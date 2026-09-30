@@ -45,8 +45,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
-| **Phase 13** Ready for live review | all | 🔄 in progress | 8/23 | 43/75 | `██████░░░░`  57% |
-| **All** | | | **91/106** | **485/517** | `█████████░`  94% |
+| **Phase 13** Ready for live review | all | 🔄 in progress | 9/23 | 48/75 | `██████░░░░`  64% |
+| **All** | | | **92/106** | **490/517** | `██████████`  95% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -81,7 +81,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 1 | `yourtal-1` | free | 2026-09-30 | Phase 12 ✅ (12.1–12.4; 12.4 by the F83 self-assessment, checked on staging at deeb342a). Slot db `yourtal_s1` and Cerbos 26315 stay; helpers `yourtal-p12-b` (db `yourtal_s12b`, 26610–26615) and `yourtal-p12-c` (db `yourtal_s12c`, 26620–26625) are free for reuse. Carried to Phase 13: 13.10, 13.11 |
 | 2 | `yourtal-2` | free | 2026-09-29 | Phase 9 ✅ (779b2a53). Worktree, `.env`, db `yourtal_s2` and Cerbos 26325 ready for the next phase. Phase 9 helpers `yourtal-p9-b/c/d` (dbs `yourtal_s9b/c/d`) are done and can be reused; their Cerbos containers are stopped. Staging holds a test `ops` account (`staff-ops-9-3-b-1790652948@example.test`, granted under F76). Found for Area A: the fake ledger's `grantAction` skips the K6 cash-backing check, and its burns are not region-tagged. Carried for later phases: 11.5.g, 11.5.h, 2.3.i |
 | 3 | `yourtal-3` | **13** — business and API side (agent C) | 2026-09-30 | Branch `phase/13-c`, db `yourtal_s3`, ports 26330–26336. 13.11 → 13.12 (contract shapes merged first, for agent V) → 13.23 → 13.21, plus 13.17 (C half). |
-| 9b | `yourtal-p9-b` | **13** — platform (agent A1) | 2026-09-30 | Branch `phase/13-a1`, db `yourtal_s9b`, ports 26470–26477. 13.8 ✅, 13.24 ✅; on 13.5. |
+| 9b | `yourtal-p9-b` | **13** — platform (agent A1) | 2026-09-30 | Free. 13.8, 13.24 and 13.5 ✅ (834fd2a3). Db `yourtal_s9b` and Cerbos 26475 stay for reuse. |
 | 9c | `yourtal-p9-c` | **13** — vouchers and escrow (agent A2) | 2026-09-30 | Branch `phase/13-a2`, db `yourtal_s9c`, ports 26480–26487. 13.20.a/b/d (gifting backend) → 13.10 → 13.9 → 13.22.a–c (auction backend, once 13.21.a is on main). |
 | 4 | `yourtal-4` | **13** — viewer side (agent V) — at checkpoint | 2026-09-30 | Branch `phase/13`, db `yourtal_s4`, ports 26360–26366. Done: 13.18 ✅, 13.16 ✅; 13.13, 13.14, 13.15, 13.19 merged and passing on staging, closing with 13.17. 13.17 B half passed on staging except the tag filter (waits on 13.11.c reaching staging, and Release is red since 62cbcdb5). Paused for the founder's screen review; next 13.20.c, 13.22.d (UI only). |
 | 2b | `yourtal-p11` | free | 2026-09-29 | Phase 11 moved to slot 4. 11.3.a ✅ (d2ae6ab), 11.3.b merged except `VideoObject` (11fc23d). Worktree left detached |
@@ -1449,17 +1449,17 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 13.4.a Performance on a mid-tier Android profile: LCP ≤ 2.0 s, initial JS ≤ 200 KB, TBT ≤ 200 ms, and **time to first frame on the feed ≤ 1.0 s** (docs/08).
   - [ ] 13.4.b Axe clean on every route, no horizontal scroll at 320 px, light and dark both checked, and captions present on every demo campaign.
   - [ ] 13.4.c **Check:** the Lighthouse CI mobile run meets the budgets on `/home` and `/au`.
-- [ ] **13.5 Security and red lines in code** · A (with requests to B and C) · needs: 13.1 — 🔄 slot 9b
-  - [ ] 13.5.a Rate limits on public endpoints, a session and cookie review, CSP, gitleaks in CI (the repo is public), and a dependency audit.
-  - [ ] 13.5.b Tests that keep the red lines in code:
+- [x] **13.5 Security and red lines in code** · A (with requests to B and C) · needs: 13.1 — ✅ 2026-09-30 834fd2a3
+  - [x] 13.5.a Rate limits on public endpoints, a session and cookie review, CSP, gitleaks in CI (the repo is public), and a dependency audit. Every `@PublicRoute` without its own limit gets 600/min per IP per handler (health and nginx's HLS auth exempt, with reasons). `security.yml` runs gitleaks 8.30.1 (pinned by checksum) over the full history, plus `pnpm audit`, on push, PR and daily; history is clean after allowlisting `atlas.sum` and 12 reviewed false positives. Cookies are HttpOnly, Secure in production and SameSite=Lax; nginx sends CSP, HSTS, nosniff and a Referrer-Policy (`script-src` still needs `'unsafe-inline'` until nonces).
+  - [x] 13.5.b Tests that keep the red lines in code (`shared/red-lines/red-lines.e2e.test.ts`, 10 tests over HTTP):
     - **#1** no prediction questions (7.3.b);
     - **#4** the user role is denied every purchase path, and `userPointPurchaseEnabled` stays literally false;
     - **#6** no sensitive interests (1.1.e);
     - **#7** unverified businesses cannot submit (7.3.d);
     - **#10** reports are aggregates only (7.6).
-  - [ ] 13.5.c Delete `money/mock-backing-rate.ts`, drop `pointsPriceFromSettlement` from the exports, remove the bundle-test allowlist (4.9.d), and delete `formatPoints` once `git grep 'formatPoints('` is empty.
-  - [ ] 13.5.e Postgres row-level security for region on every region-scoped table (F29): policies keyed on a per-transaction region setting that the api and the ledger set from the principal, with a test that a query in the wrong region returns nothing.
-  - [ ] 13.5.d **Check:** gitleaks and the audit are green in CI, and each red-line test fails when its guard is removed.
+  - [x] 13.5.c Delete `money/mock-backing-rate.ts`, drop `pointsPriceFromSettlement` from the exports, remove the bundle-test allowlist (4.9.d), and delete `formatPoints` once `git grep 'formatPoints('` is empty.
+  - [x] 13.5.e Postgres row-level security for region on every region-scoped table (F29): policies keyed on a per-transaction region setting that the api and the ledger set from the principal, with a test that a query in the wrong region returns nothing. 53 tables get `region_wall` (F90); `region-scope.e2e.test.ts` shows a walled read returns 0 rows and a walled write changes none, and keeps every future region table walled; the ledger sets it per acquire from `X-YourTal-Region` (`regionwall`). On staging an AU account's feed, wallet and store answer 200 with AU items only.
+  - [x] 13.5.d **Check:** gitleaks and the audit are green in CI, and each red-line test fails when its guard is removed. Security run 36694281553 is green on 834fd2a3. Each guard was removed in turn and its test failed (re-checked by hand for #1 and #7: 3 of 10 tests failed, then passed again after restoring).
 - [ ] **13.6 Founder walkthrough** · founder · needs: 13.2
   - [ ] 13.6.a Walk through `/review` on staging. Every issue becomes a task in this file, either in Phase 13 or in a new Phase 14.
 
@@ -1635,6 +1635,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-09-30 · A (slot 9b) · **13.5 Security and red lines in code** · 834fd2a3. Region row-level security in Postgres for signed-in viewers and the ledger, anonymous routes rate-limited by default, gitleaks and the dependency audit in CI, red-line tests that fail when a guard goes, and the mock backing rate deleted.
 - 2026-09-30 · A2 (slot 9c) · **13.10 done:** Studio Reports shows a business's own vouchers by status from the voucher service, region-scoped and cohort-floored; the old "not available" panel is gone. Also on main: 13.20's gifting backend (a, b, d ticked; e43a280d) and 13.9.a's caption extraction · 440eab65
 - 2026-09-30 · C (slot 3) · **13.21.a contract and tables are on main** (for 13.22): `@yourtal/contracts/charity` (application request, AU ACNC / ID yayasan registration, public and detail views, staff decision), and migration `20260930080230_charity_registry` with `charity.charity` (region-walled; `payout_reference` is the provider-held account auction captures settle into, and there is no charity balance anywhere), `charity.member` and the append-only `charity.decision`. The routes, the simulated KYB check and the screens come next · ca4c63ca
 - 2026-09-30 · C (slot 3) · **13.23 Business boost bids done.** A live campaign gets a daily cash budget and a maximum bid per 1,000 impressions in Studio. Home's two reserved slots go by second price (winner pays the next bid plus one minor unit, or the region reserve) among campaigns the viewer could already see; spend is booked atomically against the daily budget on the region's clock, charged once per closed day through the simulated payment driver, and shown on Billing and Reports. Rewards never change. Teens and filtered views get no boost slots · 9734eee5

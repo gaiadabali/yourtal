@@ -284,6 +284,7 @@ node C:/Users/Hansel/Documents/Hansel/Projects/yourtal/scripts/progress.mjs && g
   - Generated OpenAPI (`packages/contracts/openapi/**`): take `main`'s copy, regenerate, add.
   - Everything else: keep both sides.
 - **`.git/index.lock` in the main checkout:** wait 10 s and retry. Never delete it.
+- **One git writer at a time in the main checkout** (2026-09-30: two sessions fast-forwarding at once left its index at the wrong tree). Wrap every merge line and every `TASKS.md` commit in `until mkdir C:/Users/Hansel/Documents/Hansel/Projects/yourtal/.git/yt-merge.lock 2>/dev/null; do sleep 5; done; … ; rmdir …/yt-merge.lock`, and always remove it.
 - **Environment variables:** every new one gets a dev default in `apps/api/src/config` and a line in `.env.example`. After a rebase, add any keys from `.env.example` missing from your `.env`.
 - **Ports:**
 

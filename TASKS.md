@@ -45,8 +45,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 43/43 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 3/4 | 17/24 | `███████░░░`  71% |
-| **Phase 13** Ready for live review | all | · not started | 0/16 | 0/40 | `░░░░░░░░░░`   0% |
-| **All** | | | **82/99** | **433/481** | `█████████░`  90% |
+| **Phase 13** Ready for live review | all | · not started | 0/18 | 0/49 | `░░░░░░░░░░`   0% |
+| **All** | | | **82/101** | **433/490** | `█████████░`  88% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -68,7 +68,7 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | 5 | **9** Staff console | Phase 7 ✅ | ~4d |
 | 5 | **11** Viewer feed & public site | Phases 5, 6 and 7 ✅ | ~8d |
 | 6 | **12** Teen & family mode | Phases 10 and 11 ✅ | ~3d |
-| 7 | **13** Ready for live review | every other phase ✅. Its UI pass, 13.11–13.17, and 13.1, 13.5, 13.8, 13.9 and 13.10 can start now (F84). | ~3d + ~5d UI pass |
+| 7 | **13** Ready for live review | every other phase ✅. Its UI pass, 13.11–13.19, and 13.1, 13.5, 13.8, 13.9 and 13.10 can start now (F84). | ~3d + ~5d UI pass |
 
 **Never run these two at once:** 4 and 10 (both rewrite `services/ledger`), and 5 and 11 (both change the player and watch flow). The waves above already keep them apart.
 
@@ -151,7 +151,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | **F80** | Phase 12 was asked to start while its gate (Phase 11) was unfinished | **Start an early slice now** in slot 1 (`phase/12`), like F21/F26/F27/F36/F52: 12.1 (guardians, the Cerbos age wall, the teen cap), 12.2.c (the new `/guardian/[token]` page) and 12.3, whose needs are all ✅. 12.2.a/b wait for Phase 11 to close, since they touch the feed and streak files slot 4 is editing. |
 | **F82** | Add agents to speed Phase 12 up? | **One more now, one more later.** An agent takes 12.1.f now (in `yourtal-p12-c`); 12.2.a/b get their own agent the moment Phase 11 is ✅. Three agents at most, to stay clear of the session limit hit on 2026-09-29. |
 | **F83** | How to finish 12.4, the legal review of teen mode | **A self-assessment against the industry codes, treated as final** (founder, 2026-09-30; offered and declined: keeping a lawyer sign-off gate). Assessed against the UK Age Appropriate Design Code (the model for AU's coming Children's Online Privacy Code), the AANA children's advertising code, the AU under-16 social media law, UU PDP Art. 25 and PP 17/2025. Gaps found are fixed in code; `docs/24` and `docs/16` record it as a founder-approved self-assessment, not a lawyer's review. `TEEN_ACCOUNTS` may then be on in production, still off unless set. |
-| **F84** | The founder's UI pass before Phase 13's review (2026-09-30): how tags work, what short videos are called, and when it runs | **Tags are picked from the interest taxonomy** (offered and declined: taxonomy plus free keywords, free text only), so they match the preference engine and the sensitive-term block applies. **Short videos are called "Shorts"** in the app (still `quick` in code). **It runs first in Phase 13** as 13.11–13.17, ahead of 13.2, 13.3, 13.4 and 13.6, which test the final screens. |
+| **F84** | The founder's UI pass before Phase 13's review (2026-09-30): how tags work, what short videos are called, and when it runs | **Tags are picked from the interest taxonomy** (offered and declined: taxonomy plus free keywords, free text only), so they match the preference engine and the sensitive-term block applies. **Short videos are called "Shorts"** in the app (still `quick` in code). **It runs first in Phase 13** as 13.11–13.19, ahead of 13.2, 13.3, 13.4 and 13.6, which test the final screens. |
 | **F85** | A superadmin login on staging for the founder to explore with | **`hansel@gaiada.com`, AU**, registered over the staging API on 2026-09-30, with every staff role plus a team role at the AU demo business. The password is the founder's own and is never written in this repo. The grants run over SSH on Helios, like F76. |
 | **F81** | Every worktree kept a frozen TASKS.md from when its branch was cut, which looked current (the founder read Phase 10 at 4/7 in `yourtal-p11-d` after it was done) | **Leave TASKS.md out of every worktree** with git sparse-checkout, so the main checkout's copy is the only one on disk. Applied to all 23 worktrees on 2026-09-29; new slots run it in slot setup. Undo per worktree with `git sparse-checkout disable`. |
 | **F83** | Phase 11's Done-when needs a staging buy and dispute, but the demo viewers' password is only in Helios's secrets file | **Read it once over SSH (founder, 2026-09-29).** Used only to sign in `viewer.au`/`viewer.id`, never printed or stored. |
@@ -1418,7 +1418,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 
 ## Phase 13 — Ready for live review · All areas · ~3d, plus ~5d for the UI pass
 
-**Order (F84), which overrides task order:** the founder's UI pass, 13.11–13.17, runs first. 13.1, 13.5, 13.8, 13.9 and 13.10 do not depend on the screens and can run beside it. 13.2, 13.3, 13.4 and 13.6 wait for the UI pass, because they test the final screens. The Phase 6 screen rules (live data, primitives, copy pass, every state, screenshots with axe) apply to every UI task.
+**Order (F84), which overrides task order:** the founder's UI pass, 13.11–13.19, runs first. 13.1, 13.5, 13.8, 13.9 and 13.10 do not depend on the screens and can run beside it. 13.2, 13.3, 13.4 and 13.6 wait for the UI pass, because they test the final screens. The Phase 6 screen rules (live data, primitives, copy pass, every state, screenshots with axe) apply to every UI task.
 
 - [ ] **13.1 The demo world** · C (A does the ledger part) · needs: 7.2, 7.3, 7.4, 8.1, 4.7, 9.1, 10.1, 12.1
   - [ ] 13.1.a `pnpm demo:reset`, **on demand** (a CLI and a staff button), never deleting or editing ledger, voucher or proof rows: it suspends the current demo accounts, reverses their balances with postings, and creates fresh demo accounts with new IDs. It covers AU (the default) and ID. Each region gets:
@@ -1428,13 +1428,13 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
     - demo accounts for every role: adult viewer (tier 3), teen plus guardian, business owner, marketer and finance, a store counter device, and staff admin, moderator and finance.
   - [ ] 13.1.b A week of history, made by driving the **real APIs** over a real period and never by raw SQL into the ledger (A's `seed/ledger.ts`), so reports and statements have data.
   - [ ] 13.1.c **Check:** after `pnpm demo:reset`, every demo login works and every screen has data in both regions.
-- [ ] **13.2 Review guide** · B · needs: 13.1, 13.11–13.17
+- [ ] **13.2 Review guide** · B · needs: 13.1, 13.11–13.19
   - [ ] 13.2.a A `/review` page, on staging only, listing the viewer, teen and guardian, business and counter demo logins. **Staff logins are not listed**; they are given to the founder separately from `app.env`. It also lists the journeys to try with direct links, `/dev/clock` for time-based journeys, and what is simulated.
-- [ ] **13.3 End-to-end tests, split by owner** · needs: 13.1, 13.11–13.17
+- [ ] **13.3 End-to-end tests, split by owner** · needs: 13.1, 13.11–13.19
   - [ ] 13.3.a **B:** journeys 5, 6, 7, 11 and 14 (`product-intent.md` §2.2), in AU and ID, in `e2e/journeys/`.
   - [ ] 13.3.b **C:** journeys 1, 2, 3, 4, 8 and 12.
   - [ ] 13.3.c **A:** journeys 9, 10 and 13, a test that fails if the production build ever resolves `mock`, and an authorization matrix test covering every role against every route and region.
-- [ ] **13.4 The quality bar** · B + C · needs: 13.1, 13.11–13.17
+- [ ] **13.4 The quality bar** · B + C · needs: 13.1, 13.11–13.19
   - [ ] 13.4.a Performance on a mid-tier Android profile: LCP ≤ 2.0 s, initial JS ≤ 200 KB, TBT ≤ 200 ms, and **time to first frame on the feed ≤ 1.0 s** (docs/08).
   - [ ] 13.4.b Axe clean on every route, no horizontal scroll at 320 px, light and dark both checked, and captions present on every demo campaign.
   - [ ] 13.4.c **Check:** the Lighthouse CI mobile run meets the budgets on `/home` and `/au`.
@@ -1477,6 +1477,8 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 13.13.a `/home` shows long videos only, never Shorts, in a YouTube-style grid (1 column at 390 px up to 4–5 at 1280 px and wider): thumbnail with duration, title, brand, points and category.
   - [ ] 13.13.b A sticky chip bar across the top (All, then each category), plus a tag filter sheet, both kept in the URL. Below the chips on "All", rows per category and Continue watching.
   - [ ] 13.13.c `/watch` redirects to `/home`; its grid is folded into Home.
+  - [ ] 13.13.d (founder, 2026-09-30: "Home needs a major redesign") Today's single tall teaser beside a column of empty lists goes. At 1280 px the grid fills the page width; a featured row of 1–3 large videos sits above it. An empty row (Saved, Following, Ending soon) is hidden, not shown as "Nothing here yet". The streak shows as a small header badge, not a banner. At 390 px the same grid is one column with the chips scrolling sideways.
+  - [ ] 13.13.e Each video card opens its watch page on click. Save, Not interested and Share move into a card menu (⋮), the way YouTube does it.
 - [ ] **13.14 Shorts** (F84) · B · needs: 13.12.a
   - [ ] 13.14.a A `/shorts` route with the vertical swipe feed, Shorts only, earning in place as today. `/quick` redirects to it.
   - [ ] 13.14.b The nav becomes Home · Shorts · Store · Wallet · Me, in both catalogues.
@@ -1486,8 +1488,17 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 - [ ] **13.16 Light and dark mode** (F84) · B · needs: —
   - [ ] 13.16.a A theme setting (System, Light, Dark) in Me and in the header menu, saved to the account and a cookie, so the server renders it with no flash. `ViewerShell` stops forcing dark.
   - [ ] 13.16.b Every viewer, Studio, counter and staff screen is checked in both themes.
-- [ ] **13.17 Check the UI pass** · B + C · needs: 13.13–13.16
-  - [ ] 13.17.a **Check:** on staging, in AU and ID: Home shows only long videos, filters by category and tag, and the filters survive a reload; Shorts plays only Shorts; the store filters, sorts and searches on the server; the theme setting persists across sign-out and sign-in. Screenshots of Home, Shorts, Store and Search at 390 px and 1280 px, light and dark, axe clean.
+- [ ] **13.18 Header and sidebar** (founder, 2026-09-30) · B · needs: —
+  - [ ] 13.18.a The logo moves to the top of the sidebar at 1280 px, so the header holds only search, notifications, the points balance and the profile. At 390 px the logo stays in the header, because there is no sidebar.
+  - [ ] 13.18.b A profile avatar at the top right opens a menu: name and email, Me, Wallet, theme (13.16), language, Studio or Staff console when the account has that role, and Log out.
+- [ ] **13.19 Wallet redesign** (founder, 2026-09-30: "more important things and a better flow") · B · needs: 13.12.b
+  - [ ] 13.19.a Top card: available points, pending points (with when they release), and the next reward within reach ("40 more points for a Snap App coffee"), linking to it in the Store.
+  - [ ] 13.19.b Active vouchers first, as cards that open the QR in one tap, with expiry and where to use them. Used and expired vouchers sit in their own tab.
+  - [ ] 13.19.c Vouchers you can afford now, from the Store, as a row.
+  - [ ] 13.19.d Points history grouped by day, with filters (earned, redeemed, returned) and each line linking to its video or voucher. Disputes stay reachable from a voucher's own page.
+  - [ ] 13.19.e An empty wallet explains the loop in three steps (watch, earn, redeem), with one button to Home. It never says "money" or "income".
+- [ ] **13.17 Check the UI pass** · B + C · needs: 13.13–13.16, 13.18, 13.19
+  - [ ] 13.17.a **Check:** on staging, in AU and ID: Home shows only long videos, filters by category and tag, and the filters survive a reload; Shorts plays only Shorts; the store filters, sorts and searches on the server; the theme setting persists across sign-out and sign-in. Screenshots of Home, Shorts, Store, Search and Wallet, and the header menu, at 390 px and 1280 px, light and dark, axe clean.
 
 **Done when:** the founder completes the walkthrough on staging, and every issue raised is either fixed or recorded as a task in this file.
 

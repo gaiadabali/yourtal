@@ -114,15 +114,22 @@ export function createPdpClient(config: PdpClientConfig): PdpClient {
       ],
     });
 
-    return ResultAsync.fromPromise(
-      doFetch(endpoint, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body,
-        signal: AbortSignal.timeout(timeoutMs),
-      }),
-      (cause): AuthzError => ({ type: "pdp_unavailable", cause: String(cause) }),
-    )
+    const post = () =>
+      ResultAsync.fromPromise(
+        doFetch(endpoint, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body,
+          signal: AbortSignal.timeout(timeoutMs),
+        }),
+        (cause): AuthzError => ({ type: "pdp_unavailable", cause: String(cause) }),
+      );
+
+    // A check is a pure read, so one retry after a timeout or dropped
+    // connection is safe; it absorbs a momentary stall that would otherwise
+    // fail a whole page. A second failure still denies.
+    return post()
+      .orElse(() => post())
       .andThen((response) =>
         response.ok
           ? ResultAsync.fromPromise(response.json(), (cause): AuthzError => ({

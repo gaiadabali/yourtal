@@ -114,6 +114,36 @@ describe("failing closed", () => {
     expect(result._unsafeUnwrapErr().type).toBe("pdp_unavailable");
   });
 
+  it("retries once after a timeout, so a momentary stall does not fail the request", async () => {
+    const allow = JSON.stringify({
+      results: [
+        { resource: { kind: "campaign", id: "camp-1" }, actions: { view: "EFFECT_ALLOW" } },
+      ],
+    });
+    const fetchImpl = vi
+      .fn()
+      .mockRejectedValueOnce(new DOMException("The operation was aborted.", "TimeoutError"))
+      .mockResolvedValueOnce(new Response(allow)) as unknown as typeof fetch;
+
+    const result = await clientWith(fetchImpl).requireAction(budi, campaign, "view");
+    expect(result.isOk()).toBe(true);
+    expect(vi.mocked(fetchImpl)).toHaveBeenCalledTimes(2);
+  });
+
+  it("gives up after the retry, and never retries an answer it got", async () => {
+    const timingOut = vi.fn(() =>
+      Promise.reject(new DOMException("The operation was aborted.", "TimeoutError")),
+    ) as unknown as typeof fetch;
+    const stillDown = await clientWith(timingOut).requireAction(budi, campaign, "view");
+    expect(stillDown._unsafeUnwrapErr().type).toBe("pdp_unavailable");
+    expect(vi.mocked(timingOut)).toHaveBeenCalledTimes(2);
+
+    const erroring = respondWith("upstream exploded", 500);
+    const answered = await clientWith(erroring).requireAction(budi, campaign, "view");
+    expect(answered._unsafeUnwrapErr().type).toBe("pdp_unavailable");
+    expect(vi.mocked(erroring)).toHaveBeenCalledOnce();
+  });
+
   it("an HTTP 500 from the PDP is not an allow", async () => {
     const result = await clientWith(respondWith("upstream exploded", 500)).requireAction(
       budi,

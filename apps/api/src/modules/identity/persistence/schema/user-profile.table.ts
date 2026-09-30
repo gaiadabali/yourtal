@@ -19,7 +19,9 @@ export const userProfiles = identityPgSchema.table("user_profile", {
   displayName: text("display_name").notNull(),
   dateOfBirth: date("date_of_birth", { mode: "string" }).notNull(),
   timezone: text("timezone").notNull(),
-  guardianEmail: text("guardian_email"),
+  // `guardian_email` dropped by 12.4.b (#4) -- the teen's guardian address
+  // lives only in `identity.guardian_consent` now, purged when they turn 18
+  // (apps/worker's own daily job) rather than retained here forever.
   parentConsentStatus: text("parent_consent_status").notNull().default("not_required"),
   trustTier: smallint("trust_tier").notNull().default(0),
   suspendedAt: timestamp("suspended_at", { withTimezone: true }),

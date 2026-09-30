@@ -3,9 +3,14 @@
 import type { ApiResult } from "@/lib/api/api-fetch";
 import type {
   ApproveGuardianConsentResult,
+  DeleteGuardianAccountResult,
   RevokeGuardianConsentResult,
 } from "@yourtal/contracts/identity/guardian";
-import { approveGuardianConsent, revokeGuardianConsent } from "./guardian-api";
+import {
+  approveGuardianConsent,
+  deleteGuardianAccount,
+  revokeGuardianConsent,
+} from "./guardian-api";
 
 /**
  * `POST /api/guardian/:token/approve`. `idempotencyKey` is minted once per
@@ -28,4 +33,17 @@ export async function revokeGuardianConsentAction(
   idempotencyKey: string,
 ): Promise<ApiResult<RevokeGuardianConsentResult>> {
   return revokeGuardianConsent(token, idempotencyKey);
+}
+
+/**
+ * `POST /api/guardian/:token/delete-account` (12.4.b #6) — same
+ * idempotency-key contract as approve/revoke above, and same reasoning
+ * `approveGuardianConsentAction`'s own doc comment gives: minted once by
+ * the server page, not in here.
+ */
+export async function deleteGuardianAccountAction(
+  token: string,
+  idempotencyKey: string,
+): Promise<ApiResult<DeleteGuardianAccountResult>> {
+  return deleteGuardianAccount(token, idempotencyKey);
 }

@@ -8,6 +8,7 @@ import { Notice } from "@yourtal/ui/notice";
 import { getGuardianTranslator, type GuardianLocale } from "./guardian-i18n";
 import { guardianErrorKeyFor } from "./guardian-error-copy";
 import { approveGuardianConsentAction } from "./guardian-actions";
+import { GuardianDeleteAccountSection } from "./guardian-delete-account-section";
 
 export interface GuardianApproveFormProps {
   token: string;
@@ -93,6 +94,15 @@ export function GuardianApproveForm({
       >
         {t("pending.approveCta")}
       </Button>
+
+      {/* 12.4.b (#6): available before approval too -- a guardian may decide
+          to delete rather than approve. */}
+      <GuardianDeleteAccountSection
+        token={token}
+        displayName={displayName}
+        locale={locale}
+        idempotencyKey={idempotencyKey}
+      />
     </div>
   );
 }

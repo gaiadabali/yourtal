@@ -14,7 +14,8 @@ export interface NewGuardianConsent {
 export interface StoredGuardianConsent {
   readonly userId: string;
   readonly tokenHash: string;
-  readonly guardianEmail: string;
+  /** Null once apps/worker's daily purge job clears it (12.4.b #4: the account turned 18). Always non-null right after creation. */
+  readonly guardianEmail: string | null;
   readonly region: Region;
   readonly guardianConfirmedAdultAt: Date | null;
   readonly approvedAt: Date | null;

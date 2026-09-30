@@ -11,7 +11,10 @@ import { identityPgSchema } from "./identity-schema";
 export const guardianConsents = identityPgSchema.table("guardian_consent", {
   userId: text("user_id").primaryKey(),
   tokenHash: text("token_hash").notNull(),
-  guardianEmail: text("guardian_email").notNull(),
+  // 12.4.b (#4): nullable as of the retention migration -- apps/worker's
+  // daily purge job clears this once the account has turned 18. Always
+  // non-null at INSERT (`NewGuardianConsent.guardianEmail` stays required).
+  guardianEmail: text("guardian_email"),
   // Immutable after creation, same convention as user_profile.region.
   region: text("region").notNull(),
   guardianConfirmedAdultAt: timestamp("guardian_confirmed_adult_at", { withTimezone: true }),

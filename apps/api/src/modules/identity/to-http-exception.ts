@@ -3,6 +3,7 @@ import type { HttpException } from "@nestjs/common";
 import type { GetMeError } from "./me.errors";
 import type {
   ApproveGuardianConsentError,
+  DeleteGuardianAccountError,
   GetGuardianConsentError,
   RevokeGuardianConsentError,
 } from "./guardian-consent.errors";
@@ -41,7 +42,11 @@ export function mapMeErrorToHttpException(error: GetMeError): HttpException {
  * documents for `identity.verification_token`.
  */
 export function mapGuardianConsentErrorToHttpException(
-  error: GetGuardianConsentError | ApproveGuardianConsentError | RevokeGuardianConsentError,
+  error:
+    | GetGuardianConsentError
+    | ApproveGuardianConsentError
+    | RevokeGuardianConsentError
+    | DeleteGuardianAccountError,
 ): HttpException {
   switch (error.type) {
     case "not_found":

@@ -116,3 +116,14 @@ export const GUARDIAN_CONSENT_REVOKE_RATE_LIMIT: RateLimitOptions = {
   ip: { max: 10, windowSeconds: 15 * 60 },
   route: { max: 500, windowSeconds: 15 * 60 },
 };
+
+/**
+ * 12.4.b (#6): guardian-triggered account deletion. Same shape as revoke
+ * above -- irreversible, public, token-only -- and the same limits: a real
+ * guardian deletes at most once, ever, for a given teen.
+ */
+export const GUARDIAN_CONSENT_DELETE_RATE_LIMIT: RateLimitOptions = {
+  routeId: "guardian.consent.delete_account",
+  ip: { max: 10, windowSeconds: 15 * 60 },
+  route: { max: 500, windowSeconds: 15 * 60 },
+};

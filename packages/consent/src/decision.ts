@@ -57,6 +57,17 @@ export type ConsentDenyReason =
    * answer yes, same shape as `prohibited_in_jurisdiction`.
    */
   | { readonly type: "minors_declared_interests_only" }
+  /**
+   * 12.4.b (#2): a teen may not self-consent to
+   * `marketing_communications`/`market_research_panel`/
+   * `sister_app_profile_sharing` -- refused regardless of any consent
+   * record already on file, the same absolute shape
+   * `minors_declared_interests_only` gives the two profiling purposes above.
+   * A distinct reason (not reused) because the product response differs:
+   * these three purposes DO get a toggle for an adult, so a caller must be
+   * able to tell "not for you, ever" from "you haven't said yes yet".
+   */
+  | { readonly type: "teen_consent_not_allowed" }
   /** No record at all. The honest default for anything consent-based. */
   | { readonly type: "consent_not_given" }
   /** They said yes and then said no. */
@@ -82,6 +93,8 @@ export function describeConsentDenyReason(reason: ConsentDenyReason): string {
       return `prohibited in ${reason.jurisdiction} regardless of consent`;
     case "minors_declared_interests_only":
       return "minors get declared interests only -- this purpose is refused regardless of consent";
+    case "teen_consent_not_allowed":
+      return "a teen may not self-consent to this purpose, regardless of any record on file";
     case "not_available_yet":
       return `not available until ${reason.availableFromPhase} (current ${reason.currentPhase})`;
     case "consent_not_given":

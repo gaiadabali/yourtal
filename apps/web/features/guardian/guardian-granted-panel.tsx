@@ -16,6 +16,7 @@ import {
 import { getGuardianTranslator, type GuardianLocale } from "./guardian-i18n";
 import { guardianErrorKeyFor } from "./guardian-error-copy";
 import { revokeGuardianConsentAction } from "./guardian-actions";
+import { GuardianDeleteAccountSection } from "./guardian-delete-account-section";
 
 export interface GuardianGrantedPanelProps {
   token: string;
@@ -92,6 +93,15 @@ export function GuardianGrantedPanel({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* 12.4.b (#6): also available once granted -- a guardian may decide
+          later that deletion, not just revoking, is what they want. */}
+      <GuardianDeleteAccountSection
+        token={token}
+        displayName={displayName}
+        locale={locale}
+        idempotencyKey={idempotencyKey}
+      />
     </div>
   );
 }

@@ -28,7 +28,6 @@ class FakeProfiles implements UserProfileRepository {
       displayName: "Test viewer",
       dateOfBirth: "1990-01-01",
       timezone: "Asia/Jakarta",
-      guardianEmail: null,
       parentConsentStatus: "not_required",
       trustTier: 3,
       suspendedAt: null,

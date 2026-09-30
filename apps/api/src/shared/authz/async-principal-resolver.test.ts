@@ -70,7 +70,6 @@ function profileFor(overrides: Partial<StoredUserProfile> = {}): StoredUserProfi
     displayName: "Wina",
     dateOfBirth: "1990-01-01",
     timezone: "Australia/Sydney",
-    guardianEmail: null,
     parentConsentStatus: "not_required",
     trustTier: 0,
     suspendedAt: null,

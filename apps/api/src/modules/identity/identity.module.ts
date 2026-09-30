@@ -1,8 +1,10 @@
 import { Module } from "@nestjs/common";
+import { Pool } from "pg";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
+import { IDENTITY_PG_POOL } from "./persistence/identity-pg-pool.token";
 import { createLedgerClient } from "../../shared/ledger-client/create-ledger-client";
 import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
 import { DrizzlePrincipalSecurityStateRepository } from "./persistence/drizzle-principal-security-state.repository";
@@ -82,6 +84,16 @@ export { IDENTITY_DB };
       provide: LEDGER_INTERNAL_CLIENT,
       useFactory: (config: AppConfig, db: AppDb) => createLedgerClient(config, db),
       inject: [APP_CONFIG, IDENTITY_DB],
+    },
+    // 12.4.b (#6): `GuardianConsentController.deleteAccount` runs the same
+    // `postgresHandlers`/`executeDeletion` deletion `AccountController`'s
+    // own `DELETE /api/me` does, which takes a raw `pg.Pool` rather than a
+    // Drizzle handle -- same reason `me.module.ts`'s own `ME_PG_POOL`
+    // exists, on the same physical database as `IDENTITY_DB`.
+    {
+      provide: IDENTITY_PG_POOL,
+      useFactory: (config: AppConfig) => new Pool({ connectionString: config.databaseUrl }),
+      inject: [APP_CONFIG],
     },
   ],
   controllers: [MeController, GuardianConsentController],

@@ -28,7 +28,6 @@ export async function seedUserProfile(
     displayName: "1.5.a Test User",
     dateOfBirth: args.dateOfBirth ?? "1990-01-01",
     timezone: "Australia/Sydney",
-    guardianEmail: null,
     parentConsentStatus: args.parentConsentStatus ?? "not_required",
   });
 }

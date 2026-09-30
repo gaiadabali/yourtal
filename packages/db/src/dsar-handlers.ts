@@ -129,6 +129,25 @@ export function eraseSessions(pool: pg.Pool): DomainHandler {
 }
 
 /**
+ * 12.4.b (#4): the teen's own guardian consent row — one per account, at
+ * most. `identity.guardian_consent`'s own migration named this gap
+ * ("a later ticket's to extend, not this one's to pre-empt with a grant
+ * nothing here yet uses"); this is that ticket, and the retention migration
+ * alongside it grants the DELETE this needs. `erase`, not `anonymise`: this
+ * row records only the subject's OWN consent history, the same reasoning
+ * `eraseBusinessMemberships`'s own header gives for membership rows — no
+ * obligation to a third party survives here the way a voucher's does.
+ */
+export function eraseGuardianConsent(pool: pg.Pool): DomainHandler {
+  return async (subjectId: string): Promise<number> => {
+    const result = await pool.query(`DELETE FROM identity.guardian_consent WHERE user_id = $1`, [
+      subjectId,
+    ]);
+    return result.rowCount ?? 0;
+  };
+}
+
+/**
  * The `identity` domain's full erasure, 1.4.f: business membership plus the
  * three tables above. All four are `erase`, not `anonymise`, for the same
  * reason membership already was: none of them records an obligation to
@@ -146,12 +165,18 @@ export function eraseIdentity(pool: pg.Pool): DomainHandler {
   const profile = eraseUserProfile(pool);
   const credentials = eraseCredentials(pool);
   const sessions = eraseSessions(pool);
+  // 12.4.b (#4): a fifth table, same treatment. Not every subject has one
+  // (only ever created for a teen account, `AuthService.register`), but
+  // `DELETE ... WHERE user_id = $1` against a row that never existed is
+  // just `rowCount: 0` — no branch needed for "this subject was an adult".
+  const guardianConsent = eraseGuardianConsent(pool);
   return async (subjectId: string): Promise<number> => {
     const counts = await Promise.all([
       memberships(subjectId),
       profile(subjectId),
       credentials(subjectId),
       sessions(subjectId),
+      guardianConsent(subjectId),
     ]);
     return counts.reduce((total, n) => total + n, 0);
   };

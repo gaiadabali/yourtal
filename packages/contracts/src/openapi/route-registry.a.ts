@@ -3,6 +3,8 @@ import { displayLocaleSchema } from "../identity/user-profile";
 import {
   approveGuardianConsentRequestSchema,
   approveGuardianConsentResultSchema,
+  deleteGuardianAccountRequestSchema,
+  deleteGuardianAccountResultSchema,
   guardianConsentViewSchema,
   revokeGuardianConsentResultSchema,
 } from "../identity/guardian";
@@ -504,5 +506,23 @@ export const GUARDIAN_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       "Revoked — escrowedPoints is 0 when the account already held nothing, or when this link was already revoked.",
     successSchema: inlineSchema(revokeGuardianConsentResultSchema),
     errors: [GUARDIAN_NOT_FOUND, GUARDIAN_LEDGER_UNAVAILABLE],
+  },
+  {
+    method: "post",
+    path: "/api/guardian/{token}/delete-account",
+    summary: "The guardian permanently deletes the teen's account -- irreversible",
+    tags: ["guardian"],
+    pathParams: [GUARDIAN_TOKEN_PARAM],
+    requestBody: {
+      description: "confirm must be the literal true -- there is no partial or 'maybe' deletion.",
+      schema: inlineSchema(deleteGuardianAccountRequestSchema),
+    },
+    // 201 — same NestJS default every other bare @Post here uses.
+    successStatus: 201,
+    successDescription:
+      "Deleted. The token is dead afterwards -- every route on this same link, including this " +
+      "one again, now 404s the same way an unknown token always has.",
+    successSchema: inlineSchema(deleteGuardianAccountResultSchema),
+    errors: [VALIDATION_400, GUARDIAN_NOT_FOUND],
   },
 ];

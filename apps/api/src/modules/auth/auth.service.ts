@@ -145,6 +145,14 @@ export class AuthService {
       if (profile.guardianEmail === undefined) {
         return err({ type: "guardian_email_required" });
       }
+      // 12.4.b (#5): a teen cannot be their own guardian. Both sides are
+      // already lower-cased/trimmed by `registerSchema`'s own `.toLowerCase()`
+      // pipe, but `normalizeEmail` is applied again here rather than trusted
+      // — the same defence-in-depth every other identifier comparison in
+      // this service gives its own input, not a rule this check invents.
+      if (normalizeEmail(profile.guardianEmail) === identifier) {
+        return err({ type: "guardian_email_same_as_own" });
+      }
     }
 
     return this.guarded(async () => {
@@ -182,6 +190,9 @@ export class AuthService {
         );
         if (!created) return "conflict" as const;
 
+        // 12.4.b (#4): `identity.user_profile.guardian_email` is gone (the
+        // teen's guardian email lives ONLY in `identity.guardian_consent`
+        // now, below) -- `NewUserProfile` no longer has the field at all.
         await this.profiles.create(
           {
             userId,
@@ -190,7 +201,6 @@ export class AuthService {
             displayName: profile.displayName,
             dateOfBirth: profile.dateOfBirth,
             timezone: profile.timezone,
-            guardianEmail: isAdult ? null : (profile.guardianEmail ?? null),
             parentConsentStatus: isAdult ? "not_required" : "pending",
           },
           tx,
@@ -535,11 +545,19 @@ export class AuthService {
   ): Promise<void> {
     const approveUrl = `${this.config.webOrigin}/guardian/${token}`;
     const revokeUrl = `${this.config.webOrigin}/guardian/${token}?action=revoke`;
+    // 12.4.b (#3, guardian half): the public site's locale segment is the
+    // REGION ("au"/"id" — `apps/web/features/public/public-locale.ts`'s own
+    // `PublicLocale`), never the display locale ("en-AU"/"id-ID") this
+    // function's own `locale` parameter already is — the two happen to
+    // correspond one-to-one today, but spelling it out from `region` (not
+    // lower-casing `locale`) keeps this correct if that ever changes.
+    const privacyUrl = `${this.config.webOrigin}/${region.toLowerCase()}/privacy`;
     const { subject, body } = guardianConsentEmailContent(
       locale,
       displayName,
       approveUrl,
       revokeUrl,
+      privacyUrl,
     );
 
     const sent = await this.email.send({

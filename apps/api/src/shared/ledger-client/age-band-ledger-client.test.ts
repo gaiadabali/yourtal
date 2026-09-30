@@ -26,7 +26,6 @@ async function seedProfile(userId: string, dateOfBirth: string): Promise<void> {
     displayName: "12.1.c ageband fixture",
     dateOfBirth,
     timezone: "Australia/Sydney",
-    guardianEmail: null,
     parentConsentStatus: "not_required",
   });
 }

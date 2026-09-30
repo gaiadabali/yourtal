@@ -7,6 +7,7 @@ import { GuardianApproveForm } from "@/features/guardian/guardian-approve-form";
 import { GuardianGrantedPanel } from "@/features/guardian/guardian-granted-panel";
 import { GuardianRevokedNotice } from "@/features/guardian/guardian-revoked-notice";
 import { GuardianErrorNotice } from "@/features/guardian/guardian-error-notice";
+import { GuardianPrivacyNotice } from "@/features/guardian/guardian-privacy-notice";
 
 // Always noindex, in every environment — unlike `baseMetadata`'s
 // staging-only `robots`, this page can carry a real teen's real display
@@ -73,6 +74,11 @@ export default async function GuardianPage({ params, searchParams }: GuardianPag
           locale={view.locale}
           idempotencyKey={idempotencyKey}
         />
+        <GuardianPrivacyNotice
+          displayName={view.displayName}
+          locale={view.locale}
+          region={view.region}
+        />
       </AuthCard>
     );
   }
@@ -87,6 +93,11 @@ export default async function GuardianPage({ params, searchParams }: GuardianPag
           idempotencyKey={idempotencyKey}
           openConfirmOnMount={action === "revoke"}
         />
+        <GuardianPrivacyNotice
+          displayName={view.displayName}
+          locale={view.locale}
+          region={view.region}
+        />
       </AuthCard>
     );
   }
@@ -95,6 +106,11 @@ export default async function GuardianPage({ params, searchParams }: GuardianPag
   return (
     <AuthCard title={t("revoked.heading")}>
       <GuardianRevokedNotice displayName={view.displayName} locale={view.locale} />
+      <GuardianPrivacyNotice
+        displayName={view.displayName}
+        locale={view.locale}
+        region={view.region}
+      />
     </AuthCard>
   );
 }

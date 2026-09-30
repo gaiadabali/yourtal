@@ -38,6 +38,24 @@
     "heading": "Persetujuan ditarik",
     "body": "Anda telah menarik persetujuan untuk akun YourTal {displayName}. Poin mereka ditahan, dan tautan ini tidak dapat digunakan lagi."
   },
+  "delete": {
+    "cta": "Hapus akun {displayName}",
+    "confirmTitle": "Hapus akun {displayName}?",
+    "confirmBody": "Ini akan menghapus akun YourTal {displayName} secara permanen: profil, akses masuk, dan poin yang telah mereka dapatkan. Tindakan ini tidak dapat dibatalkan, dan tautan ini tidak akan berfungsi lagi setelahnya.",
+    "cancelCta": "Batal",
+    "confirmCta": "Ya, hapus akun ini",
+    "deletedBody": "Akun YourTal {displayName} telah dihapus.",
+    "errors": {
+      "network": "YourTal tidak dapat dihubungi. Periksa koneksi Anda dan coba lagi.",
+      "invalid_response": "Ada yang tidak beres di sisi kami. Coba lagi sebentar lagi.",
+      "unavailable": "YourTal sedang tidak tersedia sementara. Coba lagi sebentar lagi.",
+      "unknown": "Ada yang kurang tepat. Coba lagi."
+    }
+  },
+  "privacy": {
+    "body": "Yang kami simpan: nama, tanggal lahir, dan email {displayName}, serta apa yang mereka tonton dan hasilkan. Data ini tidak pernah dijual, tidak pernah digunakan untuk membuat profil mereka, dan tidak dibagikan ke bisnis kecuali sebagai total anonim.",
+    "linkLabel": "Baca pemberitahuan privasi lengkap"
+  },
   "invalid": {
     "heading": "Tautan ini tidak valid",
     "body": "Tautan wali ini tidak cocok dengan akun YourTal mana pun. Jika Anda baru saja menerima ini, periksa apakah seluruh tautan tersalin dengan benar, atau minta tautan baru."

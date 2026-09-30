@@ -14,9 +14,12 @@ import type { FastifyRequest } from "fastify";
 import { z } from "zod";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
-import { PrincipalService } from "../../shared/authz/principal.service";
-import type { PrincipalResolver } from "../../shared/authz/principal-resolver";
-import { NOTIFICATION_REPOSITORY } from "./persistence/notification.repository";
+import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
+import {
+  DEFAULT_NOTIFICATION_CATEGORIES,
+  NOTIFICATION_REPOSITORY,
+  pushEnabledDefaultFor,
+} from "./persistence/notification.repository";
 import type { NotificationRepository } from "./persistence/notification.repository";
 
 const DEFAULT_LIMIT = 30;
@@ -32,7 +35,10 @@ const preferenceBody = z.object({ pushEnabled: z.boolean() });
 @Controller("api/me/notifications")
 export class NotificationsController {
   constructor(
-    @Inject(PrincipalService) private readonly principals: PrincipalResolver,
+    // `AsyncPrincipalResolver`, not `PrincipalService`: `ageBand` (12.4.b
+    // #8, below) is only populated by the async, profile-reading resolver
+    // -- see that class's own doc comment.
+    private readonly principals: AsyncPrincipalResolver,
     @Inject(NOTIFICATION_REPOSITORY) private readonly notifications: NotificationRepository,
   ) {}
 
@@ -61,9 +67,24 @@ export class NotificationsController {
   @NotValueMoving("A read of the caller's own notification preferences.")
   @Get("preferences")
   async preferences(@Req() request: FastifyRequest) {
-    const userId = (await this.principals.resolve(request)).id;
-    const preferences = await this.notifications.preferencesFor(userId);
-    return { preferences: Object.fromEntries(preferences) };
+    const principal = await this.principals.resolve(request);
+    const stored = await this.notifications.preferencesFor(principal.id);
+
+    // 12.4.b (#8): push defaults OFF for a teen -- but only for a category
+    // this account has never made an explicit choice on, and only for a
+    // teen: an adult's response is UNCHANGED by this ticket (a category
+    // with no row stays absent, same as before), because the column's own
+    // DEFAULT true already matches what an adult should see and there is
+    // nothing here to correct for that case. A stored row (`stored`, spread
+    // last) always wins regardless of age band.
+    const merged = new Map<string, boolean>(stored);
+    if (principal.attr.ageBand === "teen") {
+      for (const category of DEFAULT_NOTIFICATION_CATEGORIES) {
+        if (!merged.has(category)) merged.set(category, pushEnabledDefaultFor("teen"));
+      }
+    }
+
+    return { preferences: Object.fromEntries(merged) };
   }
 
   @NotValueMoving("Setting the same preference twice ends in the same stored state.")

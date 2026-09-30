@@ -52,3 +52,25 @@ export const revokeGuardianConsentResultSchema = z.object({
   escrowedPoints: pointsSchema,
 });
 export type RevokeGuardianConsentResult = z.infer<typeof revokeGuardianConsentResultSchema>;
+
+/**
+ * `POST /api/guardian/:token/delete-account`'s body (12.4.b #6). Same
+ * "literal true, not a boolean" shape as `approveGuardianConsentRequestSchema`
+ * above — there is no partial or "maybe" deletion, and `false`/missing is a
+ * 400, not a domain refusal.
+ */
+export const deleteGuardianAccountRequestSchema = z.object({
+  confirm: z.literal(true),
+});
+export type DeleteGuardianAccountRequest = z.infer<typeof deleteGuardianAccountRequestSchema>;
+
+/**
+ * Deliberately as narrow as `approveGuardianConsentResultSchema` — the
+ * teen's own `DELETE /api/me` returns a full `DeletionReport`
+ * (per-domain erased/anonymised/retained/unhandled), which is exactly the
+ * kind of operational detail (which domains are still unhandled) this
+ * public, no-session route must not hand a caller with nothing but a
+ * token. `deleted: true` is the whole answer a guardian needs.
+ */
+export const deleteGuardianAccountResultSchema = z.object({ deleted: z.literal(true) });
+export type DeleteGuardianAccountResult = z.infer<typeof deleteGuardianAccountResultSchema>;

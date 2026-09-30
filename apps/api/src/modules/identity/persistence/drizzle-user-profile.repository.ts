@@ -21,7 +21,6 @@ export class DrizzleUserProfileRepository implements UserProfileRepository {
       displayName: profile.displayName,
       dateOfBirth: profile.dateOfBirth,
       timezone: profile.timezone,
-      guardianEmail: profile.guardianEmail,
       parentConsentStatus: profile.parentConsentStatus,
     });
   }
@@ -36,7 +35,6 @@ export class DrizzleUserProfileRepository implements UserProfileRepository {
       displayName: row.displayName,
       dateOfBirth: row.dateOfBirth,
       timezone: row.timezone,
-      guardianEmail: row.guardianEmail,
       parentConsentStatus: readParentConsentStatus(row.parentConsentStatus),
       trustTier: row.trustTier,
       suspendedAt: row.suspendedAt,

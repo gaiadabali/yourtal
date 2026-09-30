@@ -66,11 +66,22 @@ export interface GuardianEmailRequiredError {
   readonly type: "guardian_email_required";
 }
 
+/**
+ * 12.4.b (#5): the `guardianEmail` given is the teen's own email address
+ * (case-insensitively — the same normalisation `normalizeEmail` applies to
+ * both fields before this is checked). A teen cannot be their own guardian;
+ * refused before anything is written, same as `guardian_email_required`.
+ */
+export interface GuardianEmailSameAsOwnError {
+  readonly type: "guardian_email_same_as_own";
+}
+
 export type RegisterError =
   | EmailAlreadyRegisteredError
   | TooYoungError
   | BelowMinimumAgeError
   | GuardianEmailRequiredError
+  | GuardianEmailSameAsOwnError
   | PersistenceFailedError;
 
 export type LoginError = InvalidCredentialsError | ThrottledError | PersistenceFailedError;

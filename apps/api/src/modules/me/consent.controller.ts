@@ -1,14 +1,14 @@
 import { Body, Controller, Get, Inject, Post, Req } from "@nestjs/common";
-import { BadRequestException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import { z } from "zod";
 import { latestPerPurpose } from "@yourtal/consent/consent-record";
 import { processingPurposeSchema } from "@yourtal/consent/purpose";
 import { currentPolicyVersion } from "@yourtal/consent/policy-version";
+import { TEEN_CONSENT_NOT_ALLOWED } from "@yourtal/consent/consent-query";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
-import { PrincipalService } from "../../shared/authz/principal.service";
-import type { PrincipalResolver } from "../../shared/authz/principal-resolver";
+import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { CONSENT_RECORD_REPOSITORY } from "./persistence/consent-record.repository";
 import type { ConsentRecordRepository } from "./persistence/consent-record.repository";
 import { USER_PROFILE_REPOSITORY } from "../identity/persistence/user-profile.repository";
@@ -37,7 +37,12 @@ const updateBody = z.object({
 @Controller("api/me/consents")
 export class ConsentController {
   constructor(
-    @Inject(PrincipalService) private readonly principals: PrincipalResolver,
+    // `AsyncPrincipalResolver`, not `PrincipalService`: `ageBand` is one of
+    // the attributes only the async, profile-reading resolver populates
+    // (see its own doc comment) -- needed below to refuse a teen's grant of
+    // `TEEN_CONSENT_NOT_ALLOWED`'s purposes, the same reason
+    // `InterestsController` uses it for its own teen gate.
+    private readonly principals: AsyncPrincipalResolver,
     @Inject(CONSENT_RECORD_REPOSITORY) private readonly records: ConsentRecordRepository,
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
   ) {}
@@ -65,6 +70,21 @@ export class ConsentController {
     }
 
     const principal = await this.principals.resolve(request);
+
+    // 12.4.b (#2): a teen may not self-consent to these purposes -- checked
+    // before anything is written, and only on a GRANT (withdrawing one of
+    // these back to nothing is always fine, for a teen or anyone else).
+    if (
+      parsed.data.state === "granted" &&
+      principal.attr.ageBand === "teen" &&
+      TEEN_CONSENT_NOT_ALLOWED.includes(parsed.data.purpose)
+    ) {
+      throw new ForbiddenException({
+        code: "teen_consent_not_allowed",
+        message: "A teen account can't grant this consent.",
+      });
+    }
+
     const jurisdiction = await requireRegion(this.profiles, principal.id);
     const version = currentPolicyVersion(jurisdiction);
     if (version === undefined) {

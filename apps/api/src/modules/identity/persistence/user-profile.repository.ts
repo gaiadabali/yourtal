@@ -18,7 +18,6 @@ export interface NewUserProfile {
   /** ISO date (`YYYY-MM-DD`). */
   readonly dateOfBirth: string;
   readonly timezone: string;
-  readonly guardianEmail: string | null;
   readonly parentConsentStatus: ParentConsentStatus;
 }
 

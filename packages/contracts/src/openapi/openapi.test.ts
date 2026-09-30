@@ -83,6 +83,10 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "12.1.a: POST /api/guardian/:token/approve's response, documented inline in route-registry.a.ts.",
   revokeGuardianConsentResultSchema:
     "12.1.a: POST /api/guardian/:token/revoke's response, documented inline in route-registry.a.ts.",
+  deleteGuardianAccountRequestSchema:
+    "12.4.b (#6): POST /api/guardian/:token/delete-account's body, documented inline in route-registry.a.ts.",
+  deleteGuardianAccountResultSchema:
+    "12.4.b (#6): POST /api/guardian/:token/delete-account's response, documented inline in route-registry.a.ts.",
   staffBusinessDetailSchema:
     "9.3.a's staff Businesses zone: GET /api/staff/businesses/{businessId} and every review action's response, documented inline in route-registry.c-staff-businesses.ts.",
   listStaffBusinessesResponseSchema:

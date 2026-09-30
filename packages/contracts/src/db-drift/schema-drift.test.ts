@@ -388,8 +388,9 @@ const MAPPINGS: readonly Mapping[] = [
     },
     columnsWithNoField: {
       date_of_birth: "Holds the `ageBand` field's source. See the note on that field.",
-      guardian_email:
-        "Internal only (1.4.b/1.4.f) — never returned to any client. A teen account's guardian has no login of their own yet, so there is nothing this field would even be serialised TO.",
+      // guardian_email dropped by 12.4.b (#4)'s retention migration -- it
+      // lives only in identity.guardian_consent now (see that table's own
+      // MAPPINGS entry, TABLES_WITH_NO_MAPPING below).
       parent_consent_status:
         "Internal only, same reason as guardian_email — no guardian-facing surface exists yet to show it to.",
       trust_tier:

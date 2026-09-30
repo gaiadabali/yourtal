@@ -38,6 +38,24 @@
     "heading": "Approval withdrawn",
     "body": "You've withdrawn approval for {displayName}'s YourTal account. Their points are held, and this link can't be used again."
   },
+  "delete": {
+    "cta": "Delete {displayName}'s account",
+    "confirmTitle": "Delete {displayName}'s account?",
+    "confirmBody": "This permanently deletes {displayName}'s YourTal account: their profile, sign-in and any points they've earned. This can't be undone, and this link won't work again afterwards.",
+    "cancelCta": "Cancel",
+    "confirmCta": "Yes, delete the account",
+    "deletedBody": "{displayName}'s YourTal account has been deleted.",
+    "errors": {
+      "network": "YourTal couldn't be reached. Check your connection and try again.",
+      "invalid_response": "Something went wrong on our end. Try again shortly.",
+      "unavailable": "YourTal is temporarily unavailable. Try again shortly.",
+      "unknown": "Something wasn't quite right. Try again."
+    }
+  },
+  "privacy": {
+    "body": "What we keep: {displayName}'s name, date of birth and email, and what they watch and earn. It's never sold, never used to build a profile of them, and never shared with a business except as an anonymous total.",
+    "linkLabel": "Read the full privacy notice"
+  },
   "invalid": {
     "heading": "This link isn't valid",
     "body": "This guardian link doesn't match a YourTal account. If you were sent this recently, check the whole link was copied, or ask for a new one."

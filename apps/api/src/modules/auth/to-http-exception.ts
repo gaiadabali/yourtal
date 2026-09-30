@@ -60,6 +60,11 @@ export function mapAuthErrorToHttpException(error: AuthDomainError): HttpExcepti
         code: "guardian_email_required",
         message: "a parent or guardian's email is required for this age",
       });
+    case "guardian_email_same_as_own":
+      return new BadRequestException({
+        code: "guardian_email_same_as_own",
+        message: "the guardian's email can't be the same as your own",
+      });
     case "invalid_credentials":
       // Deliberately the exact same status, code and message whether the
       // email does not exist or the password is wrong. See

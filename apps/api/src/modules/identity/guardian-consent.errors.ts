@@ -20,3 +20,5 @@ export type ApproveGuardianConsentError =
   GuardianTokenNotFoundError | GuardianConsentAlreadyRevokedError;
 export type RevokeGuardianConsentError =
   GuardianTokenNotFoundError | GuardianLedgerUnavailableError;
+/** 12.4.b (#6): the token is dead once deletion has run once, the same way it is after a real revoke. */
+export type DeleteGuardianAccountError = GuardianTokenNotFoundError;

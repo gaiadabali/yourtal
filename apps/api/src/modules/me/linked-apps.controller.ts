@@ -1,9 +1,8 @@
 import { randomBytes } from "node:crypto";
-import { Controller, Inject, Post, Req } from "@nestjs/common";
+import { Controller, ForbiddenException, Inject, Post, Req } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import { Idempotent } from "../../shared/idempotency/idempotent.decorator";
-import { PrincipalService } from "../../shared/authz/principal.service";
-import type { PrincipalResolver } from "../../shared/authz/principal-resolver";
+import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { LINK_CODE_REPOSITORY } from "./persistence/link-code.repository";
 import type { LinkCodeRepository } from "./persistence/link-code.repository";
@@ -23,11 +22,19 @@ function randomCode(length = 8): string {
 /**
  * `POST /api/me/linked-apps/code` (5.4.c) — a one-time code the user
  * copies into snap-app (8.4, not built yet: this only issues the code).
+ *
+ * 12.4.b (#2): linking a sister app is exactly `sister_app_profile_sharing`
+ * -- a teen may not self-consent to it (`TEEN_CONSENT_NOT_ALLOWED`,
+ * `consent.controller.ts`'s own gate), so a teen never even reaches a code
+ * to hand a sister app in the first place.
  */
 @Controller("api/me/linked-apps")
 export class LinkedAppsController {
   constructor(
-    @Inject(PrincipalService) private readonly principals: PrincipalResolver,
+    // `AsyncPrincipalResolver`, not `PrincipalService`: `ageBand` is only
+    // populated by the async, profile-reading resolver -- see that class's
+    // own doc comment.
+    private readonly principals: AsyncPrincipalResolver,
     @Inject(LINK_CODE_REPOSITORY) private readonly codes: LinkCodeRepository,
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
   ) {}
@@ -41,6 +48,12 @@ export class LinkedAppsController {
   @Post("code")
   async issueCode(@Req() request: FastifyRequest) {
     const principal = await this.principals.resolve(request);
+    if (principal.attr.ageBand === "teen") {
+      throw new ForbiddenException({
+        code: "teen_consent_not_allowed",
+        message: "A teen account can't link a sister app.",
+      });
+    }
     const region = await requireRegion(this.profiles, principal.id);
     const now = new Date();
     const code = randomCode();

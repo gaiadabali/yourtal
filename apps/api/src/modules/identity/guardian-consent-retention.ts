@@ -10,3 +10,6 @@ export const APPROVE_GUARDIAN_CONSENT_RETENTION_MS = 24 * 60 * 60 * 1000;
 
 /** Same window as approve — a revoke retry is exactly as plausible over the same timescale. */
 export const REVOKE_GUARDIAN_CONSENT_RETENTION_MS = 24 * 60 * 60 * 1000;
+
+/** 12.4.b (#6): same window again — a guardian re-submitting a stuck "Delete account" tap. */
+export const DELETE_GUARDIAN_ACCOUNT_RETENTION_MS = 24 * 60 * 60 * 1000;

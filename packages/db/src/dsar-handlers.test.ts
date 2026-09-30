@@ -178,8 +178,8 @@ describe("what the application role can and cannot do to a voucher", () => {
   });
 });
 
-describe("erasing identity: profile, credential, session and business membership", () => {
-  it("removes all four rows for the subject, and counts every one of them", async () => {
+describe("erasing identity: profile, credential, session, guardian consent and business membership", () => {
+  it("removes all five rows for the subject, and counts every one of them", async () => {
     const subjectId = randomUUID();
 
     // `packages/db/src/seed*` never creates a business.business_accounts
@@ -219,10 +219,17 @@ describe("erasing identity: profile, credential, session and business membership
        VALUES ($1, $2, 'analyst', $2)`,
       [businessId, subjectId],
     );
+    // 12.4.b (#4): a teen's guardian consent row -- not every subject has
+    // one, but this fixture proves the case that does.
+    await pool.query(
+      `INSERT INTO identity.guardian_consent (user_id, token_hash, guardian_email, region)
+       VALUES ($1, $2, 'dsar-test-guardian@example.test', 'AU')`,
+      [subjectId, `dsar-test-token-hash-${subjectId}`],
+    );
 
     const report = await executeDeletion(subjectId, postgresHandlers(pool));
     const identity = report.results.find((result) => result.domain === "identity");
-    expect(identity?.outcome).toMatchObject({ status: "erased", records: 4 });
+    expect(identity?.outcome).toMatchObject({ status: "erased", records: 5 });
 
     expect(
       await count(`SELECT COUNT(*)::text AS n FROM identity.user_profile WHERE user_id = $1`, [
@@ -244,12 +251,31 @@ describe("erasing identity: profile, credential, session and business membership
         subjectId,
       ]),
     ).toBe(0);
+    expect(
+      await count(
+        `SELECT COUNT(*)::text AS n FROM identity.guardian_consent WHERE user_id = $1`,
+        [subjectId],
+      ),
+    ).toBe(0);
   });
 
   it("reports zero, not an error, for a subject who never existed", async () => {
     const report = await executeDeletion(randomUUID(), postgresHandlers(pool));
     const identity = report.results.find((result) => result.domain === "identity");
     expect(identity?.outcome).toMatchObject({ status: "erased", records: 0 });
+  });
+
+  it("12.4.b (#4): identity.user_profile.guardian_email no longer exists", async () => {
+    // The retention migration's own DROP COLUMN, asserted against the live
+    // column list rather than the migration file -- same convention
+    // seed.test.ts's own "keeps the answer key out of the question row"
+    // uses for the same reason (checking a migration against itself proves
+    // nothing).
+    const { rows } = await pool.query<{ column_name: string }>(
+      `SELECT column_name FROM information_schema.columns
+        WHERE table_schema = 'identity' AND table_name = 'user_profile'`,
+    );
+    expect(rows.map((row) => row.column_name)).not.toContain("guardian_email");
   });
 });
 

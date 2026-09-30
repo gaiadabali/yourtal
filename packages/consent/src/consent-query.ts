@@ -23,6 +23,28 @@ const MINORS_DECLARED_INTERESTS_ONLY: readonly ProcessingPurpose[] = [
 ];
 
 /**
+ * 12.4.b (#2): purposes a teen may never self-consent to, even though an
+ * adult can. Unlike `MINORS_DECLARED_INTERESTS_ONLY` these are not about
+ * inference from behaviour -- `marketing_communications` and
+ * `market_research_panel` are a teen being solicited or sold to a panel
+ * buyer, and `sister_app_profile_sharing` is a teen's profile leaving
+ * YourTal for another app entirely. All three stay refused for a teen even
+ * when a granted record already exists (a stale grant from before an
+ * account's age was known, or a record imported `from_import_from_sister_
+ * app` -- see `purpose.ts`'s own catalogue), the same "a stored yes cannot
+ * reach this decision" shape `MINORS_DECLARED_INTERESTS_ONLY` uses.
+ *
+ * Exported so `apps/api`'s consent and linked-apps controllers can refuse
+ * the WRITE (a teen trying to grant one of these) with the same list this
+ * query refuses the READ side with -- one list, not two that could drift.
+ */
+export const TEEN_CONSENT_NOT_ALLOWED: readonly ProcessingPurpose[] = [
+  "marketing_communications",
+  "market_research_panel",
+  "sister_app_profile_sharing",
+];
+
+/**
  * "May I use this signal for X?" — YT-0036 AC2, and the only function any
  * other service should call.
  *
@@ -51,6 +73,10 @@ const MINORS_DECLARED_INTERESTS_ONLY: readonly ProcessingPurpose[] = [
  *      a teen's own granted consent record must not be able to reach
  *      `behavioural_profiling`/`purchase_history_targeting` either — see
  *      `MINORS_DECLARED_INTERESTS_ONLY` above.
+ *   3.6. **A teen may not self-consent to this purpose** -> deny, same
+ *      absolute shape as (3.5): `marketing_communications`/`market_
+ *      research_panel`/`sister_app_profile_sharing` are refused for a teen
+ *      regardless of any record — see `TEEN_CONSENT_NOT_ALLOWED` above.
  *   4. **Phase gate** -> deny. `docs/16` D3 holds purchase-history targeting
  *      to Phase 2. Consent collected early does not advance the phase.
  *   5. **Lawful basis is not consent** -> allow. Asking permission for
@@ -116,6 +142,13 @@ export function mayUseSignalFor(query: ConsentQuery): ConsentDecision {
   // more than a granted one can override `prohibited_in_jurisdiction`.
   if (query.ageBand === "teen" && MINORS_DECLARED_INTERESTS_ONLY.includes(definition.purpose)) {
     return { allowed: false, reason: { type: "minors_declared_interests_only" } };
+  }
+
+  // 3.6. Same shape again: a teen's own granted record for one of these
+  // three purposes must not be able to reach an allow either -- checked
+  // before the record is read, exactly like 3 and 3.5.
+  if (query.ageBand === "teen" && TEEN_CONSENT_NOT_ALLOWED.includes(definition.purpose)) {
+    return { allowed: false, reason: { type: "teen_consent_not_allowed" } };
   }
 
   // 4. Have we earned the right to use this yet?

@@ -123,7 +123,6 @@ function fakeProfiles(dateOfBirth: string, trustTier = 0) {
         displayName: "Streak Test",
         dateOfBirth,
         timezone: "Australia/Sydney",
-        guardianEmail: null,
         parentConsentStatus: "not_required" as const,
         trustTier,
         suspendedAt: null,

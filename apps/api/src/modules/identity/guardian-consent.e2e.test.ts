@@ -125,6 +125,9 @@ describe("12.1.a — guardian consent: register -> pending -> outbox -> approve 
     // with ?action=revoke — both present in the one email body.
     expect(email!.body).toContain(`/guardian/${email!.token}`);
     expect(email!.body).toContain(`/guardian/${email!.token}?action=revoke`);
+    // 12.4.b (#3, guardian half): the "what is kept" paragraph links to the
+    // region's own privacy page (region is AU for this suite's own payload).
+    expect(email!.body).toContain("/au/privacy");
 
     const view = await app.inject({
       method: "GET",
@@ -291,5 +294,129 @@ describe("12.1.a — guardian consent: revoke", () => {
     expect(revoke.statusCode).toBe(201);
     expect(revoke.json()).toStrictEqual({ revoked: true, escrowedPoints: 0 });
     expect(await parentConsentStatusFor(userId)).toBe("revoked");
+  });
+});
+
+describe("12.4.b (#5): a guardian email can't be the teen's own", () => {
+  it("refuses registration when guardianEmail matches email (case-insensitively)", async () => {
+    const email = `Teen-Own-Email+${randomUUID()}@Example.Test`;
+    const register = await app.inject({
+      method: "POST",
+      url: "/api/auth/register",
+      remoteAddress: randomTestIp(),
+      headers: { "idempotency-key": randomUUID() },
+      payload: { ...registerPayload(email.toLowerCase()), email },
+    });
+    expect(register.statusCode).toBe(400);
+    expect(register.json<{ code: string }>().code).toBe("guardian_email_same_as_own");
+  });
+
+  it("still allows a genuinely different guardian email", async () => {
+    const register = await app.inject({
+      method: "POST",
+      url: "/api/auth/register",
+      remoteAddress: randomTestIp(),
+      headers: { "idempotency-key": randomUUID() },
+      payload: registerPayload(`guardian+${randomUUID()}@example.test`),
+    });
+    expect(register.statusCode).toBeLessThan(300);
+  });
+});
+
+describe("12.4.b (#6): guardian-triggered account deletion", () => {
+  it("deletes the account, and the token is dead afterwards -- every route 404s", async () => {
+    const guardianEmail = `guardian+${randomUUID()}@example.test`;
+    const register = await app.inject({
+      method: "POST",
+      url: "/api/auth/register",
+      remoteAddress: randomTestIp(),
+      headers: { "idempotency-key": randomUUID() },
+      payload: registerPayload(guardianEmail),
+    });
+    expect(register.statusCode).toBeLessThan(300);
+    const { userId } = register.json<{ userId: string; token: string }>();
+    const email = await latestGuardianConsentEmail(guardianEmail);
+
+    const deleteResponse = await app.inject({
+      method: "POST",
+      url: `/api/guardian/${email!.token}/delete-account`,
+      remoteAddress: randomTestIp(),
+      headers: { "idempotency-key": randomUUID(), "content-type": "application/json" },
+      payload: { confirm: true },
+    });
+    expect(deleteResponse.statusCode).toBe(201);
+    expect(deleteResponse.json()).toStrictEqual({ deleted: true });
+
+    // The same deletion `DELETE /api/me` runs (2.5/F31 style, one profile
+    // row -- see `delete-guardian-account.use-case.ts`'s own header).
+    expect(await parentConsentStatusFor(userId)).toBeNull();
+
+    for (const attempt of [
+      () =>
+        app.inject({
+          method: "GET",
+          url: `/api/guardian/${email!.token}`,
+          remoteAddress: randomTestIp(),
+        }),
+      () =>
+        app.inject({
+          method: "POST",
+          url: `/api/guardian/${email!.token}/approve`,
+          remoteAddress: randomTestIp(),
+          headers: { "idempotency-key": randomUUID() },
+          payload: { confirmAdult: true },
+        }),
+      () =>
+        app.inject({
+          method: "POST",
+          url: `/api/guardian/${email!.token}/revoke`,
+          remoteAddress: randomTestIp(),
+          headers: { "idempotency-key": randomUUID() },
+        }),
+      () =>
+        app.inject({
+          method: "POST",
+          url: `/api/guardian/${email!.token}/delete-account`,
+          remoteAddress: randomTestIp(),
+          headers: { "idempotency-key": randomUUID(), "content-type": "application/json" },
+          payload: { confirm: true },
+        }),
+    ]) {
+      const response = await attempt();
+      expect(response.statusCode).toBe(404);
+    }
+  });
+
+  it("404s an unknown token, identically to every other guardian route", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/guardian/${randomUUID()}/delete-account`,
+      remoteAddress: randomTestIp(),
+      headers: { "idempotency-key": randomUUID(), "content-type": "application/json" },
+      payload: { confirm: true },
+    });
+    expect(response.statusCode).toBe(404);
+  });
+
+  it("refuses confirm: false with a 400 -- no partial deletion", async () => {
+    const guardianEmail = `guardian+${randomUUID()}@example.test`;
+    const register = await app.inject({
+      method: "POST",
+      url: "/api/auth/register",
+      remoteAddress: randomTestIp(),
+      headers: { "idempotency-key": randomUUID() },
+      payload: registerPayload(guardianEmail),
+    });
+    expect(register.statusCode).toBeLessThan(300);
+    const email = await latestGuardianConsentEmail(guardianEmail);
+
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/guardian/${email!.token}/delete-account`,
+      remoteAddress: randomTestIp(),
+      headers: { "idempotency-key": randomUUID(), "content-type": "application/json" },
+      payload: { confirm: false },
+    });
+    expect(response.statusCode).toBe(400);
   });
 });

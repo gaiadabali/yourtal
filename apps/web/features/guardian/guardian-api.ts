@@ -5,11 +5,13 @@ import {
   guardianConsentViewSchema,
   approveGuardianConsentResultSchema,
   revokeGuardianConsentResultSchema,
+  deleteGuardianAccountResultSchema,
 } from "@yourtal/contracts/identity/guardian";
 import type {
   GuardianConsentView,
   ApproveGuardianConsentResult,
   RevokeGuardianConsentResult,
+  DeleteGuardianAccountResult,
 } from "@yourtal/contracts/identity/guardian";
 import { apiInternalUrl } from "@/lib/api/env";
 import { httpErrorFrom, networkErrorMessage, tryParseJson } from "@/lib/api/api-fetch";
@@ -118,4 +120,19 @@ export async function revokeGuardianConsent(
   });
   if (!isResponse(result)) return result;
   return parseAgainst(result, revokeGuardianConsentResultSchema, path);
+}
+
+/** `POST /api/guardian/:token/delete-account` (12.4.b #6). `confirm` is always the literal `true` — the confirm dialog gating this call IS that confirmation. */
+export async function deleteGuardianAccount(
+  token: string,
+  idempotencyKey: string,
+): Promise<ApiResult<DeleteGuardianAccountResult>> {
+  const path = `/api/guardian/${encodeURIComponent(token)}/delete-account`;
+  const result = await guardianFetch(path, {
+    method: "POST",
+    headers: { "content-type": "application/json", "idempotency-key": idempotencyKey },
+    body: JSON.stringify({ confirm: true }),
+  });
+  if (!isResponse(result)) return result;
+  return parseAgainst(result, deleteGuardianAccountResultSchema, path);
 }

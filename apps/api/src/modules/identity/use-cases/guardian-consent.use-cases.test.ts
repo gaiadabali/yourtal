@@ -92,7 +92,6 @@ function fakeProfile(overrides: Partial<StoredUserProfile> = {}): StoredUserProf
     displayName: "Teen Tester",
     dateOfBirth: "2012-01-01",
     timezone: "Australia/Sydney",
-    guardianEmail: "guardian@example.test",
     parentConsentStatus: "pending",
     trustTier: 0,
     suspendedAt: null,

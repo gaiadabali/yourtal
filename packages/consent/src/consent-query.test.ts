@@ -335,3 +335,54 @@ describe("12.1.c: minors get declared interests only, never inferred ones", () =
     expect(decision.allowed).toBe(true);
   });
 });
+
+describe("12.4.b (#2): a teen may not self-consent to marketing/research/sister-app sharing", () => {
+  it.each([
+    "marketing_communications",
+    "market_research_panel",
+    "sister_app_profile_sharing",
+  ] as const)("denies a teen %s even with a current, granted record", (purpose) => {
+    const decision = mayUseSignalFor({
+      purpose,
+      jurisdiction: "ID",
+      records: [granted(purpose, { jurisdiction: "ID" })],
+      currentPhase: "P3",
+      ageBand: "teen",
+    });
+
+    expect(decision).toEqual({
+      allowed: false,
+      reason: { type: "teen_consent_not_allowed" },
+    });
+  });
+
+  it("does not touch an adult's own decision for the same purposes", () => {
+    const decision = mayUseSignalFor({
+      purpose: "marketing_communications",
+      jurisdiction: "ID",
+      records: [granted("marketing_communications")],
+      currentPhase: "P1",
+      ageBand: "adult",
+    });
+
+    expect(decision).toEqual({
+      allowed: true,
+      basis: { type: "consent", policyVersionId: ID_VERSION },
+    });
+  });
+
+  it("still denies a teen with no record at all -- not merely consent_not_given", () => {
+    const decision = mayUseSignalFor({
+      purpose: "sister_app_profile_sharing",
+      jurisdiction: "ID",
+      records: [],
+      currentPhase: "P1",
+      ageBand: "teen",
+    });
+
+    expect(decision).toEqual({
+      allowed: false,
+      reason: { type: "teen_consent_not_allowed" },
+    });
+  });
+});

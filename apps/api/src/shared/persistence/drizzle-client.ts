@@ -1,6 +1,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { regionScopedPool } from "./region-scope";
 
 /**
  * The one Drizzle handle every module shares. YT-0553.
@@ -19,5 +20,5 @@ import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 export type AppDb = NodePgDatabase;
 
 export function createAppDb(databaseUrl: string): AppDb {
-  return drizzle(new Pool({ connectionString: databaseUrl }));
+  return drizzle(regionScopedPool(new Pool({ connectionString: databaseUrl })));
 }

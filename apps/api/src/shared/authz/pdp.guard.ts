@@ -11,6 +11,7 @@ import type { FastifyRequest } from "fastify";
 import type { PdpClient } from "@yourtal/authz/pdp-client";
 import type { ResourceKind } from "@yourtal/authz/resources";
 import { PDP_CLIENT } from "../pdp/pdp-client.module";
+import { markRequestRegion } from "../persistence/region-scope";
 import { AsyncPrincipalResolver } from "./async-principal-resolver";
 import { mapAuthzErrorToHttpException } from "./authz-error.mapper";
 import { AUTHORIZE_METADATA, PUBLIC_ROUTE_METADATA } from "./authorize.decorator";
@@ -145,6 +146,8 @@ export class PdpGuard implements CanActivate {
       }
       throw mapAuthzErrorToHttpException(result.error);
     }
+    // After the decision, so the lookups above are never narrowed (13.5.e).
+    markRequestRegion(request, principal);
     return true;
   }
 }

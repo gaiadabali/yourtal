@@ -29,6 +29,7 @@ import { CampaignViewAttributeLoader } from "./modules/watch/campaign-view-attri
 import { HealthModule } from "./shared/health/health.module";
 import { MediaAuthModule } from "./shared/media-auth/media-auth.module";
 import { IdempotencyInterceptor } from "./shared/idempotency/idempotency.interceptor";
+import { RegionScopeInterceptor } from "./shared/persistence/region-scope.interceptor";
 import { IdempotencyModule } from "./shared/idempotency/idempotency.module";
 import { PdpClientModule } from "./shared/pdp/pdp-client.module";
 import { PersistenceModule } from "./shared/persistence/persistence.module";
@@ -80,6 +81,7 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
     // the wrong cost. Acts only on routes carrying @RateLimit (YT-0052).
     { provide: APP_GUARD, useClass: RateLimitGuard },
     { provide: APP_GUARD, useClass: PdpGuard },
+    { provide: APP_INTERCEPTOR, useClass: RegionScopeInterceptor },
     { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
     // 1.5.d (EW-03): every DB-backed resource-attribute loader, gathered
     // here rather than via NestJS's per-module multi-binding (which does

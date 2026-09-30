@@ -35,7 +35,9 @@ the api (`auth_request` to `/api/internal/hls-auth`, `shared/media-auth`).
 `gaiada-poll` installs it through `gaiada-deploy`, which (patched 2026-09-26,
 `gaiada-setups/patches/pre-reload-hook.md`) runs `deploy/pre-reload.sh`
 **before** the swap: `atlas migrate apply`, `ALTER ROLE … PASSWORD` from
-`app.env`, then an rsync of `policies/` into `/opt/yourtal/shared/policies`,
+`app.env`, a boot check (`deploy/boot-check.sh`: the new api answers
+`/api/health` 200 at its own `REVISION` on port 26309, and `worker --check`
+imports every job), then an rsync of `policies/` into `/opt/yourtal/shared/policies`,
 which Cerbos watches. A failure there fails the deploy and the old release keeps
 serving. Then it swaps `current`, reloads the five pm2 processes named in
 `.gaiadeploy.yml` and health-checks the web port, rolling back on failure.

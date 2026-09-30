@@ -110,6 +110,7 @@ Nothing of ours binds `0.0.0.0`.**
 | 26303 | 127.0.0.1 | `voucher`      | Go voucher service (pm2, `uyourtal`). Called only by api and worker.                         |
 | 26304 | 127.0.0.1 | `docker-proxy` | Cerbos container.                                                                            |
 | 26305 | 127.0.0.1 | `docker-proxy` | RustFS S3 + admin API (F58, replaces MinIO). nginx serves the public media prefixes from it. |
+| 26309 | 127.0.0.1 | `node`         | A new release's api, for a few seconds during `pre-reload.sh`'s boot check (13.8).           |
 | 26379 | 127.0.0.1 | `docker-proxy` | Valkey container.                                                                            |
 
 Both processes sit inside `yourtal.slice`, confirmed from

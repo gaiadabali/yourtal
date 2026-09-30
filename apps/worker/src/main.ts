@@ -1,6 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadWorkerConfig } from "./config";
+import { loadJobs } from "./job-loader";
 import { startWorker } from "./worker";
 import type { RunningWorker } from "./worker";
 
@@ -20,6 +21,15 @@ const jobsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "jobs");
 
 async function bootstrap(): Promise<void> {
   const config = loadWorkerConfig();
+  // 13.8: the deploy's boot check. Parses config and imports every job, so a
+  // missing dependency or variable fails before the release goes live, but
+  // starts no queue and so takes no job from the running worker.
+  if (process.argv.includes("--check")) {
+    const jobs = await loadJobs(jobsDir);
+    if (jobs.length === 0) throw new Error("[worker] check: no jobs found in " + jobsDir);
+    console.log(`[worker] check ok: ${String(jobs.length)} job(s) load`);
+    process.exit(0);
+  }
   const worker = await startWorker({ databaseUrl: config.databaseUrl, jobsDir, config });
   installShutdownHandlers(worker);
 }

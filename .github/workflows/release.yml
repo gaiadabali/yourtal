@@ -76,6 +76,22 @@ jobs:
     name: Build the deploy artifact
     runs-on: ubuntu-24.04
     timeout-minutes: 25
+    # For the boot check below: the api refuses to start without a database
+    # it can prove is unprivileged. No migrations; an empty one is enough.
+    services:
+      postgres:
+        image: postgres:18.6-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
+        env:
+          POSTGRES_USER: yourtal
+          POSTGRES_PASSWORD: yourtal_local_only
+          POSTGRES_DB: yourtal
+        ports:
+          - 26432:5432
+        options: >-
+          --health-cmd "pg_isready -U yourtal"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -140,13 +156,29 @@ jobs:
           cp -r policies "$STAGE/policies"
           # The demo video the staging seed publishes to RustFS (2.3.i, F58).
           mkdir -p "$STAGE/media-fixtures" && cp -r packages/media/fixtures/attention-30s "$STAGE/media-fixtures/" && cp -r packages/media/fixtures/snap-app-30s "$STAGE/media-fixtures/"
-          cp infra/helios/pre-reload.sh infra/helios/set-role-passwords.mjs             infra/helios/run-with-env.sh infra/helios/ecosystem.config.cjs "$STAGE/deploy/"
+          cp infra/helios/pre-reload.sh infra/helios/boot-check.sh infra/helios/set-role-passwords.mjs             infra/helios/run-with-env.sh infra/helios/ecosystem.config.cjs "$STAGE/deploy/"
           chmod 755 "$STAGE/deploy/"*.sh "$STAGE/bin/"*
           echo "$GITHUB_SHA" > "$STAGE/REVISION"
           mkdir -p "$RUNNER_TEMP/out"
           tar -czf "$RUNNER_TEMP/out/yourtal.tar.gz" -C "$STAGE" .
           cd "$RUNNER_TEMP/out" && sha256sum yourtal.tar.gz > yourtal.tar.gz.sha256
           ls -l "$RUNNER_TEMP/out"
+
+      # 13.8.b: boot what ships, not the workspace. A dependency only a
+      # workspace package declares is missing from `pnpm deploy --prod`, and
+      # the api or worker then dies on import (7.9.e, 1191d50). With no Cerbos
+      # here, any answer from /api/health proves the api booted.
+      - name: Boot the artifact's api and worker
+        env:
+          DATABASE_URL: postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal
+          PDP_BASE_URL: http://127.0.0.1:26592
+          CHECKPOINT_TOKEN_SECRET: ci-only-checkpoint-signing-key-not-a-real-secret
+          WEBHOOK_SECRET_ENCRYPTION_KEY: ci-only-webhook-secret-encryption-key-not-a-real-secret
+          SNAP_APP_PARTNER_SECRET: ci-only-snap-app-partner-secret-not-a-real-secret
+        run: |
+          set -euo pipefail
+          psql postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal -v ON_ERROR_STOP=1 -q -f infra/postgres/init/01-schemas.sql
+          bash infra/helios/boot-check.sh "$RUNNER_TEMP/yourtal"
 
       - name: Upload the artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

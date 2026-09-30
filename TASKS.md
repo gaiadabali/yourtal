@@ -45,8 +45,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 3/4 | 23/24 | `██████████`  96% |
-| **Phase 13** Ready for live review | all | 🔄 in progress | 1/23 | 14/69 | `██░░░░░░░░`  20% |
-| **All** | | | **83/106** | **455/511** | `█████████░`  89% |
+| **Phase 13** Ready for live review | all | 🔄 in progress | 1/23 | 17/70 | `██░░░░░░░░`  24% |
+| **All** | | | **83/106** | **458/512** | `█████████░`  89% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1474,6 +1474,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [x] 13.12.a `GET /api/feed` takes `kind` (`long_form` or `quick`), `category`, `tags` and `sort` (for you, newest, most points, ending soon), filtered on the server with the region and audience walls unchanged. It also returns the category and tag facets present, with counts. (71b2faf3: filters and facets over the walled, ranked set; a teen's `ending_soon` falls back to for you; `browse.test.ts`)
   - [x] 13.12.b `GET /api/store/listings` takes `tags`, `brand` and `sort` (popular, newest, points low to high, points high to low, ending soon) beside today's filters, and returns facets with counts. The store stops filtering in the browser over one fetch. (71b2faf3: API side, with `total_count` and cursor paging in the chosen sort; the web store moves onto it in 13.15)
   - [x] 13.12.c `GET /api/search` takes `kind` and `category`. (71b2faf3)
+  - [ ] 13.12.e (requested by B) `GET /api/store/listings` takes `channel` (`in_store` or `online`), where each also matches `both`, so the store's "Where to use it" filter (13.15.c) counts and pages on the server. The page narrows it itself until then.
   - [ ] 13.12.d **Check:** each filter and sort, called over HTTP in AU and ID, returns only matching rows in the right order, and never a row from the other region or a wrong audience.
 - [ ] **13.13 Home is a grid of long videos** (F84) · B · needs: 13.12.a — 🔄 slot 4 (UI merged e3481b70; closes with 13.17 on staging)
   - [x] 13.13.a `/home` shows long videos only, never Shorts, in a YouTube-style grid (1 column at 390 px up to 4–5 at 1280 px and wider): thumbnail with duration, title, brand, points and category. — e3481b70: `/home` asks for `kind=long_form` (filtered again locally until 13.12.a serves it); 1 column at 390 up to 4 at 1280 and 5 at 2xl; card shows poster, duration, points, brand, category.
@@ -1484,10 +1485,10 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 - [ ] **13.14 Shorts** (F84) · B · needs: 13.12.a — 🔄 slot 4 (merged e3481b70; closes with 13.17 on staging)
   - [x] 13.14.a A `/shorts` route with the vertical swipe feed, Shorts only, earning in place as today. `/quick` redirects to it. — e3481b70: `/shorts` is the centred swipe feed, `kind=quick` only, earning in place; `/quick` redirects to it. Screenshots 390/1280 light/dark, axe clean.
   - [x] 13.14.b The nav becomes Home · Shorts · Store · Wallet · Me, in both catalogues. — e3481b70: Home · Shorts · Store · Wallet · Me in both catalogues, rail and bottom bar; "Quick" copy renamed to Shorts.
-- [ ] **13.15 The store as a shop** (F84) · B · needs: 13.12.b
-  - [ ] 13.15.a A search box, category chips, and filters for brand, tags, points range, location and channel: a sidebar at 1280 px, a bottom sheet at 390 px. Active filters show as removable chips, with a result count, sort and paging.
-  - [ ] 13.15.b Voucher cards show the image, brand, points, stock left and expiry. Brand pages list that brand's vouchers.
-  - [ ] 13.15.c The "Channel" filter becomes "Where to use it" (In store, Online), and picking either one also shows "In store & online" vouchers (today it hides them).
+- [ ] **13.15 The store as a shop** (F84) · B · needs: 13.12.b — 🔄 slot 4 (merged e38af590; closes with 13.17 on staging)
+  - [x] 13.15.a A search box, category chips, and filters for brand, tags, points range, location and channel: a sidebar at 1280 px, a bottom sheet at 390 px. Active filters show as removable chips, with a result count, sort and paging. — e38af590: search, category chips, filters (where to use it, points range, brand, topics, location) in a sidebar at 1280 and a sheet at 390; removable active chips, count, sort, cursor paging; all in the URL (`store-query.ts`, tested). Screenshots 390/1280 light/dark, AU and ID, axe clean.
+  - [x] 13.15.b Voucher cards show the image, brand, points, stock left and expiry. Brand pages list that brand's vouchers. — e38af590: `StoreVoucherCard` shows image, brand, title, points, face value, stock left and end date; brand names link to the new `/store/brand/[merchantId]` page, which lists that brand's vouchers with the same filters.
+  - [x] 13.15.c The "Channel" filter becomes "Where to use it" (In store, Online), and picking either one also shows "In store & online" vouchers (today it hides them). — e38af590: "Where to use it" (Anywhere, In store, Online); either one also includes "In store & online" vouchers. Narrowed in the page until 13.12.e lands.
 - [ ] **13.16 Light and dark mode** (F84) · B · needs: — — 🔄 slot 4
   - [x] 13.16.a A theme setting (System, Light, Dark) in Me and in the header menu, saved to the account and a cookie, so the server renders it with no flash. `ViewerShell` stops forcing dark. — 310e2770: `me.viewer_theme` + `GET/PUT /api/me/settings/theme` (PUT light → row `light`, verified), `yt_theme` cookie read by every signed-in root layout into `<html data-theme>`, restored from the account at login; Me section and header menu. Default is System.
   - [ ] 13.16.b Every viewer, Studio, counter and staff screen is checked in both themes.

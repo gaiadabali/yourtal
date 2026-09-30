@@ -616,7 +616,7 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "Same FakeVoucherClient note as platform.voucher_fake_batch above.",
   "platform.voucher_fake_gift": "Same FakeVoucherClient note as platform.voucher_fake_batch above.",
   "voucher.gift":
-    "13.20 (20260930041552_voucher_gift.sql): a gift's two vouchers and two people. voucher-internal/gifts.ts's voucherGiftSchema is built by the voucher service's route, joined with the reminted voucher, not a row mirror; wallet-gift.ts is the viewer's projection of that.",
+    "13.20 (20260930044002_voucher_gift.sql): a gift's two vouchers and two people. voucher-internal/gifts.ts's voucherGiftSchema is built by the voucher service's route, joined with the reminted voucher, not a row mirror; wallet-gift.ts is the viewer's projection of that.",
   "platform.voucher_fake_authorization":
     "Same FakeVoucherClient note as platform.voucher_fake_batch above.",
   "platform.voucher_fake_capture":

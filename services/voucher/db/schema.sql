@@ -269,7 +269,7 @@ CREATE TABLE store.merchant_location (
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 
--- packages/db/migrations/20260930041552_voucher_gift.sql (13.20).
+-- packages/db/migrations/20260930044002_voucher_gift.sql (13.20).
 CREATE TABLE voucher.gift (
   id                uuid        PRIMARY KEY,
   source_voucher_id uuid        NOT NULL UNIQUE,

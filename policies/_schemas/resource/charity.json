@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "charity",
+  "description": "13.21: one charity in the registry. Region-scoped (F2); memberIds are the users who administer it once approved.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "region": { "type": "string", "enum": ["AU", "ID"] },
+    "state": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+    "memberIds": {
+      "description": "Users who administer this charity (charity.member). Empty until an approval.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "hasReason": {
+      "description": "A staff approve or reject with no reason is not auditable, so the PDP refuses it.",
+      "type": "boolean"
+    }
+  }
+}

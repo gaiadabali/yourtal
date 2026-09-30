@@ -531,3 +531,29 @@ resources:
     kind: staff_console
     id: self
     attr: {}
+
+  # 13.21: the charity registry.
+  charity_new_id:
+    kind: charity
+    id: new
+    attr: { region: "ID" }
+
+  charity_new_au:
+    kind: charity
+    id: new
+    attr: { region: "AU" }
+
+  charity_harapan:
+    kind: charity
+    id: charity-harapan
+    attr: { region: "ID", state: "approved", memberIds: ["adi"] }
+
+  charity_harapan_decision:
+    kind: charity
+    id: charity-harapan
+    attr: { region: "ID", state: "pending", hasReason: true }
+
+  charity_harapan_no_reason:
+    kind: charity
+    id: charity-harapan
+    attr: { region: "ID", state: "pending", hasReason: false }

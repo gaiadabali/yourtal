@@ -39,3 +39,58 @@ tests:
       - principal: charity_nur
         resource: report_kopi
         actions: { view: EFFECT_DENY }
+
+  # 13.21: the registry itself.
+  - name: an adult applies for a charity in their own region only
+    input:
+      principals: [adi_adult, teo_granted, wina_au]
+      resources: [charity_new_id, charity_new_au]
+      actions: [apply]
+    expected:
+      - principal: adi_adult
+        resource: charity_new_id
+        actions: { apply: EFFECT_ALLOW }
+      - principal: adi_adult
+        resource: charity_new_au
+        actions: { apply: EFFECT_DENY }
+      - principal: teo_granted
+        resource: charity_new_id
+        actions: { apply: EFFECT_DENY }
+      - principal: wina_au
+        resource: charity_new_id
+        actions: { apply: EFFECT_DENY }
+
+  - name: only a charity's own members read its console
+    input:
+      principals: [adi_adult, wina, finance_yani]
+      resources: [charity_harapan]
+      actions: [view_console]
+    expected:
+      - principal: adi_adult
+        resource: charity_harapan
+        actions: { view_console: EFFECT_ALLOW }
+      - principal: wina
+        resource: charity_harapan
+        actions: { view_console: EFFECT_DENY }
+      - principal: finance_yani
+        resource: charity_harapan
+        actions: { view_console: EFFECT_ALLOW }
+
+  - name: ops decide only with a reason; moderators and users never do
+    input:
+      principals: [ops_zul, moderator_tono, adi_adult]
+      resources: [charity_harapan_decision, charity_harapan_no_reason]
+      actions: [decide, review]
+    expected:
+      - principal: ops_zul
+        resource: charity_harapan_decision
+        actions: { decide: EFFECT_ALLOW, review: EFFECT_ALLOW }
+      - principal: ops_zul
+        resource: charity_harapan_no_reason
+        actions: { decide: EFFECT_DENY, review: EFFECT_ALLOW }
+      - principal: moderator_tono
+        resource: charity_harapan_decision
+        actions: { decide: EFFECT_DENY, review: EFFECT_DENY }
+      - principal: adi_adult
+        resource: charity_harapan_decision
+        actions: { decide: EFFECT_DENY, review: EFFECT_DENY }

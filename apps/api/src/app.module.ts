@@ -6,6 +6,7 @@ import { BillingModule } from "./modules/billing/billing.module";
 import { BusinessModule } from "./modules/business/business.module";
 import { CampaignModule } from "./modules/campaign/campaign.module";
 import { FeedModule } from "./modules/feed/feed.module";
+import { CharityModule, CharityAttributeLoader } from "./modules/charity/charity.module";
 import { ReportsModule } from "./modules/reports/reports.module";
 import { StoreModule } from "./modules/store/store.module";
 import { WatchModule } from "./modules/watch/watch.module";
@@ -56,6 +57,7 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
     BillingModule,
     ReportsModule,
     FeedModule,
+    CharityModule,
     WatchModule,
     CheckpointModule,
     DevModule,
@@ -96,8 +98,14 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
         campaignView: CampaignViewAttributeLoader,
         wallet: WalletAttributeLoader,
         userAccount: UserAccountAttributeLoader,
-      ): readonly ResourceAttributeLoader[] => [campaignView, wallet, userAccount],
-      inject: [CampaignViewAttributeLoader, WalletAttributeLoader, UserAccountAttributeLoader],
+        charity: CharityAttributeLoader,
+      ): readonly ResourceAttributeLoader[] => [campaignView, wallet, userAccount, charity],
+      inject: [
+        CampaignViewAttributeLoader,
+        WalletAttributeLoader,
+        UserAccountAttributeLoader,
+        CharityAttributeLoader,
+      ],
     },
   ],
 })

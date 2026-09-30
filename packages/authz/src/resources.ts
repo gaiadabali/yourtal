@@ -231,6 +231,7 @@ export const RESOURCE_ACTIONS = {
 
   /** Phase 3 placeholder. */
   charity_settlement: ["view", "view_statement"],
+  charity: ["apply", "list_mine", "view_console", "review", "decide"],
 
   /**
    * A principal's own credential and session lifecycle. YT-0540. This is

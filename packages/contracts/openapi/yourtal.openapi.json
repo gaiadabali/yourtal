@@ -10408,6 +10408,416 @@
         }
       }
     },
+    "/api/charities/applications": {
+      "post": {
+        "summary": "A foundation applies to the registry (simulated KYB check)",
+        "tags": [
+          "charity"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The application.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CharityApplicationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The pending application, with the payout account masked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharityDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The simulated KYB check refused it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/charities": {
+      "get": {
+        "summary": "Approved charities in the caller's region",
+        "tags": [
+          "charity"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Approved charities only.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCharityList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          }
+        }
+      }
+    },
+    "/api/charities/{charityId}": {
+      "get": {
+        "summary": "One approved charity in the caller's region",
+        "tags": [
+          "charity"
+        ],
+        "parameters": [
+          {
+            "name": "charityId",
+            "in": "path",
+            "required": true,
+            "description": "A charity in the registry.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The charity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCharity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "404": {
+            "description": "No such charity in the caller's reach.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/me/charities": {
+      "get": {
+        "summary": "The caller's own applications and the charities they administer",
+        "tags": [
+          "charity",
+          "me"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Newest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharityDetailList"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/charities/{charityId}/console": {
+      "get": {
+        "summary": "A charity's console: its proceeds and statements, never a balance",
+        "tags": [
+          "charity"
+        ],
+        "parameters": [
+          {
+            "name": "charityId",
+            "in": "path",
+            "required": true,
+            "description": "A charity in the registry.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The charity with its proceeds and monthly statements.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharityConsole"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such charity in the caller's reach.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/charities": {
+      "get": {
+        "summary": "Every application in the registry, for review (ops)",
+        "tags": [
+          "charity",
+          "staff"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Newest first, optionally one state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharityDetailList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/charities/{charityId}/decision": {
+      "post": {
+        "summary": "Approve or reject an application, with a reason (ops, audited)",
+        "tags": [
+          "charity",
+          "staff"
+        ],
+        "parameters": [
+          {
+            "name": "charityId",
+            "in": "path",
+            "required": true,
+            "description": "A charity in the registry.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The decision and its reason.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CharityDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The decided charity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharityDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such charity in the caller's reach.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already decided.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/counter/lookup": {
       "post": {
         "summary": "Preview a scanned or typed voucher code, before authorizing it",
@@ -21498,6 +21908,33 @@
           "food_security"
         ]
       },
+      "CharityConsole": {
+        "description": "GET /api/charities/{charityId}/console: the charity, its proceeds and statements.",
+        "type": "object",
+        "properties": {
+          "charity": {
+            "$ref": "#/components/schemas/CharityDetail"
+          },
+          "proceeds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CharityProceed"
+            }
+          },
+          "statements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CharityStatement"
+            }
+          }
+        },
+        "required": [
+          "charity",
+          "proceeds",
+          "statements"
+        ],
+        "additionalProperties": false
+      },
       "CharityDecisionRequest": {
         "description": "A staff approve or reject, always with a reason.",
         "type": "object",
@@ -21652,6 +22089,47 @@
         ],
         "additionalProperties": false
       },
+      "CharityProceed": {
+        "description": "One auction's proceeds, paid straight to the charity's own account.",
+        "type": "object",
+        "properties": {
+          "auctionId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "amountMinor": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "AUD",
+              "IDR"
+            ]
+          },
+          "providerReference": {
+            "type": "string",
+            "minLength": 1
+          },
+          "paidAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "auctionId",
+          "amountMinor",
+          "currency",
+          "providerReference",
+          "paidAt"
+        ],
+        "additionalProperties": false
+      },
       "CharityRegistration": {
         "description": "A charity's registration, by region.",
         "oneOf": [
@@ -21671,6 +22149,42 @@
           "approved",
           "rejected"
         ]
+      },
+      "CharityStatement": {
+        "description": "A month's proceeds per currency.",
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}$"
+          },
+          "currency": {
+            "type": "string",
+            "enum": [
+              "AUD",
+              "IDR"
+            ]
+          },
+          "auctions": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "totalMinor": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          }
+        },
+        "required": [
+          "month",
+          "currency",
+          "auctions",
+          "totalMinor"
+        ],
+        "additionalProperties": false
       },
       "CheckoutQuote": {
         "description": "A held points price. Confirm it with checkoutId before expiresAt.",

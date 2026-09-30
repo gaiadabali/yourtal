@@ -108,3 +108,34 @@ export type CharityDecisionRequest = z.infer<typeof charityDecisionRequestSchema
 
 export const publicCharityListSchema = z.object({ charities: z.array(publicCharitySchema) });
 export const charityDetailListSchema = z.object({ charities: z.array(charityDetailSchema) });
+
+/**
+ * 13.21.c: one auction's proceeds, captured from the winner and paid straight
+ * to the charity's own account. Filled by 13.22's auctions; a record of money
+ * that moved to the charity, never a balance YourTal holds.
+ */
+export const charityProceedSchema = z.object({
+  auctionId: z.uuid(),
+  amountMinor: z.number().int().positive(),
+  currency: z.enum(["AUD", "IDR"]),
+  providerReference: z.string().min(1),
+  paidAt: z.iso.datetime(),
+});
+export type CharityProceed = z.infer<typeof charityProceedSchema>;
+
+/** A calendar month's proceeds, the charity's statement line. */
+export const charityStatementSchema = z.object({
+  month: z.string().regex(/^\d{4}-\d{2}$/),
+  currency: z.enum(["AUD", "IDR"]),
+  auctions: z.number().int().min(0),
+  totalMinor: z.number().int().min(0),
+});
+export type CharityStatement = z.infer<typeof charityStatementSchema>;
+
+/** `GET /api/charities/{charityId}/console`: the charity_admin console. */
+export const charityConsoleSchema = z.object({
+  charity: charityDetailSchema,
+  proceeds: z.array(charityProceedSchema),
+  statements: z.array(charityStatementSchema),
+});
+export type CharityConsole = z.infer<typeof charityConsoleSchema>;

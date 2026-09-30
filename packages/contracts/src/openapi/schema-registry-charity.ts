@@ -11,6 +11,9 @@ import {
   idCharityRegistrationSchema,
   publicCharityListSchema,
   publicCharitySchema,
+  charityProceedSchema,
+  charityStatementSchema,
+  charityConsoleSchema,
 } from "../charity/charity";
 import type { ContractComponent } from "./schema-registry";
 
@@ -88,6 +91,25 @@ export const CHARITY_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     id: "CharityDetailList",
     schema: charityDetailListSchema,
     description: "GET /api/staff/charities and GET /api/me/charities.",
+    crossFieldRules: [],
+  },
+  {
+    id: "CharityProceed",
+    schema: charityProceedSchema,
+    description: "One auction's proceeds, paid straight to the charity's own account.",
+    crossFieldRules: [],
+  },
+  {
+    id: "CharityStatement",
+    schema: charityStatementSchema,
+    description: "A month's proceeds per currency.",
+    crossFieldRules: [],
+  },
+  {
+    id: "CharityConsole",
+    schema: charityConsoleSchema,
+    description:
+      "GET /api/charities/{charityId}/console: the charity, its proceeds and statements.",
     crossFieldRules: [],
   },
 ];

@@ -1,0 +1,67 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  13.21 (F86): the charity registry. A verified adult applies for their own
+  region's charity; ops approve or reject with a reason; the charity's own
+  members read its console. Proceeds are paid straight to the charity's
+  account at the provider, so there is no balance action here (red line 8).
+  No teen applies (F86: teens take part in none of it).
+resourcePolicy:
+  version: default
+  resource: charity
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/charity.json
+  rules:
+    - name: an-adult-applies-in-their-own-region
+      actions: ["apply"]
+      effect: EFFECT_ALLOW
+      roles: ["user"]
+      condition:
+        match:
+          all:
+            of:
+              - expr: has(P.attr.ageBand) && P.attr.ageBand == "adult"
+              - expr: P.attr.isSuspended == false
+              - expr: has(R.attr.region) && R.attr.region == P.attr.jurisdiction
+
+    - name: a-signed-in-user-lists-their-own-applications
+      actions: ["list_mine"]
+      effect: EFFECT_ALLOW
+      roles: ["user"]
+
+    - name: a-member-reads-its-own-charity
+      actions: ["view_console"]
+      effect: EFFECT_ALLOW
+      roles: ["user"]
+      condition:
+        match:
+          expr: has(R.attr.memberIds) && P.id in R.attr.memberIds
+
+    - name: ops-review-the-registry
+      actions: ["review"]
+      effect: EFFECT_ALLOW
+      roles: ["ops"]
+
+    - name: ops-decide-with-a-reason
+      actions: ["decide"]
+      effect: EFFECT_ALLOW
+      roles: ["ops"]
+      condition:
+        match:
+          expr: has(R.attr.hasReason) && R.attr.hasReason == true
+
+    - name: finance-reconciles
+      actions: ["view_console", "review"]
+      effect: EFFECT_ALLOW
+      roles: ["finance"]
+
+    - name: f2-region-wall
+      actions: ["apply", "view_console"]
+      effect: EFFECT_DENY
+      roles: ["user"]
+      condition:
+        match:
+          expr: has(R.attr.region) && R.attr.region != P.attr.jurisdiction

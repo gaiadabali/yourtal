@@ -1,4 +1,4 @@
-h1:Gkfd1HScWiYX+6U/RrLQJxvF0+f2DCv4+j5Kuo8LmDA=
+h1:994Lr0xJuV89gy7u8aRC2zBWT1z+rw3vCHawxlM9T18=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -119,4 +119,5 @@ h1:Gkfd1HScWiYX+6U/RrLQJxvF0+f2DCv4+j5Kuo8LmDA=
 20260930082025_region_row_level_security.sql h1:A1cSvTlSZ9tKi/beAaWR0pZhhESOhThU3kdThGQC/VE=
 20260930090159_charity_auction.sql h1:pSrX+64R15ivBBKeE6vTG6xoQK4qzxE9BHe8z0ptnV0=
 20260930094056_auction_dsar_grants.sql h1:FYGlkRig2U065USFttc28HZmZsOTXMIvZVSpHWKxe5Q=
-20260930100714_auction_region_wall.sql h1:/o66qsF4fvUQ5pcav2s/abpvSbjhnjFfzGByFxDX0Uw=
+20260930095659_platform_demo_login.sql h1:RfaGbQPkMGlRmxmtW/8lC1aKLctmaCV8VCHaL94yMTQ=
+20260930100714_auction_region_wall.sql h1:uk90cM1jGNixiftYi2kaCRgOozccafSlBW0TBYQPx6U=

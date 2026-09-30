@@ -204,11 +204,16 @@ const FACT_DISPLAY_SECONDS = 5;
  * Loops/trims the source to `TARGET_DURATION_SECONDS` and burns every fact
  * in as on-screen text at its resolved timestamp, in one ffmpeg pass.
  */
-function burnFacts(inputPath: string, facts: readonly ManifestFact[], outputPath: string): void {
+function burnFacts(
+  inputPath: string,
+  facts: readonly ManifestFact[],
+  outputPath: string,
+  durationSeconds: number = TARGET_DURATION_SECONDS,
+): void {
   const fontFile = escapeForFilter(resolveFontFile());
   const drawtextFilters = facts.map((fact) => {
-    const atSeconds = Math.round(fact.at * TARGET_DURATION_SECONDS);
-    const endSeconds = Math.min(TARGET_DURATION_SECONDS, atSeconds + FACT_DISPLAY_SECONDS);
+    const atSeconds = Math.round(fact.at * durationSeconds);
+    const endSeconds = Math.min(durationSeconds, atSeconds + FACT_DISPLAY_SECONDS);
     return (
       `drawtext=fontfile='${fontFile}':text='${escapeDrawtext(fact.text)}':` +
       // `expansion=none`: a fact's text is a literal string, never a
@@ -237,7 +242,7 @@ function burnFacts(inputPath: string, facts: readonly ManifestFact[], outputPath
     "-i",
     inputPath,
     "-t",
-    String(TARGET_DURATION_SECONDS),
+    String(durationSeconds),
     "-filter_complex",
     filter,
     "-map",
@@ -783,4 +788,84 @@ async function main(): Promise<void> {
 
 if (process.argv[1]?.endsWith("demo-media.ts") === true) {
   await main();
+}
+
+export interface DemoVideoRequest {
+  /** A clip name from the manifest (`bigBuckBunny`, `sintel`). */
+  readonly clip: string;
+  readonly durationSeconds: number;
+  readonly facts: readonly ManifestFact[];
+  /** The asset id its objects are stored under; several campaigns may share one. */
+  readonly assetId: string;
+  readonly teaserStartSeconds: number;
+}
+
+export interface DemoVideo {
+  readonly posterUrl: string;
+  readonly teaserUrl: string;
+  readonly hlsUrl: string;
+  readonly aspect: string;
+  readonly estimatedBytes: number;
+}
+
+/**
+ * 13.1: one demo video of any length, rendered, uploaded and addressed like a
+ * manifest campaign's. The demo world renders one per length and shares it
+ * between campaigns, so a reset costs a few transcodes, not one per campaign.
+ */
+export async function renderDemoVideo(request: DemoVideoRequest): Promise<DemoVideo> {
+  const manifest = loadManifest();
+  const clip = manifest.clips[request.clip];
+  if (clip === undefined) throw new Error(`no clip named "${request.clip}" in the manifest`);
+  const workDir = path.join(CACHE_DIR, "work", `render-${request.assetId}`);
+  mkdirSync(workDir, { recursive: true });
+  const sourcePath = await downloadToCache(clip.url);
+  const musicPath = await downloadToCache(manifest.musicBed.url);
+
+  const burnedPath = path.join(workDir, "burned.mp4");
+  burnFacts(sourcePath, request.facts, burnedPath, request.durationSeconds);
+  const finalPath = path.join(workDir, "final.mp4");
+  muxMusicIfSilent(burnedPath, hasAudioStream(burnedPath), musicPath, finalPath);
+  const final = await probeInput(finalPath);
+
+  const hlsDir = path.join(workDir, "hls");
+  mkdirSync(hlsDir, { recursive: true });
+  const renditionBytes = await renderHlsLadder(finalPath, hlsDir);
+  const posterPath = path.join(workDir, "poster.jpg");
+  await renderPoster(finalPath, posterPath, Math.min(5, request.durationSeconds / 2));
+  const teaserPath = path.join(workDir, "teaser.mp4");
+  await renderTeaser({
+    inputPath: finalPath,
+    outputPath: teaserPath,
+    startSeconds: request.teaserStartSeconds,
+    aspect: final.aspect,
+  });
+
+  const client = createMediaClient();
+  for (const file of listFiles(hlsDir)) {
+    await putMediaOutput(client, {
+      kind: "hls",
+      key: hlsAssetObjectKey(request.assetId, file),
+      body: readFileSync(path.join(hlsDir, ...file.split("/"))),
+    });
+  }
+  await putMediaOutput(client, {
+    kind: "poster",
+    key: posterObjectKey(request.assetId),
+    body: readFileSync(posterPath),
+  });
+  await putMediaOutput(client, {
+    kind: "teaser",
+    key: teaserObjectKey(request.assetId),
+    body: readFileSync(teaserPath),
+  });
+  client.destroy();
+
+  return {
+    posterUrl: publicMediaUrl(posterObjectKey(request.assetId)),
+    teaserUrl: publicMediaUrl(teaserObjectKey(request.assetId)),
+    hlsUrl: publicMediaUrl(hlsAssetObjectKey(request.assetId, "index.m3u8")),
+    aspect: final.aspect,
+    estimatedBytes: renditionBytes.v540,
+  };
 }

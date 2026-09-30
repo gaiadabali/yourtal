@@ -13,7 +13,10 @@ import { DrizzleBusinessMembershipReader } from "./persistence/drizzle-business-
 import { BUSINESS_MEMBERSHIP_READER } from "./persistence/business-membership-reader";
 import { DrizzleStaffRoleReader } from "./persistence/drizzle-staff-role-reader";
 import { STAFF_ROLE_READER } from "./persistence/staff-role-reader";
-import { ACCOUNT_EMAIL_READER, DrizzleAccountEmailReader } from "./persistence/account-email-reader";
+import {
+  ACCOUNT_EMAIL_READER,
+  DrizzleAccountEmailReader,
+} from "./persistence/account-email-reader";
 import { DrizzleGuardianConsentRepository } from "./persistence/drizzle-guardian-consent.repository";
 import { GUARDIAN_CONSENT_REPOSITORY } from "./persistence/guardian-consent.repository";
 import { IDENTITY_DB } from "./persistence/identity-db.token";

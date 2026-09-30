@@ -77,6 +77,7 @@ export function FeedItem({
       <div className="absolute inset-x-3 bottom-4 z-20 flex max-w-[calc(100%-4.5rem)] flex-col gap-2 text-white">
         <a href={`/c/${item.channelHandle}`} className="flex w-fit items-center gap-2">
           <ChannelAvatar
+            decorative
             name={item.merchantName}
             size="sm"
             {...(item.channelLogoUrl ? { src: item.channelLogoUrl } : {})}

@@ -45,6 +45,7 @@ export function MeFollowsSection({ initialFollows }: MeFollowsSectionProps) {
               key={entry.businessId}
               leading={
                 <ChannelAvatar
+                  decorative
                   name={entry.displayName}
                   {...(entry.logoUrl ? { src: entry.logoUrl } : {})}
                 />

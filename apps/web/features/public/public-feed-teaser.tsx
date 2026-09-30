@@ -63,7 +63,7 @@ export function PublicFeedTeaser({
             loop
           />
           <div className="pointer-events-none absolute inset-x-3 top-3 flex items-center gap-2">
-            <ChannelAvatar name={item.merchantName} size="sm" />
+            <ChannelAvatar decorative name={item.merchantName} size="sm" />
             <span className="line-clamp-1 text-body-sm font-sans font-semibold text-white [text-shadow:0_1px_2px_rgb(0_0_0_/_0.6)]">
               {item.merchantName}
             </span>

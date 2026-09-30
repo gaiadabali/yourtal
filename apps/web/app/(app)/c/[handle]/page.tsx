@@ -57,6 +57,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <ChannelAvatar
+            decorative
             name={channel.displayName}
             size="lg"
             {...(channel.logoUrl ? { src: channel.logoUrl } : {})}

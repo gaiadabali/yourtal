@@ -109,7 +109,7 @@
   "deleteAccount": {
     "heading": "Delete your account",
     "intro": "This permanently removes your YourTal account. Before you confirm, here is exactly what happens — there is no cash refund for any of it.",
-    "bulletPoints": "Unspent points are forfeited, including anything on hold. None of it can be paid out as cash or transferred to anyone else.",
+    "bulletPoints": "Unspent points are forfeited, including anything on hold, and can't be moved to anyone else.",
     "bulletVouchers": "Vouchers already in your wallet keep their code and can still be redeemed by the merchant until they expire — but you won't be able to log back in to view them, so save or screenshot any you plan to use first.",
     "bulletIrreversible": "This can't be undone.",
     "confirmCheckboxLabel": "I understand my unspent points will be forfeited and this can't be undone.",

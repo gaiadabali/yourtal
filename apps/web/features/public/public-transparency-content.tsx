@@ -44,7 +44,7 @@ export function PublicTransparencyContent({ roots, locale }: PublicTransparencyC
               key: "root",
               header: t("transparency.rootHeader"),
               cell: (day) => (
-                <span className="font-mono text-xs" title={day.merkleRoot}>
+                <span className="font-mono text-xs break-all" title={day.merkleRoot}>
                   {day.merkleRoot}
                 </span>
               ),

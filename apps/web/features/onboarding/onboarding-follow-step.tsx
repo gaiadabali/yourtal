@@ -66,6 +66,7 @@ export function OnboardingFollowStep({ candidates, returnTo }: OnboardingFollowS
                 key={candidate.id}
                 leading={
                   <ChannelAvatar
+                    decorative
                     name={candidate.displayName}
                     {...(candidate.logoUrl ? { src: candidate.logoUrl } : {})}
                   />

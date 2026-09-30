@@ -109,7 +109,7 @@
   "deleteAccount": {
     "heading": "Hapus akunmu",
     "intro": "Ini menghapus akun YourTal-mu secara permanen. Sebelum kamu konfirmasi, ini yang akan terjadi persis — tidak ada pengembalian dana tunai untuk apa pun di bawah ini.",
-    "bulletPoints": "Poin yang belum dipakai hangus, termasuk yang masih ditahan. Tidak ada yang bisa dicairkan jadi uang tunai atau dipindahkan ke orang lain.",
+    "bulletPoints": "Poin yang belum dipakai hangus, termasuk yang masih ditahan, dan tidak bisa dipindahkan ke orang lain.",
     "bulletVouchers": "Voucher yang sudah ada di walletmu tetap punya kode dan masih bisa ditukarkan merchant sampai kedaluwarsa — tapi kamu tidak bisa login lagi untuk melihatnya, jadi simpan atau screenshot dulu voucher yang ingin kamu pakai.",
     "bulletIrreversible": "Tindakan ini tidak bisa dibatalkan.",
     "confirmCheckboxLabel": "Saya paham poin yang belum dipakai akan hangus dan ini tidak bisa dibatalkan.",

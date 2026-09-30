@@ -25,6 +25,7 @@ export function SearchChannelRow({ channel }: SearchChannelRowProps) {
       href={`/c/${channel.handle}`}
       leading={
         <ChannelAvatar
+          decorative
           name={channel.displayName}
           {...(channel.logoUrl ? { src: channel.logoUrl } : {})}
           size="md"

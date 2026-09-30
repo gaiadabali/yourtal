@@ -28,7 +28,7 @@ export function ChannelRow({
   return (
     <div className="flex items-center justify-between gap-3">
       <a href={`/c/${handle}`} className="flex min-w-0 items-center gap-3">
-        <ChannelAvatar name={displayName} {...(logoUrl ? { src: logoUrl } : {})} />
+        <ChannelAvatar decorative name={displayName} {...(logoUrl ? { src: logoUrl } : {})} />
         <span className="truncate text-sm font-sans font-semibold text-fg">{displayName}</span>
       </a>
       <FollowButton businessId={businessId} initialFollowing={isFollowing} locale={locale} />

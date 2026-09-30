@@ -49,10 +49,12 @@ export interface ChannelAvatarProps extends Omit<
   /** Override the derived initials, e.g. for a channel with a short-name convention. */
   initials?: string;
   size?: "sm" | "md" | "lg";
+  /** The name is already written beside the avatar: hide it from assistive tech rather than read it twice. */
+  decorative?: boolean;
 }
 
 export const ChannelAvatar = React.forwardRef<HTMLSpanElement, ChannelAvatarProps>(
-  ({ name, src, initials, size = "md", className, ...props }, ref) => {
+  ({ name, src, initials, size = "md", decorative = false, className, ...props }, ref) => {
     const [failed, setFailed] = React.useState(false);
     const showImage = Boolean(src) && !failed;
     const { bg, fg } = paletteFor(name);
@@ -61,8 +63,9 @@ export const ChannelAvatar = React.forwardRef<HTMLSpanElement, ChannelAvatarProp
     return (
       <span
         ref={ref}
-        role={showImage ? undefined : "img"}
-        aria-label={showImage ? undefined : name}
+        role={showImage || decorative ? undefined : "img"}
+        aria-label={showImage || decorative ? undefined : name}
+        aria-hidden={decorative ? true : undefined}
         className={cn(
           "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-display font-bold",
           SIZES[size],
@@ -75,7 +78,7 @@ export const ChannelAvatar = React.forwardRef<HTMLSpanElement, ChannelAvatarProp
         {showImage ? (
           <img
             src={src}
-            alt={name}
+            alt={decorative ? "" : name}
             className="h-full w-full object-cover"
             loading="lazy"
             onError={() => {

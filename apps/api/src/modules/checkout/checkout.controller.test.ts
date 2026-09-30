@@ -175,8 +175,9 @@ describe("POST /api/checkout", () => {
         listingId: await buyableListing("AU"),
       },
     );
-    expect(refused.statusCode).toBe(409);
-    expect(refused.json()).toMatchObject({ code: "region_mismatch" });
+    // 13.5.e: Postgres's region wall hides the AU listing from an ID account
+    // before the saga's own region check can run, so it is simply not found.
+    expect(refused.statusCode).toBe(404);
   });
 
   it("keeps online rewards for established accounts", async () => {

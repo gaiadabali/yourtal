@@ -43,10 +43,13 @@ describe("region row-level security", () => {
 
   it("a walled write to the other region changes nothing", async () => {
     const au = await sessionFor(app, { jurisdiction: "AU" });
-    const updated = await regionScope.run({ region: "ID" }, () =>
-      db.execute(
-        sql`UPDATE identity.user_profile SET display_name = 'moved' WHERE user_id = ${au.userId}`,
-      ),
+    // Awaited inside the scope: a drizzle query only runs when awaited.
+    const updated = await regionScope.run(
+      { region: "ID" },
+      async () =>
+        await db.execute(
+          sql`UPDATE identity.user_profile SET display_name = 'moved' WHERE user_id = ${au.userId}`,
+        ),
     );
     expect(updated.rowCount).toBe(0);
   });

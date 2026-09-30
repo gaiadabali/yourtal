@@ -47,6 +47,8 @@ export const listings = storePgSchema.table("listings", {
   partialRedemptionPolicy: text("partial_redemption_policy").notNull(),
   minimumSpendMinor: bigint("minimum_spend_minor", { mode: "number" }),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  // 13.12.b: the "newest" sort.
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   status: text("status").notNull(),
   /** MERCHANT-side visibility. Never served to a customer. See the repository. */
   lifecycleState: text("lifecycle_state").notNull().default("active"),

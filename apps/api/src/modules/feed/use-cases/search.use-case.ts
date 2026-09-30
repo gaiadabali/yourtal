@@ -1,6 +1,8 @@
 import type { Principal } from "@yourtal/authz/principal";
 import type { SearchResponse } from "@yourtal/contracts/feed";
 import type { Region } from "@yourtal/contracts/region";
+import type { CampaignKind } from "@yourtal/contracts/campaign";
+import type { ContentCategory } from "@yourtal/jurisdiction/content-category";
 import type { CampaignRepository } from "../../campaign/persistence/campaign.repository";
 import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-internal-client";
 import type { ListingRepository } from "../../store/persistence/listing.repository";
@@ -34,6 +36,8 @@ export async function search(
   principal: Principal,
   query: string,
   queryRegion: Region | undefined,
+  /** 13.12.c: `kind` narrows campaigns only; `category` narrows campaigns and listings. */
+  narrow: { readonly kind?: CampaignKind | undefined; readonly category?: ContentCategory | undefined } = {},
 ): Promise<
   { readonly kind: "ok"; readonly result: SearchResponse } | { readonly kind: "region_required" }
 > {
@@ -71,6 +75,11 @@ export async function search(
   };
   const matchingCampaigns = candidates
     .filter((candidate) => passesFilter(candidate, ctx))
+    .filter((candidate) => narrow.kind === undefined || candidate.campaign.kind === narrow.kind)
+    .filter(
+      (candidate) =>
+        narrow.category === undefined || candidate.campaign.contentCategory === narrow.category,
+    )
     .filter(
       (candidate) =>
         candidate.campaign.title.toLowerCase().includes(needle) ||
@@ -88,7 +97,14 @@ export async function search(
 
   const [channelResults, listingPage] = await Promise.all([
     channels.search(query, region, SEARCH_LIMIT),
-    listings.browsePublic({ region, audiences, search: query, limit: SEARCH_LIMIT }),
+    listings.browsePublic({
+      region,
+      audiences,
+      search: query,
+      contentCategory: narrow.category,
+      sort: "popular",
+      limit: SEARCH_LIMIT,
+    }),
   ]);
 
   return {

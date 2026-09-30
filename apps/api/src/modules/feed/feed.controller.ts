@@ -88,6 +88,7 @@ export class FeedController {
       principal,
       parsed.surface,
       parsed.region,
+      { kind: parsed.kind, category: parsed.category, tags: parsed.tags, sort: parsed.sort },
     );
     if (result.kind === "region_required") {
       throw new BadRequestException({
@@ -119,6 +120,7 @@ export class FeedController {
       principal,
       parsed.q,
       parsed.region,
+      { kind: parsed.kind, category: parsed.category },
     );
     if (result.kind === "region_required") {
       throw new BadRequestException({

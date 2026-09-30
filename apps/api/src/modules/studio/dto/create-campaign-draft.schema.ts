@@ -1,8 +1,8 @@
+import { interestTagsSchema } from "@yourtal/contracts/interest/tags";
 import { z } from "zod";
 import { createZodDto } from "nestjs-zod";
 import { campaignKindSchema, audienceSchema } from "@yourtal/contracts/campaign";
 import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";
-import { isKnownInterestNode } from "@yourtal/contracts/interest/taxonomy";
 
 /** TASKS.md 7.3.a. `region`/`currency`/`merchantName` are never client fields — the business's own row decides them, same reasoning `create-business.schema.ts` documents for `currency`. */
 export const createCampaignDraftSchema = z.object({
@@ -21,9 +21,7 @@ export const createCampaignDraftSchema = z.object({
   /** F8: off by default; only an all_ages campaign may opt in — checked in the use-case, not here (needs the resolved audience). */
   openViewing: z.boolean().default(false),
   teaserStartSeconds: z.number().int().min(0).default(0),
-  declaredInterests: z
-    .array(z.string().refine(isKnownInterestNode, { message: "unknown interest node id" }))
-    .default([]),
+  declaredInterests: interestTagsSchema.default([]),
 });
 
 export type CreateCampaignDraftRequest = z.infer<typeof createCampaignDraftSchema>;

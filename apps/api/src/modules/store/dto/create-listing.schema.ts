@@ -1,3 +1,4 @@
+import { interestTagsSchema } from "@yourtal/contracts/interest/tags";
 import { z } from "zod";
 import { createZodDto } from "nestjs-zod";
 import {
@@ -49,6 +50,8 @@ export const createListingSchema = z
     perUserLimit: z.number().int().positive().optional(),
     audience: audienceSchema,
     contentCategory: contentCategorySchema,
+    /** 13.11.a (F84): taxonomy node ids only, up to 8. */
+    tags: interestTagsSchema.default([]),
     imageUrl: z.url(),
     channel: listingChannelSchema,
     partialRedemption: partialRedemptionSchema,

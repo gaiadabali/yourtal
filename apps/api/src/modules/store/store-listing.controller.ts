@@ -70,6 +70,7 @@ export class StoreListingController {
       perUserLimit: body.perUserLimit,
       audience: body.audience,
       contentCategory: body.contentCategory,
+      tags: body.tags,
       imageUrl: body.imageUrl,
       channel: body.channel,
       partialRedemption: body.partialRedemption,

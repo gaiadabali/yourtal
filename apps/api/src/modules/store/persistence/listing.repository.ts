@@ -11,6 +11,7 @@ import type {
 import type { Audience } from "@yourtal/contracts/campaign";
 import type { Region } from "@yourtal/contracts/region";
 import type { ContentCategory } from "@yourtal/jurisdiction/content-category";
+import type { ListingFacets, ListingSort } from "@yourtal/contracts/listing/browse";
 
 /**
  * MERCHANT-side visibility (docs/17 section 2, Inventory). Never a
@@ -61,6 +62,8 @@ export interface CreateListingInput {
   readonly region: Region;
   readonly audience: Audience;
   readonly contentCategory: ContentCategory;
+  /** 13.11.a: taxonomy node ids, already validated by the DTO. Omitted means none. */
+  readonly tags?: readonly string[] | undefined;
   readonly imageUrl: string;
   readonly channel: ListingChannel;
   readonly partialRedemption: PartialRedemption;
@@ -91,6 +94,7 @@ export interface EditListingInput {
    */
   readonly contentCategory?: ContentCategory | undefined;
   readonly audience?: Audience | undefined;
+  readonly tags?: readonly string[] | undefined;
 }
 
 export interface BrowseListingsFilter {
@@ -114,14 +118,25 @@ export interface BrowseListingsFilter {
   readonly search?: string | undefined;
   readonly minPoints?: number | undefined;
   readonly maxPoints?: number | undefined;
+  /** 13.12.b: a listing's primary (content) category, e.g. from search. */
+  readonly contentCategory?: ContentCategory | undefined;
+  /** 13.12.b: any of these merchants. */
+  readonly brands?: readonly string[] | undefined;
+  /** 13.12.b: any of these tags. */
+  readonly tags?: readonly string[] | undefined;
+  /** 13.12.b: omitted means id order. */
+  readonly sort?: ListingSort | undefined;
   readonly limit: number;
-  /** Cursor-only pagination (docs/13 section 5) — the last id of the previous page. */
+  /** Cursor-only pagination (docs/13 section 5) — the last id of the previous page, in the same sort. */
   readonly startingAfter?: string | undefined;
 }
 
 export interface BrowseListingsPage {
   readonly listings: readonly PublicListing[];
   readonly hasMore: boolean;
+  /** 13.12.b: every row matching the filters, across pages. */
+  readonly totalCount: number;
+  readonly facets: ListingFacets;
 }
 
 export interface SettlementValueChange {

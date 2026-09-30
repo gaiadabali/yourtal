@@ -1,3 +1,4 @@
+import { interestTagsSchema } from "@yourtal/contracts/interest/tags";
 import { z } from "zod";
 import { createZodDto } from "nestjs-zod";
 import {
@@ -35,6 +36,8 @@ export const editListingSchema = z.object({
   // never applied unchecked.
   contentCategory: contentCategorySchema.optional(),
   audience: audienceSchema.optional(),
+  /** 13.11.a: replaces the whole set when present. */
+  tags: interestTagsSchema.optional(),
 });
 
 export type EditListingRequest = z.infer<typeof editListingSchema>;

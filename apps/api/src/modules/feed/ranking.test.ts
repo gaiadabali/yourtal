@@ -208,6 +208,36 @@ describe("buildFeed", () => {
     );
   });
 
+  it("13.11.b: matches a declared interest against a campaign's tags, not only its category", () => {
+    const tagged = candidate({
+      campaign: campaign({ contentCategory: "travel", tags: ["coffee-specialty"] }),
+    });
+    const other = candidate({ campaign: campaign({ contentCategory: "travel" }) });
+    const ctx = baseContext({
+      // A parent node: "coffee" declared, the campaign tagged with its child.
+      declaredInterestNodeIds: new Set(["coffee"]),
+      interestTargetingAllowed: true,
+      minSegmentSize: 1,
+      segmentSizeOf: () => 10,
+    });
+
+    const items = buildFeed([other, tagged], ctx);
+    expect(items[0]?.campaignId).toBe(tagged.campaign.id);
+    expect(items[0]?.whyReason).toBe("interest");
+    expect(items[0]?.tags).toEqual(["coffee-specialty"]);
+  });
+
+  it("13.11.b: a tag match still needs consent", () => {
+    const tagged = candidate({ campaign: campaign({ contentCategory: "travel", tags: ["books"] }) });
+    const ctx = baseContext({
+      declaredInterestNodeIds: new Set(["books"]),
+      interestTargetingAllowed: false,
+      minSegmentSize: 1,
+      segmentSizeOf: () => 10,
+    });
+    expect(buildFeed([tagged], ctx)[0]?.whyReason).not.toBe("interest");
+  });
+
   it("demotes a campaign the viewer said they were not interested in, without removing it", () => {
     const demoted = candidate();
     const other = candidate();

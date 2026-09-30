@@ -1,4 +1,4 @@
-import { interestTagSchema, MAX_TAGS } from "@yourtal/contracts/interest/tags";
+import { storedTagsOf } from "@yourtal/contracts/interest/tags";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { Audience, Campaign } from "@yourtal/contracts/campaign";
 import { campaignSchema } from "@yourtal/contracts/campaign";
@@ -222,7 +222,7 @@ export class DrizzleCampaignRepository implements CampaignRepository {
       region: row.region,
       audience: row.audience,
       contentCategory: row.contentCategory,
-      tags: storedTags(row.declaredInterests),
+      tags: storedTagsOf(row.declaredInterests),
       posterUrl: row.posterUrl,
       teaserUrl: row.teaserUrl,
       hlsUrl: row.hlsUrl,
@@ -248,14 +248,3 @@ export class DrizzleCampaignRepository implements CampaignRepository {
   }
 }
 
-/**
- * 13.11: a stored tag the taxonomy no longer knows is dropped, never allowed
- * to fail the whole row's parse and hide the campaign.
- */
-function storedTags(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return [];
-  const known = raw.filter(
-    (tag): tag is string => typeof tag === "string" && interestTagSchema.safeParse(tag).success,
-  );
-  return [...new Set(known)].slice(0, MAX_TAGS);
-}

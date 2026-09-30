@@ -1,3 +1,4 @@
+import { storedTagsOf } from "@yourtal/contracts/interest/tags";
 import { eq } from "drizzle-orm";
 import type { Listing, PublicListing } from "@yourtal/contracts/listing";
 import { listingSchema, publicListingSchema } from "@yourtal/contracts/listing";
@@ -82,6 +83,7 @@ export async function assembleListing(
     region: row.region,
     audience: row.audience,
     contentCategory: row.contentCategory,
+    tags: storedTagsOf(row.tags),
     imageUrl: row.imageUrl,
     channel: row.channel,
     partialRedemption: row.partialRedemption,

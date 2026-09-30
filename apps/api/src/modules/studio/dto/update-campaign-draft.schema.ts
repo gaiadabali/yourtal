@@ -1,9 +1,9 @@
+import { interestTagsSchema } from "@yourtal/contracts/interest/tags";
 import { z } from "zod";
 import { createZodDto } from "nestjs-zod";
 import { audienceSchema } from "@yourtal/contracts/campaign";
 import { campaignChapterSchema } from "@yourtal/contracts/campaign/chapter";
 import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";
-import { isKnownInterestNode } from "@yourtal/contracts/interest/taxonomy";
 
 /** TASKS.md 7.3.a: a patch. Every field optional; `chapters`/`declaredInterests` replace the whole set when present. */
 export const updateCampaignDraftSchema = z.object({
@@ -22,9 +22,7 @@ export const updateCampaignDraftSchema = z.object({
   openViewing: z.boolean().optional(),
   teaserStartSeconds: z.number().int().min(0).optional(),
   posterFrameSeconds: z.number().int().min(0).nullable().optional(),
-  declaredInterests: z
-    .array(z.string().refine(isKnownInterestNode, { message: "unknown interest node id" }))
-    .optional(),
+  declaredInterests: interestTagsSchema.optional(),
   chapters: z.array(campaignChapterSchema).optional(),
   captionsUrl: z.url().nullable().optional(),
 });

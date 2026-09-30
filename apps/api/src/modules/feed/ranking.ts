@@ -1,3 +1,4 @@
+import { ancestorsOf } from "@yourtal/contracts/interest/taxonomy";
 import type { Campaign } from "@yourtal/contracts/campaign";
 import type { Audience } from "@yourtal/contracts/audience/audience";
 import type { FeedItem, FeedWhyReason } from "@yourtal/contracts/feed";
@@ -97,8 +98,10 @@ export function signalsFor(candidate: CandidateCampaign, ctx: RankingContext): S
   }
   const interestMatch =
     ctx.interestTargetingAllowed &&
-    ctx.declaredInterestNodeIds.has(campaign.contentCategory) &&
-    ctx.segmentSizeOf(campaign.contentCategory) >= ctx.minSegmentSize;
+    matchedInterestNodes(campaign).some(
+      (nodeId) =>
+        ctx.declaredInterestNodeIds.has(nodeId) && ctx.segmentSizeOf(nodeId) >= ctx.minSegmentSize,
+    );
   const audienceMatch =
     (campaign.audience === "teen" && ctx.ageBand === "teen") ||
     (campaign.audience === "parents" && ctx.hasParentBoost);
@@ -112,6 +115,20 @@ export function signalsFor(candidate: CandidateCampaign, ctx: RankingContext): S
     // `home-feed.tsx`) no row or tab for it either.
     endingSoon: ctx.ageBand === "teen" ? false : isEndingSoon(candidate, ctx.now),
   };
+}
+
+/**
+ * 13.11.b: the interest nodes a campaign speaks to -- its category, its tags,
+ * and each tag's ancestors, so a viewer who declared "coffee" matches a
+ * campaign tagged "coffee-specialty". Exported for the segment-size pre-warm.
+ */
+export function matchedInterestNodes(campaign: Campaign): readonly string[] {
+  const nodes = new Set<string>([campaign.contentCategory]);
+  for (const tag of campaign.tags) {
+    nodes.add(tag);
+    for (const ancestor of ancestorsOf(tag)) nodes.add(ancestor);
+  }
+  return [...nodes];
 }
 
 function freshnessScore(campaign: Campaign, now: Date): number {

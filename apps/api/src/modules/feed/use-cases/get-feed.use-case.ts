@@ -1,6 +1,6 @@
 import type { Principal } from "@yourtal/authz/principal";
 import { isBoostedForParents } from "@yourtal/contracts/audience/audience";
-import type { FeedItem, FeedSurface } from "@yourtal/contracts/feed";
+import type { FeedFacets, FeedItem, FeedSurface } from "@yourtal/contracts/feed";
 import type { Region } from "@yourtal/contracts/region";
 import { mayUseSignalFor } from "@yourtal/consent/consent-query";
 import type { CampaignRepository } from "../../campaign/persistence/campaign.repository";
@@ -11,8 +11,11 @@ import type { ChannelLookupRepository } from "../persistence/channel-lookup.repo
 import type { FeedSignalsRepository } from "../persistence/feed-signals.repository";
 import type { PacingStateRepository } from "../persistence/pacing-state.repository";
 import type { SuspendedBusinessLookup } from "../persistence/suspended-business-lookup";
-import { buildFeed } from "../ranking";
+import { buildFeed, matchedInterestNodes } from "../ranking";
 import { fetchFundedCampaigns } from "../candidates";
+import { applyFeedBrowse, feedFacets } from "../browse";
+import type { FeedBrowseFilter } from "../browse";
+import type { CandidateCampaign } from "../ranking";
 
 /** 11.5.d: defensive fallback only -- see `RankingContext.channelOf`'s own comment. */
 const UNKNOWN_CHANNEL = { handle: "unknown", logoUrl: null } as const;
@@ -33,6 +36,33 @@ const CURRENT_CONSENT_PHASE = "P1" as const;
 export interface FeedResult {
   readonly surface: FeedSurface;
   readonly items: readonly FeedItem[];
+  readonly facets: FeedFacets;
+}
+
+/**
+ * 13.12.a: facets over the walled set, then the viewer's filters and sort.
+ * Only what is returned counts as served for pacing. A teen never gets the
+ * "ending soon" ordering (12.4.d: no scarcity nudges), so it falls back to
+ * the ranked order.
+ */
+async function finish(
+  surface: FeedSurface,
+  ranked: readonly FeedItem[],
+  candidates: readonly CandidateCampaign[],
+  browse: FeedBrowseFilter,
+  pacing: PacingStateRepository,
+  teen: boolean,
+): Promise<FeedResult> {
+  const byId = new Map(candidates.map((candidate) => [candidate.campaign.id, candidate.campaign]));
+  const time = (iso: string | undefined) => (iso === undefined ? 0 : new Date(iso).getTime());
+  const effective: FeedBrowseFilter =
+    teen && browse.sort === "ending_soon" ? { ...browse, sort: "for_you" } : browse;
+  const items = applyFeedBrowse(ranked, effective, {
+    publishedAt: (id) => time(byId.get(id)?.publishedAt),
+    endsAt: (id) => time(byId.get(id)?.endsAt),
+  });
+  for (const item of items) await pacing.recordServe(item.campaignId);
+  return { surface, items, facets: feedFacets(ranked, effective) };
 }
 
 export async function getFeed(
@@ -46,6 +76,7 @@ export async function getFeed(
   principal: Principal,
   surface: FeedSurface,
   queryRegion: Region | undefined,
+  browse: FeedBrowseFilter = { sort: "for_you" },
 ): Promise<
   { readonly kind: "ok"; readonly result: FeedResult } | { readonly kind: "region_required" }
 > {
@@ -96,8 +127,10 @@ export async function getFeed(
       anonymous: true,
       channelOf,
     });
-    for (const item of items) await pacing.recordServe(item.campaignId);
-    return { kind: "ok", result: { surface, items } };
+    return {
+      kind: "ok",
+      result: await finish(surface, items, candidates, browse, pacing, false),
+    };
   }
 
   const [
@@ -140,12 +173,16 @@ export async function getFeed(
     segmentCache.set(nodeId, size);
     return size;
   };
-  // Pre-warm the cache for every content category actually in play, so
-  // `buildFeed`'s own segmentSizeOf can stay synchronous.
-  const categories = [
-    ...new Set(candidates.map((candidate) => candidate.campaign.contentCategory)),
-  ];
-  await Promise.all(categories.map((category) => segmentSizeOf(category)));
+  // Pre-warm the cache for every interest node in play (13.11.b: category,
+  // tags and their ancestors) that the viewer declared, so `buildFeed`'s own
+  // segmentSizeOf can stay synchronous.
+  const declared = new Set(declaredInterestNodeIds);
+  const nodesInPlay = new Set(
+    candidates.flatMap((candidate) => matchedInterestNodes(candidate.campaign)),
+  );
+  await Promise.all(
+    [...nodesInPlay].filter((node) => declared.has(node)).map((node) => segmentSizeOf(node)),
+  );
 
   const hasParentBoost = isBoostedForParents({
     ageBand: ageBand ?? "adult",
@@ -172,6 +209,8 @@ export async function getFeed(
     anonymous: false,
     channelOf,
   });
-  for (const item of items) await pacing.recordServe(item.campaignId);
-  return { kind: "ok", result: { surface, items } };
+  return {
+    kind: "ok",
+    result: await finish(surface, items, candidates, browse, pacing, ageBand === "teen"),
+  };
 }

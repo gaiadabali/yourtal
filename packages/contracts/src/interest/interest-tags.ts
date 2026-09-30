@@ -21,6 +21,18 @@ export const interestTagsSchema = z
 export type InterestTags = z.infer<typeof interestTagsSchema>;
 
 /**
+ * A stored tag list, read back leniently: an id the taxonomy no longer knows
+ * is dropped rather than failing the whole row's parse and hiding it.
+ */
+export function storedTagsOf(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const known = raw.filter(
+    (tag): tag is string => typeof tag === "string" && interestTagSchema.safeParse(tag).success,
+  );
+  return [...new Set(known)].slice(0, MAX_TAGS);
+}
+
+/**
  * A list query param: `tags=a,b` or `tags=a&tags=b`, both accepted. Empty
  * entries are dropped, so `tags=` means "no filter", not a 400.
  */

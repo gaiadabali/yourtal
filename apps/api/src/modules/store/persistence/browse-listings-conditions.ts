@@ -1,4 +1,4 @@
-import { and, eq, gt, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { listingLocations, listings, merchantLocations } from "./schema/listing.table";
 import type { BrowseListingsFilter } from "./listing.repository";
@@ -28,13 +28,19 @@ export const PUBLIC_LIFECYCLE_STATE = "active";
  * listing everywhere except staging -- caught by this module's own
  * `drizzle-listing-browse.test.ts`, which runs against the fake.
  */
-export function browseConditions(filter: BrowseListingsFilter): SQL {
+export function browseConditions(
+  filter: Omit<BrowseListingsFilter, "category" | "startingAfter">,
+): SQL {
   const conditions = [
     eq(listings.lifecycleState, PUBLIC_LIFECYCLE_STATE),
     eq(listings.region, filter.region),
     inArray(listings.audience, filter.audiences),
   ];
-  if (filter.category !== undefined) conditions.push(eq(listings.category, filter.category));
+  // `category`, `brands` and `tags` are facets and `startingAfter` follows the
+  // sort, so all four apply in memory (listing-browse-facets.ts), not here.
+  if (filter.contentCategory !== undefined) {
+    conditions.push(eq(listings.contentCategory, filter.contentCategory));
+  }
   if (filter.merchantId !== undefined) conditions.push(eq(listings.merchantId, filter.merchantId));
   if (filter.minPoints !== undefined) {
     conditions.push(
@@ -52,7 +58,6 @@ export function browseConditions(filter: BrowseListingsFilter): SQL {
       ) <= ${filter.maxPoints}`,
     );
   }
-  if (filter.startingAfter !== undefined) conditions.push(gt(listings.id, filter.startingAfter));
   if (filter.search !== undefined && filter.search.length > 0) {
     // `sql` template, parameterised — not the string-built SQL docs/13
     // section 3 rule 6 bans, and the query builder has no fluent API for

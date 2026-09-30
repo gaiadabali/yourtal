@@ -14,6 +14,13 @@ import {
   assemblePublicListings,
 } from "./listing-assembler";
 import { listingLocations, listings, merchantLocations } from "./schema/listing.table";
+import type { ListingRow } from "./listing-assembler";
+import { listingFacets, matchesFacets, pageAfter, sortRows } from "./listing-browse-facets";
+import { pricePointsByListing, unallocatedStockByListing } from "./listing-live-values";
+import type { ListingSort } from "@yourtal/contracts/listing/browse";
+
+/** A region's walled, active catalogue is hundreds of rows; this bounds the in-memory browse. */
+const BROWSE_SCAN_LIMIT = 2_000;
 import type {
   BrowseListingsFilter,
   BrowseListingsPage,
@@ -94,17 +101,38 @@ export class DrizzleListingRepository implements ListingRepository {
   }
 
   async browsePublic(filter: BrowseListingsFilter): Promise<BrowseListingsPage> {
-    // One extra row fetched to answer `hasMore` without a second COUNT query.
-    const rows = await this.db
+    // 13.12.b: one bounded read of the walled set, then facets, sort and the
+    // cursor in memory (listing-browse-facets.ts has the why).
+    const walled = await this.db
       .select()
       .from(listings)
       .where(browseConditions(filter))
       .orderBy(asc(listings.id))
-      .limit(filter.limit + 1);
+      .limit(BROWSE_SCAN_LIMIT);
+    const facetFilter = { category: filter.category, brands: filter.brands, tags: filter.tags };
+    const matching = walled.filter((row) => matchesFacets(row, facetFilter));
 
-    const hasMore = rows.length > filter.limit;
-    const page = hasMore ? rows.slice(0, filter.limit) : rows;
-    return { listings: await assemblePublicListings(this.db, page), hasMore };
+    const sorted =
+      filter.sort === undefined ? matching : await this.sortBrowse(matching, filter.sort);
+    const { page, hasMore } = pageAfter(sorted, filter.startingAfter, filter.limit);
+    return {
+      listings: await assemblePublicListings(this.db, page),
+      hasMore,
+      totalCount: matching.length,
+      facets: listingFacets(walled, facetFilter),
+    };
+  }
+
+  private async sortBrowse(rows: ListingRow[], sort: ListingSort): Promise<ListingRow[]> {
+    const ids = rows.map((row) => row.id);
+    const [prices, unallocated] = await Promise.all([
+      pricePointsByListing(this.db, ids),
+      unallocatedStockByListing(this.db, ids),
+    ]);
+    return sortRows(rows, sort, {
+      priceOf: (row) => prices.get(row.id) ?? row.priceInPoints,
+      takenOf: (row) => row.stockTotal - (unallocated.get(row.id) ?? 0),
+    });
   }
 
   async create(merchantId: string, input: CreateListingInput): Promise<Listing> {
@@ -149,6 +177,7 @@ export class DrizzleListingRepository implements ListingRepository {
           region: input.region,
           audience: input.audience,
           contentCategory: input.contentCategory,
+          tags: [...(input.tags ?? [])],
           imageUrl: input.imageUrl,
           channel: input.channel,
           partialRedemption: input.partialRedemption,
@@ -197,6 +226,7 @@ export class DrizzleListingRepository implements ListingRepository {
     // re-derives or re-checks it.
     if (patch.contentCategory !== undefined) values.contentCategory = patch.contentCategory;
     if (patch.audience !== undefined) values.audience = patch.audience;
+    if (patch.tags !== undefined) values.tags = [...patch.tags];
 
     if (Object.keys(values).length === 0) {
       return this.findOwnedById(merchantId, listingId);

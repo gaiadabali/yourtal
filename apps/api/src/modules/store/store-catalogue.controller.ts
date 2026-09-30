@@ -3,6 +3,7 @@ import { NotFoundException } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import type { PdpClient } from "@yourtal/authz/pdp-client";
 import { regionSchema } from "@yourtal/contracts/region";
+import { EMPTY_LISTING_FACETS } from "@yourtal/contracts/listing/browse";
 import { PublicRoute } from "../../shared/authz/authorize.decorator";
 import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { PDP_CLIENT } from "../../shared/pdp/pdp-client.module";
@@ -69,7 +70,14 @@ export class StoreCatalogueController {
       // Empty, not an error: a signed-in AU caller asking for `?region=ID`
       // is not confused about syntax, just looking at a region they are not
       // in -- the same "show nothing" a wrong district or price band gets.
-      return { object: "list", data: [], has_more: false, url: "/api/store/listings" };
+      return {
+        object: "list",
+        data: [],
+        has_more: false,
+        url: "/api/store/listings",
+        total_count: 0,
+        facets: EMPTY_LISTING_FACETS,
+      };
     }
 
     const result = await browseListings(
@@ -82,6 +90,8 @@ export class StoreCatalogueController {
       data: result.value.listings,
       has_more: result.value.hasMore,
       url: "/api/store/listings",
+      total_count: result.value.totalCount,
+      facets: result.value.facets,
     };
   }
 

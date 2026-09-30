@@ -94,5 +94,39 @@
   "watchTimeReminder": {
     "body": "You've been watching a while -- take a break if you'd like.",
     "dismiss": "Got it"
+  },
+  "browse": {
+    "all": "All",
+    "chipsLabel": "Categories",
+    "filters": "Filters",
+    "filtersTitle": "Filter videos",
+    "close": "Close",
+    "sort": "Sort by",
+    "sorts": {
+      "for_you": "For you",
+      "newest": "Newest",
+      "most_points": "Most points",
+      "ending_soon": "Ending soon"
+    },
+    "topics": "Topics",
+    "noTopics": "No topics to filter by here yet.",
+    "reset": "Reset",
+    "apply": "Show videos",
+    "activeFilters": "Active filters",
+    "remove": "Remove {name}",
+    "results": "Results",
+    "count": "{count, plural, =0 {No videos} one {# video} other {# videos}}",
+    "noneHeading": "No videos match",
+    "noneBody": "Try fewer topics, or another category.",
+    "clear": "Clear filters",
+    "featured": "Featured",
+    "forYou": "For you",
+    "seeAll": "See all",
+    "seeAllIn": "See all in {name}"
+  },
+  "shortsTitle": "Shorts",
+  "shortsEmpty": {
+    "heading": "No Shorts right now",
+    "body": "New Shorts land here as brands post them. Long videos are on Home."
   }
 }

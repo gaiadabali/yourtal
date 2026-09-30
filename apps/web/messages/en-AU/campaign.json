@@ -1,7 +1,7 @@
 {
   "card": {
     "upToReward": "Up to {amount}",
-    "quickBadge": "Quick"
+    "quickBadge": "Short"
   },
   "entry": {
     "duration": "Duration",
@@ -27,14 +27,14 @@
     "emptyNoneBody": "This list is refreshed regularly — check back shortly.",
     "emptyShowAll": "Show all campaigns",
     "kindLongForm": "long-form",
-    "kindQuick": "quick"
+    "kindQuick": "Short"
   },
   "board": {
     "title": "Earn",
     "filterAria": "Filter campaigns by kind",
     "filterAll": "All",
     "filterLongForm": "Long videos",
-    "filterQuick": "Quick",
+    "filterQuick": "Shorts",
     "sortLabel": "Sort",
     "sortAria": "Sort campaigns",
     "sortValue": "Best value",

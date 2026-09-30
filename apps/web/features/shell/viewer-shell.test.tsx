@@ -69,7 +69,7 @@ describe("ViewerShell", () => {
       }
     }
     expect(screen.getAllByText("Home")[0]).toBeInTheDocument();
-    expect(screen.getAllByText("Watch")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Shorts")[0]).toBeInTheDocument();
   });
 
   describe("signedOut (F79/11.1.d)", () => {
@@ -77,7 +77,7 @@ describe("ViewerShell", () => {
       homeHref: "/au",
       hrefs: {
         home: "/au",
-        watch: "/login?returnTo=%2Fquick",
+        shorts: "/login?returnTo=%2Fshorts",
         store: "/au/rewards",
         wallet: "/login?returnTo=%2Fwallet",
         me: "/login?returnTo=%2Fme",
@@ -111,7 +111,7 @@ describe("ViewerShell", () => {
       }
     });
 
-    it("points Home and Store at their own public destinations, and Watch/Wallet/Me at sign-in", () => {
+    it("points Home and Store at their own public destinations, and Shorts/Wallet/Me at sign-in", () => {
       render(
         <ViewerShell locale="en-AU" availablePoints={0} signedOut={signedOut}>
           <p>content</p>
@@ -122,7 +122,7 @@ describe("ViewerShell", () => {
         const links = Array.from(nav.querySelectorAll("a")).map((a) => a.getAttribute("href"));
         expect(links).toEqual([
           "/au",
-          "/login?returnTo=%2Fquick",
+          "/login?returnTo=%2Fshorts",
           "/au/rewards",
           "/login?returnTo=%2Fwallet",
           "/login?returnTo=%2Fme",

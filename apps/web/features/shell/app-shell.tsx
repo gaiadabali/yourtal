@@ -4,7 +4,11 @@ import { getNotifications } from "@/features/notifications/notifications-data";
 import { RumReporterLoader } from "@/features/rum/rum-reporter-loader";
 import { getDisplayLocale } from "@/i18n/get-locale";
 import { getMeProfile } from "@/features/me/me-data";
+import { z } from "zod";
+import { apiFetch } from "@/lib/api/api-fetch";
 import { readThemeCookie } from "@/lib/api/session-cookies";
+
+const streakResponseSchema = z.object({ currentLength: z.number().int().min(0) });
 import { ViewerShell } from "./viewer-shell";
 
 export interface AppShellProps {
@@ -27,13 +31,17 @@ export interface AppShellProps {
  * than a broken shell if `GET /api/me/notifications` errors.
  */
 export async function AppShell({ children }: AppShellProps) {
-  const [locale, wallet, notifications, me, theme] = await Promise.all([
+  const [locale, wallet, notifications, me, theme, streak] = await Promise.all([
     getDisplayLocale(),
     getWalletBalance(),
     getNotifications(),
     getMeProfile(),
     readThemeCookie(),
+    apiFetch("/api/me/streak", streakResponseSchema),
   ]);
+  // 13.13.d: the streak is a header badge; 12.2.b: teens get no streak anywhere.
+  const streakDays =
+    streak.ok && me.ok && me.data.profile.ageBand !== "teen" ? streak.data.currentLength : 0;
   // 13.18.b: a failed profile read drops the avatar menu, never the shell.
   const account = me.ok
     ? {
@@ -51,6 +59,7 @@ export async function AppShell({ children }: AppShellProps) {
         availablePoints={wallet.ok ? wallet.data.availablePoints : 0}
         notifications={notifications.ok ? notifications.data.notifications : []}
         theme={theme}
+        streakDays={streakDays}
         {...(account ? { account } : {})}
       >
         {children}

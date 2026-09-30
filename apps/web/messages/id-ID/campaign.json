@@ -27,14 +27,14 @@
     "emptyNoneBody": "Daftar ini diperbarui secara berkala — coba kembali lagi sebentar lagi.",
     "emptyShowAll": "Tampilkan semua campaign",
     "kindLongForm": "video panjang",
-    "kindQuick": "cepat"
+    "kindQuick": "Short"
   },
   "board": {
     "title": "Dapatkan",
     "filterAria": "Filter jenis campaign",
     "filterAll": "Semua",
     "filterLongForm": "Video panjang",
-    "filterQuick": "Cepat",
+    "filterQuick": "Shorts",
     "sortLabel": "Urutkan",
     "sortAria": "Urutkan campaign",
     "sortValue": "Nilai terbaik",

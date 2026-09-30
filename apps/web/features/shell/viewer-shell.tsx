@@ -36,6 +36,8 @@ export interface ViewerShellProps {
    * colours come from `data-theme` on `<html>` (RootDocument).
    */
   theme?: ThemeSetting;
+  /** 13.13.d: the current streak for the header badge; 0 hides it. */
+  streakDays?: number;
   /** Pins one theme on this subtree only, for the gallery. */
   forceTheme?: "light" | "dark";
   /** 13.18.b: the signed-in account for the header's avatar menu. */
@@ -73,6 +75,7 @@ export function ViewerShell({
   notifications,
   theme = "system",
   forceTheme,
+  streakDays = 0,
   account,
   signedOut,
   children,
@@ -101,6 +104,7 @@ export function ViewerShell({
         locale={locale}
         availablePoints={availablePoints}
         theme={theme}
+        streakDays={signedOut ? 0 : streakDays}
         {...topBarSignedOutProps}
         {...topBarNotificationsProps}
         {...topBarAccountProps}

@@ -19,15 +19,13 @@ import { pinRegionCookie } from "./pin-region";
  * a Next.js-loader feature, not a Node one, per
  * wallet-merchant-qr-agreement.spec.ts's identical note.
  *
- * `watch` (task 3.5.c): the second tab was relabelled from "Quick" to
- * "Watch" (href unchanged, still `/quick`) when the viewer shell moved to
- * Home · Watch · Store · Wallet · Me.
+ * `shorts` (13.14.b): the second tab is Shorts, at `/shorts`.
  */
 interface NavCatalogue {
   primary: string;
   store: string;
   wallet: string;
-  watch: string;
+  shorts: string;
   me: string;
 }
 const idNav = JSON.parse(
@@ -57,13 +55,11 @@ test.beforeEach(async ({ context, baseURL }) => {
 
 // Starting tab is Home ("/"), loaded before the loop below. Each entry is
 // the NEXT tab clicked into, so the sequence exercised is
-// Home -> Store -> Wallet -> Watch -> Me, per the ticket's own wording
-// ("Earn -> Store -> Wallet -> Me", pre-3.5.c naming) plus Watch, since it
-// is a fifth real tab.
+// Home -> Store -> Wallet -> Shorts -> Me (13.14.b).
 const TRANSITIONS: readonly { label: string; to: string }[] = [
   { label: idNav.store, to: "/store" },
   { label: idNav.wallet, to: "/wallet" },
-  { label: idNav.watch, to: "/quick" },
+  { label: idNav.shorts, to: "/shorts" },
   { label: idNav.me, to: "/me" },
 ];
 

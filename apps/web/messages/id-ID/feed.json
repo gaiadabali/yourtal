@@ -94,5 +94,39 @@
   "watchTimeReminder": {
     "body": "Kamu sudah menonton cukup lama -- boleh istirahat sebentar kalau mau.",
     "dismiss": "Oke"
+  },
+  "browse": {
+    "all": "Semua",
+    "chipsLabel": "Kategori",
+    "filters": "Filter",
+    "filtersTitle": "Filter video",
+    "close": "Tutup",
+    "sort": "Urutkan",
+    "sorts": {
+      "for_you": "Untuk Anda",
+      "newest": "Terbaru",
+      "most_points": "Poin terbanyak",
+      "ending_soon": "Segera berakhir"
+    },
+    "topics": "Topik",
+    "noTopics": "Belum ada topik untuk difilter di sini.",
+    "reset": "Atur ulang",
+    "apply": "Tampilkan video",
+    "activeFilters": "Filter aktif",
+    "remove": "Hapus {name}",
+    "results": "Hasil",
+    "count": "{count, plural, =0 {Tidak ada video} other {# video}}",
+    "noneHeading": "Tidak ada video yang cocok",
+    "noneBody": "Coba kurangi topik, atau pilih kategori lain.",
+    "clear": "Hapus filter",
+    "featured": "Pilihan",
+    "forYou": "Untuk Anda",
+    "seeAll": "Lihat semua",
+    "seeAllIn": "Lihat semua di {name}"
+  },
+  "shortsTitle": "Shorts",
+  "shortsEmpty": {
+    "heading": "Belum ada Shorts",
+    "body": "Shorts baru muncul di sini saat brand mengunggahnya. Video panjang ada di Beranda."
   }
 }

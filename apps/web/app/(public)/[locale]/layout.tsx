@@ -97,7 +97,7 @@ export default async function PublicLocaleLayout({ children, params }: PublicLoc
           homeHref: `/${locale}`,
           hrefs: {
             home: `/${locale}`,
-            watch: `/login?returnTo=${encodeURIComponent("/quick")}`,
+            shorts: `/login?returnTo=${encodeURIComponent("/shorts")}`,
             store: `/${locale}/rewards`,
             wallet: `/login?returnTo=${encodeURIComponent("/wallet")}`,
             me: `/login?returnTo=${encodeURIComponent("/me")}`,

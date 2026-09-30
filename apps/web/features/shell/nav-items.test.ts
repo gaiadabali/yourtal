@@ -29,25 +29,25 @@ describe("isActiveTab", () => {
     expect(isActiveTab("/me", "/home", ["/campaign"])).toBe(false);
   });
 
-  it("matches the Watch tab on its own campaign-page subtree (11.7.d)", () => {
-    expect(isActiveTab("/watch", "/watch")).toBe(true);
-    expect(isActiveTab("/watch/abc-123", "/watch")).toBe(true);
-    expect(isActiveTab("/watch/abc-123/checkpoint", "/watch")).toBe(true);
+  it("matches Home on a long video's watch page (13.13)", () => {
+    expect(isActiveTab("/watch/abc-123", "/home", ["/watch", "/campaign"])).toBe(true);
+    expect(isActiveTab("/watch/abc-123/checkpoint", "/home", ["/watch", "/campaign"])).toBe(true);
+    expect(isActiveTab("/shorts", "/home", ["/watch", "/campaign"])).toBe(false);
   });
 });
 
 describe("navItems", () => {
-  it("lists the five tabs in the fixed Home · Watch · Store · Wallet · Me order (task 3.5.c)", () => {
+  it("lists the five tabs in the fixed Home · Shorts · Store · Wallet · Me order (13.14.b)", () => {
     expect(navItems.map((item) => item.labelKey)).toStrictEqual([
       "home",
-      "watch",
+      "shorts",
       "store",
       "wallet",
       "me",
     ]);
     expect(navItems.map((item) => item.href)).toStrictEqual([
       "/home",
-      "/watch",
+      "/shorts",
       "/store",
       "/wallet",
       "/me",

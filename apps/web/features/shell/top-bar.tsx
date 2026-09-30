@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { Flame, Search } from "lucide-react";
 import type { ThemeSetting } from "@yourtal/contracts/me/theme-setting";
 import { Input } from "@yourtal/ui/input";
 import { PointsChip } from "@yourtal/ui/points-chip";
@@ -35,6 +35,8 @@ export interface TopBarProps {
   /** 13.18.b: the signed-in account for the avatar menu. Omitted, no avatar shows. */
   account?: AccountSummary;
   theme?: ThemeSetting;
+  /** 13.13.d: 0 hides the badge. */
+  streakDays?: number;
 }
 
 /**
@@ -52,6 +54,7 @@ export function TopBar({
   signedOutCta,
   account,
   theme = "system",
+  streakDays = 0,
 }: TopBarProps) {
   const t = getNavTranslator(locale);
 
@@ -109,6 +112,18 @@ export function TopBar({
         </a>
       ) : (
         <>
+          {streakDays > 0 ? (
+            <span
+              className="hidden h-8 shrink-0 items-center gap-1 rounded-pill bg-accent-subtle px-2.5 text-label font-sans font-bold text-fg sm:inline-flex"
+              title={t("streak", { count: streakDays })}
+            >
+              <Flame aria-hidden="true" className="h-4 w-4 text-accent" />
+              <span aria-hidden="true" className="tabular-nums">
+                {streakDays}
+              </span>
+              <span className="sr-only">{t("streak", { count: streakDays })}</span>
+            </span>
+          ) : null}
           {notifications ? <NotificationsBell initialNotifications={notifications} /> : null}
           <Link href="/wallet" className="shrink-0 rounded-pill">
             <PointsChip

@@ -1,6 +1,6 @@
 {
   "home": "Home",
-  "watch": "Watch",
+  "shorts": "Shorts",
   "store": "Store",
   "wallet": "Wallet",
   "me": "Me",
@@ -21,5 +21,6 @@
   "studio": "YourTal Studio",
   "staffConsole": "Staff console",
   "logOut": "Log out",
-  "themeSaveFailed": "Your theme couldn't be saved. Try again."
+  "themeSaveFailed": "Your theme couldn't be saved. Try again.",
+  "streak": "{count}-day streak"
 }

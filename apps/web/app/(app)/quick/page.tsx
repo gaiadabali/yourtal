@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-// Quick campaigns earn inside the Home feed now (11.4.b).
+// Shorts have their own tab now (13.14.a).
 export default function QuickPage(): never {
-  redirect("/home");
+  redirect("/shorts");
 }

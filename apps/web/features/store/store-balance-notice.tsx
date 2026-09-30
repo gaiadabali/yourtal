@@ -67,7 +67,7 @@ export function StoreBalanceNotice({
           <Link href="/home">{t("balance.earnAtEarn")}</Link>
         </Button>
         <Button asChild size="sm" variant="secondary">
-          <Link href="/quick">{t("balance.tryQuick")}</Link>
+          <Link href="/shorts">{t("balance.tryQuick")}</Link>
         </Button>
       </div>
     </div>

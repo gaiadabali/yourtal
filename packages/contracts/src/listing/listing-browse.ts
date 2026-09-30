@@ -7,19 +7,14 @@ import {
   interestTagSchema,
 } from "../interest/interest-tags";
 import { listingCategorySchema, publicListingSchema } from "./listing";
+import { LISTING_SORTS } from "./listing-browse-values";
 
 /**
  * 13.12.b: `GET /api/store/listings`'s query. Filtering, sorting and facet
  * counts all run on the server inside the region and audience walls; the
  * store no longer filters in the browser over one fetch.
  */
-export const listingSortSchema = z.enum([
-  "popular",
-  "newest",
-  "points_asc",
-  "points_desc",
-  "ending_soon",
-]);
+export const listingSortSchema = z.enum(LISTING_SORTS);
 export type ListingSort = z.infer<typeof listingSortSchema>;
 
 export const LISTING_BROWSE_DEFAULT_LIMIT = 20;

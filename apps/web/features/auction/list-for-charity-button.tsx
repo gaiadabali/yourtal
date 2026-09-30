@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { HeartHandshake } from "lucide-react";
-import { AUCTION_REFUSALS } from "@yourtal/contracts/auction/auction";
+import { AUCTION_REFUSALS } from "@yourtal/contracts/auction/auction-refusals";
 import type { PublicCharity } from "@yourtal/contracts/charity/charity";
 import { Button } from "@yourtal/ui/button";
 import { ChoiceCard } from "@yourtal/ui/choice-card";

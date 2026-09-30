@@ -1,4 +1,6 @@
 import * as z from "zod";
+import { AUCTION_REFUSALS } from "./auction-refusals";
+export { AUCTION_REFUSALS } from "./auction-refusals";
 import { charityCauseSchema } from "../charity/charity";
 import { minorUnitsSchema } from "../money/money";
 import { currencySchema } from "../money/money-value";
@@ -82,18 +84,6 @@ export type AuctionList = z.infer<typeof auctionListSchema>;
  * these. `bidder_ineligible` covers an unverified, suspended, teen or
  * other-region caller alike.
  */
-export const AUCTION_REFUSALS = [
-  "charity_unavailable",
-  "voucher_not_unused",
-  "voucher_not_transferable",
-  "voucher_already_transferred",
-  "seller_ineligible",
-  "bidder_ineligible",
-  "own_auction",
-  "auction_closed",
-  "bid_too_low",
-  "payment_declined",
-] as const;
 export const auctionRefusalSchema = z.enum(AUCTION_REFUSALS);
 export type AuctionRefusal = z.infer<typeof auctionRefusalSchema>;
 

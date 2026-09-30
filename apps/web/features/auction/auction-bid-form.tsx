@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { AUCTION_REFUSALS } from "@yourtal/contracts/auction/auction";
+import { AUCTION_REFUSALS } from "@yourtal/contracts/auction/auction-refusals";
 import { Button } from "@yourtal/ui/button";
 import { Input } from "@yourtal/ui/input";
 import { Notice } from "@yourtal/ui/notice";

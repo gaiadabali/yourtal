@@ -1,6 +1,7 @@
 import * as z from "zod";
 import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";
 import { regionSchema } from "../region/region";
+import { FEED_SORTS } from "./feed-browse-values";
 import { campaignKindSchema } from "../campaign/campaign";
 import {
   MAX_TAGS,
@@ -19,7 +20,7 @@ export const feedSurfaceSchema = z.enum(["home", "watch"]);
 export type FeedSurface = z.infer<typeof feedSurfaceSchema>;
 
 /** `for_you` is the personalised ranking; the others are plain orderings of the same walled set. */
-export const feedSortSchema = z.enum(["for_you", "newest", "most_points", "ending_soon"]);
+export const feedSortSchema = z.enum(FEED_SORTS);
 export type FeedSort = z.infer<typeof feedSortSchema>;
 
 export const feedBrowseQuerySchema = z.object({

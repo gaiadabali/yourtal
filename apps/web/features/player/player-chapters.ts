@@ -1,5 +1,5 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
-import { chapterEndSeconds, chapterRewardPoints } from "@yourtal/contracts/campaign/chapter";
+import { chapterEndSeconds, chapterRewardPoints } from "@yourtal/contracts/campaign/chapter-math";
 
 /**
  * The player's view of a campaign's chapters, projected from the contract

@@ -5,6 +5,7 @@ import { currencySchema } from "../money/money-value";
 import { regionSchema } from "../region/region";
 import { audienceSchema } from "../audience/audience";
 import { merchantLocationSchema } from "./merchant-location";
+import { LISTING_CATEGORIES, LISTING_CHANNELS } from "./listing-values";
 import { interestTagsSchema } from "../interest/interest-tags";
 
 /**
@@ -19,13 +20,7 @@ import { interestTagsSchema } from "../interest/interest-tags";
  * given voucher is load-bearing for redemption and for disputes, not
  * cosmetic. See `merchant-location.ts`.
  */
-export const listingCategorySchema = z.enum([
-  "food_beverage",
-  "retail",
-  "digital_goods",
-  "merchandise",
-  "services",
-]);
+export const listingCategorySchema = z.enum(LISTING_CATEGORIES);
 export type ListingCategory = z.infer<typeof listingCategorySchema>;
 
 export const listingStatusSchema = z.enum(["available", "sold_out", "expiring_soon", "new"]);
@@ -44,7 +39,7 @@ export type PartialRedemptionPolicy = z.infer<typeof partialRedemptionPolicySche
  * question than `partialRedemptionPolicy` above, which governs what happens to
  * the remainder of a partially-spent voucher.
  */
-export const listingChannelSchema = z.enum(["in_store", "online", "both"]);
+export const listingChannelSchema = z.enum(LISTING_CHANNELS);
 export type ListingChannel = z.infer<typeof listingChannelSchema>;
 
 /**

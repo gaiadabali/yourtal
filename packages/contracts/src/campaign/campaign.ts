@@ -6,6 +6,7 @@ import { audienceSchema } from "../audience/audience";
 import { campaignChapterSchema } from "./campaign-chapter";
 import { campaignVideoSourceSchema } from "./campaign-video-source";
 import { interestTagsSchema } from "../interest/interest-tags";
+import { CAMPAIGN_KINDS } from "./campaign-kind";
 
 // Re-exported here (rather than added to packages/contracts/package.json's
 // exports map, which 1.3.a is about to restructure into a wildcard) so B and
@@ -25,7 +26,7 @@ export type { Audience, AgeBand, AudienceReachContext } from "../audience/audien
  * as local, commented fakes — see `campaign-chapter.ts` and
  * `campaign-video-source.ts` for why each is shaped the way it is.
  */
-export const campaignKindSchema = z.enum(["long_form", "quick"]);
+export const campaignKindSchema = z.enum(CAMPAIGN_KINDS);
 export type CampaignKind = z.infer<typeof campaignKindSchema>;
 
 export const campaignScoringRuleSchema = z.enum(["base_only", "base_plus_accuracy_bonus"]);

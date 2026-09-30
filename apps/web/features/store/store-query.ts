@@ -1,5 +1,8 @@
-import { listingSortSchema, type ListingSort } from "@yourtal/contracts/listing/browse";
-import { listingCategorySchema, type ListingCategory } from "@yourtal/contracts/listing";
+import { LISTING_SORTS, type ListingSort } from "@yourtal/contracts/listing/listing-browse-values";
+import {
+  LISTING_CATEGORIES,
+  type ListingCategory,
+} from "@yourtal/contracts/listing/listing-values";
 import { INTEREST_TAXONOMY } from "@yourtal/contracts/interest/taxonomy";
 
 /**
@@ -35,7 +38,11 @@ export const EMPTY_STORE_QUERY: StoreQuery = {
   after: null,
 };
 
-export const STORE_SORTS = listingSortSchema.options;
+export const STORE_SORTS = LISTING_SORTS;
+
+function oneOf<T extends string>(values: readonly T[], value: string | undefined): T | null {
+  return value !== undefined && (values as readonly string[]).includes(value) ? (value as T) : null;
+}
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type SearchParams = Readonly<Record<string, string | string[] | undefined>>;
@@ -57,9 +64,9 @@ function points(value: string | undefined): number | null {
 /** Anything unknown is dropped, never passed on. */
 export function parseStoreQuery(params: SearchParams): StoreQuery {
   const q = (first(params["q"]) ?? "").trim().slice(0, 200);
-  const category = listingCategorySchema.safeParse(first(params["category"]));
+  const category = oneOf(LISTING_CATEGORIES, first(params["category"]));
   const where = first(params["where"]);
-  const sort = listingSortSchema.safeParse(first(params["sort"]));
+  const sort = oneOf(LISTING_SORTS, first(params["sort"]));
   const location = (first(params["location"]) ?? "").trim();
   const after = first(params["after"]);
   let minPoints = points(first(params["min"]));
@@ -69,14 +76,14 @@ export function parseStoreQuery(params: SearchParams): StoreQuery {
   }
   return {
     q,
-    category: category.success ? category.data : null,
+    category,
     where: where === "in_store" || where === "online" ? where : null,
     brands: list(first(params["brand"]), (id) => UUID.test(id), 20),
     tags: list(first(params["tags"]), (id) => INTEREST_TAXONOMY.has(id), 8),
     minPoints,
     maxPoints,
     location: location !== "" && location.length <= 60 ? location : null,
-    sort: sort.success ? sort.data : "popular",
+    sort: sort ?? "popular",
     after: after !== undefined && UUID.test(after) ? after : null,
   };
 }

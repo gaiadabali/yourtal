@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Gift } from "lucide-react";
-import { WALLET_GIFT_REFUSALS } from "@yourtal/contracts/wallet/wallet-gift";
+import { WALLET_GIFT_REFUSALS } from "@yourtal/contracts/wallet/wallet-gift-refusals";
 import { Button } from "@yourtal/ui/button";
 import {
   Dialog,

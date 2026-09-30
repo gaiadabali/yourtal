@@ -1,4 +1,6 @@
 import * as z from "zod";
+import { WALLET_GIFT_REFUSALS } from "./wallet-gift-refusals";
+export { WALLET_GIFT_REFUSALS } from "./wallet-gift-refusals";
 import { minorUnitsSchema } from "../money/money";
 import { currencySchema } from "../money/money-value";
 
@@ -56,17 +58,5 @@ export type WalletGiftList = z.infer<typeof walletGiftListSchema>;
  * `gift_sender_ineligible`: the caller's own email is unverified or the
  * account is suspended.
  */
-export const WALLET_GIFT_REFUSALS = [
-  "gift_recipient_ineligible",
-  "gift_sender_ineligible",
-  "gift_to_self",
-  "gift_not_transferable",
-  "gift_already_gifted",
-  "gift_not_unused",
-  "gift_holdback",
-  "gift_velocity_capped",
-  "gift_not_pending",
-  "gift_window_closed",
-] as const;
 export const walletGiftRefusalSchema = z.enum(WALLET_GIFT_REFUSALS);
 export type WalletGiftRefusal = z.infer<typeof walletGiftRefusalSchema>;

@@ -1,8 +1,9 @@
-import { feedBrowseQuerySchema, feedSortSchema, type FeedSort } from "@yourtal/contracts/feed";
+import { FEED_SORTS, type FeedSort } from "@yourtal/contracts/feed/feed-browse-values";
+import { CONTENT_CATEGORIES } from "@yourtal/contracts/campaign/content-category-values";
 import { INTEREST_TAXONOMY } from "@yourtal/contracts/interest/taxonomy";
 
 /** 13.13/13.12.a: how Home's grid is narrowed and ordered. Kept in the URL. */
-export const FEED_SORTS = feedSortSchema.options;
+export { FEED_SORTS };
 export type { FeedSort };
 
 export interface BrowseQuery {
@@ -30,7 +31,7 @@ export function parseBrowseQuery(params: SearchParams): BrowseQuery {
     .slice(0, 8);
   return {
     category:
-      category !== undefined && feedBrowseQuerySchema.shape.category.safeParse(category).success
+      category !== undefined && (CONTENT_CATEGORIES as readonly string[]).includes(category)
         ? category
         : null,
     tags,

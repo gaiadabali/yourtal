@@ -12,6 +12,7 @@
     "./policy-query": "./src/policy-query.ts",
     "./voiding-red-lines": "./src/voiding-red-lines.ts",
     "./content-category": "./src/content-category.ts",
+    "./content-category-values": "./src/content-category-values.ts",
     "./age": "./src/age.ts"
   },
   "scripts": {

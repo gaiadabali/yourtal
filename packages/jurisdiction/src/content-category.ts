@@ -1,5 +1,7 @@
 import * as z from "zod";
 import type { JurisdictionCode } from "./jurisdiction-code";
+import { CONTENT_CATEGORIES } from "./content-category-values";
+export { CONTENT_CATEGORIES } from "./content-category-values";
 
 /**
  * The category a campaign or listing advertises, and what each jurisdiction
@@ -12,36 +14,7 @@ import type { JurisdictionCode } from "./jurisdiction-code";
  * let a typo'd category silently fall through `categoryPolicy`'s `allowed`
  * default instead of being rejected by the schema.
  */
-export const contentCategorySchema = z.enum([
-  // Ordinary catalogue.
-  "food-and-drink",
-  "fashion",
-  "personal-care",
-  "electronics",
-  "telco",
-  "transport",
-  "fitness",
-  "education",
-  "travel",
-  "home",
-  "entertainment",
-  "games",
-  "books",
-  "family",
-  "toys",
-  "digital-goods",
-  "services",
-  // Regulated somewhere — see CATEGORY_POLICY below.
-  "tobacco",
-  "vaping",
-  "gambling",
-  "alcohol",
-  "dating",
-  "financial-products",
-  "weight-loss",
-  "cosmetic-procedures",
-  "energy-drinks",
-]);
+export const contentCategorySchema = z.enum(CONTENT_CATEGORIES);
 export type ContentCategory = z.infer<typeof contentCategorySchema>;
 
 export const categoryStatusSchema = z.enum(["allowed", "adult_only", "prohibited"]);

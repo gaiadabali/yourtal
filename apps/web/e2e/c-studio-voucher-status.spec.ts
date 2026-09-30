@@ -84,10 +84,10 @@ test("Reports shows a supplier's vouchers by status, floored", async ({
          'all_ages', 'food-and-drink', 'https://cdn.example.com/p.jpg', 'both', 'single_use')`,
       [listingId, businessId],
     );
-    await pool.query(`INSERT INTO store.listing_location (listing_id, location_id) VALUES ($1, $2)`, [
-      listingId,
-      locationId,
-    ]);
+    await pool.query(
+      `INSERT INTO store.listing_location (listing_id, location_id) VALUES ($1, $2)`,
+      [listingId, locationId],
+    );
     const addVouchers = (states: readonly [string, string | null][]) =>
       Promise.all(
         states.map(([state, reason]) =>

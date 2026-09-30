@@ -45,8 +45,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | 🔄 in progress | 3/4 | 18/24 | `████████░░`  75% |
-| **Phase 13** Ready for live review | all | · not started | 0/22 | 0/68 | `░░░░░░░░░░`   0% |
-| **All** | | | **82/105** | **436/510** | `█████████░`  85% |
+| **Phase 13** Ready for live review | all | 🔄 in progress | 0/23 | 0/69 | `░░░░░░░░░░`   0% |
+| **All** | | | **82/106** | **436/511** | `█████████░`  85% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1491,7 +1491,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 - [ ] **13.16 Light and dark mode** (F84) · B · needs: —
   - [ ] 13.16.a A theme setting (System, Light, Dark) in Me and in the header menu, saved to the account and a cookie, so the server renders it with no flash. `ViewerShell` stops forcing dark.
   - [ ] 13.16.b Every viewer, Studio, counter and staff screen is checked in both themes.
-- [ ] **13.18 Header and sidebar** (founder, 2026-09-30) · B · needs: —
+- [ ] **13.18 Header and sidebar** (founder, 2026-09-30) · B · needs: — — 🔄 slot 4
   - [ ] 13.18.a The logo moves to the top of the sidebar at 1280 px, so the header holds only search, notifications, the points balance and the profile. At 390 px the logo stays in the header, because there is no sidebar.
   - [ ] 13.18.b A profile avatar at the top right opens a menu: name and email, Me, Wallet, theme (13.16), language, Studio or Staff console when the account has that role, and Log out.
 - [ ] **13.19 Wallet redesign** (founder, 2026-09-30: "more important things and a better flow") · B · needs: 13.12.b
@@ -1524,6 +1524,9 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [ ] 13.23.c Boost spend is billed in cash through the simulated payment driver, separate from points packs, and shows on the business's statement.
   - [ ] 13.23.d Boosted cards carry the "Sponsored" label (12.4.d). Studio Reports shows boosted impressions, spend and the average price paid.
   - [ ] 13.23.e **Check:** with two boosted campaigns over HTTP, the higher bid wins the slot and pays the lower bid plus one; spend stops at the daily budget; the reward rows are unchanged.
+
+- [ ] **13.11 Account deletion leaves the ledger balance behind** (found by 12.4.b) · A · needs: —
+  - [ ] 13.11.a `DELETE /api/me` and the guardian's delete both run `executeDeletion`, which has no `ledger` domain handler, so the balance and grant history stay under the deleted user's id (reported `unhandled`). Decide and build: void or escrow the balance with a posting, and pseudonymise the ledger rows, without deleting or editing ledger history.
 
 **Done when:** the founder completes the walkthrough on staging, and every issue raised is either fixed or recorded as a task in this file.
 

@@ -14,6 +14,8 @@ import { LogoutButton } from "@/features/me/logout-button";
 import { MeProfileSection } from "@/features/me/me-profile-section";
 import { MeLanguageSection } from "@/features/me/me-language-section";
 import { MeAutoplaySection } from "@/features/me/me-autoplay-section";
+import { MeThemeSection } from "@/features/me/me-theme-section";
+import { readThemeCookie } from "@/lib/api/session-cookies";
 import { MeInterestsSection } from "@/features/me/me-interests-section";
 import { MeFollowsSection } from "@/features/me/me-follows-section";
 import { MeConsentSection } from "@/features/me/me-consent-section";
@@ -76,6 +78,7 @@ export default async function MePage() {
           <MeSectionError title={t("profile.heading")} error={profile.error} />
         )}
 
+        <MeThemeSection initialTheme={await readThemeCookie()} />
         {autoplay.ok ? (
           <MeAutoplaySection initialAutoplay={autoplay.data.autoplay} />
         ) : (

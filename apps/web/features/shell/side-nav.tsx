@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { cn } from "@yourtal/ui/cn";
 import { getNavTranslator, type SupportedLocale } from "./nav-i18n";
 import { navItems, type NavLabelKey } from "./nav-items";
 import { NavLink } from "./nav-link";
+import { Wordmark } from "./wordmark";
 
 export interface SideNavProps {
   locale: SupportedLocale;
@@ -15,6 +17,8 @@ export interface SideNavProps {
    * renders exactly as it always has (signed-in tab hrefs, `NavLink`).
    */
   signedOutHrefs?: Readonly<Record<NavLabelKey, string>>;
+  /** Where the rail's logo links when signed out (the public locale root). */
+  homeHref?: string;
 }
 
 const LINK_BASE =
@@ -36,46 +40,59 @@ const LINK_ACTIVE = "bg-surface-sunken text-accent";
  * why (same reasoning, same catalogue, so the two chrome variants can never
  * disagree on a label for a given region).
  */
-export function SideNav({ locale, signedOutHrefs }: SideNavProps) {
+export function SideNav({ locale, signedOutHrefs, homeHref }: SideNavProps) {
   const t = getNavTranslator(locale);
 
   return (
-    <nav
-      aria-label={t("primary")}
+    <aside
       className={cn(
         "fixed inset-y-0 left-0 z-(--z-nav) hidden w-56 flex-col gap-1 border-r border-border-subtle",
-        "bg-surface px-3 py-6 lg:flex",
+        "bg-surface px-3 pb-6 lg:flex",
         "pl-[max(0.75rem,env(safe-area-inset-left))]",
       )}
     >
-      {navItems.map((item) => {
-        const Icon = item.icon;
-        if (signedOutHrefs) {
+      {/* 13.18.a: the logo tops the rail, level with the header, so the header keeps its width for search. */}
+      <div className="flex h-14 shrink-0 items-center px-3">
+        {signedOutHrefs ? (
+          <a href={homeHref ?? "/"}>
+            <Wordmark />
+          </a>
+        ) : (
+          <Link href="/home">
+            <Wordmark />
+          </Link>
+        )}
+      </div>
+      <nav aria-label={t("primary")} className="mt-2 flex flex-col gap-1">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          if (signedOutHrefs) {
+            return (
+              <a
+                key={item.href}
+                href={signedOutHrefs[item.labelKey]}
+                className={LINK_BASE}
+                rel={item.labelKey === "wallet" || item.labelKey === "me" ? "nofollow" : undefined}
+              >
+                <Icon aria-hidden="true" className="h-5 w-5 shrink-0" />
+                <span>{t(item.labelKey)}</span>
+              </a>
+            );
+          }
           return (
-            <a
+            <NavLink
               key={item.href}
-              href={signedOutHrefs[item.labelKey]}
+              href={item.href}
+              matchPrefixes={item.matchPrefixes}
               className={LINK_BASE}
-              rel={item.labelKey === "wallet" || item.labelKey === "me" ? "nofollow" : undefined}
+              activeClassName={LINK_ACTIVE}
             >
               <Icon aria-hidden="true" className="h-5 w-5 shrink-0" />
               <span>{t(item.labelKey)}</span>
-            </a>
+            </NavLink>
           );
-        }
-        return (
-          <NavLink
-            key={item.href}
-            href={item.href}
-            matchPrefixes={item.matchPrefixes}
-            className={LINK_BASE}
-            activeClassName={LINK_ACTIVE}
-          >
-            <Icon aria-hidden="true" className="h-5 w-5 shrink-0" />
-            <span>{t(item.labelKey)}</span>
-          </NavLink>
-        );
-      })}
-    </nav>
+        })}
+      </nav>
+    </aside>
   );
 }

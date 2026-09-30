@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { cn } from "@yourtal/ui/cn";
 import type { Notification } from "@yourtal/contracts/me/notification";
+import type { ThemeSetting } from "@yourtal/contracts/me/theme-setting";
+import type { AccountSummary } from "./account-menu";
 import { BottomNav } from "./bottom-nav";
 import type { SupportedLocale } from "./nav-i18n";
 import type { NavLabelKey } from "./nav-items";
@@ -30,12 +32,14 @@ export interface ViewerShellProps {
   /** 11.7.a: the signed-in viewer's notifications for the top bar's bell. Omit (or leave unset) for a signed-out shell — `TopBar` shows no bell then either way. */
   notifications?: readonly Notification[];
   /**
-   * The viewer is dark-first (After Dark, F3) — every caller gets `"dark"`
-   * until the Me screen grows a real light/dark setting. `data-theme` on the
-   * root is what every token in tokens.css keys off; nothing here is bespoke
-   * CSS.
+   * 13.16.a: the viewer's saved theme, for the account menu's control. The
+   * colours come from `data-theme` on `<html>` (RootDocument).
    */
-  theme?: "light" | "dark";
+  theme?: ThemeSetting;
+  /** Pins one theme on this subtree only, for the gallery. */
+  forceTheme?: "light" | "dark";
+  /** 13.18.b: the signed-in account for the header's avatar menu. */
+  account?: AccountSummary;
   signedOut?: ViewerShellSignedOutProps;
   children: ReactNode;
 }
@@ -67,7 +71,9 @@ export function ViewerShell({
   locale,
   availablePoints,
   notifications,
-  theme = "dark",
+  theme = "system",
+  forceTheme,
+  account,
   signedOut,
   children,
 }: ViewerShellProps) {
@@ -87,16 +93,23 @@ export function ViewerShell({
   // Same `exactOptionalPropertyTypes` reasoning as above: omit the key
   // entirely rather than pass `notifications: undefined` when there is none.
   const topBarNotificationsProps = notifications ? { notifications } : {};
+  const topBarAccountProps = account && !signedOut ? { account } : {};
 
   return (
-    <div data-surface="viewer" data-theme={theme} className="min-h-dvh bg-canvas text-fg">
+    <div data-surface="viewer" data-theme={forceTheme} className="min-h-dvh bg-canvas text-fg">
       <TopBar
         locale={locale}
         availablePoints={availablePoints}
+        theme={theme}
         {...topBarSignedOutProps}
         {...topBarNotificationsProps}
+        {...topBarAccountProps}
       />
-      <SideNav locale={locale} {...navSignedOutProps} />
+      <SideNav
+        locale={locale}
+        {...navSignedOutProps}
+        {...(signedOut ? { homeHref: signedOut.homeHref } : {})}
+      />
       <main
         className={cn(
           "min-h-dvh pb-[calc(4rem+max(0px,env(safe-area-inset-bottom)))]",

@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { AppShell } from "@/features/shell/app-shell";
 import { getRegion } from "@/features/region/get-region";
 import { RegionProvider } from "@/features/region/region-context";
+import { readThemeCookie } from "@/lib/api/session-cookies";
 import { RootDocument, baseMetadata, baseViewport } from "@/app/root-document";
 import { ServiceWorkerRegistrar } from "@/app/service-worker-registrar";
 
@@ -52,7 +53,7 @@ export default async function AppLayout({ children }: AppLayoutProps) {
   // guaranteed to agree with the catalogue the page renders from — the same
   // single-source-of-truth argument the comment above makes for messages.
   return (
-    <RootDocument lang={locale}>
+    <RootDocument lang={locale} theme={await readThemeCookie()}>
       {/* YT-0588: registers /sw.js. The webpack plugin used to inject this;
           under Turbopack nothing did, so the worker was built and never ran. */}
       <ServiceWorkerRegistrar />

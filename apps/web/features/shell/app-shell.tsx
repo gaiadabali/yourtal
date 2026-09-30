@@ -3,6 +3,8 @@ import { getWalletBalance } from "@/features/wallet/wallet-data";
 import { getNotifications } from "@/features/notifications/notifications-data";
 import { RumReporterLoader } from "@/features/rum/rum-reporter-loader";
 import { getDisplayLocale } from "@/i18n/get-locale";
+import { getMeProfile } from "@/features/me/me-data";
+import { readThemeCookie } from "@/lib/api/session-cookies";
 import { ViewerShell } from "./viewer-shell";
 
 export interface AppShellProps {
@@ -25,11 +27,22 @@ export interface AppShellProps {
  * than a broken shell if `GET /api/me/notifications` errors.
  */
 export async function AppShell({ children }: AppShellProps) {
-  const [locale, wallet, notifications] = await Promise.all([
+  const [locale, wallet, notifications, me, theme] = await Promise.all([
     getDisplayLocale(),
     getWalletBalance(),
     getNotifications(),
+    getMeProfile(),
+    readThemeCookie(),
   ]);
+  // 13.18.b: a failed profile read drops the avatar menu, never the shell.
+  const account = me.ok
+    ? {
+        displayName: me.data.profile.displayName,
+        email: me.data.email ?? null,
+        hasStudio: me.data.businessMemberships.length > 0,
+        hasStaff: me.data.staffRoles.length > 0,
+      }
+    : undefined;
   return (
     <>
       <RumReporterLoader />
@@ -37,6 +50,8 @@ export async function AppShell({ children }: AppShellProps) {
         locale={locale}
         availablePoints={wallet.ok ? wallet.data.availablePoints : 0}
         notifications={notifications.ok ? notifications.data.notifications : []}
+        theme={theme}
+        {...(account ? { account } : {})}
       >
         {children}
       </ViewerShell>

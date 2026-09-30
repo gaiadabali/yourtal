@@ -74,12 +74,19 @@ export interface RootDocumentProps {
    * and `lang` takes the BCP-47 one.
    */
   lang: string;
+  /** 13.16.a: `light`/`dark` pin `data-theme` on `<html>`; `system` (or none) follows the device. */
+  theme?: "system" | "light" | "dark";
   children: ReactNode;
 }
 
-export function RootDocument({ lang, children }: RootDocumentProps) {
+export function RootDocument({ lang, theme = "system", children }: RootDocumentProps) {
   return (
-    <html lang={lang} suppressHydrationWarning className={fontVariables}>
+    <html
+      lang={lang}
+      suppressHydrationWarning
+      className={fontVariables}
+      data-theme={theme === "system" ? undefined : theme}
+    >
       <body>
         {isStaging() ? <StagingBanner lang={lang} /> : null}
         {children}

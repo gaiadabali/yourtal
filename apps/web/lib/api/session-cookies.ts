@@ -6,12 +6,15 @@ import "server-only";
 import { cookies } from "next/headers";
 import type { Region } from "@yourtal/contracts/region";
 import type { DisplayLocale } from "@yourtal/contracts/identity/user-profile";
+import { themeSettingSchema } from "@yourtal/contracts/me/theme-setting";
+import type { ThemeSetting } from "@yourtal/contracts/me/theme-setting";
 import {
   LOCALE_COOKIE,
   PREFERENCE_COOKIE_MAX_AGE_SECONDS,
   REGION_COOKIE,
   SESSION_COOKIE,
   SESSION_COOKIE_MAX_AGE_SECONDS,
+  THEME_COOKIE,
 } from "./cookies";
 
 /**
@@ -67,4 +70,17 @@ export async function clearSessionCookie(): Promise<void> {
 export async function readSessionToken(): Promise<string | null> {
   const store = await cookies();
   return store.get(SESSION_COOKIE)?.value ?? null;
+}
+
+/** 13.16.a: a preference like locale, so sign-out keeps it. */
+export async function setThemeCookie(theme: ThemeSetting): Promise<void> {
+  const store = await cookies();
+  store.set(THEME_COOKIE, theme, cookieOptions(PREFERENCE_COOKIE_MAX_AGE_SECONDS));
+}
+
+/** The theme to render: the cookie's, or `system` when it is missing or garbled. */
+export async function readThemeCookie(): Promise<ThemeSetting> {
+  const store = await cookies();
+  const parsed = themeSettingSchema.safeParse(store.get(THEME_COOKIE)?.value);
+  return parsed.success ? parsed.data : "system";
 }

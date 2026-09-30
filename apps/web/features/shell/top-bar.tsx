@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { Search } from "lucide-react";
+import type { ThemeSetting } from "@yourtal/contracts/me/theme-setting";
 import { Input } from "@yourtal/ui/input";
 import { PointsChip } from "@yourtal/ui/points-chip";
 import type { Notification } from "@yourtal/contracts/me/notification";
 import { NotificationsBell } from "../notifications/notifications-bell";
 import { getNavTranslator, type SupportedLocale } from "./nav-i18n";
+import { AccountMenu, type AccountSummary } from "./account-menu";
 import { Wordmark } from "./wordmark";
 
 export interface TopBarProps {
@@ -29,32 +32,17 @@ export interface TopBarProps {
    * than no search box.
    */
   signedOutCta?: { href: string; label: string };
+  /** 13.18.b: the signed-in account for the avatar menu. Omitted, no avatar shows. */
+  account?: AccountSummary;
+  theme?: ThemeSetting;
 }
 
 /**
- * The viewer shell's top bar (task 3.5.c): wordmark, a real GET search form
- * and the available-points chip.
- *
- * `"use client"`: `@yourtal/ui/points-chip` calls `useMemo` without
- * declaring its own `"use client"` boundary, so it only renders safely
- * inside one — this is that boundary, kept to the smallest leaf that needs
- * it (`nav-link.tsx` gives the same reasoning for the nav's active-tab
- * logic). `Input` is already a client component for the same reason.
- *
- * `sticky`, not `fixed`: `RootDocument` renders the staging banner above
- * every `(app)` route; a fixed top bar would sit on top of it, exactly what
- * the brief for this task rules out.
- *
- * `lg:pl-56` clears the side rail (`side-nav.tsx`'s `w-56`, fixed to the
- * left edge from the same breakpoint): the header spans the full viewport
- * width, so without this the wordmark would render underneath the rail
- * instead of beside it — same value `<main>` uses in `viewer-shell.tsx` for
- * the same reason, using `pl-*`/`pr-*` rather than `px-*` so the two
- * breakpoints' left-padding declarations cleanly override each other
- * instead of both trying to set the same property with no defined winner.
- *
- * Search submits a real, JS-free GET to `/search?q=...` (11.7.b) — no
- * `onSubmit`, so it works before hydration and with JS disabled.
+ * The viewer's top bar. 13.18: the logo moves to the side rail from lg, so
+ * this holds search, notifications, points and the account menu. Below md,
+ * search is an icon link to `/search`. `sticky`, not `fixed`, so the staging
+ * banner above it keeps its place. Search is a plain GET form that works
+ * before hydration.
  */
 export function TopBar({
   locale,
@@ -62,35 +50,55 @@ export function TopBar({
   notifications,
   homeHref = "/home",
   signedOutCta,
+  account,
+  theme = "system",
 }: TopBarProps) {
   const t = getNavTranslator(locale);
 
   return (
-    <header className="sticky top-0 z-(--z-nav) flex items-center gap-3 border-b border-border-subtle bg-surface pl-gutter-sm pr-gutter-sm py-2 md:pl-gutter-md md:pr-gutter-md lg:pl-56">
-      {signedOutCta ? (
-        // Plain `<a>`, not `next/link`: `homeHref` may be a public locale
-        // route outside the signed-in tab graph `next/link`'s typed routes
-        // resolve against — same reasoning `public-cta-link.tsx` gives.
-        <a href={homeHref} className="shrink-0">
-          <Wordmark />
-        </a>
-      ) : (
-        <Link href="/home" className="shrink-0">
-          <Wordmark />
-        </Link>
-      )}
+    <header className="sticky top-0 z-(--z-nav) flex h-14 items-center gap-2 border-b border-border-subtle bg-surface/95 px-gutter-sm backdrop-blur md:gap-3 md:px-gutter-md lg:pl-[calc(14rem+var(--spacing-gutter-md))]">
+      {/* 13.18.a: from lg the logo lives at the top of the side rail. */}
+      <div className="shrink-0 lg:hidden">
+        {signedOutCta ? (
+          // Plain `<a>`: `homeHref` may be a public locale route outside the typed tab graph.
+          <a href={homeHref}>
+            <Wordmark />
+          </a>
+        ) : (
+          <Link href="/home">
+            <Wordmark />
+          </Link>
+        )}
+      </div>
       {signedOutCta ? (
         <div className="min-w-0 flex-1" />
       ) : (
-        <form action="/search" method="get" role="search" className="min-w-0 flex-1">
-          <Input
-            type="search"
-            name="q"
-            label={t("searchLabel")}
-            hideLabel
-            placeholder={t("searchPlaceholder")}
-          />
-        </form>
+        <>
+          <form
+            action="/search"
+            method="get"
+            role="search"
+            className="hidden min-w-0 flex-1 justify-center md:flex"
+          >
+            <div className="w-full max-w-xl">
+              <Input
+                type="search"
+                name="q"
+                label={t("searchLabel")}
+                hideLabel
+                placeholder={t("searchPlaceholder")}
+              />
+            </div>
+          </form>
+          <div className="min-w-0 flex-1 md:hidden" />
+          <Link
+            href="/search"
+            aria-label={t("search")}
+            className="inline-flex size-10 shrink-0 items-center justify-center rounded-pill text-fg hover:bg-surface-sunken md:hidden"
+          >
+            <Search aria-hidden="true" className="h-5 w-5" />
+          </Link>
+        </>
       )}
       {signedOutCta ? (
         <a
@@ -102,13 +110,15 @@ export function TopBar({
       ) : (
         <>
           {notifications ? <NotificationsBell initialNotifications={notifications} /> : null}
-          <PointsChip
-            value={availablePoints}
-            size="sm"
-            locale={locale}
-            formatLabel={(formatted) => t("pointsAvailable", { points: formatted })}
-            className="shrink-0"
-          />
+          <Link href="/wallet" className="shrink-0 rounded-pill">
+            <PointsChip
+              value={availablePoints}
+              size="sm"
+              locale={locale}
+              formatLabel={(formatted) => t("pointsAvailable", { points: formatted })}
+            />
+          </Link>
+          {account ? <AccountMenu locale={locale} account={account} theme={theme} /> : null}
         </>
       )}
     </header>

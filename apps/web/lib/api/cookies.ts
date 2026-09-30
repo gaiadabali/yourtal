@@ -21,6 +21,8 @@
 export const SESSION_COOKIE = "yt_session";
 export const LOCALE_COOKIE = "yt_locale";
 export const REGION_COOKIE = "yt_region";
+/** 13.16.a: `system`, `light` or `dark`, so the server renders the theme with no flash. */
+export const THEME_COOKIE = "yt_theme";
 
 /** Same fallbacks as 0.5.a's `DEFAULT_REGION` — AU/en-AU, never ID (F2). */
 export const DEFAULT_REGION = "AU";

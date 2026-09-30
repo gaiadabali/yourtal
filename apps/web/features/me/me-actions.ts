@@ -5,7 +5,9 @@ import { z } from "zod";
 import { apiFetch } from "@/lib/api/api-fetch";
 import type { ApiResult } from "@/lib/api/api-fetch";
 import { meResponseSchema } from "@/lib/api/me-schema";
-import { clearSessionCookie, setSessionCookies } from "@/lib/api/session-cookies";
+import { clearSessionCookie, setSessionCookies, setThemeCookie } from "@/lib/api/session-cookies";
+import { themeResponseSchema } from "@yourtal/contracts/me/theme-setting";
+import type { ThemeResponse, ThemeSetting } from "@yourtal/contracts/me/theme-setting";
 import {
   autoplayResponseSchema,
   consentsResponseSchema,
@@ -93,6 +95,16 @@ export async function setAutoplayAction(
     method: "PUT",
     body: { autoplay },
   });
+}
+
+/** 13.16.a: saves the theme to the account, then the cookie the server renders from. */
+export async function setThemeAction(theme: ThemeSetting): Promise<ApiResult<ThemeResponse>> {
+  const result = await apiFetch("/api/me/settings/theme", themeResponseSchema, {
+    method: "PUT",
+    body: { theme },
+  });
+  if (result.ok) await setThemeCookie(result.data.theme);
+  return result;
 }
 
 /**

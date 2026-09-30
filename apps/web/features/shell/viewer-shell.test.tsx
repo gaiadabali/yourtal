@@ -9,7 +9,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("ViewerShell", () => {
-  it("is dark by default and sets data-surface for the token system", () => {
+  it("follows the document's theme by default and sets data-surface for the token system", () => {
     const { container } = render(
       <ViewerShell locale="en-AU" availablePoints={8400}>
         <p>content</p>
@@ -17,12 +17,12 @@ describe("ViewerShell", () => {
     );
     const root = container.firstChild as HTMLElement;
     expect(root).toHaveAttribute("data-surface", "viewer");
-    expect(root).toHaveAttribute("data-theme", "dark");
+    expect(root).not.toHaveAttribute("data-theme");
   });
 
-  it("accepts a light theme override", () => {
+  it("accepts a pinned theme", () => {
     const { container } = render(
-      <ViewerShell locale="en-AU" availablePoints={0} theme="light">
+      <ViewerShell locale="en-AU" availablePoints={0} forceTheme="light">
         <p>content</p>
       </ViewerShell>,
     );
@@ -35,7 +35,10 @@ describe("ViewerShell", () => {
         <p>content</p>
       </ViewerShell>,
     );
-    expect(screen.getByRole("link", { name: "YourTal" })).toHaveAttribute("href", "/home");
+    // Two wordmarks: the header's below lg, the side rail's from lg (13.18.a).
+    for (const link of screen.getAllByRole("link", { name: "YourTal" })) {
+      expect(link).toHaveAttribute("href", "/home");
+    }
     expect(screen.getByRole("searchbox", { name: "Search YourTal" })).toHaveAttribute("name", "q");
     expect(screen.getByLabelText("8,400 points available")).toBeInTheDocument();
   });
@@ -103,7 +106,9 @@ describe("ViewerShell", () => {
           <p>content</p>
         </ViewerShell>,
       );
-      expect(screen.getByRole("link", { name: "YourTal" })).toHaveAttribute("href", "/au");
+      for (const link of screen.getAllByRole("link", { name: "YourTal" })) {
+        expect(link).toHaveAttribute("href", "/au");
+      }
     });
 
     it("points Home and Store at their own public destinations, and Watch/Wallet/Me at sign-in", () => {

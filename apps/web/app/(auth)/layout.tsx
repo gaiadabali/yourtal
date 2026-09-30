@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { getLocale, getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
+import { readThemeCookie } from "@/lib/api/session-cookies";
 import { RootDocument, baseMetadata, baseViewport } from "@/app/root-document";
 
 export const metadata = baseMetadata;
@@ -22,7 +23,7 @@ export default async function AuthLayout({ children }: AuthLayoutProps) {
   const locale = await getLocale();
   const messages = await getMessages();
   return (
-    <RootDocument lang={locale}>
+    <RootDocument lang={locale} theme={await readThemeCookie()}>
       <NextIntlClientProvider locale={locale} messages={messages}>
         {children}
       </NextIntlClientProvider>

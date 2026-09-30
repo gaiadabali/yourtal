@@ -8,5 +8,18 @@
   "searchLabel": "Search YourTal",
   "searchPlaceholder": "Search brands, videos and rewards",
   "pointsAvailable": "{points} points available",
-  "signUpToEarn": "Sign up to earn"
+  "signUpToEarn": "Sign up to earn",
+  "search": "Search",
+  "accountMenu": "Account menu",
+  "theme": "Theme",
+  "themeSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "language": "Language",
+  "languageEnAU": "English",
+  "languageIdID": "Bahasa Indonesia",
+  "studio": "YourTal Studio",
+  "staffConsole": "Staff console",
+  "logOut": "Log out",
+  "themeSaveFailed": "Your theme couldn't be saved. Try again."
 }

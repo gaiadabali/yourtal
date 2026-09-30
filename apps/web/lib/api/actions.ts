@@ -6,7 +6,13 @@ import { apiFetch } from "./api-fetch";
 import type { ApiError } from "./api-fetch";
 import { loginResponseSchema, logoutResponseSchema } from "./auth-schema";
 import { meResponseSchema } from "./me-schema";
-import { clearSessionCookie, setLocaleCookie, setSessionCookies } from "./session-cookies";
+import { themeResponseSchema } from "@yourtal/contracts/me/theme-setting";
+import {
+  clearSessionCookie,
+  setLocaleCookie,
+  setSessionCookies,
+  setThemeCookie,
+} from "./session-cookies";
 
 /**
  * Server Actions for identity plumbing (1.7.b), living in Area A's
@@ -88,6 +94,12 @@ export async function loginAction(formData: FormData): Promise<void> {
     region: meResult.data.profile.region,
     displayLocale: meResult.data.profile.displayLocale,
   });
+  // 13.16.a: the account's saved theme follows it to a new device. A failed
+  // read keeps whatever this browser already had.
+  const theme = await apiFetch("/api/me/settings/theme", themeResponseSchema, {
+    headers: { authorization: `Bearer ${loginResult.data.token}` },
+  });
+  if (theme.ok) await setThemeCookie(theme.data.theme);
 
   redirect(returnTo as Route);
 }

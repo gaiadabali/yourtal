@@ -32,6 +32,14 @@
     "wifiOnly": "Wi-Fi only",
     "never": "Never"
   },
+  "theme": {
+    "heading": "Theme",
+    "intro": "Light, dark, or match your device.",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark",
+    "saveFailed": "Your theme couldn't be saved. Try again."
+  },
   "interests": {
     "heading": "Your interests",
     "intro": "Sorts what you see when personalisation, below, is on. Change these any time.",

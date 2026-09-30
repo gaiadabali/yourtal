@@ -32,6 +32,14 @@
     "wifiOnly": "Hanya Wi-Fi",
     "never": "Tidak pernah"
   },
+  "theme": {
+    "heading": "Tema",
+    "intro": "Terang, gelap, atau ikuti perangkat Anda.",
+    "system": "Sistem",
+    "light": "Terang",
+    "dark": "Gelap",
+    "saveFailed": "Tema belum tersimpan. Coba lagi."
+  },
   "interests": {
     "heading": "Minatmu",
     "intro": "Mengurutkan apa yang kamu lihat saat personalisasi di bawah aktif. Bisa diubah kapan saja.",

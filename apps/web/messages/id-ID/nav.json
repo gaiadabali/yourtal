@@ -8,5 +8,18 @@
   "searchLabel": "Cari di YourTal",
   "searchPlaceholder": "Cari merek, video, dan reward",
   "pointsAvailable": "{points} poin tersedia",
-  "signUpToEarn": "Daftar untuk dapat poin"
+  "signUpToEarn": "Daftar untuk dapat poin",
+  "search": "Cari",
+  "accountMenu": "Menu akun",
+  "theme": "Tema",
+  "themeSystem": "Sistem",
+  "themeLight": "Terang",
+  "themeDark": "Gelap",
+  "language": "Bahasa",
+  "languageEnAU": "English",
+  "languageIdID": "Bahasa Indonesia",
+  "studio": "YourTal Studio",
+  "staffConsole": "Konsol staf",
+  "logOut": "Keluar",
+  "themeSaveFailed": "Tema belum tersimpan. Coba lagi."
 }

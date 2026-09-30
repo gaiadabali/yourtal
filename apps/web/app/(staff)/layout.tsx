@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { getLocale, getMessages } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
+import { readThemeCookie } from "@/lib/api/session-cookies";
 import { RootDocument, baseMetadata, baseViewport } from "@/app/root-document";
 
 // Internal tooling: never indexed, whatever the environment.
@@ -13,7 +14,7 @@ export default async function StaffRootLayout({ children }: { children: ReactNod
   const locale = await getLocale();
   const messages = await getMessages();
   return (
-    <RootDocument lang={locale}>
+    <RootDocument lang={locale} theme={await readThemeCookie()}>
       <NextIntlClientProvider locale={locale} messages={messages}>
         {children}
       </NextIntlClientProvider>

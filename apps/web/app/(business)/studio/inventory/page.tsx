@@ -56,6 +56,7 @@ export default async function StudioInventoryPage(props: PageProps<"/studio/inve
       header={<PageHeader title="Inventory" />}
     >
       <InventoryScreen
+        businessId={businessId}
         listings={listings}
         locations={locations}
         pendingDecreaseRequests={pendingDecreaseRequests}

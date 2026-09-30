@@ -1,5 +1,6 @@
 "use client";
 
+import { knownTags } from "../tag-picker";
 import { useState } from "react";
 import type { BillingAllocation } from "@yourtal/contracts/billing";
 import { draftDurationSeconds } from "./campaign-draft";
@@ -127,6 +128,7 @@ export function CampaignBuilderScreen({
         openViewing: current.openViewing,
         teaserStartSeconds: current.teaserStartSeconds,
         captionsUrl: current.captionsUrl,
+        declaredInterests: knownTags(current.targeting.interests),
       });
       if (result.ok) {
         // The PATCH response has no question bank of its own (see

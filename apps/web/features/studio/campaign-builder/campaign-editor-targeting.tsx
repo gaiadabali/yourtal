@@ -6,6 +6,7 @@ import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
 import { Input } from "@yourtal/ui/input";
 import type { CampaignTargeting } from "./campaign-draft";
+import { TagPicker } from "../tag-picker";
 
 export interface CampaignEditorTargetingProps {
   targeting: CampaignTargeting;
@@ -13,7 +14,7 @@ export interface CampaignEditorTargetingProps {
   disabled?: boolean;
 }
 
-/** Targeting: interests and districts, both free-form tag lists (docs/17 §2's Campaigns zone: "targeting"). Untargeted (empty) is a valid, honest choice — shown as "targets everyone", not left ambiguous. */
+/** Targeting: interest tags from the taxonomy (13.11.a) and free-form districts (docs/17 §2's Campaigns zone: "targeting"). Untargeted (empty) is a valid, honest choice — shown as "targets everyone", not left ambiguous. */
 export function CampaignEditorTargeting({
   targeting,
   onChange,
@@ -22,18 +23,11 @@ export function CampaignEditorTargeting({
   const t = useTranslations("studio");
   return (
     <div className="flex flex-col gap-4">
-      <TagList
-        label={t("campaignBuilder.targeting.interestsLabel")}
-        emptyMessage={t("campaignBuilder.targeting.noInterests")}
-        values={targeting.interests}
+      {/* 13.11.a: tags come from the interest taxonomy and are saved as the campaign's tags. */}
+      <TagPicker
+        value={targeting.interests}
         disabled={disabled}
-        onAdd={(value) => onChange({ ...targeting, interests: [...targeting.interests, value] })}
-        onRemove={(value) =>
-          onChange({
-            ...targeting,
-            interests: targeting.interests.filter((item) => item !== value),
-          })
-        }
+        onChange={(interests) => onChange({ ...targeting, interests })}
       />
       <TagList
         label={t("campaignBuilder.targeting.districtsLabel")}

@@ -29,7 +29,7 @@ const MAX_SYNOPSIS_LENGTH = 500;
  * server-side on every `PATCH`; a typo here fails loudly there, not
  * silently here.
  */
-const CONTENT_CATEGORIES = [
+export const CONTENT_CATEGORIES = [
   "food-and-drink",
   "fashion",
   "personal-care",

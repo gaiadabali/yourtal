@@ -51,6 +51,8 @@ export interface CampaignDraftDetailsPatch {
   openViewing: boolean;
   teaserStartSeconds: number;
   captionsUrl: string | null;
+  /** 13.11.a: the campaign's tags, taxonomy node ids only. */
+  declaredInterests: string[];
 }
 
 /** `PATCH /api/:tenantId/studio/campaigns/:campaignId` (7.3.a) — every field the real DTO accepts that this editor has a control for (see TASKS.md 7.8.b's note for `targeting.districts`/`budget`, which the DTO has no field for at all). */

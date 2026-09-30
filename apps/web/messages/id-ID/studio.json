@@ -444,7 +444,12 @@
     "listingsTitle": "Listing",
     "emptyTitle": "Belum ada listing",
     "emptyDescription": "Tambahkan lokasi dan listing voucher untuk mulai berjualan di toko.",
-    "stock": "{remaining} dari {total} stok tersedia · {locations, plural, other {# lokasi}}"
+    "stock": "{remaining} dari {total} stok tersedia · {locations, plural, other {# lokasi}}",
+    "editTags": "Ubah kategori dan tag",
+    "editTagsFor": "Ubah kategori dan tag untuk {title}",
+    "saveTags": "Simpan",
+    "closeTags": "Tutup",
+    "tagsSaved": "Tersimpan."
   },
   "onboarding": {
     "error": {
@@ -544,5 +549,11 @@
       "idempotencyTitle": "Idempotensi",
       "idempotencyBody": "Kirim satu <code>Idempotency-Key</code> per panggilan logis dan pakai ulang, dengan body yang identik, di setiap percobaan ulang. Key dan body yang sama akan mendapat jawaban yang sama, bukan redeem kedua."
     }
+  },
+  "tags": {
+    "label": "Tag",
+    "none": "Belum ada tag. Pilih hingga 8 agar penonton dengan minat ini lebih cepat menemukannya.",
+    "count": "{count} dari {max} dipilih",
+    "listLabel": "Tag"
   }
 }

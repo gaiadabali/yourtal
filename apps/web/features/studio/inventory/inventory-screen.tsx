@@ -6,8 +6,11 @@ import { MoneyAmount } from "@yourtal/ui/money-amount";
 import { EmptyState } from "@yourtal/ui/empty-state";
 import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import type { SettlementDecreaseRequest } from "./inventory-data";
+import { TagChips } from "../tag-picker";
+import { ListingTagsEditor } from "./listing-tags-editor";
 
 export interface InventoryScreenProps {
+  businessId: string;
   listings: readonly Listing[];
   locations: readonly MerchantLocation[];
   pendingDecreaseRequests: readonly SettlementDecreaseRequest[];
@@ -22,6 +25,7 @@ export interface InventoryScreenProps {
  * on the real, already-merged API this should flip to.
  */
 export function InventoryScreen({
+  businessId,
   listings,
   locations,
   pendingDecreaseRequests,
@@ -118,6 +122,14 @@ export function InventoryScreen({
                   <Badge variant={listing.status === "sold_out" ? "danger" : "success"}>
                     {listing.status.replace("_", " ")}
                   </Badge>
+                  <TagChips tags={listing.tags} />
+                  <ListingTagsEditor
+                    businessId={businessId}
+                    listingId={listing.id}
+                    listingTitle={listing.title}
+                    contentCategory={listing.contentCategory}
+                    tags={listing.tags}
+                  />
                 </li>
               ))}
             </ul>

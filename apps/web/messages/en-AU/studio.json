@@ -444,7 +444,12 @@
     "listingsTitle": "Listings",
     "emptyTitle": "No listings yet",
     "emptyDescription": "Add a location and a voucher listing to start selling in the store.",
-    "stock": "{remaining} of {total} in stock · {locations, plural, one {# location} other {# locations}}"
+    "stock": "{remaining} of {total} in stock · {locations, plural, one {# location} other {# locations}}",
+    "editTags": "Edit category and tags",
+    "editTagsFor": "Edit category and tags for {title}",
+    "saveTags": "Save",
+    "closeTags": "Close",
+    "tagsSaved": "Saved."
   },
   "onboarding": {
     "error": {
@@ -544,5 +549,11 @@
       "idempotencyTitle": "Idempotency",
       "idempotencyBody": "Send one <code>Idempotency-Key</code> per logical call and reuse it, with the identical body, on every retry. A repeated key and body gets the same answer back rather than a second redemption."
     }
+  },
+  "tags": {
+    "label": "Tags",
+    "none": "No tags yet. Pick up to 8 so viewers with these interests find it sooner.",
+    "count": "{count} of {max} picked",
+    "listLabel": "Tags"
   }
 }

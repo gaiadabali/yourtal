@@ -86,10 +86,10 @@ export function FeedItem({
             />
             <span className="text-label font-sans font-semibold">{item.merchantName}</span>
           </a>
-          {/* 12.4.d/#9: every campaign is funded by a business, so every
-              card says so, plainly, in text -- never a colour alone. */}
+          {/* 12.4.d/#9: every campaign is a brand's paid video, so every card
+              says so in text. 13.23.f (F90): a boosted one says "Sponsored". */}
           <Badge variant="outline" className="border-white/70 text-white">
-            {t("item.sponsored")}
+            {item.boosted ? t("item.sponsored") : t("item.brandVideo")}
           </Badge>
         </div>
         <h2 className="line-clamp-2 font-display text-title font-bold text-balance">

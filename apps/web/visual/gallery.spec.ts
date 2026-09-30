@@ -45,7 +45,8 @@ for (const theme of THEMES) {
           // so nothing else here needs masking.
           const videos = await section.locator("video").all();
 
-          await expect(section).toHaveScreenshot(`${id}-${widthLabel}-${theme}.png`, {
+          // Soft, so one changed section never hides a diff in the next.
+          await expect.soft(section).toHaveScreenshot(`${id}-${widthLabel}-${theme}.png`, {
             mask: videos,
           });
         }

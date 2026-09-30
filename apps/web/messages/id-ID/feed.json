@@ -37,7 +37,8 @@
     "earn": "Dapatkan {points}",
     "watchAndEarn": "Tonton & dapatkan poin",
     "progress": "{watched} dari {total} ditonton",
-    "sponsored": "Bersponsor"
+    "sponsored": "Bersponsor",
+    "brandVideo": "Video brand"
   },
   "earn": {
     "starting": "Memulai…",

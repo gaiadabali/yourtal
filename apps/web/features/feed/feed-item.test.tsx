@@ -66,11 +66,17 @@ function renderItem(item: FeedItemData) {
   );
 }
 
-// 12.4.d/#9: every campaign is funded by a business — the card says so in
-// plain text on every item, not just a colour.
-describe("FeedItem — Sponsored label (12.4.d/#9)", () => {
-  it("shows a Sponsored label", () => {
+// 12.4.d/#9 and 13.23.f (F90): every card discloses it is a brand's video;
+// a boosted one says "Sponsored".
+describe("FeedItem — brand disclosure", () => {
+  it("labels an unboosted card as a brand video", () => {
     renderItem(baseItem());
+    expect(screen.getByText("Brand video")).toBeInTheDocument();
+    expect(screen.queryByText("Sponsored")).not.toBeInTheDocument();
+  });
+
+  it("labels a boosted card Sponsored", () => {
+    renderItem({ ...baseItem(), boosted: true });
     expect(screen.getByText("Sponsored")).toBeInTheDocument();
   });
 });

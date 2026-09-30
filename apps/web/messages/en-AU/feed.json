@@ -37,7 +37,8 @@
     "earn": "Earn {points}",
     "watchAndEarn": "Watch & earn",
     "progress": "{watched} of {total} watched",
-    "sponsored": "Sponsored"
+    "sponsored": "Sponsored",
+    "brandVideo": "Brand video"
   },
   "earn": {
     "starting": "Starting…",

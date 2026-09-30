@@ -96,9 +96,9 @@ export function VideoCard({ item, locale, saved, shareUrl, size = "grid" }: Vide
             {item.merchantName}
           </a>
           <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-caption font-sans text-fg-muted">
-            {/* 12.4.d/#9: every campaign is paid for by a business; said in text. */}
+            {/* 12.4.d/#9 and 13.23.f (F90): "Sponsored" when boosted, else "Brand video". */}
             <span className="rounded-pill border border-border-control px-1.5 font-medium">
-              {t("item.sponsored")}
+              {item.boosted ? t("item.sponsored") : t("item.brandVideo")}
             </span>
             <span>{categoryLabel(item.contentCategory)}</span>
             {item.questionCount > 0 ? (

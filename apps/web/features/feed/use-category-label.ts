@@ -2,8 +2,12 @@
 
 import { useTranslations } from "next-intl";
 
-/** A taxonomy node's label in the viewer's language; the id itself if a node has none yet. */
+/**
+ * A category or tag label in the viewer's language: an interest-taxonomy node,
+ * else one of the regulated content categories, else the id itself.
+ */
 export function useCategoryLabel(): (id: string) => string {
-  const t = useTranslations("taxonomy.node");
-  return (id) => (t.has(id) ? t(id) : id);
+  const t = useTranslations("taxonomy");
+  return (id) =>
+    t.has(`node.${id}`) ? t(`node.${id}`) : t.has(`content.${id}`) ? t(`content.${id}`) : id;
 }

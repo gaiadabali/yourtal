@@ -1,8 +1,9 @@
-import { INTEREST_TAXONOMY, ancestorsOf } from "@yourtal/contracts/interest/taxonomy";
+import { feedBrowseQuerySchema, feedSortSchema, type FeedSort } from "@yourtal/contracts/feed";
+import { INTEREST_TAXONOMY } from "@yourtal/contracts/interest/taxonomy";
 
 /** 13.13/13.12.a: how Home's grid is narrowed and ordered. Kept in the URL. */
-export const FEED_SORTS = ["for_you", "newest", "most_points", "ending_soon"] as const;
-export type FeedSort = (typeof FEED_SORTS)[number];
+export const FEED_SORTS = feedSortSchema.options;
+export type { FeedSort };
 
 export interface BrowseQuery {
   readonly category: string | null;
@@ -28,7 +29,10 @@ export function parseBrowseQuery(params: SearchParams): BrowseQuery {
     )
     .slice(0, 8);
   return {
-    category: category !== undefined && isRootCategory(category) ? category : null,
+    category:
+      category !== undefined && feedBrowseQuerySchema.shape.category.safeParse(category).success
+        ? category
+        : null,
     tags,
     sort: FEED_SORTS.includes(sort as FeedSort) ? (sort as FeedSort) : "for_you",
   };
@@ -51,14 +55,4 @@ export function feedApiPath(query: BrowseQuery, kind: "long_form" | "quick"): st
   if (query.tags.length > 0) params.set("tags", query.tags.join(","));
   if (query.sort !== "for_you") params.set("sort", query.sort);
   return `/api/feed?${params.toString()}`;
-}
-
-export function isRootCategory(id: string): boolean {
-  return INTEREST_TAXONOMY.get(id)?.parent === null;
-}
-
-/** A node's root category, e.g. `games` → `entertainment`; itself for a root or an unknown id. */
-export function rootCategoryOf(id: string): string {
-  const chain = ancestorsOf(id);
-  return chain.length === 0 ? id : (chain[chain.length - 1] ?? id);
 }

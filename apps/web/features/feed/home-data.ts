@@ -2,28 +2,16 @@ import "server-only";
 
 import { z } from "zod";
 import { campaignSchema } from "@yourtal/contracts/campaign";
-import { feedItemSchema, feedSurfaceSchema } from "@yourtal/contracts/feed";
+import { feedResponseSchema, type FeedItem } from "@yourtal/contracts/feed";
+import type { FacetCount } from "@yourtal/contracts/interest/tags";
 import { continueWatchingResponseSchema } from "@yourtal/contracts/watch/continue-watching";
 import type { AgeBand } from "@yourtal/contracts/identity/user-profile";
 import { apiFetch } from "@/lib/api/api-fetch";
 import { getMeProfile } from "@/features/me/me-data";
-import { feedApiPath, rootCategoryOf, type BrowseQuery } from "./browse-query";
+import { feedApiPath, type BrowseQuery } from "./browse-query";
 
-// 13.12.a's category, tags and facets are optional here so Home works before
-// and after that contract lands; without them the grid narrows locally.
-const browseItemSchema = feedItemSchema.extend({
-  category: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-});
-const facetSchema = z.object({ id: z.string(), count: z.number().int().min(0) });
-const browseResponseSchema = z.object({
-  surface: feedSurfaceSchema,
-  items: z.array(browseItemSchema),
-  facets: z.object({ categories: z.array(facetSchema), tags: z.array(facetSchema) }).optional(),
-});
-
-export type BrowseItem = z.infer<typeof browseItemSchema> & { category: string; tags: string[] };
-export type Facet = z.infer<typeof facetSchema>;
+export type BrowseItem = FeedItem;
+export type Facet = FacetCount;
 
 export interface ContinueItem {
   readonly campaignId: string;
@@ -45,27 +33,19 @@ export interface HomeBrowseData {
 
 const savesResponseSchema = z.object({ campaignIds: z.array(z.uuid()) });
 
-function withCategory(item: z.infer<typeof browseItemSchema>): BrowseItem {
-  return {
-    ...item,
-    category: item.category ?? rootCategoryOf(item.contentCategory),
-    tags: item.tags ?? [],
-  };
-}
-
 function countBy(values: readonly string[]): Facet[] {
   const counts = new Map<string, number>();
   for (const value of values) counts.set(value, (counts.get(value) ?? 0) + 1);
   return [...counts]
-    .map(([id, count]) => ({ id, count }))
-    .sort((a, b) => b.count - a.count || a.id.localeCompare(b.id));
+    .map(([value, count]) => ({ value, count }))
+    .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
 }
 
-/** The local stand-in for 13.12.a's server filter: same rules, over one fetch. */
+/** The stand-in for a server without 13.12.a's filters yet: same rules, over one fetch. */
 function narrow(all: readonly BrowseItem[], query: BrowseQuery) {
   const longForm = all.filter((item) => item.kind === "long_form");
   const inCategory = query.category
-    ? longForm.filter((item) => item.category === query.category)
+    ? longForm.filter((item) => item.contentCategory === query.category)
     : longForm;
   const tagged =
     query.tags.length === 0
@@ -77,7 +57,7 @@ function narrow(all: readonly BrowseItem[], query: BrowseQuery) {
     sorted.sort((a, b) => Number(b.endingSoon) - Number(a.endingSoon));
   return {
     items: sorted,
-    categories: countBy(longForm.map((item) => item.category)),
+    categories: countBy(longForm.map((item) => item.contentCategory)),
     tags: countBy(inCategory.flatMap((item) => item.tags)),
   };
 }
@@ -108,15 +88,17 @@ export async function getHomeBrowse(
 ): Promise<{ ok: true; data: HomeBrowseData } | { ok: false }> {
   const isAll = query.category === null && query.tags.length === 0;
   const [feed, saves, profile, continueWatching] = await Promise.all([
-    apiFetch(feedApiPath(query, "long_form"), browseResponseSchema),
+    apiFetch(feedApiPath(query, "long_form"), feedResponseSchema),
     apiFetch("/api/me/saves", savesResponseSchema),
     getMeProfile(),
     isAll ? continueRows() : Promise.resolve([]),
   ]);
   if (!feed.ok) return { ok: false };
 
-  const items = feed.data.items.map(withCategory);
-  const narrowed = feed.data.facets
+  const items = feed.data.items;
+  // An older server returns items but no facets: narrow here instead.
+  const serverFiltered = feed.data.facets.categories.length > 0 || items.length === 0;
+  const narrowed = serverFiltered
     ? {
         items: items.filter((item) => item.kind === "long_form"),
         categories: feed.data.facets.categories,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { browseHref, feedApiPath, parseBrowseQuery, rootCategoryOf } from "./browse-query";
+import { browseHref, feedApiPath, parseBrowseQuery } from "./browse-query";
 
 describe("browse query (13.13.b)", () => {
   it("keeps known categories, tags and sorts, and drops the rest", () => {
@@ -10,7 +10,7 @@ describe("browse query (13.13.b)", () => {
         sort: "newest",
       }),
     ).toStrictEqual({ category: "food-and-drink", tags: ["coffee", "bakery"], sort: "newest" });
-    expect(parseBrowseQuery({ category: "coffee", sort: "loudest" })).toStrictEqual({
+    expect(parseBrowseQuery({ category: "coffee-specialty", sort: "loudest" })).toStrictEqual({
       category: null,
       tags: [],
       sort: "for_you",
@@ -30,11 +30,5 @@ describe("browse query (13.13.b)", () => {
     expect(feedApiPath({ category: null, tags: [], sort: "for_you" }, "long_form")).toBe(
       "/api/feed?surface=home&kind=long_form",
     );
-  });
-
-  it("maps a leaf to its root category", () => {
-    expect(rootCategoryOf("games")).toBe("entertainment");
-    expect(rootCategoryOf("coffee-specialty")).toBe("food-and-drink");
-    expect(rootCategoryOf("fitness")).toBe("fitness");
   });
 });

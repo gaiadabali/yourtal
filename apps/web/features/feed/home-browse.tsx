@@ -90,8 +90,10 @@ export async function HomeBrowse({ data, query, locale, publicBase }: HomeBrowse
   const forYou = data.items.slice(3, 3 + FOR_YOU_COUNT);
   const shelves = data.categories
     .map((facet) => ({
-      id: facet.id,
-      items: data.items.filter((item) => item.category === facet.id).slice(0, SHELF_COUNT),
+      value: facet.value,
+      items: data.items
+        .filter((item) => item.contentCategory === facet.value)
+        .slice(0, SHELF_COUNT),
     }))
     .filter((shelf) => shelf.items.length >= 2);
 
@@ -146,13 +148,13 @@ export async function HomeBrowse({ data, query, locale, publicBase }: HomeBrowse
 
       {shelves.map((shelf) => (
         <Shelf
-          key={shelf.id}
-          id={`shelf-${shelf.id}`}
-          title={label(shelf.id)}
+          key={shelf.value}
+          id={`shelf-${shelf.value}`}
+          title={label(shelf.value)}
           seeAll={{
-            href: browseHref({ category: shelf.id, tags: [], sort: "for_you" }),
+            href: browseHref({ category: shelf.value, tags: [], sort: "for_you" }),
             label: t("browse.seeAll"),
-            ariaLabel: t("browse.seeAllIn", { name: label(shelf.id) }),
+            ariaLabel: t("browse.seeAllIn", { name: label(shelf.value) }),
           }}
         >
           <ul className={GRID}>

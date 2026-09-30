@@ -72,5 +72,16 @@
     "digital-goods": "Produk digital",
     "software": "Perangkat lunak",
     "digital-credit": "Pulsa & top-up"
+  },
+  "content": {
+    "tobacco": "Tembakau",
+    "vaping": "Vape",
+    "gambling": "Perjudian",
+    "alcohol": "Alkohol",
+    "dating": "Kencan",
+    "financial-products": "Produk keuangan",
+    "weight-loss": "Penurunan berat badan",
+    "cosmetic-procedures": "Prosedur kosmetik",
+    "energy-drinks": "Minuman energi"
   }
 }

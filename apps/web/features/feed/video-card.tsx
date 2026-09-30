@@ -100,7 +100,7 @@ export function VideoCard({ item, locale, saved, shareUrl, size = "grid" }: Vide
             <span className="rounded-pill border border-border-control px-1.5 font-medium">
               {t("item.sponsored")}
             </span>
-            <span>{categoryLabel(item.category)}</span>
+            <span>{categoryLabel(item.contentCategory)}</span>
             {item.questionCount > 0 ? (
               <>
                 <span aria-hidden="true">·</span>

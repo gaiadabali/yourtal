@@ -63,12 +63,12 @@ export function BrowseControls({ query, categories, tags, hideEndingSoon }: Brow
       <div className="flex items-center gap-2">
         <nav aria-label={t("chipsLabel")} className="min-w-0 flex-1">
           <ul className="flex gap-2 overflow-x-auto [scrollbar-width:none]">
-            {[{ id: null as string | null, count: 0 }, ...categories].map((facet) => {
-              const active = facet.id === query.category;
+            {[{ value: null as string | null, count: 0 }, ...categories].map((facet) => {
+              const active = facet.value === query.category;
               return (
-                <li key={facet.id ?? "all"}>
+                <li key={facet.value ?? "all"}>
                   <a
-                    href={browseHref({ category: facet.id, tags: [], sort: query.sort })}
+                    href={browseHref({ category: facet.value, tags: [], sort: query.sort })}
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       CHIP_LINK,
@@ -77,7 +77,7 @@ export function BrowseControls({ query, categories, tags, hideEndingSoon }: Brow
                         : "bg-surface-sunken text-fg hover:bg-border-subtle",
                     )}
                   >
-                    {facet.id === null ? t("all") : label(facet.id)}
+                    {facet.value === null ? t("all") : label(facet.value)}
                   </a>
                 </li>
               );
@@ -130,15 +130,17 @@ export function BrowseControls({ query, categories, tags, hideEndingSoon }: Brow
                   <div className="flex flex-wrap gap-2">
                     {tags.map((tag) => (
                       <Chip
-                        key={tag.id}
-                        pressed={draftTags.includes(tag.id)}
+                        key={tag.value}
+                        pressed={draftTags.includes(tag.value)}
                         onPressedChange={(pressed) =>
                           setDraftTags((current) =>
-                            pressed ? [...current, tag.id] : current.filter((id) => id !== tag.id),
+                            pressed
+                              ? [...current, tag.value]
+                              : current.filter((id) => id !== tag.value),
                           )
                         }
                       >
-                        {label(tag.id)}
+                        {label(tag.value)}
                         <span className="ml-1 tabular-nums opacity-70">{tag.count}</span>
                       </Chip>
                     ))}

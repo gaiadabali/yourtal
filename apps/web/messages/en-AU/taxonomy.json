@@ -72,5 +72,16 @@
     "digital-goods": "Digital goods",
     "software": "Software",
     "digital-credit": "Digital credit and top-ups"
+  },
+  "content": {
+    "tobacco": "Tobacco",
+    "vaping": "Vaping",
+    "gambling": "Gambling",
+    "alcohol": "Alcohol",
+    "dating": "Dating",
+    "financial-products": "Financial products",
+    "weight-loss": "Weight loss",
+    "cosmetic-procedures": "Cosmetic procedures",
+    "energy-drinks": "Energy drinks"
   }
 }

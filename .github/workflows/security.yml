@@ -46,7 +46,8 @@ jobs:
           tar -xzf "$RUNNER_TEMP/$tarball" -C "$RUNNER_TEMP" gitleaks
 
       - name: Scan every commit
-        run: "$RUNNER_TEMP/gitleaks" git . --no-banner --redact --exit-code 1
+        run: |
+          "$RUNNER_TEMP/gitleaks" git . --no-banner --redact --exit-code 1
 
   audit:
     name: Dependency audit

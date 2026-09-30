@@ -252,10 +252,9 @@ describe("erasing identity: profile, credential, session, guardian consent and b
       ]),
     ).toBe(0);
     expect(
-      await count(
-        `SELECT COUNT(*)::text AS n FROM identity.guardian_consent WHERE user_id = $1`,
-        [subjectId],
-      ),
+      await count(`SELECT COUNT(*)::text AS n FROM identity.guardian_consent WHERE user_id = $1`, [
+        subjectId,
+      ]),
     ).toBe(0);
   });
 

@@ -3,7 +3,6 @@ import type { HttpException } from "@nestjs/common";
 import type { GetMeError } from "./me.errors";
 import type {
   ApproveGuardianConsentError,
-  DeleteGuardianAccountError,
   GetGuardianConsentError,
   RevokeGuardianConsentError,
 } from "./guardian-consent.errors";
@@ -41,12 +40,17 @@ export function mapMeErrorToHttpException(error: GetMeError): HttpException {
  * same "no enumeration oracle" discipline `ConsumeRefusal`'s own header
  * documents for `identity.verification_token`.
  */
+/**
+ * `DeleteGuardianAccountError` (12.4.b #6) is not in this signature's own
+ * union: it is structurally identical to `GetGuardianConsentError` (both
+ * are exactly `GuardianTokenNotFoundError`), and ESLint's own
+ * `no-duplicate-type-constituents` refuses a union that says the same type
+ * twice under different names. `deleteGuardianAccount`'s own error still
+ * type-checks fine here — a `DeleteGuardianAccountError` value already
+ * satisfies `GetGuardianConsentError` structurally, so nothing is lost.
+ */
 export function mapGuardianConsentErrorToHttpException(
-  error:
-    | GetGuardianConsentError
-    | ApproveGuardianConsentError
-    | RevokeGuardianConsentError
-    | DeleteGuardianAccountError,
+  error: GetGuardianConsentError | ApproveGuardianConsentError | RevokeGuardianConsentError,
 ): HttpException {
   switch (error.type) {
     case "not_found":

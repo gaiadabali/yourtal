@@ -79,6 +79,8 @@ describe("GuardianDeleteAccountSection", () => {
       await screen.findByText("YourTal couldn't be reached. Check your connection and try again."),
     ).toBeInTheDocument();
     // Still there to retry — the failure did not render the deleted notice.
-    expect(within(dialog).getByRole("button", { name: "Yes, delete the account" })).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "Yes, delete the account" }),
+    ).toBeInTheDocument();
   });
 });

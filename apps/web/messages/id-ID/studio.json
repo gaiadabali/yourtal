@@ -286,7 +286,14 @@
       "caption": "Voucher berdasarkan status, dengan total nilai nominal per status",
       "statusHeader": "Status",
       "vouchersHeader": "Voucher",
-      "faceValueHeader": "Total nilai nominal"
+      "faceValueHeader": "Total nilai nominal",
+      "status": {
+        "redeemed": "Ditukar",
+        "active": "Aktif",
+        "expired": "Kedaluwarsa",
+        "transferred": "Dialihkan"
+      },
+      "suppressed": "Voucher yang diterbitkan masih terlalu sedikit untuk ditampilkan dengan jujur — rinciannya muncul setelah setidaknya {floor} voucher diterbitkan."
     },
     "screen": {
       "campaignsTitle": "Kampanye",

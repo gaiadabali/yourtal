@@ -68,6 +68,11 @@ const LEDGER_AND_VOUCHER_INTERNAL_REASON =
   "ledger-internal/voucher-internal (1.2.a-c): an internal service-to-service operation type, not a public/business-facing HTTP contract -- see this file's comment above NOT_PUBLISHED.";
 
 const NOT_PUBLISHED: Readonly<Record<string, string>> = {
+  merchantVoucherStatusRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  merchantVoucherStatusSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  voucherStatusReportRowSchema:
+    "13.10: GET .../studio/reports/vouchers, not yet in a route registry, same as the campaign report beside it.",
+  voucherStatusReportSchema: "Same as voucherStatusReportRowSchema above.",
   voucherGiftErrorCodeSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   voucherGiftErrorSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   voucherGiftStateSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,

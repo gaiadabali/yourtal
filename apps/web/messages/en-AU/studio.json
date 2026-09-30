@@ -286,7 +286,14 @@
       "caption": "Vouchers by status, with total face value per status",
       "statusHeader": "Status",
       "vouchersHeader": "Vouchers",
-      "faceValueHeader": "Total face value"
+      "faceValueHeader": "Total face value",
+      "status": {
+        "redeemed": "Redeemed",
+        "active": "Active",
+        "expired": "Expired",
+        "transferred": "Passed on"
+      },
+      "suppressed": "Too few vouchers so far to show this honestly — the breakdown appears once at least {floor} have been issued."
     },
     "screen": {
       "campaignsTitle": "Campaigns",

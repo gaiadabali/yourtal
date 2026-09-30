@@ -51,7 +51,7 @@ export function ReportsRedemptionLedgerPanel({
             <ReportsBarChart
               rows={nonZeroRows.map((row) => ({
                 id: row.status,
-                label: row.label,
+                label: t(`reports.ledger.status.${row.status}`),
                 value: row.count,
                 valueLabel: `${row.count}`,
               }))}
@@ -64,7 +64,7 @@ export function ReportsRedemptionLedgerPanel({
                 {
                   key: "status",
                   header: t("reports.ledger.statusHeader"),
-                  cell: (row) => row.label,
+                  cell: (row) => t(`reports.ledger.status.${row.status}`),
                 },
                 {
                   key: "count",

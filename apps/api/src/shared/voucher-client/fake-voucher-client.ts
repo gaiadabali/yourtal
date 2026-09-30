@@ -52,6 +52,8 @@ import type {
 import type {
   MerchantCaptureStats,
   MerchantCaptureStatsRequest,
+  MerchantVoucherStatus,
+  MerchantVoucherStatusRequest,
 } from "@yourtal/contracts/voucher-internal/stats";
 import type { AppDb } from "../persistence/drizzle-client";
 import type { VoucherError, VoucherInternalClient } from "./voucher-internal-client";
@@ -144,6 +146,12 @@ export class FakeVoucherClient implements VoucherInternalClient {
 
   revoke(request: RevokeCredentialRequest): ResultAsync<void, VoucherError> {
     return credentials.revoke(this.db, request);
+  }
+
+  merchantVoucherStatus(
+    request: MerchantVoucherStatusRequest,
+  ): ResultAsync<MerchantVoucherStatus, VoucherError> {
+    return stats.merchantVoucherStatus(this.db, request);
   }
 
   merchantCaptureStats(

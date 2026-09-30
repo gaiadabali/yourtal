@@ -7,6 +7,7 @@ import {
   aggregateQuestionTypeCounts,
   summarizeQuestionBank,
   summarizeRedemptionLedger,
+  summarizeVoucherStatusReport,
 } from "./reports-metrics";
 import { ReportsCampaignFilter } from "./reports-campaign-filter";
 import { ReportsCampaignMetricsPanel } from "./reports-campaign-metrics-panel";
@@ -76,15 +77,21 @@ export function ReportsScreen({
   // `reports-data.ts`'s `ReportsBundle.vouchers` doc comment) — an honest
   // gap panel renders instead of the ledger, below, rather than a
   // real-looking table of zeroes.
-  const redemptionSummary = bundle.vouchers
-    ? summarizeRedemptionLedger(bundle.vouchers)
-    : undefined;
+  const liveStatus = bundle.voucherStatus;
+  const redemptionSummary =
+    liveStatus !== undefined
+      ? liveStatus.suppressed
+        ? undefined
+        : summarizeVoucherStatusReport(liveStatus)
+      : bundle.vouchers
+        ? summarizeRedemptionLedger(bundle.vouchers)
+        : undefined;
 
   const relevantGaps = UNAVAILABLE_METRICS.filter(
     (metric) =>
       metric.requiresRelationship === null || relationships.includes(metric.requiresRelationship),
   );
-  if (isSupplier && bundle.vouchers === undefined) {
+  if (isSupplier && bundle.vouchers === undefined && liveStatus === undefined) {
     relevantGaps.push(VOUCHER_LEDGER_GAP);
   }
 
@@ -124,6 +131,19 @@ export function ReportsScreen({
 
       {isSupplier && redemptionSummary ? (
         <ReportsRedemptionLedgerPanel summary={redemptionSummary} locale={locale} />
+      ) : null}
+
+      {isSupplier && liveStatus?.suppressed === true ? (
+        <Card>
+          <CardHeader>
+            <CardTitle as="h3">{t("reports.ledger.title")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm font-sans text-fg-muted">
+              {t("reports.ledger.suppressed", { floor: liveStatus.floor })}
+            </p>
+          </CardContent>
+        </Card>
       ) : null}
 
       {!isAdvertiser && !isSupplier ? (

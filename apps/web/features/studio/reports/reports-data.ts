@@ -12,6 +12,10 @@ import type { Question } from "@yourtal/contracts/question";
 import type { Voucher } from "@yourtal/contracts/voucher";
 import { campaignReportResultSchema } from "@yourtal/contracts/report";
 import type { CampaignReportResult } from "@yourtal/contracts/report";
+import {
+  voucherStatusReportSchema,
+  type VoucherStatusReport,
+} from "@yourtal/contracts/report/voucher-status-report";
 import { toPoints } from "@yourtal/contracts/money";
 import { apiFetch } from "@/lib/api/api-fetch";
 import type { ReportsCampaign } from "./reports-campaign";
@@ -48,6 +52,8 @@ export interface ReportsBundle {
    * the architect (a new endpoint) rather than built here.
    */
   vouchers: Voucher[] | undefined;
+  /** 13.10: live mode's server-counted vouchers by status (cohort-floored); mock mode leaves it out and uses `vouchers`. */
+  voucherStatus?: VoucherStatusReport;
 }
 
 interface ReportsDataSource {
@@ -182,13 +188,20 @@ const liveReportsDataSource: ReportsDataSource = {
       throw new Error(`Could not load this business's listings: ${listingsResult.error.message}`);
     }
 
+    const voucherStatus = await apiFetch(
+      `/api/${businessId}/studio/reports/vouchers`,
+      voucherStatusReportSchema,
+    );
+    if (!voucherStatus.ok) {
+      throw new Error(`Could not load this business's vouchers: ${voucherStatus.error.message}`);
+    }
+
     return {
       campaigns,
       questionsByCampaignId,
       listings: listingsResult.data.listings,
-      // See `ReportsBundle.vouchers`'s own doc comment — a genuine gap,
-      // never a fabricated empty ledger.
       vouchers: undefined,
+      voucherStatus: voucherStatus.data,
     };
   },
   getCampaignReport: async (businessId, campaignId) => {

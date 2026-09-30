@@ -1,4 +1,6 @@
-import { Controller, Get, Inject, Param } from "@nestjs/common";
+import { Controller, Get, Inject, NotFoundException, Param } from "@nestjs/common";
+import type { VoucherStatusReport } from "@yourtal/contracts/report/voucher-status-report";
+import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
@@ -9,6 +11,8 @@ import { CAMPAIGN_REPORT_REPOSITORY } from "./persistence/campaign-report.reposi
 import type { CampaignReportRepository } from "./persistence/campaign-report.repository";
 import { mapReportsErrorToHttpException } from "./to-http-exception";
 import { getCampaignReport } from "./use-cases/get-campaign-report.use-case";
+import { getVoucherStatusReport } from "./use-cases/get-voucher-status-report.use-case";
+import { REPORTS_DB } from "./reports.tokens";
 
 /**
  * 7.6: Studio reports. Reuses the pre-existing `report` resource kind and
@@ -22,7 +26,19 @@ export class ReportsController {
     @Inject(CAMPAIGN_REPORT_REPOSITORY) private readonly reports: CampaignReportRepository,
     @Inject(LEDGER_INTERNAL_CLIENT) private readonly ledger: LedgerInternalClient,
     @Inject(VOUCHER_INTERNAL_CLIENT) private readonly vouchers: VoucherInternalClient,
+    @Inject(REPORTS_DB) private readonly db: AppDb,
   ) {}
+
+  /** 13.10: the business's own vouchers by status, cohort-floored. */
+  @Authorize({ kind: "report", action: "view" })
+  @NotValueMoving("A read.")
+  @Get("vouchers")
+  async voucherStatus(@Param("tenantId") tenantId: string): Promise<VoucherStatusReport> {
+    const report = await getVoucherStatusReport(this.db, this.vouchers, tenantId);
+    if (report === null)
+      throw new NotFoundException({ code: "not_found", message: "No such business." });
+    return report;
+  }
 
   @Authorize({ kind: "report", action: "view" })
   @NotValueMoving("A read.")

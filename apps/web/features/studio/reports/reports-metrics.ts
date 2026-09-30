@@ -2,6 +2,7 @@ import type { CampaignScoringRule, CampaignStatus } from "@yourtal/contracts/cam
 import { asDisplayIdr } from "@yourtal/contracts/money/format";
 import type { Question } from "@yourtal/contracts/question";
 import type { Voucher, VoucherStatus } from "@yourtal/contracts/voucher";
+import type { VoucherStatusReport } from "@yourtal/contracts/report/voucher-status-report";
 import type { ReportsCampaign } from "./reports-campaign";
 
 /**
@@ -169,4 +170,22 @@ export function summarizeRedemptionLedger(vouchers: readonly Voucher[]): Redempt
     };
   });
   return { rows, totalVoucherCount: vouchers.length };
+}
+
+/** 13.10: the same summary from the live, server-counted report. */
+export function summarizeVoucherStatusReport(
+  report: Extract<VoucherStatusReport, { suppressed: false }>,
+): RedemptionLedgerSummary {
+  const rows = VOUCHER_STATUS_ORDER.map((status) => {
+    const row = report.rows.find((candidate) => candidate.status === status);
+    return {
+      status,
+      label: VOUCHER_STATUS_LABEL[status],
+      count: row?.count ?? 0,
+      totalFaceValueMinor: asDisplayIdr(row?.faceValueMinor ?? 0),
+      currency: report.currency,
+      provenance: "measured" as const,
+    };
+  });
+  return { rows, totalVoucherCount: report.totalCount };
 }

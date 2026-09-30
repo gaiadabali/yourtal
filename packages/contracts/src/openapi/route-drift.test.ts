@@ -236,6 +236,8 @@ const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   // ReportsModule -- TASKS.md 7.6, this pass's own ticket.
   "GET /api/{tenantId}/studio/reports/campaigns/{campaignId}":
     "ReportsModule -- TASKS.md 7.6.a, this pass's own ticket.",
+  "GET /api/{tenantId}/studio/reports/vouchers":
+    "ReportsModule -- TASKS.md 13.10, alongside the campaign report above; shape in report/voucher-status-report.ts.",
 
   // AuthModule -- YT-0540. No `:tenantId`, matching create-business's own
   // out-of-scope entry pattern: these are account-level, not business-level.

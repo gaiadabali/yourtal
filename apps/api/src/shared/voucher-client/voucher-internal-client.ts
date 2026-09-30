@@ -53,6 +53,8 @@ import type {
 import type {
   MerchantCaptureStats,
   MerchantCaptureStatsRequest,
+  MerchantVoucherStatus,
+  MerchantVoucherStatusRequest,
 } from "@yourtal/contracts/voucher-internal/stats";
 
 /**
@@ -94,6 +96,10 @@ export interface VoucherInternalClient {
   merchantCaptureStats(
     request: MerchantCaptureStatsRequest,
   ): ResultAsync<MerchantCaptureStats, VoucherError>;
+  /** 13.10: issued vouchers by public status, one region. */
+  merchantVoucherStatus(
+    request: MerchantVoucherStatusRequest,
+  ): ResultAsync<MerchantVoucherStatus, VoucherError>;
   /** 13.20: gifts. Refusals use the gift contract's own codes. */
   gift(request: GiftVoucherRequest): ResultAsync<VoucherGift, VoucherGiftError>;
   listGifts(request: ListGiftsRequest): ResultAsync<ListGiftsResult, VoucherGiftError>;

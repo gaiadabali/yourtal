@@ -7,8 +7,9 @@ import { WalletModule } from "../wallet/wallet.module";
 import { DrizzleCampaignReportRepository } from "./persistence/drizzle-campaign-report.repository";
 import { CAMPAIGN_REPORT_REPOSITORY } from "./persistence/campaign-report.repository";
 import { ReportsController } from "./reports.controller";
+import { REPORTS_DB } from "./reports.tokens";
 
-export const REPORTS_DB = Symbol("REPORTS_DB");
+export { REPORTS_DB } from "./reports.tokens";
 
 /**
  * 7.6: read-only aggregates over campaign/watch tables plus the ledger's

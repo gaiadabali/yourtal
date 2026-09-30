@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { CURRENCY_CODES, type Currency } from "./currency";
 import { MAX_SAFE_AMOUNT_MINOR } from "./minor-unit";
 import { toMinorUnits, type MinorUnits } from "./money";

@@ -2,7 +2,7 @@ import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { z } from "zod";
+import * as z from "zod";
 import {
   buildDocument,
   countCrossFieldRefinements,

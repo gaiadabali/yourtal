@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { minorUnitsSchema, pointsSchema } from "../money/money";
 import { currencySchema } from "../money/money-value";
 import { regionSchema } from "../region/region";

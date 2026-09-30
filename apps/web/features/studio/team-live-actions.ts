@@ -1,6 +1,6 @@
 "use server";
 
-import { z } from "zod";
+import * as z from "zod";
 import { businessMemberSchema } from "@yourtal/contracts/business/member";
 import type { BusinessMember } from "@yourtal/contracts/business/member";
 import { businessTeamRoleSchema } from "@yourtal/contracts/business/team-role";

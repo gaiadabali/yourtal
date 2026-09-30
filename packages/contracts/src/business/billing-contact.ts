@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /** E.164: leading `+`, no leading zero, 7-15 digits total. */
 const E164_PATTERN = /^\+[1-9]\d{6,14}$/;

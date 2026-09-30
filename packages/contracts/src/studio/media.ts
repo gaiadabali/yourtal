@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * The self-hosted media pipeline (TASKS.md 7.2, replaces Cloudflare Stream).

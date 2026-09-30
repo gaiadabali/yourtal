@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { audienceSchema, campaignKindSchema } from "@yourtal/contracts/campaign";
 import { regionSchema } from "@yourtal/contracts/region";
 

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { kycTierSchema } from "./kyc-tier";
 
 /**

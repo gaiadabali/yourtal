@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { audienceSchema } from "../campaign/campaign";
 import { campaignLifecycleStateSchema } from "../campaign/campaign-lifecycle";
 import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";

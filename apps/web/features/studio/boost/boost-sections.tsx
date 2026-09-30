@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { MoneyAmount } from "@yourtal/ui/money-amount";
 import { DataTable } from "@yourtal/ui/data-table";

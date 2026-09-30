@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { regionSchema } from "../region/region";
 import { pointsSchema } from "../money/money";
 import { displayLocaleSchema } from "./user-profile";

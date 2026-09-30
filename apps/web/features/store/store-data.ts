@@ -3,7 +3,7 @@ import "server-only";
 // Importing this file from a client graph is now a BUILD FAILURE rather
 // than a review catch. See apps/web/features/README-server-only.md.
 
-import { z } from "zod";
+import * as z from "zod";
 import type { PublicListing } from "@yourtal/contracts/listing";
 import { publicListingSchema } from "@yourtal/contracts/listing";
 import { apiFetch, type ApiResult } from "@/lib/api/api-fetch";

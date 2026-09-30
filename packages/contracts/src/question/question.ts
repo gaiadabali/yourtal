@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * Checkpoint questions (docs/tasks/phase-u-ui.md YT-0413): five distinct

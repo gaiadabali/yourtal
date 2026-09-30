@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * `/api/dev/clock`'s response shapes (2.3.d), restated here the same way

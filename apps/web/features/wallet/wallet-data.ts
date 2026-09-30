@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { apiFetch, type ApiResult } from "@/lib/api/api-fetch";
 import {
   walletHistoryPageSchema,

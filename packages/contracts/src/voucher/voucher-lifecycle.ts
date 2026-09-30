@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { voucherStatusSchema, type VoucherStatus } from "./voucher";
 
 /**

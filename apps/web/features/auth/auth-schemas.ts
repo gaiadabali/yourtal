@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * Response shapes for the 1.4 auth endpoints `lib/api/auth-schema.ts`

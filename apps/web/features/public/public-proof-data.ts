@@ -1,6 +1,6 @@
 import "server-only";
 
-import { z } from "zod";
+import * as z from "zod";
 import { provedDaySchema } from "@yourtal/contracts/ledger-internal/proof";
 import { publicApiFetch } from "@/lib/api/public-api-fetch";
 

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * Basic KYB (Know Your Business) document types for onboarding an Indonesian

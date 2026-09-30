@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * Who a campaign or listing may reach — TASKS.md 1.1.c, the one definition

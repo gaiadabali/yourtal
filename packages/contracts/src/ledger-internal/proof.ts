@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * 10.3.b: F11's "generation, redemption and a client SDK, secure and

@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { businessHandleSchema } from "@yourtal/contracts/business";
-import { z } from "zod";
+import * as z from "zod";
 import { updateChannelSettings } from "../studio-data";
 
 const channelSettingsFormSchema = z.object({

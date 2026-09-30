@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { regionSchema } from "@yourtal/contracts/region";
 import { processingPurposeSchema } from "@yourtal/consent/purpose";
 import { autoplaySettingSchema } from "@yourtal/contracts/me/autoplay-setting";

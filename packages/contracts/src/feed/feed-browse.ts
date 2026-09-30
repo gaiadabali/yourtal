@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";
 import { regionSchema } from "../region/region";
 import { campaignKindSchema } from "../campaign/campaign";

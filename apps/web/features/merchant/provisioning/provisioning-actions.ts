@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { z } from "zod";
+import * as z from "zod";
 import {
   pairDeviceResultSchema,
   unlockDeviceResultSchema,

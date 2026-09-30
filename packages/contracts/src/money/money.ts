@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { MAX_SAFE_AMOUNT_MINOR, minorUnitExponent } from "./minor-unit";
 
 /**

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { listingSchema, settlementDecreaseRequestSchema } from "@yourtal/contracts/listing";
 import { merchantLocationSchema } from "@yourtal/contracts/listing/merchant-location";
 import type { Listing, SettlementDecreaseRequest } from "@yourtal/contracts/listing";

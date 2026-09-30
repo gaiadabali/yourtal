@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { auStateSchema, businessHandleSchema, taxIdKindSchema } from "@yourtal/contracts/business";
 import type { TaxIdKind } from "@yourtal/contracts/business";
 import { regionSchema } from "@yourtal/contracts/region";

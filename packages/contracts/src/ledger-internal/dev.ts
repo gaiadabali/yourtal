@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * Dev/staging-only holdback control (TASKS.md 2.3.d/2.3.f's `/dev/clock`).

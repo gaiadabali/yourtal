@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * TASKS.md 1.2.c: the one closed error enum `ledger-internal` and

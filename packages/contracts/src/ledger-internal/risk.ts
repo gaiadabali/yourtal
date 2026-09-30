@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { regionSchema } from "../region/region";
 
 /** TASKS.md 10.4/10.5: the real RiskGate's manual-review queue. */

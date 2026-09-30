@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { kybDocumentSchema } from "../business/kyb-document";
 import { taxIdKindSchema } from "../business/business";
 import { regionSchema } from "../region/region";

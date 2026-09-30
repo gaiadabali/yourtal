@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { apiFetch } from "@/lib/api/api-fetch";
 
 const followsListSchema = z.object({

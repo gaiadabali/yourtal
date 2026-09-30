@@ -4,7 +4,7 @@ import { getNotifications } from "@/features/notifications/notifications-data";
 import { RumReporterLoader } from "@/features/rum/rum-reporter-loader";
 import { getDisplayLocale } from "@/i18n/get-locale";
 import { getMeProfile } from "@/features/me/me-data";
-import { z } from "zod";
+import * as z from "zod";
 import { apiFetch } from "@/lib/api/api-fetch";
 import { readThemeCookie } from "@/lib/api/session-cookies";
 

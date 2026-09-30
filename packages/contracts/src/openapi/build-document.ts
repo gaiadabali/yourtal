@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { CONTRACT_COMPONENTS } from "./schema-registry";
 import type { ContractComponent } from "./schema-registry";
 import { buildPaths } from "./route-registry";

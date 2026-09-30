@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * Where the player finds a campaign's video, without guessing (YT-0503).

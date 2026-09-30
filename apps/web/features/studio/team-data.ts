@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { businessMemberSchema } from "@yourtal/contracts/business/member";
 import type { BusinessMember } from "@yourtal/contracts/business/member";
 import { resolveStudioDataSource } from "./studio-data-source";

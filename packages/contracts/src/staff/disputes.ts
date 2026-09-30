@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { disputeReasonSchema } from "../checkout/dispute";
 import { minorUnitsSchema } from "../money/money";
 import { currencySchema } from "../money/money-value";

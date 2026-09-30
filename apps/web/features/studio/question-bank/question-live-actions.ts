@@ -1,6 +1,6 @@
 "use server";
 
-import { z } from "zod";
+import * as z from "zod";
 import { questionSchema } from "@yourtal/contracts/question";
 import type { Question } from "@yourtal/contracts/question";
 import { piiScreenVerdictSchema, questionStatusSchema } from "@yourtal/contracts/question/bank";

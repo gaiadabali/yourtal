@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { z } from "zod";
+import * as z from "zod";
 import { apiFetch } from "@/lib/api/api-fetch";
 import type { ApiResult } from "@/lib/api/api-fetch";
 import { meResponseSchema } from "@/lib/api/me-schema";

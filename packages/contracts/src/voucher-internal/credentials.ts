@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * TASKS.md 1.2.b/8.3.f: the merchant HMAC credential a brand's server (or,

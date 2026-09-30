@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * TASKS.md 8.4.a: `POST /api/partners/actions` — snap-app's receipt-scan

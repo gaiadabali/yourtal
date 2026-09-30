@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /** TASKS.md 1.2.b: an emergency stop, scoped to whichever level it names. */
 

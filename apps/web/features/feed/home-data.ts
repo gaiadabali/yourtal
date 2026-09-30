@@ -1,6 +1,6 @@
 import "server-only";
 
-import { z } from "zod";
+import * as z from "zod";
 import { campaignSchema } from "@yourtal/contracts/campaign";
 import { feedResponseSchema, type FeedItem } from "@yourtal/contracts/feed";
 import type { FacetCount } from "@yourtal/contracts/interest/tags";

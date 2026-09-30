@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /** `POST /api/auth/login` and `/register` both return this shape (1.4.c). */
 export const loginResponseSchema = z.object({

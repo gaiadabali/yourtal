@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { COMPONENT_REF_PREFIX, isRecord, widenSchemaObject } from "./json-schema-helpers";
 
 /**

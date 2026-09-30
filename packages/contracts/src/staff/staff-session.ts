@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { regionSchema } from "../region/region";
 
 /** The six internal roles (`@yourtal/authz` INTERNAL_ROLES; apps/api's staff tests pin the two together). */

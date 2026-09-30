@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { regionSchema } from "../region/region";
 import { statementSchema } from "../ledger-internal/economy";
 import { economyProposalSchema } from "./staff-economy";

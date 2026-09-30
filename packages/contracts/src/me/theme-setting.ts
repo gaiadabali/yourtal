@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /** 13.16.a: the viewer's colour theme. `system` follows the device. */
 export const themeSettingSchema = z.enum(["system", "light", "dark"]);

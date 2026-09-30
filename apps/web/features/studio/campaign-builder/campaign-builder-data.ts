@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { resolveStudioDataSource } from "../studio-data-source";
 import { apiFetch } from "@/lib/api/api-fetch";
 import type { CampaignDraft } from "./campaign-draft";

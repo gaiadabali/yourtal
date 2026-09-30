@@ -11,7 +11,7 @@ import {
   type SettingsScreen,
 } from "@yourtal/contracts/staff/economy";
 import { killSwitchSchema, type KillSwitch } from "@yourtal/contracts/voucher-internal/kill-switch";
-import { z } from "zod";
+import * as z from "zod";
 import type { ApiError } from "@/lib/api/api-fetch";
 import { apiFetch } from "@/lib/api/api-fetch";
 

@@ -1,12 +1,18 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@yourtal/ui/button";
 import { PointsChip } from "@yourtal/ui/points-chip";
-import { HlsAttacher } from "@/features/player/hls-attacher";
 import { formatFeedPoints, type FeedLocale } from "./feed-terms";
 import type { useQuickEarn } from "./use-quick-earn";
+
+// Lazy, like the player: hls.js (~170 KB gz) stays out of the feed's initial JS.
+const HlsAttacher = dynamic(
+  () => import("@/features/player/hls-attacher").then((mod) => mod.HlsAttacher),
+  { ssr: false },
+);
 
 type QuickEarnState = ReturnType<typeof useQuickEarn>;
 

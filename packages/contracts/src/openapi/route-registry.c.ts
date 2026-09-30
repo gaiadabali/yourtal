@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { auStateSchema, businessRoleSchema, taxIdKindSchema } from "../business/business";
 import { businessTeamRoleSchema } from "../business/business-team-role";
 import { billingContactSchema } from "../business/billing-contact";

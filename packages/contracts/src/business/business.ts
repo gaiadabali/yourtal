@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { currencySchema } from "../money/money-value";
 import { REGION_CONFIG, regionSchema } from "../region/region";
 

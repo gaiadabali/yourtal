@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * TASKS.md 8.3.a: Studio -> Developers. Wraps the voucher service's own

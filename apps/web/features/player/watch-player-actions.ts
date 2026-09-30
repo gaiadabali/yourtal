@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { z } from "zod";
+import * as z from "zod";
 import type { PresentedQuestion } from "@yourtal/contracts/question/presented-question";
 import { apiFetch } from "@/lib/api/api-fetch";
 import type { ApiResult } from "@/lib/api/api-fetch";

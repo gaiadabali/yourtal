@@ -1,6 +1,6 @@
 import "server-only";
 
-import { z } from "zod";
+import * as z from "zod";
 import type { FeedItem } from "@yourtal/contracts/feed";
 import { feedResponseSchema } from "@yourtal/contracts/feed";
 import type { Region } from "@yourtal/contracts/region";

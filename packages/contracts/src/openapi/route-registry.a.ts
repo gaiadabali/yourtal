@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { displayLocaleSchema } from "../identity/user-profile";
 import {
   approveGuardianConsentRequestSchema,

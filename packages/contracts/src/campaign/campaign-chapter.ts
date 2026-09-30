@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * One chapter marker on a long-form campaign's video (docs/06 section 3:

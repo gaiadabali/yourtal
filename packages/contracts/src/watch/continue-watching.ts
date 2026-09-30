@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /** `GET /api/watch/sessions`: the viewer's unfinished sessions (Continue watching, 11.4.c). */
 export const continueWatchingResponseSchema = z.object({

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 
 /**
  * One physical outlet a merchant redeems vouchers at (docs/tasks/phase-0-platform.md

@@ -1,6 +1,6 @@
 "use server";
 
-import { z } from "zod";
+import * as z from "zod";
 import { apiFetch } from "@/lib/api/api-fetch";
 import type { ApiResult } from "@/lib/api/api-fetch";
 import { consentsResponseSchema } from "@/features/me/me-schemas";

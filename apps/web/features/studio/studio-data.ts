@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { businessSchema } from "@yourtal/contracts/business";
 import type { Business } from "@yourtal/contracts/business";
 import { businessTeamRoleSchema } from "@yourtal/contracts/business/team-role";

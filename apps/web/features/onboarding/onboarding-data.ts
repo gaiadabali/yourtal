@@ -1,6 +1,6 @@
 import "server-only";
 
-import { z } from "zod";
+import * as z from "zod";
 import { regionSchema } from "@yourtal/contracts/region";
 import { apiFetch } from "@/lib/api/api-fetch";
 import type { ApiResult } from "@/lib/api/api-fetch";

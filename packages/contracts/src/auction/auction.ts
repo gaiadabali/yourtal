@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { charityCauseSchema } from "../charity/charity";
 import { minorUnitsSchema } from "../money/money";
 import { currencySchema } from "../money/money-value";

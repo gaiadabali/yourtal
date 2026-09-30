@@ -243,7 +243,10 @@ CREATE TABLE store.listings (
   channel                   text        NOT NULL,
   partial_redemption        text        NOT NULL,
   -- Added by 20260929070000 (listing moderation), mirrored for the drift guard only.
-  rejection_reason          text
+  rejection_reason          text,
+  -- Added by 20260930024731 and 20260930030429 (13.11/13.12), mirrored for the drift guard only.
+  tags                      jsonb       NOT NULL DEFAULT '[]',
+  created_at                timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE TABLE store.listing_location (

@@ -58,7 +58,8 @@ export function applyFeedBrowse(
   keys: FeedSortKeys,
 ): FeedItem[] {
   const matching = items.filter(
-    (item) => matchesKind(item, filter) && matchesCategory(item, filter) && matchesTags(item, filter),
+    (item) =>
+      matchesKind(item, filter) && matchesCategory(item, filter) && matchesTags(item, filter),
   );
   // Array.prototype.sort is stable, so ties keep the ranked order.
   switch (filter.sort) {

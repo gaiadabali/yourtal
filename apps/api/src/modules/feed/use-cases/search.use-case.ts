@@ -37,7 +37,10 @@ export async function search(
   query: string,
   queryRegion: Region | undefined,
   /** 13.12.c: `kind` narrows campaigns only; `category` narrows campaigns and listings. */
-  narrow: { readonly kind?: CampaignKind | undefined; readonly category?: ContentCategory | undefined } = {},
+  narrow: {
+    readonly kind?: CampaignKind | undefined;
+    readonly category?: ContentCategory | undefined;
+  } = {},
 ): Promise<
   { readonly kind: "ok"; readonly result: SearchResponse } | { readonly kind: "region_required" }
 > {

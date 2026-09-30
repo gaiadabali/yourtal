@@ -46,6 +46,8 @@ type StoreListing struct {
 	Channel                 string
 	PartialRedemption       string
 	RejectionReason         *string
+	Tags                    []byte
+	CreatedAt               pgtype.Timestamptz
 }
 
 type StoreListingLocation struct {

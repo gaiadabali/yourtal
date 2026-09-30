@@ -228,7 +228,9 @@ describe("buildFeed", () => {
   });
 
   it("13.11.b: a tag match still needs consent", () => {
-    const tagged = candidate({ campaign: campaign({ contentCategory: "travel", tags: ["books"] }) });
+    const tagged = candidate({
+      campaign: campaign({ contentCategory: "travel", tags: ["books"] }),
+    });
     const ctx = baseContext({
       declaredInterestNodeIds: new Set(["books"]),
       interestTargetingAllowed: false,

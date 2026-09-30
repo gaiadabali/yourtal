@@ -1458,7 +1458,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 
 - [ ] **13.7 Drop the `browserslist` override once serwist 10 ships** (moved from 2.4.g by F38) · needs: serwist 10 stable — ✂️ cut: F42, ship on the latest stable; upgrade serwist later as routine maintenance, not a gate.
   - [ ] 13.7.a Upgrade `serwist`, `@serwist/next` and `@serwist/build` to 10.x and remove the `browserslist@<4.28.7` override from `pnpm-workspace.yaml`; `pnpm verify` green and the service worker still serves a visited voucher page offline. — ✂️ cut: F42.
-- [ ] **13.8 A deploy that crashes on start is not "OK"** · A · needs: —
+- [ ] **13.8 A deploy that crashes on start is not "OK"** · A · needs: — — 🔄 slot 9b
   - [ ] 13.8.a (found by slot 1, 2026-09-28) After the pm2 reload, the deploy waits for `/api/health` (and the worker's readiness) and, if either fails, reports DEPLOY FAILED and rolls back to the previous release. On 2026-09-27 release 1191d50 logged `DEPLOY OK` while `yourtal-api` crashed on import (`ERR_MODULE_NOT_FOUND @aws-sdk/client-s3`), leaving `/api` at 502.
   - [ ] 13.8.b CI builds the release artifact (`pnpm --filter … deploy --prod`) and boots `api/dist/main.js` and the worker once, so a dependency that is only declared by a workspace package fails in CI, not on staging.
   - [ ] 13.8.c **Check:** a release whose api cannot boot is rolled back automatically, and staging keeps serving the previous one.
@@ -1505,7 +1505,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [x] 13.19.e An empty wallet explains the loop in three steps (watch, earn, redeem), with one button to Home. It never says "money" or "income". — 2964b4f2: an empty wallet shows watch → earn → redeem as three steps and one button to Home; copy says points and rewards only. Screenshots 390/1280 light/dark, AU and ID, axe clean.
 - [ ] **13.17 Check the UI pass** · B + C · needs: 13.13–13.16, 13.18, 13.19
   - [ ] 13.17.a **Check:** on staging, in AU and ID: Home shows only long videos, filters by category and tag, and the filters survive a reload; Shorts plays only Shorts; the store filters, sorts and searches on the server; the theme setting persists across sign-out and sign-in. Screenshots of Home, Shorts, Store, Search and Wallet, and the header menu, at 390 px and 1280 px, light and dark, axe clean.
-- [ ] **13.20 Gift a voucher** (F86) · A (voucher, wallet API) + B (wallet UI) + C (Studio flag) · needs: —
+- [ ] **13.20 Gift a voucher** (F86) · A (voucher, wallet API) + B (wallet UI) + C (Studio flag) · needs: — — 🔄 slot 9c (a, b, d)
   - [ ] 13.20.a The voucher service gifts by void-and-remint: only an unused, unexpired voucher on a transferable listing, to a verified adult in the same region, one hop only (a gifted voucher cannot be gifted again), with velocity caps. Batch creation takes `transferable` from the listing; Studio's listing editor sets it.
   - [ ] 13.20.b `POST /api/wallet/vouchers/:id/gift` with the recipient's email. The recipient accepts in the app within 7 days, or the gift returns to the sender. It shows only the sender's display name, with no message field. Teens can neither gift nor receive. The old code stops working the moment the gift is sent.
   - [ ] 13.20.c Wallet: a Gift action on a voucher, a Gifts section (sent, received, pending) and a notification to the recipient.

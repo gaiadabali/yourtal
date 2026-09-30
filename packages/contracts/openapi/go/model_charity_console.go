@@ -16,85 +16,111 @@ import (
 	"fmt"
 )
 
-// checks if the CharityDecisionRequest type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &CharityDecisionRequest{}
+// checks if the CharityConsole type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &CharityConsole{}
 
-// CharityDecisionRequest A staff approve or reject, always with a reason.
-type CharityDecisionRequest struct {
-	Decision string `json:"decision"`
-	Reason string `json:"reason"`
+// CharityConsole GET /api/charities/{charityId}/console: the charity, its proceeds and statements.
+type CharityConsole struct {
+	Charity CharityDetail `json:"charity"`
+	Proceeds []CharityProceed `json:"proceeds"`
+	Statements []CharityStatement `json:"statements"`
 }
 
-type _CharityDecisionRequest CharityDecisionRequest
+type _CharityConsole CharityConsole
 
-// NewCharityDecisionRequest instantiates a new CharityDecisionRequest object
+// NewCharityConsole instantiates a new CharityConsole object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCharityDecisionRequest(decision string, reason string) *CharityDecisionRequest {
-	this := CharityDecisionRequest{}
-	this.Decision = decision
-	this.Reason = reason
+func NewCharityConsole(charity CharityDetail, proceeds []CharityProceed, statements []CharityStatement) *CharityConsole {
+	this := CharityConsole{}
+	this.Charity = charity
+	this.Proceeds = proceeds
+	this.Statements = statements
 	return &this
 }
 
-// NewCharityDecisionRequestWithDefaults instantiates a new CharityDecisionRequest object
+// NewCharityConsoleWithDefaults instantiates a new CharityConsole object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewCharityDecisionRequestWithDefaults() *CharityDecisionRequest {
-	this := CharityDecisionRequest{}
+func NewCharityConsoleWithDefaults() *CharityConsole {
+	this := CharityConsole{}
 	return &this
 }
 
-// GetDecision returns the Decision field value
-func (o *CharityDecisionRequest) GetDecision() string {
+// GetCharity returns the Charity field value
+func (o *CharityConsole) GetCharity() CharityDetail {
 	if o == nil {
-		var ret string
+		var ret CharityDetail
 		return ret
 	}
 
-	return o.Decision
+	return o.Charity
 }
 
-// GetDecisionOk returns a tuple with the Decision field value
+// GetCharityOk returns a tuple with the Charity field value
 // and a boolean to check if the value has been set.
-func (o *CharityDecisionRequest) GetDecisionOk() (*string, bool) {
+func (o *CharityConsole) GetCharityOk() (*CharityDetail, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Decision, true
+	return &o.Charity, true
 }
 
-// SetDecision sets field value
-func (o *CharityDecisionRequest) SetDecision(v string) {
-	o.Decision = v
+// SetCharity sets field value
+func (o *CharityConsole) SetCharity(v CharityDetail) {
+	o.Charity = v
 }
 
-// GetReason returns the Reason field value
-func (o *CharityDecisionRequest) GetReason() string {
+// GetProceeds returns the Proceeds field value
+func (o *CharityConsole) GetProceeds() []CharityProceed {
 	if o == nil {
-		var ret string
+		var ret []CharityProceed
 		return ret
 	}
 
-	return o.Reason
+	return o.Proceeds
 }
 
-// GetReasonOk returns a tuple with the Reason field value
+// GetProceedsOk returns a tuple with the Proceeds field value
 // and a boolean to check if the value has been set.
-func (o *CharityDecisionRequest) GetReasonOk() (*string, bool) {
+func (o *CharityConsole) GetProceedsOk() ([]CharityProceed, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Reason, true
+	return o.Proceeds, true
 }
 
-// SetReason sets field value
-func (o *CharityDecisionRequest) SetReason(v string) {
-	o.Reason = v
+// SetProceeds sets field value
+func (o *CharityConsole) SetProceeds(v []CharityProceed) {
+	o.Proceeds = v
 }
 
-func (o CharityDecisionRequest) MarshalJSON() ([]byte, error) {
+// GetStatements returns the Statements field value
+func (o *CharityConsole) GetStatements() []CharityStatement {
+	if o == nil {
+		var ret []CharityStatement
+		return ret
+	}
+
+	return o.Statements
+}
+
+// GetStatementsOk returns a tuple with the Statements field value
+// and a boolean to check if the value has been set.
+func (o *CharityConsole) GetStatementsOk() ([]CharityStatement, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.Statements, true
+}
+
+// SetStatements sets field value
+func (o *CharityConsole) SetStatements(v []CharityStatement) {
+	o.Statements = v
+}
+
+func (o CharityConsole) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -102,20 +128,22 @@ func (o CharityDecisionRequest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o CharityDecisionRequest) ToMap() (map[string]interface{}, error) {
+func (o CharityConsole) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["decision"] = o.Decision
-	toSerialize["reason"] = o.Reason
+	toSerialize["charity"] = o.Charity
+	toSerialize["proceeds"] = o.Proceeds
+	toSerialize["statements"] = o.Statements
 	return toSerialize, nil
 }
 
-func (o *CharityDecisionRequest) UnmarshalJSON(data []byte) (err error) {
+func (o *CharityConsole) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"decision",
-		"reason",
+		"charity",
+		"proceeds",
+		"statements",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -132,53 +160,53 @@ func (o *CharityDecisionRequest) UnmarshalJSON(data []byte) (err error) {
 		}
 	}
 
-	varCharityDecisionRequest := _CharityDecisionRequest{}
+	varCharityConsole := _CharityConsole{}
 
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varCharityDecisionRequest)
+	err = decoder.Decode(&varCharityConsole)
 
 	if err != nil {
 		return err
 	}
 
-	*o = CharityDecisionRequest(varCharityDecisionRequest)
+	*o = CharityConsole(varCharityConsole)
 
 	return err
 }
 
-type NullableCharityDecisionRequest struct {
-	value *CharityDecisionRequest
+type NullableCharityConsole struct {
+	value *CharityConsole
 	isSet bool
 }
 
-func (v NullableCharityDecisionRequest) Get() *CharityDecisionRequest {
+func (v NullableCharityConsole) Get() *CharityConsole {
 	return v.value
 }
 
-func (v *NullableCharityDecisionRequest) Set(val *CharityDecisionRequest) {
+func (v *NullableCharityConsole) Set(val *CharityConsole) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableCharityDecisionRequest) IsSet() bool {
+func (v NullableCharityConsole) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableCharityDecisionRequest) Unset() {
+func (v *NullableCharityConsole) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableCharityDecisionRequest(val *CharityDecisionRequest) *NullableCharityDecisionRequest {
-	return &NullableCharityDecisionRequest{value: val, isSet: true}
+func NewNullableCharityConsole(val *CharityConsole) *NullableCharityConsole {
+	return &NullableCharityConsole{value: val, isSet: true}
 }
 
-func (v NullableCharityDecisionRequest) MarshalJSON() ([]byte, error) {
+func (v NullableCharityConsole) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableCharityDecisionRequest) UnmarshalJSON(src []byte) error {
+func (v *NullableCharityConsole) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

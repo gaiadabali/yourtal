@@ -20,7 +20,7 @@ var _ MappedNullable = &ApiTenantIdStudioDevelopersWebhooksPostRequest{}
 
 // ApiTenantIdStudioDevelopersWebhooksPostRequest struct for ApiTenantIdStudioDevelopersWebhooksPostRequest
 type ApiTenantIdStudioDevelopersWebhooksPostRequest struct {
-	Url NullableString `json:"url"`
+	Url string `json:"url"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -30,7 +30,7 @@ type _ApiTenantIdStudioDevelopersWebhooksPostRequest ApiTenantIdStudioDevelopers
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiTenantIdStudioDevelopersWebhooksPostRequest(url NullableString) *ApiTenantIdStudioDevelopersWebhooksPostRequest {
+func NewApiTenantIdStudioDevelopersWebhooksPostRequest(url string) *ApiTenantIdStudioDevelopersWebhooksPostRequest {
 	this := ApiTenantIdStudioDevelopersWebhooksPostRequest{}
 	this.Url = url
 	return &this
@@ -45,29 +45,27 @@ func NewApiTenantIdStudioDevelopersWebhooksPostRequestWithDefaults() *ApiTenantI
 }
 
 // GetUrl returns the Url field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiTenantIdStudioDevelopersWebhooksPostRequest) GetUrl() string {
-	if o == nil || o.Url.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.Url.Get()
+	return o.Url
 }
 
 // GetUrlOk returns a tuple with the Url field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiTenantIdStudioDevelopersWebhooksPostRequest) GetUrlOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.Url.Get(), o.Url.IsSet()
+	return &o.Url, true
 }
 
 // SetUrl sets field value
 func (o *ApiTenantIdStudioDevelopersWebhooksPostRequest) SetUrl(v string) {
-	o.Url.Set(&v)
+	o.Url = v
 }
 
 func (o ApiTenantIdStudioDevelopersWebhooksPostRequest) MarshalJSON() ([]byte, error) {
@@ -80,7 +78,7 @@ func (o ApiTenantIdStudioDevelopersWebhooksPostRequest) MarshalJSON() ([]byte, e
 
 func (o ApiTenantIdStudioDevelopersWebhooksPostRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["url"] = o.Url.Get()
+	toSerialize["url"] = o.Url
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value

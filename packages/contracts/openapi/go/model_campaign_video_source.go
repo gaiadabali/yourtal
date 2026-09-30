@@ -22,7 +22,7 @@ var _ MappedNullable = &CampaignVideoSource{}
 // CampaignVideoSource Where the player resolves a campaign's video from, without guessing (YT-0503).
 type CampaignVideoSource struct {
 	Kind string `json:"kind"`
-	ManifestUrl NullableString `json:"manifestUrl"`
+	ManifestUrl string `json:"manifestUrl"`
 }
 
 type _CampaignVideoSource CampaignVideoSource
@@ -31,7 +31,7 @@ type _CampaignVideoSource CampaignVideoSource
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCampaignVideoSource(kind string, manifestUrl NullableString) *CampaignVideoSource {
+func NewCampaignVideoSource(kind string, manifestUrl string) *CampaignVideoSource {
 	this := CampaignVideoSource{}
 	this.Kind = kind
 	this.ManifestUrl = manifestUrl
@@ -71,29 +71,27 @@ func (o *CampaignVideoSource) SetKind(v string) {
 }
 
 // GetManifestUrl returns the ManifestUrl field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *CampaignVideoSource) GetManifestUrl() string {
-	if o == nil || o.ManifestUrl.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.ManifestUrl.Get()
+	return o.ManifestUrl
 }
 
 // GetManifestUrlOk returns a tuple with the ManifestUrl field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *CampaignVideoSource) GetManifestUrlOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.ManifestUrl.Get(), o.ManifestUrl.IsSet()
+	return &o.ManifestUrl, true
 }
 
 // SetManifestUrl sets field value
 func (o *CampaignVideoSource) SetManifestUrl(v string) {
-	o.ManifestUrl.Set(&v)
+	o.ManifestUrl = v
 }
 
 func (o CampaignVideoSource) MarshalJSON() ([]byte, error) {
@@ -107,7 +105,7 @@ func (o CampaignVideoSource) MarshalJSON() ([]byte, error) {
 func (o CampaignVideoSource) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["kind"] = o.Kind
-	toSerialize["manifestUrl"] = o.ManifestUrl.Get()
+	toSerialize["manifestUrl"] = o.ManifestUrl
 	return toSerialize, nil
 }
 

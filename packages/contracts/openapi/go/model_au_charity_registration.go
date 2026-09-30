@@ -12,6 +12,7 @@ package contracts
 
 import (
 	"encoding/json"
+	"bytes"
 	"fmt"
 )
 
@@ -23,7 +24,6 @@ type AuCharityRegistration struct {
 	Kind string `json:"kind"`
 	Abn string `json:"abn" validate:"regexp=^\\d{11}$"`
 	AcncRegistered bool `json:"acncRegistered"`
-	AdditionalProperties map[string]interface{}
 }
 
 type _AuCharityRegistration AuCharityRegistration
@@ -133,11 +133,6 @@ func (o AuCharityRegistration) ToMap() (map[string]interface{}, error) {
 	toSerialize["kind"] = o.Kind
 	toSerialize["abn"] = o.Abn
 	toSerialize["acncRegistered"] = o.AcncRegistered
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
 	return toSerialize, nil
 }
 
@@ -167,22 +162,15 @@ func (o *AuCharityRegistration) UnmarshalJSON(data []byte) (err error) {
 
 	varAuCharityRegistration := _AuCharityRegistration{}
 
-	err = json.Unmarshal(data, &varAuCharityRegistration)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varAuCharityRegistration)
 
 	if err != nil {
 		return err
 	}
 
 	*o = AuCharityRegistration(varAuCharityRegistration)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "kind")
-		delete(additionalProperties, "abn")
-		delete(additionalProperties, "acncRegistered")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

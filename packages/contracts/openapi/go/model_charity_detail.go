@@ -13,6 +13,7 @@ package contracts
 import (
 	"encoding/json"
 	"time"
+	"bytes"
 	"fmt"
 )
 
@@ -21,21 +22,20 @@ var _ MappedNullable = &CharityDetail{}
 
 // CharityDetail A charity as its applicant and staff see it, with review state and the masked payout account.
 type CharityDetail struct {
-	Id NullableString `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	Id string `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Region Region `json:"region"`
-	Name NullableString `json:"name"`
+	Name string `json:"name"`
 	Cause CharityCause `json:"cause"`
-	Summary NullableString `json:"summary"`
+	Summary string `json:"summary"`
 	LogoUrl NullableString `json:"logoUrl"`
 	State CharityState `json:"state"`
 	Registration CharityRegistration `json:"registration"`
-	PayoutAccountName NullableString `json:"payoutAccountName"`
+	PayoutAccountName string `json:"payoutAccountName"`
 	PayoutAccountLast4 string `json:"payoutAccountLast4" validate:"regexp=^\\d{4}$"`
-	KybReference NullableString `json:"kybReference"`
+	KybReference string `json:"kybReference"`
 	RejectionReason NullableString `json:"rejectionReason"`
 	AppliedAt time.Time `json:"appliedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 	DecidedAt NullableTime `json:"decidedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
-	AdditionalProperties map[string]interface{}
 }
 
 type _CharityDetail CharityDetail
@@ -44,7 +44,7 @@ type _CharityDetail CharityDetail
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCharityDetail(id NullableString, region Region, name NullableString, cause CharityCause, summary NullableString, logoUrl NullableString, state CharityState, registration CharityRegistration, payoutAccountName NullableString, payoutAccountLast4 string, kybReference NullableString, rejectionReason NullableString, appliedAt time.Time, decidedAt NullableTime) *CharityDetail {
+func NewCharityDetail(id string, region Region, name string, cause CharityCause, summary string, logoUrl NullableString, state CharityState, registration CharityRegistration, payoutAccountName string, payoutAccountLast4 string, kybReference string, rejectionReason NullableString, appliedAt time.Time, decidedAt NullableTime) *CharityDetail {
 	this := CharityDetail{}
 	this.Id = id
 	this.Region = region
@@ -72,29 +72,27 @@ func NewCharityDetailWithDefaults() *CharityDetail {
 }
 
 // GetId returns the Id field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *CharityDetail) GetId() string {
-	if o == nil || o.Id.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.Id.Get()
+	return o.Id
 }
 
 // GetIdOk returns a tuple with the Id field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *CharityDetail) GetIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.Id.Get(), o.Id.IsSet()
+	return &o.Id, true
 }
 
 // SetId sets field value
 func (o *CharityDetail) SetId(v string) {
-	o.Id.Set(&v)
+	o.Id = v
 }
 
 // GetRegion returns the Region field value
@@ -122,29 +120,27 @@ func (o *CharityDetail) SetRegion(v Region) {
 }
 
 // GetName returns the Name field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *CharityDetail) GetName() string {
-	if o == nil || o.Name.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.Name.Get()
+	return o.Name
 }
 
 // GetNameOk returns a tuple with the Name field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *CharityDetail) GetNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.Name.Get(), o.Name.IsSet()
+	return &o.Name, true
 }
 
 // SetName sets field value
 func (o *CharityDetail) SetName(v string) {
-	o.Name.Set(&v)
+	o.Name = v
 }
 
 // GetCause returns the Cause field value
@@ -172,29 +168,27 @@ func (o *CharityDetail) SetCause(v CharityCause) {
 }
 
 // GetSummary returns the Summary field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *CharityDetail) GetSummary() string {
-	if o == nil || o.Summary.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.Summary.Get()
+	return o.Summary
 }
 
 // GetSummaryOk returns a tuple with the Summary field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *CharityDetail) GetSummaryOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.Summary.Get(), o.Summary.IsSet()
+	return &o.Summary, true
 }
 
 // SetSummary sets field value
 func (o *CharityDetail) SetSummary(v string) {
-	o.Summary.Set(&v)
+	o.Summary = v
 }
 
 // GetLogoUrl returns the LogoUrl field value
@@ -272,29 +266,27 @@ func (o *CharityDetail) SetRegistration(v CharityRegistration) {
 }
 
 // GetPayoutAccountName returns the PayoutAccountName field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *CharityDetail) GetPayoutAccountName() string {
-	if o == nil || o.PayoutAccountName.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.PayoutAccountName.Get()
+	return o.PayoutAccountName
 }
 
 // GetPayoutAccountNameOk returns a tuple with the PayoutAccountName field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *CharityDetail) GetPayoutAccountNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.PayoutAccountName.Get(), o.PayoutAccountName.IsSet()
+	return &o.PayoutAccountName, true
 }
 
 // SetPayoutAccountName sets field value
 func (o *CharityDetail) SetPayoutAccountName(v string) {
-	o.PayoutAccountName.Set(&v)
+	o.PayoutAccountName = v
 }
 
 // GetPayoutAccountLast4 returns the PayoutAccountLast4 field value
@@ -322,29 +314,27 @@ func (o *CharityDetail) SetPayoutAccountLast4(v string) {
 }
 
 // GetKybReference returns the KybReference field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *CharityDetail) GetKybReference() string {
-	if o == nil || o.KybReference.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.KybReference.Get()
+	return o.KybReference
 }
 
 // GetKybReferenceOk returns a tuple with the KybReference field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *CharityDetail) GetKybReferenceOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.KybReference.Get(), o.KybReference.IsSet()
+	return &o.KybReference, true
 }
 
 // SetKybReference sets field value
 func (o *CharityDetail) SetKybReference(v string) {
-	o.KybReference.Set(&v)
+	o.KybReference = v
 }
 
 // GetRejectionReason returns the RejectionReason field value
@@ -433,25 +423,20 @@ func (o CharityDetail) MarshalJSON() ([]byte, error) {
 
 func (o CharityDetail) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["id"] = o.Id.Get()
+	toSerialize["id"] = o.Id
 	toSerialize["region"] = o.Region
-	toSerialize["name"] = o.Name.Get()
+	toSerialize["name"] = o.Name
 	toSerialize["cause"] = o.Cause
-	toSerialize["summary"] = o.Summary.Get()
+	toSerialize["summary"] = o.Summary
 	toSerialize["logoUrl"] = o.LogoUrl.Get()
 	toSerialize["state"] = o.State
 	toSerialize["registration"] = o.Registration
-	toSerialize["payoutAccountName"] = o.PayoutAccountName.Get()
+	toSerialize["payoutAccountName"] = o.PayoutAccountName
 	toSerialize["payoutAccountLast4"] = o.PayoutAccountLast4
-	toSerialize["kybReference"] = o.KybReference.Get()
+	toSerialize["kybReference"] = o.KybReference
 	toSerialize["rejectionReason"] = o.RejectionReason.Get()
 	toSerialize["appliedAt"] = o.AppliedAt
 	toSerialize["decidedAt"] = o.DecidedAt.Get()
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
 	return toSerialize, nil
 }
 
@@ -492,33 +477,15 @@ func (o *CharityDetail) UnmarshalJSON(data []byte) (err error) {
 
 	varCharityDetail := _CharityDetail{}
 
-	err = json.Unmarshal(data, &varCharityDetail)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varCharityDetail)
 
 	if err != nil {
 		return err
 	}
 
 	*o = CharityDetail(varCharityDetail)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "id")
-		delete(additionalProperties, "region")
-		delete(additionalProperties, "name")
-		delete(additionalProperties, "cause")
-		delete(additionalProperties, "summary")
-		delete(additionalProperties, "logoUrl")
-		delete(additionalProperties, "state")
-		delete(additionalProperties, "registration")
-		delete(additionalProperties, "payoutAccountName")
-		delete(additionalProperties, "payoutAccountLast4")
-		delete(additionalProperties, "kybReference")
-		delete(additionalProperties, "rejectionReason")
-		delete(additionalProperties, "appliedAt")
-		delete(additionalProperties, "decidedAt")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

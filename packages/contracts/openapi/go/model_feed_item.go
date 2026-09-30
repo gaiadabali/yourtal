@@ -25,8 +25,8 @@ type FeedItem struct {
 	MerchantName string `json:"merchantName"`
 	Title string `json:"title"`
 	Synopsis NullableString `json:"synopsis"`
-	PosterUrl NullableString `json:"posterUrl"`
-	TeaserUrl NullableString `json:"teaserUrl"`
+	PosterUrl string `json:"posterUrl"`
+	TeaserUrl string `json:"teaserUrl"`
 	DurationSeconds int64 `json:"durationSeconds"`
 	// Platform points. Always a whole number; there is no fractional point.
 	RewardPoints int64 `json:"rewardPoints"`
@@ -56,7 +56,7 @@ type _FeedItem FeedItem
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFeedItem(campaignId NullableString, businessId NullableString, merchantName string, title string, synopsis NullableString, posterUrl NullableString, teaserUrl NullableString, durationSeconds int64, rewardPoints int64, kind CampaignKind, questionCount int64, maxRewardPoints int64, estimatedDataMb float32, contentCategory string, tags []string, audience Audience, region Region, openViewing bool, endingSoon bool, why string, whyReason FeedWhyReason, channelHandle string, channelLogoUrl NullableString, boosted bool) *FeedItem {
+func NewFeedItem(campaignId NullableString, businessId NullableString, merchantName string, title string, synopsis NullableString, posterUrl string, teaserUrl string, durationSeconds int64, rewardPoints int64, kind CampaignKind, questionCount int64, maxRewardPoints int64, estimatedDataMb float32, contentCategory string, tags []string, audience Audience, region Region, openViewing bool, endingSoon bool, why string, whyReason FeedWhyReason, channelHandle string, channelLogoUrl NullableString, boosted bool) *FeedItem {
 	this := FeedItem{}
 	this.CampaignId = campaignId
 	this.BusinessId = businessId
@@ -222,55 +222,51 @@ func (o *FeedItem) SetSynopsis(v string) {
 }
 
 // GetPosterUrl returns the PosterUrl field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *FeedItem) GetPosterUrl() string {
-	if o == nil || o.PosterUrl.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.PosterUrl.Get()
+	return o.PosterUrl
 }
 
 // GetPosterUrlOk returns a tuple with the PosterUrl field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *FeedItem) GetPosterUrlOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.PosterUrl.Get(), o.PosterUrl.IsSet()
+	return &o.PosterUrl, true
 }
 
 // SetPosterUrl sets field value
 func (o *FeedItem) SetPosterUrl(v string) {
-	o.PosterUrl.Set(&v)
+	o.PosterUrl = v
 }
 
 // GetTeaserUrl returns the TeaserUrl field value
-// If the value is explicit nil, the zero value for string will be returned
 func (o *FeedItem) GetTeaserUrl() string {
-	if o == nil || o.TeaserUrl.Get() == nil {
+	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return *o.TeaserUrl.Get()
+	return o.TeaserUrl
 }
 
 // GetTeaserUrlOk returns a tuple with the TeaserUrl field value
 // and a boolean to check if the value has been set.
-// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *FeedItem) GetTeaserUrlOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.TeaserUrl.Get(), o.TeaserUrl.IsSet()
+	return &o.TeaserUrl, true
 }
 
 // SetTeaserUrl sets field value
 func (o *FeedItem) SetTeaserUrl(v string) {
-	o.TeaserUrl.Set(&v)
+	o.TeaserUrl = v
 }
 
 // GetDurationSeconds returns the DurationSeconds field value
@@ -698,8 +694,8 @@ func (o FeedItem) ToMap() (map[string]interface{}, error) {
 	toSerialize["merchantName"] = o.MerchantName
 	toSerialize["title"] = o.Title
 	toSerialize["synopsis"] = o.Synopsis.Get()
-	toSerialize["posterUrl"] = o.PosterUrl.Get()
-	toSerialize["teaserUrl"] = o.TeaserUrl.Get()
+	toSerialize["posterUrl"] = o.PosterUrl
+	toSerialize["teaserUrl"] = o.TeaserUrl
 	toSerialize["durationSeconds"] = o.DurationSeconds
 	toSerialize["rewardPoints"] = o.RewardPoints
 	toSerialize["kind"] = o.Kind

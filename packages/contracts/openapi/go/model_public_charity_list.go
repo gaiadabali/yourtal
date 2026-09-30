@@ -12,6 +12,7 @@ package contracts
 
 import (
 	"encoding/json"
+	"bytes"
 	"fmt"
 )
 
@@ -21,7 +22,6 @@ var _ MappedNullable = &PublicCharityList{}
 // PublicCharityList GET /api/charities.
 type PublicCharityList struct {
 	Charities []PublicCharity `json:"charities"`
-	AdditionalProperties map[string]interface{}
 }
 
 type _PublicCharityList PublicCharityList
@@ -79,11 +79,6 @@ func (o PublicCharityList) MarshalJSON() ([]byte, error) {
 func (o PublicCharityList) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["charities"] = o.Charities
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
 	return toSerialize, nil
 }
 
@@ -111,20 +106,15 @@ func (o *PublicCharityList) UnmarshalJSON(data []byte) (err error) {
 
 	varPublicCharityList := _PublicCharityList{}
 
-	err = json.Unmarshal(data, &varPublicCharityList)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varPublicCharityList)
 
 	if err != nil {
 		return err
 	}
 
 	*o = PublicCharityList(varPublicCharityList)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "charities")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

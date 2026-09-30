@@ -51,6 +51,11 @@ import type {
   VoucherGiftError,
 } from "@yourtal/contracts/voucher-internal/gifts";
 import type {
+  VoucherEscrow,
+  VoucherEscrowHoldRequest,
+  VoucherEscrowReleaseRequest,
+} from "@yourtal/contracts/voucher-internal/escrow";
+import type {
   MerchantCaptureStats,
   MerchantCaptureStatsRequest,
   MerchantVoucherStatus,
@@ -105,6 +110,9 @@ export interface VoucherInternalClient {
   listGifts(request: ListGiftsRequest): ResultAsync<ListGiftsResult, VoucherGiftError>;
   acceptGift(request: ResolveGiftRequest): ResultAsync<VoucherGift, VoucherGiftError>;
   declineGift(request: ResolveGiftRequest): ResultAsync<VoucherGift, VoucherGiftError>;
+  /** 13.22: escrow a listed voucher; hand it over at the close. */
+  escrowHold(request: VoucherEscrowHoldRequest): ResultAsync<VoucherEscrow, VoucherGiftError>;
+  escrowRelease(request: VoucherEscrowReleaseRequest): ResultAsync<VoucherEscrow, VoucherGiftError>;
 }
 
 export const VOUCHER_INTERNAL_CLIENT = Symbol("VOUCHER_INTERNAL_CLIENT");

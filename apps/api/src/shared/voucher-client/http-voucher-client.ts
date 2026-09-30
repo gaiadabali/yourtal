@@ -56,6 +56,11 @@ import {
   type VoucherGiftError,
 } from "@yourtal/contracts/voucher-internal/gifts";
 import type {
+  VoucherEscrow,
+  VoucherEscrowHoldRequest,
+  VoucherEscrowReleaseRequest,
+} from "@yourtal/contracts/voucher-internal/escrow";
+import type {
   MerchantCaptureStats,
   MerchantCaptureStatsRequest,
   MerchantVoucherStatus,
@@ -237,6 +242,16 @@ export class HttpVoucherClient implements VoucherInternalClient {
 
   acceptGift(request: ResolveGiftRequest): ResultAsync<VoucherGift, VoucherGiftError> {
     return this.postGift("/internal/v1/gifts/accept", request);
+  }
+
+  escrowHold(request: VoucherEscrowHoldRequest): ResultAsync<VoucherEscrow, VoucherGiftError> {
+    return this.postGift("/internal/v1/escrow", request);
+  }
+
+  escrowRelease(
+    request: VoucherEscrowReleaseRequest,
+  ): ResultAsync<VoucherEscrow, VoucherGiftError> {
+    return this.postGift("/internal/v1/escrow/release", request);
   }
 
   declineGift(request: ResolveGiftRequest): ResultAsync<VoucherGift, VoucherGiftError> {

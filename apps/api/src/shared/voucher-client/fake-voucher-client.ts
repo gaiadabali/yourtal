@@ -50,6 +50,11 @@ import type {
   VoucherGiftError,
 } from "@yourtal/contracts/voucher-internal/gifts";
 import type {
+  VoucherEscrow,
+  VoucherEscrowHoldRequest,
+  VoucherEscrowReleaseRequest,
+} from "@yourtal/contracts/voucher-internal/escrow";
+import type {
   MerchantCaptureStats,
   MerchantCaptureStatsRequest,
   MerchantVoucherStatus,
@@ -65,6 +70,7 @@ import * as killSwitch from "./fake/fake-voucher-killswitch";
 import * as credentials from "./fake/fake-voucher-credentials";
 import * as stats from "./fake/fake-voucher-stats";
 import * as gifts from "./fake/fake-voucher-gifts";
+import * as escrow from "./fake/fake-voucher-escrow";
 
 /** TASKS.md 1.2.d, `voucher-internal`'s half — see `FakeLedgerClient` for the shared design notes. */
 export class FakeVoucherClient implements VoucherInternalClient {
@@ -170,6 +176,16 @@ export class FakeVoucherClient implements VoucherInternalClient {
 
   acceptGift(request: ResolveGiftRequest): ResultAsync<VoucherGift, VoucherGiftError> {
     return gifts.acceptGift(this.db, request);
+  }
+
+  escrowHold(request: VoucherEscrowHoldRequest): ResultAsync<VoucherEscrow, VoucherGiftError> {
+    return escrow.escrowHold(this.db, request);
+  }
+
+  escrowRelease(
+    request: VoucherEscrowReleaseRequest,
+  ): ResultAsync<VoucherEscrow, VoucherGiftError> {
+    return escrow.escrowRelease(this.db, request);
   }
 
   declineGift(request: ResolveGiftRequest): ResultAsync<VoucherGift, VoucherGiftError> {

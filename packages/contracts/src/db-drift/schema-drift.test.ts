@@ -726,6 +726,14 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "MeModule -- TASKS.md 13.16.a. GET/PUT /api/me/settings/theme returns only `{theme}`; `themeSettingSchema` (me/theme-setting.ts) mirrors the VALUE, not the row.",
   "feed.pacing_state":
     "TASKS.md 7.7.b, this pass's own ticket. Advisory per-campaign daily serve counter (pacing-state.repository.ts) -- an internal ranking input, never read by any client; nothing in FeedResponse mirrors served_today.",
+  "feed.boost":
+    "13.23.a: a campaign's boost setting. Returned through boostViewSchema.setting (studio/boost.ts), a composed view with the campaign's delivery totals, not the row.",
+  "feed.boost_spend_day":
+    "13.23.b: the per-day budget counter the auction books against, in thousandths of a minor unit; clients see boostViewSchema.days, rounded to whole minor units.",
+  "feed.boost_impression":
+    "13.23.b: one row per slot won, for the average price paid; aggregated into boostViewSchema, never listed.",
+  "feed.boost_charge":
+    "13.23.c: mirrored by boostChargeSchema (studio/boost.ts) joined with the campaign title; business_id and region stay server-side.",
   "feed.demotion":
     "TASKS.md 7.7.a, this pass's own ticket. POST /api/feed/:campaignId/not-interested writes a row here but returns only `{ok: true}` (feed.controller.ts) -- the row itself (which campaigns a viewer demoted) is a ranking input read back through FeedItem.why, never returned as a list.",
 };

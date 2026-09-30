@@ -31,6 +31,8 @@ import type { SuspendedBusinessLookup } from "./persistence/suspended-business-l
 import { CHANNEL_LOOKUP_REPOSITORY } from "./persistence/channel-lookup.repository";
 import type { ChannelLookupRepository } from "./persistence/channel-lookup.repository";
 import { feedQuerySchema } from "./dto/feed-query";
+import { BOOST_REPOSITORY } from "./boost/boost.tokens";
+import type { BoostRepository } from "./boost/boost.repository";
 import { searchQuerySchema } from "./dto/search-query";
 import { getFeed } from "./use-cases/get-feed.use-case";
 import { search } from "./use-cases/search.use-case";
@@ -63,6 +65,7 @@ export class FeedController {
     private readonly suspendedBusinesses: SuspendedBusinessLookup,
     @Inject(CHANNEL_LOOKUP_REPOSITORY) private readonly channelLookup: ChannelLookupRepository,
     private readonly principals: AsyncPrincipalResolver,
+    @Inject(BOOST_REPOSITORY) private readonly boosts: BoostRepository,
   ) {}
 
   @PublicRoute(
@@ -89,6 +92,7 @@ export class FeedController {
       parsed.surface,
       parsed.region,
       { kind: parsed.kind, category: parsed.category, tags: parsed.tags, sort: parsed.sort },
+      this.boosts,
     );
     if (result.kind === "region_required") {
       throw new BadRequestException({

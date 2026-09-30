@@ -84,6 +84,8 @@ export const feedItemSchema = z.object({
    */
   channelHandle: z.string().min(1),
   channelLogoUrl: z.url().nullable(),
+  /** 13.23: this card won a paid boost slot. Its reward is the same either way. */
+  boosted: z.boolean().default(false),
 });
 export type FeedItem = z.infer<typeof feedItemSchema>;
 

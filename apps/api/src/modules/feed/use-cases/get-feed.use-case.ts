@@ -16,6 +16,12 @@ import { fetchFundedCampaigns } from "../candidates";
 import { applyFeedBrowse, feedFacets } from "../browse";
 import type { FeedBrowseFilter } from "../browse";
 import type { CandidateCampaign } from "../ranking";
+import { placeBoosted, runBoostAuction } from "../boost/boost-auction";
+import type { BoostAward } from "../boost/boost-auction";
+import type { BoostRepository } from "../boost/boost.repository";
+import { reserveCpmFor } from "../boost/boost-reserve";
+
+export type BoostSlots = Pick<BoostRepository, "bidsFor" | "recordWin">;
 
 /** 11.5.d: defensive fallback only -- see `RankingContext.channelOf`'s own comment. */
 const UNKNOWN_CHANNEL = { handle: "unknown", logoUrl: null } as const;
@@ -52,6 +58,13 @@ async function finish(
   browse: FeedBrowseFilter,
   pacing: PacingStateRepository,
   teen: boolean,
+  boost:
+    | {
+        readonly slots: BoostSlots;
+        readonly settings: RegionSettingsReader;
+        readonly region: Region;
+      }
+    | undefined,
 ): Promise<FeedResult> {
   const byId = new Map(candidates.map((candidate) => [candidate.campaign.id, candidate.campaign]));
   const time = (iso: string | undefined) => (iso === undefined ? 0 : new Date(iso).getTime());
@@ -61,8 +74,44 @@ async function finish(
     publishedAt: (id) => time(byId.get(id)?.publishedAt),
     endsAt: (id) => time(byId.get(id)?.endsAt),
   });
-  for (const item of items) await pacing.recordServe(item.campaignId);
-  return { surface, items, facets: feedFacets(ranked, effective) };
+  const served =
+    boost !== undefined && surface === "home" && effective.sort === "for_you" && !teen
+      ? await fillBoostSlots(items, boost)
+      : items;
+  for (const item of served) await pacing.recordServe(item.campaignId);
+  return { surface, items: served, facets: feedFacets(ranked, effective) };
+}
+
+/**
+ * 13.23.b: Home's reserved slots go to the highest boost bid among cards the
+ * viewer could already see; a teen's feed and any filtered or sorted view
+ * carry none. A win is kept only if the budget row accepts it.
+ */
+async function fillBoostSlots(
+  items: FeedItem[],
+  boost: {
+    readonly slots: BoostSlots;
+    readonly settings: RegionSettingsReader;
+    readonly region: Region;
+  },
+): Promise<FeedItem[]> {
+  const bids = await boost.slots.bidsFor(
+    boost.region,
+    items.map((item) => item.campaignId),
+  );
+  if (bids.length === 0) return items;
+  const reserve = await reserveCpmFor(boost.settings, boost.region);
+  const kept: BoostAward[] = [];
+  for (const award of runBoostAuction(bids, reserve)) {
+    const booked = await boost.slots.recordWin(
+      boost.region,
+      award.campaignId,
+      award.slot,
+      award.priceCpmMinor,
+    );
+    if (booked) kept.push({ ...award, slot: kept.length });
+  }
+  return placeBoosted(items, kept);
 }
 
 export async function getFeed(
@@ -77,6 +126,7 @@ export async function getFeed(
   surface: FeedSurface,
   queryRegion: Region | undefined,
   browse: FeedBrowseFilter = { sort: "for_you" },
+  boostSlots?: BoostSlots,
 ): Promise<
   { readonly kind: "ok"; readonly result: FeedResult } | { readonly kind: "region_required" }
 > {
@@ -129,7 +179,17 @@ export async function getFeed(
     });
     return {
       kind: "ok",
-      result: await finish(surface, items, candidates, browse, pacing, false),
+      result: await finish(
+        surface,
+        items,
+        candidates,
+        browse,
+        pacing,
+        false,
+        region === undefined || boostSlots === undefined
+          ? undefined
+          : { slots: boostSlots, settings, region },
+      ),
     };
   }
 
@@ -211,6 +271,14 @@ export async function getFeed(
   });
   return {
     kind: "ok",
-    result: await finish(surface, items, candidates, browse, pacing, ageBand === "teen"),
+    result: await finish(
+      surface,
+      items,
+      candidates,
+      browse,
+      pacing,
+      ageBand === "teen",
+      boostSlots === undefined ? undefined : { slots: boostSlots, settings, region },
+    ),
   };
 }

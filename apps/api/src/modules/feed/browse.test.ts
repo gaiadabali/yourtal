@@ -30,6 +30,7 @@ function item(overrides: Partial<FeedItem>): FeedItem {
     whyReason: "popular",
     channelHandle: "m",
     channelLogoUrl: null,
+    boosted: false,
     ...overrides,
   };
 }

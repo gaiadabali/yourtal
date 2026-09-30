@@ -44,6 +44,7 @@ function baseItem(overrides: Partial<FeedItemData> = {}): FeedItemData {
     whyReason: "popular",
     channelHandle: "test-merchant",
     channelLogoUrl: null,
+    boosted: false,
     ...overrides,
   };
 }

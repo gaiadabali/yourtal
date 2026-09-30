@@ -17,6 +17,7 @@ import {
   STUDIO_ROUTE_DEFINITIONS,
 } from "./route-registry.c";
 import { STUDIO_MEDIA_ROUTE_DEFINITIONS } from "./route-registry.c-media";
+import { BOOST_ROUTE_DEFINITIONS } from "./route-registry.c-boost";
 import { COUNTER_ROUTE_DEFINITIONS } from "./route-registry.c-counter";
 import { DEVELOPERS_ROUTE_DEFINITIONS } from "./route-registry.c-developers";
 import { PARTNERS_ROUTE_DEFINITIONS } from "./route-registry.c-partners";
@@ -100,6 +101,7 @@ export const ALL_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   ...DEVICE_ROUTE_DEFINITIONS,
   ...STUDIO_ROUTE_DEFINITIONS,
   ...STUDIO_MEDIA_ROUTE_DEFINITIONS,
+  ...BOOST_ROUTE_DEFINITIONS,
   ...COUNTER_ROUTE_DEFINITIONS,
   ...DEVELOPERS_ROUTE_DEFINITIONS,
   ...PARTNERS_ROUTE_DEFINITIONS,

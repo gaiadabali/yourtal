@@ -200,6 +200,7 @@ export function toFeedItem(
     whyReason: whyReasonFor(signals),
     channelHandle: channel.handle,
     channelLogoUrl: channel.logoUrl,
+    boosted: false,
   };
 }
 

@@ -8,6 +8,9 @@ import { WalletModule } from "../wallet/wallet.module";
 import { StoreModule } from "../store/store.module";
 import { SettingsModule } from "../../shared/settings/settings.module";
 import { FeedController } from "./feed.controller";
+import { StudioBoostController } from "./boost/studio-boost.controller";
+import { BoostRepository } from "./boost/boost.repository";
+import { BOOST_DB, BOOST_REPOSITORY } from "./boost/boost.tokens";
 import { FEED_SIGNALS_REPOSITORY } from "./persistence/feed-signals.repository";
 import { DrizzleFeedSignalsRepository } from "./persistence/drizzle-feed-signals.repository";
 import { PACING_STATE_REPOSITORY } from "./persistence/pacing-state.repository";
@@ -36,12 +39,19 @@ export const FEED_DB = Symbol("FEED_DB");
  */
 @Module({
   imports: [CampaignModule, WalletModule, StoreModule, SettingsModule],
-  controllers: [FeedController],
+  controllers: [FeedController, StudioBoostController],
   providers: [
     {
       provide: FEED_DB,
       useFactory: (config: AppConfig): AppDb => createAppDb(config.databaseUrl),
       inject: [APP_CONFIG],
+    },
+    // 13.23: the boost tables share the feed's connection.
+    { provide: BOOST_DB, useExisting: FEED_DB },
+    {
+      provide: BOOST_REPOSITORY,
+      useFactory: (db: AppDb) => new BoostRepository(db),
+      inject: [FEED_DB],
     },
     {
       provide: FEED_SIGNALS_REPOSITORY,

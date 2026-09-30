@@ -99,7 +99,16 @@ export function ViewerShell({
   const topBarAccountProps = account && !signedOut ? { account } : {};
 
   return (
-    <div data-surface="viewer" data-theme={forceTheme} className="min-h-dvh bg-canvas text-fg">
+    <div
+      data-surface="viewer"
+      data-theme={forceTheme}
+      // The rail is fixed; its colour and edge are also painted on the shell,
+      // so it reads as full height however tall the page gets.
+      className={cn(
+        "min-h-dvh bg-canvas text-fg",
+        "lg:bg-[linear-gradient(to_right,var(--color-surface)_calc(14rem-1px),var(--color-border-subtle)_calc(14rem-1px),var(--color-border-subtle)_14rem,var(--color-canvas)_14rem)]",
+      )}
+    >
       <TopBar
         locale={locale}
         availablePoints={availablePoints}

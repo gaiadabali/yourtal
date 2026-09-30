@@ -1,3 +1,4 @@
+import { backfillDemoTags } from "./demo-tags";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -317,11 +318,22 @@ async function main(): Promise<void> {
     ).length;
     const demoAudiencesSummary = `demo audiences: ${String(demoAudiencesUpdated)}/${String(demoAudienceResults.length)} re-rated`;
 
+    // 13.11.c: tags on every untagged demo campaign and listing. Cosmetic, so never fails the deploy.
+    let demoTagsSummary = "demo tags: skipped";
+    try {
+      const tagged = await backfillDemoTags(pool);
+      demoTagsSummary = `demo tags: ${String(tagged.campaigns)} campaigns, ${String(tagged.listings)} listings`;
+    } catch (error) {
+      const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+      demoTagsSummary = `demo tags: FAILED (${detail}) — not failing the deploy over it`;
+    }
+
     console.log(
       `Staging seed — ${worldSummary}; marketing funding: ${result.marketingFunding}; ` +
         `${grantSummary}; ${voucherSummary}; ${affordableListingsSummary}; ` +
         `${redemptionBalanceSummary}; ${mediaSummary}; ${demoMediaSummary}; ` +
-        `${demoCampaignFundingSummary}; ${demoMediaVouchersSummary}; ${demoAudiencesSummary}.`,
+        `${demoCampaignFundingSummary}; ${demoMediaVouchersSummary}; ${demoAudiencesSummary}; ` +
+        `${demoTagsSummary}.`,
     );
 
     if (

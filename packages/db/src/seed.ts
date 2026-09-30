@@ -8,6 +8,7 @@ import { seedLedger } from "./seed/ledger";
 import { seedStudio } from "./seed/studio";
 import { seedStore } from "./seed/store";
 import { seedWatch } from "./seed/watch";
+import { backfillDemoTags } from "./seed/demo-tags";
 
 /**
  * Seeds the local database from the same mock generators Phase U renders.
@@ -93,6 +94,7 @@ export async function seed(pool: pg.Pool): Promise<SeedCounts> {
   const { campaigns, questions } = await seedStudio(pool);
   const { listings, vouchers } = await seedStore(pool);
   await seedWatch(pool);
+  await backfillDemoTags(pool);
   return { businesses, campaigns, listings, vouchers, questions };
 }
 

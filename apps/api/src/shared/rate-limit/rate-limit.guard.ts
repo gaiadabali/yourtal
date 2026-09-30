@@ -8,7 +8,13 @@ import {
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import type { FastifyRequest } from "fastify";
-import { RATE_LIMIT_METADATA, type RateLimitOptions } from "./rate-limit.decorator";
+import { PUBLIC_ROUTE_METADATA } from "../authz/authorize.decorator";
+import {
+  NO_RATE_LIMIT_METADATA,
+  PUBLIC_ROUTE_RATE_LIMIT,
+  RATE_LIMIT_METADATA,
+  type RateLimitOptions,
+} from "./rate-limit.decorator";
 import { RateLimitService } from "./rate-limit.service";
 
 /**
@@ -24,19 +30,12 @@ import { RateLimitService } from "./rate-limit.service";
  * in a flood — which is to say it would bound the wrong cost, and the
  * remaining one is the one an attacker is actually spending.
  *
- * ## Unannotated routes pass
+ * ## Unannotated routes
  *
- * A route with neither `@RateLimit` nor `@NoRateLimit` is allowed through
- * unlimited. That is a deliberate, and temporary, default: making the
- * absence of an annotation a build failure is the right end state — it is
- * exactly what `mutating-routes.test.ts` does for `@Idempotent` — but
- * turning it on in the same change that introduces the mechanism would fail
- * the build for every route in the app at once, including routes owned by
- * other sessions working in this tree right now. The enforcing test is
- * deliberately left for a follow-up so that it lands as its own reviewable
- * change. Until it does, **this guard limits what is declared and is silent
- * about what is not**, which is a weaker claim than the ticket's criterion
- * and is recorded rather than glossed.
+ * A `@PublicRoute` with neither `@RateLimit` nor `@NoRateLimit` gets
+ * `PUBLIC_ROUTE_RATE_LIMIT`, per IP and per handler (13.5.a), so a new
+ * anonymous route is never unlimited by omission. A signed-in route with no
+ * annotation passes: its caller has an account that can be frozen.
  *
  * ## A limiter that cannot reach its store refuses
  *
@@ -52,10 +51,7 @@ export class RateLimitGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const options = this.reflector.getAllAndOverride<RateLimitOptions | undefined>(
-      RATE_LIMIT_METADATA,
-      [context.getHandler(), context.getClass()],
-    );
+    const options = this.policyFor(context);
     if (!options) return true;
 
     const request = context.switchToHttp().getRequest<FastifyRequest>();
@@ -97,6 +93,27 @@ export class RateLimitGuard implements CanActivate {
       },
       HttpStatus.TOO_MANY_REQUESTS,
     );
+  }
+
+  private policyFor(context: ExecutionContext): RateLimitOptions | undefined {
+    const targets = [context.getHandler(), context.getClass()];
+    const declared = this.reflector.getAllAndOverride<RateLimitOptions | undefined>(
+      RATE_LIMIT_METADATA,
+      targets,
+    );
+    if (declared) return declared;
+    if (this.reflector.getAllAndOverride<string | undefined>(NO_RATE_LIMIT_METADATA, targets)) {
+      return undefined;
+    }
+    const isPublic = this.reflector.get<string | undefined>(
+      PUBLIC_ROUTE_METADATA,
+      context.getHandler(),
+    );
+    if (isPublic === undefined) return undefined;
+    return {
+      ...PUBLIC_ROUTE_RATE_LIMIT,
+      routeId: `public:${context.getClass().name}.${context.getHandler().name}`,
+    };
   }
 }
 

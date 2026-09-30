@@ -43,6 +43,14 @@ export const NoRateLimit = (reason: string) => SetMetadata(NO_RATE_LIMIT_METADAT
  */
 
 /**
+ * The default for a `@PublicRoute` that declares nothing (13.5.a): per IP,
+ * per handler, well above a person browsing and well below a scraper.
+ */
+export const PUBLIC_ROUTE_RATE_LIMIT: RateLimitPolicy = {
+  ip: { max: 600, windowSeconds: 60 },
+};
+
+/**
  * Registration. The per-IP limit is the operative one: creating accounts is
  * the thing being bounded and an attacker has no identity yet by
  * definition. The route limit is a backstop against a distributed signup

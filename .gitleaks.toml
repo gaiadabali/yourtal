@@ -1,0 +1,9 @@
+# gitleaks (13.5.a): the default rules, minus Atlas's migration checksums,
+# which are hashes that look like keys. Single false positives go in
+# .gitleaksignore by fingerprint, each with the reason it is not a secret.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Atlas migration checksums"
+paths = ['''^packages/db/migrations/atlas\.sum$''']

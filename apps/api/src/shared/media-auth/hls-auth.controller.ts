@@ -2,6 +2,7 @@ import { Controller, Get, Headers, HttpCode, HttpException, Inject } from "@nest
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import { PublicRoute } from "../authz/authorize.decorator";
+import { NoRateLimit } from "../rate-limit/rate-limit.decorator";
 import { verifyHlsUri } from "./hls-token";
 
 /**
@@ -15,6 +16,7 @@ import { verifyHlsUri } from "./hls-token";
 export class HlsAuthController {
   constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {}
 
+  @NoRateLimit("nginx calls it from loopback for every HLS segment of every viewer.")
   @PublicRoute(
     "Called by nginx for every HLS request, with no user session; the signed URL " +
       "itself is the credential, and the route is unreachable from outside nginx.",

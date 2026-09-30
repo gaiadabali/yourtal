@@ -1,6 +1,7 @@
 import { Controller, Get, Res } from "@nestjs/common";
 import type { FastifyReply } from "fastify";
 import { PublicRoute } from "../authz/authorize.decorator";
+import { NoRateLimit } from "../rate-limit/rate-limit.decorator";
 import { HealthService } from "./health.service";
 import type { HealthResponse } from "./health-check.schema";
 
@@ -24,6 +25,7 @@ import type { HealthResponse } from "./health-check.schema";
 export class HealthController {
   constructor(private readonly health: HealthService) {}
 
+  @NoRateLimit("Probes must see an outage, not a 429; it reads nothing a caller supplies.")
   @PublicRoute(
     "A readiness probe must be reachable without a bearer token or a PDP round trip — " +
       "the PDP is one of the two dependencies this route checks, so gating the check on " +

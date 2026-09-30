@@ -1,0 +1,19 @@
+# False positives, one fingerprint per line (commit:file:rule:line), grouped by why.
+# webhook secrets of a local slot database (yourtal_s8c), never staging
+2dc4a562cf58a41380b1f227169a191e1ba74054:packages/db/scripts/tmp-verify-webhooks.mjs:generic-api-key:58
+2dc4a562cf58a41380b1f227169a191e1ba74054:packages/db/scripts/tmp-verify-webhooks.mjs:generic-api-key:63
+# a made-up device credential in a test
+20be229112d5450444365909b22fb0085f6a6119:apps/web/features/merchant/provisioning/device-binding-schema.test.ts:generic-api-key:6
+# a made-up device credential in a test
+20be229112d5450444365909b22fb0085f6a6119:apps/web/features/merchant/provisioning/device-session-cookie.test.ts:generic-api-key:26
+# the local-only RustFS credentials CI uses
+f2556daa3bccbec72532971fa6c7d60d658b5ee1:.github/workflows/integration.yml:curl-auth-user:204
+# prose describing a curl healthcheck
+7d8ae978c8debe26e126bfa40e311712a8e8dcd8:TASKS.md:curl-auth-user:1160
+# test vectors for request signing
+eec197b0e4ec9fb2130dab0686cdf5b7f208cd5c:packages/sdk-merchant/src/signing.test.ts:generic-api-key:42
+eec197b0e4ec9fb2130dab0686cdf5b7f208cd5c:packages/sdk-merchant/src/signing.test.ts:generic-api-key:52
+eec197b0e4ec9fb2130dab0686cdf5b7f208cd5c:packages/sdk-merchant/src/signing.test.ts:generic-api-key:62
+eec197b0e4ec9fb2130dab0686cdf5b7f208cd5c:packages/sdk-merchant/src/signing.test.ts:generic-api-key:73
+eec197b0e4ec9fb2130dab0686cdf5b7f208cd5c:packages/sdk-merchant/src/signing.test.ts:generic-api-key:83
+eec197b0e4ec9fb2130dab0686cdf5b7f208cd5c:packages/sdk-merchant/src/signing.test.ts:generic-api-key:93

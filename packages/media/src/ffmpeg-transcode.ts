@@ -257,35 +257,25 @@ export async function renderTeaser(input: TeaserInput): Promise<void> {
 }
 
 /**
- * 13.9: the first embedded subtitle stream (mov_text, SubRip, WebVTT...) as
- * a WebVTT file. `false` when the upload carries none, or when ffmpeg's
- * output has no cue in it; a file with nothing to show is not a caption.
+ * 13.9: an embedded subtitle stream (mov_text, SubRip, WebVTT...) as a
+ * WebVTT file: the English one when there are several, else the first.
+ * `false` when the upload carries none, or when ffmpeg's output has no cue
+ * in it; a file with nothing to show is not a caption.
  */
 export async function extractCaptions(inputPath: string, outputPath: string): Promise<boolean> {
   const { stdout } = await execFileAsync("ffprobe", [
-    "-v",
-    "error",
-    "-select_streams",
-    "s",
-    "-show_entries",
-    "stream=index",
-    "-of",
-    "csv=p=0",
-    inputPath,
+    ...["-v", "error", "-select_streams", "s"],
+    ...["-show_entries", "stream=index:stream_tags=language", "-of", "csv=p=0", inputPath],
   ]);
-  if (stdout.trim() === "") return false;
+  const languages = stdout
+    .split(/\r?\n/)
+    .filter((line) => line.trim() !== "")
+    .map((line) => line.split(",")[1]?.trim() ?? "");
+  if (languages.length === 0) return false;
+  const english = languages.findIndex((language) => language === "eng" || language === "en");
   await execFileAsync("ffmpeg", [
-    "-hide_banner",
-    "-loglevel",
-    "error",
-    "-y",
-    "-i",
-    inputPath,
-    "-map",
-    "0:s:0",
-    "-c:s",
-    "webvtt",
-    outputPath,
+    ...["-hide_banner", "-loglevel", "error", "-y", "-i", inputPath],
+    ...["-map", `0:s:${String(Math.max(english, 0))}`, "-c:s", "webvtt", outputPath],
   ]);
   return isWebVtt(readFileSync(outputPath, "utf8"));
 }

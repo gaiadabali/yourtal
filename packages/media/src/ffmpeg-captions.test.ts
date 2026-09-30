@@ -41,6 +41,24 @@ describe("extractCaptions", () => {
     expect(text).toContain("Hello there.");
   });
 
+  it("prefers the English track when there are several", async () => {
+    const ger = path.join(workDir, "ger.srt");
+    const eng = path.join(workDir, "eng.srt");
+    writeFileSync(ger, "1\n00:00:00,500 --> 00:00:02,000\nHallo.\n");
+    writeFileSync(eng, "1\n00:00:00,500 --> 00:00:02,000\nHello.\n");
+    const out = path.join(workDir, "two.mp4");
+    execFileSync("ffmpeg", [
+      ...["-hide_banner", "-loglevel", "error", "-y"],
+      ...["-f", "lavfi", "-i", "testsrc=size=320x180:rate=24:duration=3", "-i", ger, "-i", eng],
+      ...["-map", "0:v", "-map", "1:s", "-map", "2:s", "-c:s", "mov_text"],
+      ...["-metadata:s:s:0", "language=ger", "-metadata:s:s:1", "language=eng"],
+      ...["-c:v", "libx264", "-pix_fmt", "yuv420p", out],
+    ]);
+    const vtt = path.join(workDir, "two.vtt");
+    expect(await extractCaptions(out, vtt)).toBe(true);
+    expect(readFileSync(vtt, "utf8")).toContain("Hello.");
+  });
+
   it("reports no captions for an upload without a subtitle stream", async () => {
     expect(await extractCaptions(clip(false), path.join(workDir, "without.vtt"))).toBe(false);
   });

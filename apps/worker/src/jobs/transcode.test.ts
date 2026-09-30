@@ -3,7 +3,7 @@ import { createServer } from "node:http";
 import type { IncomingMessage, Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { randomUUID } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -12,6 +12,7 @@ import type { MediaReadyCallbackRequest, MediaTranscodeJob } from "@yourtal/cont
 import { verifyMediaServiceRequest } from "@yourtal/contracts/studio/media-service-signature";
 import { campaignVideoSourceSchema } from "@yourtal/contracts/campaign/video-source";
 import {
+  captionsObjectKey,
   completeRawUpload,
   createMediaClient,
   createRawUpload,
@@ -158,6 +159,7 @@ describe("transcode job", () => {
     expect(ready.renditionBytes.v360).toBeGreaterThan(0);
     expect(ready.renditionBytes.v540).toBeGreaterThan(0);
     expect(ready.renditionBytes.v720).toBeGreaterThan(0);
+    expect(ready.captionsUrl).toBeNull();
 
     // F61-adjacent (found 2026-09-28, 7.9.d): a bare `/media/…` path here
     // fails campaignSchema's own `z.url()` (posterUrl/teaserUrl are the
@@ -182,6 +184,33 @@ describe("transcode job", () => {
     const segment = await getRawObject(client, hlsAssetObjectKey(assetId, "v1/segment0.ts"));
     expect(segment.length).toBeGreaterThan(0);
     client.destroy();
+  }, 60_000);
+
+  it("extracts an embedded subtitle stream to a served WebVTT track (13.9)", async () => {
+    const assetId = randomUUID();
+    const plain = generateClip();
+    const srt = path.join(path.dirname(plain), "cues.srt");
+    writeFileSync(srt, "1\n00:00:00,500 --> 00:00:02,000\nHello there.\n");
+    const muxed = path.join(path.dirname(plain), "with-subtitles.mp4");
+    execFileSync("ffmpeg", [
+      ...["-hide_banner", "-loglevel", "error", "-y", "-i", plain, "-i", srt],
+      ...["-map", "0", "-map", "1", "-c", "copy", "-c:s", "mov_text", muxed],
+    ]);
+    const rawKey = await uploadRaw(assetId, muxed);
+
+    await job.handle(fakeJob({ assetId, rawObjectKey: rawKey, teaserStartSeconds: 0 }), {
+      boss: undefined as never,
+      config: undefined as never,
+    });
+
+    const ready = api.received;
+    if (ready?.status !== "ready") throw new Error("expected a ready callback");
+    expect(new URL(ready.captionsUrl ?? "").pathname).toContain(`/captions/${assetId}.vtt`);
+    const client = createMediaClient();
+    const vtt = Buffer.from(await getRawObject(client, captionsObjectKey(assetId))).toString();
+    client.destroy();
+    expect(vtt.startsWith("WEBVTT")).toBe(true);
+    expect(vtt).toContain("Hello there.");
   }, 60_000);
 
   it("reports a failure when the input has no video stream", async () => {

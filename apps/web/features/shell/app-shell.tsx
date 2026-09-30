@@ -8,6 +8,13 @@ import { z } from "zod";
 import { apiFetch } from "@/lib/api/api-fetch";
 import { readThemeCookie } from "@/lib/api/session-cookies";
 
+const STAFF_CONSOLE_ROLES: ReadonlySet<string> = new Set([
+  "support",
+  "moderator",
+  "risk_analyst",
+  "finance",
+  "ops",
+]);
 const streakResponseSchema = z.object({ currentLength: z.number().int().min(0) });
 import { ViewerShell } from "./viewer-shell";
 
@@ -48,7 +55,8 @@ export async function AppShell({ children }: AppShellProps) {
         displayName: me.data.profile.displayName,
         email: me.data.email ?? null,
         hasStudio: me.data.businessMemberships.length > 0,
-        hasStaff: me.data.staffRoles.length > 0,
+        // staff_console.yaml opens for working roles only, not `admin` alone.
+        hasStaff: me.data.staffRoles.some((role) => STAFF_CONSOLE_ROLES.has(role)),
       }
     : undefined;
   return (

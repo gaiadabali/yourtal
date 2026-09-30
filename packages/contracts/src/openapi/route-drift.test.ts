@@ -282,6 +282,8 @@ const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   "POST /api/me/linked-apps/code": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
   "GET /api/me/settings/autoplay": "MeModule -- TASKS.md 6.7.a, this pass's own ticket.",
   "PUT /api/me/settings/autoplay": "MeModule -- TASKS.md 6.7.a, this pass's own ticket.",
+  "GET /api/me/settings/theme": "MeModule -- TASKS.md 13.16.a, same convention as autoplay.",
+  "PUT /api/me/settings/theme": "MeModule -- TASKS.md 13.16.a, same convention as autoplay.",
 
   // FeedModule -- TASKS.md 7.7, this pass's own ticket. Same "stand the
   // module up first, transcribe the contract later" reasoning as every

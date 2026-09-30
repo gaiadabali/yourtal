@@ -313,12 +313,20 @@
                       "items": {
                         "type": "string"
                       }
+                    },
+                    "email": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "The sign-in email, for the account menu."
                     }
                   },
                   "required": [
                     "profile",
                     "businessMemberships",
-                    "staffRoles"
+                    "staffRoles",
+                    "email"
                   ],
                   "additionalProperties": false
                 }
@@ -416,12 +424,20 @@
                       "items": {
                         "type": "string"
                       }
+                    },
+                    "email": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "The sign-in email, for the account menu."
                     }
                   },
                   "required": [
                     "profile",
                     "businessMemberships",
-                    "staffRoles"
+                    "staffRoles",
+                    "email"
                   ],
                   "additionalProperties": false
                 }

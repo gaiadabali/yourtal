@@ -108,8 +108,9 @@ const meResponseSchema: Record<string, unknown> = {
     profile: ref("UserProfile"),
     businessMemberships: { type: "array", items: businessMembershipSchema },
     staffRoles: { type: "array", items: { type: "string" } },
+    email: { type: ["string", "null"], description: "The sign-in email, for the account menu." },
   },
-  required: ["profile", "businessMemberships", "staffRoles"],
+  required: ["profile", "businessMemberships", "staffRoles", "email"],
   additionalProperties: false,
 };
 

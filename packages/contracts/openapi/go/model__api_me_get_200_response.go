@@ -23,6 +23,8 @@ type ApiMeGet200Response struct {
 	Profile UserProfile `json:"profile"`
 	BusinessMemberships []ApiMeGet200ResponseBusinessMembershipsInner `json:"businessMemberships"`
 	StaffRoles []*string `json:"staffRoles"`
+	// The sign-in email, for the account menu.
+	Email NullableString `json:"email"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -32,11 +34,12 @@ type _ApiMeGet200Response ApiMeGet200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiMeGet200Response(profile UserProfile, businessMemberships []ApiMeGet200ResponseBusinessMembershipsInner, staffRoles []*string) *ApiMeGet200Response {
+func NewApiMeGet200Response(profile UserProfile, businessMemberships []ApiMeGet200ResponseBusinessMembershipsInner, staffRoles []*string, email NullableString) *ApiMeGet200Response {
 	this := ApiMeGet200Response{}
 	this.Profile = profile
 	this.BusinessMemberships = businessMemberships
 	this.StaffRoles = staffRoles
+	this.Email = email
 	return &this
 }
 
@@ -120,6 +123,32 @@ func (o *ApiMeGet200Response) SetStaffRoles(v []*string) {
 	o.StaffRoles = v
 }
 
+// GetEmail returns the Email field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *ApiMeGet200Response) GetEmail() string {
+	if o == nil || o.Email.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.Email.Get()
+}
+
+// GetEmailOk returns a tuple with the Email field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiMeGet200Response) GetEmailOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.Email.Get(), o.Email.IsSet()
+}
+
+// SetEmail sets field value
+func (o *ApiMeGet200Response) SetEmail(v string) {
+	o.Email.Set(&v)
+}
+
 func (o ApiMeGet200Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -133,6 +162,7 @@ func (o ApiMeGet200Response) ToMap() (map[string]interface{}, error) {
 	toSerialize["profile"] = o.Profile
 	toSerialize["businessMemberships"] = o.BusinessMemberships
 	toSerialize["staffRoles"] = o.StaffRoles
+	toSerialize["email"] = o.Email.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -149,6 +179,7 @@ func (o *ApiMeGet200Response) UnmarshalJSON(data []byte) (err error) {
 		"profile",
 		"businessMemberships",
 		"staffRoles",
+		"email",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -181,6 +212,7 @@ func (o *ApiMeGet200Response) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "profile")
 		delete(additionalProperties, "businessMemberships")
 		delete(additionalProperties, "staffRoles")
+		delete(additionalProperties, "email")
 		o.AdditionalProperties = additionalProperties
 	}
 

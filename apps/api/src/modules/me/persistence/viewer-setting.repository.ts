@@ -3,7 +3,8 @@ import type { AutoplaySetting } from "@yourtal/contracts/me/autoplay-setting";
 import { defaultAutoplayFor } from "@yourtal/contracts/me/autoplay-setting";
 import type { Region } from "@yourtal/contracts/region";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
-import { viewerSettings } from "./schema/me-schema";
+import type { ThemeSetting } from "@yourtal/contracts/me/theme-setting";
+import { viewerSettings, viewerThemes } from "./schema/me-schema";
 
 /**
  * `me.viewer_setting` (6.7.a) — read/write for the settings controller.
@@ -15,6 +16,9 @@ export interface ViewerSettingRepository {
   /** `null` when the user has never set one — the caller resolves the region default. */
   autoplayFor(userId: string): Promise<AutoplaySetting | null>;
   setAutoplay(userId: string, autoplay: AutoplaySetting): Promise<void>;
+  /** 13.16.a: `system` when the viewer never picked one. */
+  themeFor(userId: string): Promise<ThemeSetting>;
+  setTheme(userId: string, theme: ThemeSetting): Promise<void>;
 }
 
 export const VIEWER_SETTING_REPOSITORY = Symbol("VIEWER_SETTING_REPOSITORY");
@@ -36,6 +40,22 @@ export class DrizzleViewerSettingRepository implements ViewerSettingRepository {
       .insert(viewerSettings)
       .values({ userId, autoplay })
       .onConflictDoUpdate({ target: viewerSettings.userId, set: { autoplay } });
+  }
+
+  async themeFor(userId: string): Promise<ThemeSetting> {
+    const rows = await this.db
+      .select({ theme: viewerThemes.theme })
+      .from(viewerThemes)
+      .where(eq(viewerThemes.userId, userId))
+      .limit(1);
+    return (rows[0]?.theme as ThemeSetting | undefined) ?? "system";
+  }
+
+  async setTheme(userId: string, theme: ThemeSetting): Promise<void> {
+    await this.db
+      .insert(viewerThemes)
+      .values({ userId, theme })
+      .onConflictDoUpdate({ target: viewerThemes.userId, set: { theme, updatedAt: new Date() } });
   }
 }
 

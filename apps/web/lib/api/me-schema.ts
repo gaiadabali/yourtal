@@ -19,6 +19,8 @@ export const meResponseSchema = z.object({
     }),
   ),
   staffRoles: z.array(z.string()),
+  /** 13.18.b: the sign-in email for the account menu. Optional so older fixtures still parse. */
+  email: z.string().nullable().optional(),
 });
 
 export type MeResponse = z.infer<typeof meResponseSchema>;

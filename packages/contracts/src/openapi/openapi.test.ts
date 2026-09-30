@@ -363,6 +363,8 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   // --- me (TASKS.md 6.7.a) ---
   autoplaySettingSchema:
     "MeModule -- TASKS.md 6.7.a, this pass's own ticket. GET/PUT /api/me/settings/autoplay is in route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger (same convention as every other MeModule route from 5.4/5.5) -- no packages/contracts/src/openapi route-registry entry exists for it to be published from.",
+  themeSettingSchema: "MeModule -- TASKS.md 13.16.a, same convention as autoplaySettingSchema.",
+  themeResponseSchema: "MeModule -- TASKS.md 13.16.a, same convention as autoplaySettingSchema.",
 
   // --- device (TASKS.md 8.1-8.4): request bodies, documented inline via
   // inlineSchema() in route-registry.c.ts rather than published as their

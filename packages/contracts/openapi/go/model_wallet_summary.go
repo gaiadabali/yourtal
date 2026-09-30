@@ -31,6 +31,8 @@ type WalletSummary struct {
 	// Platform points. Always a whole number; there is no fractional point.
 	ExpiringPoints int64 `json:"expiringPoints"`
 	ExpiringAt NullableTime `json:"expiringAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
+	// Platform points. Always a whole number; there is no fractional point.
+	DailyCapPoints *int64 `json:"dailyCapPoints,omitempty"`
 }
 
 type _WalletSummary WalletSummary
@@ -204,6 +206,38 @@ func (o *WalletSummary) SetExpiringAt(v time.Time) {
 	o.ExpiringAt.Set(&v)
 }
 
+// GetDailyCapPoints returns the DailyCapPoints field value if set, zero value otherwise.
+func (o *WalletSummary) GetDailyCapPoints() int64 {
+	if o == nil || IsNil(o.DailyCapPoints) {
+		var ret int64
+		return ret
+	}
+	return *o.DailyCapPoints
+}
+
+// GetDailyCapPointsOk returns a tuple with the DailyCapPoints field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *WalletSummary) GetDailyCapPointsOk() (*int64, bool) {
+	if o == nil || IsNil(o.DailyCapPoints) {
+		return nil, false
+	}
+	return o.DailyCapPoints, true
+}
+
+// HasDailyCapPoints returns a boolean if a field has been set.
+func (o *WalletSummary) HasDailyCapPoints() bool {
+	if o != nil && !IsNil(o.DailyCapPoints) {
+		return true
+	}
+
+	return false
+}
+
+// SetDailyCapPoints gets a reference to the given int64 and assigns it to the DailyCapPoints field.
+func (o *WalletSummary) SetDailyCapPoints(v int64) {
+	o.DailyCapPoints = &v
+}
+
 func (o WalletSummary) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -220,6 +254,9 @@ func (o WalletSummary) ToMap() (map[string]interface{}, error) {
 	toSerialize["pending"] = o.Pending
 	toSerialize["expiringPoints"] = o.ExpiringPoints
 	toSerialize["expiringAt"] = o.ExpiringAt.Get()
+	if !IsNil(o.DailyCapPoints) {
+		toSerialize["dailyCapPoints"] = o.DailyCapPoints
+	}
 	return toSerialize, nil
 }
 

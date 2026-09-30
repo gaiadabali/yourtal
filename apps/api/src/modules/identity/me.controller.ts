@@ -12,6 +12,8 @@ import { USER_PROFILE_REPOSITORY } from "./persistence/user-profile.repository";
 import type { UserProfileRepository } from "./persistence/user-profile.repository";
 import { STAFF_ROLE_READER } from "./persistence/staff-role-reader";
 import type { StaffRoleReader } from "./persistence/staff-role-reader";
+import { ACCOUNT_EMAIL_READER } from "./persistence/account-email-reader";
+import type { AccountEmailReader } from "./persistence/account-email-reader";
 import { UpdateMeDto } from "./dto/update-me.schema";
 import { mapMeErrorToHttpException } from "./to-http-exception";
 import { getMe } from "./use-cases/get-me.use-case";
@@ -36,6 +38,7 @@ export class MeController {
     @Inject(BUSINESS_MEMBERSHIP_READER)
     private readonly businessMemberships: BusinessMembershipReader,
     @Inject(STAFF_ROLE_READER) private readonly staffRoles: StaffRoleReader,
+    @Inject(ACCOUNT_EMAIL_READER) private readonly emails: AccountEmailReader,
   ) {}
 
   @Authorize({ kind: "session", action: "view_profile" })
@@ -50,7 +53,7 @@ export class MeController {
       new Date(),
     );
     if (result.isErr()) throw mapMeErrorToHttpException(result.error);
-    return result.value;
+    return { ...result.value, email: await this.emails.emailFor(userId) };
   }
 
   @NotValueMoving(
@@ -78,6 +81,6 @@ export class MeController {
       new Date(),
     );
     if (refreshed.isErr()) throw mapMeErrorToHttpException(refreshed.error);
-    return refreshed.value;
+    return { ...refreshed.value, email: await this.emails.emailFor(userId) };
   }
 }

@@ -23,6 +23,7 @@
     "./interest/category-map": "./src/interest/category-map.ts",
     "./me/streak": "./src/me/streak.ts",
     "./me/autoplay-setting": "./src/me/autoplay-setting.ts",
+    "./me/theme-setting": "./src/me/theme-setting.ts",
     "./me/notification": "./src/me/notification.ts",
     "./listing/mock": "./src/listing/listing.mock.ts",
     "./listing/merchant-location": "./src/listing/merchant-location.ts",

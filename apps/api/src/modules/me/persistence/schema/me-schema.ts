@@ -74,6 +74,13 @@ export const notificationPreferences = mePgSchema.table("notification_preference
 });
 
 /** 6.7.a: the viewer's own display settings. One row per user; absent means "use the region default". */
+/** 13.16.a: `me.viewer_theme`, one row per viewer who picked a theme. */
+export const viewerThemes = mePgSchema.table("viewer_theme", {
+  userId: text("user_id").primaryKey(),
+  theme: text("theme").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const viewerSettings = mePgSchema.table("viewer_setting", {
   userId: text("user_id").primaryKey(),
   autoplay: text("autoplay").notNull(),

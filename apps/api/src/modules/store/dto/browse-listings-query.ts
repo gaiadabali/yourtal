@@ -1,4 +1,4 @@
-import { z } from "zod";
+import type { z } from "zod";
 import { listingBrowseQuerySchema } from "@yourtal/contracts/listing/browse";
 import type { Audience } from "@yourtal/contracts/campaign";
 import type { Region } from "@yourtal/contracts/region";

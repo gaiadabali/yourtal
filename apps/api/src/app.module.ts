@@ -103,7 +103,13 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
         userAccount: UserAccountAttributeLoader,
         charity: CharityAttributeLoader,
         auction: AuctionAttributeLoader,
-      ): readonly ResourceAttributeLoader[] => [campaignView, wallet, userAccount, charity, auction],
+      ): readonly ResourceAttributeLoader[] => [
+        campaignView,
+        wallet,
+        userAccount,
+        charity,
+        auction,
+      ],
       inject: [
         CampaignViewAttributeLoader,
         WalletAttributeLoader,

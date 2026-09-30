@@ -103,8 +103,8 @@ export class GuardianConsentController {
    * `POST /api/guardian/:token/delete-account` (12.4.b #6). Runs the same
    * deletion the teen's own `DELETE /api/me` does
    * (`delete-guardian-account.use-case.ts`'s own header explains why this
-   * is not a parallel implementation, and why it does not escrow the
-   * balance the way `revoke` above does). Idempotent in the sense that
+   * is not a parallel implementation; its ledger part escrows the balance
+   * for good). Idempotent in the sense that
    * matters here: the token is dead after the first success, so a retry
    * with a FRESH idempotency key (a genuinely separate request, not a
    * replay of the first) 404s exactly like any other spent link, rather
@@ -118,7 +118,7 @@ export class GuardianConsentController {
   async deleteAccount(@Param("token") token: string, @Body() _body: DeleteGuardianAccountDto) {
     // `_body.confirm` is already proven `true` by the DTO's own schema, same
     // shape `approve`'s own `_body.confirmAdult` is above.
-    const result = await deleteGuardianAccount(this.pool, this.consents, token);
+    const result = await deleteGuardianAccount(this.pool, this.consents, this.ledger, token);
     if (result.isErr()) throw mapGuardianConsentErrorToHttpException(result.error);
     return result.value;
   }

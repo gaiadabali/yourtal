@@ -3,11 +3,9 @@ import type { FastifyRequest } from "fastify";
 import type { DeletionReport } from "@yourtal/consent/dsar-orchestrator";
 import { executeDeletion } from "@yourtal/consent/dsar-orchestrator";
 import { deletionPlan } from "@yourtal/consent/dsar";
-// `@yourtal/db` had no "exports" map (nothing outside it imported from it
-// before this ticket) — added one entry, `./dsar-handlers`, so this crosses
-// the package boundary the same way every other cross-package import in
-// this repo does, rather than a deep `src/` import (13b §5).
-import { postgresHandlers } from "@yourtal/db/dsar-handlers";
+import { deletionHandlers } from "../../shared/dsar/deletion-handlers";
+import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
+import type { LedgerInternalClient } from "../../shared/ledger-client/ledger-internal-client";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { PrincipalService } from "../../shared/authz/principal.service";
@@ -27,12 +25,12 @@ import type { StreakStateRepository } from "./persistence/streak-state.repositor
 
 /**
  * `DELETE /api/me` and `GET /api/me/data-export` (5.4.b). Deletion runs
- * `@yourtal/consent`'s `executeDeletion` against `postgresHandlers`
- * (`@yourtal/db`, A's file) — the `identity` handler there already erases
+ * `@yourtal/consent`'s `executeDeletion` against `deletionHandlers`
+ * (A's, 13.24: Postgres's plus the ledger's) — the `identity` handler erases
  * business membership, `user_profile`, `credential` and `session` in one
  * pass (1.4.f, done for exactly this ticket), which is what ends every
  * session and removes the profile. Domains with no handler yet (`watch_
- * sessions`, `ledger`, ...) come back `unhandled` in the report rather than
+ * sessions`, ...) come back `unhandled` in the report rather than
  * silently reported done — see `dsar-orchestrator.ts`'s own header for why.
  */
 @Controller("api/me")
@@ -45,6 +43,7 @@ export class AccountController {
     @Inject(FOLLOW_REPOSITORY) private readonly follows: FollowRepository,
     @Inject(SAVE_REPOSITORY) private readonly saves: SaveRepository,
     @Inject(STREAK_STATE_REPOSITORY) private readonly streaks: StreakStateRepository,
+    @Inject(LEDGER_INTERNAL_CLIENT) private readonly ledger: LedgerInternalClient,
   ) {}
 
   // A repeated delete-account call must not run the deletion a second time.
@@ -53,7 +52,7 @@ export class AccountController {
   @Delete()
   async deleteAccount(@Req() request: FastifyRequest): Promise<DeletionReport> {
     const userId = (await this.principals.resolve(request)).id;
-    return executeDeletion(userId, postgresHandlers(this.pool));
+    return executeDeletion(userId, deletionHandlers(this.pool, this.ledger));
   }
 
   @Authorize({ kind: "me", action: "export_data" })

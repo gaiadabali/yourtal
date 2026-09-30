@@ -236,6 +236,8 @@ And `docs/24` position **ID-1** — that YourTal Points are a loyalty currency a
 
 **Recorded as a direction, not as buildable.** `yourtal-5a` continues to refuse the full-consumption refund with a named error, which remains correct under P-1. Nothing about resale is to be built until the denomination question is answered — see YT-0562.
 
+**Settled by F86 (founder, 2026-09-30), which answers YT-0562.** There is no open resale market. The four exits are now: **gift it once** to a verified adult in the same region (void-and-remint, one hop); **auction it for a verified charity**, where bids are **in cash** and the winning payment goes **straight to the charity's own account**, never through YourTal; the charity gets it to use if nobody bids; or **let it expire**. Bids are never in points, so the one-way valve holds and points get no market price; the proceeds go only to charity, so no viewer ever turns a voucher into cash. A voucher received by gift or auction cannot move again. Built as 13.20 and 13.22; the self-assessment is in `docs/24`, _Gifting and charity auctions_.
+
 ---
 
 ## Q — CI, and what "verified" is allowed to mean

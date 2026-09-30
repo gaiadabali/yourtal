@@ -144,7 +144,20 @@ export type ListPendingListingModerationResponse = z.infer<
   typeof listPendingListingModerationResponseSchema
 >;
 
-export const approveListingModerationRequestSchema = staffReasonSchema;
+/**
+ * 12.4.c (F83): "confirm or change" (1.1.d), the same shape
+ * `approveCampaignModerationRequestSchema` above already gives campaigns --
+ * a moderator may override the declared audience/category before approving
+ * a flagged listing too. Both optional -- omitting either confirms the
+ * business's own value unchanged.
+ */
+export const approveListingModerationRequestSchema = z
+  .object({
+    reason: z.string().min(1).max(500),
+    audience: audienceSchema.optional(),
+    contentCategory: contentCategorySchema.optional(),
+  })
+  .strict();
 export type ApproveListingModerationRequest = z.infer<typeof approveListingModerationRequestSchema>;
 
 export const rejectListingModerationRequestSchema = staffReasonSchema;

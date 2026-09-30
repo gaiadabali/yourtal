@@ -35,6 +35,23 @@ export interface PersistenceFailedError {
   readonly cause: string;
 }
 
+/**
+ * 12.4.c (F83): a `prohibited` content category for the business's own
+ * region (1.1.d) -- the same policy `studio`'s campaign draft already
+ * enforces, reused here (`category-policy.ts`'s `categoryRefusal`) rather
+ * than a second copy of the table.
+ */
+export interface ProhibitedCategoryError {
+  readonly type: "prohibited_category";
+  readonly category: string;
+}
+
+/** An `adult_only` category was saved (or moderated in) with an audience other than "adult". */
+export interface AudienceMustBeAdultError {
+  readonly type: "audience_must_be_adult";
+  readonly category: string;
+}
+
 export interface LocationNotFoundError {
   readonly type: "location_not_found";
   readonly locationId: string;
@@ -84,10 +101,16 @@ export interface ApprovalRefusedError {
 export type CreateListingError =
   | InvalidLocationsError
   | BusinessNotFoundError
+  | ProhibitedCategoryError
+  | AudienceMustBeAdultError
   | ListingPricingFailedError
   | PersistenceFailedError;
 
-export type EditListingError = ListingNotFoundError | PersistenceFailedError;
+export type EditListingError =
+  | ListingNotFoundError
+  | ProhibitedCategoryError
+  | AudienceMustBeAdultError
+  | PersistenceFailedError;
 
 export type SetSettlementValueError =
   ListingNotFoundError | ListingPricingFailedError | PersistenceFailedError;
@@ -144,6 +167,12 @@ export type ApproveSettlementDecreaseError =
 
 export type SetListingLifecycleError =
   ListingNotFoundError | InvalidLifecycleTransitionError | PersistenceFailedError;
+
+export type ModerateListingError =
+  | InvalidLifecycleTransitionError
+  | ProhibitedCategoryError
+  | AudienceMustBeAdultError
+  | PersistenceFailedError;
 
 export type GetListingError = ListingNotFoundError | PersistenceFailedError;
 

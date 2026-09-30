@@ -21,10 +21,15 @@ import type { CreateQuestionError } from "../studio.errors";
  * client-only guard entirely.
  *
  * TASKS.md 12.3.a: the draft is fetched before the guards run (moved ahead
- * of where 7.3.b left it) so its own audience is in hand for the teen-only
- * personal-question guard below -- a teen campaign gets one extra, hard
- * refusal no other audience does; every audience still gets the universal
- * PII/prediction guards unconditionally.
+ * of where 7.3.b left it) so its own audience is in hand for the extra
+ * personal-question guard below -- a teen OR all_ages campaign gets one
+ * extra, hard refusal no adult/parents campaign does; every audience still
+ * gets the universal PII/prediction guards unconditionally.
+ *
+ * 12.4.c (F83): widened from teen-only to teen-or-all_ages -- a teen account
+ * reaches `all_ages` campaigns too (`reachesAudience`), so an all_ages
+ * question bank needed the same minimising guard a teen-audience one always
+ * had.
  */
 export function createQuestion(
   deps: { readonly drafts: CampaignDraftRepository; readonly bank: QuestionBankRepository },
@@ -58,7 +63,7 @@ export function createQuestion(
         reason: predictionFinding.reason,
       });
     }
-    if (draft.audience === "teen") {
+    if (draft.audience === "teen" || draft.audience === "all_ages") {
       const personalFinding = detectTeenPersonalQuestion(question.prompt);
       if (personalFinding !== null) {
         return errAsync<BankQuestionRecord, CreateQuestionError>({

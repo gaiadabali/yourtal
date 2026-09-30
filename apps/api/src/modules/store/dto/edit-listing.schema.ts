@@ -6,6 +6,8 @@ import {
   partialRedemptionPolicySchema,
 } from "@yourtal/contracts/listing";
 import { minorUnitsSchema } from "@yourtal/contracts/money";
+import { audienceSchema } from "@yourtal/contracts/campaign";
+import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";
 
 /**
  * Every field optional (a PATCH), and deliberately WITHOUT
@@ -28,6 +30,11 @@ export const editListingSchema = z.object({
   expiresAt: z.iso.datetime().optional(),
   status: listingStatusSchema.optional(),
   perUserLimit: z.number().int().positive().nullable().optional(),
+  // 12.4.c (F83): re-checked against the same 1.1.d policy `create` already
+  // enforces (`edit-listing.use-case.ts`'s own `categoryRefusal` call) --
+  // never applied unchecked.
+  contentCategory: contentCategorySchema.optional(),
+  audience: audienceSchema.optional(),
 });
 
 export type EditListingRequest = z.infer<typeof editListingSchema>;

@@ -78,11 +78,11 @@ export function updateQuestion(
       if (draft.lifecycleState !== "draft") {
         return errAsync<BankQuestionRecord, UpdateQuestionError>({ type: "campaign_not_draft" });
       }
-      // TASKS.md 12.3.a: the same teen-only guard create-question.use-case.ts
-      // runs, re-run here because the prompt may have just changed into a
-      // personal question -- an edit that skipped this would be a second,
-      // unscreened way into a teen-audience bank.
-      if (draft.audience === "teen") {
+      // TASKS.md 12.3.a/12.4.c: the same teen-or-all_ages guard
+      // create-question.use-case.ts runs, re-run here because the prompt may
+      // have just changed into a personal question -- an edit that skipped
+      // this would be a second, unscreened way into a bank a teen can reach.
+      if (draft.audience === "teen" || draft.audience === "all_ages") {
         const personalFinding = detectTeenPersonalQuestion(question.prompt);
         if (personalFinding !== null) {
           return errAsync<BankQuestionRecord, UpdateQuestionError>({

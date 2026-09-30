@@ -1,11 +1,16 @@
 /**
- * TASKS.md 9.2.d: restated from `@yourtal/jurisdiction`'s `contentCategorySchema`/
- * `categoryPolicy` -- that package is not an `apps/web` dependency (this
- * client-reachable module must not pull in its Zod runtime), the same
- * reason `campaign-editor-details.tsx`'s own `CONTENT_CATEGORIES` restates
- * it. The real enum/policy is still enforced server-side on every approve
- * call (`categoryRefusal`); a drift here fails loudly there, not silently
- * here.
+ * TASKS.md 9.2.d/12.4.c: restated from `@yourtal/jurisdiction`'s
+ * `contentCategorySchema`/`categoryPolicy` -- that package is not an
+ * `apps/web` dependency (this client-reachable module must not pull in its
+ * Zod runtime), the same reason `campaign-editor-details.tsx`'s own
+ * `CONTENT_CATEGORIES` restates it. The real enum/policy is still enforced
+ * server-side on every approve call (`categoryRefusal`); a drift here fails
+ * loudly there, not silently here.
+ *
+ * Despite the filename, this table is not campaign-specific -- a listing is
+ * checked against the exact same region/category/audience policy
+ * (`categoryRefusal`, server-side), so `staff-listing-approve-dialog-button.tsx`
+ * imports this module too rather than duplicating the table a third time.
  */
 export const CONTENT_CATEGORIES = [
   "food-and-drink",

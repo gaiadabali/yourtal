@@ -191,6 +191,12 @@ export class DrizzleListingRepository implements ListingRepository {
     if (patch.expiresAt !== undefined) values.expiresAt = new Date(patch.expiresAt);
     if (patch.status !== undefined) values.status = patch.status;
     if (patch.perUserLimit !== undefined) values.perUserLimit = patch.perUserLimit;
+    // 12.4.c: the caller (edit-listing.use-case.ts, or a staff moderation
+    // override) has already run categoryRefusal against the merged
+    // category/audience before calling in here -- this method never
+    // re-derives or re-checks it.
+    if (patch.contentCategory !== undefined) values.contentCategory = patch.contentCategory;
+    if (patch.audience !== undefined) values.audience = patch.audience;
 
     if (Object.keys(values).length === 0) {
       return this.findOwnedById(merchantId, listingId);

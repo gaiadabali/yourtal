@@ -9,6 +9,7 @@ import {
 import type { HttpException } from "@nestjs/common";
 import type {
   ApprovalRefusedError,
+  AudienceMustBeAdultError,
   BusinessNotFoundError,
   DecreaseAlreadyPendingError,
   InvalidLifecycleTransitionError,
@@ -19,6 +20,7 @@ import type {
   LocationNotFoundError,
   NotAMaterialDecreaseError,
   PersistenceFailedError,
+  ProhibitedCategoryError,
   SettlementDecreaseRequestNotFoundError,
   VoucherBatchRequestNotFoundError,
   VoucherMintFailedError,
@@ -35,6 +37,8 @@ export type StoreDomainError =
   | InvalidLocationsError
   | BusinessNotFoundError
   | InvalidLifecycleTransitionError
+  | ProhibitedCategoryError
+  | AudienceMustBeAdultError
   | NotAMaterialDecreaseError
   | DecreaseAlreadyPendingError
   | SettlementDecreaseRequestNotFoundError
@@ -67,6 +71,16 @@ export function mapStoreErrorToHttpException(error: StoreDomainError): HttpExcep
       return new BadRequestException({
         code: "invalid_lifecycle_transition",
         message: `cannot move a listing from ${error.from} to ${error.to}`,
+      });
+    case "prohibited_category":
+      return new BadRequestException({
+        code: "prohibited_category",
+        message: `"${error.category}" is a prohibited content category in this business's region`,
+      });
+    case "audience_must_be_adult":
+      return new BadRequestException({
+        code: "audience_must_be_adult",
+        message: `"${error.category}" is adult_only in this business's region; audience must be "adult"`,
       });
     case "not_a_material_decrease":
       return new BadRequestException({

@@ -56,10 +56,20 @@ describe("addQuestionToBank", () => {
     }
   });
 
-  it("12.3.a: allows the identical prompt for a non-teen campaign", () => {
+  it("12.4.c: refuses the same personal question for an all_ages campaign too, since a teen reaches it", () => {
     const draft = createEmptyQuestionDraft("short_text", CAMPAIGN_ID, idFactory);
     draft.prompt = "How old are you?";
     const result = addQuestionToBank([], draft, "all_ages");
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.type).toBe("pii_request");
+    }
+  });
+
+  it("12.3.a: allows the identical prompt for an adult-only campaign, which a teen cannot reach", () => {
+    const draft = createEmptyQuestionDraft("short_text", CAMPAIGN_ID, idFactory);
+    draft.prompt = "How old are you?";
+    const result = addQuestionToBank([], draft, "adult");
     expect(result.ok).toBe(true);
   });
 });

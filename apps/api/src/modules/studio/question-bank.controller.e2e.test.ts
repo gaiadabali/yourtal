@@ -265,9 +265,18 @@ describe("POST /api/:tenantId/studio/campaigns/:campaignId/questions (12.3.a tee
     expect(response.statusCode).toBe(201);
   });
 
-  it("does not refuse the same personal-style prompt on a non-teen campaign", async () => {
+  it("refuses the same personal question on an all_ages campaign too, since a teen reaches it", async () => {
     const { cookie, businessId } = await ownerAt();
     const campaignId = await createDraftCampaign(cookie, businessId, "all_ages");
+
+    const response = await postQuestion(cookie, businessId, campaignId, "How old are you?");
+    expect(response.statusCode).toBe(400);
+    expect(response.json<{ code: string }>().code).toBe("teen_personal_question");
+  });
+
+  it("does not refuse the same personal-style prompt on an adult-only campaign, which a teen cannot reach", async () => {
+    const { cookie, businessId } = await ownerAt();
+    const campaignId = await createDraftCampaign(cookie, businessId, "adult");
 
     const response = await postQuestion(cookie, businessId, campaignId, "How old are you?");
     expect(response.statusCode).toBe(201);

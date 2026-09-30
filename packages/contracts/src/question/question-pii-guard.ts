@@ -138,18 +138,20 @@ export function detectPredictionRequest(promptText: string): PredictionFinding |
 
 /**
  * TASKS.md 12.3.a: "Teen-rated question banks may not ask personal
- * questions." A STRICTER, teen-only layer on top of `detectPiiRequest`
- * above -- that function already refuses hard data-harvesting categories
- * (phone, email, government ID, and the rest) for every campaign,
- * regardless of audience. This one adds the categories that are ordinary,
- * fine questions for an adult audience (an opinion on age, school,
- * neighbourhood, appearance, family or an online handle) but are not
- * something a 13-17-year-old's quiz should be asking at all -- the
- * platform minimising what it collects from a minor, not just what counts
- * as identity-theft-grade PII. Called only when the campaign's own
- * `audience` is `"teen"` (`create-question.use-case.ts` /
- * `update-question.use-case.ts`); an adult, parents or all_ages campaign
- * never runs this check.
+ * questions." A STRICTER layer on top of `detectPiiRequest` above -- that
+ * function already refuses hard data-harvesting categories (phone, email,
+ * government ID, and the rest) for every campaign, regardless of audience.
+ * This one adds the categories that are ordinary, fine questions for an
+ * adult audience (an opinion on age, school, neighbourhood, appearance,
+ * family or an online handle) but are not something a 13-17-year-old's quiz
+ * should be asking at all -- the platform minimising what it collects from
+ * a minor, not just what counts as identity-theft-grade PII. Called when
+ * the campaign's own `audience` is `"teen"` OR `"all_ages"`
+ * (`create-question.use-case.ts` / `update-question.use-case.ts`) -- a teen
+ * account reaches all_ages campaigns too (12.4.c, F83; see
+ * `packages/contracts/src/audience/audience.ts`'s `reachesAudience`). An
+ * adult or parents campaign, which a teen can never reach, never runs this
+ * check.
  */
 const TEEN_PERSONAL_RULES: PiiRule[] = [
   {

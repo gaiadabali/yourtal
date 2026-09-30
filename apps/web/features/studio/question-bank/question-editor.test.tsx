@@ -94,11 +94,24 @@ describe("QuestionEditor", () => {
     expect(error.textContent).toContain("age or date of birth");
   });
 
-  it("12.3.a: does not refuse the identical prompt for a non-teen campaign", async () => {
+  it("12.4.c: shows the same personal-question rejection inline for an all_ages campaign too", async () => {
     render(
       <StatefulEditor
         initial={createEmptyQuestionDraft("short_text", CAMPAIGN_ID)}
         audience="all_ages"
+      />,
+    );
+    const prompt = screen.getByRole("textbox", { name: "Question prompt" });
+    await userEvent.type(prompt, "How old are you?");
+    const error = await screen.findByRole("alert");
+    expect(error.textContent).toContain("age or date of birth");
+  });
+
+  it("12.3.a: does not refuse the identical prompt for an adult-only campaign, which a teen cannot reach", async () => {
+    render(
+      <StatefulEditor
+        initial={createEmptyQuestionDraft("short_text", CAMPAIGN_ID)}
+        audience="adult"
       />,
     );
     const prompt = screen.getByRole("textbox", { name: "Question prompt" });

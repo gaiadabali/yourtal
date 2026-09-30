@@ -25,7 +25,12 @@ export type QuestionBankActionError =
 export type QuestionBankActionResult<T> =
   { ok: true; value: T } | { ok: false; error: QuestionBankActionError };
 
-/** TASKS.md 12.3.a: `audience` defaults to a non-teen value -- only a teen-audience campaign runs the extra personal-question guard, same as the server's own use-cases. */
+/**
+ * TASKS.md 12.3.a/12.4.c: `audience` defaults to a value neither `teen` nor
+ * `all_ages` runs -- a teen OR all_ages campaign runs the extra
+ * personal-question guard, same as the server's own use-cases (a teen
+ * account reaches all_ages campaigns too, `reachesAudience`).
+ */
 function validatePrompt(draft: QuestionDraft, audience?: string): QuestionBankActionError | null {
   if (draft.prompt.trim().length === 0) {
     return { type: "empty_prompt" };
@@ -34,7 +39,7 @@ function validatePrompt(draft: QuestionDraft, audience?: string): QuestionBankAc
   if (finding) {
     return { type: "pii_request", category: finding.category, reason: finding.reason };
   }
-  if (audience === "teen") {
+  if (audience === "teen" || audience === "all_ages") {
     const teenFinding = detectTeenPersonalQuestion(draft.prompt);
     if (teenFinding) {
       return { type: "pii_request", category: teenFinding.category, reason: teenFinding.reason };

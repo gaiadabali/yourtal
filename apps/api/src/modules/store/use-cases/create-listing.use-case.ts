@@ -1,6 +1,7 @@
 import type { ResultAsync } from "neverthrow";
 import { errAsync } from "neverthrow";
 import type { Listing } from "@yourtal/contracts/listing";
+import { categoryRefusal } from "../../studio/use-cases/category-policy";
 import type { CreateListingError } from "../store.errors";
 import type { CreateListingInput, ListingRepository } from "../persistence/listing.repository";
 import type { BusinessRegionLookup } from "../persistence/business-region-lookup";
@@ -23,6 +24,14 @@ import { wrapPersistence, wrapPricedPersistence } from "../wrap-persistence";
  * and its `currency` is a pure function of it (F2), so the request body
  * naming either would just be a second, potentially-mismatched copy of a
  * fact the business row already states.
+ *
+ * 12.4.c (F83): `categoryRefusal` runs here too, the same 1.1.d policy
+ * `create-campaign-draft.use-case.ts` already enforces for campaigns — a
+ * `prohibited` category (region-dependent) is refused outright and an
+ * `adult_only` one requires `audience: "adult"`. Run before the location
+ * check below so a refused category never even reaches the repository
+ * (`DrizzleListingRepository.create`'s own `initialLifecycleState` still
+ * routes an `adult_only`-but-otherwise-valid listing to `pending_review`).
  */
 export function createListing(
   listings: ListingRepository,
@@ -37,6 +46,10 @@ export function createListing(
           type: "business_not_found",
           businessId: merchantId,
         });
+      }
+      const refusal = categoryRefusal(business.region, input.contentCategory, input.audience);
+      if (refusal !== null) {
+        return errAsync<Listing, CreateListingError>(refusal);
       }
       return wrapPersistence(
         listings.locationsBelongToMerchant(merchantId, input.locationIds),

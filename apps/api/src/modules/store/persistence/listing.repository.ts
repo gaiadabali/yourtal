@@ -83,6 +83,14 @@ export interface EditListingInput {
   readonly expiresAt?: string | undefined;
   readonly status?: ListingStatus | undefined;
   readonly perUserLimit?: number | null | undefined;
+  /**
+   * 12.4.c (F83): editable, unlike before -- but only through
+   * `edit-listing.use-case.ts`'s own `categoryRefusal` check, the same 1.1.d
+   * policy `create` already enforces. Never written directly by
+   * `updateFields` without that check running first.
+   */
+  readonly contentCategory?: ContentCategory | undefined;
+  readonly audience?: Audience | undefined;
 }
 
 export interface BrowseListingsFilter {

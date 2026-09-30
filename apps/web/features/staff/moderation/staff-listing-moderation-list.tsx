@@ -8,6 +8,8 @@ import { EmptyState } from "@yourtal/ui/empty-state";
 import { Notice } from "@yourtal/ui/notice";
 import { Text } from "@yourtal/ui/text";
 import { StaffReasonDialogButton } from "../staff-reason-dialog-button";
+import { StaffListingApproveDialogButton } from "./staff-listing-approve-dialog-button";
+import type { Audience, ContentCategory } from "./campaign-category-policy";
 import {
   approveListingModerationAction,
   rejectListingModerationAction,
@@ -40,6 +42,20 @@ export function StaffListingModerationList({ initial }: StaffListingModerationLi
       return true;
     }
     setError(result.error?.message ?? t("errors.actionFailed"));
+    return false;
+  }
+
+  async function decideApprove(
+    listingId: string,
+    params: { reason: string; audience: Audience; contentCategory: ContentCategory },
+  ): Promise<boolean> {
+    const result = await approveListingModerationAction(listingId, params);
+    if (result.ok) {
+      setItems((current) => current.filter((item) => item.id !== listingId));
+      setError(null);
+      return true;
+    }
+    setError(result.error.message);
     return false;
   }
 
@@ -77,13 +93,12 @@ export function StaffListingModerationList({ initial }: StaffListingModerationLi
               header: t("moderation.columnActions"),
               cell: (row) => (
                 <div className="flex flex-wrap gap-2">
-                  <StaffReasonDialogButton
-                    triggerLabel={t("moderation.approveCta")}
-                    triggerVariant="primary"
-                    dialogTitle={t("moderation.approveListingDialogTitle")}
-                    dialogBody={t("moderation.approveListingDialogBody")}
+                  <StaffListingApproveDialogButton
+                    region={row.region}
+                    declaredAudience={row.audience}
+                    declaredCategory={row.contentCategory}
                     submitLabel={t("moderation.approveListingSubmit")}
-                    onSubmit={(reason) => decide(row.id, approveListingModerationAction, reason)}
+                    onSubmit={(params) => decideApprove(row.id, params)}
                   />
                   <StaffReasonDialogButton
                     triggerLabel={t("moderation.rejectCta")}

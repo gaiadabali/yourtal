@@ -14,7 +14,12 @@ import { TrueFalseFields } from "./question-fields-true-false";
 export interface QuestionEditorProps {
   draft: QuestionDraft;
   onChange: (draft: QuestionDraft) => void;
-  /** TASKS.md 12.3.a: the campaign's own audience -- only `"teen"` runs the extra personal-question guard below, inline as the author types. */
+  /**
+   * TASKS.md 12.3.a/12.4.c: the campaign's own audience -- `"teen"` or
+   * `"all_ages"` runs the extra personal-question guard below, inline as the
+   * author types. Widened to include `all_ages` because a teen account
+   * reaches all_ages campaigns too (`reachesAudience`).
+   */
   audience?: string | undefined;
 }
 
@@ -35,7 +40,8 @@ const MAX_TIMER_SECONDS = 120;
 export function QuestionEditor({ draft, onChange, audience }: QuestionEditorProps) {
   const t = useTranslations("studio");
   const piiFinding = detectPiiRequest(draft.prompt);
-  const teenFinding = audience === "teen" ? detectTeenPersonalQuestion(draft.prompt) : null;
+  const teenFinding =
+    audience === "teen" || audience === "all_ages" ? detectTeenPersonalQuestion(draft.prompt) : null;
   const finding = piiFinding ?? teenFinding;
 
   return (

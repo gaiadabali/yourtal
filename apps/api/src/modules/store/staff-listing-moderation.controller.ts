@@ -58,13 +58,17 @@ export class StaffListingModerationController {
     @Body() body: ApproveListingModerationDto,
     @Req() request: FastifyRequest,
   ) {
-    const result = await approveListingModeration(this.listings, listingId);
+    const result = await approveListingModeration(this.listings, listingId, {
+      audience: body.audience,
+      contentCategory: body.contentCategory,
+    });
     if (result.isErr()) throw mapStoreErrorToHttpException(result.error);
     setStaffAuditContext(request, {
       targetKind: "listing",
       targetId: listingId,
       region: result.value.region,
       reason: body.reason,
+      detail: { audience: result.value.audience, contentCategory: result.value.contentCategory },
     });
     return result.value;
   }

@@ -57,7 +57,7 @@ export interface CampaignModerationQueueItem {
 async function flagsFor(
   bank: QuestionBankRepository,
   campaignId: string,
-  /** 12.3.a: only a teen-audience campaign is re-screened for the extra personal-question guard. */
+  /** 12.3.a/12.4.c: a teen-or-all_ages-audience campaign is re-screened for the extra personal-question guard -- a teen reaches both (`reachesAudience`). */
   audience: Audience,
 ): Promise<readonly CampaignModerationFlag[]> {
   const questions = await bank.listByCampaign(campaignId);
@@ -76,7 +76,7 @@ async function flagsFor(
     if (prediction !== null) {
       flags.push({ questionId: record.question.id, kind: "prediction", reason: prediction.reason });
     }
-    if (audience === "teen") {
+    if (audience === "teen" || audience === "all_ages") {
       const personal = detectTeenPersonalQuestion(record.question.prompt);
       if (personal !== null) {
         flags.push({

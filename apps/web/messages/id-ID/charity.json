@@ -1,0 +1,66 @@
+{
+  "cause": {
+    "children_youth": "Anak dan remaja",
+    "education": "Pendidikan",
+    "environment": "Lingkungan",
+    "animals": "Hewan",
+    "disaster_relief": "Tanggap bencana",
+    "community": "Komunitas",
+    "arts_culture": "Seni dan budaya",
+    "food_security": "Ketahanan pangan"
+  },
+  "list": {
+    "title": "Lembaga amal",
+    "description": "Lembaga amal terdaftar di wilayah Anda. Saat Anda melelang voucher untuk amal, tawaran pemenang langsung masuk ke lembaga yang Anda pilih.",
+    "empty": "Belum ada lembaga amal di wilayah Anda.",
+    "applyLink": "Daftarkan lembaga amal Anda"
+  },
+  "apply": {
+    "title": "Daftarkan lembaga amal Anda",
+    "description": "Lembaga amal terdaftar dapat menerima hasil lelang voucher, dibayar langsung ke rekening mereka sendiri. Kami memeriksa pendaftaran dan rekening Anda sebelum menampilkan lembaga Anda.",
+    "signIn": "Masuk untuk mendaftarkan lembaga amal.",
+    "name": "Nama lembaga",
+    "cause": "Bidang",
+    "summary": "Apa yang dilakukan lembaga Anda",
+    "abn": "ABN",
+    "acnc": "Kami terdaftar di ACNC",
+    "deed": "Nomor akta pendirian",
+    "permit": "Nomor izin penggalangan dana",
+    "accountName": "Nama pemilik rekening",
+    "bankCodeAU": "BSB",
+    "bankCodeID": "Kode bank",
+    "accountNumber": "Nomor rekening",
+    "accountNote": "Kami hanya menyimpan empat digit terakhir nomor rekening Anda.",
+    "submit": "Kirim untuk ditinjau",
+    "submitted": "Terima kasih. Pendaftaran Anda sedang ditinjau tim kami.",
+    "mineTitle": "Pendaftaran Anda",
+    "state": {
+      "pending": "Ditinjau",
+      "approved": "Disetujui",
+      "rejected": "Tidak disetujui"
+    },
+    "openConsole": "Buka konsol",
+    "errors": {
+      "kyb_abn_invalid": "ABN tersebut tidak valid. Mohon periksa nomornya.",
+      "kyb_account_refused": "Kami tidak dapat memverifikasi rekening tersebut. Mohon periksa datanya.",
+      "forbidden": "Hanya orang dewasa yang dapat mendaftarkan lembaga amal, di wilayahnya sendiri.",
+      "generic": "Terjadi kesalahan. Mohon periksa formulir dan coba lagi."
+    }
+  },
+  "console": {
+    "title": "Konsol lembaga amal",
+    "notFound": "Konsol ini tidak tersedia untuk Anda.",
+    "note": "Hasil lelang dibayar langsung ke rekening Anda sendiri. YourTal tidak pernah menyimpan dana Anda.",
+    "account": "Rekening pembayaran berakhiran {last4}",
+    "proceedsTitle": "Hasil lelang",
+    "proceedsEmpty": "Belum ada hasil lelang.",
+    "statementsTitle": "Laporan",
+    "statementsEmpty": "Belum ada laporan.",
+    "auction": "Lelang",
+    "amount": "Jumlah",
+    "paidAt": "Dibayar",
+    "month": "Bulan",
+    "auctions": "Lelang",
+    "total": "Total"
+  }
+}

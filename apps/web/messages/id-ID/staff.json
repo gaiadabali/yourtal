@@ -12,7 +12,8 @@
     "disputes": "Sengketa",
     "risk": "Risiko",
     "economy": "Ekonomi",
-    "settlement": "Penyelesaian"
+    "settlement": "Penyelesaian",
+    "charities": "Lembaga amal"
   },
   "overview": {
     "title": "Ringkasan",
@@ -400,5 +401,21 @@
       "error": "Tindakan tersebut tidak dapat diselesaikan.",
       "invalid": "Periksa formulir -- ada yang kosong atau tidak valid."
     }
+  },
+  "charities": {
+    "pageTitle": "Lembaga amal",
+    "pageDescription": "Tinjau pendaftaran lembaga amal. Hanya lembaga yang disetujui yang ditampilkan ke penonton.",
+    "empty": "Tidak ada pendaftaran di sini.",
+    "registration": "Pendaftaran",
+    "account": "Rekening pembayaran berakhiran {last4}",
+    "kyb": "Referensi pemeriksaan {reference}",
+    "rejected": "Alasan: {reason}",
+    "approve": "Setujui",
+    "reject": "Tolak",
+    "approveTitle": "Setujui {name}?",
+    "approveBody": "Lembaga ini akan ditampilkan ke penonton di {region}. Berikan alasan untuk jejak audit.",
+    "rejectTitle": "Tolak {name}?",
+    "rejectBody": "Pendaftar akan melihat alasan ini.",
+    "failed": "Gagal diproses: {message}"
   }
 }

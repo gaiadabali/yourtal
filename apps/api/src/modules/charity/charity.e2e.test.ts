@@ -188,7 +188,7 @@ describe("13.21: the charity registry", () => {
         payoutAccount: { accountName: "X Ltd", bankCode: "062000", accountNumber: "11110000" },
       }),
     );
-    expect(badAccount.json<{ reason: string }>().reason).toBe("account_refused");
+    expect(badAccount.json<{ code: string }>().code).toBe("kyb_account_refused");
     const mismatch = await apply(adult.cookie, {
       ...application("AU"),
       registration: ID_REGISTRATION,

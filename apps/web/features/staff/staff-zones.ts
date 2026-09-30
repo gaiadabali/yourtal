@@ -20,6 +20,8 @@ const EVERY_WORKING_ROLE: readonly StaffRole[] = [
 export const STAFF_ZONES: readonly StaffZone[] = [
   { key: "overview", href: "/staff", roles: EVERY_WORKING_ROLE },
   { key: "businesses", href: "/staff/businesses", roles: ["ops"] },
+  // 13.21.a: the charity registry review, ops only per charity.yaml.
+  { key: "charities", href: "/staff/charities", roles: ["ops"] },
   { key: "moderation", href: "/staff/moderation", roles: ["moderator"] },
   // TASKS.md 9.4: users and support. A courtesy list here -- the API's own
   // user_account.yaml is the real gate (risk suspends/reinstates/sets the

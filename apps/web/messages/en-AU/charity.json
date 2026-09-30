@@ -1,0 +1,66 @@
+{
+  "cause": {
+    "children_youth": "Children and young people",
+    "education": "Education",
+    "environment": "Environment",
+    "animals": "Animals",
+    "disaster_relief": "Disaster relief",
+    "community": "Community",
+    "arts_culture": "Arts and culture",
+    "food_security": "Food security"
+  },
+  "list": {
+    "title": "Charities",
+    "description": "Registered charities in your region. When you list a voucher in a charity auction, the winning bid goes straight to the charity you pick.",
+    "empty": "No charities are listed in your region yet.",
+    "applyLink": "Register your charity"
+  },
+  "apply": {
+    "title": "Register your charity",
+    "description": "Registered charities can receive the proceeds of voucher auctions, paid straight to their own account. We check your registration and account before we list you.",
+    "signIn": "Sign in to register a charity.",
+    "name": "Charity name",
+    "cause": "Cause",
+    "summary": "What your charity does",
+    "abn": "ABN",
+    "acnc": "We are registered with the ACNC",
+    "deed": "Deed of establishment number",
+    "permit": "Fundraising permit number",
+    "accountName": "Account name",
+    "bankCodeAU": "BSB",
+    "bankCodeID": "Bank code",
+    "accountNumber": "Account number",
+    "accountNote": "We keep only the last four digits of your account number.",
+    "submit": "Submit for review",
+    "submitted": "Thanks. Your application is with our team for review.",
+    "mineTitle": "Your applications",
+    "state": {
+      "pending": "In review",
+      "approved": "Approved",
+      "rejected": "Not approved"
+    },
+    "openConsole": "Open console",
+    "errors": {
+      "kyb_abn_invalid": "That ABN doesn't check out. Please check the number.",
+      "kyb_account_refused": "We couldn't verify that account. Please check the details.",
+      "forbidden": "Only adults can register a charity, in their own region.",
+      "generic": "Something went wrong. Please check the form and try again."
+    }
+  },
+  "console": {
+    "title": "Charity console",
+    "notFound": "This console isn't available to you.",
+    "note": "Auction proceeds are paid straight to your own account. YourTal never holds your funds.",
+    "account": "Payout account ending {last4}",
+    "proceedsTitle": "Proceeds",
+    "proceedsEmpty": "No auction proceeds yet.",
+    "statementsTitle": "Statements",
+    "statementsEmpty": "No statements yet.",
+    "auction": "Auction",
+    "amount": "Amount",
+    "paidAt": "Paid",
+    "month": "Month",
+    "auctions": "Auctions",
+    "total": "Total"
+  }
+}

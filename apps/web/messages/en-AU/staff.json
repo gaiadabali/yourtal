@@ -12,7 +12,8 @@
     "disputes": "Disputes",
     "risk": "Risk",
     "economy": "Economy",
-    "settlement": "Settlement"
+    "settlement": "Settlement",
+    "charities": "Charities"
   },
   "overview": {
     "title": "Overview",
@@ -400,5 +401,21 @@
       "error": "That action could not be completed.",
       "invalid": "Check the form -- something was missing or not valid."
     }
+  },
+  "charities": {
+    "pageTitle": "Charities",
+    "pageDescription": "Review charity applications. Only approved charities are listed to viewers.",
+    "empty": "No applications here.",
+    "registration": "Registration",
+    "account": "Payout account ending {last4}",
+    "kyb": "Check reference {reference}",
+    "rejected": "Reason: {reason}",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approveTitle": "Approve {name}?",
+    "approveBody": "It will be listed to viewers in {region}. Give a reason for the audit trail.",
+    "rejectTitle": "Reject {name}?",
+    "rejectBody": "The applicant will see this reason.",
+    "failed": "That didn't go through: {message}"
   }
 }

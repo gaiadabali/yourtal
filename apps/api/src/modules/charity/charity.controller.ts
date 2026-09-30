@@ -52,7 +52,10 @@ export class CharityController {
     const principal = await this.principals.resolve(request);
     const kyb = simulatedCharityKyb(parsed.data);
     if (!kyb.ok) {
-      throw new UnprocessableEntityException({ code: "kyb_failed", reason: kyb.reason });
+      throw new UnprocessableEntityException({
+        code: `kyb_${kyb.reason}`,
+        message: "The registration or payout account did not pass the check.",
+      });
     }
     return this.charities.create(parsed.data, principal.id, kyb);
   }

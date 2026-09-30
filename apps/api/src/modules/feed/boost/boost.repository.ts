@@ -35,14 +35,14 @@ export class BoostRepository {
   constructor(private readonly db: AppDb) {}
 
   async find(campaignId: string): Promise<BoostSettingRow | null> {
-    const { rows } = await this.db.execute<Record<string, unknown>>(sql`
+    const { rows } = await this.db.execute(sql`
       SELECT * FROM feed.boost WHERE campaign_id = ${campaignId}`);
     const row = rows[0];
     return row === undefined ? null : toSetting(row);
   }
 
   async upsert(setting: BoostSettingRow): Promise<BoostSettingRow> {
-    const { rows } = await this.db.execute<Record<string, unknown>>(sql`
+    const { rows } = await this.db.execute(sql`
       INSERT INTO feed.boost (campaign_id, business_id, region, currency, daily_budget_minor,
                               max_bid_cpm_minor, starts_at, ends_at, state)
       VALUES (${setting.campaignId}, ${setting.businessId}, ${setting.region}, ${setting.currency},
@@ -60,7 +60,7 @@ export class BoostRepository {
   /** Active, in-window boosts among these campaigns, with today's spend on the region clock. */
   async bidsFor(region: Region, campaignIds: readonly string[]): Promise<BoostBid[]> {
     if (campaignIds.length === 0) return [];
-    const { rows } = await this.db.execute<Record<string, unknown>>(sql`
+    const { rows } = await this.db.execute(sql`
       SELECT b.campaign_id, b.max_bid_cpm_minor, b.daily_budget_minor,
              coalesce(s.spent_milli, 0) AS spent_milli
         FROM feed.boost b
@@ -112,10 +112,10 @@ export class BoostRepository {
 
   async totals(campaignId: string): Promise<BoostTotals> {
     const [days, sum] = await Promise.all([
-      this.db.execute<Record<string, unknown>>(sql`
+      this.db.execute(sql`
         SELECT day::text AS day, impressions, spent_milli FROM feed.boost_spend_day
          WHERE campaign_id = ${campaignId} ORDER BY day DESC LIMIT 31`),
-      this.db.execute<Record<string, unknown>>(sql`
+      this.db.execute(sql`
         SELECT coalesce(sum(price_cpm_minor), 0) AS price_sum FROM feed.boost_impression
          WHERE campaign_id = ${campaignId}`),
     ]);
@@ -130,7 +130,7 @@ export class BoostRepository {
   }
 
   async charges(businessId: string): Promise<BoostCharge[]> {
-    const { rows } = await this.db.execute<Record<string, unknown>>(sql`
+    const { rows } = await this.db.execute(sql`
       SELECT c.*, c.day::text AS day_text, cc.title
         FROM feed.boost_charge c JOIN campaign.campaigns cc ON cc.id = c.campaign_id
        WHERE c.business_id = ${businessId} ORDER BY c.day DESC, c.charged_at DESC LIMIT 200`);

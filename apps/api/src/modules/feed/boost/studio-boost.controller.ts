@@ -97,7 +97,7 @@ export class StudioBoostController {
 
   /** 404 unless the campaign is this business's own, so another tenant's id reveals nothing. */
   private async owned(tenantId: string, campaignId: string): Promise<OwnedCampaign> {
-    const { rows } = await this.db.execute<Record<string, unknown>>(sql`
+    const { rows } = await this.db.execute(sql`
       SELECT c.region, c.lifecycle_state, b.currency
         FROM campaign.campaigns c JOIN business.business_accounts b ON b.id = c.business_id
        WHERE c.id = ${campaignId} AND c.business_id = ${tenantId}`);

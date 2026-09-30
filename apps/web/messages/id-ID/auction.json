@@ -43,7 +43,7 @@
     "reserve": "Tawaran pertama minimal setengah nilai voucher.",
     "extension": "Tawaran di 2 menit terakhir menambah 2 menit, jadi tidak ada yang menang dengan tawaran di detik terakhir.",
     "private": "Hanya jumlah dan banyaknya tawaran yang ditampilkan, tidak pernah siapa penawarnya.",
-    "hold": "Tawaran Anda menahan dana di kartu. Hanya ditagih jika menang, dan dilepas jika terlampaui."
+    "hold": "Tawaran Anda menahan dana di kartu. Hanya ditagih jika menang; jika tidak, dana dilepas saat lelang selesai."
   },
   "error": {
     "title": "Lelang belum bisa dimuat",
@@ -80,7 +80,7 @@
       "bidder_ineligible": "Hanya anggota dewasa terverifikasi di wilayah ini yang bisa menawar.",
       "own_auction": "Anda tidak bisa menawar lelang sendiri.",
       "auction_closed": "Lelang ini sudah selesai.",
-      "bid_too_low": "Sudah ada yang menawar lebih dulu. Tawar minimal jumlah terbaru.",
+      "bid_too_low": "Tawaran di bawah minimum. Tawar minimal sebesar jumlah yang tertera.",
       "payment_declined": "Kartu Anda menolak penahanan dana. Coba kartu lain.",
       "failed": "Belum berhasil. Coba lagi."
     }

@@ -43,7 +43,7 @@
     "reserve": "The first bid must reach half the voucher's value.",
     "extension": "A bid in the last 2 minutes adds 2 minutes, so nobody wins with a last-second bid.",
     "private": "Only the amount and the number of bids are shown, never who bid.",
-    "hold": "Your bid places a hold on your card. It's only charged if you win, and released if you're outbid."
+    "hold": "Your bid places a hold on your card. It's only charged if you win; otherwise it's released when the auction ends."
   },
   "error": {
     "title": "Auctions couldn't load",
@@ -80,7 +80,7 @@
       "bidder_ineligible": "Only verified adult members in this region can bid.",
       "own_auction": "You can't bid on your own listing.",
       "auction_closed": "This auction has ended.",
-      "bid_too_low": "Someone bid first. Bid at least the new minimum.",
+      "bid_too_low": "That's below the minimum bid. Bid at least the amount shown.",
       "payment_declined": "Your card declined the hold. Try another card.",
       "failed": "That didn't go through. Try again."
     }

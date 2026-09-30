@@ -25,7 +25,21 @@ export const feedWhyReasonSchema = z.enum([
 ]);
 export type FeedWhyReason = z.infer<typeof feedWhyReasonSchema>;
 
-export * from "./feed-browse";
+export {
+  EMPTY_FEED_FACETS,
+  feedBrowseQuerySchema,
+  feedFacetsSchema,
+  feedSortSchema,
+  feedSurfaceSchema,
+  searchQuerySchema,
+} from "./feed-browse";
+export type {
+  FeedBrowseQuery,
+  FeedFacets,
+  FeedSort,
+  FeedSurface,
+  SearchQuery,
+} from "./feed-browse";
 
 /**
  * One campaign card. Deliberately NOT the full `Campaign` contract --

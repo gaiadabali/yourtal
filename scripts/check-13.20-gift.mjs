@@ -67,7 +67,10 @@ async function voucher(route, body) {
     .digest("hex");
   const response = await fetch(`${VOUCHER}/internal/v1${route}`, {
     method: "POST",
-    headers: { "content-type": "application/json", "x-yourtal-service-signature": `t=${t},c=api,n=${nonce},v1=${mac}` },
+    headers: {
+      "content-type": "application/json",
+      "x-yourtal-service-signature": `t=${t},c=api,n=${nonce},v1=${mac}`,
+    },
     body: payload,
   });
   const json = await response.json();
@@ -76,8 +79,24 @@ async function voucher(route, body) {
 }
 
 const REGIONS = {
-  AU: { locale: "en-AU", timezone: "Australia/Sydney", currency: "AUD", face: 2500, taxKind: "ABN", tax: "12345678901", address: ["NSW", "2000", null] },
-  ID: { locale: "id-ID", timezone: "Asia/Jakarta", currency: "IDR", face: 50000, taxKind: "NPWP", tax: "1234567890123456", address: [null, null, "Jakarta"] },
+  AU: {
+    locale: "en-AU",
+    timezone: "Australia/Sydney",
+    currency: "AUD",
+    face: 2500,
+    taxKind: "ABN",
+    tax: "12345678901",
+    address: ["NSW", "2000", null],
+  },
+  ID: {
+    locale: "id-ID",
+    timezone: "Asia/Jakarta",
+    currency: "IDR",
+    face: 50000,
+    taxKind: "NPWP",
+    tax: "1234567890123456",
+    address: [null, null, "Jakarta"],
+  },
 };
 
 // The first account registers over HTTP; the rest reuse its password hash
@@ -90,12 +109,20 @@ async function person(region, role) {
   let userId;
   if (template === undefined) {
     const reg = await api("POST", "/api/auth/register", undefined, {
-      email, password: PASSWORD, region, locale: r.locale, displayName,
-      dateOfBirth: "1990-01-01", timezone: r.timezone,
+      email,
+      password: PASSWORD,
+      region,
+      locale: r.locale,
+      displayName,
+      dateOfBirth: "1990-01-01",
+      timezone: r.timezone,
     });
     expect(reg.status < 400, `register ${email}: ${reg.status} ${JSON.stringify(reg.json)}`);
     userId = reg.json.userId;
-    const { rows } = await db.query(`SELECT secret_hash FROM identity.credential WHERE user_id = $1`, [userId]);
+    const { rows } = await db.query(
+      `SELECT secret_hash FROM identity.credential WHERE user_id = $1`,
+      [userId],
+    );
     template = rows[0].secret_hash;
   } else {
     userId = randomUUID();
@@ -109,7 +136,9 @@ async function person(region, role) {
       [userId, region, r.locale, displayName, r.timezone],
     );
   }
-  await db.query(`UPDATE identity.credential SET verified_at = now() WHERE identifier = $1`, [email]);
+  await db.query(`UPDATE identity.credential SET verified_at = now() WHERE identifier = $1`, [
+    email,
+  ]);
   if (role === "teen") {
     await db.query(
       `UPDATE identity.user_profile SET date_of_birth = (now() - interval '15 years')::date,
@@ -129,7 +158,16 @@ async function shop(region, owner) {
     `INSERT INTO business.business_accounts (id, legal_name, display_name, tax_id_kind, tax_id_value,
        address_state, address_postcode, address_city, roles, region, currency, handle)
      VALUES ($1, $2, $2, $3, $4, $8, $9, $10, '["redeemer"]', $5, $6, $7)`,
-    [business, `Gift Check ${region} ${RUN}`, r.taxKind, r.tax, region, r.currency, `gift-check-${region.toLowerCase()}-${RUN}`, ...r.address],
+    [
+      business,
+      `Gift Check ${region} ${RUN}`,
+      r.taxKind,
+      r.tax,
+      region,
+      r.currency,
+      `gift-check-${region.toLowerCase()}-${RUN}`,
+      ...r.address,
+    ],
   );
   await db.query(
     `INSERT INTO business.business_members (business_id, user_id, role, invited_by_user_id, joined_at)
@@ -150,10 +188,18 @@ async function shop(region, owner) {
        $5, $6, 'all_ages', 'food-and-drink', 'http://127.0.0.1:26900/p.jpg', 'both', 'single_use')`,
     [listing, business, r.face, Math.floor(r.face * 0.6), r.currency, region],
   );
-  await db.query(`INSERT INTO store.listing_location (listing_id, location_id) VALUES ($1, $2)`, [listing, location]);
+  await db.query(`INSERT INTO store.listing_location (listing_id, location_id) VALUES ($1, $2)`, [
+    listing,
+    location,
+  ]);
   const batch = await voucher("/batches", {
-    listingId: listing, merchantId: business, currency: r.currency, faceValueMinor: r.face,
-    quantity: 2, partialRedemptionPolicy: "single_use_forfeit", requestedBy: `check-${RUN}-a`,
+    listingId: listing,
+    merchantId: business,
+    currency: r.currency,
+    faceValueMinor: r.face,
+    quantity: 2,
+    partialRedemptionPolicy: "single_use_forfeit",
+    requestedBy: `check-${RUN}-a`,
   });
   await voucher("/batches/approve", { batchId: batch.batchId, approvedBy: `check-${RUN}-b` });
   return { business, location, listing };
@@ -162,23 +208,48 @@ async function shop(region, owner) {
 async function counter(owner, shopIds) {
   const pin = String(1000 + Math.floor(Math.random() * 9000));
   const provision = await api("POST", `/api/${shopIds.business}/studio/devices`, owner.token, {
-    locationId: shopIds.location, label: `Gift check ${RUN}`, pin,
+    locationId: shopIds.location,
+    label: `Gift check ${RUN}`,
+    pin,
   });
-  expect(provision.status === 201, `provision: ${provision.status} ${JSON.stringify(provision.json)}`);
-  const paired = await api("POST", "/api/devices/pair", undefined, { pairingCode: provision.json.pairingCode });
+  expect(
+    provision.status === 201,
+    `provision: ${provision.status} ${JSON.stringify(provision.json)}`,
+  );
+  const paired = await api("POST", "/api/devices/pair", undefined, {
+    pairingCode: provision.json.pairingCode,
+  });
   expect(paired.status < 300, `pair: ${paired.status}`);
   const auth = { authorization: `Bearer ${paired.json.credential}` };
   return {
     lookup: (code) => api("POST", "/api/counter/lookup", undefined, { code }, auth),
     redeem: async (code) => {
       const found = await api("POST", "/api/counter/lookup", undefined, { code }, auth);
-      expect(found.status === 201, `lookup of the new code: ${found.status} ${JSON.stringify(found.json)}`);
-      const held = await api("POST", "/api/counter/authorize", undefined, {
-        code, amountMinor: found.json.remainingValueMinor, currency: found.json.currency,
-        orderRef: `gift-${RUN}`, orderTotalMinor: found.json.remainingValueMinor,
-      }, auth);
+      expect(
+        found.status === 201,
+        `lookup of the new code: ${found.status} ${JSON.stringify(found.json)}`,
+      );
+      const held = await api(
+        "POST",
+        "/api/counter/authorize",
+        undefined,
+        {
+          code,
+          amountMinor: found.json.remainingValueMinor,
+          currency: found.json.currency,
+          orderRef: `gift-${RUN}`,
+          orderTotalMinor: found.json.remainingValueMinor,
+        },
+        auth,
+      );
       expect(held.status < 300, `authorize: ${held.status} ${JSON.stringify(held.json)}`);
-      const captured = await api("POST", "/api/counter/capture", undefined, { authorizationId: held.json.authorizationId }, auth);
+      const captured = await api(
+        "POST",
+        "/api/counter/capture",
+        undefined,
+        { authorizationId: held.json.authorizationId },
+        auth,
+      );
       expect(captured.status < 300, `capture: ${captured.status} ${JSON.stringify(captured.json)}`);
       return captured.json;
     },
@@ -186,35 +257,62 @@ async function counter(owner, shopIds) {
 }
 
 async function events(voucherId) {
-  const { rows } = await db.query(`SELECT event_type, detail FROM voucher.event WHERE voucher_id = $1 ORDER BY seq`, [voucherId]);
+  const { rows } = await db.query(
+    `SELECT event_type, detail FROM voucher.event WHERE voucher_id = $1 ORDER BY seq`,
+    [voucherId],
+  );
   return rows;
 }
 
 async function region(code, other) {
   const [sender, recipient, teen, owner, abroad] = [
-    await person(code, "sender"), await person(code, "recipient"), await person(code, "teen"),
-    await person(code, "owner"), await person(other, "abroad"),
+    await person(code, "sender"),
+    await person(code, "recipient"),
+    await person(code, "teen"),
+    await person(code, "owner"),
+    await person(other, "abroad"),
   ];
   const ids = await shop(code, owner);
   const saga = `gift-check-${randomUUID()}`;
   const reserved = await voucher("/reservations", { listingId: ids.listing, sagaId: saga });
   await voucher("/reservations/activate", { sagaId: saga, ownerId: sender.id });
   const oldId = reserved.voucherId;
-  const { code: oldCode } = await voucher("/vouchers/reveal", { voucherId: oldId, ownerId: sender.id });
+  const { code: oldCode } = await voucher("/vouchers/reveal", {
+    voucherId: oldId,
+    ownerId: sender.id,
+  });
 
   const listed = await api("GET", `/api/wallet/vouchers/${oldId}`, sender.token);
-  expect(listed.json.giftable === true, `the sender's voucher is not giftable: ${JSON.stringify(listed.json)}`);
+  expect(
+    listed.json.giftable === true,
+    `the sender's voucher is not giftable: ${JSON.stringify(listed.json)}`,
+  );
 
-  const gift = (to) => api("POST", `/api/wallet/vouchers/${oldId}/gift`, sender.token, { recipientEmail: to });
+  const gift = (to) =>
+    api("POST", `/api/wallet/vouchers/${oldId}/gift`, sender.token, { recipientEmail: to });
   const toTeen = await gift(teen.email);
-  expect(toTeen.status === 409 && toTeen.json.code === "gift_recipient_ineligible", `teen recipient: ${toTeen.status} ${JSON.stringify(toTeen.json)}`);
+  expect(
+    toTeen.status === 409 && toTeen.json.code === "gift_recipient_ineligible",
+    `teen recipient: ${toTeen.status} ${JSON.stringify(toTeen.json)}`,
+  );
   const toAbroad = await gift(abroad.email);
-  expect(toAbroad.status === 409 && toAbroad.json.code === "gift_recipient_ineligible", `cross-region recipient: ${toAbroad.status} ${JSON.stringify(toAbroad.json)}`);
-  const teenSends = await api("POST", `/api/wallet/vouchers/${oldId}/gift`, teen.token, { recipientEmail: recipient.email });
-  expect(teenSends.status === 403 || teenSends.status === 404, `a teen sending: ${teenSends.status}`);
+  expect(
+    toAbroad.status === 409 && toAbroad.json.code === "gift_recipient_ineligible",
+    `cross-region recipient: ${toAbroad.status} ${JSON.stringify(toAbroad.json)}`,
+  );
+  const teenSends = await api("POST", `/api/wallet/vouchers/${oldId}/gift`, teen.token, {
+    recipientEmail: recipient.email,
+  });
+  expect(
+    teenSends.status === 403 || teenSends.status === 404,
+    `a teen sending: ${teenSends.status}`,
+  );
 
   const sent = await gift(recipient.email);
-  expect(sent.status === 201 && sent.json.status === "pending", `gift: ${sent.status} ${JSON.stringify(sent.json)}`);
+  expect(
+    sent.status === 201 && sent.json.status === "pending",
+    `gift: ${sent.status} ${JSON.stringify(sent.json)}`,
+  );
   const giftId = sent.json.giftId;
 
   const till = await counter(owner, ids);
@@ -227,15 +325,29 @@ async function region(code, other) {
   expect(teenAccepts.status === 403, `a teen accepting: ${teenAccepts.status}`);
   const inbox = await api("GET", "/api/wallet/gifts", recipient.token);
   const received = inbox.json.gifts?.find((g) => g.giftId === giftId);
-  expect(received?.direction === "received" && received.senderDisplayName === `Gift sender ${code}`, `recipient's gifts: ${JSON.stringify(inbox.json)}`);
+  expect(
+    received?.direction === "received" && received.senderDisplayName === `Gift sender ${code}`,
+    `recipient's gifts: ${JSON.stringify(inbox.json)}`,
+  );
   const accepted = await api("POST", `/api/wallet/gifts/${giftId}/accept`, recipient.token);
-  expect(accepted.status === 200 && accepted.json.status === "accepted", `accept: ${accepted.status} ${JSON.stringify(accepted.json)}`);
+  expect(
+    accepted.status === 200 && accepted.json.status === "accepted",
+    `accept: ${accepted.status} ${JSON.stringify(accepted.json)}`,
+  );
   const newId = accepted.json.voucherId;
 
-  const again = await api("POST", `/api/wallet/vouchers/${newId}/gift`, recipient.token, { recipientEmail: sender.email });
-  expect(again.status === 409 && again.json.code === "gift_already_gifted", `second gift: ${again.status} ${JSON.stringify(again.json)}`);
+  const again = await api("POST", `/api/wallet/vouchers/${newId}/gift`, recipient.token, {
+    recipientEmail: sender.email,
+  });
+  expect(
+    again.status === 409 && again.json.code === "gift_already_gifted",
+    `second gift: ${again.status} ${JSON.stringify(again.json)}`,
+  );
   const regift = await gift(recipient.email);
-  expect(regift.status === 201 && regift.json.giftId === giftId, `replaying the same gift must return it: ${regift.status}`);
+  expect(
+    regift.status === 201 && regift.json.giftId === giftId,
+    `replaying the same gift must return it: ${regift.status}`,
+  );
 
   const qr = await api("GET", `/api/wallet/vouchers/${newId}/qr`, recipient.token);
   expect(qr.status === 200, `new QR: ${qr.status}`);
@@ -243,7 +355,10 @@ async function region(code, other) {
   const after = await api("GET", `/api/wallet/vouchers/${newId}`, recipient.token);
   expect(after.json.status === "redeemed", `the new voucher is ${after.json.status}, not redeemed`);
   const senderView = await api("GET", `/api/wallet/vouchers/${oldId}`, sender.token);
-  expect(senderView.json.status === "transferred", `the sender sees ${senderView.json.status}, not transferred`);
+  expect(
+    senderView.json.status === "transferred",
+    `the sender sees ${senderView.json.status}, not transferred`,
+  );
 
   const { rows } = await db.query(
     `SELECT v.id, v.state, v.void_reason, v.owner_id, v.region, v.remaining_value_minor FROM voucher.vouchers v WHERE v.id = ANY($1)`,
@@ -251,16 +366,47 @@ async function region(code, other) {
   );
   const oldRow = rows.find((r) => r.id === oldId);
   const newRow = rows.find((r) => r.id === newId);
-  expect(oldRow.state === "voided" && oldRow.void_reason === "transfer" && oldRow.owner_id === sender.id, `old row ${JSON.stringify(oldRow)}`);
-  expect(newRow.state === "redeemed" && newRow.owner_id === recipient.id && newRow.region === code, `new row ${JSON.stringify(newRow)}`);
-  const { rows: [giftRow] } = await db.query(`SELECT * FROM voucher.gift WHERE id = $1`, [giftId]);
-  expect(giftRow.state === "accepted" && giftRow.source_voucher_id === oldId && giftRow.voucher_id === newId && giftRow.region === code, `gift row ${JSON.stringify(giftRow)}`);
+  expect(
+    oldRow.state === "voided" && oldRow.void_reason === "transfer" && oldRow.owner_id === sender.id,
+    `old row ${JSON.stringify(oldRow)}`,
+  );
+  expect(
+    newRow.state === "redeemed" && newRow.owner_id === recipient.id && newRow.region === code,
+    `new row ${JSON.stringify(newRow)}`,
+  );
+  const {
+    rows: [giftRow],
+  } = await db.query(`SELECT * FROM voucher.gift WHERE id = $1`, [giftId]);
+  expect(
+    giftRow.state === "accepted" &&
+      giftRow.source_voucher_id === oldId &&
+      giftRow.voucher_id === newId &&
+      giftRow.region === code,
+    `gift row ${JSON.stringify(giftRow)}`,
+  );
   const oldChain = (await events(oldId)).map((e) => e.event_type);
   const newChain = await events(newId);
   expect(oldChain.at(-1) === "transferred", `old chain ${oldChain}`);
-  expect(newChain[0].event_type === "minted" && newChain[0].detail.remint_of === oldId && newChain[0].detail.gift_id === giftId, `new chain head ${JSON.stringify(newChain[0])}`);
-  expect(newChain.map((e) => e.event_type).join(",") === "minted,allocated,activated,authorized,captured", `new chain ${newChain.map((e) => e.event_type)}`);
-  return { region: code, giftId, oldVoucher: oldId, newVoucher: newId, captureId: capture.captureId, oldChain, newChain: newChain.map((e) => e.event_type) };
+  expect(
+    newChain[0].event_type === "minted" &&
+      newChain[0].detail.remint_of === oldId &&
+      newChain[0].detail.gift_id === giftId,
+    `new chain head ${JSON.stringify(newChain[0])}`,
+  );
+  expect(
+    newChain.map((e) => e.event_type).join(",") ===
+      "minted,allocated,activated,authorized,captured",
+    `new chain ${newChain.map((e) => e.event_type)}`,
+  );
+  return {
+    region: code,
+    giftId,
+    oldVoucher: oldId,
+    newVoucher: newId,
+    captureId: capture.captureId,
+    oldChain,
+    newChain: newChain.map((e) => e.event_type),
+  };
 }
 
 try {

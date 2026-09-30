@@ -124,37 +124,6 @@ export function subtractPointsClamped(a: Points, b: Points): Points {
 }
 
 /**
- * Converts a settlement value into a points price at a given backing rate,
- * per the pricing shape in docs/09 section 4.1: `points_price = S / B`.
- *
- * **Both sides must share a unit**, and YT-0506 proved how sharp that is:
- * the settlement value moved from Rupiah to sen, so the rate had to move
- * from Rupiah-per-point to sen-per-point in the same pass. Moving one and
- * not the other leaves every price 100x wrong with no test failing, because
- * the two sides are only ever compared to each other. The mock rate now
- * lives in one place (`mock-backing-rate.ts`) rather than being copied into
- * four files, for exactly that reason.
- * This is a mock-data convenience, not the real pricing engine — the demand
- * multiplier and its bounds (0.8-1.25) live in the pricing service, not here.
- * Rounds UP to a whole point, so a price never sells below its backing.
- */
-export function pointsPriceFromSettlement(
-  settlementValueMinor: MinorUnits,
-  backingRateIdrPerPoint: number,
-): Points {
-  if (backingRateIdrPerPoint <= 0) {
-    throw new Error("backingRateIdrPerPoint must be positive");
-  }
-  if (!Number.isInteger(backingRateIdrPerPoint)) {
-    throw new Error("backingRateIdrPerPoint must be a whole number of minor units");
-  }
-  // Up, never down: a price rounded down sells below backing (EM-20).
-  const whole = Math.trunc(settlementValueMinor / backingRateIdrPerPoint);
-  const exact = whole * backingRateIdrPerPoint === settlementValueMinor;
-  return toPoints(exact ? whole : whole + 1);
-}
-
-/**
  * A whole-Rupiah amount in IDR minor units. `rupiah(45_000)` is Rp 45.000.
  *
  * Every IDR literal goes through here, and every AUD one through

@@ -1,28 +1,10 @@
 /**
  * 4.9.d: B (the backing rate) never reaches a browser. The server prices
- * every listing; the mock rates in `@yourtal/contracts/money/mock-backing-rate`
- * are left only where they already are, until their owners remove them.
+ * every listing. 13.5.c deleted the last mock rate; this keeps a new one out.
  */
-
-/** The only files that may still name a mock backing rate. */
-const ALLOWED = [
-  // B's 11.6.b deleted `burn-data.ts` (its rate) and `wallet-history.ts`
-  // (removed earlier, 6.5) — both entries are gone, not just their rates.
-  // C's 7.8.c removed this from `apps/web/features/studio/campaign-builder/campaign-reward-risk.ts`.
-  // The contract mocks and the constant itself; 13.5.c deletes them.
-  "packages/contracts/src/money/mock-backing-rate.ts",
-  "packages/contracts/src/listing/listing.mock.ts",
-  "packages/contracts/src/region/region-mock-au-listing.ts",
-  "packages/contracts/src/wallet/wallet-history.mock.ts",
-];
 
 const MOCK_NAME = /^MOCK_BACKING_RATE/;
 const MOCK_MODULE = /(^|\/)money\/mock-backing-rate(\.ts)?$/;
-
-function isAllowed(filename) {
-  const normalised = filename.split("\\").join("/");
-  return ALLOWED.some((file) => normalised.endsWith(file));
-}
 
 /** @type {import("eslint").Rule.RuleModule} */
 export default {
@@ -39,7 +21,6 @@ export default {
   },
 
   create(context) {
-    if (isAllowed(context.filename)) return {};
     const reportModule = (node, source) => {
       if (typeof source === "string" && MOCK_MODULE.test(source))
         context.report({ node, messageId: "mockRate" });

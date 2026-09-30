@@ -3,11 +3,10 @@ import { listingSchema } from "../listing/listing";
 import { DEFAULT_REFERENCE_INSTANT, addDays, toIsoString } from "../internal/clock";
 import { createSeededFaker } from "../internal/seeded-faker";
 import { LONG_MERCHANT_NAME_AU, generateMerchantLocationsAu } from "../internal/sydney";
-import { pointsPriceFromSettlement, toPoints } from "../money/money";
+import { toPoints } from "../money/money";
 
 import { pickMockMerchant } from "../merchant/merchant-roster";
 import { audCents } from "../money/money-value";
-import { MOCK_BACKING_RATE_AUD_CENTS_PER_POINT } from "../money/mock-backing-rate";
 import type { Audience } from "../audience/audience";
 import type { ContentCategory } from "@yourtal/jurisdiction/content-category";
 import type { ListingChannel, PartialRedemption } from "../listing/listing";
@@ -55,9 +54,6 @@ const MOCK_PARTIAL_REDEMPTIONS: readonly PartialRedemption[] = ["single_use", "b
  * correctly.
  */
 
-// AUD cents per point. Illustrative only, like the IDR mock rate in
-// listing.mock.ts — not the real pricing engine.
-
 function auListingFrom(faker: ReturnType<typeof createSeededFaker>, now: Date): Listing {
   // Merchant identity comes from the shared roster, never from the faker.
   // A random per-fixture uuid here is what made every prototype redemption
@@ -101,10 +97,8 @@ function auListingFrom(faker: ReturnType<typeof createSeededFaker>, now: Date): 
     currency: "AUD" as const,
     faceValueMinor: faceValueCents,
     settlementValueMinor: settlementValueCents,
-    priceInPoints: pointsPriceFromSettlement(
-      settlementValueCents,
-      MOCK_BACKING_RATE_AUD_CENTS_PER_POINT,
-    ),
+    // A stable mock price, not a rate: the server prices every real listing.
+    priceInPoints: toPoints(Math.ceil(settlementValueCents / 3)),
     stockRemaining,
     stockTotal,
     transferable: faker.datatype.boolean({ probability: 0.4 }),
@@ -151,7 +145,7 @@ export const auSoldOutListingFixture: Listing = listingSchema.parse({
   currency: "AUD" as const,
   faceValueMinor: audCents(2_000), // $20.00
   settlementValueMinor: audCents(600), // $6.00
-  priceInPoints: pointsPriceFromSettlement(audCents(600), MOCK_BACKING_RATE_AUD_CENTS_PER_POINT),
+  priceInPoints: toPoints(200),
   stockRemaining: 0,
   stockTotal: 100,
   transferable: false,

@@ -3,8 +3,7 @@ import { listingSchema } from "./listing";
 import { DEFAULT_REFERENCE_INSTANT, addDays, addHours, toIsoString } from "../internal/clock";
 import { createSeededFaker } from "../internal/seeded-faker";
 import { LONG_MERCHANT_NAME, generateMerchantLocations } from "../internal/jakarta";
-import { pointsPriceFromSettlement, rupiah, toMinorUnits, toPoints } from "../money/money";
-import { MOCK_BACKING_RATE_IDR_PER_POINT } from "../money/mock-backing-rate";
+import { rupiah, toMinorUnits, toPoints } from "../money/money";
 import { pickMockMerchant } from "../merchant/merchant-roster";
 import type { Audience } from "../audience/audience";
 import type { ContentCategory } from "@yourtal/jurisdiction/content-category";
@@ -103,7 +102,8 @@ export function generateListing(params: GenerateListingParams): Listing {
     currency: "IDR" as const,
     faceValueMinor,
     settlementValueMinor,
-    priceInPoints: pointsPriceFromSettlement(settlementValueMinor, MOCK_BACKING_RATE_IDR_PER_POINT),
+    // A stable mock price, not a rate: the server prices every real listing.
+    priceInPoints: toPoints(Math.ceil(settlementValueMinor / 6)),
     stockRemaining,
     stockTotal,
     transferable: faker.datatype.boolean({ probability: 0.4 }),
@@ -149,7 +149,7 @@ export const soldOutListingFixture: Listing = listingSchema.parse({
   currency: "IDR" as const,
   faceValueMinor: rupiah(30_000),
   settlementValueMinor: rupiah(9_000),
-  priceInPoints: pointsPriceFromSettlement(rupiah(9_000), MOCK_BACKING_RATE_IDR_PER_POINT),
+  priceInPoints: toPoints(1_500),
   stockRemaining: 0,
   stockTotal: 100,
   transferable: false,
@@ -230,7 +230,7 @@ export const expiringSoonListingFixture: Listing = listingSchema.parse({
   currency: "IDR" as const,
   faceValueMinor: rupiah(50_000),
   settlementValueMinor: rupiah(15_000),
-  priceInPoints: pointsPriceFromSettlement(rupiah(15_000), MOCK_BACKING_RATE_IDR_PER_POINT),
+  priceInPoints: toPoints(2_500),
   stockRemaining: 12,
   stockTotal: 50,
   transferable: true,

@@ -6,7 +6,6 @@ import {
   rupiah,
   addPoints,
   idrMinorUnitsSchema,
-  pointsPriceFromSettlement,
   pointsSchema,
   subtractIdrClamped,
   subtractPointsClamped,
@@ -76,26 +75,6 @@ describe("arithmetic helpers", () => {
 
   it("clamps point subtraction at zero", () => {
     expect(subtractPointsClamped(toPoints(10), toPoints(50))).toBe(0);
-  });
-
-  it("computes a points price from a settlement value and backing rate", () => {
-    // docs/09 4.1: S = Rp 12.000, B = Rp 6/point -> 2,000 points. Both sides
-    // share the stored unit, whole Rupiah.
-    expect(pointsPriceFromSettlement(rupiah(12_000), 6)).toBe(2_000);
-    expect(pointsPriceFromSettlement(rupiah(54_000), 6)).toBe(9_000);
-  });
-
-  it("rounds a points price up, never below its backing", () => {
-    expect(pointsPriceFromSettlement(rupiah(12_001), 6)).toBe(2_001);
-    expect(pointsPriceFromSettlement(rupiah(12_005), 6)).toBe(2_001);
-  });
-
-  it("rejects a fractional backing rate", () => {
-    expect(() => pointsPriceFromSettlement(rupiah(12_000), 4.5)).toThrow();
-  });
-
-  it("rejects a non-positive backing rate", () => {
-    expect(() => pointsPriceFromSettlement(rupiah(12_000), 0)).toThrow();
   });
 });
 

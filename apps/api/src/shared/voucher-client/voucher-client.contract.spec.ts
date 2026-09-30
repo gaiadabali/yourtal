@@ -49,7 +49,7 @@ async function seedListing(
        minimum_spend_minor, expires_at, status, currency, region, audience,
        content_category, image_url, channel, partial_redemption)
     VALUES (${listingId}, ${merchantId}, 'Contract Spec Merchant', 'Contract Spec Listing',
-            'seeded for voucher-client.contract.spec.ts', 'food-and-drink',
+            'seeded for voucher-client.contract.spec.ts', 'food_beverage',
             50000, 15000, 1000, 10, 10, false, 'single_use_forfeit',
             NULL, ${farFuture}, 'available', ${currency}, ${region}, 'all_ages',
             'food-and-drink', 'http://127.0.0.1:26900/yourtal-media/listings/placeholder.jpg', 'both', 'single_use')

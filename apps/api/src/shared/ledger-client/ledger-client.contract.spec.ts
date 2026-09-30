@@ -143,7 +143,7 @@ async function insertTestListing(
        content_category, image_url, channel, partial_redemption)
     VALUES
       (${listingId}, ${randomUUID()}, 'Contract spec listing', 'Contract spec listing',
-       'a listing minted for the ledger contract spec', 'food-and-drink',
+       'a listing minted for the ledger contract spec', 'food_beverage',
        ${points}, ${points}, ${points},
        1, 1, false, 'single_use_forfeit',
        NULL, now() + interval '90 days', 'available', ${currency}, ${region}, 'all_ages',

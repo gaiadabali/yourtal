@@ -106,7 +106,7 @@ async function seedRedeemableVoucher(
        minimum_spend_minor, expires_at, status, currency, region, audience,
        content_category, image_url, channel, partial_redemption)
     VALUES (${listingId}, ${merchantId}, '8.2.h Test Merchant', '8.2.h Test Listing',
-            'seeded for counter-idempotency.e2e.test.ts', 'food-and-drink',
+            'seeded for counter-idempotency.e2e.test.ts', 'food_beverage',
             50000, 15000, 1000, 10, 10, false, 'single_use_forfeit',
             NULL, ${farFuture}, 'available', 'AUD', 'AU', 'all_ages',
             'food-and-drink', 'http://127.0.0.1:26900/yourtal-media/listings/placeholder.jpg', 'both', 'single_use')

@@ -103,7 +103,7 @@ async function listing(region: "ID" | "AU"): Promise<string> {
        minimum_spend_minor, expires_at, status, lifecycle_state, currency, region, audience,
        content_category, image_url, channel, partial_redemption)
     VALUES (${listingId}, ${merchantId}, 'Live Saga Merchant', 'Live Saga Listing',
-            'seeded for checkout.live.test.ts', 'food-and-drink',
+            'seeded for checkout.live.test.ts', 'food_beverage',
             ${face}, ${settlement}, 1000, 5, 5, false, 'single_use_forfeit',
             NULL, now() + interval '90 days', 'available', 'active', ${currency}, ${region},
             'all_ages', 'food-and-drink', 'http://127.0.0.1:26900/yourtal-media/listings/placeholder.jpg',

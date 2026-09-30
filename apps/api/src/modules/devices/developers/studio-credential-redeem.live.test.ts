@@ -203,7 +203,7 @@ async function mintOwnedVoucher(
        minimum_spend_minor, expires_at, status, lifecycle_state, currency, region, audience,
        content_category, image_url, channel, partial_redemption)
     VALUES (${listingId}, ${merchantId}, '8.3.f Test Merchant', '8.3.f Test Listing',
-            'seeded for studio-credential-redeem.live.test.ts', 'food-and-drink',
+            'seeded for studio-credential-redeem.live.test.ts', 'food_beverage',
             ${faceValueMinor}, ${Math.floor(faceValueMinor / 2)}, 1, 1, 1, false, 'balance_carrying',
             NULL, now() + interval '90 days', 'available', 'active', ${currency}, ${region},
             'all_ages', 'food-and-drink', 'http://127.0.0.1:26900/yourtal-media/listings/placeholder.jpg',

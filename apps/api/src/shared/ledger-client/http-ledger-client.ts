@@ -82,6 +82,7 @@ import {
 } from "@yourtal/contracts/ledger-internal/service-signature";
 import type { ServiceCaller } from "@yourtal/contracts/ledger-internal/service-signature";
 import type { AppDb } from "../persistence/drizzle-client";
+import { regionScope } from "../persistence/region-scope";
 import * as settings from "./fake/fake-ledger-settings";
 import type { LedgerInternalClient } from "./ledger-internal-client";
 import { LedgerNotFoundError } from "./ledger-not-found";
@@ -122,11 +123,14 @@ export class HttpLedgerClient implements LedgerInternalClient {
 
   private async send(path: string, body: unknown): Promise<Response> {
     const payload = JSON.stringify(body);
+    // 13.5.e: a walled request's region reaches the ledger's row-level security.
+    const region = regionScope.getStore()?.region;
     return fetch(`${this.baseUrl}${path}`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
         [SERVICE_SIGNATURE_HEADER]: this.sign(path, payload),
+        ...(region === undefined ? {} : { "x-yourtal-region": region }),
       },
       body: payload,
     });

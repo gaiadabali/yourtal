@@ -38,6 +38,7 @@ import (
 	"github.com/yourtal/services/ledger/internal/ledger"
 	"github.com/yourtal/services/ledger/internal/pricing"
 	"github.com/yourtal/services/ledger/internal/proof"
+	"github.com/yourtal/services/ledger/internal/regionwall"
 	"github.com/yourtal/services/ledger/internal/reward"
 	"github.com/yourtal/services/ledger/internal/serviceauth"
 	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
@@ -113,8 +114,13 @@ func run(logger *slog.Logger) error {
 	// deployment that has both.
 	var pool *pgxpool.Pool
 	if url := os.Getenv("LEDGER_DATABASE_URL"); url != "" {
-		var err error
-		pool, err = pgxpool.New(ctx, url)
+		cfg, err := pgxpool.ParseConfig(url)
+		if err != nil {
+			return fmt.Errorf("parsing LEDGER_DATABASE_URL: %w", err)
+		}
+		// 13.5.e: each acquire carries the api caller's region to row-level security.
+		regionwall.Configure(cfg)
+		pool, err = pgxpool.NewWithConfig(ctx, cfg)
 		if err != nil {
 			return fmt.Errorf("connecting as yourtal_ledger: %w", err)
 		}
@@ -211,6 +217,7 @@ func run(logger *slog.Logger) error {
 		module.EnableDevRoutes(appEnv == "dev" || appEnv == "staging")
 		router.Route("/v1", func(r chi.Router) {
 			r.Use(auth.Middleware(logger))
+			r.Use(regionwall.Middleware)
 			r.Mount("/", module.Routes())
 		})
 	} else if pool != nil {

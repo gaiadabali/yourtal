@@ -11,6 +11,7 @@
     "./live-driver": "./src/live-driver.ts",
     "./registry": "./src/registry.ts",
     "./payments": "./src/boundaries/payments.ts",
+    "./marketplace-payments": "./src/boundaries/marketplace-payments.ts",
     "./provider-amount": "./src/boundaries/provider-amount.ts",
     "./webhook-signature": "./src/boundaries/webhook-signature.ts",
     "./webhook-inbox": "./src/boundaries/webhook-inbox.ts",

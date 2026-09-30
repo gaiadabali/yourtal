@@ -76,9 +76,13 @@ jobs:
     name: Build the deploy artifact
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    # For the boot check below: the api refuses to start without a database
-    # it can prove is unprivileged. No migrations; an empty one is enough.
+    # For the boot check below: the api needs a migrated database (it checks
+    # its role and pg-boss's schema at boot) and Valkey.
     services:
+      valkey:
+        image: valkey/valkey:9.1.2-alpine@sha256:48332870af354a799964c0012ae1194a0bf2bf894eb508f945810596dc2d8d11
+        ports:
+          - 26379:6379
       postgres:
         image: postgres:18.6-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
         env:
@@ -171,13 +175,15 @@ jobs:
       - name: Boot the artifact's api and worker
         env:
           DATABASE_URL: postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal
+          DATABASE_OWNER_URL: postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal
           PDP_BASE_URL: http://127.0.0.1:26592
           CHECKPOINT_TOKEN_SECRET: ci-only-checkpoint-signing-key-not-a-real-secret
           WEBHOOK_SECRET_ENCRYPTION_KEY: ci-only-webhook-secret-encryption-key-not-a-real-secret
           SNAP_APP_PARTNER_SECRET: ci-only-snap-app-partner-secret-not-a-real-secret
         run: |
           set -euo pipefail
-          psql postgres://yourtal:yourtal_local_only@127.0.0.1:26432/yourtal -v ON_ERROR_STOP=1 -q -f infra/postgres/init/01-schemas.sql
+          psql "$DATABASE_OWNER_URL" -v ON_ERROR_STOP=1 -q -f infra/postgres/init/01-schemas.sql
+          pnpm db:migrate
           bash infra/helios/boot-check.sh "$RUNNER_TEMP/yourtal"
 
       - name: Upload the artifact

@@ -1,4 +1,4 @@
-import { bigint, boolean, integer, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { bigint, boolean, integer, jsonb, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { storePgSchema } from "./store-schema";
 
 /**
@@ -48,6 +48,8 @@ export const listings = storePgSchema.table("listings", {
   region: text("region").notNull(),
   audience: text("audience").notNull(),
   contentCategory: text("content_category").notNull(),
+  // 13.11.a: interest-taxonomy node ids (20260930024731_listing_tags).
+  tags: jsonb("tags").$type<string[]>().notNull().default([]),
   imageUrl: text("image_url").notNull(),
   channel: text("channel").notNull(),
   partialRedemption: text("partial_redemption").notNull(),

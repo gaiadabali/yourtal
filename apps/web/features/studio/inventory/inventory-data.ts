@@ -110,6 +110,7 @@ function mockListing(input: {
     region: input.region,
     audience: "all_ages",
     contentCategory: "food-and-drink",
+    tags: [],
     imageUrl: "https://images.example.com/listings/placeholder.jpg",
     channel: "in_store",
     partialRedemption: "single_use",

@@ -439,6 +439,11 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "me/notification.ts's shape for GET /api/me/notifications and PATCH .../:id/read — both routes predate this " +
     'file and are already exempted in route-drift.test.ts ("MeModule -- TASKS.md 5.5, this pass\'s own ticket"); ' +
     "this only names the shape apps/web now imports, without closing that pre-existing registry gap.",
+  feedBrowseQuerySchema:
+    "13.12.a: GET /api/feed's query string, not a body. Its enums (FeedSort, InterestTag) are published.",
+  searchQuerySchema: "13.12.c: GET /api/search's query string, same as feedBrowseQuerySchema.",
+  listingBrowseQuerySchema:
+    "13.12.b: GET /api/store/listings's query string, same as feedBrowseQuerySchema.",
   notificationListResponseSchema:
     "me/notification.ts's GET /api/me/notifications response envelope — same gap as notificationSchema above.",
   notificationMarkReadResponseSchema:

@@ -35,6 +35,7 @@ function baseItem(overrides: Partial<FeedItemData> = {}): FeedItemData {
     maxRewardPoints: toPoints(100),
     estimatedDataMb: 10,
     contentCategory: "food-and-drink",
+    tags: [],
     audience: "all_ages",
     region: "AU",
     openViewing: false,

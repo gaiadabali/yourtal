@@ -19657,6 +19657,32 @@
         ],
         "additionalProperties": false
       },
+      "BrandFacet": {
+        "description": "A brand filter option: the merchant id, its name and its listing count.",
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "minLength": 1
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "value",
+          "count",
+          "label"
+        ],
+        "additionalProperties": false
+      },
       "Business": {
         "description": "An advertiser, supplier and/or redeemer.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - roles must not contain duplicates.\n  - currency must match the business's own region (F2: regions never cross).\n  - taxIdKind must match the business's region (ABN for AU; NIB or NPWP for ID).\n  - taxIdValue must match the expected shape for its taxIdKind.\n  - address must match the business's region (AU: state + postcode; ID: city).",
         "type": "object",
@@ -19966,6 +19992,10 @@
               "energy-drinks"
             ]
           },
+          "tags": {
+            "default": [],
+            "$ref": "#/components/schemas/InterestTags"
+          },
           "posterUrl": {
             "type": "string",
             "format": "uri"
@@ -20044,6 +20074,7 @@
           "region",
           "audience",
           "contentCategory",
+          "tags",
           "posterUrl",
           "teaserUrl",
           "hlsUrl",
@@ -20920,6 +20951,27 @@
         ],
         "additionalProperties": false
       },
+      "FacetCount": {
+        "description": "A facet bucket: a value present in the walled result set and its row count.",
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "minLength": 1
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          }
+        },
+        "required": [
+          "value",
+          "count"
+        ],
+        "additionalProperties": false
+      },
       "FeedChannelResult": {
         "description": "A business matched by GET /api/search.",
         "type": "object",
@@ -20956,6 +21008,29 @@
           "handle",
           "logoUrl",
           "region"
+        ],
+        "additionalProperties": false
+      },
+      "FeedFacets": {
+        "description": "Category and tag counts over the feed's walled set; each facet ignores its own filter.",
+        "type": "object",
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FacetCount"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FacetCount"
+            }
+          }
+        },
+        "required": [
+          "categories",
+          "tags"
         ],
         "additionalProperties": false
       },
@@ -21048,6 +21123,10 @@
               "energy-drinks"
             ]
           },
+          "tags": {
+            "default": [],
+            "$ref": "#/components/schemas/InterestTags"
+          },
           "audience": {
             "$ref": "#/components/schemas/Audience"
           },
@@ -21098,6 +21177,7 @@
           "maxRewardPoints",
           "estimatedDataMb",
           "contentCategory",
+          "tags",
           "audience",
           "region",
           "openViewing",
@@ -21121,13 +21201,31 @@
             "items": {
               "$ref": "#/components/schemas/FeedItem"
             }
+          },
+          "facets": {
+            "default": {
+              "categories": [],
+              "tags": []
+            },
+            "$ref": "#/components/schemas/FeedFacets"
           }
         },
         "required": [
           "surface",
-          "items"
+          "items",
+          "facets"
         ],
         "additionalProperties": false
+      },
+      "FeedSort": {
+        "description": "GET /api/feed's `sort`: the personalised ranking or a plain ordering.",
+        "type": "string",
+        "enum": [
+          "for_you",
+          "newest",
+          "most_points",
+          "ending_soon"
+        ]
       },
       "FeedSurface": {
         "description": "Which board GET /api/feed is ranking for -- home or the full-screen watch surface.",
@@ -21241,6 +21339,18 @@
           "parts"
         ],
         "additionalProperties": false
+      },
+      "InterestTag": {
+        "description": "One tag: an interest-taxonomy node id, never free text (F84).",
+        "type": "string"
+      },
+      "InterestTags": {
+        "description": "Up to 8 unique interest tags on a campaign or listing (13.11).",
+        "maxItems": 8,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/InterestTag"
+        }
       },
       "KybDocument": {
         "description": "A business's submitted KYB document and its review state (docs/17 section 5). `storageRef` is an opaque pointer to encrypted bytes; this schema does not cover the upload path itself.",
@@ -21470,6 +21580,10 @@
               "energy-drinks"
             ]
           },
+          "tags": {
+            "default": [],
+            "$ref": "#/components/schemas/InterestTags"
+          },
           "imageUrl": {
             "type": "string",
             "format": "uri"
@@ -21503,9 +21617,57 @@
           "region",
           "audience",
           "contentCategory",
+          "tags",
           "imageUrl",
           "channel",
           "partialRedemption"
+        ],
+        "additionalProperties": false
+      },
+      "ListingBrowseResponse": {
+        "description": "GET /api/store/listings's response: one page, the total match count and the facets (13.12.b).",
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string",
+            "const": "list"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicListing"
+            }
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "url": {
+            "type": "string",
+            "const": "/api/store/listings"
+          },
+          "total_count": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "facets": {
+            "default": {
+              "categories": [],
+              "tags": [],
+              "brands": []
+            },
+            "$ref": "#/components/schemas/ListingFacets"
+          }
+        },
+        "required": [
+          "object",
+          "data",
+          "has_more",
+          "url",
+          "total_count",
+          "facets"
         ],
         "additionalProperties": false
       },
@@ -21527,6 +21689,47 @@
           "in_store",
           "online",
           "both"
+        ]
+      },
+      "ListingFacets": {
+        "description": "Category, tag and brand counts over the store's walled set; each facet ignores its own filter.",
+        "type": "object",
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FacetCount"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FacetCount"
+            }
+          },
+          "brands": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BrandFacet"
+            }
+          }
+        },
+        "required": [
+          "categories",
+          "tags",
+          "brands"
+        ],
+        "additionalProperties": false
+      },
+      "ListingSort": {
+        "description": "GET /api/store/listings's `sort`.",
+        "type": "string",
+        "enum": [
+          "popular",
+          "newest",
+          "points_asc",
+          "points_desc",
+          "ending_soon"
         ]
       },
       "ListingStatus": {
@@ -22263,6 +22466,10 @@
               "energy-drinks"
             ]
           },
+          "tags": {
+            "default": [],
+            "$ref": "#/components/schemas/InterestTags"
+          },
           "imageUrl": {
             "type": "string",
             "format": "uri"
@@ -22295,6 +22502,7 @@
           "region",
           "audience",
           "contentCategory",
+          "tags",
           "imageUrl",
           "channel",
           "partialRedemption"

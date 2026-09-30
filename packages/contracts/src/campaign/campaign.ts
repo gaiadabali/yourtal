@@ -5,6 +5,7 @@ import { regionSchema } from "../region/region";
 import { audienceSchema } from "../audience/audience";
 import { campaignChapterSchema } from "./campaign-chapter";
 import { campaignVideoSourceSchema } from "./campaign-video-source";
+import { interestTagsSchema } from "../interest/interest-tags";
 
 // Re-exported here (rather than added to packages/contracts/package.json's
 // exports map, which 1.3.a is about to restructure into a wildcard) so B and
@@ -68,6 +69,8 @@ export const campaignSchema = z
     region: regionSchema,
     audience: audienceSchema,
     contentCategory: contentCategorySchema,
+    /** 13.11 (F84): up to 8 interest-taxonomy node ids, stored as `declared_interests`. */
+    tags: interestTagsSchema.default([]),
     /** Feed and card image, shown before any video loads. */
     posterUrl: z.url(),
     /** A progressive MP4, autoplayed muted in the vertical feed (docs/17, 3.5.a). */

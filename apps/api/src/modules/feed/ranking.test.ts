@@ -28,6 +28,7 @@ function campaign(overrides: Partial<Campaign> = {}): Campaign {
     region: "AU",
     audience: "all_ages",
     contentCategory: "food-and-drink",
+    tags: [],
     posterUrl: "https://cdn.example.com/poster.jpg",
     teaserUrl: "https://cdn.example.com/teaser.mp4",
     hlsUrl: "https://cdn.example.com/manifest.m3u8",

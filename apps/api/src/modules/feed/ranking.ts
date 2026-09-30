@@ -174,6 +174,7 @@ export function toFeedItem(
     ),
     estimatedDataMb: campaign.estimatedDataMb,
     contentCategory: campaign.contentCategory,
+    tags: campaign.tags,
     audience: campaign.audience,
     region: campaign.region,
     openViewing: campaign.openViewing,

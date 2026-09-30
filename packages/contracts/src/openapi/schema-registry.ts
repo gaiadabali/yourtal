@@ -71,6 +71,7 @@ import { PROOF_CONTRACT_COMPONENTS } from "./schema-registry-proof";
 import { BUSINESS_CONTRACT_COMPONENTS } from "./schema-registry-business";
 import { DEVICE_CONTRACT_COMPONENTS } from "./schema-registry-devices";
 import { FEED_CONTRACT_COMPONENTS } from "./schema-registry-feed";
+import { BROWSE_CONTRACT_COMPONENTS } from "./schema-registry-browse";
 import { REPORT_CONTRACT_COMPONENTS } from "./schema-registry-report";
 import { STUDIO_CONTRACT_COMPONENTS } from "./schema-registry-studio";
 
@@ -575,5 +576,6 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
   // --- studio media pipeline: see schema-registry-studio.ts (TASKS.md 7.2).
   ...STUDIO_CONTRACT_COMPONENTS,
   ...FEED_CONTRACT_COMPONENTS,
+  ...BROWSE_CONTRACT_COMPONENTS,
   ...PROOF_CONTRACT_COMPONENTS,
 ];

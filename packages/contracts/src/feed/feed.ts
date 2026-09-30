@@ -5,6 +5,8 @@ import { regionSchema } from "../region/region";
 import { audienceSchema } from "../audience/audience";
 import { publicListingSchema } from "../listing/listing";
 import { campaignKindSchema, campaignSchema } from "../campaign/campaign";
+import { interestTagsSchema } from "../interest/interest-tags";
+import { EMPTY_FEED_FACETS, feedFacetsSchema, feedSurfaceSchema } from "./feed-browse";
 
 /**
  * 7.7: the feed/discovery response shape. `packages/contracts/src/feed` is
@@ -23,8 +25,7 @@ export const feedWhyReasonSchema = z.enum([
 ]);
 export type FeedWhyReason = z.infer<typeof feedWhyReasonSchema>;
 
-export const feedSurfaceSchema = z.enum(["home", "watch"]);
-export type FeedSurface = z.infer<typeof feedSurfaceSchema>;
+export * from "./feed-browse";
 
 /**
  * One campaign card. Deliberately NOT the full `Campaign` contract --
@@ -49,6 +50,8 @@ export const feedItemSchema = z.object({
   maxRewardPoints: pointsSchema,
   estimatedDataMb: z.number().positive(),
   contentCategory: contentCategorySchema,
+  /** 13.11: interest-taxonomy node ids, up to 8. Defaults so an older server still parses. */
+  tags: interestTagsSchema.default([]),
   audience: audienceSchema,
   region: regionSchema,
   openViewing: z.boolean(),
@@ -73,6 +76,8 @@ export type FeedItem = z.infer<typeof feedItemSchema>;
 export const feedResponseSchema = z.object({
   surface: feedSurfaceSchema,
   items: z.array(feedItemSchema),
+  /** 13.12.a: category and tag counts over the walled set; see `feedFacetsSchema`. */
+  facets: feedFacetsSchema.default(EMPTY_FEED_FACETS),
 });
 export type FeedResponse = z.infer<typeof feedResponseSchema>;
 

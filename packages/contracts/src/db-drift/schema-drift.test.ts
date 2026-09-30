@@ -263,6 +263,8 @@ const MAPPINGS: readonly Mapping[] = [
         "A relation, not a column. campaign.video_source stores `kind` plus per-kind fields behind a CHECK, so the discriminated union stays additive rather than becoming a jsonb convention.",
       status:
         "DERIVED, deliberately. The viewer-facing status comes from `lifecycle_state` through `publicStatusOf` (YT-0101). Storing both would be two copies of one fact, and the copy is what goes stale.",
+
+      tags: "13.11 (F84): stored in declared_interests (below), the column the feed already matched on.",
     },
     columnsWithNoField: {
       lifecycle_state:
@@ -270,7 +272,7 @@ const MAPPINGS: readonly Mapping[] = [
       rejection_reason:
         "Console-only, and null unless the campaign is rejected. A viewer is never shown why a campaign they cannot see was refused.",
       declared_interests:
-        "TASKS.md 7.3/7.7 (20260927140000, requested by C): authoring-only targeting input for the feed's ranking match, not something a viewer-facing campaign envelope carries. Tracked here rather than added to campaignSchema, which is B's file.",
+        "TASKS.md 7.3/7.7 (20260927140000): the campaign's interest tags, published as `tags` since 13.11 (F84).",
       poster_frame_seconds:
         "TASKS.md 7.3 (20260927140000, requested by C): an authoring input (which video second the poster is grabbed from), superseded for a viewer by the rendered posterUrl. Same reasoning as declared_interests above.",
     },

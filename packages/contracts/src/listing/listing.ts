@@ -5,6 +5,7 @@ import { currencySchema } from "../money/money-value";
 import { regionSchema } from "../region/region";
 import { audienceSchema } from "../audience/audience";
 import { merchantLocationSchema } from "./merchant-location";
+import { interestTagsSchema } from "../interest/interest-tags";
 
 /**
  * A listing is a store catalogue entry — a voucher or digital-goods SKU a
@@ -121,6 +122,8 @@ const listingFields = z.object({
   region: regionSchema,
   audience: audienceSchema,
   contentCategory: contentCategorySchema,
+  /** 13.11 (F84): up to 8 interest-taxonomy node ids, never free text. */
+  tags: interestTagsSchema.default([]),
   /** The storefront card image. */
   imageUrl: z.url(),
   channel: listingChannelSchema,

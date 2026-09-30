@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { listingCategorySchema } from "@yourtal/contracts/listing";
-import { regionSchema } from "@yourtal/contracts/region";
+import { listingBrowseQuerySchema } from "@yourtal/contracts/listing/browse";
 import type { Audience } from "@yourtal/contracts/campaign";
 import type { Region } from "@yourtal/contracts/region";
 import type { BrowseListingsFilter } from "../persistence/listing.repository";
@@ -22,20 +21,8 @@ import type { BrowseListingsFilter } from "../persistence/listing.repository";
  * present for an anonymous caller -- that check is the controller's too,
  * because it is the one place that knows which case applies.
  */
-const DEFAULT_LIMIT = 20;
-const MAX_LIMIT = 100;
-
-export const browseListingsQuerySchema = z.object({
-  region: regionSchema.optional(),
-  category: listingCategorySchema.optional(),
-  merchantId: z.uuid().optional(),
-  district: z.string().min(1).max(60).optional(),
-  q: z.string().min(1).max(200).optional(),
-  minPoints: z.coerce.number().int().min(0).optional(),
-  maxPoints: z.coerce.number().int().min(0).optional(),
-  limit: z.coerce.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT),
-  startingAfter: z.uuid().optional(),
-});
+// 13.12.b: the shape now lives in the contract, so the web store builds against it.
+export const browseListingsQuerySchema = listingBrowseQuerySchema;
 
 export type BrowseListingsQuery = z.infer<typeof browseListingsQuerySchema>;
 

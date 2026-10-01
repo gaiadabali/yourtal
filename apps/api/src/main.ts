@@ -44,7 +44,7 @@ async function bootstrap(): Promise<void> {
     // 13.3.e: trust X-Forwarded-For only from a loopback hop (nginx, or the web
     // server forwarding its viewer's address). `true` took the leftmost entry a
     // client wrote itself, so any caller could choose its own IP.
-    new FastifyAdapter({ trustProxy: TRUSTED_PROXIES }),
+    new FastifyAdapter({ trustProxy: [...TRUSTED_PROXIES] }),
     {
       // The idempotency fingerprint hashes the bytes the client actually
       // sent, not a re-serialisation of the parsed object — see

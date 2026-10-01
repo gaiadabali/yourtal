@@ -1,5 +1,5 @@
 import type pg from "pg";
-import { DemoApi, field, ok, sleep } from "./api-client";
+import { DemoApi, field, loginAs, ok, sleep } from "./api-client";
 import { DEMO_BRANDS } from "./catalogue";
 import type { Audience } from "@yourtal/contracts/audience/audience";
 import type { Region } from "./catalogue";
@@ -56,12 +56,11 @@ function todaysCampaigns(viewer: Viewer, day: number): string[] {
 }
 
 async function login(api: DemoApi, email: string, password: string): Promise<DemoApi> {
-  const body = ok(await api.post("/api/auth/login", { email, password }), `login ${email}`);
-  return api.withSession(String(field(body, "token")));
+  return (await loginAs(api, email, password)).api;
 }
 
 /** Watches one campaign in real time, answering each checkpoint (most of them right). */
-async function watch(pool: pg.Pool, api: DemoApi, campaignId: string): Promise<string> {
+export async function watch(pool: pg.Pool, api: DemoApi, campaignId: string): Promise<string> {
   const started = await api.post("/api/watch/sessions", { campaignId });
   if (started.status >= 400) return `refused ${String(started.status)}`;
   if (field(started.body, "alreadyEarned") === true) return "already earned";
@@ -71,6 +70,7 @@ async function watch(pool: pg.Pool, api: DemoApi, campaignId: string): Promise<s
   let covered = 0;
   let checkpoint = 0;
   let questionsDone = false;
+  let lastCheckpoint = "";
   while (covered < duration || !questionsDone) {
     await sleep(TICK_MS);
     const to = Math.min(duration, Math.floor((Date.now() - t0) / 1000));
@@ -85,7 +85,8 @@ async function watch(pool: pg.Pool, api: DemoApi, campaignId: string): Promise<s
         `/api/watch/sessions/${sessionId}/checkpoints/${String(checkpoint)}`,
       );
       if (presented.status === 404) questionsDone = true;
-      if (presented.status === 200) {
+      lastCheckpoint = `${String(presented.status)} ${JSON.stringify(presented.body).slice(0, 120)}`;
+      if (presented.status === 200 || presented.status === 201) {
         const questionId = String(field(presented.body, "question", "id"));
         const key = await pool.query<{ correct_option_id: string }>(
           "SELECT correct_option_id FROM campaign.question_answer_key WHERE question_id = $1",
@@ -95,22 +96,29 @@ async function watch(pool: pg.Pool, api: DemoApi, campaignId: string): Promise<s
         const right = key.rows[0]?.correct_option_id;
         // One answer in five is wrong, so reports show a real accuracy spread.
         const pick = Math.random() < 0.8 ? right : options.find((o) => o.id !== right)?.id;
-        await api.post(
+        const answered = await api.post(
           `/api/watch/sessions/${sessionId}/checkpoints/${String(checkpoint)}/answer`,
           {
             token: field(presented.body, "token"),
             selectedOptionId: pick,
           },
         );
+        if (answered.status >= 400) {
+          return `answer ${String(answered.status)} ${JSON.stringify(answered.body).slice(0, 160)}`;
+        }
         checkpoint += 1;
       }
     }
-    if (Date.now() - t0 > (duration + 120) * 1000) return "timed out";
+    if (Date.now() - t0 > (duration + 120) * 1000) {
+      return `timed out at ${String(covered)} s; last checkpoint: ${lastCheckpoint}`;
+    }
   }
   const done = await api.post(`/api/watch/sessions/${sessionId}/complete`);
-  return done.status < 400
+  if (done.status >= 400)
+    return `complete ${String(done.status)} ${JSON.stringify(done.body).slice(0, 160)}`;
+  return field(done.body, "granted") === true
     ? `earned ${String(field(done.body, "pendingPoints") ?? "?")}`
-    : `complete ${String(done.status)}`;
+    : `not granted: ${String(field(done.body, "reason"))}`;
 }
 
 /** The cheapest demo listing this viewer may buy, if the balance covers it. */

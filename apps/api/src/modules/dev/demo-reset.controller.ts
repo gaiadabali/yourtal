@@ -41,7 +41,7 @@ export class DemoResetController {
   async reset(@Req() request: FastifyRequest): Promise<{ queued: true; jobId: string }> {
     if (this.config.appEnv === "production") throw new NotFoundException();
     const principal = await this.principals.resolve(request);
-    await defineQueue(this.boss, DEMO_RESET_QUEUE, { retryLimit: 0 });
+    await defineQueue(this.boss, DEMO_RESET_QUEUE, { retryLimit: 0, expireInSeconds: 2 * 60 * 60 });
     const jobId = await this.boss.send(DEMO_RESET_QUEUE, { requestedBy: principal.id });
     if (jobId === null) throw new Error("pg-boss refused the demo-reset job");
     return { queued: true, jobId };

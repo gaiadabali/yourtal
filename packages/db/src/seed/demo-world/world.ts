@@ -30,7 +30,7 @@ export const listingIdFor = (slug: string, key: string): string =>
   stableId(`demo-world:listing:${slug}:${key}`);
 
 const QUICK_MAX_SECONDS = 60;
-const VOUCHERS_PER_LISTING = 6;
+const VOUCHERS_PER_LISTING = 12;
 
 /** AU addresses carry a state and postcode, ID ones a city (business_accounts_address_matches_region). */
 const AU_STATE: Readonly<Record<string, readonly [string, string]>> = {

@@ -8,4 +8,8 @@ set -a
 # shellcheck disable=SC1090
 . "$env_file"
 set +a
+# F89: staging gifts at once; production keeps the voucher service's 24 h default.
+if [ "${APP_ENV:-}" = staging ] && [ -z "${GIFT_HOLDBACK:-}" ]; then
+  export GIFT_HOLDBACK=0s
+fi
 exec "$@"

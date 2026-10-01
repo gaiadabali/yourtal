@@ -475,9 +475,15 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: 3.1139.0
         version: 3.1139.0
+      '@node-rs/argon2':
+        specifier: 2.2.1
+        version: 2.2.1
       '@yourtal/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@yourtal/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@yourtal/drivers':
         specifier: workspace:*
         version: link:../../packages/drivers

@@ -35,6 +35,8 @@ export interface DefineQueueOptions {
   readonly retryDelaySeconds?: number;
   readonly retryBackoff?: boolean;
   readonly retryDelayMaxSeconds?: number;
+  /** How long a job may run before pg-boss calls it failed (pg-boss default: 15 min). */
+  readonly expireInSeconds?: number;
 }
 
 export interface DefinedQueue {
@@ -67,6 +69,7 @@ export async function defineQueue(
     retryBackoff: options.retryBackoff ?? DEFAULT_RETRY_BACKOFF,
     retryDelayMax: options.retryDelayMaxSeconds ?? DEFAULT_RETRY_DELAY_MAX_SECONDS,
     deadLetter: deadLetterName,
+    ...(options.expireInSeconds === undefined ? {} : { expireInSeconds: options.expireInSeconds }),
     // Never true — see client.ts's doc comment on why the app role must
     // not trigger pg-boss's per-queue CREATE TABLE path.
     partition: false,

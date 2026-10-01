@@ -83,3 +83,37 @@ export const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+
+const sessions = new Map<string, { api: DemoApi; userId: string }>();
+
+/**
+ * One login per demo account per run (the login route allows 30 per 15 min per
+ * address), and a 429 is waited out rather than failed.
+ */
+export async function loginAs(
+  base: DemoApi,
+  email: string,
+  password: string,
+): Promise<{ api: DemoApi; userId: string }> {
+  const cached = sessions.get(email);
+  if (cached !== undefined) return cached;
+  for (;;) {
+    const response = await base.post("/api/auth/login", { email, password });
+    if (response.status === 429) {
+      await sleep((Number(field(response.body, "retryAfterSeconds")) || 60) * 1000);
+      continue;
+    }
+    const body = ok(response, `login ${email}`);
+    const session = {
+      api: base.withSession(String(field(body, "token"))),
+      userId: String(field(body, "userId")),
+    };
+    sessions.set(email, session);
+    return session;
+  }
+}
+
+/** A reset retires accounts, so their sessions go with them. */
+export function forgetSessions(): void {
+  sessions.clear();
+}

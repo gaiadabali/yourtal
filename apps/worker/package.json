@@ -15,7 +15,9 @@
   "dependencies": {
     "@aws-sdk/client-s3": "3.1139.0",
     "@aws-sdk/s3-request-presigner": "3.1139.0",
+    "@node-rs/argon2": "2.2.1",
     "@yourtal/contracts": "workspace:*",
+    "@yourtal/db": "workspace:*",
     "@yourtal/drivers": "workspace:*",
     "@yourtal/jurisdiction": "workspace:*",
     "@yourtal/media": "workspace:*",

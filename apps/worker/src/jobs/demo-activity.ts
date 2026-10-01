@@ -9,7 +9,8 @@ import { defineJob } from "../job";
 export const job = defineJob({
   queue: "demo-activity",
   schedule: "0 2 * * *",
-  queueOptions: { retryLimit: 0 },
+  // A reset renders video and a day of activity watches in real time.
+  queueOptions: { retryLimit: 0, expireInSeconds: 2 * 60 * 60 },
   async handle(_job, { config }) {
     if (config.demo === undefined) return;
     const pool = new Pool({ connectionString: config.demo.ownerDatabaseUrl });

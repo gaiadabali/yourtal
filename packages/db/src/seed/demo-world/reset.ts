@@ -4,6 +4,7 @@ import { alignDemoCampaignTerms } from "../demo-campaign-terms";
 import { backfillDemoTags } from "../demo-tags";
 import type { StagingLedgerConfig, StagingVoucherConfig } from "../staging";
 import { DEMO_PEOPLE, resetDemoAccounts } from "./accounts";
+import { forgetSessions } from "./api-client";
 import type { DemoLogin } from "./accounts";
 import { ensureDemoWorld } from "./world";
 import type { DemoWorldCounts } from "./world";
@@ -47,6 +48,7 @@ export async function resetDemoWorld(
   await backfillDemoTags(pool);
 
   const logins = await resetDemoAccounts(pool, config.ledger, config, log);
+  forgetSessions();
   const staff = new Set(DEMO_PEOPLE.filter((p) => p.staffRole !== undefined).map((p) => p.email));
   for (const login of logins) {
     await pool.query(

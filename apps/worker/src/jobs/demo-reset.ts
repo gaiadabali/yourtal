@@ -13,7 +13,8 @@ export const DEMO_RESET_QUEUE = "demo-reset";
 
 export const job = defineJob({
   queue: DEMO_RESET_QUEUE,
-  queueOptions: { retryLimit: 0 },
+  // A reset renders video and a day of activity watches in real time.
+  queueOptions: { retryLimit: 0, expireInSeconds: 2 * 60 * 60 },
   async handle(_job, { config }) {
     if (config.demo === undefined) {
       console.log("[demo-reset] skipped: no demo configuration here (or production)");

@@ -59,7 +59,7 @@ export function TopBar({
   const t = getNavTranslator(locale);
 
   return (
-    <header className="sticky top-0 z-(--z-nav) flex h-14 items-center gap-2 border-b border-border-subtle bg-surface/95 px-gutter-sm backdrop-blur md:gap-3 md:px-gutter-md lg:pl-[calc(14rem+var(--spacing-gutter-md))]">
+    <header className="sticky top-0 z-(--z-nav) flex h-14 items-center gap-1 border-b border-border-subtle bg-surface/95 px-gutter-sm backdrop-blur min-[360px]:gap-2 md:gap-3 md:px-gutter-md lg:pl-[calc(14rem+var(--spacing-gutter-md))]">
       {/* 13.18.a: from lg the logo lives at the top of the side rail. */}
       <div className="shrink-0 lg:hidden">
         {signedOutCta ? (
@@ -97,7 +97,7 @@ export function TopBar({
           <Link
             href="/search"
             aria-label={t("search")}
-            className="inline-flex size-10 shrink-0 items-center justify-center rounded-pill text-fg hover:bg-surface-sunken md:hidden"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-pill text-fg hover:bg-surface-sunken min-[360px]:size-10 md:hidden"
           >
             <Search aria-hidden="true" className="h-5 w-5" />
           </Link>

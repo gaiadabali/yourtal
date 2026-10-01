@@ -1,5 +1,6 @@
 import type pg from "pg";
 import { publicMediaUrl } from "@yourtal/media/hls-origin";
+import { createMediaClient, putMediaOutput } from "@yourtal/media/studio-media";
 
 /** The Snap App quick campaigns' own clip: 30 s of the Big Buck Bunny trailer (CC-BY 3.0). */
 export const SNAP_APP_ASSET_ID = "snap-app-30s";
@@ -35,4 +36,38 @@ export async function repairSnapAppMedia(
     );
   }
   return { repointed: ids.length };
+}
+
+/**
+ * 13.4.e: the Snap App clip is the Big Buck Bunny trailer, music with no
+ * speech, so its captions say so, in each region's language.
+ */
+const SNAP_APP_CAPTIONS: Readonly<Record<"AU" | "ID", { key: string; cue: string }>> = {
+  AU: { key: `captions/${SNAP_APP_ASSET_ID}.vtt`, cue: "[Upbeat orchestral music]" },
+  ID: { key: `captions/${SNAP_APP_ASSET_ID}-id.vtt`, cue: "[Musik orkestra yang ceria]" },
+};
+
+export async function captionSnapAppMedia(
+  pool: pg.Pool,
+  log: (message: string) => void,
+): Promise<{ captioned: number }> {
+  const client = createMediaClient();
+  let captioned = 0;
+  try {
+    for (const region of ["AU", "ID"] as const) {
+      const { key, cue } = SNAP_APP_CAPTIONS[region];
+      const body = ["WEBVTT", "", "00:00:00.000 --> 00:00:30.000", cue, ""].join("\n");
+      await putMediaOutput(client, { kind: "captions", key, body: new TextEncoder().encode(body) });
+      const result = await pool.query(
+        `UPDATE campaign.campaigns SET captions_url = $2
+          WHERE region = $1 AND hls_url LIKE '%/hls/${SNAP_APP_ASSET_ID}/%' AND captions_url IS NULL`,
+        [region, publicMediaUrl(key)],
+      );
+      captioned += result.rowCount ?? 0;
+    }
+  } finally {
+    client.destroy();
+  }
+  if (captioned > 0) log(`[seed:snap-app-media] ${String(captioned)} Snap App campaigns captioned`);
+  return { captioned };
 }

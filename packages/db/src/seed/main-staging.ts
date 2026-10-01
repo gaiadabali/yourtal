@@ -10,7 +10,7 @@ import { runDemoCampaignFunding } from "./demo-campaign-funding";
 import { alignDemoCampaignTerms } from "./demo-campaign-terms";
 import { repairDemoListingCopy, repairDemoListingImages } from "./demo-listing-images";
 import { retireLeakedFixtures } from "./retire-leaked-fixtures";
-import { SNAP_APP_ASSET_ID, repairSnapAppMedia } from "./snap-app-media";
+import { SNAP_APP_ASSET_ID, captionSnapAppMedia, repairSnapAppMedia } from "./snap-app-media";
 import type { DemoCampaignFundingResult } from "./demo-campaign-funding";
 import { runDemoMediaVouchers } from "./demo-media-vouchers";
 import type { DemoMediaVoucherResult } from "./demo-media-vouchers";
@@ -184,6 +184,7 @@ async function main(): Promise<void> {
           });
     if (snapAppMedia !== null && snapAppMedia.status !== "failed") {
       await repairSnapAppMedia(pool, console.log);
+      await captionSnapAppMedia(pool, console.log);
     }
     const mediaSummary =
       media === null

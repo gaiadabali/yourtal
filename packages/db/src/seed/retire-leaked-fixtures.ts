@@ -13,8 +13,12 @@ export async function retireLeakedFixtures(
 ): Promise<{ retired: number }> {
   const result = await pool.query(
     `UPDATE campaign.campaigns SET lifecycle_state = 'ended'
-      WHERE title = 'ledger-client contract fixture'
-        AND merchant_name = 'contract-spec merchant'
+      WHERE ((title = 'ledger-client contract fixture' AND merchant_name = 'contract-spec merchant')
+             -- 13.4.e: two more from a 2026-09-25 contract run, each under its own
+             -- "Ledger contract test <id>" business, though named Snap App.
+             OR (title LIKE 'Ledger contract test %'
+                 AND business_id IN (SELECT id FROM business.business_accounts
+                                      WHERE display_name LIKE 'Ledger contract test %')))
         AND lifecycle_state <> 'ended'`,
   );
   const retired = result.rowCount ?? 0;

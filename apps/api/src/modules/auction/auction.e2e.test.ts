@@ -228,6 +228,14 @@ describe("13.22 — charity auctions", () => {
       [auction.auctionId],
     );
     expect(receipts.map((r) => r.party)).toEqual(["charity", "seller", "winner"]);
+
+    // 13.21.c: the charity's console shows the proceeds and a monthly statement.
+    const console = await call("GET", `/api/charities/${charityId}/console`, admin);
+    expect(console.statusCode, console.body).toBe(200);
+    expect(console.json()).toMatchObject({
+      proceeds: [{ auctionId: auction.auctionId, amountMinor: 32000, currency: "IDR" }],
+      statements: [{ currency: "IDR", auctions: 1, totalMinor: 32000 }],
+    });
   });
 
   it("gives an auction nobody bid on to the charity", async () => {

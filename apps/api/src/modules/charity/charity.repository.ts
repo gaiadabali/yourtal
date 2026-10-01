@@ -1,5 +1,7 @@
 import { sql } from "drizzle-orm";
 import type {
+  CharityProceed,
+  CharityStatement,
   CharityApplicationRequest,
   CharityDetail,
   CharityState,
@@ -77,6 +79,42 @@ export class CharityRepository {
       sql`SELECT * FROM charity.charity WHERE id = ${id}`,
     );
     return rows[0] === undefined ? null : toDetail(rows[0]);
+  }
+
+  /**
+   * 13.21.c: sold auctions' proceeds (13.22.h's `auction.settlement`), each
+   * already paid to the charity's own account at the provider, newest first.
+   */
+  async proceeds(id: string): Promise<CharityProceed[]> {
+    const { rows } = await this.db.execute<Row>(sql`
+      SELECT auction_id, amount_minor, currency, capture_reference, settled_at
+        FROM auction.settlement
+       WHERE charity_id = ${id} AND outcome = 'sold'
+       ORDER BY settled_at DESC LIMIT 500`);
+    return rows.map((row) => ({
+      auctionId: String(row["auction_id"]),
+      amountMinor: Number(row["amount_minor"]),
+      currency: row["currency"] as CharityProceed["currency"],
+      providerReference: String(row["capture_reference"]),
+      paidAt: iso(row["settled_at"]) ?? new Date(0).toISOString(),
+    }));
+  }
+
+  /** Monthly totals per currency, on the charity's own region clock (F16). */
+  async statements(id: string, region: Region): Promise<CharityStatement[]> {
+    const tz = region === "AU" ? "Australia/Sydney" : "Asia/Jakarta";
+    const { rows } = await this.db.execute<Row>(sql`
+      SELECT to_char(settled_at AT TIME ZONE ${tz}, 'YYYY-MM') AS month, currency,
+             count(*)::int AS auctions, sum(amount_minor)::bigint AS total
+        FROM auction.settlement
+       WHERE charity_id = ${id} AND outcome = 'sold'
+       GROUP BY 1, 2 ORDER BY 1 DESC, 2`);
+    return rows.map((row) => ({
+      month: String(row["month"]),
+      currency: row["currency"] as CharityStatement["currency"],
+      auctions: Number(row["auctions"]),
+      totalMinor: Number(row["total"]),
+    }));
   }
 
   /** The PDP's view of one charity: region, state and its members. */

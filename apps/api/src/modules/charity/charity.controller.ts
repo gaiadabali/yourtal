@@ -99,8 +99,12 @@ export class CharityController {
   async console(@Param("charityId") charityId: string): Promise<CharityConsole> {
     const charity = await this.charities.findDetail(charityId);
     if (charity === null) throw new NotFoundException("No such charity.");
-    // Proceeds arrive with 13.22's auctions, captured straight to the charity.
-    return { charity, proceeds: [], statements: [] };
+    // Money already paid to the charity's own account; never a balance held here.
+    const [proceeds, statements] = await Promise.all([
+      this.charities.proceeds(charityId),
+      this.charities.statements(charityId, charity.region),
+    ]);
+    return { charity, proceeds, statements };
   }
 
   private async regionFor(regionParam: string | undefined, request: FastifyRequest) {

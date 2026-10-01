@@ -1638,6 +1638,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-10-01 · A2 (slot 9c) · Integration green again: Postgres row-level security now covers `voucher.escrow`, `auction.auction`, `auction.bid` and the fake escrow, and Integration and Release both pass on main · 599f2def
 - 2026-09-30 · B (slot 4) · **13.20.c, 13.21.b and 13.22.d** merged (1cd6f4a7, 5f7cea86): gift a voucher from its page and answer gifts in the wallet; `/charities` in the viewer app; charity auction pages on the real API, checked end to end on slot 4.
 - 2026-09-30 · A2 (slot 9c) · **13.22 backend on main:** charity auctions: listing voids the code into voucher escrow, bids are serialised per auction with a payment hold each, the close pays the charity's own account (never YourTal, no ledger posting) and hands the voucher to the winner; self-assessment in docs/24; the live Check passes in AU and ID. Also 13.20.f (gift notifications), F89 on staging (no gift holdback), 13.9.b caption half on staging · 9197e190
 - 2026-09-30 · A (slot 9b) · **13.5 Security and red lines in code** · 834fd2a3. Region row-level security in Postgres for signed-in viewers and the ledger, anonymous routes rate-limited by default, gitleaks and the dependency audit in CI, red-line tests that fail when a guard goes, and the mock backing rate deleted.

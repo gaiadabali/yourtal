@@ -11,12 +11,10 @@
  * The bonus requires a PERFECT score, not a partial one. `docs/18`'s
  * accuracy bonus is a bonus for attention, not a partial-credit curve, and
  * a prorated version would need its own founder-approved formula this
- * ticket was never given. Zero questions asked (a Quick campaign under F10)
- * trivially satisfies "every question answered correctly" — vacuously, the
- * same reasoning `judgeCompletion`'s own `questionsAnswered` gate uses — but
- * `campaignRewardConfigSchema` already forbids an accuracy bonus on a
- * campaign with no questions to score, so this can only ever add something
- * real.
+ * ticket was never given. Zero questions asked earns
+ * no bonus: a bonus-bearing campaign under a minute is asked nothing
+ * (`questionsAskedFor`), and paying the bonus there made the ledger refuse
+ * the grant, so the viewer got nothing at all.
  */
 export interface RewardTerms {
   readonly rewardPoints: number;
@@ -25,7 +23,8 @@ export interface RewardTerms {
 }
 
 export function pointsForCompletion(terms: RewardTerms, asked: number, correct: number): number {
-  const perfectScore = correct >= asked;
+  // No questions asked means no accuracy to reward; the ledger's TermsPoints agrees.
+  const perfectScore = asked > 0 && correct >= asked;
   const earnsBonus = terms.scoringRule === "base_plus_accuracy_bonus" && perfectScore;
   return terms.rewardPoints + (earnsBonus ? terms.accuracyBonusPoints : 0);
 }

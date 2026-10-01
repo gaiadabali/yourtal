@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import * as z from "zod";
 import { apiFetch } from "@/lib/api/api-fetch";
@@ -155,8 +156,15 @@ export async function fetchDataExportAction(): Promise<ApiResult<DataExportRespo
  * cookie is cleared too and the caller is redirected to `/login` the same
  * way `logoutAction` does — there is nothing left to sign back into.
  */
-export async function deleteAccountAction(): Promise<void> {
-  await apiFetch("/api/me", z.unknown(), { method: "DELETE" });
+export async function deleteAccountAction(): Promise<{ ok: false }> {
+  // The route is idempotent, so it needs a key; and the session is only
+  // dropped once the server says the account is gone (it used to sign the
+  // viewer out on a refusal too, leaving the account in place).
+  const result = await apiFetch("/api/me", z.unknown(), {
+    method: "DELETE",
+    headers: { "idempotency-key": randomUUID() },
+  });
+  if (!result.ok) return { ok: false };
   await clearSessionCookie();
   redirect("/login");
 }

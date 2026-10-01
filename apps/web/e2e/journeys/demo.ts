@@ -127,11 +127,9 @@ export async function useSession(
   token: string,
   r: RegionCase,
 ) {
-  await context.addCookies(
-    [
-      ["yt_session", token],
-      ["yt_region", r.region],
-      ["yt_locale", r.locale],
-    ].map(([name, value]) => ({ name: name!, value: value!, url: baseURL })),
-  );
+  await context.addCookies([
+    { name: "yt_session", value: token, url: baseURL },
+    { name: "yt_region", value: r.region, url: baseURL },
+    { name: "yt_locale", value: r.locale, url: baseURL },
+  ]);
 }

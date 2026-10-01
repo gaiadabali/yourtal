@@ -26,4 +26,9 @@ describe("pointsForCompletion", () => {
     const terms = { rewardPoints: 150, accuracyBonusPoints: 0, scoringRule: "base_only" as const };
     expect(pointsForCompletion(terms, 0, 0)).toBe(150);
   });
+
+  it("pays no bonus when no question was asked, as the ledger computes it", () => {
+    const terms = { rewardPoints: 8, accuracyBonusPoints: 2, scoringRule: "base_plus_accuracy_bonus" as const };
+    expect(pointsForCompletion(terms, 0, 0)).toBe(8);
+  });
 });

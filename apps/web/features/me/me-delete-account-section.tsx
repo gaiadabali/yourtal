@@ -27,10 +27,14 @@ export function MeDeleteAccountSection() {
   const t = useTranslations("me.deleteAccount");
   const [confirmed, setConfirmed] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [failed, setFailed] = useState(false);
 
   function handleDelete() {
-    startTransition(() => {
-      void deleteAccountAction();
+    setFailed(false);
+    startTransition(async () => {
+      // Success redirects to sign-in, so returning at all means a refusal.
+      await deleteAccountAction();
+      setFailed(true);
     });
   }
 
@@ -60,6 +64,11 @@ export function MeDeleteAccountSection() {
             />
             {t("confirmCheckboxLabel")}
           </label>
+          {failed ? (
+            <Text size="body-sm" tone="danger" role="alert">
+              {t("failed")}
+            </Text>
+          ) : null}
           <div className="flex justify-end gap-2">
             <DialogClose asChild>
               <Button type="button" variant="secondary">

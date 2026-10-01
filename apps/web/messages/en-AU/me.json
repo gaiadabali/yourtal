@@ -123,7 +123,8 @@
     "confirmCheckboxLabel": "I understand my unspent points will be forfeited and this can't be undone.",
     "startCta": "Delete my account",
     "deleteCta": "Delete my account",
-    "cancelCta": "Cancel"
+    "cancelCta": "Cancel",
+    "failed": "Your account wasn't deleted. Nothing has changed; try again in a moment."
   },
   "logout": {
     "cta": "Log out"

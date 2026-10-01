@@ -7,7 +7,7 @@ import enAU from "@/messages/en-AU/me.json";
 import { MeDeleteAccountSection } from "./me-delete-account-section";
 import { deleteAccountAction } from "./me-actions";
 
-vi.mock("./me-actions", () => ({ deleteAccountAction: vi.fn() }));
+vi.mock("./me-actions", () => ({ deleteAccountAction: vi.fn().mockResolvedValue({ ok: false }) }));
 
 function renderWithIntl(ui: React.ReactElement) {
   return render(
@@ -32,5 +32,7 @@ describe("MeDeleteAccountSection", () => {
 
     await user.click(dialogDeleteButton);
     expect(deleteAccountAction).toHaveBeenCalledOnce();
+    // A refusal keeps the viewer here and says nothing changed.
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("wasn't deleted");
   });
 });

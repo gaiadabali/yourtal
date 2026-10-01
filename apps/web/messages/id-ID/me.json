@@ -123,7 +123,8 @@
     "confirmCheckboxLabel": "Saya paham poin yang belum dipakai akan hangus dan ini tidak bisa dibatalkan.",
     "startCta": "Hapus akun saya",
     "deleteCta": "Hapus akun saya",
-    "cancelCta": "Batal"
+    "cancelCta": "Batal",
+    "failed": "Akunmu belum terhapus. Tidak ada yang berubah; coba lagi sebentar lagi."
   },
   "logout": {
     "cta": "Keluar"

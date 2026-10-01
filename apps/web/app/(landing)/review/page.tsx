@@ -77,8 +77,23 @@ export default async function ReviewPage() {
             t("logins.passwordAsk")
           )}
         </p>
-        <div className="overflow-x-auto rounded-card border border-border-subtle">
-          <table className="w-full min-w-[36rem] text-left text-body-sm font-sans">
+        {/* Phones get one card per person; the table needs about 600 px. */}
+        <ul className="flex flex-col gap-2 sm:hidden">
+          {PEOPLE.map((person) => (
+            <li key={person} className="rounded-card border border-border-subtle bg-surface p-3 text-body-sm font-sans">
+              <p className="font-semibold">{t(`logins.people.${person}.who`)}</p>
+              <p className="mt-1 break-all font-mono text-caption">
+                {t("logins.au")}: {`${person}.au@demo.yourtal.test`}
+              </p>
+              <p className="break-all font-mono text-caption">
+                {t("logins.id")}: {`${person}.id@demo.yourtal.test`}
+              </p>
+              <p className="mt-1 text-fg-muted">{t(`logins.people.${person}.try`)}</p>
+            </li>
+          ))}
+        </ul>
+        <div className="hidden overflow-hidden rounded-card border border-border-subtle sm:block">
+          <table className="w-full text-left text-body-sm font-sans">
             <thead className="bg-surface-sunken text-caption text-fg-muted">
               <tr>
                 <th scope="col" className="px-3 py-2">

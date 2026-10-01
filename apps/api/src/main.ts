@@ -6,6 +6,7 @@ import { ZodValidationPipe } from "nestjs-zod";
 import { assertDriversConfiguredForBoot } from "@yourtal/drivers/driver-mode";
 import { AppModule } from "./app.module";
 import { loadAppConfig } from "./config/app-config";
+import { TRUSTED_PROXIES } from "./shared/http/trusted-proxies";
 
 /**
  * NestJS on Fastify (docs/13b section 7, docs/15) — no Express middleware,
@@ -40,7 +41,10 @@ async function bootstrap(): Promise<void> {
     // bucket for the whole site. `true` trusts the immediate hop, which is
     // exactly nginx on the same host/network — never a public-facing
     // multi-hop chain this app would need to pick apart.
-    new FastifyAdapter({ trustProxy: true }),
+    // 13.3.e: trust X-Forwarded-For only from a loopback hop (nginx, or the web
+    // server forwarding its viewer's address). `true` took the leftmost entry a
+    // client wrote itself, so any caller could choose its own IP.
+    new FastifyAdapter({ trustProxy: TRUSTED_PROXIES }),
     {
       // The idempotency fingerprint hashes the bytes the client actually
       // sent, not a re-serialisation of the parsed object — see

@@ -1,4 +1,5 @@
 import "server-only";
+import { forwardViewerAddress } from "@/lib/api/viewer-address";
 
 import type { z } from "zod";
 import {
@@ -44,6 +45,7 @@ async function guardianFetch(
   // construction avoids the same trap the same way).
   const headers = new Headers(init.headers);
   headers.set("accept", "application/json");
+  await forwardViewerAddress(headers);
   // `apiInternalUrl()` OUTSIDE the try, same as `apiFetch`'s own header
   // comment on this: a missing `API_INTERNAL_URL` is a boot-time
   // misconfiguration, not a request-time network failure, and should throw

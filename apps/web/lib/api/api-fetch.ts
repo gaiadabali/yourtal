@@ -3,6 +3,7 @@ import "server-only";
 import type { z } from "zod";
 import { apiInternalUrl } from "./env";
 import { readSessionToken } from "./session-cookies";
+import { forwardViewerAddress } from "./viewer-address";
 
 /**
  * Typed errors (1.7.a) — a caller always gets one of these three shapes,
@@ -57,6 +58,7 @@ export async function apiFetch<T>(
 ): Promise<ApiResult<T>> {
   const headers = new Headers(init.headers);
   headers.set("accept", "application/json");
+  await forwardViewerAddress(headers);
 
   if (!headers.has("authorization")) {
     const token = await readSessionToken();

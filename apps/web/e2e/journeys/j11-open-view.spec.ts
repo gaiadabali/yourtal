@@ -12,35 +12,47 @@ for (const r of REGIONS) {
     request,
   }) => {
     requireDemoEnv();
-    const feed = await apiGet<{ items: { campaignId: string; kind: string; openViewing: boolean; audience: string }[] }>(
-      request,
-      null,
-      `/api/feed?surface=home&region=${r.region}`,
+    const feed = await apiGet<{
+      items: { campaignId: string; kind: string; openViewing: boolean; audience: string }[];
+    }>(request, null, `/api/feed?surface=home&region=${r.region}`);
+    const open = feed.items.find(
+      (i) => i.openViewing && i.kind === "long_form" && i.audience === "all_ages",
     );
-    const open = feed.items.find((i) => i.openViewing && i.kind === "long_form" && i.audience === "all_ages");
     expect(open, "the demo world has an Open View video").toBeDefined();
 
     // One anonymous session per IP at a time (F12): each run comes from its own
     // documentation-range address, so the two regions and reruns never collide.
-    await page.setExtraHTTPHeaders({ "x-forwarded-for": `198.51.100.${1 + Math.floor(Math.random() * 254)}` });
+    await page.setExtraHTTPHeaders({
+      "x-forwarded-for": `198.51.100.${1 + Math.floor(Math.random() * 254)}`,
+    });
     await page.goto(`/${r.slug}/c/${open?.campaignId}/watch`);
     // The foregone reward, said plainly, and a sign-up that brings them back here.
-    await expect(page.getByText(/won't earn anything this time|tidak mendapatkan poin/).first()).toBeVisible();
-    const signUp = page.getByRole("link", { name: /Sign up to earn on your next video|Daftar untuk mulai dapat poin/ });
+    await expect(
+      page.getByText(/won't earn anything this time|tidak mendapatkan poin/).first(),
+    ).toBeVisible();
+    const signUp = page.getByRole("link", {
+      name: /Sign up to earn on your next video|Daftar untuk mulai dapat poin/,
+    });
     await expect(signUp).toHaveAttribute("href", new RegExp(`returnTo=.*${open?.campaignId}`));
 
     // It plays to the end, in real time: the player keeps a watch honest.
-    await page.getByRole("button", { name: /^(Play|Putar) / }).first().click();
+    await page
+      .getByRole("button", { name: /^(Play|Putar) / })
+      .first()
+      .click();
     await expect
-      .poll(async () => page.evaluate(() => document.querySelector("video")?.currentTime ?? 0), { timeout: 30_000 })
+      .poll(async () => page.evaluate(() => document.querySelector("video")?.currentTime ?? 0), {
+        timeout: 30_000,
+      })
       .toBeGreaterThan(0.5);
-    await expect(page.getByText(/You watched the whole video|sudah menonton video ini sampai selesai/)).toBeVisible({
+    await expect(
+      page.getByText(/You watched the whole video|sudah menonton video ini sampai selesai/),
+    ).toBeVisible({
       timeout: 200_000,
     });
-    await expect(page.getByRole("link", { name: /pick up where you left off|lanjutkan dari sini/ })).toHaveAttribute(
-      "href",
-      new RegExp(`returnTo=.*${open?.campaignId}`),
-    );
+    await expect(
+      page.getByRole("link", { name: /pick up where you left off|lanjutkan dari sini/ }),
+    ).toHaveAttribute("href", new RegExp(`returnTo=.*${open?.campaignId}`));
 
     // Nothing to claim, anywhere on the page.
     await expect(page.getByRole("button", { name: /claim|earn|klaim|dapatkan/i })).toHaveCount(0);

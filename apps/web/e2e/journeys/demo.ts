@@ -10,27 +10,42 @@ export const API = process.env["JOURNEY_API_URL"] ?? process.env["API_INTERNAL_U
 export const DEMO_PASSWORD = process.env["DEMO_PASSWORD"] ?? "";
 
 export const REGIONS = [
-  { region: "AU", slug: "au", locale: "en-AU", label: "Australia", language: "English (Australia)" },
+  {
+    region: "AU",
+    slug: "au",
+    locale: "en-AU",
+    label: "Australia",
+    language: "English (Australia)",
+  },
   { region: "ID", slug: "id", locale: "id-ID", label: "Indonesia", language: "Bahasa Indonesia" },
 ] as const;
 export type RegionCase = (typeof REGIONS)[number];
 
-export const demoEmail = (person: string, r: RegionCase) =>
-  `${person}.${r.slug}@demo.yourtal.test`;
+export const demoEmail = (person: string, r: RegionCase) => `${person}.${r.slug}@demo.yourtal.test`;
 
 export function requireDemoEnv(): void {
   if (API === "" || DEMO_PASSWORD === "") {
-    throw new Error("Set JOURNEY_API_URL (or API_INTERNAL_URL) and DEMO_PASSWORD for the journeys.");
+    throw new Error(
+      "Set JOURNEY_API_URL (or API_INTERNAL_URL) and DEMO_PASSWORD for the journeys.",
+    );
   }
 }
 
-export async function apiLogin(request: APIRequestContext, email: string, password = DEMO_PASSWORD) {
+export async function apiLogin(
+  request: APIRequestContext,
+  email: string,
+  password = DEMO_PASSWORD,
+) {
   const response = await request.post(`${API}/api/auth/login`, { data: { email, password } });
   expect(response.ok(), `login ${email}: ${await response.text()}`).toBeTruthy();
   return (await response.json()) as { userId: string; token: string };
 }
 
-export async function apiGet<T>(request: APIRequestContext, token: string | null, path: string): Promise<T> {
+export async function apiGet<T>(
+  request: APIRequestContext,
+  token: string | null,
+  path: string,
+): Promise<T> {
   const response = await request.get(`${API}${path}`, {
     headers: token ? { authorization: `Bearer ${token}` } : {},
   });
@@ -56,7 +71,12 @@ export async function inboxToken(
   const response = await request.get(`${API}/api/dev/inbox`);
   expect(response.ok()).toBeTruthy();
   const { entries } = (await response.json()) as {
-    entries: { recipient: string; category: string; createdAt: string; metadata: Record<string, unknown> }[];
+    entries: {
+      recipient: string;
+      category: string;
+      createdAt: string;
+      metadata: Record<string, unknown>;
+    }[];
   };
   const match = entries
     .filter((e) => e.recipient === recipient && e.category === category)

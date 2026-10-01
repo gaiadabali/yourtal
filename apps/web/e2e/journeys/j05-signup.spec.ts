@@ -22,14 +22,18 @@ for (const r of REGIONS) {
 
     // The shared link a friend would send.
     await page.goto(`/${r.slug}/c/${campaignId}`);
-    const signUp = page.getByRole("link", { name: /sign up|daftar/i }).first();
+    const signUp = page.getByRole("link", { name: /Sign up to start earning|Daftar untuk mulai/ });
     await expect(signUp).toBeVisible();
     await signUp.click();
     if (page.url().includes("/login")) {
-      await page.getByRole("link", { name: /create an account|buat akun|register|daftar/i }).first().click();
+      await page
+        .getByRole("link", { name: /create an account|buat akun|register|daftar/i })
+        .first()
+        .click();
     }
     await expect(page).toHaveURL(/\/register/);
-    expect(decodeURIComponent(page.url())).toContain(`/watch/${campaignId}`);
+    // returnTo nests once per hop (register → onboarding → watch).
+    expect(decodeURIComponent(decodeURIComponent(page.url()))).toContain(`/watch/${campaignId}`);
 
     const account = freshAccount(`j5-${r.slug}`);
     await page.getByLabel("Email").fill(account.email);
@@ -44,8 +48,13 @@ for (const r of REGIONS) {
     await page.getByRole("button", { name: /Create account|Buat akun/ }).click();
 
     // Consents, per purpose: personalisation on, marketing left off.
-    await expect(page).toHaveURL(/\/onboarding/);
-    await page.getByRole("switch", { name: /Personalise|Personalisasi/ }).click();
+    await expect(page).toHaveURL((url) => url.pathname === "/onboarding", { timeout: 60_000 });
+    const personalise = page.getByRole("switch", { name: /Personalise|Personalisasi/ });
+    await expect(personalise).not.toBeChecked();
+    await personalise.click();
+    await expect(personalise).toBeChecked();
+    const marketing = page.getByRole("switch").nth(1);
+    await expect(marketing).not.toBeChecked();
     await page.getByRole("button", { name: /^(Continue|Lanjutkan)$/ }).click();
 
     // Interests, because personalisation is on.
@@ -56,7 +65,10 @@ for (const r of REGIONS) {
     await page.getByRole("button", { name: /^(Continue|Lanjutkan)$/ }).click();
 
     await expect(page).toHaveURL(/\/onboarding\/follow/);
-    await page.getByRole("button", { name: /Continue|Skip for now|Lanjutkan|Lewati dulu/ }).first().click();
+    await page
+      .getByRole("button", { name: /Continue|Skip for now|Lanjutkan|Lewati dulu/ })
+      .first()
+      .click();
     await expect(page).toHaveURL(/\/onboarding\/done/);
     await page.getByRole("link", { name: /Start watching|Mulai menonton/ }).click();
 
@@ -66,26 +78,35 @@ for (const r of REGIONS) {
     // Verify the email through the link the app sent.
     const session = (await page.context().cookies()).find((c) => c.name === "yt_session")?.value;
     expect(session).toBeTruthy();
-    await request.post(`${process.env["JOURNEY_API_URL"] ?? process.env["API_INTERNAL_URL"]}/api/auth/email/verify/request`, {
-      headers: { authorization: `Bearer ${session}`, "idempotency-key": crypto.randomUUID() },
-      data: {},
-    });
+    await request.post(
+      `${process.env["JOURNEY_API_URL"] ?? process.env["API_INTERNAL_URL"]}/api/auth/email/verify/request`,
+      {
+        headers: { authorization: `Bearer ${session}`, "idempotency-key": crypto.randomUUID() },
+        data: {},
+      },
+    );
     const token = await inboxToken(request, account.email, "email_verification");
     await page.goto(`/verify?token=${encodeURIComponent(token)}`);
-    await expect(page.getByText(/verified|terverifikasi/i).first()).toBeVisible();
+    await page.getByRole("button", { name: /^(Verify email|Verifikasi email)$/ }).click();
+    await expect(page).toHaveURL(/verified=1/, { timeout: 60_000 });
 
     // What the account holds now: the region fixed, the language chosen, the consents given.
-    const me = await apiGet<{ profile: { region: string; displayLocale: string } }>(request, session ?? null, "/api/me");
+    const me = await apiGet<{ profile: { region: string; displayLocale: string } }>(
+      request,
+      session ?? null,
+      "/api/me",
+    );
     expect(me.profile.region).toBe(r.region);
     expect(me.profile.displayLocale).toBe(r.locale);
-    const consents = await apiGet<{ consents: { purpose: string; granted: boolean }[] }>(
+    const consents = await apiGet<{ consents: { purpose: string; state: string }[] }>(
       request,
       session ?? null,
       "/api/me/consents",
     );
-    const byPurpose = Object.fromEntries(consents.consents.map((c) => [c.purpose, c.granted]));
-    expect(Object.values(byPurpose).some((granted) => granted)).toBe(true);
-    const interestsNow = await apiGet<{ interests: unknown[] }>(request, session ?? null, "/api/me/interests");
-    expect(interestsNow.interests.length).toBeGreaterThanOrEqual(1);
+    const state = Object.fromEntries(consents.consents.map((c) => [c.purpose, c.state]));
+    expect(state["declared_interest_targeting"]).toBe("granted");
+    expect(state["marketing_communications"]).not.toBe("granted");
+    const interestsNow = await apiGet<{ nodeIds: string[] }>(request, session ?? null, "/api/me/interests");
+    expect(interestsNow.nodeIds.length).toBeGreaterThanOrEqual(2);
   });
 }

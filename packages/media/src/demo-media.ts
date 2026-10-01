@@ -16,6 +16,7 @@ import demoMediaManifestJson from "../demo-media.json" with { type: "json" };
 import { probeInput, renderHlsLadder, renderPoster, renderTeaser } from "./ffmpeg-transcode";
 import { publicMediaUrl } from "./hls-origin";
 import {
+  captionsObjectKey,
   createMediaClient,
   hlsAssetObjectKey,
   posterObjectKey,
@@ -868,4 +869,39 @@ export async function renderDemoVideo(request: DemoVideoRequest): Promise<DemoVi
     aspect: final.aspect,
     estimatedBytes: renditionBytes.v540,
   };
+}
+
+const NL = String.fromCharCode(10);
+
+function vttTime(seconds: number): string {
+  const whole = Math.max(0, Math.floor(seconds));
+  const h = String(Math.floor(whole / 3600)).padStart(2, "0");
+  const m = String(Math.floor((whole % 3600) / 60)).padStart(2, "0");
+  const s = String(whole % 60).padStart(2, "0");
+  return `${h}:${m}:${s}.000`;
+}
+
+/**
+ * 13.1/13.4.b: WebVTT captions for a demo video, one cue per on-screen fact at
+ * the moment it is burned in. Cheap, so a reset uploads it every time.
+ */
+export async function ensureDemoCaptions(request: {
+  readonly assetId: string;
+  readonly durationSeconds: number;
+  readonly facts: readonly ManifestFact[];
+}): Promise<string> {
+  const cues = request.facts.map((fact) => {
+    const at = Math.round(fact.at * request.durationSeconds);
+    const end = Math.min(request.durationSeconds, at + FACT_DISPLAY_SECONDS);
+    return [`${vttTime(at)} --> ${vttTime(end)}`, fact.text].join(NL);
+  });
+  const body = ["WEBVTT", "", cues.join(NL + NL), ""].join(NL);
+  const client = createMediaClient();
+  await putMediaOutput(client, {
+    kind: "captions",
+    key: captionsObjectKey(request.assetId),
+    body: new TextEncoder().encode(body),
+  });
+  client.destroy();
+  return publicMediaUrl(captionsObjectKey(request.assetId));
 }

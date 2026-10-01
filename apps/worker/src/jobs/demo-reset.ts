@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import { runDemoActivity } from "@yourtal/db/demo-world/activity";
+import { runDemoMarketplace } from "@yourtal/db/demo-world/marketplace";
 import { resetDemoWorld } from "@yourtal/db/demo-world/reset";
 import { defineJob } from "../job";
 
@@ -32,6 +33,10 @@ export const job = defineJob({
       );
       console.log(
         `[demo-reset] ${String(result.logins.length)} logins, ${String(result.funded)} funded`,
+      );
+      await runDemoMarketplace(
+        { apiBaseUrl: config.demo.apiBaseUrl, password: config.demo.password },
+        console.log,
       );
       const summary = await runDemoActivity(
         pool,

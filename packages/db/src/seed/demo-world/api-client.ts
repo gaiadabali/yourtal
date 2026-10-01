@@ -36,6 +36,10 @@ export class DemoApi {
     return this.send("POST", path, body);
   }
 
+  async put(path: string, body: unknown): Promise<ApiResponse> {
+    return this.send("PUT", path, body);
+  }
+
   private async send(method: string, path: string, body: unknown): Promise<ApiResponse> {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method,

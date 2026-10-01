@@ -2,7 +2,7 @@ import type pg from "pg";
 import { listingSchema } from "@yourtal/contracts/listing";
 import { toMinorUnits } from "@yourtal/contracts/money";
 import { questionsAskedFor } from "@yourtal/contracts/question/bank";
-import { renderDemoVideo, stableId } from "@yourtal/media/demo-media";
+import { ensureDemoCaptions, renderDemoVideo, stableId } from "@yourtal/media/demo-media";
 import type { DemoVideo } from "@yourtal/media/demo-media";
 import { publicMediaUrl } from "@yourtal/media/hls-origin";
 import { hlsAssetObjectKey, posterObjectKey, teaserObjectKey } from "@yourtal/media/studio-media";
@@ -72,7 +72,7 @@ async function ensureVideo(
   region: Region,
   seconds: DemoLength,
   log: (message: string) => void,
-): Promise<DemoVideo> {
+): Promise<DemoVideo & { readonly captionsUrl: string }> {
   const assetId = stableId(`demo-world:video:${region}:${String(seconds)}`);
   const hlsUrl = publicMediaUrl(hlsAssetObjectKey(assetId, "index.m3u8"));
   const known = await pool.query<{ aspect: string; estimated_bytes: string }>(
@@ -80,6 +80,9 @@ async function ensureVideo(
     [hlsUrl],
   );
   const row = known.rows[0];
+  const facts = DEMO_FACTS[region];
+  const timed = facts.map((text, index) => ({ at: (index + 1) / (facts.length + 1), text }));
+  const captionsUrl = await ensureDemoCaptions({ assetId, durationSeconds: seconds, facts: timed });
   if (row !== undefined) {
     return {
       hlsUrl,
@@ -87,24 +90,25 @@ async function ensureVideo(
       teaserUrl: publicMediaUrl(teaserObjectKey(assetId)),
       aspect: row.aspect,
       estimatedBytes: Number(row.estimated_bytes),
+      captionsUrl,
     };
   }
   log(`[demo:world] rendering the ${region} ${String(seconds)} s video`);
-  const facts = DEMO_FACTS[region];
-  return renderDemoVideo({
+  const rendered = await renderDemoVideo({
     clip: DEMO_LENGTHS.indexOf(seconds) % 2 === 0 ? "bigBuckBunny" : "sintel",
     durationSeconds: seconds,
-    facts: facts.map((text, index) => ({ at: (index + 1) / (facts.length + 1), text })),
+    facts: timed,
     assetId,
     teaserStartSeconds: Math.min(10, Math.floor(seconds / 4)),
   });
+  return { ...rendered, captionsUrl };
 }
 
 async function ensureCampaign(
   pool: pg.Pool,
   brand: DemoBrandSpec,
   spec: DemoCampaignSpec,
-  video: DemoVideo,
+  video: DemoVideo & { readonly captionsUrl: string },
 ): Promise<void> {
   const id = campaignIdFor(brand.slug, spec.key);
   const quick = spec.seconds <= QUICK_MAX_SECONDS;
@@ -144,6 +148,11 @@ async function ensureCampaign(
       // Open Viewing needs all_ages (F8); every other audience needs a sign-in.
       spec.audience === "all_ages",
     ],
+  );
+  // Captions arrived after some campaigns were made; fill them in either way.
+  await pool.query(
+    "UPDATE campaign.campaigns SET captions_url = $2 WHERE id = $1 AND captions_url IS NULL",
+    [id, video.captionsUrl],
   );
   if ((inserted.rowCount ?? 0) === 0) return;
 
@@ -280,7 +289,7 @@ export async function ensureDemoWorld(
   voucher: StagingVoucherConfig,
   log: (message: string) => void,
 ): Promise<DemoWorldCounts> {
-  const videos = new Map<string, DemoVideo>();
+  const videos = new Map<string, DemoVideo & { readonly captionsUrl: string }>();
   let campaigns = 0;
   let listings = 0;
   for (const brand of DEMO_BRANDS) {

@@ -24,6 +24,14 @@ const TIMEZONE: Readonly<Record<Region, string>> = {
 
 type BusinessRole = "owner" | "marketer" | "finance";
 type StaffRole = "support" | "moderator" | "risk_analyst" | "finance" | "ops" | "admin";
+const ALL_STAFF_ROLES: readonly StaffRole[] = [
+  "support",
+  "moderator",
+  "risk_analyst",
+  "finance",
+  "ops",
+  "admin",
+];
 
 export interface DemoPerson {
   readonly email: string;
@@ -60,6 +68,9 @@ function regionPeople(region: Region): DemoPerson[] {
     person("owner", `Owner Demo (${region})`, { businessRole: "owner" }),
     person("member", `Marketer Demo (${region})`, { businessRole: "marketer" }),
     person("finance", `Finance Demo (${region})`, { businessRole: "finance" }),
+    // Run the demo charities (marketplace.ts applies with them; staff approve).
+    person("charity1", au ? "Coastal Kids Trust" : "Yayasan Anak Pesisir"),
+    person("charity2", au ? "Green Corridors Fund" : "Yayasan Hutan Kota"),
   ];
 }
 
@@ -198,10 +209,13 @@ export async function resetDemoAccounts(
     const userId = await register(pool, person, passwordHash);
     created.set(person.email, userId);
 
-    if (person.staffRole !== undefined) {
+    // The demo admin holds every staff role, like the founder's own account (F85).
+    const staffRoles =
+      person.staffRole === "admin" ? ALL_STAFF_ROLES : person.staffRole ? [person.staffRole] : [];
+    for (const role of staffRoles) {
       await pool.query(
         "INSERT INTO identity.staff_role (user_id, role, granted_by) VALUES ($1, $2, 'demo-reset')",
-        [userId, person.staffRole],
+        [userId, role],
       );
     }
     let guardianLink: string | undefined;

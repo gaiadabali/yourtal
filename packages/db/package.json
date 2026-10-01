@@ -6,7 +6,8 @@
   "exports": {
     "./dsar-handlers": "./src/dsar-handlers.ts",
     "./demo-world/reset": "./src/seed/demo-world/reset.ts",
-    "./demo-world/activity": "./src/seed/demo-world/activity.ts"
+    "./demo-world/activity": "./src/seed/demo-world/activity.ts",
+    "./demo-world/marketplace": "./src/seed/demo-world/marketplace.ts"
   },
   "scripts": {
     "migrate": "node scripts/atlas.mjs apply",
@@ -15,7 +16,8 @@
     "seed": "node --env-file-if-exists=../../.env --import @swc-node/register/esm-register src/seed.ts",
     "typecheck": "tsc --noEmit",
     "test": "node scripts/with-test-db.mjs -- vitest run",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "demo:reset": "node --env-file-if-exists=../../.env --import @swc-node/register/esm-register src/seed/main-demo-reset.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1139.0",

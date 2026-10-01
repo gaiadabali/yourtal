@@ -1,5 +1,6 @@
 import pg from "pg";
 import { runDemoActivity } from "./demo-world/activity";
+import { runDemoMarketplace } from "./demo-world/marketplace";
 import { resetDemoWorld } from "./demo-world/reset";
 
 /**
@@ -33,8 +34,9 @@ async function main(): Promise<void> {
         `${String(result.funded)} newly funded, ${String(result.logins.length)} logins`,
     );
     for (const failure of result.fundingFailures) console.error(`  funding failed: ${failure}`);
+    const apiBaseUrl = env["DEMO_API_BASE_URL"] ?? `http://127.0.0.1:${env["PORT"] ?? "3001"}`;
+    await runDemoMarketplace({ apiBaseUrl, password }, console.log);
     if (!process.argv.includes("--no-activity")) {
-      const apiBaseUrl = env["DEMO_API_BASE_URL"] ?? `http://127.0.0.1:${env["PORT"] ?? "3001"}`;
       const summary = await runDemoActivity(pool, { apiBaseUrl, password }, console.log);
       console.log(`demo:activity — ${summary}`);
     }

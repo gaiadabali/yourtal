@@ -140,16 +140,13 @@ async function redeemAtCounter(
   region: Region,
 ): Promise<number> {
   const vouchers = (field(ok(await buyer.get("/api/wallet/vouchers"), "vouchers"), "vouchers") ??
-    []) as {
-    id: string;
-    merchantId?: string;
-    state?: string;
-  }[];
+    []) as { voucherId: string; status?: string }[];
   let redeemed = 0;
-  for (const voucher of vouchers.filter((v) => v.state === "active")) {
+  // One a day: the rest stay unused for gifts and charity auctions.
+  for (const voucher of vouchers.filter((v) => v.status === "active").slice(0, 1)) {
     const row = await pool.query<{ merchant_id: string; location_id: string }>(
       "SELECT merchant_id::text, location_id::text FROM voucher.vouchers WHERE id = $1",
-      [voucher.id],
+      [voucher.voucherId],
     );
     const facts = row.rows[0];
     if (
@@ -157,8 +154,9 @@ async function redeemAtCounter(
       !DEMO_BRANDS.some((b) => b.region === region && businessIdFor(b.slug) === facts.merchant_id)
     )
       continue;
-    const detail = ok(await buyer.get(`/api/wallet/vouchers/${voucher.id}`), "voucher");
-    const code = String(field(detail, "code") ?? field(detail, "voucher", "code"));
+    // The counter scans the wallet's QR token.
+    const qr = ok(await buyer.get(`/api/wallet/vouchers/${voucher.voucherId}/qr`), "voucher qr");
+    const code = String(field(qr, "token"));
     const provisioned = await owner.post(`/api/${facts.merchant_id}/studio/devices`, {
       locationId: facts.location_id,
       label: region === "AU" ? "Front counter" : "Kasir depan",
@@ -176,7 +174,7 @@ async function redeemAtCounter(
       await till.post("/api/counter/authorize", {
         code,
         currency: field(preview, "currency"),
-        orderRef: `DEMO-${voucher.id.slice(0, 8)}`,
+        orderRef: `DEMO-${voucher.voucherId.slice(0, 8)}`,
         orderTotalMinor: field(preview, "remainingValueMinor"),
       }),
       "counter authorize",

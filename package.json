@@ -32,6 +32,7 @@
     "db:reset:slot": "node scripts/db-reset-slot.mjs",
     "staff:add": "node packages/db/scripts/staff-add.mjs",
     "demo:media": "pnpm --filter @yourtal/media demo:media",
+    "demo:reset": "pnpm --filter @yourtal/db demo:reset",
     "dev:cerbos": "node scripts/dev-cerbos.mjs",
     "media:publish": "pnpm --filter @yourtal/media publish:fixture",
     "dev:fresh": "pnpm dev:reset && pnpm db:migrate && pnpm db:seed && pnpm media:publish",

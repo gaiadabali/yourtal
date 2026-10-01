@@ -32,7 +32,7 @@ export default async function DevClockPage(props: PageProps<"/dev/clock">) {
       </p>
 
       {errorCode === undefined ? null : (
-        <p role="alert" style={{ color: "crimson" }}>
+        <p role="alert" className="text-danger-solid">
           Failed: {errorCode}
         </p>
       )}
@@ -41,7 +41,7 @@ export default async function DevClockPage(props: PageProps<"/dev/clock">) {
       )}
 
       {jobsResult.ok ? null : (
-        <p role="alert" style={{ color: "crimson" }}>
+        <p role="alert" className="text-danger-solid">
           Not signed in ({jobsResult.error.kind}). Sign in at <code>/dev/login</code> first.
         </p>
       )}
@@ -93,7 +93,7 @@ export default async function DevClockPage(props: PageProps<"/dev/clock">) {
                     <button type="submit">Run now</button>
                   </form>
                 ) : (
-                  <span style={{ color: "#888" }}> — not yet built</span>
+                  <span className="text-fg-muted"> — not yet built</span>
                 )}
               </li>
             ))}

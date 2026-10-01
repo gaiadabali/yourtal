@@ -57,7 +57,7 @@ export default async function DevInboxPage() {
         first. Enabled only while <code>APP_ENV</code> is <code>dev</code> or <code>staging</code>.
       </p>
       {"error" in result ? (
-        <p role="alert" style={{ color: "crimson" }}>
+        <p role="alert" className="text-danger-solid">
           {result.error}
         </p>
       ) : result.entries.length === 0 ? (
@@ -82,7 +82,7 @@ export default async function DevInboxPage() {
               {entry.subject === undefined ? null : <div>Subject: {entry.subject}</div>}
               <pre style={{ whiteSpace: "pre-wrap" }}>{entry.body}</pre>
               {Object.keys(entry.metadata).length > 0 ? (
-                <pre style={{ whiteSpace: "pre-wrap", color: "#555" }}>
+                <pre className="whitespace-pre-wrap text-fg-muted">
                   {JSON.stringify(entry.metadata, null, 2)}
                 </pre>
               ) : null}

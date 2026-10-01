@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { expect, type APIRequestContext, type Page } from "@playwright/test";
+import { expect, type APIRequestContext, type BrowserContext, type Page } from "@playwright/test";
 
 /**
  * 13.3.a: shared setup for the viewer journeys, run against a demo world (13.1).
@@ -92,4 +92,38 @@ export function freshAccount(prefix: string) {
     password: `journey-${randomUUID()}`,
     displayName: `Journey ${prefix}`,
   };
+}
+
+/** A documentation-range client address; the API keys its per-IP limits on it. */
+export const testIp = () => `198.51.100.${1 + Math.floor(Math.random() * 254)}`;
+
+/** Registers a fresh adult viewer straight through the API, from its own IP. */
+export async function apiRegister(request: APIRequestContext, r: RegionCase, prefix: string) {
+  const account = freshAccount(prefix);
+  const response = await request.post(`${API}/api/auth/register`, {
+    headers: { "idempotency-key": randomUUID(), "x-forwarded-for": testIp() },
+    data: {
+      email: account.email,
+      password: account.password,
+      displayName: account.displayName,
+      dateOfBirth: "1990-03-03",
+      region: r.region,
+      locale: r.locale,
+      timezone: r.region === "AU" ? "Australia/Sydney" : "Asia/Jakarta",
+    },
+  });
+  expect(response.ok(), `register: ${await response.text()}`).toBeTruthy();
+  const { token, userId } = (await response.json()) as { token: string; userId: string };
+  return { ...account, token, userId };
+}
+
+/** Puts an API session on the browser, as sign-in would. */
+export async function useSession(context: BrowserContext, baseURL: string, token: string, r: RegionCase) {
+  await context.addCookies(
+    [
+      ["yt_session", token],
+      ["yt_region", r.region],
+      ["yt_locale", r.locale],
+    ].map(([name, value]) => ({ name: name!, value: value!, url: baseURL })),
+  );
 }

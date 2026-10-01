@@ -80,7 +80,10 @@ export default async function ReviewPage() {
         {/* Phones get one card per person; the table needs about 600 px. */}
         <ul className="flex flex-col gap-2 sm:hidden">
           {PEOPLE.map((person) => (
-            <li key={person} className="rounded-card border border-border-subtle bg-surface p-3 text-body-sm font-sans">
+            <li
+              key={person}
+              className="rounded-card border border-border-subtle bg-surface p-3 text-body-sm font-sans"
+            >
               <p className="font-semibold">{t(`logins.people.${person}.who`)}</p>
               <p className="mt-1 break-all font-mono text-caption">
                 {t("logins.au")}: {`${person}.au@demo.yourtal.test`}

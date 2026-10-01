@@ -106,7 +106,9 @@ export async function registerAction(formData: FormData): Promise<void> {
 
   // A sign-up that started at onboarding (an Open View or campaign link) already
   // carries its own returnTo; wrapping it again would nest onboarding in itself.
-  const next = returnTo?.startsWith("/onboarding") ? returnTo : withReturnTo("/onboarding", returnTo);
+  const next = returnTo?.startsWith("/onboarding")
+    ? returnTo
+    : withReturnTo("/onboarding", returnTo);
   redirect(next as Route);
 }
 

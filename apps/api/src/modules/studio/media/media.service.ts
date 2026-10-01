@@ -180,6 +180,9 @@ export class MediaService {
       teaserUrl: input.teaserUrl,
       hlsUrl: input.hlsUrl,
       captionsUrl: input.captionsUrl,
+      // 13.9.b: submit needs these (campaigns_media_required_past_draft).
+      aspect: input.aspect,
+      estimatedBytes: input.renditionBytes.v540,
     });
     return { ok: true };
   }

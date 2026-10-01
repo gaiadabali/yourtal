@@ -48,7 +48,15 @@ export interface MediaAssetRepository {
    */
   writeCampaignMedia(
     campaignId: string,
-    media: { posterUrl: string; teaserUrl: string; hlsUrl: string; captionsUrl: string | null },
+    media: {
+      posterUrl: string;
+      teaserUrl: string;
+      hlsUrl: string;
+      captionsUrl: string | null;
+      aspect: string;
+      /** The 540p rendition: what a viewer on the default quality downloads. */
+      estimatedBytes: number;
+    },
   ): Promise<void>;
 }
 

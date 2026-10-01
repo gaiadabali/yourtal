@@ -206,10 +206,18 @@ describe("studio media pipeline (7.2)", () => {
       poster_url: string;
       teaser_url: string;
       hls_url: string;
+      aspect: string;
+      estimated_bytes: string;
+      manifest_url: string;
     }>(
-      sql`SELECT poster_url, teaser_url, hls_url FROM campaign.campaigns WHERE id = ${campaignId}`,
+      sql`SELECT c.poster_url, c.teaser_url, c.hls_url, c.aspect, c.estimated_bytes::text, v.manifest_url
+            FROM campaign.campaigns c JOIN campaign.video_source v ON v.campaign_id = c.id
+           WHERE c.id = ${campaignId}`,
     );
     expect(campaignRow.rows[0]).toMatchObject({
+      aspect: "16:9",
+      estimated_bytes: "2000000",
+      manifest_url: body.hlsUrl,
       poster_url: body.posterUrl,
       teaser_url: body.teaserUrl,
       hls_url: body.hlsUrl,

@@ -82,15 +82,32 @@ export class DrizzleMediaAssetRepository implements MediaAssetRepository {
 
   async writeCampaignMedia(
     campaignId: string,
-    media: { posterUrl: string; teaserUrl: string; hlsUrl: string; captionsUrl: string | null },
+    media: {
+      posterUrl: string;
+      teaserUrl: string;
+      hlsUrl: string;
+      captionsUrl: string | null;
+      aspect: string;
+      /** The 540p rendition: what a viewer on the default quality downloads. */
+      estimatedBytes: number;
+    },
   ): Promise<void> {
     await this.db.execute(sql`
       UPDATE campaign.campaigns
       SET poster_url = ${media.posterUrl},
           teaser_url = ${media.teaserUrl},
           hls_url = ${media.hlsUrl},
-          captions_url = ${media.captionsUrl}
+          captions_url = ${media.captionsUrl},
+          aspect = ${media.aspect},
+          estimated_bytes = ${media.estimatedBytes},
+          estimated_data_mb = ${(media.estimatedBytes / (1024 * 1024)).toFixed(2)}
       WHERE id = ${campaignId}
+    `);
+    // The player resolves the video from here (campaignSchema's videoSource).
+    await this.db.execute(sql`
+      INSERT INTO campaign.video_source (campaign_id, kind, manifest_url)
+      VALUES (${campaignId}, 'hls', ${media.hlsUrl})
+      ON CONFLICT (campaign_id) DO UPDATE SET manifest_url = EXCLUDED.manifest_url
     `);
   }
 }

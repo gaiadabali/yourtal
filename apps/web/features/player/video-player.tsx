@@ -8,6 +8,7 @@ import type { PublicListing } from "@yourtal/contracts/listing";
 import { Button } from "@yourtal/ui/button";
 import { AccrualIndicator } from "./accrual-indicator";
 import { ChapterTrack } from "./chapter-track";
+import { CaptionsToggle } from "./captions-toggle";
 import { CheckpointOverlay } from "./checkpoint-overlay";
 import { EarnMoment, NotEarningMoment } from "./earn-moment";
 import { playerChapters } from "./player-chapters";
@@ -15,6 +16,7 @@ import { PlayIcon } from "./player-icons";
 import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
 import { SpendAtBrand } from "./spend-at-brand";
 import { UpNextCard } from "./up-next-card";
+import { useCaptions } from "./use-captions";
 import { useWatchEarnSession } from "./use-watch-earn-session";
 // 12.2.e: the same hook the in-feed reward loop uses (12.2.b) -- reused
 // here rather than duplicated, since the counting logic (foreground-only,
@@ -70,6 +72,7 @@ export function VideoPlayer({
 }: VideoPlayerProps) {
   const t = getPlayerTranslator(locale);
   const { phase, videoRef, start, chooseResume, answer, finish } = useWatchEarnSession(campaign.id);
+  const captions = useCaptions(videoRef, campaign.captionsUrl !== null);
   const [nativeHls, setNativeHls] = useState<boolean | null>(null);
   const [currentSeconds, setCurrentSeconds] = useState(0);
   const [videoError, setVideoError] = useState(false);
@@ -129,11 +132,24 @@ export function VideoPlayer({
           onError={() => setVideoError(true)}
         >
           {campaign.captionsUrl !== null ? (
-            <track kind="captions" src={campaign.captionsUrl} label={t("controls.captions")} />
+            <track
+              kind="captions"
+              src={campaign.captionsUrl}
+              srcLang={locale.slice(0, 2)}
+              label={t("controls.captions")}
+            />
           ) : null}
         </video>
         {manifestUrl !== null && nativeHls === false ? (
           <HlsAttacher videoRef={videoRef} src={manifestUrl} desiredHeight={HLS_HEIGHT} />
+        ) : null}
+
+        {campaign.captionsUrl !== null ? (
+          <CaptionsToggle
+            on={captions.on}
+            onToggle={captions.toggle}
+            label={t("controls.captions")}
+          />
         ) : null}
 
         {/* 12.4.d/#9: every long-form campaign is funded by a business, so

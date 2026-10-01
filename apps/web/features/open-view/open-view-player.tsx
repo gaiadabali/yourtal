@@ -7,6 +7,8 @@ import type { PlayerChapter } from "@/features/player/player-chapters";
 import { getQualityTier } from "@/features/player/quality-tier";
 import { useWatchSession } from "@/features/player/use-watch-session";
 import { PlayerControls } from "@/features/player/player-controls";
+import { CaptionsToggle } from "@/features/player/captions-toggle";
+import { useCaptions } from "@/features/player/use-captions";
 import { PlayIcon } from "@/features/player/player-icons";
 import { SeekSlider } from "@/features/player/seek-slider";
 import type { SupportedLocale } from "@/features/player/player-i18n";
@@ -68,6 +70,7 @@ export function OpenViewPlayer({
   sessionId,
 }: OpenViewPlayerProps) {
   const session = useWatchSession(campaign, chapters, false);
+  const captions = useCaptions(session.videoRef, campaign.captionsUrl !== null);
   const showStartOverlay = !session.hasStarted && !session.resumeOffer;
   const signupHref = buildOpenViewSignupHref(campaign.id);
 
@@ -129,7 +132,19 @@ export function OpenViewPlayer({
           poster={campaign.posterUrl}
           playsInline
           aria-hidden="true"
-        />
+        >
+          {campaign.captionsUrl !== null ? (
+            <track
+              kind="captions"
+              src={campaign.captionsUrl}
+              srcLang={locale.slice(0, 2)}
+              label={copy.captionsLabel}
+            />
+          ) : null}
+        </video>
+        {campaign.captionsUrl !== null ? (
+          <CaptionsToggle on={captions.on} onToggle={captions.toggle} label={copy.captionsLabel} />
+        ) : null}
         {showStartOverlay ? (
           // Same reasoning as features/player/video-player.tsx: a full-bleed
           // hit target over the video, not a styled button.

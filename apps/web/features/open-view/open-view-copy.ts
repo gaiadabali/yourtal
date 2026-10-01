@@ -17,6 +17,8 @@ export interface OpenViewCopy {
   chapterUpcomingStatus: string;
   /** For the shared `PlayerControls`/`SeekSlider` primitives this feature reuses (6.1.d) — computed here, same as every other field, never read ambiently. */
   playAriaLabel: string;
+  /** 13.9.e: the CC toggle and the caption track. */
+  captionsLabel: string;
   playingStatus: string;
   pausedStatus: string;
   chaptersAriaLabel: string;
@@ -85,6 +87,7 @@ export function computeOpenViewCopy(
     chapterWatchingStatus: t("openView.chapterWatchingStatus"),
     chapterUpcomingStatus: t("openView.chapterUpcomingStatus"),
     playAriaLabel: tPlayer("controls.playCampaign", { title: campaign.title }),
+    captionsLabel: tPlayer("controls.captions"),
     playingStatus: tPlayer("status.playing"),
     pausedStatus: tPlayer("status.paused"),
     chaptersAriaLabel: tPlayer("chapters.ariaLabel"),

@@ -13,7 +13,8 @@
     "risk": "Risiko",
     "economy": "Ekonomi",
     "settlement": "Penyelesaian",
-    "charities": "Lembaga amal"
+    "charities": "Lembaga amal",
+    "auctions": "Lelang"
   },
   "overview": {
     "title": "Ringkasan",
@@ -424,5 +425,18 @@
     "button": "Atur ulang dunia demo",
     "queued": "Pengaturan ulang sudah dimulai. Login demo bisa dipakai lagi dalam beberapa menit.",
     "failed": "Pengaturan ulang tidak bisa dimulai. Coba lagi."
+  },
+  "auctions": {
+    "pageTitle": "Lelang",
+    "pageDescription": "Lelang amal yang masih buka di semua wilayah. Membatalkan akan melepas semua tawaran dan mengembalikan voucher ke penjualnya.",
+    "empty": "Tidak ada lelang yang buka.",
+    "for": "Untuk {charity}",
+    "bids": "{count, plural, other {# tawaran}}",
+    "ends": "berakhir {date} UTC",
+    "current": "Jumlah saat ini:",
+    "cancel": "Batalkan lelang",
+    "cancelTitle": "Batalkan “{title}”?",
+    "cancelBody": "Semua tawaran dilepas dan voucher kembali ke penjual. Berikan alasan untuk jejak audit.",
+    "failed": "Gagal diproses: {message}"
   }
 }

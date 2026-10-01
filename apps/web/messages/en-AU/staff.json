@@ -13,7 +13,8 @@
     "risk": "Risk",
     "economy": "Economy",
     "settlement": "Settlement",
-    "charities": "Charities"
+    "charities": "Charities",
+    "auctions": "Auctions"
   },
   "overview": {
     "title": "Overview",
@@ -424,5 +425,18 @@
     "button": "Reset demo world",
     "queued": "The reset has started. Demo logins work again in a few minutes.",
     "failed": "The reset could not be started. Try again."
+  },
+  "auctions": {
+    "pageTitle": "Auctions",
+    "pageDescription": "Open charity auctions in every region. Cancelling releases every bid and returns the voucher to its seller.",
+    "empty": "No open auctions.",
+    "for": "For {charity}",
+    "bids": "{count, plural, one {# bid} other {# bids}}",
+    "ends": "ends {date} UTC",
+    "current": "Current amount:",
+    "cancel": "Cancel auction",
+    "cancelTitle": "Cancel “{title}”?",
+    "cancelBody": "Every bid is released and the voucher goes back to the seller. Give a reason for the audit trail.",
+    "failed": "That didn't go through: {message}"
   }
 }

@@ -11,7 +11,12 @@ type FeedItem = {
   questionCount: number;
   audience: string;
 };
-type Wallet = { region: string; availablePoints: number; pendingPoints: number; pending: { points: number }[] };
+type Wallet = {
+  region: string;
+  availablePoints: number;
+  pendingPoints: number;
+  pending: { points: number }[];
+};
 
 /**
  * Journey 6 (product-intent §2.2): the terms are shown before the start, the
@@ -30,10 +35,20 @@ for (const r of REGIONS) {
     const viewer = await apiRegister(request, r, `j6-${r.slug}`);
     await useSession(context, baseURL!, viewer.token, r);
 
-    const feed = await apiGet<{ items: FeedItem[] }>(request, viewer.token, `/api/feed?surface=home&region=${r.region}`);
+    const feed = await apiGet<{ items: FeedItem[] }>(
+      request,
+      viewer.token,
+      `/api/feed?surface=home&region=${r.region}`,
+    );
     const video = feed.items
       // Under a minute the server asks no questions, whatever the card says.
-      .filter((i) => i.kind === "long_form" && i.durationSeconds >= 60 && i.questionCount > 0 && i.audience === "all_ages")
+      .filter(
+        (i) =>
+          i.kind === "long_form" &&
+          i.durationSeconds >= 60 &&
+          i.questionCount > 0 &&
+          i.audience === "all_ages",
+      )
       .sort((a, b) => a.durationSeconds - b.durationSeconds)[0];
     expect(video, "the demo world has a long video with questions").toBeDefined();
     test.setTimeout((video!.durationSeconds + 180) * 1000);
@@ -47,7 +62,10 @@ for (const r of REGIONS) {
     await expect(terms).toContainText(String(video!.maxRewardPoints));
     await expect(terms).toContainText(/question|pertanyaan/i);
 
-    await page.getByRole("button", { name: new RegExp(`^(Play|Putar) `) }).first().click();
+    await page
+      .getByRole("button", { name: new RegExp(`^(Play|Putar) `) })
+      .first()
+      .click();
 
     // Answer each checkpoint as it comes, until the earn moment says what landed.
     const earned = page.locator("[aria-label^='Plus ']");
@@ -74,11 +92,9 @@ for (const r of REGIONS) {
     const after = await apiGet<Wallet>(request, viewer.token, "/api/wallet");
     expect(after.pendingPoints - before.pendingPoints).toBe(shown);
     expect(after.availablePoints).toBe(before.availablePoints);
-    const sessions = await apiGet<{ sessions: { campaignId: string; coveredSeconds: number; durationSeconds: number }[] }>(
-      request,
-      viewer.token,
-      "/api/watch/sessions",
-    );
+    const sessions = await apiGet<{
+      sessions: { campaignId: string; coveredSeconds: number; durationSeconds: number }[];
+    }>(request, viewer.token, "/api/watch/sessions");
     const session = sessions.sessions.find((s) => s.campaignId === video!.campaignId);
     expect(session?.coveredSeconds).toBe(session?.durationSeconds);
   });

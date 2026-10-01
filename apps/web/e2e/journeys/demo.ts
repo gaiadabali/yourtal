@@ -36,7 +36,10 @@ export async function apiLogin(
   email: string,
   password = DEMO_PASSWORD,
 ) {
-  const response = await request.post(`${API}/api/auth/login`, { data: { email, password } });
+  const response = await request.post(`${API}/api/auth/login`, {
+    headers: { "x-forwarded-for": testIp() },
+    data: { email, password },
+  });
   expect(response.ok(), `login ${email}: ${await response.text()}`).toBeTruthy();
   return (await response.json()) as { userId: string; token: string };
 }
@@ -118,7 +121,12 @@ export async function apiRegister(request: APIRequestContext, r: RegionCase, pre
 }
 
 /** Puts an API session on the browser, as sign-in would. */
-export async function useSession(context: BrowserContext, baseURL: string, token: string, r: RegionCase) {
+export async function useSession(
+  context: BrowserContext,
+  baseURL: string,
+  token: string,
+  r: RegionCase,
+) {
   await context.addCookies(
     [
       ["yt_session", token],

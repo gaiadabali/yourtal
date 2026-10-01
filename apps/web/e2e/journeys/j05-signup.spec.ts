@@ -106,7 +106,11 @@ for (const r of REGIONS) {
     const state = Object.fromEntries(consents.consents.map((c) => [c.purpose, c.state]));
     expect(state["declared_interest_targeting"]).toBe("granted");
     expect(state["marketing_communications"]).not.toBe("granted");
-    const interestsNow = await apiGet<{ nodeIds: string[] }>(request, session ?? null, "/api/me/interests");
+    const interestsNow = await apiGet<{ nodeIds: string[] }>(
+      request,
+      session ?? null,
+      "/api/me/interests",
+    );
     expect(interestsNow.nodeIds.length).toBeGreaterThanOrEqual(2);
   });
 }

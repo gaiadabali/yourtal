@@ -128,7 +128,8 @@ export interface StagingSeedResult {
   /** `"skipped"` only when the world has no demo viewer to grant to at all
    * (identity.user_profile is non-empty from something other than this
    * seed's own accounts) — not a ledger outcome, so not a failure either. */
-  readonly pendingGrant: "granted" | "already_present" | "failed" | "skipped";
+  /** `capped_for_today`: F12's daily cap refused it; expected, retried on a later run. */
+  readonly pendingGrant: "granted" | "already_present" | "capped_for_today" | "failed" | "skipped";
   /** Present only when `pendingGrant` is `"failed"` — the ledger's own
    * error code (e.g. `insufficient_available`), or a network-error message. */
   readonly pendingGrantDetail?: string;
@@ -870,7 +871,7 @@ async function ensureMarketingFunding(pool: pg.Pool): Promise<"funded" | "alread
 }
 
 interface GrantOutcome {
-  readonly status: "granted" | "already_present" | "failed";
+  readonly status: "granted" | "already_present" | "capped_for_today" | "failed";
   readonly detail?: string;
 }
 
@@ -956,6 +957,8 @@ async function ensureTierZeroPendingGrant(
     const parsed = ledgerErrorSchema.safeParse(tryParseJson(raw));
     const detail = parsed.success ? parsed.data.code : `http_${String(response.status)}: ${raw}`;
     log(`[seed:staging] ledger ${path} answered ${String(response.status)}: ${raw}`);
+    // F12's own daily cap is the system working, not a broken deploy (same as the top-up).
+    if (detail === "velocity_capped") return { status: "capped_for_today", detail };
     return { status: "failed", detail };
   }
 

@@ -11,6 +11,31 @@ import { ServiceWorkerRegistrar } from "@/app/service-worker-registrar";
 export const metadata = baseMetadata;
 export const viewport = baseViewport;
 
+// 13.4.a: only what this app's client components translate. The full catalogue
+// (Studio, staff, public…) was ~100 KB of every page's HTML, ahead of the first frame.
+// A missing namespace shows its key in dev, so a new client namespace must be added here.
+const CLIENT_NAMESPACES = [
+  "auction",
+  "auth",
+  "burn",
+  "campaign",
+  "charity",
+  "checkpoint",
+  "feed",
+  "me",
+  "onboarding",
+  "shell",
+  "store",
+  "taxonomy",
+  "wallet",
+] as const;
+
+function clientMessages(messages: Awaited<ReturnType<typeof getMessages>>) {
+  return Object.fromEntries(
+    CLIENT_NAMESPACES.filter((ns) => ns in messages).map((ns) => [ns, messages[ns]]),
+  );
+}
+
 export interface AppLayoutProps {
   children: ReactNode;
 }
@@ -57,7 +82,7 @@ export default async function AppLayout({ children }: AppLayoutProps) {
       {/* YT-0588: registers /sw.js. The webpack plugin used to inject this;
           under Turbopack nothing did, so the worker was built and never ran. */}
       <ServiceWorkerRegistrar />
-      <NextIntlClientProvider locale={locale} messages={messages}>
+      <NextIntlClientProvider locale={locale} messages={clientMessages(messages)}>
         <RegionProvider region={region}>
           <AppShell>{children}</AppShell>
         </RegionProvider>

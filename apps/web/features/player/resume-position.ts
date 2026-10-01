@@ -9,7 +9,7 @@
  * playback — every function here degrades to "no prior position" instead
  * of throwing.
  *
- * Validated by a hand-written guard, not Zod (13.4.d, F93): even
+ * Validated by a hand-written guard, not Zod (13.4.d, F94): even
  * `zod/mini` puts zod core in this route's first load and kept the watch
  * pages over the 200 KB initial-JS gate (§8). The checks are the same ones
  * the schema made: every field present, typed, and in range.

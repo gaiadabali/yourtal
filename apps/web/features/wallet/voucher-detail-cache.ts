@@ -4,7 +4,7 @@
  * localStorage is a process boundary (another tab, a stale schema version,
  * a tampered value can all write there), so every read is validated and
  * every access wrapped in try/catch. The guard is hand-written, not Zod
- * (13.4.d, F93): even `zod/mini` kept this route over the 200 KB
+ * (13.4.d, F94): even `zod/mini` kept this route over the 200 KB
  * initial-JS gate (docs/13b-typescript-standards.md §3, §8) — see
  * `use-voucher-qr-rotation.ts`'s sibling IndexedDB cache for the QR windows
  * themselves, which live separately because they need a bigger, longer-lived

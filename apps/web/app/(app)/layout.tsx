@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { getLocale, getMessages } from "next-intl/server";
-import { NextIntlClientProvider } from "next-intl";
+import { getLocale } from "next-intl/server";
 import { AppShell } from "@/features/shell/app-shell";
+import { ClientMessages } from "@/features/shell/client-messages";
 import { getRegion } from "@/features/region/get-region";
 import { RegionProvider } from "@/features/region/region-context";
 import { readThemeCookie } from "@/lib/api/session-cookies";
@@ -10,31 +10,6 @@ import { ServiceWorkerRegistrar } from "@/app/service-worker-registrar";
 
 export const metadata = baseMetadata;
 export const viewport = baseViewport;
-
-// 13.4.a: only what this app's client components translate. The full catalogue
-// (Studio, staff, public…) was ~100 KB of every page's HTML, ahead of the first frame.
-// A missing namespace shows its key in dev, so a new client namespace must be added here.
-const CLIENT_NAMESPACES = [
-  "auction",
-  "auth",
-  "burn",
-  "campaign",
-  "charity",
-  "checkpoint",
-  "feed",
-  "me",
-  "onboarding",
-  "shell",
-  "store",
-  "taxonomy",
-  "wallet",
-] as const;
-
-function clientMessages(messages: Awaited<ReturnType<typeof getMessages>>) {
-  return Object.fromEntries(
-    CLIENT_NAMESPACES.filter((ns) => ns in messages).map((ns) => [ns, messages[ns]]),
-  );
-}
 
 export interface AppLayoutProps {
   children: ReactNode;
@@ -71,7 +46,6 @@ export interface AppLayoutProps {
 export default async function AppLayout({ children }: AppLayoutProps) {
   const region = await getRegion();
   const locale = await getLocale();
-  const messages = await getMessages();
   // YT-0181: this group is a ROOT layout now, so it owns its own `<html>`.
   // `locale` is the BCP-47 tag next-intl already resolved from the region
   // cookie via `i18n/request.ts`, so `lang` costs nothing extra here and is
@@ -82,11 +56,12 @@ export default async function AppLayout({ children }: AppLayoutProps) {
       {/* YT-0588: registers /sw.js. The webpack plugin used to inject this;
           under Turbopack nothing did, so the worker was built and never ran. */}
       <ServiceWorkerRegistrar />
-      <NextIntlClientProvider locale={locale} messages={clientMessages(messages)}>
+      {/* 13.4.a: base strings only; each section's layout adds its own. */}
+      <ClientMessages>
         <RegionProvider region={region}>
           <AppShell>{children}</AppShell>
         </RegionProvider>
-      </NextIntlClientProvider>
+      </ClientMessages>
     </RootDocument>
   );
 }

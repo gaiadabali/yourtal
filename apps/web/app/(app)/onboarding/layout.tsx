@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ClientMessages } from "@/features/shell/client-messages";
 
 export interface OnboardingLayoutProps {
   children: ReactNode;
@@ -28,7 +29,9 @@ export interface OnboardingLayoutProps {
 export default function OnboardingLayout({ children }: OnboardingLayoutProps) {
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-bg pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))]">
-      <div className="mx-auto flex w-full max-w-md flex-col px-4 py-6 sm:py-10">{children}</div>
+      <div className="mx-auto flex w-full max-w-md flex-col px-4 py-6 sm:py-10">
+        <ClientMessages namespaces={["onboarding", "me", "auth"]}>{children}</ClientMessages>
+      </div>
     </div>
   );
 }

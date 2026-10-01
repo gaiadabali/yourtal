@@ -117,7 +117,7 @@ export async function watch(pool: pg.Pool, api: DemoApi, campaignId: string): Pr
   if (done.status >= 400)
     return `complete ${String(done.status)} ${JSON.stringify(done.body).slice(0, 160)}`;
   return field(done.body, "granted") === true
-    ? `earned ${String(field(done.body, "pendingPoints") ?? "?")}`
+    ? `earned ${JSON.stringify(field(done.body, "pendingPoints") ?? null)}`
     : `not granted: ${String(field(done.body, "reason"))}`;
 }
 

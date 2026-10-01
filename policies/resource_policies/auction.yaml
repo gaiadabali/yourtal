@@ -49,3 +49,18 @@ resourcePolicy:
               - expr: has(P.attr.ageBand) && P.attr.ageBand == "adult"
               - expr: "!has(P.attr.valueFrozenUntil) || now() > timestamp(P.attr.valueFrozenUntil)"
               - expr: "!has(R.attr.sellerId) || R.attr.sellerId != P.id"
+
+    # 13.22.g: ops see every region's open auctions and cancel one only with a
+    # reason (every hold released, the voucher back to the seller, audited).
+    - name: ops-review-auctions
+      actions: ["review"]
+      effect: EFFECT_ALLOW
+      roles: ["ops"]
+
+    - name: ops-cancel-with-a-reason
+      actions: ["cancel"]
+      effect: EFFECT_ALLOW
+      roles: ["ops"]
+      condition:
+        match:
+          expr: has(R.attr.hasReason) && R.attr.hasReason == true

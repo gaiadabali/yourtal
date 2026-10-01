@@ -87,9 +87,16 @@ export class AuctionService implements OnModuleInit, OnModuleDestroy {
   }
 
   /** Staff cancel (13.22.d's backend): every hold released, voucher back to the seller. */
-  async cancel(auctionId: string, reason: string): Promise<void> {
+  async cancel(auctionId: string, reason: string): Promise<boolean> {
     const settled = await settleAuction(this, auctionId, { reason });
     if (settled !== null) await sendReceipts(this.email, this.parties, settled);
+    return settled !== null;
+  }
+
+  /** 13.22.g: every open auction, every region, for the staff console. */
+  async openForStaff(): Promise<Auction[]> {
+    const rows = await this.store.list(sql`a.state = 'open'`, 200);
+    return Promise.all(rows.map((row) => this.present(row, null)));
   }
 
   async settleDue(): Promise<number> {

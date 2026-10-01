@@ -577,3 +577,13 @@ resources:
     kind: charity
     id: charity-harapan
     attr: { region: "ID", state: "pending", hasReason: false }
+
+  auction_with_reason:
+    kind: auction
+    id: auction-1
+    attr: { region: "ID", sellerId: "wina", hasReason: true }
+
+  auction_no_reason:
+    kind: auction
+    id: auction-1
+    attr: { region: "ID", sellerId: "wina", hasReason: false }

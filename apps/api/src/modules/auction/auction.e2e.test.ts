@@ -6,6 +6,7 @@ import { ZodValidationPipe } from "nestjs-zod";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
 import { AppModule } from "../../app.module";
+import { grantStaffRole, ownerPool } from "../staff/staff.test-helper";
 
 /**
  * 13.22 over real HTTP, a real PDP and the fake voucher engine: list into
@@ -249,5 +250,75 @@ describe("13.22 — charity auctions", () => {
       [auctionId],
     );
     expect(rows[0]?.voucher_owner_id).toBe(admin.userId);
+  });
+
+  it("13.22.g: ops cancel with a reason; every hold is released and the voucher goes back to the seller", async () => {
+    const [seller, bidder, admin, ops, stranger] = [
+      await person("ID"),
+      await person("ID"),
+      await person("ID"),
+      await person("AU"),
+      await person("ID"),
+    ];
+    // The app role cannot grant staff roles; the owner connection can (staff.test-helper).
+    const owner = ownerPool();
+    await grantStaffRole(owner, ops.userId, "ops");
+    await owner.end();
+    const { id: charityId } = await charity(admin.userId);
+    const voucherId = await voucherFor(seller.userId);
+    const listed = await call("POST", `/api/wallet/vouchers/${voucherId}/auction`, seller, {
+      charityId,
+    });
+    const { auctionId } = listed.json<{ auctionId: string }>();
+    const bid = await call("POST", `/api/auctions/${auctionId}/bids`, bidder, {
+      amountMinor: 30000,
+    });
+    expect(bid.statusCode, bid.body).toBe(201);
+
+    const staffList = await call("GET", "/api/staff/auctions", ops);
+    expect(staffList.statusCode).toBe(200);
+    expect(
+      staffList.json<{ auctions: { auctionId: string }[] }>().auctions.map((a) => a.auctionId),
+    ).toContain(auctionId);
+    expect(JSON.stringify(staffList.json())).not.toContain(bidder.userId);
+    expect((await call("GET", "/api/staff/auctions", stranger)).statusCode).toBe(403);
+    const byUser = await call("POST", `/api/staff/auctions/${auctionId}/cancel`, stranger, {
+      reason: "not staff",
+    });
+    expect(byUser.statusCode).toBe(403);
+    const noReason = await call("POST", `/api/staff/auctions/${auctionId}/cancel`, ops, {
+      reason: "",
+    });
+    expect(noReason.statusCode).toBe(403);
+
+    const cancelled = await call("POST", `/api/staff/auctions/${auctionId}/cancel`, ops, {
+      reason: "Seller reported the voucher stolen",
+    });
+    expect(cancelled.statusCode, cancelled.body).toBe(201);
+    expect(cancelled.json()).toMatchObject({ state: "cancelled" });
+    const again = await call("POST", `/api/staff/auctions/${auctionId}/cancel`, ops, {
+      reason: "second try",
+    });
+    expect(again.statusCode).toBe(409);
+
+    const { rows: bids } = await pool.query<{ state: string }>(
+      `SELECT state FROM auction.bid WHERE auction_id = $1`,
+      [auctionId],
+    );
+    expect(bids.map((row) => row.state)).toEqual(["released"]);
+    const { rows: voucher } = await pool.query(
+      `SELECT v.owner_id FROM platform.voucher_fake_escrow e
+         JOIN platform.voucher_fake_voucher v ON v.id = e.voucher_id WHERE e.auction_id = $1`,
+      [auctionId],
+    );
+    expect(voucher[0]?.owner_id).toBe(seller.userId);
+    const { rows: audit } = await pool.query(
+      `SELECT action, reason, region FROM staff.audit_event
+        WHERE target_kind = 'auction' AND target_id = $1 AND outcome = 'succeeded'`,
+      [auctionId],
+    );
+    expect(audit).toEqual([
+      { action: "auction.cancel", reason: "Seller reported the voucher stolen", region: "ID" },
+    ]);
   });
 });

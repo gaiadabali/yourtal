@@ -94,3 +94,23 @@ tests:
       - principal: adi_adult
         resource: charity_harapan_decision
         actions: { decide: EFFECT_DENY, review: EFFECT_DENY }
+
+  # 13.22.g: staff cancel of an auction.
+  - name: only ops cancel an auction, and only with a reason
+    input:
+      principals: [ops_zul, moderator_tono, adi_adult]
+      resources: [auction_with_reason, auction_no_reason]
+      actions: [cancel, review]
+    expected:
+      - principal: ops_zul
+        resource: auction_with_reason
+        actions: { cancel: EFFECT_ALLOW, review: EFFECT_ALLOW }
+      - principal: ops_zul
+        resource: auction_no_reason
+        actions: { cancel: EFFECT_DENY, review: EFFECT_ALLOW }
+      - principal: moderator_tono
+        resource: auction_with_reason
+        actions: { cancel: EFFECT_DENY, review: EFFECT_DENY }
+      - principal: adi_adult
+        resource: auction_with_reason
+        actions: { cancel: EFFECT_DENY, review: EFFECT_DENY }

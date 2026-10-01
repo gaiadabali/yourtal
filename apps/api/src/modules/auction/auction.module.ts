@@ -1,3 +1,4 @@
+import { StaffAuctionController } from "./staff-auction.controller";
 import { Module } from "@nestjs/common";
 import { describeProblem, resolveDriverMode } from "@yourtal/drivers/driver-mode";
 import { createMarketplacePaymentsDriver } from "@yourtal/drivers/marketplace-payments";
@@ -15,7 +16,7 @@ import { AUCTION_STORE, AuctionStore } from "./persistence/auction-store";
 /** 13.22 (F86): charity auctions. Payments go through the simulated marketplace driver. */
 @Module({
   imports: [WalletModule, IdentityModule, EmailDriverModule],
-  controllers: [AuctionController],
+  controllers: [AuctionController, StaffAuctionController],
   providers: [
     {
       provide: AUCTION_STORE,

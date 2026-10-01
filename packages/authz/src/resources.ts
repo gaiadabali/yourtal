@@ -138,7 +138,7 @@ export const RESOURCE_ACTIONS = {
   wallet: ["view", "view_history", "redeem", "transfer", "receive_voucher"],
 
   /** 13.22 (F86): a charity auction in the caller's region. Teens take no part. */
-  auction: ["view", "bid"],
+  auction: ["view", "bid", "review", "cancel"],
 
   /**
    * The merchant redemption network and its credentials. Note the absence of

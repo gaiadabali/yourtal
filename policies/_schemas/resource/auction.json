@@ -12,6 +12,10 @@
     },
     "sellerId": {
       "type": "string"
+    },
+    "hasReason": {
+      "description": "13.22.g: a staff cancel with no reason is not auditable, so the PDP refuses it.",
+      "type": "boolean"
     }
   }
 }

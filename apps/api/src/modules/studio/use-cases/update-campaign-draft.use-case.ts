@@ -33,6 +33,10 @@ export function updateCampaignDraft(
     if (existing.lifecycleState !== "draft") {
       return errAsync<CampaignDraft, UpdateCampaignDraftError>({ type: "campaign_not_draft" });
     }
+    // 13.9.d: the database CHECK would refuse this as a 503; say it plainly instead.
+    if (existing.kind === "quick" && (patch.durationSeconds ?? existing.durationSeconds) > 60) {
+      return errAsync<CampaignDraft, UpdateCampaignDraftError>({ type: "quick_too_long" });
+    }
     const category = patch.contentCategory ?? existing.contentCategory;
     const audience = patch.audience ?? existing.audience;
     const refusal = categoryRefusal(existing.region, category, audience);

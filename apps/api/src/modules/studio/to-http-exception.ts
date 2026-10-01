@@ -19,6 +19,7 @@ import type {
   LedgerRefusedError,
   NotKybVerifiedError,
   OpenViewingRequiresAllAgesError,
+  QuickTooLongError,
   PersistenceFailedError,
   PiiRequestError,
   PredictionRequestError,
@@ -52,6 +53,7 @@ export type StudioDomainError =
   | NotKybVerifiedError
   | IllegalTransitionError
   | OpenViewingRequiresAllAgesError
+  | QuickTooLongError
   | PersistenceFailedError;
 
 export function mapStudioErrorToHttpException(error: StudioDomainError): HttpException {
@@ -130,6 +132,11 @@ export function mapStudioErrorToHttpException(error: StudioDomainError): HttpExc
       return new BadRequestException({
         code: "open_viewing_requires_all_ages",
         message: "Open Viewing may only be enabled for an all_ages campaign (F8)",
+      });
+    case "quick_too_long":
+      return new BadRequestException({
+        code: "quick_too_long",
+        message: "A Short must be 60 seconds or less.",
       });
     case "not_kyb_verified":
       return new ForbiddenException({

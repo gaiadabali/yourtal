@@ -37,11 +37,17 @@ export interface OpenViewingRequiresAllAgesError {
   readonly type: "open_viewing_requires_all_ages";
 }
 
+/** 13.9.d: a Short (`quick`) is 60 seconds or less (docs/17 section 1.1). */
+export interface QuickTooLongError {
+  readonly type: "quick_too_long";
+}
+
 export type CreateCampaignDraftError =
   | BusinessNotFoundError
   | ProhibitedCategoryError
   | AudienceMustBeAdultError
   | OpenViewingRequiresAllAgesError
+  | QuickTooLongError
   | PersistenceFailedError;
 
 export type UpdateCampaignDraftError =
@@ -50,6 +56,7 @@ export type UpdateCampaignDraftError =
   | ProhibitedCategoryError
   | AudienceMustBeAdultError
   | OpenViewingRequiresAllAgesError
+  | QuickTooLongError
   | PersistenceFailedError;
 
 export interface PiiRequestError {

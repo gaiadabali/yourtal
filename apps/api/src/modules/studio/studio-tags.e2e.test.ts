@@ -281,4 +281,44 @@ describe("13.11.d: tags on Studio-made campaigns and listings", () => {
     expect(tagged?.whyReason).toBe("interest");
     expect(tagged?.tags).toEqual(["coffee-specialty"]);
   });
+
+  it("13.9.d: a Short over 60 seconds is a 400, on create and on update, never a 503", async () => {
+    const { cookie, businessId } = await verifiedOwner();
+    const now = Date.now();
+    const body = {
+      kind: "quick",
+      title: "13.9.d short",
+      synopsis: "Too long for a Short.",
+      durationSeconds: 61,
+      contentCategory: "food-and-drink",
+      audience: "all_ages",
+      startsAt: new Date(now).toISOString(),
+      endsAt: new Date(now + 86_400_000).toISOString(),
+      openViewing: false,
+      teaserStartSeconds: 0,
+      declaredInterests: [],
+    };
+    const tooLong = await app.inject({
+      method: "POST",
+      url: `/api/${businessId}/studio/campaigns`,
+      headers: { cookie, ...key() },
+      payload: body,
+    });
+    expect(tooLong.statusCode).toBe(400);
+    const ok = await app.inject({
+      method: "POST",
+      url: `/api/${businessId}/studio/campaigns`,
+      headers: { cookie, ...key() },
+      payload: { ...body, durationSeconds: 45 },
+    });
+    expect(ok.statusCode).toBe(201);
+    const patched = await app.inject({
+      method: "PATCH",
+      url: `/api/${businessId}/studio/campaigns/${ok.json<{ id: string }>().id}`,
+      headers: { cookie },
+      payload: { durationSeconds: 90 },
+    });
+    expect(patched.statusCode).toBe(400);
+    expect(patched.json<{ code: string }>().code).toBe("quick_too_long");
+  });
 });

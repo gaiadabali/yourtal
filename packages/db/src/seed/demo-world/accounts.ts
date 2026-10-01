@@ -42,6 +42,8 @@ export interface DemoPerson {
   readonly teen?: true;
   readonly businessRole?: BusinessRole;
   readonly staffRole?: StaffRole;
+  /** Kept across resets: the charities it runs belong to this account. */
+  readonly keep?: true;
 }
 
 const ADULT = "1990-01-01";
@@ -69,8 +71,8 @@ function regionPeople(region: Region): DemoPerson[] {
     person("member", `Marketer Demo (${region})`, { businessRole: "marketer" }),
     person("finance", `Finance Demo (${region})`, { businessRole: "finance" }),
     // Run the demo charities (marketplace.ts applies with them; staff approve).
-    person("charity1", au ? "Coastal Kids Trust" : "Yayasan Anak Pesisir"),
-    person("charity2", au ? "Green Corridors Fund" : "Yayasan Hutan Kota"),
+    person("charity1", au ? "Coastal Kids Trust" : "Yayasan Anak Pesisir", { keep: true }),
+    person("charity2", au ? "Green Corridors Fund" : "Yayasan Hutan Kota", { keep: true }),
   ];
 }
 
@@ -205,6 +207,11 @@ export async function resetDemoAccounts(
 
   for (const person of DEMO_PEOPLE) {
     const previous = await userIdFor(pool, person.email);
+    if (previous !== null && person.keep === true) {
+      created.set(person.email, previous);
+      logins.push({ email: person.email, userId: previous, region: person.region });
+      continue;
+    }
     if (previous !== null) await retire(pool, ledger, person, previous, generation);
     const userId = await register(pool, person, passwordHash);
     created.set(person.email, userId);

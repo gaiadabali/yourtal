@@ -44,10 +44,12 @@ const fontDisplay = Bricolage_Grotesque({
   display: "swap",
   variable: "--font-display-app",
 });
+// Only voucher codes use the mono face, so it is not preloaded on every page (13.4.a).
 const fontMono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["500"],
   display: "swap",
+  preload: false,
   variable: "--font-mono-app",
 });
 const fontVariables = `${fontBody.variable} ${fontDisplay.variable} ${fontMono.variable}`;

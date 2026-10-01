@@ -61,7 +61,7 @@ export function VideoCard({
           src={item.posterUrl}
           alt=""
           loading={priority ? "eager" : "lazy"}
-          fetchPriority={priority ? "high" : "auto"}
+          fetchPriority={priority ? "high" : "low"}
           decoding="async"
           width={640}
           height={360}

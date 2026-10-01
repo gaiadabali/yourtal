@@ -102,4 +102,46 @@ export const CHARITY_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     successSchema: ref("CharityDetail"),
     errors: [VALIDATION_400, FORBIDDEN, NOT_FOUND, nestDefaultError(409, "Already decided.")],
   },
+  {
+    method: "get",
+    path: "/api/staff/auctions",
+    summary: "Every open charity auction, every region (ops, 13.22.g)",
+    tags: ["auction", "staff"],
+    pathParams: [],
+    successStatus: 200,
+    successDescription: "Soonest to end first. Who bid is never shown.",
+    successSchema: ref("AuctionList"),
+    errors: [FORBIDDEN],
+  },
+  {
+    method: "post",
+    path: "/api/staff/auctions/{auctionId}/cancel",
+    summary:
+      "Cancel an open auction with a reason: every hold released, voucher back to the seller (ops, audited)",
+    tags: ["auction", "staff"],
+    pathParams: [
+      {
+        name: "auctionId",
+        description: "An open auction.",
+        schema: { type: "string", format: "uuid" },
+      },
+    ],
+    requestBody: {
+      description: "The reason, for the audit trail.",
+      schema: {
+        type: "object",
+        required: ["reason"],
+        properties: { reason: { type: "string", minLength: 3, maxLength: 500 } },
+      },
+    },
+    successStatus: 201,
+    successDescription: "The cancelled auction.",
+    successSchema: ref("Auction"),
+    errors: [
+      VALIDATION_400,
+      FORBIDDEN,
+      NOT_FOUND,
+      nestDefaultError(409, "The auction is not open."),
+    ],
+  },
 ];

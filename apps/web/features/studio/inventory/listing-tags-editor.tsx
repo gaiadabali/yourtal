@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@yourtal/ui/button";
 import { NativeSelect } from "@yourtal/ui/native-select";
+import { Switch } from "@yourtal/ui/switch";
 import { CONTENT_CATEGORIES } from "../campaign-builder/campaign-editor-details";
 import { TagPicker, knownTags } from "../tag-picker";
 import { updateListingTags } from "./inventory-actions";
@@ -14,6 +15,7 @@ export interface ListingTagsEditorProps {
   listingTitle: string;
   contentCategory: string;
   tags: readonly string[];
+  transferable: boolean;
 }
 
 /**
@@ -26,6 +28,7 @@ export function ListingTagsEditor(props: ListingTagsEditorProps) {
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState(props.contentCategory);
   const [tags, setTags] = useState<string[]>(knownTags(props.tags));
+  const [transferable, setTransferable] = useState(props.transferable);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -35,6 +38,7 @@ export function ListingTagsEditor(props: ListingTagsEditorProps) {
       const result = await updateListingTags(props.businessId, props.listingId, {
         contentCategory: category,
         tags,
+        transferable,
       });
       setMessage(
         result.ok
@@ -73,6 +77,13 @@ export function ListingTagsEditor(props: ListingTagsEditorProps) {
         ))}
       </NativeSelect>
       <TagPicker value={tags} onChange={setTags} disabled={pending} />
+      <Switch
+        label={t("inventory.transferable")}
+        checked={transferable}
+        disabled={pending}
+        onCheckedChange={setTransferable}
+      />
+      <p className="-mt-2 text-xs font-sans text-fg-muted">{t("inventory.transferableHelp")}</p>
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" size="sm" onClick={save} disabled={pending}>
           {t("inventory.saveTags")}

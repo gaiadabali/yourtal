@@ -457,7 +457,10 @@
     "editTagsFor": "Ubah kategori dan tag untuk {title}",
     "saveTags": "Simpan",
     "closeTags": "Tutup",
-    "tagsSaved": "Tersimpan."
+    "tagsSaved": "Tersimpan.",
+    "transferable": "Dapat dihadiahkan atau dilelang untuk amal",
+    "transferableHelp": "Penonton dapat meneruskan voucher yang belum dipakai satu kali: ke orang dewasa lain di wilayah Anda, atau ke lelang amal. Mematikannya berlaku untuk voucher yang diterbitkan mulai sekarang.",
+    "transferableBadge": "Bisa dihadiahkan"
   },
   "onboarding": {
     "error": {

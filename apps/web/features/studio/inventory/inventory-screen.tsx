@@ -122,6 +122,9 @@ export function InventoryScreen({
                   <Badge variant={listing.status === "sold_out" ? "danger" : "success"}>
                     {listing.status.replace("_", " ")}
                   </Badge>
+                  {listing.transferable ? (
+                    <Badge variant="secondary">{t("inventory.transferableBadge")}</Badge>
+                  ) : null}
                   <TagChips tags={listing.tags} />
                   <ListingTagsEditor
                     businessId={businessId}
@@ -129,6 +132,7 @@ export function InventoryScreen({
                     listingTitle={listing.title}
                     contentCategory={listing.contentCategory}
                     tags={listing.tags}
+                    transferable={listing.transferable}
                   />
                 </li>
               ))}

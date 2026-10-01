@@ -457,7 +457,10 @@
     "editTagsFor": "Edit category and tags for {title}",
     "saveTags": "Save",
     "closeTags": "Close",
-    "tagsSaved": "Saved."
+    "tagsSaved": "Saved.",
+    "transferable": "Can be gifted or given to a charity auction",
+    "transferableHelp": "Viewers can pass an unused voucher on once: to another adult in your region, or to a charity auction. Turning this off applies to vouchers issued from now on.",
+    "transferableBadge": "Giftable"
   },
   "onboarding": {
     "error": {

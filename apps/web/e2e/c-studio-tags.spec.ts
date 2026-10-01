@@ -106,6 +106,8 @@ test("a listing's category and tags are picked from the taxonomy and saved", asy
   await expect(page.getByText("Flat white")).toBeVisible();
   await page.getByRole("button", { name: "Edit category and tags for Flat white" }).click();
   await page.getByRole("button", { name: "Bakery", exact: true }).click();
+  // 13.20.e: the listing was created non-transferable; switch it on.
+  await page.getByRole("switch", { name: "Can be gifted or given to a charity auction" }).click();
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page.getByRole("status")).toHaveText("Saved.");
   await capture(page, "inventory");
@@ -113,7 +115,10 @@ test("a listing's category and tags are picked from the taxonomy and saved", asy
   const saved = await request.get(`${api()}/api/${owner.businessId}/store/listings/${listing.id}`, {
     headers: { cookie: owner.cookie },
   });
-  expect(((await saved.json()) as { tags: string[] }).tags).toEqual(["coffee", "bakery"]);
+  const body = (await saved.json()) as { tags: string[]; transferable: boolean };
+  expect(body.tags).toEqual(["coffee", "bakery"]);
+  expect(body.transferable).toBe(true);
+  await expect(page.getByText("Giftable")).toBeVisible();
 });
 
 test("a campaign's tags are picked in Targeting and saved on close", async ({

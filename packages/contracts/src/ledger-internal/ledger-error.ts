@@ -25,6 +25,8 @@ export const ledgerErrorCodeSchema = z.enum([
   "dispute_window_open",
   /** 10.1/10.6: an action that needs a statement `open` (approve, dispute) found one disputed or already paid. */
   "statement_not_open",
+  /** 13.1.d: the listing has no unallocated voucher left (the voucher service's refusal). */
+  "sold_out",
 ]);
 
 export type LedgerErrorCode = z.infer<typeof ledgerErrorCodeSchema>;

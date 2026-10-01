@@ -10,7 +10,8 @@
     "./studio-media": "./src/studio-media.ts",
     "./hls-session-url": "./src/hls-session-url.ts",
     "./ffmpeg-transcode": "./src/ffmpeg-transcode.ts",
-    "./demo-media": "./src/demo-media.ts"
+    "./demo-media": "./src/demo-media.ts",
+    "./poster-shrink": "./src/poster-shrink.ts"
   },
   "scripts": {
     "publish:fixture": "node --import @swc-node/register/esm-register src/publish-fixture.ts",

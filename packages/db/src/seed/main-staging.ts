@@ -1,4 +1,5 @@
 import { backfillDemoTags } from "./demo-tags";
+import { posterKeyOf, shrinkPosters } from "@yourtal/media/poster-shrink";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -289,6 +290,19 @@ async function main(): Promise<void> {
     // After the vouchers' listings exist: give any placeholder image a real poster.
     await repairDemoListingImages(pool, console.log);
     await repairDemoListingCopy(pool, console.log);
+    // 13.4.f: every poster a viewer can see, at card size. Never fails the deploy.
+    try {
+      const { rows } = await pool.query<{ url: string }>(
+        `SELECT poster_url AS url FROM campaign.campaigns WHERE poster_url IS NOT NULL
+          UNION SELECT image_url FROM store.listings WHERE image_url IS NOT NULL`,
+      );
+      const keys = rows
+        .map((row) => posterKeyOf(row.url))
+        .filter((key): key is string => key !== null);
+      await shrinkPosters(keys, console.log);
+    } catch (error) {
+      console.error(`[seed:staging] poster shrink failed: ${String(error)}`);
+    }
     await retireLeakedFixtures(pool, console.log);
     const demoMediaVouchersSeeded = demoMediaVoucherResults.filter(
       (r: DemoMediaVoucherResult) => r.status === "seeded",

@@ -426,8 +426,9 @@ async function seedOneCampaign(
     open_viewing: boolean;
     title: string;
     synopsis: string;
+    captions_url: string | null;
   }>(
-    "SELECT lifecycle_state, hls_url, open_viewing, title, synopsis FROM campaign.campaigns WHERE id = $1",
+    "SELECT lifecycle_state, hls_url, open_viewing, title, synopsis, captions_url FROM campaign.campaigns WHERE id = $1",
     [campaignId],
   );
   const existingHlsUrl = existing.rows[0]?.hls_url ?? null;
@@ -438,7 +439,8 @@ async function seedOneCampaign(
     const copyOk = !STALE_COPY.test(
       `${existing.rows[0]?.title ?? ""} ${existing.rows[0]?.synopsis ?? ""}`,
     );
-    if (urlsOk && chapterCount > 0 && openViewingOk && copyOk) {
+    const captionsOk = existing.rows[0]?.captions_url != null;
+    if (urlsOk && chapterCount > 0 && openViewingOk && copyOk && captionsOk) {
       return { slug: entry.slug, status: "already_present" };
     }
 
@@ -484,6 +486,19 @@ async function seedOneCampaign(
         copy.synopsis,
       ]);
       repaired.push("viewer-facing title and synopsis");
+    }
+    if (!captionsOk) {
+      // 13.4.e: the burned-in facts, as a caption track (same cues renderDemoVideo makes).
+      const captionsUrl = await ensureDemoCaptions({
+        assetId: campaignId,
+        durationSeconds: TARGET_DURATION_SECONDS,
+        facts: entry.facts,
+      });
+      await pool.query("UPDATE campaign.campaigns SET captions_url = $2 WHERE id = $1", [
+        campaignId,
+        captionsUrl,
+      ]);
+      repaired.push("captions");
     }
     log(`[demo:media] ${entry.slug}: repaired ${repaired.join(", ")}`);
     return { slug: entry.slug, status: "repaired" };
@@ -553,6 +568,15 @@ async function seedOneCampaign(
     teaserUrl,
     hlsUrl,
   });
+  const captionsUrl = await ensureDemoCaptions({
+    assetId: campaignId,
+    durationSeconds: TARGET_DURATION_SECONDS,
+    facts: entry.facts,
+  });
+  await pool.query("UPDATE campaign.campaigns SET captions_url = $2 WHERE id = $1", [
+    campaignId,
+    captionsUrl,
+  ]);
   await ensureQuestions(pool, campaignId, entry.facts);
   await ensureChapters(pool, campaignId, entry.brand);
 

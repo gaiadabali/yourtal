@@ -84,6 +84,7 @@ const CODE_BUCKET = {
   quote_expired: "quote_expired",
   insufficient_available: "insufficient_available",
   allocation_exhausted: "unavailable",
+  sold_out: "unavailable",
   listing_unavailable: "unavailable",
   region_mismatch: "blocked",
   audience_blocked: "blocked",

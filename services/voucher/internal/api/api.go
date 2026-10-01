@@ -125,6 +125,8 @@ var contractCodes = []struct {
 	{errAuthorizationExpired, "quote_expired"},
 	{errRegionMismatch, "region_mismatch"},
 	{issue.ErrNotUnused, "already_granted"},
+	// 13.1.d: a 409 the api maps, not a 400 it cannot.
+	{issue.ErrOutOfStock, "sold_out"},
 }
 
 // fail answers an engine error: a contract code as 409, a missing thing as
@@ -141,7 +143,7 @@ func (a *API) fail(w http.ResponseWriter, err error) {
 		httpx.WriteError(w, a.logger, http.StatusNotFound, "invalid_request_error", "not_found", err.Error())
 	case errors.Is(err, issue.ErrStaleVersion), errors.Is(err, lifecycle.ErrIllegalTransition):
 		httpx.WriteError(w, a.logger, http.StatusConflict, "api_error", "retry", "the voucher changed under this request; retry")
-	case errors.Is(err, issue.ErrWrongSupplier), errors.Is(err, issue.ErrOutOfStock), errors.Is(err, errBadRequest):
+	case errors.Is(err, issue.ErrWrongSupplier), errors.Is(err, errBadRequest):
 		httpx.WriteError(w, a.logger, http.StatusBadRequest, "invalid_request_error", "refused", err.Error())
 	default:
 		a.logger.Error("voucher-internal request failed", "error", err)

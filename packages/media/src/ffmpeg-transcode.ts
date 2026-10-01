@@ -176,11 +176,17 @@ export async function renderPoster(
     inputPath,
     "-vframes",
     "1",
+    // 13.4.f: card size. The poster is the LCP image on Home, Store and Shorts
+    // and a Short's first frame, so its longest side is 640 px (~20-40 KB).
+    "-vf",
+    `scale='if(gt(iw,ih),${String(POSTER_LONG_SIDE)},-2)':'if(gt(iw,ih),-2,${String(POSTER_LONG_SIDE)})'`,
     "-q:v",
-    "3",
+    "5",
     outputPath,
   ]);
 }
+
+export const POSTER_LONG_SIDE = 640;
 
 export interface TeaserInput {
   readonly inputPath: string;

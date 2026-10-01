@@ -648,6 +648,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "TASKS.md 10.5.b (20260929070900): which capture and ledger recovery-posting id a K13 dispute's resolution used, so a resolved voucher leaves the queue (checkout.dispute itself stays append-only, its own outcome never changes) and cannot be resolved twice. Internal bookkeeping only; what a client sees (`disputeResolutionResultSchema`) is the ledger's own CaptureRecoveryPosting shape, not a row of this table.",
   "staff.economy_proposal":
     "9.5's pending-approval read model. Deliberately a partial mapping, not a full one: economyProposalSchema (staff-economy.ts) exposes only id/kind/region/summary/proposedBy/approvedBy/status/reason/createdAt/decidedAt -- `payload` and `result` (the ledger's own request/response, which for a rate_change proposal carries B) and `decision_note` are read by the API but never serialised to a client, the same 'not every column reaches a contract' shape platform.partner_credential states above.",
+  "platform.demo_login":
+    "13.1.a: the demo logins the last demo reset made, for the staging review guide (13.2). Gated out of production with the reset itself; no domain contract reads it.",
   "platform.dev_clock_audit":
     "2.3.d's append-only audit trail for /dev/clock -- a reviewer's own action log, gated out of production by APP_ENV, never a domain contract any consumer parses.",
   "platform.partner_credential":

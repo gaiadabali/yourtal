@@ -178,9 +178,9 @@ export async function StoreShop({ data, query, locale, base, brand }: StoreShopP
             </div>
           ) : (
             <ul className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
-              {data.listings.map((listing) => (
+              {data.listings.map((listing, index) => (
                 <li key={listing.id}>
-                  <StoreVoucherCard listing={listing} locale={locale} />
+                  <StoreVoucherCard listing={listing} locale={locale} priority={index < 2} />
                 </li>
               ))}
             </ul>

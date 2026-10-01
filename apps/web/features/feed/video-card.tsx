@@ -17,6 +17,8 @@ export interface VideoCardProps {
   shareUrl: string;
   /** A featured card is larger and shows the synopsis. */
   size?: "grid" | "feature";
+  /** 13.4.a: above-the-fold cards load their poster first (the page's LCP). */
+  priority?: boolean;
 }
 
 /**
@@ -25,7 +27,14 @@ export interface VideoCardProps {
  * poster and title open the watch page; Save, Not interested and Share sit in
  * the ⋮ menu. The gold coin pill on the poster is what the video earns.
  */
-export function VideoCard({ item, locale, saved, shareUrl, size = "grid" }: VideoCardProps) {
+export function VideoCard({
+  item,
+  locale,
+  saved,
+  shareUrl,
+  size = "grid",
+  priority = false,
+}: VideoCardProps) {
   const t = useTranslations("feed");
   const categoryLabel = useCategoryLabel();
   const [hidden, setHidden] = useState(false);
@@ -51,7 +60,11 @@ export function VideoCard({ item, locale, saved, shareUrl, size = "grid" }: Vide
         <img
           src={item.posterUrl}
           alt=""
-          loading="lazy"
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : "auto"}
+          decoding="async"
+          width={640}
+          height={360}
           className="aspect-video w-full object-cover transition-transform duration-(--duration-slow) ease-standard group-hover:scale-[1.03]"
         />
         {/* On-image chrome stays light-on-dark in both themes, like MediaCard's. */}

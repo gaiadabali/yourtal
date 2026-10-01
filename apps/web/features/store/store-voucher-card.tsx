@@ -8,6 +8,8 @@ import { listingStatusPresentation } from "./store-status";
 export interface StoreVoucherCardProps {
   listing: PublicListing;
   locale: SupportedLocale;
+  /** 13.4.a: the first row's images load first. */
+  priority?: boolean;
 }
 
 const SHORT_DATE: Record<SupportedLocale, Intl.DateTimeFormat> = {
@@ -23,7 +25,7 @@ const LOW_STOCK = 10;
  * (linking to its brand page), the title, the points price in gold, and how
  * many are left and until when.
  */
-export function StoreVoucherCard({ listing, locale }: StoreVoucherCardProps) {
+export function StoreVoucherCard({ listing, locale, priority = false }: StoreVoucherCardProps) {
   const t = getStoreTranslator(locale);
   const status = listingStatusPresentation(listing.status, locale);
   const { pointsLabel, faceValueLabel } = formatListingPrice(
@@ -41,7 +43,11 @@ export function StoreVoucherCard({ listing, locale }: StoreVoucherCardProps) {
         <img
           src={listing.imageUrl}
           alt=""
-          loading="lazy"
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : "auto"}
+          decoding="async"
+          width={480}
+          height={360}
           className={cn(
             "h-full w-full object-cover transition-transform duration-(--duration-slow) ease-standard group-hover:scale-[1.03]",
             soldOut && "grayscale",

@@ -19,9 +19,14 @@ export default async function ShortsPage() {
     getTranslations("feed"),
   ]);
   const result = await getShortsFeed(region);
+  // 13.4.a: the first Short's poster is its first frame; React hoists this preload into <head>.
+  const firstPoster = result.ok ? result.data.items[0]?.posterUrl : undefined;
 
   return (
     <div className="flex flex-col gap-4 p-4">
+      {firstPoster ? (
+        <link rel="preload" as="image" href={firstPoster} fetchPriority="high" />
+      ) : null}
       <h1 className="sr-only">{t("shortsTitle")}</h1>
       {!result.ok ? (
         <ErrorState

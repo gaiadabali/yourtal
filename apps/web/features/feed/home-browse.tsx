@@ -29,13 +29,14 @@ export async function HomeBrowse({ data, query, locale, publicBase }: HomeBrowse
   const tx = await getTranslations("taxonomy.node");
   const saved = new Set(data.savedIds);
   const label = (id: string) => (tx.has(id) ? tx(id) : id);
-  const card = (item: BrowseItem, size: "grid" | "feature" = "grid") => (
+  const card = (item: BrowseItem, size: "grid" | "feature" = "grid", priority = false) => (
     <VideoCard
       item={item}
       locale={locale}
       saved={saved.has(item.campaignId)}
       shareUrl={`${publicBase}/c/${item.campaignId}`}
       size={size}
+      priority={priority}
     />
   );
   const isAll = query.category === null && query.tags.length === 0;
@@ -76,8 +77,8 @@ export async function HomeBrowse({ data, query, locale, publicBase }: HomeBrowse
             </div>
           ) : (
             <ul className={GRID}>
-              {data.items.map((item) => (
-                <li key={item.campaignId}>{card(item)}</li>
+              {data.items.map((item, index) => (
+                <li key={item.campaignId}>{card(item, "grid", index < 2)}</li>
               ))}
             </ul>
           )}
@@ -102,7 +103,9 @@ export async function HomeBrowse({ data, query, locale, publicBase }: HomeBrowse
       {controls}
       {featured.length > 0 ? (
         <section aria-label={t("browse.featured")} className="grid gap-x-6 gap-y-8 lg:grid-cols-3">
-          <div className="lg:col-span-2">{featured[0] ? card(featured[0], "feature") : null}</div>
+          <div className="lg:col-span-2">
+            {featured[0] ? card(featured[0], "feature", true) : null}
+          </div>
           <div className="grid gap-y-8 sm:grid-cols-2 sm:gap-x-4 lg:grid-cols-1">
             {featured.slice(1).map((item) => (
               <div key={item.campaignId}>{card(item)}</div>

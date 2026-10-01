@@ -1,0 +1,77 @@
+{
+  "title": "Review YourTal",
+  "intro": "Everything here is a demo: the businesses, videos, points and money are made up, and nothing leaves this server. Sign in as any of the people below and try the journeys.",
+  "logins": {
+    "heading": "Demo logins",
+    "intro": "One login per person, in each region. Australia is in English and AUD; Indonesia in Bahasa and IDR. The two never mix.",
+    "passwordShown": "Password for every login below:",
+    "passwordAsk": "The password for these logins comes from the founder.",
+    "role": "Who",
+    "au": "Australia",
+    "id": "Indonesia",
+    "tryThis": "Try",
+    "people": {
+      "viewer": {
+        "who": "New viewer",
+        "try": "Starts at the beginning: points pending, first streak."
+      },
+      "adult": {
+        "who": "Regular viewer",
+        "try": "Has points and vouchers: gift one, list one for charity, bid."
+      },
+      "teen": {
+        "who": "Teen, 14",
+        "try": "Teen feed only, no streaks, no gifts or auctions, a daily cap."
+      },
+      "guardian": {
+        "who": "Guardian",
+        "try": "Approves the teen; the consent email is in the inbox below."
+      },
+      "owner": {
+        "who": "Business owner",
+        "try": "Studio: campaigns, boost, inventory, billing, team and the counter."
+      },
+      "member": {
+        "who": "Marketer",
+        "try": "Studio with a marketer's rights: campaigns, not billing."
+      },
+      "finance": {
+        "who": "Business finance",
+        "try": "Studio billing and statements."
+      }
+    },
+    "counter": "Store counter: sign in as the business owner, open Studio › Team, add a device and copy its pairing code. Open {pairUrl} on another device, enter the code, then the PIN {pin}.",
+    "staffNote": "Staff console logins are not listed here; the founder has them."
+  },
+  "journeys": {
+    "heading": "Journeys to try",
+    "items": {
+      "home": "Home: long videos in a grid. Pick a category, open Filters, choose topics and a sort, then reload: the filters stay.",
+      "shorts": "Shorts: swipe; Shorts earn in place, with no questions.",
+      "watch": "Watch and earn: a long video asks questions part-way; points arrive pending, then unlock.",
+      "store": "Store: search, filter by where to use it, points range and brand, then redeem a voucher.",
+      "wallet": "Wallet: balance, what's on its way, active vouchers, and the history by day.",
+      "gift": "Gift a voucher: open an unused voucher in the Wallet and choose Gift; the other viewer accepts it in their Wallet.",
+      "auction": "Charity auction: list a voucher for a charity from its page, then bid on it as the other viewer.",
+      "boost": "Boost: as the business owner, open a live campaign in Studio and set a daily boost budget.",
+      "theme": "Light and dark: the avatar menu at the top right, or Me.",
+      "open": "Watch without an account: a public video page plays, but nothing is earned."
+    }
+  },
+  "tools": {
+    "heading": "Tools",
+    "clock": "Clock: move time forward to unlock pending points, end auctions or expire vouchers.",
+    "inbox": "Inbox: every email and text the app would have sent (verification, guardian consent, receipts)."
+  },
+  "simulated": {
+    "heading": "What is simulated",
+    "items": [
+      "Card payments and charity payouts (no real money moves)",
+      "Email and SMS (they land in the inbox above)",
+      "Business and charity checks (KYB)",
+      "Video moderation",
+      "Push notifications"
+    ]
+  },
+  "open": "Open"
+}

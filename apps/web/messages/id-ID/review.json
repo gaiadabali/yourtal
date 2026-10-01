@@ -1,0 +1,77 @@
+{
+  "title": "Tinjau YourTal",
+  "intro": "Semua di sini adalah demo: bisnis, video, poin, dan uangnya rekaan, dan tidak ada yang keluar dari server ini. Masuk sebagai salah satu orang di bawah lalu coba alurnya.",
+  "logins": {
+    "heading": "Login demo",
+    "intro": "Satu login per orang, di tiap wilayah. Australia dalam bahasa Inggris dan AUD; Indonesia dalam bahasa Indonesia dan IDR. Keduanya tidak pernah bercampur.",
+    "passwordShown": "Kata sandi untuk semua login di bawah:",
+    "passwordAsk": "Kata sandi untuk login ini diberikan oleh pendiri.",
+    "role": "Siapa",
+    "au": "Australia",
+    "id": "Indonesia",
+    "tryThis": "Coba",
+    "people": {
+      "viewer": {
+        "who": "Penonton baru",
+        "try": "Mulai dari awal: poin tertunda, streak pertama."
+      },
+      "adult": {
+        "who": "Penonton tetap",
+        "try": "Punya poin dan voucher: hadiahkan satu, lelang satu untuk amal, menawar."
+      },
+      "teen": {
+        "who": "Remaja, 14",
+        "try": "Hanya feed remaja, tanpa streak, tanpa hadiah atau lelang, ada batas harian."
+      },
+      "guardian": {
+        "who": "Wali",
+        "try": "Menyetujui remaja; email persetujuan ada di kotak masuk di bawah."
+      },
+      "owner": {
+        "who": "Pemilik bisnis",
+        "try": "Studio: kampanye, boost, inventaris, tagihan, tim, dan kasir."
+      },
+      "member": {
+        "who": "Pemasar",
+        "try": "Studio dengan hak pemasar: kampanye, bukan tagihan."
+      },
+      "finance": {
+        "who": "Keuangan bisnis",
+        "try": "Tagihan dan laporan di Studio."
+      }
+    },
+    "counter": "Kasir toko: masuk sebagai pemilik bisnis, buka Studio › Tim, tambahkan perangkat, lalu salin kode pemasangannya. Buka {pairUrl} di perangkat lain, masukkan kodenya, lalu PIN {pin}.",
+    "staffNote": "Login konsol staf tidak dicantumkan di sini; pendiri memilikinya."
+  },
+  "journeys": {
+    "heading": "Alur untuk dicoba",
+    "items": {
+      "home": "Beranda: video panjang dalam grid. Pilih kategori, buka Filter, pilih topik dan urutan, lalu muat ulang: filter tetap.",
+      "shorts": "Shorts: geser; Shorts memberi poin di tempat, tanpa pertanyaan.",
+      "watch": "Tonton dan dapatkan poin: video panjang mengajukan pertanyaan di tengah; poin masuk tertunda, lalu terbuka.",
+      "store": "Toko: cari, filter berdasarkan tempat pakai, rentang poin, dan merek, lalu tukarkan voucher.",
+      "wallet": "Dompet: saldo, yang sedang diproses, voucher aktif, dan riwayat per hari.",
+      "gift": "Hadiahkan voucher: buka voucher yang belum dipakai di Dompet dan pilih Hadiahkan; penonton lain menerimanya di Dompetnya.",
+      "auction": "Lelang amal: lelang voucher untuk yayasan dari halamannya, lalu tawar sebagai penonton lain.",
+      "boost": "Boost: sebagai pemilik bisnis, buka kampanye aktif di Studio dan atur anggaran boost harian.",
+      "theme": "Terang dan gelap: menu avatar di kanan atas, atau Saya.",
+      "open": "Tonton tanpa akun: halaman video publik bisa diputar, tapi tidak memberi poin."
+    }
+  },
+  "tools": {
+    "heading": "Alat",
+    "clock": "Jam: majukan waktu untuk membuka poin tertunda, mengakhiri lelang, atau membuat voucher kedaluwarsa.",
+    "inbox": "Kotak masuk: setiap email dan SMS yang akan dikirim aplikasi (verifikasi, persetujuan wali, tanda terima)."
+  },
+  "simulated": {
+    "heading": "Yang disimulasikan",
+    "items": [
+      "Pembayaran kartu dan pencairan ke yayasan (tidak ada uang sungguhan)",
+      "Email dan SMS (masuk ke kotak masuk di atas)",
+      "Pemeriksaan bisnis dan yayasan (KYB)",
+      "Moderasi video",
+      "Notifikasi push"
+    ]
+  },
+  "open": "Buka"
+}

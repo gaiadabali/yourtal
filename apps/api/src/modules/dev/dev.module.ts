@@ -15,6 +15,7 @@ import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { DevInboxController } from "./dev-inbox.controller";
 import { DevClockController } from "./dev-clock.controller";
+import { DemoResetController } from "./demo-reset.controller";
 import { DEV_CLOCK_DB_POOL, DEV_CLOCK_QUEUE_CLIENT, DevClockService } from "./dev-clock.service";
 
 const DEV_CLOCK_APP_DB = Symbol("DEV_CLOCK_APP_DB");
@@ -39,7 +40,7 @@ class DevClockQueueShutdown implements OnApplicationShutdown {
  * now" is the one place `apps/api` itself sends a job, everywhere else that
  * is `apps/worker`'s job. */
 @Module({
-  controllers: [DevInboxController, DevClockController],
+  controllers: [DevInboxController, DevClockController, DemoResetController],
   providers: [
     {
       provide: SIM_OUTBOX_READER,

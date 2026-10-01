@@ -32,8 +32,19 @@ export const listingIdFor = (slug: string, key: string): string =>
 const QUICK_MAX_SECONDS = 60;
 const VOUCHERS_PER_LISTING = 6;
 
+/** AU addresses carry a state and postcode, ID ones a city (business_accounts_address_matches_region). */
+const AU_STATE: Readonly<Record<string, readonly [string, string]>> = {
+  Sydney: ["NSW", "2000"],
+  Melbourne: ["VIC", "3000"],
+  Brisbane: ["QLD", "4000"],
+  Perth: ["WA", "6000"],
+  Adelaide: ["SA", "5000"],
+  Canberra: ["ACT", "2600"],
+};
+
 async function ensureBusiness(pool: pg.Pool, brand: DemoBrandSpec): Promise<void> {
   const au = brand.region === "AU";
+  const [state, postcode] = AU_STATE[brand.city] ?? ["NSW", "2000"];
   await pool.query(
     `INSERT INTO business.business_accounts
        (id, legal_name, display_name, roles, is_verified, region, currency, handle,
@@ -48,9 +59,9 @@ async function ensureBusiness(pool: pg.Pool, brand: DemoBrandSpec): Promise<void
       brand.slug.replace(/^(au|id)-/, ""),
       au ? "ABN" : "NPWP",
       au ? "51824753556" : "012345678901234",
-      au ? "NSW" : null,
-      au ? "2000" : null,
-      brand.city,
+      au ? state : null,
+      au ? postcode : null,
+      au ? null : brand.city,
     ],
   );
 }

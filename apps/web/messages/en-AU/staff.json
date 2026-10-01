@@ -417,5 +417,12 @@
     "rejectTitle": "Reject {name}?",
     "rejectBody": "The applicant will see this reason.",
     "failed": "That didn't go through: {message}"
+  },
+  "demo": {
+    "title": "Demo world",
+    "intro": "Rebuilds the demo brands, campaigns and vouchers and gives every demo login a fresh account. Old demo accounts are suspended and their points held. It takes a few minutes.",
+    "button": "Reset demo world",
+    "queued": "The reset has started. Demo logins work again in a few minutes.",
+    "failed": "The reset could not be started. Try again."
   }
 }

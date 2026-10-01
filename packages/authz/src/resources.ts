@@ -225,6 +225,8 @@ export const RESOURCE_ACTIONS = {
     "grant_role",
     "set_feature_flag",
     "trip_kill_switch",
+    // 13.1.a: rebuild the demo world and its logins (never in production).
+    "reset_demo_world",
     // 1.2.f (F12/F23): per-region economy settings, same resource kind,
     // deliberately absent from admin's rule -- see platform_setting.yaml.
     "view_setting",

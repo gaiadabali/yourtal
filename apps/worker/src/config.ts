@@ -39,6 +39,14 @@ const envSchema = z.object({
   // `delivery-log-ingest.ts` treats "" as "nothing to ingest yet" rather
   // than failing; staging's `.gaiadeploy.yml` sets the real path.
   NGINX_ACCESS_LOG_PATH: z.string().default(""),
+  // 13.1: the demo reset and daily demo activity. Both refuse to run unless
+  // the owner URL and the demo password are set, and never in production.
+  APP_ENV: z.string().default("dev"),
+  DATABASE_OWNER_URL: z.url().optional(),
+  STAGING_DEMO_PASSWORD: z.string().min(1).optional(),
+  SITE_URL: z.url().optional(),
+  // Helios's api port (infra/PORTS.md); a local slot sets its own.
+  DEMO_API_BASE_URL: z.url().default("http://127.0.0.1:26301"),
 });
 
 export interface WorkerConfig {
@@ -52,6 +60,13 @@ export interface WorkerConfig {
   readonly voucher: { readonly baseUrl: string; readonly serviceSecret: string };
   readonly webhookSecretEncryptionKey: string;
   readonly nginxAccessLogPath: string;
+  /** Present only where the demo world may be reset (never production). */
+  readonly demo?: {
+    readonly ownerDatabaseUrl: string;
+    readonly password: string;
+    readonly siteUrl: string;
+    readonly apiBaseUrl: string;
+  };
 }
 
 /** `process.env` is read in exactly this one file. Everything else takes `WorkerConfig`. */
@@ -68,5 +83,20 @@ export function loadWorkerConfig(source: NodeJS.ProcessEnv = process.env): Worke
     voucher: { baseUrl: env.VOUCHER_BASE_URL, serviceSecret: env.VOUCHER_SERVICE_SECRET },
     webhookSecretEncryptionKey: env.WEBHOOK_SECRET_ENCRYPTION_KEY,
     nginxAccessLogPath: env.NGINX_ACCESS_LOG_PATH,
+    ...(env.APP_ENV !== "production" &&
+    env.DATABASE_OWNER_URL !== undefined &&
+    env.STAGING_DEMO_PASSWORD !== undefined
+      ? {
+          demo: {
+            ownerDatabaseUrl: env.DATABASE_OWNER_URL,
+            password: env.STAGING_DEMO_PASSWORD,
+            // Guardian links point at the web app; staging's is fixed (.gaiadeploy.yml).
+            siteUrl:
+              env.SITE_URL ??
+              (env.APP_ENV === "staging" ? "https://yourtal.gaiada.com" : "http://127.0.0.1:3000"),
+            apiBaseUrl: env.DEMO_API_BASE_URL,
+          },
+        }
+      : {}),
   };
 }

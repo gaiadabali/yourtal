@@ -4,10 +4,17 @@ import { Card, CardContent } from "@yourtal/ui/card";
 import { KeyValue } from "@yourtal/ui/key-value";
 import { PageHeader } from "@yourtal/ui/page-header";
 import { requireStaffSession } from "@/features/staff/staff-session";
+import { DemoResetCard } from "@/features/staff/demo/demo-reset-card";
 
 /** `/staff`: who is signed in, with which staff roles. Sections arrive with 9.2–9.5. */
-export default async function StaffOverviewPage() {
+export default async function StaffOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ demo?: string }>;
+}) {
   const session = await requireStaffSession();
+  const { demo } = await searchParams;
+  const demoWorld = session.roles.includes("admin") && process.env["APP_ENV"] !== "production";
   const t = await getTranslations("staff");
   return (
     <div className="flex flex-col gap-6">
@@ -35,6 +42,7 @@ export default async function StaffOverviewPage() {
           />
         </CardContent>
       </Card>
+      {demoWorld ? <DemoResetCard outcome={demo} /> : null}
     </div>
   );
 }

@@ -417,5 +417,12 @@
     "rejectTitle": "Tolak {name}?",
     "rejectBody": "Pendaftar akan melihat alasan ini.",
     "failed": "Gagal diproses: {message}"
+  },
+  "demo": {
+    "title": "Dunia demo",
+    "intro": "Membangun ulang merek, kampanye, dan voucher demo, serta memberi setiap login demo akun baru. Akun demo lama ditangguhkan dan poinnya ditahan. Prosesnya beberapa menit.",
+    "button": "Atur ulang dunia demo",
+    "queued": "Pengaturan ulang sudah dimulai. Login demo bisa dipakai lagi dalam beberapa menit.",
+    "failed": "Pengaturan ulang tidak bisa dimulai. Coba lagi."
   }
 }

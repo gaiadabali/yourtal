@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./dsar-handlers": "./src/dsar-handlers.ts"
+    "./dsar-handlers": "./src/dsar-handlers.ts",
+    "./demo-world/reset": "./src/seed/demo-world/reset.ts",
+    "./demo-world/activity": "./src/seed/demo-world/activity.ts"
   },
   "scripts": {
     "migrate": "node scripts/atlas.mjs apply",

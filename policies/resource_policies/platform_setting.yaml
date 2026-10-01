@@ -34,7 +34,8 @@ resourcePolicy:
       ref: cerbos:///resource/platform_setting.json
   rules:
     - name: admin-operates-the-platform
-      actions: ["view", "grant_role", "set_feature_flag", "trip_kill_switch"]
+      # 13.1.a adds reset_demo_world: a platform operation, not data access.
+      actions: ["view", "grant_role", "set_feature_flag", "trip_kill_switch", "reset_demo_world"]
       effect: EFFECT_ALLOW
       roles: ["admin"]
       # Scoped away from region_setting.* keys, not just left unmentioned:

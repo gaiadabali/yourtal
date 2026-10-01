@@ -109,3 +109,22 @@ tests:
         resource: region_setting_by_finance_yani
         actions:
           { view_setting: EFFECT_ALLOW, propose_setting: EFFECT_DENY, approve_setting: EFFECT_DENY }
+
+  - name: 13.1.a only admin resets the demo world
+    input:
+      principals: [admin_root, ops_zul, finance_yani, budi_owner]
+      resources: [kill_switch]
+      actions: [reset_demo_world]
+    expected:
+      - principal: admin_root
+        resource: kill_switch
+        actions: { reset_demo_world: EFFECT_ALLOW }
+      - principal: ops_zul
+        resource: kill_switch
+        actions: { reset_demo_world: EFFECT_DENY }
+      - principal: finance_yani
+        resource: kill_switch
+        actions: { reset_demo_world: EFFECT_DENY }
+      - principal: budi_owner
+        resource: kill_switch
+        actions: { reset_demo_world: EFFECT_DENY }

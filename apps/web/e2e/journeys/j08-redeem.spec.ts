@@ -1,20 +1,175 @@
-import { expect, test } from "@playwright/test";
-import { REGIONS } from "./demo";
-import { closeDb, db, demoCaller, one, requireBusinessEnv } from "./business";
+import { createHash, createHmac, randomUUID } from "node:crypto";
+import { expect, test, type APIRequestContext, type Browser } from "@playwright/test";
+import { REGIONS, apiRegister, useSession, type RegionCase } from "./demo";
+import {
+  callerFor,
+  closeDb,
+  db,
+  demoCaller,
+  eitherLocale,
+  msg,
+  one,
+  requireBusinessEnv,
+  staffCaller,
+  type Caller,
+} from "./business";
 
 const PIN = "4826";
+const VOUCHER_URL = process.env["VOUCHER_BASE_URL"] ?? "http://127.0.0.1:26333";
+
+interface Pick {
+  viewer: Caller;
+  person: string;
+  voucherId: string;
+  merchantId: string;
+  locationId: string;
+  remaining: number;
+}
 
 /**
- * Journey 8 (product-intent §2.2): the business owner provisions a counter
- * device in Studio; store staff pair it, unlock it with the PIN and enter
- * the customer's code; the device authorizes and captures, and both sides
- * see the receipt. Checks the authorization and capture rows and the
- * voucher's own state.
+ * The demo owner's cheapest reward a day's goodwill can buy, restocked the
+ * way a merchant restocks: the owner asks for a batch, a moderator approves.
+ */
+async function restockedReward(request: APIRequestContext, owner: Caller, r: RegionCase) {
+  const listing = await one<{ id: string; merchant_id: string }>(
+    `SELECT l.id::text, l.merchant_id::text FROM store.listings l
+       JOIN business.business_members m ON m.business_id = l.merchant_id AND m.role = 'owner'
+      WHERE m.user_id = $1 AND l.region = $2 AND l.lifecycle_state = 'active'
+        AND l.audience IN ('all_ages', 'adult') AND l.expires_at > now()
+      ORDER BY l.price_in_points, l.id LIMIT 1`,
+    [owner.userId, r.region],
+  );
+  const batch = await owner.post<{ id: string }>(
+    `/api/${listing.merchant_id}/store/voucher-batch-requests`,
+    { listingId: listing.id, quantity: 2, reason: "Journey 8 restock." },
+  );
+  const moderator = await staffCaller(request, "moderator");
+  await moderator.post(`/api/staff/moderation/voucher-batches/${batch.id}/approve`, {
+    reason: "Restock for a verified merchant.",
+  });
+  return listing.id;
+}
+
+/**
+ * A fresh customer who buys that reward in the store: an admin goodwill
+ * credit (the day's earn cap), released, then checkout, as the demo seed
+ * does (journey 7 proves buying on screen).
+ */
+async function customerWithVoucher(
+  request: APIRequestContext,
+  listingId: string,
+  r: RegionCase,
+  tag: string,
+): Promise<Pick> {
+  const viewer = callerFor(request, await apiRegister(request, r, `j08-${tag}`));
+  const admin = await staffCaller(request, "admin");
+  await admin.post(`/api/staff/users/${viewer.userId}/goodwill`, {
+    points: r.region === "AU" ? 500 : 5_000,
+    reason: "Journey 8 customer balance.",
+  });
+  await viewer.post("/api/dev/clock/release-pending", {});
+  const quote = await viewer.post<{ checkoutId: string }>("/api/checkout/quote", { listingId });
+  const bought = await viewer.post<{ voucherId: string }>("/api/checkout", {
+    checkoutId: quote.checkoutId,
+  });
+  const voucher = await one<{ merchant_id: string; location_id: string | null; remaining: string }>(
+    `SELECT merchant_id::text, location_id::text, remaining_value_minor::text AS remaining
+       FROM voucher.vouchers WHERE id = $1 AND owner_id = $2 AND state = 'active'`,
+    [bought.voucherId, viewer.userId],
+  );
+  const location =
+    voucher.location_id ??
+    (
+      await one<{ location_id: string }>(
+        `SELECT location_id::text FROM store.listing_location WHERE listing_id = $1 LIMIT 1`,
+        [listingId],
+      )
+    ).location_id;
+  return {
+    viewer,
+    person: tag,
+    voucherId: bought.voucherId,
+    merchantId: voucher.merchant_id,
+    locationId: location,
+    remaining: Number(voucher.remaining),
+  };
+}
+
+/** The code a customer reads out, taken off their real Wallet screen. */
+async function codeFromWallet(browser: Browser, baseURL: string, pick: Pick, r: RegionCase) {
+  const context = await browser.newContext();
+  await useSession(context, baseURL, pick.viewer.token, r);
+  const page = await context.newPage();
+  await page.goto(`/wallet/voucher/${pick.voucherId}`);
+  const code = (await page.locator("span.select-all").first().innerText()).trim();
+  await context.close();
+  expect(code, "the wallet shows a code a customer can read out").toMatch(/^\S{4,}$/);
+  return code;
+}
+
+/** One HMAC-signed merchant call, exactly as the Studio developer docs describe. */
+async function merchantCall(keyId: string, secret: string, path: string, body: unknown) {
+  const raw = JSON.stringify(body);
+  const idempotencyKey = randomUUID();
+  const t = Math.floor(Date.now() / 1000);
+  const canonical = [
+    String(t),
+    keyId,
+    "POST",
+    path,
+    idempotencyKey,
+    createHash("sha256").update(raw).digest("base64"),
+  ].join("\n");
+  const v1 = createHmac("sha256", secret).update(canonical).digest("hex");
+  const response = await fetch(`${VOUCHER_URL}${path}`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "idempotency-key": idempotencyKey,
+      "x-yourtal-signature": `t=${t},k=${keyId},v1=${v1}`,
+    },
+    body: raw,
+  });
+  const text = await response.text();
+  expect(response.ok, `${path}: ${response.status} ${text}`).toBeTruthy();
+  return JSON.parse(text) as Record<string, unknown>;
+}
+
+/** The ledger posting a capture makes (asynchronously), balanced. */
+async function expectCapturePosted(captureId: string) {
+  await expect
+    .poll(
+      async () =>
+        (
+          await db().query(`SELECT 1 FROM ledger.transfer WHERE idempotency_key = $1`, [
+            `capture_${captureId}`,
+          ])
+        ).rowCount,
+      { timeout: 30_000 },
+    )
+    .toBe(1);
+  const { rows } = await db().query<{ sum: string; legs: string }>(
+    `SELECT sum(e.amount_minor)::text AS sum, count(*)::text AS legs
+       FROM ledger.entry e JOIN ledger.transfer t ON t.id = e.transfer_id
+      WHERE t.idempotency_key = $1`,
+    [`capture_${captureId}`],
+  );
+  expect(rows[0]?.sum).toBe("0");
+  expect(Number(rows[0]?.legs)).toBeGreaterThanOrEqual(2);
+}
+
+/**
+ * Journey 8 (product-intent §2.2): store staff pair a counter, unlock it with
+ * the PIN, type the code the customer reads off their Wallet; the device
+ * authorizes and captures and both sides show the receipt. An online merchant
+ * makes the same two calls with a Studio-issued HMAC credential. Checks the
+ * authorization, capture and counter-log rows, the voucher's state and the
+ * ledger posting for each capture.
  */
 test.afterAll(closeDb);
 
 for (const r of REGIONS) {
-  test(`J8 ${r.region}: pair a counter, unlock with the PIN, redeem a customer's voucher`, async ({
+  test(`J8 ${r.region}: a counter redeems with the PIN; an online merchant redeems over HMAC`, async ({
     browser,
     request,
     baseURL,
@@ -22,91 +177,135 @@ for (const r of REGIONS) {
     test.setTimeout(240_000);
     requireBusinessEnv();
     const owner = await demoCaller(request, "owner", r);
-    // A demo viewer's unused voucher, and the owner of the brand that honours it.
-    let pick:
-      { person: string; voucherId: string; merchantId: string; locationId: string } | undefined;
-    for (const person of ["adult", "guardian", "viewer", "member"]) {
-      const viewer = await demoCaller(request, person, r);
-      const { vouchers } = await viewer.get<{ vouchers: { voucherId: string; status?: string }[] }>(
-        "/api/wallet/vouchers",
-      );
-      for (const voucher of vouchers.filter((v) => v.status === "active")) {
-        const { rows } = await db().query<{ merchant_id: string; location_id: string }>(
-          `SELECT v.merchant_id::text, v.location_id::text FROM voucher.vouchers v
-             JOIN business.business_members m ON m.business_id = v.merchant_id AND m.role = 'owner'
-            WHERE v.id = $1 AND m.user_id = $2`,
-          [voucher.voucherId, owner.userId],
-        );
-        if (rows[0]) {
-          pick = {
-            person,
-            voucherId: voucher.voucherId,
-            merchantId: rows[0].merchant_id,
-            locationId: rows[0].location_id,
-          };
-          break;
-        }
-      }
-      if (pick) break;
-    }
-    expect(
-      pick,
-      `no demo viewer in ${r.region} holds a voucher from the demo owner's brand`,
-    ).toBeDefined();
-    const { person, voucherId, merchantId, locationId } = pick!;
-    const viewer = await demoCaller(request, person, r);
+    const reward = await restockedReward(request, owner, r);
+    const atCounter = await customerWithVoucher(request, reward, r, "counter");
+    const online = await customerWithVoucher(request, reward, r, "online");
+    const m = (key: string) => msg(r, "merchant", key);
 
     // Studio: the owner provisions a counter with its PIN.
     const provisioned = await owner.post<{ pairingCode: string }>(
-      `/api/${merchantId}/studio/devices`,
-      { locationId, label: r.region === "AU" ? "Journey counter" : "Kasir journey", pin: PIN },
+      `/api/${atCounter.merchantId}/studio/devices`,
+      {
+        locationId: atCounter.locationId,
+        label: r.region === "AU" ? "Journey counter" : "Kasir journey",
+        pin: PIN,
+      },
     );
 
-    // The counter: pair, unlock, enter the code from the customer's Wallet.
+    // The counter: pair, lock, a wrong PIN refused, the right one unlocks.
     const counter = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    await counter.addCookies([{ name: "yt_locale", value: r.locale, url: baseURL! }]);
     const page = await counter.newPage();
     await page.goto(`${baseURL}/merchant/pair`);
-    await page.getByLabel(/Pairing code|Kode pemasangan/i).fill(provisioned.pairingCode);
-    await page.getByRole("button", { name: /Pair|Pasangkan/i }).click();
-    await page.getByLabel(/^PIN$/).fill(PIN);
-    await page.getByRole("button", { name: /Unlock|Buka/i }).click();
-    const { token } = await viewer.get<{ token: string }>(`/api/wallet/vouchers/${voucherId}/qr`);
-    const tab = page.getByRole("tab", { name: /Enter code|Masukkan kode/i });
+    // Until its first PIN unlock the counter does not know its shop's region or language.
+    const e = (key: string) => eitherLocale("merchant", key);
+    await page.getByLabel(e("provisioning.form.codeLabel")).fill(provisioned.pairingCode);
+    await page.getByRole("button", { name: e("provisioning.form.submitButton") }).click();
+    await page.getByRole("button", { name: e("provisioning.lockButton") }).click();
+    await page.getByLabel(e("provisioning.pinLabel")).fill("0000");
+    await page.getByRole("button", { name: e("provisioning.unlockButton") }).click();
+    await expect(page.getByText(e("provisioning.errorWrongPin"))).toBeVisible();
+    await page.getByLabel(e("provisioning.pinLabel")).fill(PIN);
+    await page.getByRole("button", { name: e("provisioning.unlockButton") }).click();
+    // From here it speaks the shop's language.
+    await expect(page.getByRole("tab", { name: m("portal.tabManual") })).toBeVisible();
+
+    // The customer reads the code off their Wallet; staff type it in.
+    const code = await codeFromWallet(browser, baseURL!, atCounter, r);
+    const tab = page.getByRole("tab", { name: m("portal.tabManual") });
     if (await tab.isVisible().catch(() => false)) await tab.click();
-    await page.getByLabel(/^(Voucher code|Kode voucher)$/).fill(token);
-    await page.getByRole("button", { name: /^(Look up voucher|Cari voucher)$/ }).click();
-    await page.getByRole("button", { name: /^(Confirm redemption|Konfirmasi redeem)$/ }).click();
-    await expect(
-      page.getByRole("heading", { name: /^(Redeemed|Berhasil di-redeem)$/ }),
-    ).toBeVisible();
+    await page.getByLabel(m("portal.manualCodeLabel"), { exact: true }).fill(code);
+    await page.getByRole("button", { name: m("portal.lookUpButton") }).click();
+    const amount = page.getByLabel(m("portal.amountLabel"));
+    if (await amount.isVisible().catch(() => false)) await amount.fill(String(atCounter.remaining));
+    await page.getByRole("button", { name: m("portal.confirmButton") }).click();
+    await expect(page.getByRole("heading", { name: m("portal.successHeading") })).toBeVisible();
     await page.screenshot({ path: `test-results/j08-counter-${r.slug}.png`, fullPage: true });
     await counter.close();
 
-    // The rows: one captured authorization from that device, and the voucher spent.
+    // One captured authorization from that device; the counter's log; the voucher spent.
     const auth = await one<{
+      id: string;
       state: string;
       device_id: string | null;
       amount: string;
       captured: string;
+      capture_id: string;
     }>(
-      `SELECT a.state, a.device_id::text, a.amount_minor::text AS amount, c.amount_minor::text AS captured
+      `SELECT a.id::text, a.state, a.device_id::text, a.amount_minor::text AS amount,
+              c.amount_minor::text AS captured, c.id::text AS capture_id
          FROM voucher.authorization a JOIN voucher.capture c ON c.authorization_id = a.id
         WHERE a.voucher_id = $1`,
-      [voucherId],
+      [atCounter.voucherId],
     );
     expect(auth.device_id).not.toBeNull();
     expect(auth.captured).toBe(auth.amount);
-    const voucher = await one<{ state: string; remaining: string }>(
-      `SELECT state, remaining_value_minor::text AS remaining FROM voucher.vouchers WHERE id = $1`,
-      [voucherId],
+    const logged = await one<{ device: string; location: string }>(
+      `SELECT device_id::text AS device, location_id::text AS location FROM store.counter_capture_log WHERE voucher_id = $1`,
+      [atCounter.voucherId],
     );
-    expect(["redeemed", "partially_redeemed", "active"]).toContain(voucher.state);
+    expect(logged).toEqual({ device: auth.device_id, location: atCounter.locationId });
+    const spent = await one<{ state: string; remaining: string }>(
+      `SELECT state, remaining_value_minor::text AS remaining FROM voucher.vouchers WHERE id = $1`,
+      [atCounter.voucherId],
+    );
+    expect(spent.state).toBe(Number(spent.remaining) === 0 ? "redeemed" : "partially_redeemed");
+    await expectCapturePosted(auth.capture_id);
 
     // The customer's side shows it redeemed.
-    const after = await viewer.get<{ vouchers: { voucherId: string; status?: string }[] }>(
-      "/api/wallet/vouchers",
+    const after = await atCounter.viewer.get<{
+      vouchers: { voucherId: string; status?: string }[];
+    }>("/api/wallet/vouchers");
+    expect(after.vouchers.find((v) => v.voucherId === atCounter.voucherId)?.status).not.toBe(
+      "active",
     );
-    const mine = after.vouchers.find((v) => v.voucherId === voucherId);
-    expect(mine?.status === "redeemed" || Number(voucher.remaining) > 0).toBe(true);
+
+    // Online: a Studio-issued credential, then authorize and capture over HMAC.
+    const credential = await owner.post<{ credentialId: string; secret: string }>(
+      `/api/${online.merchantId}/studio/developers/credentials`,
+      { label: `Journey 8 web shop ${r.region}`, sandbox: true },
+    );
+    const onlineCode = await codeFromWallet(browser, baseURL!, online, r);
+    const currency = r.region === "AU" ? "AUD" : "IDR";
+    const authorized = await merchantCall(
+      credential.credentialId,
+      credential.secret,
+      "/v1/vouchers/authorize",
+      {
+        code: onlineCode,
+        amount: online.remaining,
+        currency,
+        merchant_order_ref: `j08-web-${randomUUID()}`,
+      },
+    );
+    const captured = await merchantCall(
+      credential.credentialId,
+      credential.secret,
+      "/v1/vouchers/capture",
+      {
+        authorization_id: authorized["authorization_id"],
+        final_amount: online.remaining,
+      },
+    );
+    expect(captured["amount_captured"]).toBe(online.remaining);
+    const webAuth = await one<{ state: string; device_id: string | null; capture_id: string }>(
+      `SELECT a.state, a.device_id::text, c.id::text AS capture_id
+         FROM voucher.authorization a JOIN voucher.capture c ON c.authorization_id = a.id
+        WHERE a.voucher_id = $1`,
+      [online.voucherId],
+    );
+    expect(webAuth.device_id).toBeNull();
+    await expectCapturePosted(webAuth.capture_id);
+
+    // A forged signature is refused.
+    const forged = await fetch(`${VOUCHER_URL}/v1/vouchers/authorize`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-yourtal-signature": `t=1,k=${credential.credentialId},v1=00`,
+      },
+      body: "{}",
+    });
+    expect(forged.status).toBe(401);
   });
 }

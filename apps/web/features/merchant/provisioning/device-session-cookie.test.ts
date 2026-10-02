@@ -8,15 +8,25 @@ import type { DeviceBinding } from "./device-binding-schema";
  * Next.js request context. Each test gets a fresh in-memory cookie jar via
  * `vi.resetModules()` so writes in one test never leak into another.
  */
+/**
+ * Path-aware, like a browser (13.3.b): a delete only removes the cookie set
+ * at the same path, so a `/merchant` cookie survived a path-less delete and
+ * "Lock now" never locked.
+ */
 function createCookieJar() {
   const jar = new Map<string, string>();
+  const key = (name: string, path = "/") => `${path}|${name}`;
   return {
-    get: (name: string) => (jar.has(name) ? { value: jar.get(name) } : undefined),
-    set: (name: string, value: string) => {
-      jar.set(name, value);
+    get: (name: string) => {
+      const value = jar.get(key(name, "/merchant")) ?? jar.get(key(name));
+      return value === undefined ? undefined : { value };
     },
-    delete: (name: string) => {
-      jar.delete(name);
+    set: (name: string, value: string, options?: { path?: string }) => {
+      jar.set(key(name, options?.path), value);
+    },
+    delete: (target: string | { name: string; path?: string }) => {
+      if (typeof target === "string") jar.delete(key(target));
+      else jar.delete(key(target.name, target.path));
     },
   };
 }

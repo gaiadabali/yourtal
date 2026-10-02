@@ -2,7 +2,16 @@ import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { expect, type APIRequestContext } from "@playwright/test";
 import { Pool } from "pg";
-import { API, apiLogin, apiRegister, demoEmail, inboxToken, testIp, type RegionCase } from "./demo";
+import {
+  API,
+  REGIONS,
+  apiLogin,
+  apiRegister,
+  demoEmail,
+  inboxToken,
+  testIp,
+  type RegionCase,
+} from "./demo";
 
 /**
  * 13.3.b: shared setup for the business-side journeys (1, 2, 3, 4, 8, 12),
@@ -87,7 +96,7 @@ export async function demoCaller(request: APIRequestContext, person: string, r: 
 
 export async function staffCaller(
   request: APIRequestContext,
-  role: "ops" | "moderator" | "finance",
+  role: "ops" | "moderator" | "finance" | "admin" | "support",
 ) {
   return callerFor(request, await apiLogin(request, `${role}@demo.yourtal.test`));
 }
@@ -180,4 +189,10 @@ export async function addMember(
   const member = callerFor(request, account);
   await member.post("/api/me/businesses/invitations/accept", { token });
   return member;
+}
+
+/** Either locale's string, exactly: for a screen that has not learned its region yet. */
+export function eitherLocale(namespace: string, key: string): RegExp {
+  const esc = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`^(${REGIONS.map((r) => esc(msg(r, namespace, key))).join("|")})$`);
 }

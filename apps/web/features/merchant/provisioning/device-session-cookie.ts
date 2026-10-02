@@ -60,6 +60,8 @@ function decodeBinding(raw: string): unknown {
  * genuine cookie is verified again, for real, by the API on every call —
  * this function alone grants nothing.
  */
+const COOKIE_PATH = "/merchant";
+
 export async function readDeviceBinding(): Promise<DeviceBinding | null> {
   try {
     const store = await cookies();
@@ -87,7 +89,7 @@ export async function writeDeviceBinding(binding: DeviceBinding): Promise<void> 
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/merchant",
+    path: COOKIE_PATH,
     maxAge: DEVICE_COOKIE_MAX_AGE_SECONDS,
   });
 }
@@ -95,8 +97,9 @@ export async function writeDeviceBinding(binding: DeviceBinding): Promise<void> 
 /** Un-pairs this browser entirely — used when a device-authenticated call 401s (revoked or unknown credential). Also clears the unlock cookie: an un-paired device is never "unlocked." */
 export async function clearDeviceBinding(): Promise<void> {
   const store = await cookies();
-  store.delete(DEVICE_COOKIE);
-  store.delete(UNLOCK_COOKIE);
+  // Same path they were set at, or the browser keeps them (13.3.b).
+  store.delete({ name: DEVICE_COOKIE, path: COOKIE_PATH });
+  store.delete({ name: UNLOCK_COOKIE, path: COOKIE_PATH });
 }
 
 /** Whether this shift's PIN unlock is still in effect. */
@@ -112,7 +115,7 @@ export async function markUnlocked(): Promise<void> {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/merchant",
+    path: COOKIE_PATH,
     maxAge: UNLOCK_COOKIE_MAX_AGE_SECONDS,
   });
 }
@@ -120,5 +123,7 @@ export async function markUnlocked(): Promise<void> {
 /** Set by `lockDeviceAction` — manual "Lock now", auto-lock on inactivity, or auto-lock on the tab going hidden. Immediate: the very next request sees the device as locked. */
 export async function markLocked(): Promise<void> {
   const store = await cookies();
-  store.delete(UNLOCK_COOKIE);
+  // 13.3.b: a path-less delete left the `/merchant` cookie in place, so "Lock
+  // now" locked only the one response and the next request was unlocked again.
+  store.delete({ name: UNLOCK_COOKIE, path: COOKIE_PATH });
 }

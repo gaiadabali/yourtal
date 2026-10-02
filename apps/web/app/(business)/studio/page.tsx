@@ -36,18 +36,22 @@ export default async function StudioOverviewPage(props: PageProps<"/studio">) {
 
   const [drafts, balance, kybDocuments] = await Promise.all([
     listCampaignDrafts(business.id, business.displayName),
-    getBalance(business.id),
+    // Billing is owner/admin/finance only; anyone else still gets an overview.
+    getBalance(business.id).catch(() => null),
     business.isVerified ? Promise.resolve([]) : listKybDocuments(business.id),
   ]);
 
   const setupStatus = {
     channelSet: business.logoUrl !== null,
-    pointsBought: balance.remainingPoints > 0,
+    // Not this person's step when they cannot see billing (left off their list below).
+    pointsBought: balance === null || balance.remainingPoints > 0,
     campaignUploaded: drafts.some((draft) => draft.video.status === "ready"),
     questionsWritten: drafts.some((draft) => draft.questionBank.length > 0),
     campaignSubmitted: drafts.some((draft) => draft.status !== "draft"),
   };
-  const checklist = buildSetupChecklist(setupStatus);
+  const checklist = buildSetupChecklist(setupStatus).filter(
+    (step) => step.id !== "pointsBought" || balance !== null,
+  );
 
   return (
     <StudioChrome

@@ -429,6 +429,10 @@
     "checklist": {
       "title": "Finish setting up",
       "progress": "{doneCount} of {total} done"
+    },
+    "error": {
+      "message": "Something went wrong loading this business. Check your connection and try again.",
+      "retry": "Retry"
     }
   },
   "billing": {

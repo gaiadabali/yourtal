@@ -145,10 +145,15 @@ for (const r of REGIONS) {
     expect(verified).toEqual({ is_verified: true, doc: "verified" });
     const audit = await one<{ actor: string; outcome: string; region: string | null; reason: string }>(
       `SELECT actor_user_id AS actor, outcome, region, reason FROM staff.audit_event
-        WHERE action = 'kyb.approve' AND target_id = $1`,
+        WHERE action = 'business.kyb.approve' AND target_id = $1`,
       [business.id],
     );
-    expect(audit).toMatchObject({ actor: ops.userId, outcome: "succeeded", reason: "Registration certificate matches." });
+    expect(audit).toEqual({
+      actor: ops.userId,
+      outcome: "succeeded",
+      region: r.region,
+      reason: "Registration certificate matches.",
+    });
 
     // The owner invites a marketer from Team; the invitee joins through Studio.
     const inviteeAccount = await apiRegister(request, r, "j01-marketer");
@@ -182,6 +187,9 @@ for (const r of REGIONS) {
     await page.getByLabel(msg(r, "studio", "join.codeLabel")).fill(code);
     await page.getByRole("button", { name: msg(r, "studio", "join.submit") }).click();
     await expect(page).toHaveURL(new RegExp(`/studio\\?business=${business.id}`));
+    // A marketer cannot see billing, and still gets a working overview.
+    await expect(page.getByText(`Journey ${r.region}`).first()).toBeVisible();
+    await expect(page.getByText(msg(r, "studio", "chrome.error.message"))).toHaveCount(0);
     const member = await one<{ role: string }>(
       `SELECT role FROM business.business_members WHERE business_id = $1 AND user_id = $2`,
       [business.id, inviteeAccount.userId],

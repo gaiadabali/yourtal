@@ -429,6 +429,10 @@
     "checklist": {
       "title": "Selesaikan penyiapan",
       "progress": "{doneCount} dari {total} selesai"
+    },
+    "error": {
+      "message": "Terjadi kesalahan saat memuat bisnis ini. Periksa koneksi Anda dan coba lagi.",
+      "retry": "Coba lagi"
     }
   },
   "billing": {

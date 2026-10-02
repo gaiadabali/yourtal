@@ -97,14 +97,18 @@ for (const r of REGIONS) {
 
     await useSession(page.context(), baseURL!, marketer.token, r);
     await page.goto(`/studio/campaigns?business=${businessId}`);
+    const existing = new Set(
+      (await marketer.get<{ id: string }[]>(`/api/${businessId}/studio/campaigns`)).map(
+        (c) => c.id,
+      ),
+    );
     await page.getByRole("button", { name: t("list.newCampaign") }).click();
     await expect(page.getByLabel(t("details.titleLabel"), { exact: true })).toBeVisible();
-    const campaignId = (
-      await one<{ id: string }>(
-        `SELECT id::text FROM campaign.campaigns WHERE business_id = $1 ORDER BY ctid DESC LIMIT 1`,
-        [businessId],
-      )
-    ).id;
+    const created = (
+      await marketer.get<{ id: string }[]>(`/api/${businessId}/studio/campaigns`)
+    ).filter((c) => !existing.has(c.id));
+    expect(created).toHaveLength(1);
+    const campaignId = created[0]!.id;
 
     // Details: a title the automated screen will block, schedule, audience, Open View.
     await page.getByLabel(t("details.titleLabel"), { exact: true }).fill(`${title} sim-block-me`);
@@ -194,7 +198,9 @@ for (const r of REGIONS) {
         { timeout: 20_000 },
       )
       .toBe("in_review");
-    await expect(page.getByText(t("status.label.in_review"), { exact: true }).first()).toBeVisible();
+    await expect(
+      page.getByText(t("status.label.in_review"), { exact: true }).first(),
+    ).toBeVisible();
     const submitted = await one<{
       state: string;
       title: string;
@@ -264,10 +270,20 @@ for (const r of REGIONS) {
 
     // Live in its own region, invisible from the other.
     const viewer = callerFor(request, await apiRegister(request, r, "j03-viewer"));
-    const seen = await viewer.get<{ id: string; openViewing?: boolean }>(
-      `/api/campaigns/${campaignId}`,
-    );
-    expect(seen.id).toBe(campaignId);
+    const seen = await viewer.get<{
+      id: string;
+      openViewing: boolean;
+      durationSeconds: number;
+      chapters: unknown[];
+      region: string;
+    }>(`/api/campaigns/${campaignId}`);
+    expect(seen).toMatchObject({
+      id: campaignId,
+      openViewing: true,
+      durationSeconds: SECONDS,
+      region: r.region,
+    });
+    expect(seen.chapters).toHaveLength(1);
     const other = REGIONS.find((x) => x.region !== r.region)!;
     const outsider = await apiRegister(request, other, "j03-outsider");
     const crossed = await request.get(

@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/yourtal/services/voucher/internal/chain"
 	"github.com/yourtal/services/voucher/internal/issue"
@@ -372,6 +373,23 @@ func afterCapture(policy string, remaining, captured int64) (int64, lifecycle.St
 // `faceValueMinor` has been drawn down. faceValueMinor is always > 0 (the
 // listing and batch both enforce it); captured is always in [0,
 // faceValueMinor], so the result is always in [0, settlementMinor].
+// SettlementOf is the settlement value S a voucher was sold against: its
+// batch's, or, for a voucher minted with no batch, its listing's.
+func SettlementOf(ctx context.Context, q *sqlcgen.Queries, batchID, listingID pgtype.UUID) (int64, error) {
+	if batchID.Valid {
+		batch, err := q.GetBatch(ctx, batchID)
+		if err != nil {
+			return 0, fmt.Errorf("reading the batch's settlement value: %w", err)
+		}
+		return batch.SettlementValueMinor, nil
+	}
+	listing, err := q.GetListingForBatch(ctx, listingID)
+	if err != nil {
+		return 0, fmt.Errorf("reading the listing's settlement value: %w", err)
+	}
+	return listing.SettlementValueMinor, nil
+}
+
 // PayableShare is what the ledger owes the merchant for one capture: its share
 // of ceil(S × captured ÷ face), telescoped over prior captures so the total
 // never exceeds S. Both capture paths (merchant HMAC and counter device) use it.

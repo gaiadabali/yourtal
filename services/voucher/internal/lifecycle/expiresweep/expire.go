@@ -118,11 +118,22 @@ func (s *Sweeper) expireOne(ctx context.Context, voucherID pgtype.UUID) (bool, e
 			return fmt.Errorf("recording the webhook outbox row for %s: %w", uuidString(voucherID), err)
 		}
 
-		if err := queries.InsertExpiryOutbox(ctx, sqlcgen.InsertExpiryOutboxParams{
-			VoucherID: voucherID, Region: voucher.Region,
-			AmountMinor: voucher.RemainingValueMinor, Currency: voucher.Currency,
-		}); err != nil {
-			return fmt.Errorf("recording the expiry outbox row for %s: %w", uuidString(voucherID), err)
+		// 13.3.c: the ledger releases what it still owes for this voucher, the
+		// settlement share of the unredeemed remainder (a burn put only S into
+		// voucher_liability), never the face value of what is left.
+		settlement, err := redeem.SettlementOf(ctx, queries, voucher.BatchID, voucher.ListingID)
+		if err != nil {
+			return fmt.Errorf("expiring %s: %w", uuidString(voucherID), err)
+		}
+		owedMinor := redeem.PayableShare(settlement, voucher.FaceValueMinor,
+			voucher.FaceValueMinor-voucher.RemainingValueMinor, voucher.FaceValueMinor)
+		if owedMinor > 0 {
+			if err := queries.InsertExpiryOutbox(ctx, sqlcgen.InsertExpiryOutboxParams{
+				VoucherID: voucherID, Region: voucher.Region,
+				AmountMinor: owedMinor, Currency: voucher.Currency,
+			}); err != nil {
+				return fmt.Errorf("recording the expiry outbox row for %s: %w", uuidString(voucherID), err)
+			}
 		}
 		moved = true
 		return nil

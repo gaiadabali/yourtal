@@ -87,8 +87,8 @@ describe.skipIf(!live)("J9 settle", () => {
       // The voucher service posts the capture to the ledger from its outbox.
       const payableId = `mer_${s.businessId}_payable_${s.currency}`;
       await eventually(async () => (await payable(journey, payableId)) > 0, 30_000);
-    // 13.3.c: the shop is owed the settlement value S, not the face value it took.
-    expect(await payable(journey, payableId)).toBe(s.settlementMinor);
+      // 13.3.c: the shop is owed the settlement value S, not the face value it took.
+      expect(await payable(journey, payableId)).toBe(s.settlementMinor);
 
       const statement = await generateStatement(journey, s.businessId, region);
       expect(statement).toMatchObject({

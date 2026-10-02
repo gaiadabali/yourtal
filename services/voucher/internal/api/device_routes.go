@@ -327,11 +327,11 @@ func (a *API) captureAsDevice(w http.ResponseWriter, r *http.Request) {
 		// comment. 13.3.c: at the settlement share, never the face value the
 		// counter took (a burn only put S into voucher_liability), the same
 		// amount the merchant-HMAC path posts.
-		batch, err := queries.GetBatch(r.Context(), voucher.BatchID)
+		settlement, err := redeem.SettlementOf(r.Context(), queries, voucher.BatchID, voucher.ListingID)
 		if err != nil {
-			return fmt.Errorf("reading the voucher's batch for its settlement value: %w", err)
+			return err
 		}
-		payableMinor := redeem.PayableShare(batch.SettlementValueMinor, voucher.FaceValueMinor,
+		payableMinor := redeem.PayableShare(settlement, voucher.FaceValueMinor,
 			voucher.FaceValueMinor-voucher.RemainingValueMinor, voucher.FaceValueMinor-remaining)
 		if payableMinor > 0 {
 			if err := queries.InsertCaptureOutbox(r.Context(), sqlcgen.InsertCaptureOutboxParams{

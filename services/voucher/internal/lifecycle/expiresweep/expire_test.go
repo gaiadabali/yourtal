@@ -171,8 +171,8 @@ func TestSweepDueExpiresAnOverdueActiveVoucher(t *testing.T) {
 		voucherID).Scan(&outboxAmount, &posted); err != nil {
 		t.Fatalf("reading expiry outbox: %v", err)
 	}
-	if outboxAmount != 50_000 {
-		t.Errorf("expiry_outbox amount = %d, want 50000 (the face value, never redeemed from)", outboxAmount)
+	if outboxAmount != 16_000 {
+		t.Errorf("expiry_outbox amount = %d, want 16000 (S, never redeemed from; the burn only put S into voucher_liability)", outboxAmount)
 	}
 	if posted != nil {
 		t.Error("expiry_outbox was already marked posted — nothing has drained it in this test")

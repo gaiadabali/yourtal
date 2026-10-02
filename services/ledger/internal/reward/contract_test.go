@@ -48,8 +48,8 @@ func TestGrantRewardPaysTheTermsOncePerCampaignAndReplays(t *testing.T) {
 	campaign := newLiveCampaign(t, engine, 100, 40, 1_000_000)
 	user := freshUser()
 
-	// 4.4.b: 100 + floor(40 × 2 ÷ 3) = 126.
-	req := campaign.reward(user, 126, 3, 2, 1)
+	// F96: two of three right earns the base only, 100.
+	req := campaign.reward(user, 100, 3, 2, 1)
 	first, err := engine.GrantReward(ctx, req)
 	if err != nil {
 		t.Fatal(err)
@@ -61,11 +61,11 @@ func TestGrantRewardPaysTheTermsOncePerCampaignAndReplays(t *testing.T) {
 		t.Fatalf("a replay: %+v, %v", replay, err)
 	}
 	// 4.4.j: a second session on the same campaign earns nothing.
-	if _, err := engine.GrantReward(ctx, campaign.reward(user, 126, 3, 2, 1)); !errors.Is(err, reward.ErrAlreadyGranted) {
+	if _, err := engine.GrantReward(ctx, campaign.reward(user, 100, 3, 2, 1)); !errors.Is(err, reward.ErrAlreadyGranted) {
 		t.Errorf("a second session: %v", err)
 	}
-	if b, _ := ledger.New(pool).Balance(ctx, ledger.UserAccountID(user, ledger.PurposePending)); b != 126 {
-		t.Errorf("pending = %d, want 126", b)
+	if b, _ := ledger.New(pool).Balance(ctx, ledger.UserAccountID(user, ledger.PurposePending)); b != 100 {
+		t.Errorf("pending = %d, want 100", b)
 	}
 }
 

@@ -76,4 +76,4 @@ desktop.ini
 
 # The voucher service writes daily proof roots here when run from its own folder.
 services/voucher/data/
-data/proof-roots/
+**/data/proof-roots/

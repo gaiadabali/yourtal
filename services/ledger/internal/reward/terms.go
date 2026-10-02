@@ -34,14 +34,15 @@ func (e *Engine) WithAttestationSecret(secret []byte) *Engine {
 }
 
 // TermsPoints is what a completion earns under its terms (4.4.b): the base,
-// plus floor(bonus × correct ÷ asked) when the terms score accuracy. A
+// plus the whole bonus only for a perfect score when the terms score accuracy
+// (F96, as the terms card says and apps/api's pointsForCompletion pays). A
 // timed-out question counts as asked and wrong (F10), so the base is always
 // earned by a completed watch.
 func TermsPoints(base, bonus int64, scoringRule string, asked, correct int) int64 {
-	if scoringRule != scoringWithBonus || asked <= 0 {
+	if scoringRule != scoringWithBonus || asked <= 0 || correct < asked {
 		return base
 	}
-	return base + bonus*int64(correct)/int64(asked)
+	return base + bonus
 }
 
 // campaignGrant resolves a reward request into the grant it may make: the

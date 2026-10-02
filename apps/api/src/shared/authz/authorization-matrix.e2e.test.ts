@@ -177,9 +177,9 @@ describe("the authorization matrix", () => {
       for (const role of ["user", "business_user", "store_device"] as const) {
         const crossRegion = allowed(role, region)
           .filter(([id]) => id.endsWith(`-${other}`) && regional(id.slice(0, -`-${other}`.length)))
-          .map(([id, acts]) => [
+          .map(([id, acts]): [string, string[]] => [
             id,
-            acts.filter((a) => !REGIONLESS_ACTIONS.has(`${id.split("-")[0]}.${a}`)),
+            acts.filter((a) => !REGIONLESS_ACTIONS.has(`${id.split("-")[0] ?? ""}.${a}`)),
           ])
           .filter(([, acts]) => acts.length > 0);
         expect(crossRegion, `${role}@${region} across the region wall`).toEqual([]);

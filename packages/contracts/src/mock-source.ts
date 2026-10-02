@@ -44,17 +44,17 @@ const DEPLOYED = new Set(["staging", "production"]);
 export function parseDataSourceMode(
   env: Readonly<Record<string, string | undefined>>,
 ): DataSourceMode {
-  if (DEPLOYED.has(env["APP_ENV"] ?? "")) {
-    if (env["YOURTAL_DATA_SOURCE"] === "mock") {
-      throw new Error(`YOURTAL_DATA_SOURCE=mock is refused on APP_ENV=${String(env["APP_ENV"])}`);
-    }
-    return "live";
-  }
   const result = dataSourceEnvSchema.safeParse(env);
   if (!result.success) {
     throw new Error(
       `Invalid YOURTAL_DATA_SOURCE environment configuration: ${z.prettifyError(result.error)}`,
     );
+  }
+  if (DEPLOYED.has(env["APP_ENV"] ?? "")) {
+    if (env["YOURTAL_DATA_SOURCE"] === "mock") {
+      throw new Error(`YOURTAL_DATA_SOURCE=mock is refused on APP_ENV=${String(env["APP_ENV"])}`);
+    }
+    return "live";
   }
   return result.data.YOURTAL_DATA_SOURCE;
 }

@@ -27,10 +27,10 @@ describe("resolveStudioDataSourceMode", () => {
     expect(resolveStudioDataSourceMode({ YOURTAL_DATA_SOURCE: "live" })).toBe("live");
   });
 
-  it("an explicit YOURTAL_DATA_SOURCE=mock overrides staging back to mock", () => {
-    expect(resolveStudioDataSourceMode({ APP_ENV: "staging", YOURTAL_DATA_SOURCE: "mock" })).toBe(
-      "mock",
-    );
+  it("refuses an explicit YOURTAL_DATA_SOURCE=mock on staging (13.3.c: a deployed build never reads mocks)", () => {
+    expect(() =>
+      resolveStudioDataSourceMode({ APP_ENV: "staging", YOURTAL_DATA_SOURCE: "mock" }),
+    ).toThrow(/refused/);
   });
 
   it("an explicit YOURTAL_DATA_SOURCE=live is consistent with staging's own default", () => {

@@ -160,6 +160,13 @@
       "dataCostBadge": "Biaya data {amount}",
       "startVideo": "Mulai video",
       "startVideoAriaLabel": "Mulai video — hanya pratinjau, tidak interaktif di sini"
+    },
+    "captions": {
+      "label": "File teks (.vtt)",
+      "help": "Opsional. Dipakai jika video Anda tidak punya teks sendiri.",
+      "saved": "{name} tersimpan. Penonton mendapat teks ini jika video tidak punya.",
+      "invalid": "Itu bukan file WebVTT berisi teks. Pastikan diawali WEBVTT dan memiliki baris berwaktu.",
+      "tooLarge": "File terlalu besar. File teks maksimal 512 KB."
     }
   },
   "questionBank": {

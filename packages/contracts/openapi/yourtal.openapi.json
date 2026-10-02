@@ -10190,6 +10190,139 @@
         }
       }
     },
+    "/api/{tenantId}/studio/media/{assetId}/captions": {
+      "put": {
+        "summary": "Upload a sidecar .vtt, used when the video has no subtitle stream (13.9.c)",
+        "tags": [
+          "studio",
+          "media"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "assetId",
+            "in": "path",
+            "required": true,
+            "description": "The media asset being uploaded to or read.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The WebVTT file's text: starts with WEBVTT and has at least one cue.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadSidecarCaptionsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The asset, with sidecarCaptionsUrl set.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaAsset"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No media asset exists with this id for this tenant.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The asset is not in the state this action requires (e.g. completing an already-completed upload).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/{tenantId}/studio/campaigns/{campaignId}/boost": {
       "get": {
         "summary": "A campaign's boost setting and delivery report",
@@ -24251,6 +24384,13 @@
               "null"
             ]
           },
+          "sidecarCaptionsUrl": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "renditionBytes": {
             "anyOf": [
               {
@@ -24292,6 +24432,7 @@
           "teaserUrl",
           "hlsUrl",
           "captionsUrl",
+          "sidecarCaptionsUrl",
           "renditionBytes",
           "failureReason",
           "createdAt",
@@ -25634,6 +25775,20 @@
           "NIB",
           "NPWP"
         ]
+      },
+      "UploadSidecarCaptionsRequest": {
+        "description": "13.9.c: a business's own WebVTT file, up to 512 KB, used when the video has no subtitle stream.",
+        "type": "object",
+        "properties": {
+          "vtt": {
+            "type": "string",
+            "maxLength": 524288
+          }
+        },
+        "required": [
+          "vtt"
+        ],
+        "additionalProperties": false
       },
       "UserProfile": {
         "description": "The account's own profile, GET /api/me (1.4.d). trustTier, guardianEmail and parentConsentStatus are deliberately absent — F12: \"the tier is never shown to users\".",

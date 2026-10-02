@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -8,9 +9,13 @@ import {
   NotFoundException,
   Param,
   Post,
+  Put,
   Inject,
 } from "@nestjs/common";
-import { mediaReadyCallbackRequestSchema } from "@yourtal/contracts/studio/media";
+import {
+  mediaReadyCallbackRequestSchema,
+  uploadSidecarCaptionsRequestSchema,
+} from "@yourtal/contracts/studio/media";
 import {
   MEDIA_SERVICE_SIGNATURE_HEADER,
   verifyMediaServiceRequest,
@@ -53,6 +58,29 @@ export class MediaController {
     @Body() body: CompleteMediaUploadDto,
   ) {
     const result = await this.media.complete(tenantId, assetId, body);
+    if (!result.ok) throw mapError(result.error);
+    return result.asset;
+  }
+
+  @NotValueMoving(
+    "A full replacement of the asset's sidecar .vtt: a repeat stores the same file again.",
+  )
+  @Authorize({ kind: "media_asset", action: "upload" })
+  @Put(":assetId/captions")
+  async uploadCaptions(
+    @Param("tenantId") tenantId: string,
+    @Param("assetId") assetId: string,
+    @Body() body: unknown,
+  ) {
+    // 13.9.c: a business's own .vtt, used when the video has no subtitle stream.
+    const parsed = uploadSidecarCaptionsRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException({
+        code: "invalid_captions",
+        message: parsed.error.issues[0]?.message ?? "not a WebVTT file",
+      });
+    }
+    const result = await this.media.uploadSidecarCaptions(tenantId, assetId, parsed.data.vtt);
     if (!result.ok) throw mapError(result.error);
     return result.asset;
   }

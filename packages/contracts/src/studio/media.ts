@@ -80,6 +80,8 @@ export const mediaAssetSchema = z.object({
   teaserUrl: z.string().nullable(),
   hlsUrl: z.string().nullable(),
   captionsUrl: z.string().nullable(),
+  /** 13.9.c: a business-uploaded .vtt, the fallback when the video has no subtitle stream. */
+  sidecarCaptionsUrl: z.string().nullable().default(null),
   renditionBytes: mediaRenditionBytesSchema.nullable(),
   failureReason: z.string().nullable(),
   createdAt: z.iso.datetime({ offset: true }),
@@ -124,3 +126,20 @@ export const mediaTranscodeJobSchema = z.object({
   teaserStartSeconds: z.number().int().min(0),
 });
 export type MediaTranscodeJob = z.infer<typeof mediaTranscodeJobSchema>;
+
+/** 13.9.c: the most a sidecar caption file may be (an hour of dense cues is far less). */
+export const MAX_SIDECAR_CAPTIONS_BYTES = 512 * 1024;
+
+/** `PUT /api/{tenantId}/studio/media/{assetId}/captions`: a WebVTT file's text. */
+export const uploadSidecarCaptionsRequestSchema = z.object({
+  vtt: z
+    .string()
+    .max(MAX_SIDECAR_CAPTIONS_BYTES)
+    .refine((text) => /^\uFEFF?WEBVTT(?:[ \t].*)?(?:\r?\n|$)/.test(text), {
+      message: "a WebVTT file starts with WEBVTT",
+    })
+    .refine((text) => /\d{2}:\d{2}(?::\d{2})?\.\d{3}\s+-->\s+\d{2}:\d{2}/.test(text), {
+      message: "a WebVTT file needs at least one cue",
+    }),
+});
+export type UploadSidecarCaptionsRequest = z.infer<typeof uploadSidecarCaptionsRequestSchema>;

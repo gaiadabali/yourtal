@@ -13,7 +13,6 @@ package contracts
 import (
 	"encoding/json"
 	"time"
-	"bytes"
 	"fmt"
 )
 
@@ -22,11 +21,11 @@ var _ MappedNullable = &MediaAsset{}
 
 // MediaAsset One uploaded video and its transcoded renditions, for Studio to poll while the worker processes it. status \"ready\" implies posterUrl/teaserUrl/hlsUrl are all set and status \"failed\" implies failureReason is set -- both enforced by the DB CHECKs in studio.media_assets, not by a zod .refine() here, so crossFieldRules stays empty.
 type MediaAsset struct {
-	Id string `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	BusinessId string `json:"businessId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	CampaignId string `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	Id NullableString `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	BusinessId NullableString `json:"businessId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	CampaignId NullableString `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Status MediaAssetStatus `json:"status"`
-	ContentType string `json:"contentType"`
+	ContentType NullableString `json:"contentType"`
 	SizeBytes int64 `json:"sizeBytes"`
 	TeaserStartSeconds int64 `json:"teaserStartSeconds"`
 	DurationSeconds NullableInt64 `json:"durationSeconds"`
@@ -35,10 +34,12 @@ type MediaAsset struct {
 	TeaserUrl NullableString `json:"teaserUrl"`
 	HlsUrl NullableString `json:"hlsUrl"`
 	CaptionsUrl NullableString `json:"captionsUrl"`
+	SidecarCaptionsUrl NullableString `json:"sidecarCaptionsUrl"`
 	RenditionBytes NullableMediaRenditionBytes `json:"renditionBytes"`
 	FailureReason NullableString `json:"failureReason"`
 	CreatedAt time.Time `json:"createdAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"`
 	UpdatedAt time.Time `json:"updatedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"`
+	AdditionalProperties map[string]interface{}
 }
 
 type _MediaAsset MediaAsset
@@ -47,7 +48,7 @@ type _MediaAsset MediaAsset
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewMediaAsset(id string, businessId string, campaignId string, status MediaAssetStatus, contentType string, sizeBytes int64, teaserStartSeconds int64, durationSeconds NullableInt64, aspect NullableString, posterUrl NullableString, teaserUrl NullableString, hlsUrl NullableString, captionsUrl NullableString, renditionBytes NullableMediaRenditionBytes, failureReason NullableString, createdAt time.Time, updatedAt time.Time) *MediaAsset {
+func NewMediaAsset(id NullableString, businessId NullableString, campaignId NullableString, status MediaAssetStatus, contentType NullableString, sizeBytes int64, teaserStartSeconds int64, durationSeconds NullableInt64, aspect NullableString, posterUrl NullableString, teaserUrl NullableString, hlsUrl NullableString, captionsUrl NullableString, sidecarCaptionsUrl NullableString, renditionBytes NullableMediaRenditionBytes, failureReason NullableString, createdAt time.Time, updatedAt time.Time) *MediaAsset {
 	this := MediaAsset{}
 	this.Id = id
 	this.BusinessId = businessId
@@ -62,6 +63,7 @@ func NewMediaAsset(id string, businessId string, campaignId string, status Media
 	this.TeaserUrl = teaserUrl
 	this.HlsUrl = hlsUrl
 	this.CaptionsUrl = captionsUrl
+	this.SidecarCaptionsUrl = sidecarCaptionsUrl
 	this.RenditionBytes = renditionBytes
 	this.FailureReason = failureReason
 	this.CreatedAt = createdAt
@@ -78,75 +80,81 @@ func NewMediaAssetWithDefaults() *MediaAsset {
 }
 
 // GetId returns the Id field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *MediaAsset) GetId() string {
-	if o == nil {
+	if o == nil || o.Id.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Id
+	return *o.Id.Get()
 }
 
 // GetIdOk returns a tuple with the Id field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MediaAsset) GetIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Id, true
+	return o.Id.Get(), o.Id.IsSet()
 }
 
 // SetId sets field value
 func (o *MediaAsset) SetId(v string) {
-	o.Id = v
+	o.Id.Set(&v)
 }
 
 // GetBusinessId returns the BusinessId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *MediaAsset) GetBusinessId() string {
-	if o == nil {
+	if o == nil || o.BusinessId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.BusinessId
+	return *o.BusinessId.Get()
 }
 
 // GetBusinessIdOk returns a tuple with the BusinessId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MediaAsset) GetBusinessIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.BusinessId, true
+	return o.BusinessId.Get(), o.BusinessId.IsSet()
 }
 
 // SetBusinessId sets field value
 func (o *MediaAsset) SetBusinessId(v string) {
-	o.BusinessId = v
+	o.BusinessId.Set(&v)
 }
 
 // GetCampaignId returns the CampaignId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *MediaAsset) GetCampaignId() string {
-	if o == nil {
+	if o == nil || o.CampaignId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.CampaignId
+	return *o.CampaignId.Get()
 }
 
 // GetCampaignIdOk returns a tuple with the CampaignId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MediaAsset) GetCampaignIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.CampaignId, true
+	return o.CampaignId.Get(), o.CampaignId.IsSet()
 }
 
 // SetCampaignId sets field value
 func (o *MediaAsset) SetCampaignId(v string) {
-	o.CampaignId = v
+	o.CampaignId.Set(&v)
 }
 
 // GetStatus returns the Status field value
@@ -174,27 +182,29 @@ func (o *MediaAsset) SetStatus(v MediaAssetStatus) {
 }
 
 // GetContentType returns the ContentType field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *MediaAsset) GetContentType() string {
-	if o == nil {
+	if o == nil || o.ContentType.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.ContentType
+	return *o.ContentType.Get()
 }
 
 // GetContentTypeOk returns a tuple with the ContentType field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MediaAsset) GetContentTypeOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ContentType, true
+	return o.ContentType.Get(), o.ContentType.IsSet()
 }
 
 // SetContentType sets field value
 func (o *MediaAsset) SetContentType(v string) {
-	o.ContentType = v
+	o.ContentType.Set(&v)
 }
 
 // GetSizeBytes returns the SizeBytes field value
@@ -401,6 +411,32 @@ func (o *MediaAsset) SetCaptionsUrl(v string) {
 	o.CaptionsUrl.Set(&v)
 }
 
+// GetSidecarCaptionsUrl returns the SidecarCaptionsUrl field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *MediaAsset) GetSidecarCaptionsUrl() string {
+	if o == nil || o.SidecarCaptionsUrl.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.SidecarCaptionsUrl.Get()
+}
+
+// GetSidecarCaptionsUrlOk returns a tuple with the SidecarCaptionsUrl field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *MediaAsset) GetSidecarCaptionsUrlOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.SidecarCaptionsUrl.Get(), o.SidecarCaptionsUrl.IsSet()
+}
+
+// SetSidecarCaptionsUrl sets field value
+func (o *MediaAsset) SetSidecarCaptionsUrl(v string) {
+	o.SidecarCaptionsUrl.Set(&v)
+}
+
 // GetRenditionBytes returns the RenditionBytes field value
 // If the value is explicit nil, the zero value for MediaRenditionBytes will be returned
 func (o *MediaAsset) GetRenditionBytes() MediaRenditionBytes {
@@ -511,11 +547,11 @@ func (o MediaAsset) MarshalJSON() ([]byte, error) {
 
 func (o MediaAsset) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["id"] = o.Id
-	toSerialize["businessId"] = o.BusinessId
-	toSerialize["campaignId"] = o.CampaignId
+	toSerialize["id"] = o.Id.Get()
+	toSerialize["businessId"] = o.BusinessId.Get()
+	toSerialize["campaignId"] = o.CampaignId.Get()
 	toSerialize["status"] = o.Status
-	toSerialize["contentType"] = o.ContentType
+	toSerialize["contentType"] = o.ContentType.Get()
 	toSerialize["sizeBytes"] = o.SizeBytes
 	toSerialize["teaserStartSeconds"] = o.TeaserStartSeconds
 	toSerialize["durationSeconds"] = o.DurationSeconds.Get()
@@ -524,10 +560,16 @@ func (o MediaAsset) ToMap() (map[string]interface{}, error) {
 	toSerialize["teaserUrl"] = o.TeaserUrl.Get()
 	toSerialize["hlsUrl"] = o.HlsUrl.Get()
 	toSerialize["captionsUrl"] = o.CaptionsUrl.Get()
+	toSerialize["sidecarCaptionsUrl"] = o.SidecarCaptionsUrl.Get()
 	toSerialize["renditionBytes"] = o.RenditionBytes.Get()
 	toSerialize["failureReason"] = o.FailureReason.Get()
 	toSerialize["createdAt"] = o.CreatedAt
 	toSerialize["updatedAt"] = o.UpdatedAt
+
+	for key, value := range o.AdditionalProperties {
+		toSerialize[key] = value
+	}
+
 	return toSerialize, nil
 }
 
@@ -549,6 +591,7 @@ func (o *MediaAsset) UnmarshalJSON(data []byte) (err error) {
 		"teaserUrl",
 		"hlsUrl",
 		"captionsUrl",
+		"sidecarCaptionsUrl",
 		"renditionBytes",
 		"failureReason",
 		"createdAt",
@@ -571,15 +614,37 @@ func (o *MediaAsset) UnmarshalJSON(data []byte) (err error) {
 
 	varMediaAsset := _MediaAsset{}
 
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varMediaAsset)
+	err = json.Unmarshal(data, &varMediaAsset)
 
 	if err != nil {
 		return err
 	}
 
 	*o = MediaAsset(varMediaAsset)
+
+	additionalProperties := make(map[string]interface{})
+
+	if err = json.Unmarshal(data, &additionalProperties); err == nil {
+		delete(additionalProperties, "id")
+		delete(additionalProperties, "businessId")
+		delete(additionalProperties, "campaignId")
+		delete(additionalProperties, "status")
+		delete(additionalProperties, "contentType")
+		delete(additionalProperties, "sizeBytes")
+		delete(additionalProperties, "teaserStartSeconds")
+		delete(additionalProperties, "durationSeconds")
+		delete(additionalProperties, "aspect")
+		delete(additionalProperties, "posterUrl")
+		delete(additionalProperties, "teaserUrl")
+		delete(additionalProperties, "hlsUrl")
+		delete(additionalProperties, "captionsUrl")
+		delete(additionalProperties, "sidecarCaptionsUrl")
+		delete(additionalProperties, "renditionBytes")
+		delete(additionalProperties, "failureReason")
+		delete(additionalProperties, "createdAt")
+		delete(additionalProperties, "updatedAt")
+		o.AdditionalProperties = additionalProperties
+	}
 
 	return err
 }

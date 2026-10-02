@@ -50,6 +50,30 @@ export class DrizzleMediaAssetRepository implements MediaAssetRepository {
       .where(eq(mediaAssets.id, assetId));
   }
 
+  async setSidecarCaptions(
+    assetId: string,
+    url: string,
+    useNow: boolean,
+  ): Promise<MediaAssetRecord> {
+    const [row] = await this.db
+      .update(mediaAssets)
+      .set({
+        sidecarCaptionsUrl: url,
+        ...(useNow ? { captionsUrl: url } : {}),
+        updatedAt: new Date(),
+      })
+      .where(eq(mediaAssets.id, assetId))
+      .returning();
+    if (row === undefined) throw new Error(`no media_assets row for ${assetId}`);
+    return toDomain(row);
+  }
+
+  async writeCampaignCaptions(campaignId: string, captionsUrl: string): Promise<void> {
+    await this.db.execute(
+      sql`UPDATE campaign.campaigns SET captions_url = ${captionsUrl} WHERE id = ${campaignId}`,
+    );
+  }
+
   async markReady(assetId: string, input: MarkReadyInput): Promise<MediaAssetRecord> {
     const [row] = await this.db
       .update(mediaAssets)
@@ -127,6 +151,7 @@ function toDomain(row: typeof mediaAssets.$inferSelect): MediaAssetRecord {
     teaserUrl: row.teaserUrl,
     hlsUrl: row.hlsUrl,
     captionsUrl: row.captionsUrl,
+    sidecarCaptionsUrl: row.sidecarCaptionsUrl,
     renditionBytes: row.renditionBytes,
     failureReason: row.failureReason,
     createdAt: row.createdAt.toISOString(),

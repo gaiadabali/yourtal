@@ -52,6 +52,10 @@ export function teaserObjectKey(assetId: string): string {
 export function captionsObjectKey(assetId: string): string {
   return `${CAPTIONS_PREFIX}/${assetId}.vtt`;
 }
+/** 13.9.c: the business's own .vtt, kept apart so an embedded track never overwrites it. */
+export function sidecarCaptionsObjectKey(assetId: string): string {
+  return `${CAPTIONS_PREFIX}/${assetId}.sidecar.vtt`;
+}
 /** The HLS asset id nginx and `hls-token.ts` route on is the media asset id itself. */
 export function hlsAssetObjectKey(assetId: string, file: string): string {
   return hlsObjectKey(assetId, file);

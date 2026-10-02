@@ -79,4 +79,19 @@ export const STUDIO_MEDIA_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     successSchema: ref("MediaAsset"),
     errors: [FORBIDDEN, ASSET_NOT_FOUND, SERVICE_UNAVAILABLE],
   },
+  {
+    method: "put",
+    path: "/api/{tenantId}/studio/media/{assetId}/captions",
+    summary: "Upload a sidecar .vtt, used when the video has no subtitle stream (13.9.c)",
+    tags: ["studio", "media"],
+    pathParams: [TENANT_ID_PARAM, ASSET_ID_PARAM],
+    requestBody: {
+      description: "The WebVTT file's text: starts with WEBVTT and has at least one cue.",
+      schema: ref("UploadSidecarCaptionsRequest"),
+    },
+    successStatus: 200,
+    successDescription: "The asset, with sidecarCaptionsUrl set.",
+    successSchema: ref("MediaAsset"),
+    errors: [VALIDATION_400, FORBIDDEN, ASSET_NOT_FOUND, INVALID_STATE, SERVICE_UNAVAILABLE],
+  },
 ];

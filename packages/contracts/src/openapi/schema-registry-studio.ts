@@ -1,5 +1,6 @@
 import {
   mediaAssetSchema,
+  uploadSidecarCaptionsRequestSchema,
   mediaAssetStatusSchema,
   mediaRenditionBytesSchema,
   initiateMediaUploadRequestSchema,
@@ -74,6 +75,13 @@ export const STUDIO_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
       'processes it. status "ready" implies posterUrl/teaserUrl/hlsUrl are all set and status ' +
       '"failed" implies failureReason is set -- both enforced by the DB CHECKs in ' +
       "studio.media_assets, not by a zod .refine() here, so crossFieldRules stays empty.",
+    crossFieldRules: [],
+  },
+  {
+    id: "UploadSidecarCaptionsRequest",
+    schema: uploadSidecarCaptionsRequestSchema,
+    description:
+      "13.9.c: a business's own WebVTT file, up to 512 KB, used when the video has no subtitle stream.",
     crossFieldRules: [],
   },
 ];

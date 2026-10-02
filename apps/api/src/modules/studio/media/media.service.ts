@@ -18,7 +18,10 @@ import {
   createMediaClient,
   createPresignClient,
   createRawUpload,
+  putMediaOutput,
+  sidecarCaptionsObjectKey,
 } from "@yourtal/media/studio-media";
+import { publicMediaUrl } from "@yourtal/media/hls-origin";
 import { defineQueue } from "@yourtal/queue/define-queue";
 import {
   MEDIA_ASSET_REPOSITORY,
@@ -139,6 +142,37 @@ export class MediaService {
     return { ok: true, asset: toPublicAsset(updated ?? record) };
   }
 
+  /**
+   * 13.9.c: stores a business's .vtt beside the video. It becomes the
+   * captions at once only when the video is already transcoded with no
+   * subtitle stream of its own; before that, `ready` picks it up.
+   */
+  async uploadSidecarCaptions(
+    businessId: string,
+    assetId: string,
+    vtt: string,
+  ): Promise<
+    | { readonly ok: true; readonly asset: MediaAsset }
+    | { readonly ok: false; readonly error: MediaServiceError }
+  > {
+    const record = await this.assets.findByIdForBusiness(assetId, businessId);
+    if (record === null) return { ok: false, error: { kind: "not_found" } };
+    if (record.status === "failed") {
+      return { ok: false, error: { kind: "invalid_state", reason: "the video failed to process" } };
+    }
+    const client = createMediaClient();
+    const key = sidecarCaptionsObjectKey(assetId);
+    await putMediaOutput(client, { kind: "captions", key, body: new TextEncoder().encode(vtt) });
+    client.destroy();
+    const url = publicMediaUrl(key);
+    const embedded =
+      record.captionsUrl !== null && record.captionsUrl !== record.sidecarCaptionsUrl;
+    const useNow = record.status === "ready" && !embedded;
+    const updated = await this.assets.setSidecarCaptions(assetId, url, useNow);
+    if (useNow) await this.assets.writeCampaignCaptions(record.campaignId, url);
+    return { ok: true, asset: toPublicAsset(updated) };
+  }
+
   async get(businessId: string, assetId: string): Promise<MediaAsset | null> {
     const record = await this.assets.findByIdForBusiness(assetId, businessId);
     return record === null ? null : toPublicAsset(record);
@@ -164,13 +198,15 @@ export class MediaService {
       return { ok: true };
     }
 
+    // 13.9.c: an embedded subtitle track wins; otherwise the business's own .vtt.
+    const captionsUrl = input.captionsUrl ?? record.sidecarCaptionsUrl;
     const updated = await this.assets.markReady(assetId, {
       durationSeconds: input.durationSeconds,
       aspect: input.aspect,
       posterUrl: input.posterUrl,
       teaserUrl: input.teaserUrl,
       hlsUrl: input.hlsUrl,
-      captionsUrl: input.captionsUrl,
+      captionsUrl,
       renditionBytes: input.renditionBytes,
     });
     // TASKS.md 7.2.b: "the studio module writes the campaign's media
@@ -179,7 +215,7 @@ export class MediaService {
       posterUrl: input.posterUrl,
       teaserUrl: input.teaserUrl,
       hlsUrl: input.hlsUrl,
-      captionsUrl: input.captionsUrl,
+      captionsUrl,
       // 13.9.b: submit needs these (campaigns_media_required_past_draft).
       aspect: input.aspect,
       estimatedBytes: input.renditionBytes.v540,

@@ -94,3 +94,18 @@ export async function getMediaAssetAction(
   if (!result.ok) return { ok: false, message: result.error.message };
   return { ok: true, data: result.data };
 }
+
+/** 13.9.c: a sidecar `.vtt` beside the video, used when it has no subtitle stream. */
+export async function uploadSidecarCaptionsAction(
+  businessId: string,
+  assetId: string,
+  vtt: string,
+): Promise<MediaActionResult<MediaAsset>> {
+  const result = await apiFetch(
+    `/api/${businessId}/studio/media/${assetId}/captions`,
+    mediaAssetSchema,
+    { method: "PUT", body: { vtt } },
+  );
+  if (!result.ok) return { ok: false, message: result.error.message };
+  return { ok: true, data: result.data };
+}

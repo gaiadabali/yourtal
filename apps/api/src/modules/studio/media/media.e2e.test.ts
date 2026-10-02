@@ -233,6 +233,91 @@ describe("studio media pipeline (7.2)", () => {
     expect(repeated.statusCode).toBe(200);
   });
 
+  // 13.9.c: a sidecar .vtt is the fallback for a video with no subtitle stream.
+  const VTT = ["WEBVTT", "", "00:00:01.000 --> 00:00:04.000", "Welcome to Harbour Grind.", ""].join(
+    "\n",
+  );
+
+  async function sendReady(assetId: string, captionsUrl: string | null) {
+    const payload = JSON.stringify({
+      status: "ready",
+      durationSeconds: 42,
+      aspect: "16:9",
+      posterUrl: `/media/posters/${assetId}.jpg`,
+      teaserUrl: `/media/teasers/${assetId}.mp4`,
+      hlsUrl: `/media/hls/${assetId}/index.m3u8`,
+      captionsUrl,
+      renditionBytes: { v360: 1_000_000, v540: 2_000_000, v720: 3_000_000 },
+    });
+    const path = `/api/internal/studio/media/${assetId}/ready`;
+    const signed = signMediaServiceRequest({
+      secret: SERVICE_SECRET,
+      method: "POST",
+      pathAndQuery: path,
+      body: payload,
+    });
+    const ready = await app.inject({
+      method: "POST",
+      url: path,
+      headers: { "content-type": "application/json", "x-yourtal-media-signature": signed },
+      payload,
+    });
+    expect(ready.statusCode, ready.body).toBe(200);
+  }
+
+  const putCaptions = (assetId: string, vtt: string) =>
+    app.inject({
+      method: "PUT",
+      url: `/api/${businessId}/studio/media/${assetId}/captions`,
+      headers: { cookie: ownerCookie },
+      payload: { vtt },
+    });
+
+  const campaignCaptions = async () =>
+    (
+      await owner.execute<{ captions_url: string | null }>(
+        sql`SELECT captions_url FROM campaign.campaigns WHERE id = ${campaignId}`,
+      )
+    ).rows[0]?.captions_url ?? null;
+
+  it("13.9.c: a sidecar uploaded before the transcode is used when the video has no subtitle stream", async () => {
+    const initiated = await initiateUpload();
+    expect((await putCaptions(initiated.assetId, "not a caption file")).statusCode).toBe(400);
+    const noCues = ["WEBVTT", "", "no cues here"].join("\n");
+    expect((await putCaptions(initiated.assetId, noCues)).statusCode).toBe(400);
+    const uploaded = await putCaptions(initiated.assetId, VTT);
+    expect(uploaded.statusCode, uploaded.body).toBe(200);
+    const sidecar = uploaded.json<{ sidecarCaptionsUrl: string; captionsUrl: string | null }>();
+    expect(sidecar.sidecarCaptionsUrl.endsWith(`captions/${initiated.assetId}.sidecar.vtt`)).toBe(
+      true,
+    );
+    expect(sidecar.captionsUrl).toBeNull();
+
+    await sendReady(initiated.assetId, null);
+    expect(await campaignCaptions()).toBe(sidecar.sidecarCaptionsUrl);
+  });
+
+  it("13.9.c: an embedded subtitle stream wins over a sidecar", async () => {
+    const initiated = await initiateUpload();
+    await putCaptions(initiated.assetId, VTT);
+    const embedded = `/media/captions/${initiated.assetId}.vtt`;
+    await sendReady(initiated.assetId, embedded);
+    expect(await campaignCaptions()).toBe(embedded);
+    // Re-uploading a sidecar later never displaces the embedded track.
+    await putCaptions(initiated.assetId, VTT);
+    expect(await campaignCaptions()).toBe(embedded);
+  });
+
+  it("13.9.c: a sidecar uploaded after the transcode applies at once when there were no captions", async () => {
+    const initiated = await initiateUpload();
+    await sendReady(initiated.assetId, null);
+    expect(await campaignCaptions()).toBeNull();
+    const uploaded = await putCaptions(initiated.assetId, VTT);
+    const url = uploaded.json<{ sidecarCaptionsUrl: string }>().sidecarCaptionsUrl;
+    expect(uploaded.json<{ captionsUrl: string }>().captionsUrl).toBe(url);
+    expect(await campaignCaptions()).toBe(url);
+  });
+
   it("reports a transcode failure so it is visible in Studio", async () => {
     const initiated = await initiateUpload();
     const body = { status: "failed" as const, failureReason: "ffprobe: no video stream" };

@@ -160,6 +160,13 @@
       "dataCostBadge": "{amount} data cost",
       "startVideo": "Start video",
       "startVideoAriaLabel": "Start video — preview only, not interactive here"
+    },
+    "captions": {
+      "label": "Captions file (.vtt)",
+      "help": "Optional. Used when your video has no captions of its own.",
+      "saved": "{name} saved. Viewers get these captions if the video has none.",
+      "invalid": "That isn't a WebVTT file with captions. Check it starts with WEBVTT and has timed lines.",
+      "tooLarge": "That file is too large. Captions files are up to 512 KB."
     }
   },
   "questionBank": {

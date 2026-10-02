@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@yourtal/ui/button";
 import type { CampaignVideoUpload } from "./campaign-draft";
 import { uploadCampaignVideo } from "./media-upload-client";
+import { CampaignEditorCaptions } from "./campaign-editor-captions";
 
 export interface CampaignEditorUploadProps {
   video: CampaignVideoUpload;
@@ -130,6 +131,13 @@ export function CampaignEditorUpload({
           max={100}
           aria-label={t("campaignBuilder.upload.progressAriaLabel")}
           className="h-2 w-full [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-surface-raised [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-primary"
+        />
+      ) : null}
+      {isLiveMode && video.assetId ? (
+        <CampaignEditorCaptions
+          businessId={businessId}
+          assetId={video.assetId}
+          disabled={disabled}
         />
       ) : null}
       {video.status === "failed" ? (

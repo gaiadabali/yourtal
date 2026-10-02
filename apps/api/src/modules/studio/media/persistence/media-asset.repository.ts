@@ -36,6 +36,10 @@ export interface MediaAssetRepository {
   markQueued(assetId: string): Promise<void>;
   markReady(assetId: string, input: MarkReadyInput): Promise<MediaAssetRecord>;
   markFailed(assetId: string, failureReason: string): Promise<MediaAssetRecord>;
+  /** 13.9.c: records the sidecar; when `useNow`, it also becomes the asset's captions. */
+  setSidecarCaptions(assetId: string, url: string, useNow: boolean): Promise<MediaAssetRecord>;
+  /** 13.9.c: points the campaign at captions after the media has already been written. */
+  writeCampaignCaptions(campaignId: string, captionsUrl: string): Promise<void>;
   /**
    * Writes `campaign.campaigns`' own media columns (TASKS.md 7.2.b: "the
    * studio module writes the campaign's media columns", never the worker).

@@ -30,6 +30,8 @@ export const mediaAssets = studioPgSchema.table("media_assets", {
   teaserUrl: text("teaser_url"),
   hlsUrl: text("hls_url"),
   captionsUrl: text("captions_url"),
+  // 13.9.c (sidecar_captions_url).
+  sidecarCaptionsUrl: text("sidecar_captions_url"),
   renditionBytes: jsonb("rendition_bytes").$type<MediaRenditionBytes>(),
   failureReason: text("failure_reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

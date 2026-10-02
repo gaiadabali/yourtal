@@ -4,7 +4,7 @@ import type { PdpClient } from "@yourtal/authz/pdp-client";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { mapAuthzErrorToHttpException } from "../../shared/authz/authz-error.mapper";
 import { Idempotent } from "../../shared/idempotency/idempotent.decorator";
-import { PrincipalService } from "../../shared/authz/principal.service";
+import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import type { PrincipalResolver } from "../../shared/authz/principal-resolver";
 import { PDP_CLIENT } from "../../shared/pdp/pdp-client.module";
 import { ProposeSettlementDecreaseDto } from "./dto/propose-settlement-decrease.schema";
@@ -28,7 +28,9 @@ import { proposeSettlementDecrease } from "./use-cases/propose-settlement-decrea
 @Controller("api/:tenantId/store/listings")
 export class SettlementDecreaseController {
   constructor(
-    @Inject(PrincipalService) private readonly principals: PrincipalResolver,
+    // 13.3.b: the DB-backed resolver; the request-only one carries no business
+    // roles, so the explicit PDP call below refused every owner and merchandiser.
+    @Inject(AsyncPrincipalResolver) private readonly principals: PrincipalResolver,
     @Inject(LISTING_REPOSITORY) private readonly listings: ListingRepository,
     @Inject(SETTLEMENT_DECREASE_REQUEST_REPOSITORY)
     private readonly decreaseRequests: SettlementDecreaseRequestRepository,

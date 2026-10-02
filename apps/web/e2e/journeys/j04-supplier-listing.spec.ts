@@ -135,7 +135,7 @@ for (const r of REGIONS) {
     expect(minted[0]?.n).toBe(String(STOCK));
 
     // A rise in S applies at once and reprices the listing.
-    const raised = await merchandiser.post<Listing>(
+    const { updated: raised } = await merchandiser.post<{ updated: Listing }>(
       `/api/${businessId}/store/listings/${listing.id}/settlement-value`,
       { newSettlementValueMinor: v.up, reason: "Bean costs went up." },
     );

@@ -4,7 +4,7 @@ import type { PdpClient } from "@yourtal/authz/pdp-client";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { mapAuthzErrorToHttpException } from "../../shared/authz/authz-error.mapper";
 import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
-import { PrincipalService } from "../../shared/authz/principal.service";
+import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import type { PrincipalResolver } from "../../shared/authz/principal-resolver";
 import { PDP_CLIENT } from "../../shared/pdp/pdp-client.module";
 import { CreateListingDto } from "./dto/create-listing.schema";
@@ -39,7 +39,9 @@ import { setSettlementValue } from "./use-cases/set-settlement-value.use-case";
 @Controller("api/:tenantId/store/listings")
 export class StoreListingController {
   constructor(
-    @Inject(PrincipalService) private readonly principals: PrincipalResolver,
+    // 13.3.b: the DB-backed resolver; the request-only one carries no business
+    // roles, so the explicit PDP call below refused every owner and merchandiser.
+    @Inject(AsyncPrincipalResolver) private readonly principals: PrincipalResolver,
     @Inject(LISTING_REPOSITORY) private readonly listings: ListingRepository,
     @Inject(LISTING_PRICE_REVISION_REPOSITORY)
     private readonly priceRevisions: ListingPriceRevisionRepository,

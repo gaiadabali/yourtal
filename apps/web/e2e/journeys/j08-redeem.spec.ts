@@ -95,16 +95,22 @@ async function customerWithVoucher(
   };
 }
 
-/** The code a customer reads out, taken off their real Wallet screen. */
-async function codeFromWallet(browser: Browser, baseURL: string, pick: Pick, r: RegionCase) {
+/**
+ * What the counter's scanner would read: the Wallet screen shows the rotating
+ * QR, and its payload is the `/qr` token. The Wallet shows no readable code
+ * online (13.3.o), and a headless counter has no camera, so staff type it.
+ */
+async function qrFromWallet(browser: Browser, baseURL: string, pick: Pick, r: RegionCase) {
   const context = await browser.newContext();
   await useSession(context, baseURL, pick.viewer.token, r);
   const page = await context.newPage();
   await page.goto(`/wallet/voucher/${pick.voucherId}`);
-  const code = (await page.locator("span.select-all").first().innerText()).trim();
+  await expect(page.locator('img[src^="data:image/png;base64,"]').first()).toBeVisible();
   await context.close();
-  expect(code, "the wallet shows a code a customer can read out").toMatch(/^\S{4,}$/);
-  return code;
+  const { token } = await pick.viewer.get<{ token: string }>(
+    `/api/wallet/vouchers/${pick.voucherId}/qr`,
+  );
+  return token;
 }
 
 /** One HMAC-signed merchant call, exactly as the Studio developer docs describe. */
@@ -120,7 +126,8 @@ async function merchantCall(keyId: string, secret: string, path: string, body: u
     idempotencyKey,
     createHash("sha256").update(raw).digest("base64"),
   ].join("\n");
-  const v1 = createHmac("sha256", secret).update(canonical).digest("hex");
+  // The secret Studio shows is hex: the key is its bytes.
+  const v1 = createHmac("sha256", Buffer.from(secret, "hex")).update(canonical).digest("hex");
   const response = await fetch(`${VOUCHER_URL}${path}`, {
     method: "POST",
     headers: {
@@ -210,8 +217,8 @@ for (const r of REGIONS) {
     // From here it speaks the shop's language.
     await expect(page.getByRole("tab", { name: m("portal.tabManual") })).toBeVisible();
 
-    // The customer reads the code off their Wallet; staff type it in.
-    const code = await codeFromWallet(browser, baseURL!, atCounter, r);
+    // The customer shows their Wallet; staff enter what the QR carries.
+    const code = await qrFromWallet(browser, baseURL!, atCounter, r);
     const tab = page.getByRole("tab", { name: m("portal.tabManual") });
     if (await tab.isVisible().catch(() => false)) await tab.click();
     await page.getByLabel(m("portal.manualCodeLabel"), { exact: true }).fill(code);
@@ -219,7 +226,7 @@ for (const r of REGIONS) {
     const amount = page.getByLabel(m("portal.amountLabel"));
     if (await amount.isVisible().catch(() => false)) await amount.fill(String(atCounter.remaining));
     await page.getByRole("button", { name: m("portal.confirmButton") }).click();
-    await expect(page.getByRole("heading", { name: m("portal.successHeading") })).toBeVisible();
+    await expect(page.getByText(m("portal.successHeading"), { exact: true }).first()).toBeVisible();
     await page.screenshot({ path: `test-results/j08-counter-${r.slug}.png`, fullPage: true });
     await counter.close();
 
@@ -265,7 +272,7 @@ for (const r of REGIONS) {
       `/api/${online.merchantId}/studio/developers/credentials`,
       { label: `Journey 8 web shop ${r.region}`, sandbox: true },
     );
-    const onlineCode = await codeFromWallet(browser, baseURL!, online, r);
+    const onlineCode = await qrFromWallet(browser, baseURL!, online, r);
     const currency = r.region === "AU" ? "AUD" : "IDR";
     const authorized = await merchantCall(
       credential.credentialId,

@@ -12,7 +12,6 @@ describe.each(["staging", "production"])("APP_ENV=%s", (appEnv) => {
 
   it("the shared switch resolves live", async () => {
     vi.stubEnv("APP_ENV", appEnv);
-    vi.stubEnv("YOURTAL_DATA_SOURCE", "");
     const { dataSourceMode } = await import("@yourtal/contracts/mock-source");
     expect(dataSourceMode).toBe("live");
   });

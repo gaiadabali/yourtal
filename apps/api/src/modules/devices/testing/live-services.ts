@@ -114,6 +114,9 @@ export async function startLiveServices(
       LEDGER_ADDR: `127.0.0.1:${String(ledgerPort)}`,
       LEDGER_SERVICE_SECRET: ledgerSecret,
       REWARD_ATTESTATION_SECRET: attestationSecret,
+      // 13.3.c: /v1/dev/* (the holdback release a journey needs), on in dev
+      // and staging only; a test ledger is a dev ledger.
+      APP_ENV: "dev",
     },
     stdio: ["ignore", openSync(path.join(scratch, "ledger.log"), "w"), "inherit"],
   });

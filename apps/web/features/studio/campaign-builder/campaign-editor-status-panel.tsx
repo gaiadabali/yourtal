@@ -81,7 +81,16 @@ export function CampaignEditorStatusPanel({
       setLiveError(result.message);
       return;
     }
-    onChange(result.value);
+    // The submit response has no reward config, question bank or upload state.
+    onChange({
+      ...result.value,
+      allocationId: draft.allocationId,
+      accuracyBonusPoints: draft.accuracyBonusPoints,
+      rewardValueMinorUnits: draft.rewardValueMinorUnits,
+      rewardCurrency: draft.rewardCurrency,
+      questionBank: draft.questionBank,
+      video: draft.video,
+    });
   }
 
   return (

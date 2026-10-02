@@ -32,7 +32,7 @@ export interface CampaignBuilderScreenProps {
   isVerified: boolean;
   /** `YOURTAL_DATA_SOURCE === "live"` — threaded down to every leaf that needs to pick between a real call and the mock simulation. */
   isLiveMode: boolean;
-  /** The business's own funded point allocations (`GET .../billing/balance`, live only) — a reward config names one of these (7.3.c). Empty in mock mode. */
+  /** The partner allocations a reward may draw from (`GET .../studio/campaign-funding`, 13.3.b). */
   allocations: BillingAllocation[];
 }
 
@@ -117,11 +117,12 @@ export function CampaignBuilderScreen({
     const result = await updateCampaignDraftDetailsLive(businessId, current.id, merchantName, {
       title: current.title,
       synopsis: current.synopsis,
-      // Only send a duration once local chapters actually imply one — an
-      // empty chapter list computes to 0, which would otherwise overwrite
-      // the server's real, already-known duration (from creation or a
-      // real video upload) with a bogus tiny value.
-      ...(computedDuration > 0 ? { durationSeconds: computedDuration } : {}),
+      // Only a guess from local chapters, and only before a video exists: an
+      // uploaded video sets the real length server-side (13.3.b), and an
+      // empty chapter list computes to 0.
+      ...(computedDuration > 0 && current.video.status !== "ready"
+        ? { durationSeconds: computedDuration }
+        : {}),
       contentCategory: current.contentCategory,
       audience: current.audience,
       startsAt: current.startsAt,

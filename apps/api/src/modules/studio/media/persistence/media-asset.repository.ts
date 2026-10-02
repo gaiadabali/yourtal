@@ -60,6 +60,8 @@ export interface MediaAssetRepository {
       aspect: string;
       /** The 540p rendition: what a viewer on the default quality downloads. */
       estimatedBytes: number;
+      /** The video's real length; a long-form campaign takes it (13.3.b). */
+      durationSeconds: number;
     },
   ): Promise<void>;
 }

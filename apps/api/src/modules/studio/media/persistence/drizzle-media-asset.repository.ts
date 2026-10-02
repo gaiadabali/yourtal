@@ -114,6 +114,8 @@ export class DrizzleMediaAssetRepository implements MediaAssetRepository {
       aspect: string;
       /** The 540p rendition: what a viewer on the default quality downloads. */
       estimatedBytes: number;
+      /** The video's real length; a long-form campaign takes it (13.3.b). */
+      durationSeconds: number;
     },
   ): Promise<void> {
     await this.db.execute(sql`
@@ -126,6 +128,19 @@ export class DrizzleMediaAssetRepository implements MediaAssetRepository {
           estimated_bytes = ${media.estimatedBytes},
           estimated_data_mb = ${(media.estimatedBytes / (1024 * 1024)).toFixed(2)}
       WHERE id = ${campaignId}
+    `);
+    // 13.3.b: a long-form campaign runs for its video's real length, and has at
+    // least one chapter (campaignSchema refuses one without, so a chapterless
+    // campaign went live and was invisible). Authors may split it later.
+    await this.db.execute(sql`
+      UPDATE campaign.campaigns SET duration_seconds = ${media.durationSeconds}
+      WHERE id = ${campaignId} AND kind = 'long_form'
+    `);
+    await this.db.execute(sql`
+      INSERT INTO campaign.chapter (campaign_id, ordinal, title, start_seconds, reward_weight)
+      SELECT c.id, 0, left(c.title, 120), 0, 1 FROM campaign.campaigns c
+      WHERE c.id = ${campaignId} AND c.kind = 'long_form'
+        AND NOT EXISTS (SELECT 1 FROM campaign.chapter ch WHERE ch.campaign_id = c.id)
     `);
     // The player resolves the video from here (campaignSchema's videoSource).
     await this.db.execute(sql`

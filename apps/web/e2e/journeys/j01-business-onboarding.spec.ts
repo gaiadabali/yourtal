@@ -6,7 +6,10 @@ import { callerFor, closeDb, db, msg, one, requireBusinessEnv, staffCaller } fro
 const STAFF = REGIONS[0]; // the staff console runs in en-AU
 
 /** A plausible tax id per region (13.3.b: ABN in AU, NIB in ID). */
-const TAX_ID = { AU: { kind: "ABN", value: "51824753556" }, ID: { kind: "NIB", value: "9120001234567" } };
+const TAX_ID = {
+  AU: { kind: "ABN", value: "51824753556" },
+  ID: { kind: "NIB", value: "9120001234567" },
+};
 
 /**
  * Journey 1 (product-intent §2.2): the owner registers a business in Studio,
@@ -39,14 +42,22 @@ for (const r of REGIONS) {
     await signInAs(page, baseURL!, ownerAccount.token, r);
     await page.goto("/studio");
     await expect(page).toHaveURL(/\/studio\/onboarding/);
-    await page.getByLabel(msg(r, "studio", "onboarding.legalNameLabel")).fill(`Journey ${handle} Pty`);
-    await page.getByLabel(msg(r, "studio", "onboarding.displayNameLabel")).fill(`Journey ${r.region}`);
+    await page
+      .getByLabel(msg(r, "studio", "onboarding.legalNameLabel"))
+      .fill(`Journey ${handle} Pty`);
+    await page
+      .getByLabel(msg(r, "studio", "onboarding.displayNameLabel"))
+      .fill(`Journey ${r.region}`);
     await page.getByLabel(msg(r, "studio", "onboarding.handleLabel")).fill(handle);
     await page
       .getByRole("checkbox", { name: msg(r, "studio", "onboarding.role.supplier.title") })
       .check({ force: true });
-    await page.getByLabel(msg(r, "studio", "onboarding.taxIdKindLabel")).selectOption(TAX_ID[r.region].kind);
-    await page.getByLabel(msg(r, "studio", "onboarding.taxIdValueLabel")).fill(TAX_ID[r.region].value);
+    await page
+      .getByLabel(msg(r, "studio", "onboarding.taxIdKindLabel"))
+      .selectOption(TAX_ID[r.region].kind);
+    await page
+      .getByLabel(msg(r, "studio", "onboarding.taxIdValueLabel"))
+      .fill(TAX_ID[r.region].value);
     if (r.region === "AU") {
       await page.getByLabel(msg(r, "studio", "onboarding.stateLabel")).selectOption("VIC");
       await page.getByLabel(msg(r, "studio", "onboarding.postcodeLabel")).fill("3000");
@@ -112,26 +123,44 @@ for (const r of REGIONS) {
       mimeType: "application/pdf",
       buffer: Buffer.from("%PDF-1.4\n% journey 1 registration certificate\n%%EOF\n"),
     });
-    await page.getByRole("button", { name: msg(r, "studio", "chrome.verification.submit") }).click();
-    await expect(page.getByText(msg(r, "studio", "chrome.verification.submittedMessage"))).toBeVisible();
+    await page
+      .getByRole("button", { name: msg(r, "studio", "chrome.verification.submit") })
+      .click();
+    await expect(
+      page.getByText(msg(r, "studio", "chrome.verification.submittedMessage")),
+    ).toBeVisible();
     await page.reload();
-    await expect(page.getByText(msg(r, "studio", "chrome.verification.submittedMessage"))).toBeVisible();
+    await expect(
+      page.getByText(msg(r, "studio", "chrome.verification.submittedMessage")),
+    ).toBeVisible();
     const kyb = await one<{ status: string; storage_ref: string; document_type: string }>(
       `SELECT status, storage_ref, document_type FROM business.kyb_documents WHERE business_id = $1`,
       [business.id],
     );
-    expect(kyb).toMatchObject({ status: "submitted", document_type: "business_registration_certificate" });
+    expect(kyb).toMatchObject({
+      status: "submitted",
+      document_type: "business_registration_certificate",
+    });
     expect(kyb.storage_ref.startsWith(`kyb/${business.id}/`)).toBe(true);
 
     // Ops reviews it in the staff console and approves.
     const ops = await staffCaller(request, "ops");
     await signInAs(page, baseURL!, ops.token, STAFF);
     await page.goto(`/staff/businesses/${business.id}`);
-    await expect(page.getByText(msg(STAFF, "staff", "businesses.documentStatus.submitted"))).toBeVisible();
-    await page.getByRole("button", { name: msg(STAFF, "staff", "businesses.approveKybCta") }).click();
-    await page.getByLabel(msg(STAFF, "staff", "dialog.reasonLabel")).fill("Registration certificate matches.");
+    await expect(
+      page.getByText(msg(STAFF, "staff", "businesses.documentStatus.submitted")),
+    ).toBeVisible();
     await page
-      .getByRole("button", { name: msg(STAFF, "staff", "businesses.approveKybSubmit"), exact: true })
+      .getByRole("button", { name: msg(STAFF, "staff", "businesses.approveKybCta") })
+      .click();
+    await page
+      .getByLabel(msg(STAFF, "staff", "dialog.reasonLabel"))
+      .fill("Registration certificate matches.");
+    await page
+      .getByRole("button", {
+        name: msg(STAFF, "staff", "businesses.approveKybSubmit"),
+        exact: true,
+      })
       .last()
       .click();
     await expect(
@@ -143,7 +172,12 @@ for (const r of REGIONS) {
       [business.id],
     );
     expect(verified).toEqual({ is_verified: true, doc: "verified" });
-    const audit = await one<{ actor: string; outcome: string; region: string | null; reason: string }>(
+    const audit = await one<{
+      actor: string;
+      outcome: string;
+      region: string | null;
+      reason: string;
+    }>(
       `SELECT actor_user_id AS actor, outcome, region, reason FROM staff.audit_event
         WHERE action = 'business.kyb.approve' AND target_id = $1`,
       [business.id],
@@ -201,9 +235,9 @@ for (const r of REGIONS) {
       [business.id, inviteeAccount.email],
     );
     expect(accepted.accepted_by).toBe(inviteeAccount.userId);
-    const memberships = await callerFor(request, inviteeAccount).get<{ business: { id: string } }[]>(
-      "/api/me/businesses",
-    );
+    const memberships = await callerFor(request, inviteeAccount).get<
+      { business: { id: string } }[]
+    >("/api/me/businesses");
     expect(memberships.map((m) => m.business.id)).toEqual([business.id]);
     await page.screenshot({ path: `test-results/j01-joined-${r.slug}.png`, fullPage: true });
   });
@@ -214,7 +248,12 @@ async function inboxTokenOf(request: Parameters<typeof inboxToken>[0], email: st
   const response = await request.get(`${API}/api/dev/inbox`);
   expect(response.ok()).toBeTruthy();
   const { entries } = (await response.json()) as {
-    entries: { recipient: string; category: string; createdAt: string; metadata: Record<string, unknown> }[];
+    entries: {
+      recipient: string;
+      category: string;
+      createdAt: string;
+      metadata: Record<string, unknown>;
+    }[];
   };
   const match = entries
     .filter((e) => e.recipient === email && e.category === "team_invitation")

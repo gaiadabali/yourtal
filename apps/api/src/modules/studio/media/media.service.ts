@@ -219,6 +219,7 @@ export class MediaService {
       // 13.9.b: submit needs these (campaigns_media_required_past_draft).
       aspect: input.aspect,
       estimatedBytes: input.renditionBytes.v540,
+      durationSeconds: input.durationSeconds,
     });
     return { ok: true };
   }

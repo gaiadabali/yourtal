@@ -94,7 +94,8 @@
       "saveReward": "Simpan hadiah",
       "rewardSaved": "Tersimpan — nilai hadiah sebenarnya ditampilkan di atas.",
       "rewardValueLabel": "Nilai yang dihitung server (satu penyelesaian)",
-      "allocationOption": "{points} poin — {shortId}"
+      "allocationOption": "{points} poin — {shortId}",
+      "allocationRequired": "Pilih poin berdana yang membayar hadiah ini."
     },
     "sections": {
       "navLabel": "Bagian editor kampanye",

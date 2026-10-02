@@ -24,7 +24,7 @@ export interface CampaignEditorRewardProps {
   disabled?: boolean;
   isLiveMode: boolean;
   merchantName: string;
-  /** The business's own funded point allocations (`GET .../billing/balance`) — a reward config names one of these (7.3.c). Empty in mock mode or if the viewer cannot see Billing (see `campaigns/page.tsx`'s own comment). */
+  /** The partner allocations a reward may draw from (`GET .../studio/campaign-funding`, 7.3.c, 13.3.b). */
   allocations: BillingAllocation[];
 }
 
@@ -75,7 +75,14 @@ export function CampaignEditorReward({
 
   async function saveReward() {
     if (!draft.allocationId) {
-      setSaveState({ status: "error", message: t("campaignBuilder.reward.allocationNone") });
+      setSaveState({
+        status: "error",
+        message: t(
+          allocations.length === 0
+            ? "campaignBuilder.reward.allocationNone"
+            : "campaignBuilder.reward.allocationRequired",
+        ),
+      });
       return;
     }
     setSaveState({ status: "saving" });
@@ -96,7 +103,18 @@ export function CampaignEditorReward({
       setSaveState({ status: "error", message: result.message });
       return;
     }
-    onChange(result.value);
+    // Only the reward comes back from the server; the author's unsaved
+    // details on other tabs must survive (13.3.b: they were wiped).
+    const saved = result.value;
+    onChange({
+      ...draft,
+      rewardPoints: saved.rewardPoints,
+      scoringRule: saved.scoringRule,
+      allocationId: saved.allocationId,
+      accuracyBonusPoints: saved.accuracyBonusPoints,
+      rewardValueMinorUnits: saved.rewardValueMinorUnits,
+      rewardCurrency: saved.rewardCurrency,
+    });
     setSaveState({ status: "idle" });
   }
 

@@ -23,7 +23,8 @@ test.afterAll(closeDb);
 /** Draws points from an allocation the way a completion grant does (hold, then consume). */
 async function drawDown(allocationId: string, points: number, r: RegionCase) {
   const base = process.env["LEDGER_BASE_URL"] ?? "http://127.0.0.1:26910";
-  const secret = process.env["LEDGER_SERVICE_SECRET"] ?? "local-only-ledger-service-secret-not-real";
+  const secret =
+    process.env["LEDGER_SERVICE_SECRET"] ?? "local-only-ledger-service-secret-not-real";
   const post = async <T>(path: string, body: unknown): Promise<T> => {
     const payload = JSON.stringify(body);
     const response = await fetch(`${base}${path}`, {
@@ -77,7 +78,10 @@ for (const r of REGIONS) {
     // Finance buys the first preset block in Studio Billing.
     await useSession(page.context(), baseURL!, finance.token, r);
     await page.goto(`/studio/billing?business=${businessId}`);
-    await page.getByRole("button", { name: msg(r, "studio", "billing.buy") }).first().click();
+    await page
+      .getByRole("button", { name: msg(r, "studio", "billing.buy") })
+      .first()
+      .click();
     await page.waitForURL(/purchased=1|error=/);
     // Either way the person stays on this business's Billing and is told what happened.
     expect(new URL(page.url()).searchParams.get("business")).toBe(businessId);
@@ -104,7 +108,12 @@ for (const r of REGIONS) {
       amount: String(quote.totalMinor),
       currency,
     });
-    const allocation = await one<{ funder_type: string; region: string; total: string; left: string }>(
+    const allocation = await one<{
+      funder_type: string;
+      region: string;
+      total: string;
+      left: string;
+    }>(
       `SELECT funder_type, region, total_points::text AS total, remaining_points::text AS left
          FROM ledger.allocation WHERE id = $1 AND funder_id = $2`,
       [purchase.allocation_id, businessId],
@@ -150,14 +159,20 @@ for (const r of REGIONS) {
     });
     await expect(after.first()).toBeVisible();
     await expect(
-      after.first().getByText(
-        msg(r, "studio", "billing.historyLeft").replace("{formatted}", n.format(POINTS - DRAWN)),
-      ),
+      after
+        .first()
+        .getByText(
+          msg(r, "studio", "billing.historyLeft").replace("{formatted}", n.format(POINTS - DRAWN)),
+        ),
     ).toBeVisible();
     await page.screenshot({ path: `test-results/j02-billing-${r.slug}.png`, fullPage: true });
 
     // Buying is Finance's (and the owner's) job: a marketer is refused.
     const marketer = await demoCaller(request, "member", r);
-    await marketer.post(`/api/${businessId}/studio/billing/purchases`, { points: POINTS, currency }, 403);
+    await marketer.post(
+      `/api/${businessId}/studio/billing/purchases`,
+      { points: POINTS, currency },
+      403,
+    );
   });
 }

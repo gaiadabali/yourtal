@@ -110,7 +110,9 @@ export function msg(r: RegionCase, namespace: string, key: string): string {
     data = JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
     catalogues.set(file.href, data);
   }
-  const value = key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown>)?.[part], data);
+  const value = key
+    .split(".")
+    .reduce<unknown>((node, part) => (node as Record<string, unknown>)?.[part], data);
   expect(typeof value, `${r.locale}/${namespace}.json has no ${key}`).toBe("string");
   return value as string;
 }

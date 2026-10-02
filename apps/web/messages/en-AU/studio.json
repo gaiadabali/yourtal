@@ -94,7 +94,8 @@
       "saveReward": "Save reward",
       "rewardSaved": "Saved — the real reward value is shown above.",
       "rewardValueLabel": "Server-priced value (one completion)",
-      "allocationOption": "{points} pts — {shortId}"
+      "allocationOption": "{points} pts — {shortId}",
+      "allocationRequired": "Choose which funded points pay for this reward."
     },
     "sections": {
       "navLabel": "Campaign editor sections",

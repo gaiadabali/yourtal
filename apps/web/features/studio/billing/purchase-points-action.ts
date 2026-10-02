@@ -25,7 +25,8 @@ export async function purchasePointsAction(formData: FormData): Promise<void> {
     redirect("/studio/billing?error=invalid_purchase");
   }
   // Keep the business in view: a person may hold several.
-  const back = (outcome: string) => `/studio/billing?business=${encodeURIComponent(businessId)}&${outcome}`;
+  const back = (outcome: string) =>
+    `/studio/billing?business=${encodeURIComponent(businessId)}&${outcome}` as const;
   const pointsValue = Number(points);
   if (!Number.isFinite(pointsValue) || pointsValue <= 0) {
     redirect(back("error=invalid_purchase"));

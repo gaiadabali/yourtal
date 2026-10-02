@@ -223,6 +223,14 @@ describe("studio media pipeline (7.2)", () => {
       hls_url: body.hlsUrl,
     });
 
+    // 13.3.b: a long-form campaign takes the video's length and one whole-video chapter.
+    const shape = await owner.execute<{ kind: string; duration: number; chapters: string }>(
+      sql`SELECT c.kind, c.duration_seconds AS duration,
+                 (SELECT count(*) FROM campaign.chapter ch WHERE ch.campaign_id = c.id)::text AS chapters
+            FROM campaign.campaigns c WHERE c.id = ${campaignId}`,
+    );
+    expect(shape.rows[0]).toEqual({ kind: "long_form", duration: 42, chapters: "1" });
+
     // Idempotent replay: a second "ready" for an already-ready asset is a no-op success.
     const repeated = await app.inject({
       method: "POST",

@@ -38,6 +38,7 @@ interface ListingSeed {
   readonly settlementMinor: number;
   readonly expiresAt: string;
   readonly audience?: "all_ages" | "adult";
+  readonly channel?: "in_store" | "online" | "both";
 }
 
 async function seedListing(options: ListingSeed): Promise<string> {
@@ -71,7 +72,7 @@ async function seedListing(options: ListingSeed): Promise<string> {
     contentCategory: "food-and-drink",
     tags: options.tags,
     imageUrl: "https://cdn.example.com/listing.jpg",
-    channel: "in_store",
+    channel: options.channel ?? "in_store",
     partialRedemption: "single_use",
     minimumSpendMinor: null,
     expiresAt: options.expiresAt,
@@ -164,6 +165,30 @@ describe("13.12.d: GET /api/store/listings filters, sorts and facets", () => {
     expect(page.facets.categories.map((facet) => facet.value)).toContain("food_beverage");
     const mine = page.facets.brands.filter((facet) => [brandA, brandB].includes(facet.value));
     expect(mine).toEqual([{ value: brandA, count: 1, label: expect.any(String) }]);
+  });
+
+  it("13.12.e: channel matches its own kind and `both`, counted and paged on the server", async () => {
+    const brand: string = randomUUID();
+    const seed = (channel: "in_store" | "online" | "both", settlementMinor: number) =>
+      seedListing({
+        ...{ merchantId: brand, region: "AU", category: "food_beverage", tags: ["coffee"] },
+        ...{ settlementMinor, expiresAt: "2027-03-01T00:00:00.000Z", channel },
+      });
+    const shop = await seed("in_store", 100);
+    const web = await seed("online", 200);
+    const both = await seed("both", 300);
+    const q = `region=AU&brand=${brand}&sort=points_asc`;
+    const inStore = await browse(`${q}&channel=in_store`);
+    expect(ids(inStore)).toEqual([shop, both]);
+    expect(inStore.total_count).toBe(2);
+    expect(ids(await browse(`${q}&channel=online`))).toEqual([web, both]);
+    const firstPage = await browse(`${q}&channel=online&limit=1`);
+    expect(ids(firstPage)).toEqual([web]);
+    expect(firstPage.has_more).toBe(true);
+    expect(ids(await browse(`${q}&channel=online&limit=1&startingAfter=${web}`))).toEqual([both]);
+    expect(ids(await browse(q))).toEqual([shop, web, both]);
+    const bad = await app.inject({ method: "GET", url: `/api/store/listings?${q}&channel=both` });
+    expect(bad.statusCode).toBe(400);
   });
 
   it("never crosses a region or an audience", async () => {

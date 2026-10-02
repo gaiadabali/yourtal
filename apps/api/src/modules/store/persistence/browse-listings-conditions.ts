@@ -38,6 +38,9 @@ export function browseConditions(
   ];
   // `category`, `brands` and `tags` are facets and `startingAfter` follows the
   // sort, so all four apply in memory (listing-browse-facets.ts), not here.
+  if (filter.channel !== undefined) {
+    conditions.push(inArray(listings.channel, [filter.channel, "both"]));
+  }
   if (filter.contentCategory !== undefined) {
     conditions.push(eq(listings.contentCategory, filter.contentCategory));
   }

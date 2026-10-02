@@ -118,6 +118,8 @@ export interface BrowseListingsFilter {
   readonly search?: string | undefined;
   readonly minPoints?: number | undefined;
   readonly maxPoints?: number | undefined;
+  /** 13.12.e: where it can be used; each also matches `both`. */
+  readonly channel?: "in_store" | "online" | undefined;
   /** 13.12.b: a listing's primary (content) category, e.g. from search. */
   readonly contentCategory?: ContentCategory | undefined;
   /** 13.12.b: any of these merchants. */

@@ -39,6 +39,7 @@ export function toBrowseFilter(
     sort: query.sort,
     merchantId: query.merchantId,
     district: query.district,
+    channel: query.channel,
     search: query.q,
     minPoints: query.minPoints,
     maxPoints: query.maxPoints,

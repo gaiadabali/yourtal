@@ -123,7 +123,7 @@ export function activeFilterCount(query: StoreQuery): number {
   );
 }
 
-/** `GET /api/store/listings`'s query (13.12.b). `where` has no API param yet: the page narrows it. */
+/** `GET /api/store/listings`'s query (13.12.b, 13.12.e). */
 export function listingsApiPath(query: StoreQuery, pageSize: number, merchantId?: string): string {
   const params = new URLSearchParams({ limit: String(pageSize), sort: query.sort });
   if (merchantId) params.set("merchantId", merchantId);
@@ -134,6 +134,7 @@ export function listingsApiPath(query: StoreQuery, pageSize: number, merchantId?
   if (query.minPoints !== null) params.set("minPoints", String(query.minPoints));
   if (query.maxPoints !== null) params.set("maxPoints", String(query.maxPoints));
   if (query.location) params.set("district", query.location);
+  if (query.where) params.set("channel", query.where);
   if (query.after) params.set("startingAfter", query.after);
   return `/api/store/listings?${params.toString()}`;
 }

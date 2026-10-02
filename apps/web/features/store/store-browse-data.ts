@@ -113,7 +113,7 @@ export async function browseStore(
     return {
       ok: true,
       data: {
-        listings: page.data.filter((row) => matchesWhere(row, query.where)),
+        listings: page.data,
         total: page.total_count,
         hasMore: page.has_more,
         facets: page.facets,

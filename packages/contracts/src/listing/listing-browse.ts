@@ -7,7 +7,7 @@ import {
   interestTagSchema,
 } from "../interest/interest-tags";
 import { listingCategorySchema, publicListingSchema } from "./listing";
-import { LISTING_SORTS } from "./listing-browse-values";
+import { LISTING_SORTS, LISTING_WHERE } from "./listing-browse-values";
 
 /**
  * 13.12.b: `GET /api/store/listings`'s query. Filtering, sorting and facet
@@ -32,6 +32,8 @@ export const listingBrowseQuerySchema = z.object({
   /** Matches a listing carrying ANY of these tags. */
   tags: csvListParam(interestTagSchema, MAX_TAGS),
   district: z.string().min(1).max(60).optional(),
+  /** 13.12.e: in store or online; either also matches a listing good for both. */
+  channel: z.enum(LISTING_WHERE).optional(),
   q: z.string().min(1).max(200).optional(),
   minPoints: z.coerce.number().int().min(0).optional(),
   maxPoints: z.coerce.number().int().min(0).optional(),

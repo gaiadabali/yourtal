@@ -109,37 +109,42 @@ export function CampaignBuilderScreen({
    * live field in the real DTO at all (TASKS.md 7.8.b's note) and stay
    * local-only.
    */
-  async function closeEditor() {
+  /** Saves the details tab; the error message, or null once saved (or in mock mode). */
+  async function saveDetails(): Promise<string | null> {
     const current = drafts.find((draft) => draft.id === openDraftId);
-    if (isLiveMode && current) {
-      const computedDuration = draftDurationSeconds(current);
-      const result = await updateCampaignDraftDetailsLive(businessId, current.id, merchantName, {
-        title: current.title,
-        synopsis: current.synopsis,
-        // Only send a duration once local chapters actually imply one — an
-        // empty chapter list computes to 0, which would otherwise overwrite
-        // the server's real, already-known duration (from creation or a
-        // real video upload) with a bogus tiny value.
-        ...(computedDuration > 0 ? { durationSeconds: computedDuration } : {}),
-        contentCategory: current.contentCategory,
-        audience: current.audience,
-        startsAt: current.startsAt,
-        endsAt: current.endsAt,
-        openViewing: current.openViewing,
-        teaserStartSeconds: current.teaserStartSeconds,
-        captionsUrl: current.captionsUrl,
-        declaredInterests: knownTags(current.targeting.interests),
-      });
-      if (result.ok) {
-        // The PATCH response has no question bank of its own (see
-        // campaign-builder-data.ts) — keep the one already fetched into
-        // local state rather than overwrite it with the mapper's `[]`.
-        updateDraft({ ...result.value, questionBank: current.questionBank });
-      }
-      // A save hiccup on the way out is not worth trapping the author in
-      // the editor over — the list's own next live fetch shows whatever
-      // the server actually holds either way.
+    if (!isLiveMode || !current) return null;
+    const computedDuration = draftDurationSeconds(current);
+    const result = await updateCampaignDraftDetailsLive(businessId, current.id, merchantName, {
+      title: current.title,
+      synopsis: current.synopsis,
+      // Only send a duration once local chapters actually imply one — an
+      // empty chapter list computes to 0, which would otherwise overwrite
+      // the server's real, already-known duration (from creation or a
+      // real video upload) with a bogus tiny value.
+      ...(computedDuration > 0 ? { durationSeconds: computedDuration } : {}),
+      contentCategory: current.contentCategory,
+      audience: current.audience,
+      startsAt: current.startsAt,
+      endsAt: current.endsAt,
+      openViewing: current.openViewing,
+      teaserStartSeconds: current.teaserStartSeconds,
+      captionsUrl: current.captionsUrl,
+      declaredInterests: knownTags(current.targeting.interests),
+    });
+    if (result.ok) {
+      // The PATCH response has no question bank of its own (see
+      // campaign-builder-data.ts) — keep the one already fetched into
+      // local state rather than overwrite it with the mapper's `[]`.
+      updateDraft({ ...result.value, questionBank: current.questionBank });
+      return null;
     }
+    return result.message;
+  }
+
+  async function closeEditor() {
+    // A save hiccup on the way out is not worth trapping the author in the
+    // editor over — the list's own next live fetch shows what the server holds.
+    await saveDetails();
     setOpenDraftId(null);
   }
 
@@ -151,6 +156,7 @@ export function CampaignBuilderScreen({
         draft={openDraftValue}
         onChange={updateDraft}
         onBack={() => void closeEditor()}
+        onSave={saveDetails}
         canEdit={canEdit}
         isVerified={isVerified}
         isLiveMode={isLiveMode}

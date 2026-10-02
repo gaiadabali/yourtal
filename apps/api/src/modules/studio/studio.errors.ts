@@ -148,6 +148,12 @@ export interface NotKybVerifiedError {
   readonly type: "not_kyb_verified";
 }
 
+/** 13.3.b: the automated screen blocked the campaign's title or synopsis. */
+export interface CreativeBlockedError {
+  readonly type: "creative_blocked";
+  readonly category: string;
+}
+
 export interface IllegalTransitionError {
   readonly type: "illegal_transition";
   readonly reason: string;
@@ -157,6 +163,7 @@ export type SubmitCampaignError =
   | CampaignNotFoundError
   | BusinessNotFoundError
   | NotKybVerifiedError
+  | CreativeBlockedError
   | IllegalTransitionError
   | PersistenceFailedError;
 

@@ -20,6 +20,8 @@ import { getCampaignDraft, listCampaignDrafts } from "./use-cases/get-campaign-d
 import { updateCampaignDraft } from "./use-cases/update-campaign-draft.use-case";
 import { submitCampaign } from "./use-cases/submit-campaign.use-case";
 import { mapStudioErrorToHttpException } from "./to-http-exception";
+import { MODERATION_DRIVER } from "./moderation-driver";
+import type { ModerationDriver } from "@yourtal/drivers/moderation";
 
 /**
  * TASKS.md 7.3.a/7.3.d: draft CRUD and submission. Every route asks the PDP
@@ -36,6 +38,7 @@ export class CampaignDraftController {
     @Inject(REWARD_CONFIG_REPOSITORY) private readonly rewardConfigs: RewardConfigRepository,
     @Inject(TERMS_VERSION_REPOSITORY) private readonly termsVersions: TermsVersionRepository,
     @Inject(CAMPAIGN_PUBLISHED_PUBLISHER) private readonly publisher: CampaignPublishedPublisher,
+    @Inject(MODERATION_DRIVER) private readonly moderation: ModerationDriver,
   ) {}
 
   @Idempotent({ retentionMs: ONBOARDING_RETENTION_MS })
@@ -120,6 +123,7 @@ export class CampaignDraftController {
         rewardConfigs: this.rewardConfigs,
         termsVersions: this.termsVersions,
         publisher: this.publisher,
+        moderation: this.moderation,
       },
       tenantId,
       campaignId,

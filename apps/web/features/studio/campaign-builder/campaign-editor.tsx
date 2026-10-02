@@ -26,6 +26,8 @@ export interface CampaignEditorProps {
   draft: CampaignDraft;
   onChange: (draft: CampaignDraft) => void;
   onBack: () => void;
+  /** Saves the details tab; Submit calls it first so review sees what the author sees. */
+  onSave?: () => Promise<string | null>;
   canEdit: boolean;
   isVerified: boolean;
   isLiveMode: boolean;
@@ -59,6 +61,7 @@ export function CampaignEditor({
   draft,
   onChange,
   onBack,
+  onSave,
   canEdit,
   isVerified,
   isLiveMode,
@@ -167,6 +170,7 @@ export function CampaignEditor({
           <CampaignEditorStatusPanel
             draft={draft}
             onChange={onChange}
+            {...(onSave ? { onSave } : {})}
             canEdit={canEdit}
             isVerified={isVerified}
             isLiveMode={isLiveMode}

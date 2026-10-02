@@ -8,8 +8,10 @@ import { StudioNoBusiness } from "@/features/studio/studio-no-business";
 import { StudioChrome } from "@/features/studio/studio-chrome";
 import { canEditZone, canViewZone } from "@/features/studio/studio-zone-access";
 import { CampaignBuilderScreen } from "@/features/studio/campaign-builder/campaign-builder-screen";
-import { listCampaignDrafts } from "@/features/studio/campaign-builder/campaign-builder-data";
-import { getBalance } from "@/features/studio/billing/billing-data";
+import {
+  listCampaignDrafts,
+  listCampaignFunding,
+} from "@/features/studio/campaign-builder/campaign-builder-data";
 
 /**
  * `/studio/campaigns`. Access gating unchanged from the old `/business`
@@ -53,17 +55,9 @@ export default async function StudioCampaignsPage(props: PageProps<"/studio/camp
 
   const [drafts, allocations] = await Promise.all([
     listCampaignDrafts(current.business.id, current.business.displayName),
-    // `GET .../billing/balance` is gated on `billing:view` (owner/admin/
-    // finance — `studio-zone-access.ts`), a narrower set than Campaigns'
-    // own viewers (owner/admin/marketer/analyst). A marketer or analyst can
-    // legitimately reach this page with no billing access at all, so a
-    // refusal here degrades to an empty allocation list (no picker to show)
-    // rather than crashing the whole zone — the real `PUT .../reward`
-    // endpoint is gated on `campaign:edit`, not `billing:view`, so this is
-    // only a picker-convenience gap, not a security one.
-    getBalance(current.business.id)
-      .then((balance) => balance.allocations)
-      .catch(() => []),
+    // Campaign authors (owner, admin, marketer) read funding here; an analyst
+    // is read-only and is refused, so it degrades to no picker.
+    listCampaignFunding(current.business.id).catch(() => []),
   ]);
 
   return (

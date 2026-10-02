@@ -9,6 +9,7 @@ import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { sessionFor } from "../../shared/testing/session-for";
 import { seedBusinessMembership } from "../../shared/testing/seed-business-membership";
 import { businessAccounts } from "../business/persistence/schema/business-account.table";
+import { businessMembers } from "../business/persistence/schema/business-member.table";
 import { campaigns } from "../campaign/persistence/schema/campaign.table";
 
 /**
@@ -211,5 +212,61 @@ describe("7.3.e Check: studio campaign authoring, end to end", () => {
     });
     expect(submit.statusCode).toBe(403);
     expect(submit.json<{ code: string }>().code).toBe("not_kyb_verified");
+  });
+
+  it("13.3.b: the automated screen refuses a blocked title, and the campaign stays a draft", async () => {
+    const { cookie, businessId } = await ownerAt();
+    await markKybVerified(businessId);
+    const campaignId = await createDraftCampaign(cookie, businessId);
+    await fillMedia(campaignId);
+    const renamed = await app.inject({
+      method: "PATCH",
+      url: `/api/${businessId}/studio/campaigns/${campaignId}`,
+      headers: { cookie },
+      payload: { title: "Flash sale sim-block-me" },
+    });
+    expect(renamed.statusCode, renamed.body).toBe(200);
+
+    const submit = await app.inject({
+      method: "POST",
+      url: `/api/${businessId}/studio/campaigns/${campaignId}/submit`,
+      headers: { cookie },
+    });
+    expect(submit.statusCode).toBe(400);
+    expect(submit.json<{ code: string }>().code).toBe("creative_blocked");
+    const [row] = await db
+      .select({ state: campaigns.lifecycleState })
+      .from(campaigns)
+      .where(eq(campaigns.id, campaignId));
+    expect(row?.state).toBe("draft");
+  });
+
+  it("13.3.b: a marketer reads the partner allocations a reward can draw from", async () => {
+    const { cookie, businessId } = await ownerAt();
+    const allocationId = await fundedAllocationId(cookie, businessId);
+    const marketer = await sessionFor(app, { jurisdiction: "AU" });
+    await db.insert(businessMembers).values({
+      businessId,
+      userId: marketer.userId,
+      role: "marketer",
+      invitedByUserId: marketer.userId,
+      joinedAt: new Date(),
+    });
+
+    const funding = await app.inject({
+      method: "GET",
+      url: `/api/${businessId}/studio/campaign-funding`,
+      headers: { cookie: marketer.cookie },
+    });
+    expect(funding.statusCode, funding.body).toBe(200);
+    expect(funding.json<{ allocationId: string; funderType: string }[]>()).toEqual([
+      expect.objectContaining({ allocationId, funderType: "partner", remainingPoints: 10_000 }),
+    ]);
+    const billing = await app.inject({
+      method: "GET",
+      url: `/api/${businessId}/studio/billing/balance`,
+      headers: { cookie: marketer.cookie },
+    });
+    expect(billing.statusCode).toBe(403);
   });
 });

@@ -1,6 +1,9 @@
 import * as z from "zod";
 import { resolveStudioDataSource } from "../studio-data-source";
+import { billingAllocationSchema } from "@yourtal/contracts/billing";
+import type { BillingAllocation } from "@yourtal/contracts/billing";
 import { apiFetch } from "@/lib/api/api-fetch";
+import { getBalance } from "../billing/billing-data";
 import type { CampaignDraft } from "./campaign-draft";
 import { buildDemoCampaignDrafts } from "./campaign-draft-fixtures";
 import { apiCampaignDraftSchema, apiDraftToWebDraft } from "./campaign-draft-live-mapping";
@@ -60,4 +63,22 @@ export function listCampaignDrafts(
   merchantName: string,
 ): Promise<CampaignDraft[]> {
   return campaignBuilderDataSource.listCampaignDrafts(businessId, merchantName);
+}
+
+/**
+ * 13.3.b: the partner allocations a reward can draw from, readable by every
+ * campaign author (marketers cannot see Billing). Mock mode reuses Billing's.
+ */
+export function listCampaignFunding(businessId: string): Promise<BillingAllocation[]> {
+  return resolveStudioDataSource<(id: string) => Promise<BillingAllocation[]>>({
+    mock: async (id) => (await getBalance(id)).allocations,
+    live: async (id) => {
+      const result = await apiFetch(
+        `/api/${encodeURIComponent(id)}/studio/campaign-funding`,
+        z.array(billingAllocationSchema),
+      );
+      if (!result.ok) throw new Error(`Could not load funded points: ${result.error.message}`);
+      return result.data;
+    },
+  })(businessId);
 }

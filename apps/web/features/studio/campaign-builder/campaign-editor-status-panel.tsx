@@ -20,6 +20,8 @@ import { canPause, canResume, canSubmitForReview } from "./campaign-draft-status
 export interface CampaignEditorStatusPanelProps {
   draft: CampaignDraft;
   onChange: (draft: CampaignDraft) => void;
+  /** Saves unsaved details before submitting (13.3.b: they used to be lost). */
+  onSave?: () => Promise<string | null>;
   canEdit: boolean;
   /** 7.3.d/red line 7: submitting is refused server-side while the business is not KYB-verified. This panel blocks the button for the same reason, rather than only finding out from a rejected request. */
   isVerified: boolean;
@@ -40,6 +42,7 @@ export interface CampaignEditorStatusPanelProps {
 export function CampaignEditorStatusPanel({
   draft,
   onChange,
+  onSave,
   canEdit,
   isVerified,
   isLiveMode,
@@ -66,6 +69,12 @@ export function CampaignEditorStatusPanel({
   async function submitLive() {
     setLiveError(null);
     setSubmitting(true);
+    const saveError = onSave ? await onSave() : null;
+    if (saveError !== null) {
+      setSubmitting(false);
+      setLiveError(saveError);
+      return;
+    }
     const result = await submitCampaignDraftLive(businessId, campaignId, merchantName);
     setSubmitting(false);
     if (!result.ok) {

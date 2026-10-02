@@ -18,6 +18,7 @@ import type {
   IllegalTransitionError,
   LedgerRefusedError,
   NotKybVerifiedError,
+  CreativeBlockedError,
   OpenViewingRequiresAllAgesError,
   QuickTooLongError,
   PersistenceFailedError,
@@ -51,6 +52,7 @@ export type StudioDomainError =
   | AccuracyBonusTooHighError
   | LedgerRefusedError
   | NotKybVerifiedError
+  | CreativeBlockedError
   | IllegalTransitionError
   | OpenViewingRequiresAllAgesError
   | QuickTooLongError
@@ -143,6 +145,11 @@ export function mapStudioErrorToHttpException(error: StudioDomainError): HttpExc
         code: "not_kyb_verified",
         message:
           "this business's KYB has not been verified yet — submission is refused until it is",
+      });
+    case "creative_blocked":
+      return new BadRequestException({
+        code: "creative_blocked",
+        message: "The title or synopsis breaks the content rules. Change it and submit again.",
       });
     case "illegal_transition":
       return new BadRequestException({ code: "illegal_transition", message: error.reason });

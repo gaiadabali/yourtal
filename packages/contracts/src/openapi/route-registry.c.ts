@@ -1114,4 +1114,18 @@ export const STUDIO_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       SERVICE_UNAVAILABLE,
     ],
   },
+  // --- campaign-funding.controller.ts (13.3.b) ---
+  {
+    method: "get",
+    path: "/api/{tenantId}/studio/campaign-funding",
+    summary: "The partner-funded allocations a campaign's reward can draw from",
+    tags: ["studio", "campaign", "billing"],
+    pathParams: [TENANT_ID_PARAM],
+    successStatus: 200,
+    successDescription:
+      "Every partner-funded allocation the business holds, with what is left in each. " +
+      "For campaign authors, who cannot see Billing.",
+    successSchema: arrayOf("BillingAllocation"),
+    errors: [FORBIDDEN, SERVICE_UNAVAILABLE],
+  },
 ];

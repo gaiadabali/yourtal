@@ -1,4 +1,4 @@
-import { errAsync, ResultAsync } from "neverthrow";
+import { errAsync, okAsync, ResultAsync } from "neverthrow";
 import type { CampaignDraft } from "../persistence/campaign-draft.repository";
 import type { BusinessAccountRepository } from "../../business/persistence/business-account.repository";
 import { transitionCampaignLifecycle } from "./transition-campaign-lifecycle.use-case";
@@ -6,6 +6,7 @@ import type { CampaignPublishedPublisher } from "../campaign-published-publisher
 import type { CampaignDraftRepository } from "../persistence/campaign-draft.repository";
 import type { RewardConfigRepository } from "../persistence/reward-config.repository";
 import type { TermsVersionRepository } from "../persistence/terms-version.repository";
+import type { ModerationDriver } from "@yourtal/drivers/moderation";
 import type { SubmitCampaignError } from "../studio.errors";
 
 /**
@@ -22,6 +23,8 @@ export function submitCampaign(
     readonly rewardConfigs: RewardConfigRepository;
     readonly termsVersions: TermsVersionRepository;
     readonly publisher: CampaignPublishedPublisher;
+    /** 13.3.b: the simulated automated screen, before a human moderator. */
+    readonly moderation: Pick<ModerationDriver, "classify">;
   },
   businessId: string,
   campaignId: string,
@@ -39,11 +42,42 @@ export function submitCampaign(
     if (!business.isVerified) {
       return errAsync<CampaignDraft, SubmitCampaignError>({ type: "not_kyb_verified" });
     }
-    return transitionCampaignLifecycle(deps, businessId, campaignId, "in_review").mapErr(
+    return screenCreative(deps, businessId, campaignId).andThen(() =>
+      transitionCampaignLifecycle(deps, businessId, campaignId, "in_review").mapErr(
       (error): SubmitCampaignError =>
         error.type === "campaign_not_found"
           ? { type: "campaign_not_found", campaignId: error.campaignId }
           : error,
+      ),
+    );
+  });
+}
+
+/**
+ * Blocks only on a clear `block`. `review`, and a screen that is down, go on
+ * to the human moderator, who reviews every campaign anyway.
+ */
+function screenCreative(
+  deps: Pick<Parameters<typeof submitCampaign>[0], "drafts" | "moderation">,
+  businessId: string,
+  campaignId: string,
+): ResultAsync<void, SubmitCampaignError> {
+  return ResultAsync.fromPromise(
+    deps.drafts.findById(businessId, campaignId),
+    (cause): SubmitCampaignError => ({ type: "persistence_failed", cause: String(cause) }),
+  ).andThen((draft) => {
+    if (draft === null) {
+      return errAsync<void, SubmitCampaignError>({ type: "campaign_not_found", campaignId });
+    }
+    return ResultAsync.fromSafePromise(
+      deps.moderation.classify(`${draft.title}\n${draft.synopsis}`),
+    ).andThen((verdict) =>
+      verdict.isOk() && verdict.value.outcome === "block"
+        ? errAsync<void, SubmitCampaignError>({
+            type: "creative_blocked",
+            category: verdict.value.category,
+          })
+        : okAsync<void, SubmitCampaignError>(undefined),
     );
   });
 }

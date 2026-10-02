@@ -18,6 +18,8 @@ import { WalletModule } from "../wallet/wallet.module";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { CampaignDraftController } from "./campaign-draft.controller";
 import { QuestionBankController } from "./question-bank.controller";
+import { CampaignFundingController } from "./campaign-funding.controller";
+import { MODERATION_DRIVER, buildModerationDriver } from "./moderation-driver";
 import { RewardConfigController } from "./reward-config.controller";
 import { StaffCampaignModerationController } from "./staff-campaign-moderation.controller";
 import { CAMPAIGN_DRAFT_REPOSITORY } from "./persistence/campaign-draft.repository";
@@ -86,10 +88,12 @@ class StudioQueueShutdown implements OnApplicationShutdown {
     CampaignDraftController,
     QuestionBankController,
     RewardConfigController,
+    CampaignFundingController,
     StaffCampaignModerationController,
   ],
   providers: [
     MediaService,
+    { provide: MODERATION_DRIVER, useFactory: buildModerationDriver },
     {
       provide: STUDIO_MEDIA_DB,
       useFactory: (config: AppConfig): StudioMediaDb => createStudioMediaDb(config.databaseUrl),

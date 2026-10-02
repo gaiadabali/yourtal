@@ -44,6 +44,8 @@ const envSchema = z.object({
   APP_ENV: z.string().default("dev"),
   DATABASE_OWNER_URL: z.url().optional(),
   STAGING_DEMO_PASSWORD: z.string().min(1).optional(),
+  // 13.2.b (F95): the non-staff demo logins' own password; staff keep the one above.
+  STAGING_REVIEW_PASSWORD: z.string().min(1).optional(),
   SITE_URL: z.url().optional(),
   // Helios's api port (infra/PORTS.md); a local slot sets its own.
   DEMO_API_BASE_URL: z.url().default("http://127.0.0.1:26301"),
@@ -64,6 +66,7 @@ export interface WorkerConfig {
   readonly demo?: {
     readonly ownerDatabaseUrl: string;
     readonly password: string;
+    readonly reviewPassword?: string;
     readonly siteUrl: string;
     readonly apiBaseUrl: string;
   };
@@ -90,6 +93,9 @@ export function loadWorkerConfig(source: NodeJS.ProcessEnv = process.env): Worke
           demo: {
             ownerDatabaseUrl: env.DATABASE_OWNER_URL,
             password: env.STAGING_DEMO_PASSWORD,
+            ...(env.STAGING_REVIEW_PASSWORD === undefined
+              ? {}
+              : { reviewPassword: env.STAGING_REVIEW_PASSWORD }),
             // Guardian links point at the web app; staging's is fixed (.gaiadeploy.yml).
             siteUrl:
               env.SITE_URL ??

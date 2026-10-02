@@ -1,4 +1,5 @@
 import { DemoApi, field, loginAs, ok } from "./api-client";
+import type { DemoPasswords } from "./api-client";
 import { DEMO_BRANDS } from "./catalogue";
 import type { Region } from "./catalogue";
 import { businessIdFor, campaignIdFor, listingIdFor } from "./world";
@@ -9,9 +10,8 @@ import { businessIdFor, campaignIdFor, listingIdFor } from "./world";
  * vouchers bought with goodwill points, pending and accepted gifts, open
  * charity auctions with bids, and one boosted campaign. Teens take no part.
  */
-export interface MarketplaceConfig {
+export interface MarketplaceConfig extends DemoPasswords {
   readonly apiBaseUrl: string;
-  readonly password: string;
 }
 
 const email = (local: string, region: Region): string =>
@@ -19,8 +19,8 @@ const email = (local: string, region: Region): string =>
 
 const ids = new WeakMap<DemoApi, string>();
 
-async function login(base: DemoApi, address: string, password: string): Promise<DemoApi> {
-  const { api, userId } = await loginAs(base, address, password);
+async function login(base: DemoApi, address: string, passwords: DemoPasswords): Promise<DemoApi> {
+  const { api, userId } = await loginAs(base, address, passwords);
   ids.set(api, userId);
   return api;
 }
@@ -66,7 +66,7 @@ async function ensureCharities(
   base: DemoApi,
   admin: DemoApi,
   region: Region,
-  password: string,
+  passwords: DemoPasswords,
 ): Promise<string[]> {
   const listed = (field(
     ok(await base.get(`/api/charities?region=${region}`), "charities"),
@@ -82,7 +82,7 @@ async function ensureCharities(
       ids.push(existing.id);
       continue;
     }
-    const applicant = await login(base, email(charity.local, region), password);
+    const applicant = await login(base, email(charity.local, region), passwords);
     const registration =
       region === "AU"
         ? { kind: "au_acnc", abn: DEMO_ABNS[index] ?? DEMO_ABNS[0], acncRegistered: true }
@@ -179,14 +179,14 @@ export async function runDemoMarketplace(
   log: (message: string) => void,
 ): Promise<void> {
   const base = new DemoApi(config.apiBaseUrl);
-  const admin = await login(base, "admin@demo.yourtal.test", config.password);
+  const admin = await login(base, "admin@demo.yourtal.test", config);
   for (const region of ["AU", "ID"] as const) {
-    const charities = await ensureCharities(base, admin, region, config.password);
+    const charities = await ensureCharities(base, admin, region, config);
     log(`[demo:marketplace] ${region}: ${String(charities.length)} approved charities`);
 
     const [adult, guardian, viewer, member] = await Promise.all(
       ["adult", "guardian", "viewer", "member"].map((who) =>
-        login(base, email(who, region), config.password),
+        login(base, email(who, region), config),
       ),
     );
     if (!adult || !guardian || !viewer || !member) throw new Error("demo logins missing");
@@ -263,7 +263,7 @@ export async function runDemoMarketplace(
     );
     const campaign = brand?.campaigns.find((c) => c.seconds > 60);
     if (brand !== undefined && campaign !== undefined) {
-      const owner = await login(base, email("owner", region), config.password);
+      const owner = await login(base, email("owner", region), config);
       const now = Date.now();
       ok(
         await owner.put(

@@ -84,6 +84,25 @@ export const sleep = (ms: number): Promise<void> =>
     setTimeout(resolve, ms);
   });
 
+/**
+ * 13.2.b (F95): staff keep STAGING_DEMO_PASSWORD; every other demo login uses
+ * STAGING_REVIEW_PASSWORD when it is set, so /review can show that one.
+ */
+export interface DemoPasswords {
+  readonly password: string;
+  readonly reviewPassword?: string | undefined;
+}
+
+/** Staff demo emails carry no region (`admin@…`); everyone else's does (`adult.au@…`). */
+export function isStaffDemoEmail(email: string): boolean {
+  return /^[a-z-]+@demo\.yourtal\.test$/.test(email);
+}
+
+export function passwordFor(email: string, passwords: DemoPasswords): string {
+  if (isStaffDemoEmail(email)) return passwords.password;
+  return passwords.reviewPassword ?? passwords.password;
+}
+
 const sessions = new Map<string, { api: DemoApi; userId: string }>();
 
 /**
@@ -93,8 +112,9 @@ const sessions = new Map<string, { api: DemoApi; userId: string }>();
 export async function loginAs(
   base: DemoApi,
   email: string,
-  password: string,
+  passwords: DemoPasswords,
 ): Promise<{ api: DemoApi; userId: string }> {
+  const password = passwordFor(email, passwords);
   const cached = sessions.get(email);
   if (cached !== undefined) return cached;
   for (;;) {

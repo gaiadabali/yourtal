@@ -1,5 +1,6 @@
 import type pg from "pg";
 import { DemoApi, field, loginAs, ok, sleep } from "./api-client";
+import type { DemoPasswords } from "./api-client";
 import { DEMO_BRANDS } from "./catalogue";
 import type { Audience } from "@yourtal/contracts/audience/audience";
 import type { Region } from "./catalogue";
@@ -11,9 +12,8 @@ import { businessIdFor, campaignIdFor, listingIdFor } from "./world";
  * `demo:reset` and then daily on staging, so a week of it is a real week.
  * It reads the database only for answer keys, which no api hands out.
  */
-export interface DemoActivityConfig {
+export interface DemoActivityConfig extends DemoPasswords {
   readonly apiBaseUrl: string;
-  readonly password: string;
 }
 
 const TICK_MS = 3_000;
@@ -55,8 +55,8 @@ function todaysCampaigns(viewer: Viewer, day: number): string[] {
   );
 }
 
-async function login(api: DemoApi, email: string, password: string): Promise<DemoApi> {
-  return (await loginAs(api, email, password)).api;
+async function login(api: DemoApi, email: string, passwords: DemoPasswords): Promise<DemoApi> {
+  return (await loginAs(api, email, passwords)).api;
 }
 
 /** Watches one campaign in real time, answering each checkpoint (most of them right). */
@@ -208,7 +208,7 @@ export async function runDemoActivity(
   const lines: string[] = [];
   for (const region of ["AU", "ID"] as const) {
     const people = await Promise.all(
-      viewers(region).map(async (v) => ({ v, api: await login(base, v.email, config.password) })),
+      viewers(region).map(async (v) => ({ v, api: await login(base, v.email, config) })),
     );
     // Everyone watches at once, in real time.
     await Promise.all(
@@ -224,11 +224,7 @@ export async function runDemoActivity(
     if (adult !== undefined) {
       const bought = await buyOne(adult.api, adult.v);
       lines.push(`${adult.v.email} bought: ${bought ?? "nothing affordable"}`);
-      const owner = await login(
-        base,
-        `owner.${region.toLowerCase()}@demo.yourtal.test`,
-        config.password,
-      );
+      const owner = await login(base, `owner.${region.toLowerCase()}@demo.yourtal.test`, config);
       const redeemed = await redeemAtCounter(pool, owner, base, adult.api, region).catch(
         (e: unknown) => {
           lines.push(`${region} counter: ${String(e)}`);

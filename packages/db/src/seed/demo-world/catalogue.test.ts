@@ -53,3 +53,14 @@ it("has staff admin, moderator and finance logins", () => {
   const roles = DEMO_PEOPLE.map((p) => p.staffRole);
   for (const role of ["admin", "moderator", "finance"]) expect(roles).toContain(role);
 });
+
+it("gives staff the demo password and everyone else the review password (F95)", async () => {
+  const { passwordFor } = await import("./api-client");
+  const passwords = { password: "staff-secret", reviewPassword: "review-secret" };
+  for (const person of DEMO_PEOPLE) {
+    expect(passwordFor(person.email, passwords)).toBe(
+      person.staffRole === undefined ? "review-secret" : "staff-secret",
+    );
+  }
+  expect(passwordFor("adult.au@demo.yourtal.test", { password: "only" })).toBe("only");
+});

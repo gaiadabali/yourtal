@@ -26,18 +26,27 @@ async function main(): Promise<void> {
     serviceSecret: env["VOUCHER_SERVICE_SECRET"] ?? "local-only-voucher-service-secret-not-real",
   };
   const siteUrl = env["SITE_URL"] ?? "http://127.0.0.1:26310";
+  const reviewPassword = env["STAGING_REVIEW_PASSWORD"] || undefined;
   const pool = new pg.Pool({ connectionString });
   try {
-    const result = await resetDemoWorld(pool, { ledger, voucher, password, siteUrl }, console.log);
+    const result = await resetDemoWorld(
+      pool,
+      { ledger, voucher, password, reviewPassword, siteUrl },
+      console.log,
+    );
     console.log(
       `demo:reset — ${String(result.world.campaigns)} demo campaigns, ${String(result.world.listings)} listings, ` +
         `${String(result.funded)} newly funded, ${String(result.logins.length)} logins`,
     );
     for (const failure of result.fundingFailures) console.error(`  funding failed: ${failure}`);
     const apiBaseUrl = env["DEMO_API_BASE_URL"] ?? `http://127.0.0.1:${env["PORT"] ?? "3001"}`;
-    await runDemoMarketplace({ apiBaseUrl, password }, console.log);
+    await runDemoMarketplace({ apiBaseUrl, password, reviewPassword }, console.log);
     if (!process.argv.includes("--no-activity")) {
-      const summary = await runDemoActivity(pool, { apiBaseUrl, password }, console.log);
+      const summary = await runDemoActivity(
+        pool,
+        { apiBaseUrl, password, reviewPassword },
+        console.log,
+      );
       console.log(`demo:activity — ${summary}`);
     }
   } finally {

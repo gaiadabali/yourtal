@@ -2,6 +2,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import type pg from "pg";
 import { hash as hashPassword } from "@node-rs/argon2";
 import { postSigned } from "../staging";
+import type { DemoPasswords } from "./api-client";
 import type { StagingLedgerConfig } from "../staging";
 import { DEMO_BRANDS } from "./catalogue";
 import type { Region } from "./catalogue";
@@ -194,26 +195,35 @@ export interface DemoLogin {
 export async function resetDemoAccounts(
   pool: pg.Pool,
   ledger: StagingLedgerConfig,
-  input: { readonly password: string; readonly siteUrl: string },
+  input: DemoPasswords & { readonly siteUrl: string },
   log: (message: string) => void,
 ): Promise<readonly DemoLogin[]> {
   const generation = new Date()
     .toISOString()
     .replace(/[-:.TZ]/g, "")
     .slice(0, 14);
-  const passwordHash = await hashPassword(input.password);
+  const staffHash = await hashPassword(input.password);
+  const reviewHash =
+    input.reviewPassword === undefined ? staffHash : await hashPassword(input.reviewPassword);
+  const hashFor = (person: DemoPerson): string =>
+    person.staffRole === undefined ? reviewHash : staffHash;
   const logins: DemoLogin[] = [];
   const created = new Map<string, string>();
 
   for (const person of DEMO_PEOPLE) {
     const previous = await userIdFor(pool, person.email);
     if (previous !== null && person.keep === true) {
+      // Kept, but on the current password, like every other demo login.
+      await pool.query(
+        "UPDATE identity.credential SET secret_hash = $2 WHERE user_id = $1 AND kind = 'password'",
+        [previous, hashFor(person)],
+      );
       created.set(person.email, previous);
       logins.push({ email: person.email, userId: previous, region: person.region });
       continue;
     }
     if (previous !== null) await retire(pool, ledger, person, previous, generation);
-    const userId = await register(pool, person, passwordHash);
+    const userId = await register(pool, person, hashFor(person));
     created.set(person.email, userId);
 
     // The demo admin holds every staff role, like the founder's own account (F85).

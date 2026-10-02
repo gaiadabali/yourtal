@@ -13,6 +13,8 @@ export interface DemoResetConfig {
   readonly ledger: StagingLedgerConfig;
   readonly voucher: StagingVoucherConfig;
   readonly password: string;
+  /** 13.2.b (F95): the non-staff demo logins' own password, shown on /review. */
+  readonly reviewPassword?: string | undefined;
   /** The web origin guardian links point at, e.g. https://yourtal.gaiada.com. */
   readonly siteUrl: string;
 }

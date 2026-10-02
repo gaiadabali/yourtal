@@ -28,6 +28,7 @@ export const job = defineJob({
           ledger: config.ledger,
           voucher: config.voucher,
           password: config.demo.password,
+          reviewPassword: config.demo.reviewPassword,
           siteUrl: config.demo.siteUrl,
         },
         console.log,
@@ -36,12 +37,20 @@ export const job = defineJob({
         `[demo-reset] ${String(result.logins.length)} logins, ${String(result.funded)} funded`,
       );
       await runDemoMarketplace(
-        { apiBaseUrl: config.demo.apiBaseUrl, password: config.demo.password },
+        {
+          apiBaseUrl: config.demo.apiBaseUrl,
+          password: config.demo.password,
+          reviewPassword: config.demo.reviewPassword,
+        },
         console.log,
       );
       const summary = await runDemoActivity(
         pool,
-        { apiBaseUrl: config.demo.apiBaseUrl, password: config.demo.password },
+        {
+          apiBaseUrl: config.demo.apiBaseUrl,
+          password: config.demo.password,
+          reviewPassword: config.demo.reviewPassword,
+        },
         console.log,
       );
       console.log(`[demo-reset] activity: ${summary}`);

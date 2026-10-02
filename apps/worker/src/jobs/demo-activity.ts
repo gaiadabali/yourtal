@@ -17,7 +17,11 @@ export const job = defineJob({
     try {
       const summary = await runDemoActivity(
         pool,
-        { apiBaseUrl: config.demo.apiBaseUrl, password: config.demo.password },
+        {
+          apiBaseUrl: config.demo.apiBaseUrl,
+          password: config.demo.password,
+          reviewPassword: config.demo.reviewPassword,
+        },
         console.log,
       );
       console.log(`[demo-activity] ${summary}`);

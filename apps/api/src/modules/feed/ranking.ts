@@ -1,3 +1,4 @@
+import { questionsAskedFor } from "@yourtal/contracts/question/bank";
 import { ancestorsOf } from "@yourtal/contracts/interest/taxonomy";
 import type { Campaign } from "@yourtal/contracts/campaign";
 import type { Audience } from "@yourtal/contracts/audience/audience";
@@ -173,6 +174,7 @@ export function toFeedItem(
   channel: { handle: string; logoUrl: string | null },
 ): FeedItem {
   const { campaign } = candidate;
+  const asked = Math.min(campaign.questionCount, questionsAskedFor(campaign.durationSeconds));
   return {
     campaignId: campaign.id,
     businessId: campaign.businessId,
@@ -185,9 +187,12 @@ export function toFeedItem(
     // The funded base, not the campaign row's display number: the terms line must match the hold.
     rewardPoints: toPoints(candidate.rewardConfig.rewardPointsPerCompletion),
     kind: campaign.kind,
-    questionCount: campaign.questionCount,
+    // 13.3.g: what a session will actually ask (F10), capped by the bank, and
+    // a bonus only when there is a question to earn it on (F96, all or nothing).
+    questionCount: asked,
     maxRewardPoints: toPoints(
-      candidate.rewardConfig.rewardPointsPerCompletion + candidate.rewardConfig.accuracyBonusPoints,
+      candidate.rewardConfig.rewardPointsPerCompletion +
+        (asked > 0 ? candidate.rewardConfig.accuracyBonusPoints : 0),
     ),
     estimatedDataMb: campaign.estimatedDataMb,
     contentCategory: campaign.contentCategory,

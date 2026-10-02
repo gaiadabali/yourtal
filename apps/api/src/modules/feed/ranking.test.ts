@@ -240,6 +240,25 @@ describe("buildFeed", () => {
     expect(buildFeed([tagged], ctx)[0]?.whyReason).not.toBe("interest");
   });
 
+  it("13.3.g: a video under a minute shows no questions and no bonus; a longer one shows the asked count", () => {
+    const short = candidate({
+      campaign: campaign({ kind: "long_form", durationSeconds: 30, questionCount: 3 }),
+      rewardConfig: { ...candidate().rewardConfig, accuracyBonusPoints: 4 },
+    });
+    const long = candidate({
+      campaign: campaign({ kind: "long_form", durationSeconds: 600, questionCount: 6 }),
+      rewardConfig: { ...candidate().rewardConfig, accuracyBonusPoints: 4 },
+    });
+    const items = buildFeed([short, long], baseContext());
+    const shortItem = items.find((item) => item.campaignId === short.campaign.id);
+    const longItem = items.find((item) => item.campaignId === long.campaign.id);
+    expect(shortItem?.questionCount).toBe(0);
+    expect(shortItem?.maxRewardPoints).toBe(shortItem?.rewardPoints);
+    // 600 s asks two questions (one per five minutes), not the six in the bank.
+    expect(longItem?.questionCount).toBe(2);
+    expect(longItem?.maxRewardPoints).toBe((longItem?.rewardPoints ?? 0) + 4);
+  });
+
   it("demotes a campaign the viewer said they were not interested in, without removing it", () => {
     const demoted = candidate();
     const other = candidate();
@@ -292,7 +311,13 @@ describe("buildFeed", () => {
 
   it("carries the honest terms line: kind, questions, data and base plus the maximum bonus (F78)", () => {
     const withBonus = candidate({
-      campaign: campaign({ questionCount: 3, estimatedDataMb: 120 }),
+      // 15 minutes asks three questions (F10), so the bonus is on offer.
+      campaign: campaign({
+        kind: "long_form",
+        durationSeconds: 900,
+        questionCount: 3,
+        estimatedDataMb: 120,
+      }),
       rewardConfig: rewardConfig({ rewardPointsPerCompletion: 90, accuracyBonusPoints: 22 }),
     });
     const [item] = buildFeed([withBonus], baseContext());

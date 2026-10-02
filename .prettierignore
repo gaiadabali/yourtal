@@ -35,3 +35,6 @@ packages/media/fixtures/
 # would make the next `--apply` see a diff and rewrite the file, so the two
 # tools would fight over it on every run.
 .gaiadeploy.yml
+
+# Written by vitest (the authorization matrix, 13.3.c); its own format is the reviewed one.
+apps/api/src/shared/authz/__snapshots__/

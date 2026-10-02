@@ -1,0 +1,2596 @@
+{
+  "anonymous@AU": {
+    "wallet-AU": [],
+    "wallet-ID": [],
+    "auction-AU": [],
+    "auction-ID": [],
+    "session-AU": [
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "create",
+      "register",
+      "request_password_reset"
+    ],
+    "session-ID": [
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "create",
+      "register",
+      "request_password_reset"
+    ],
+    "billing-AU": [],
+    "billing-ID": [],
+    "business-AU": [],
+    "business-ID": [],
+    "kyb_document-AU": [],
+    "kyb_document-ID": [],
+    "team_invitation-AU": [],
+    "team_invitation-ID": [],
+    "team-AU": [],
+    "team-ID": [],
+    "campaign_view-AU": [
+      "browse",
+      "watch_open"
+    ],
+    "campaign_view-ID": [
+      "browse",
+      "watch_open"
+    ],
+    "charity-AU": [],
+    "charity-ID": [],
+    "platform_setting-AU": [],
+    "platform_setting-ID": [],
+    "redemption-AU": [],
+    "redemption-ID": [],
+    "me-AU": [],
+    "me-ID": [],
+    "report-AU": [],
+    "report-ID": [],
+    "ledger_adjustment-AU": [],
+    "ledger_adjustment-ID": [],
+    "staff_console-AU": [],
+    "staff_console-ID": [],
+    "voucher_dispute-AU": [],
+    "voucher_dispute-ID": [],
+    "risk_flag-AU": [],
+    "risk_flag-ID": [],
+    "user_account-AU": [],
+    "user_account-ID": [],
+    "listing-AU": [],
+    "listing-ID": [],
+    "voucher_batch-AU": [],
+    "voucher_batch-ID": [],
+    "merchant_location-AU": [],
+    "merchant_location-ID": [],
+    "campaign-AU": [],
+    "campaign-ID": [],
+    "media_asset-AU": [],
+    "media_asset-ID": [],
+    "moderation_item-AU": [],
+    "moderation_item-ID": []
+  },
+  "anonymous@ID": {
+    "wallet-AU": [],
+    "wallet-ID": [],
+    "auction-AU": [],
+    "auction-ID": [],
+    "session-AU": [
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "create",
+      "register",
+      "request_password_reset"
+    ],
+    "session-ID": [
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "create",
+      "register",
+      "request_password_reset"
+    ],
+    "billing-AU": [],
+    "billing-ID": [],
+    "business-AU": [],
+    "business-ID": [],
+    "kyb_document-AU": [],
+    "kyb_document-ID": [],
+    "team_invitation-AU": [],
+    "team_invitation-ID": [],
+    "team-AU": [],
+    "team-ID": [],
+    "campaign_view-AU": [
+      "browse",
+      "watch_open"
+    ],
+    "campaign_view-ID": [
+      "browse",
+      "watch_open"
+    ],
+    "charity-AU": [],
+    "charity-ID": [],
+    "platform_setting-AU": [],
+    "platform_setting-ID": [],
+    "redemption-AU": [],
+    "redemption-ID": [],
+    "me-AU": [],
+    "me-ID": [],
+    "report-AU": [],
+    "report-ID": [],
+    "ledger_adjustment-AU": [],
+    "ledger_adjustment-ID": [],
+    "staff_console-AU": [],
+    "staff_console-ID": [],
+    "voucher_dispute-AU": [],
+    "voucher_dispute-ID": [],
+    "risk_flag-AU": [],
+    "risk_flag-ID": [],
+    "user_account-AU": [],
+    "user_account-ID": [],
+    "listing-AU": [],
+    "listing-ID": [],
+    "voucher_batch-AU": [],
+    "voucher_batch-ID": [],
+    "merchant_location-AU": [],
+    "merchant_location-ID": [],
+    "campaign-AU": [],
+    "campaign-ID": [],
+    "media_asset-AU": [],
+    "media_asset-ID": [],
+    "moderation_item-AU": [],
+    "moderation_item-ID": []
+  },
+  "user@AU": {
+    "wallet-AU": [
+      "receive_voucher",
+      "redeem",
+      "transfer",
+      "view",
+      "view_history"
+    ],
+    "wallet-ID": [
+      "receive_voucher",
+      "redeem",
+      "transfer",
+      "view",
+      "view_history"
+    ],
+    "auction-AU": [
+      "view"
+    ],
+    "auction-ID": [],
+    "session-AU": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "session-ID": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "billing-AU": [],
+    "billing-ID": [],
+    "business-AU": [
+      "create",
+      "list_own"
+    ],
+    "business-ID": [],
+    "kyb_document-AU": [],
+    "kyb_document-ID": [],
+    "team_invitation-AU": [
+      "accept"
+    ],
+    "team_invitation-ID": [
+      "accept"
+    ],
+    "team-AU": [],
+    "team-ID": [],
+    "campaign_view-AU": [
+      "browse",
+      "earn",
+      "resume_session",
+      "watch_open",
+      "watch_rewarded"
+    ],
+    "campaign_view-ID": [
+      "browse"
+    ],
+    "charity-AU": [
+      "apply",
+      "list_mine"
+    ],
+    "charity-ID": [
+      "list_mine"
+    ],
+    "platform_setting-AU": [],
+    "platform_setting-ID": [],
+    "redemption-AU": [],
+    "redemption-ID": [],
+    "me-AU": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "me-ID": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "report-AU": [],
+    "report-ID": [],
+    "ledger_adjustment-AU": [],
+    "ledger_adjustment-ID": [],
+    "staff_console-AU": [],
+    "staff_console-ID": [],
+    "voucher_dispute-AU": [],
+    "voucher_dispute-ID": [],
+    "risk_flag-AU": [],
+    "risk_flag-ID": [],
+    "user_account-AU": [
+      "view"
+    ],
+    "user_account-ID": [
+      "view"
+    ],
+    "listing-AU": [],
+    "listing-ID": [],
+    "voucher_batch-AU": [],
+    "voucher_batch-ID": [],
+    "merchant_location-AU": [],
+    "merchant_location-ID": [],
+    "campaign-AU": [],
+    "campaign-ID": [],
+    "media_asset-AU": [],
+    "media_asset-ID": [],
+    "moderation_item-AU": [],
+    "moderation_item-ID": []
+  },
+  "user@ID": {
+    "wallet-AU": [
+      "receive_voucher",
+      "redeem",
+      "transfer",
+      "view",
+      "view_history"
+    ],
+    "wallet-ID": [
+      "receive_voucher",
+      "redeem",
+      "transfer",
+      "view",
+      "view_history"
+    ],
+    "auction-AU": [],
+    "auction-ID": [
+      "view"
+    ],
+    "session-AU": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "session-ID": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "billing-AU": [],
+    "billing-ID": [],
+    "business-AU": [],
+    "business-ID": [
+      "create",
+      "list_own"
+    ],
+    "kyb_document-AU": [],
+    "kyb_document-ID": [],
+    "team_invitation-AU": [
+      "accept"
+    ],
+    "team_invitation-ID": [
+      "accept"
+    ],
+    "team-AU": [],
+    "team-ID": [],
+    "campaign_view-AU": [
+      "browse"
+    ],
+    "campaign_view-ID": [
+      "browse",
+      "earn",
+      "resume_session",
+      "watch_open",
+      "watch_rewarded"
+    ],
+    "charity-AU": [
+      "list_mine"
+    ],
+    "charity-ID": [
+      "apply",
+      "list_mine"
+    ],
+    "platform_setting-AU": [],
+    "platform_setting-ID": [],
+    "redemption-AU": [],
+    "redemption-ID": [],
+    "me-AU": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "me-ID": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "report-AU": [],
+    "report-ID": [],
+    "ledger_adjustment-AU": [],
+    "ledger_adjustment-ID": [],
+    "staff_console-AU": [],
+    "staff_console-ID": [],
+    "voucher_dispute-AU": [],
+    "voucher_dispute-ID": [],
+    "risk_flag-AU": [],
+    "risk_flag-ID": [],
+    "user_account-AU": [
+      "view"
+    ],
+    "user_account-ID": [
+      "view"
+    ],
+    "listing-AU": [],
+    "listing-ID": [],
+    "voucher_batch-AU": [],
+    "voucher_batch-ID": [],
+    "merchant_location-AU": [],
+    "merchant_location-ID": [],
+    "campaign-AU": [],
+    "campaign-ID": [],
+    "media_asset-AU": [],
+    "media_asset-ID": [],
+    "moderation_item-AU": [],
+    "moderation_item-ID": []
+  },
+  "business_user@AU": {
+    "wallet-AU": [
+      "receive_voucher",
+      "redeem",
+      "transfer",
+      "view",
+      "view_history"
+    ],
+    "wallet-ID": [
+      "receive_voucher",
+      "redeem",
+      "transfer",
+      "view",
+      "view_history"
+    ],
+    "auction-AU": [
+      "view"
+    ],
+    "auction-ID": [],
+    "session-AU": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "session-ID": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "billing-AU": [
+      "purchase_points",
+      "raise_dispute",
+      "update_payment_method",
+      "view",
+      "view_statement"
+    ],
+    "billing-ID": [],
+    "business-AU": [
+      "create",
+      "list_own",
+      "view"
+    ],
+    "business-ID": [],
+    "kyb_document-AU": [
+      "submit",
+      "view"
+    ],
+    "kyb_document-ID": [],
+    "team_invitation-AU": [
+      "accept"
+    ],
+    "team_invitation-ID": [
+      "accept"
+    ],
+    "team-AU": [
+      "change_role",
+      "invite",
+      "provision_device",
+      "remove_member",
+      "revoke_device",
+      "view"
+    ],
+    "team-ID": [],
+    "campaign_view-AU": [
+      "browse",
+      "earn",
+      "resume_session",
+      "watch_open",
+      "watch_rewarded"
+    ],
+    "campaign_view-ID": [
+      "browse"
+    ],
+    "charity-AU": [
+      "apply",
+      "list_mine"
+    ],
+    "charity-ID": [
+      "list_mine"
+    ],
+    "platform_setting-AU": [],
+    "platform_setting-ID": [],
+    "redemption-AU": [
+      "revoke_credential",
+      "rotate_credential",
+      "view_credential"
+    ],
+    "redemption-ID": [],
+    "me-AU": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "me-ID": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "report-AU": [
+      "view"
+    ],
+    "report-ID": [],
+    "ledger_adjustment-AU": [],
+    "ledger_adjustment-ID": [],
+    "staff_console-AU": [],
+    "staff_console-ID": [],
+    "voucher_dispute-AU": [],
+    "voucher_dispute-ID": [],
+    "risk_flag-AU": [],
+    "risk_flag-ID": [],
+    "user_account-AU": [
+      "view"
+    ],
+    "user_account-ID": [
+      "view"
+    ],
+    "listing-AU": [
+      "approve_settlement_decrease",
+      "archive",
+      "create",
+      "edit",
+      "request_settlement_decrease",
+      "set_settlement_value",
+      "view"
+    ],
+    "listing-ID": [],
+    "voucher_batch-AU": [
+      "approve_issuance",
+      "request_issuance",
+      "view"
+    ],
+    "voucher_batch-ID": [],
+    "merchant_location-AU": [
+      "archive",
+      "create",
+      "edit",
+      "view"
+    ],
+    "merchant_location-ID": [],
+    "campaign-AU": [
+      "create",
+      "edit",
+      "edit_questions",
+      "submit_for_review",
+      "view"
+    ],
+    "campaign-ID": [],
+    "media_asset-AU": [
+      "upload",
+      "view"
+    ],
+    "media_asset-ID": [],
+    "moderation_item-AU": [],
+    "moderation_item-ID": []
+  },
+  "business_user@ID": {
+    "wallet-AU": [
+      "receive_voucher",
+      "redeem",
+      "transfer",
+      "view",
+      "view_history"
+    ],
+    "wallet-ID": [
+      "receive_voucher",
+      "redeem",
+      "transfer",
+      "view",
+      "view_history"
+    ],
+    "auction-AU": [],
+    "auction-ID": [
+      "view"
+    ],
+    "session-AU": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "session-ID": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "billing-AU": [],
+    "billing-ID": [
+      "purchase_points",
+      "raise_dispute",
+      "update_payment_method",
+      "view",
+      "view_statement"
+    ],
+    "business-AU": [],
+    "business-ID": [
+      "create",
+      "list_own",
+      "view"
+    ],
+    "kyb_document-AU": [],
+    "kyb_document-ID": [
+      "submit",
+      "view"
+    ],
+    "team_invitation-AU": [
+      "accept"
+    ],
+    "team_invitation-ID": [
+      "accept"
+    ],
+    "team-AU": [],
+    "team-ID": [
+      "change_role",
+      "invite",
+      "provision_device",
+      "remove_member",
+      "revoke_device",
+      "view"
+    ],
+    "campaign_view-AU": [
+      "browse"
+    ],
+    "campaign_view-ID": [
+      "browse",
+      "earn",
+      "resume_session",
+      "watch_open",
+      "watch_rewarded"
+    ],
+    "charity-AU": [
+      "list_mine"
+    ],
+    "charity-ID": [
+      "apply",
+      "list_mine"
+    ],
+    "platform_setting-AU": [],
+    "platform_setting-ID": [],
+    "redemption-AU": [],
+    "redemption-ID": [
+      "revoke_credential",
+      "rotate_credential",
+      "view_credential"
+    ],
+    "me-AU": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "me-ID": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "report-AU": [],
+    "report-ID": [
+      "view"
+    ],
+    "ledger_adjustment-AU": [],
+    "ledger_adjustment-ID": [],
+    "staff_console-AU": [],
+    "staff_console-ID": [],
+    "voucher_dispute-AU": [],
+    "voucher_dispute-ID": [],
+    "risk_flag-AU": [],
+    "risk_flag-ID": [],
+    "user_account-AU": [
+      "view"
+    ],
+    "user_account-ID": [
+      "view"
+    ],
+    "listing-AU": [],
+    "listing-ID": [
+      "approve_settlement_decrease",
+      "archive",
+      "create",
+      "edit",
+      "request_settlement_decrease",
+      "set_settlement_value",
+      "view"
+    ],
+    "voucher_batch-AU": [],
+    "voucher_batch-ID": [
+      "approve_issuance",
+      "request_issuance",
+      "view"
+    ],
+    "merchant_location-AU": [],
+    "merchant_location-ID": [
+      "archive",
+      "create",
+      "edit",
+      "view"
+    ],
+    "campaign-AU": [],
+    "campaign-ID": [
+      "create",
+      "edit",
+      "edit_questions",
+      "submit_for_review",
+      "view"
+    ],
+    "media_asset-AU": [],
+    "media_asset-ID": [
+      "upload",
+      "view"
+    ],
+    "moderation_item-AU": [],
+    "moderation_item-ID": []
+  },
+  "store_device@AU": {
+    "wallet-AU": [],
+    "wallet-ID": [],
+    "auction-AU": [],
+    "auction-ID": [],
+    "session-AU": [],
+    "session-ID": [],
+    "billing-AU": [],
+    "billing-ID": [],
+    "business-AU": [],
+    "business-ID": [],
+    "kyb_document-AU": [],
+    "kyb_document-ID": [],
+    "team_invitation-AU": [],
+    "team_invitation-ID": [],
+    "team-AU": [],
+    "team-ID": [],
+    "campaign_view-AU": [],
+    "campaign_view-ID": [],
+    "charity-AU": [],
+    "charity-ID": [],
+    "platform_setting-AU": [],
+    "platform_setting-ID": [],
+    "redemption-AU": [],
+    "redemption-ID": [],
+    "me-AU": [],
+    "me-ID": [],
+    "report-AU": [],
+    "report-ID": [],
+    "ledger_adjustment-AU": [],
+    "ledger_adjustment-ID": [],
+    "staff_console-AU": [],
+    "staff_console-ID": [],
+    "voucher_dispute-AU": [],
+    "voucher_dispute-ID": [],
+    "risk_flag-AU": [],
+    "risk_flag-ID": [],
+    "user_account-AU": [],
+    "user_account-ID": [],
+    "listing-AU": [],
+    "listing-ID": [],
+    "voucher_batch-AU": [],
+    "voucher_batch-ID": [],
+    "merchant_location-AU": [],
+    "merchant_location-ID": [],
+    "campaign-AU": [],
+    "campaign-ID": [],
+    "media_asset-AU": [],
+    "media_asset-ID": [],
+    "moderation_item-AU": [],
+    "moderation_item-ID": []
+  },
+  "store_device@ID": {
+    "wallet-AU": [],
+    "wallet-ID": [],
+    "auction-AU": [],
+    "auction-ID": [],
+    "session-AU": [],
+    "session-ID": [],
+    "billing-AU": [],
+    "billing-ID": [],
+    "business-AU": [],
+    "business-ID": [],
+    "kyb_document-AU": [],
+    "kyb_document-ID": [],
+    "team_invitation-AU": [],
+    "team_invitation-ID": [],
+    "team-AU": [],
+    "team-ID": [],
+    "campaign_view-AU": [],
+    "campaign_view-ID": [],
+    "charity-AU": [],
+    "charity-ID": [],
+    "platform_setting-AU": [],
+    "platform_setting-ID": [],
+    "redemption-AU": [],
+    "redemption-ID": [],
+    "me-AU": [],
+    "me-ID": [],
+    "report-AU": [],
+    "report-ID": [],
+    "ledger_adjustment-AU": [],
+    "ledger_adjustment-ID": [],
+    "staff_console-AU": [],
+    "staff_console-ID": [],
+    "voucher_dispute-AU": [],
+    "voucher_dispute-ID": [],
+    "risk_flag-AU": [],
+    "risk_flag-ID": [],
+    "user_account-AU": [],
+    "user_account-ID": [],
+    "listing-AU": [],
+    "listing-ID": [],
+    "voucher_batch-AU": [],
+    "voucher_batch-ID": [],
+    "merchant_location-AU": [],
+    "merchant_location-ID": [],
+    "campaign-AU": [],
+    "campaign-ID": [],
+    "media_asset-AU": [],
+    "media_asset-ID": [],
+    "moderation_item-AU": [],
+    "moderation_item-ID": []
+  },
+  "support@AU": {
+    "wallet-AU": [],
+    "wallet-ID": [],
+    "auction-AU": [],
+    "auction-ID": [],
+    "session-AU": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "session-ID": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "billing-AU": [],
+    "billing-ID": [],
+    "business-AU": [],
+    "business-ID": [],
+    "kyb_document-AU": [],
+    "kyb_document-ID": [],
+    "team_invitation-AU": [
+      "accept"
+    ],
+    "team_invitation-ID": [
+      "accept"
+    ],
+    "team-AU": [],
+    "team-ID": [],
+    "campaign_view-AU": [],
+    "campaign_view-ID": [],
+    "charity-AU": [],
+    "charity-ID": [],
+    "platform_setting-AU": [],
+    "platform_setting-ID": [],
+    "redemption-AU": [],
+    "redemption-ID": [],
+    "me-AU": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "me-ID": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "report-AU": [
+      "view"
+    ],
+    "report-ID": [
+      "view"
+    ],
+    "ledger_adjustment-AU": [],
+    "ledger_adjustment-ID": [],
+    "staff_console-AU": [
+      "view"
+    ],
+    "staff_console-ID": [
+      "view"
+    ],
+    "voucher_dispute-AU": [
+      "view"
+    ],
+    "voucher_dispute-ID": [
+      "view"
+    ],
+    "risk_flag-AU": [],
+    "risk_flag-ID": [],
+    "user_account-AU": [
+      "goodwill_credit",
+      "view"
+    ],
+    "user_account-ID": [
+      "goodwill_credit",
+      "view"
+    ],
+    "listing-AU": [],
+    "listing-ID": [],
+    "voucher_batch-AU": [],
+    "voucher_batch-ID": [],
+    "merchant_location-AU": [],
+    "merchant_location-ID": [],
+    "campaign-AU": [
+      "view"
+    ],
+    "campaign-ID": [
+      "view"
+    ],
+    "media_asset-AU": [],
+    "media_asset-ID": [],
+    "moderation_item-AU": [],
+    "moderation_item-ID": []
+  },
+  "support@ID": {
+    "wallet-AU": [],
+    "wallet-ID": [],
+    "auction-AU": [],
+    "auction-ID": [],
+    "session-AU": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "session-ID": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "billing-AU": [],
+    "billing-ID": [],
+    "business-AU": [],
+    "business-ID": [],
+    "kyb_document-AU": [],
+    "kyb_document-ID": [],
+    "team_invitation-AU": [
+      "accept"
+    ],
+    "team_invitation-ID": [
+      "accept"
+    ],
+    "team-AU": [],
+    "team-ID": [],
+    "campaign_view-AU": [],
+    "campaign_view-ID": [],
+    "charity-AU": [],
+    "charity-ID": [],
+    "platform_setting-AU": [],
+    "platform_setting-ID": [],
+    "redemption-AU": [],
+    "redemption-ID": [],
+    "me-AU": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "me-ID": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "report-AU": [
+      "view"
+    ],
+    "report-ID": [
+      "view"
+    ],
+    "ledger_adjustment-AU": [],
+    "ledger_adjustment-ID": [],
+    "staff_console-AU": [
+      "view"
+    ],
+    "staff_console-ID": [
+      "view"
+    ],
+    "voucher_dispute-AU": [
+      "view"
+    ],
+    "voucher_dispute-ID": [
+      "view"
+    ],
+    "risk_flag-AU": [],
+    "risk_flag-ID": [],
+    "user_account-AU": [
+      "goodwill_credit",
+      "view"
+    ],
+    "user_account-ID": [
+      "goodwill_credit",
+      "view"
+    ],
+    "listing-AU": [],
+    "listing-ID": [],
+    "voucher_batch-AU": [],
+    "voucher_batch-ID": [],
+    "merchant_location-AU": [],
+    "merchant_location-ID": [],
+    "campaign-AU": [
+      "view"
+    ],
+    "campaign-ID": [
+      "view"
+    ],
+    "media_asset-AU": [],
+    "media_asset-ID": [],
+    "moderation_item-AU": [],
+    "moderation_item-ID": []
+  },
+  "moderator@AU": {
+    "wallet-AU": [],
+    "wallet-ID": [],
+    "auction-AU": [],
+    "auction-ID": [],
+    "session-AU": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "session-ID": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "billing-AU": [],
+    "billing-ID": [],
+    "business-AU": [],
+    "business-ID": [],
+    "kyb_document-AU": [],
+    "kyb_document-ID": [],
+    "team_invitation-AU": [
+      "accept"
+    ],
+    "team_invitation-ID": [
+      "accept"
+    ],
+    "team-AU": [],
+    "team-ID": [],
+    "campaign_view-AU": [],
+    "campaign_view-ID": [],
+    "charity-AU": [],
+    "charity-ID": [],
+    "platform_setting-AU": [],
+    "platform_setting-ID": [],
+    "redemption-AU": [],
+    "redemption-ID": [],
+    "me-AU": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "me-ID": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "report-AU": [],
+    "report-ID": [],
+    "ledger_adjustment-AU": [],
+    "ledger_adjustment-ID": [],
+    "staff_console-AU": [
+      "view"
+    ],
+    "staff_console-ID": [
+      "view"
+    ],
+    "voucher_dispute-AU": [],
+    "voucher_dispute-ID": [],
+    "risk_flag-AU": [],
+    "risk_flag-ID": [],
+    "user_account-AU": [],
+    "user_account-ID": [],
+    "listing-AU": [],
+    "listing-ID": [],
+    "voucher_batch-AU": [
+      "approve_issuance",
+      "reject_issuance",
+      "view"
+    ],
+    "voucher_batch-ID": [
+      "approve_issuance",
+      "reject_issuance",
+      "view"
+    ],
+    "merchant_location-AU": [],
+    "merchant_location-ID": [],
+    "campaign-AU": [
+      "view"
+    ],
+    "campaign-ID": [
+      "view"
+    ],
+    "media_asset-AU": [],
+    "media_asset-ID": [],
+    "moderation_item-AU": [
+      "view"
+    ],
+    "moderation_item-ID": [
+      "view"
+    ]
+  },
+  "moderator@ID": {
+    "wallet-AU": [],
+    "wallet-ID": [],
+    "auction-AU": [],
+    "auction-ID": [],
+    "session-AU": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "session-ID": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "billing-AU": [],
+    "billing-ID": [],
+    "business-AU": [],
+    "business-ID": [],
+    "kyb_document-AU": [],
+    "kyb_document-ID": [],
+    "team_invitation-AU": [
+      "accept"
+    ],
+    "team_invitation-ID": [
+      "accept"
+    ],
+    "team-AU": [],
+    "team-ID": [],
+    "campaign_view-AU": [],
+    "campaign_view-ID": [],
+    "charity-AU": [],
+    "charity-ID": [],
+    "platform_setting-AU": [],
+    "platform_setting-ID": [],
+    "redemption-AU": [],
+    "redemption-ID": [],
+    "me-AU": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "me-ID": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "report-AU": [],
+    "report-ID": [],
+    "ledger_adjustment-AU": [],
+    "ledger_adjustment-ID": [],
+    "staff_console-AU": [
+      "view"
+    ],
+    "staff_console-ID": [
+      "view"
+    ],
+    "voucher_dispute-AU": [],
+    "voucher_dispute-ID": [],
+    "risk_flag-AU": [],
+    "risk_flag-ID": [],
+    "user_account-AU": [],
+    "user_account-ID": [],
+    "listing-AU": [],
+    "listing-ID": [],
+    "voucher_batch-AU": [
+      "approve_issuance",
+      "reject_issuance",
+      "view"
+    ],
+    "voucher_batch-ID": [
+      "approve_issuance",
+      "reject_issuance",
+      "view"
+    ],
+    "merchant_location-AU": [],
+    "merchant_location-ID": [],
+    "campaign-AU": [
+      "view"
+    ],
+    "campaign-ID": [
+      "view"
+    ],
+    "media_asset-AU": [],
+    "media_asset-ID": [],
+    "moderation_item-AU": [
+      "view"
+    ],
+    "moderation_item-ID": [
+      "view"
+    ]
+  },
+  "risk_analyst@AU": {
+    "wallet-AU": [],
+    "wallet-ID": [],
+    "auction-AU": [],
+    "auction-ID": [],
+    "session-AU": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "session-ID": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "billing-AU": [],
+    "billing-ID": [],
+    "business-AU": [],
+    "business-ID": [],
+    "kyb_document-AU": [],
+    "kyb_document-ID": [],
+    "team_invitation-AU": [
+      "accept"
+    ],
+    "team_invitation-ID": [
+      "accept"
+    ],
+    "team-AU": [],
+    "team-ID": [],
+    "campaign_view-AU": [],
+    "campaign_view-ID": [],
+    "charity-AU": [],
+    "charity-ID": [],
+    "platform_setting-AU": [],
+    "platform_setting-ID": [],
+    "redemption-AU": [],
+    "redemption-ID": [],
+    "me-AU": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "me-ID": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "report-AU": [
+      "view"
+    ],
+    "report-ID": [
+      "view"
+    ],
+    "ledger_adjustment-AU": [],
+    "ledger_adjustment-ID": [],
+    "staff_console-AU": [
+      "view"
+    ],
+    "staff_console-ID": [
+      "view"
+    ],
+    "voucher_dispute-AU": [],
+    "voucher_dispute-ID": [],
+    "risk_flag-AU": [
+      "release",
+      "suspend",
+      "view"
+    ],
+    "risk_flag-ID": [
+      "release",
+      "suspend",
+      "view"
+    ],
+    "user_account-AU": [
+      "reinstate",
+      "set_trust_tier",
+      "suspend",
+      "view"
+    ],
+    "user_account-ID": [
+      "reinstate",
+      "set_trust_tier",
+      "suspend",
+      "view"
+    ],
+    "listing-AU": [],
+    "listing-ID": [],
+    "voucher_batch-AU": [],
+    "voucher_batch-ID": [],
+    "merchant_location-AU": [],
+    "merchant_location-ID": [],
+    "campaign-AU": [],
+    "campaign-ID": [],
+    "media_asset-AU": [],
+    "media_asset-ID": [],
+    "moderation_item-AU": [],
+    "moderation_item-ID": []
+  },
+  "risk_analyst@ID": {
+    "wallet-AU": [],
+    "wallet-ID": [],
+    "auction-AU": [],
+    "auction-ID": [],
+    "session-AU": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "session-ID": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "billing-AU": [],
+    "billing-ID": [],
+    "business-AU": [],
+    "business-ID": [],
+    "kyb_document-AU": [],
+    "kyb_document-ID": [],
+    "team_invitation-AU": [
+      "accept"
+    ],
+    "team_invitation-ID": [
+      "accept"
+    ],
+    "team-AU": [],
+    "team-ID": [],
+    "campaign_view-AU": [],
+    "campaign_view-ID": [],
+    "charity-AU": [],
+    "charity-ID": [],
+    "platform_setting-AU": [],
+    "platform_setting-ID": [],
+    "redemption-AU": [],
+    "redemption-ID": [],
+    "me-AU": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "me-ID": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "report-AU": [
+      "view"
+    ],
+    "report-ID": [
+      "view"
+    ],
+    "ledger_adjustment-AU": [],
+    "ledger_adjustment-ID": [],
+    "staff_console-AU": [
+      "view"
+    ],
+    "staff_console-ID": [
+      "view"
+    ],
+    "voucher_dispute-AU": [],
+    "voucher_dispute-ID": [],
+    "risk_flag-AU": [
+      "release",
+      "suspend",
+      "view"
+    ],
+    "risk_flag-ID": [
+      "release",
+      "suspend",
+      "view"
+    ],
+    "user_account-AU": [
+      "reinstate",
+      "set_trust_tier",
+      "suspend",
+      "view"
+    ],
+    "user_account-ID": [
+      "reinstate",
+      "set_trust_tier",
+      "suspend",
+      "view"
+    ],
+    "listing-AU": [],
+    "listing-ID": [],
+    "voucher_batch-AU": [],
+    "voucher_batch-ID": [],
+    "merchant_location-AU": [],
+    "merchant_location-ID": [],
+    "campaign-AU": [],
+    "campaign-ID": [],
+    "media_asset-AU": [],
+    "media_asset-ID": [],
+    "moderation_item-AU": [],
+    "moderation_item-ID": []
+  },
+  "finance@AU": {
+    "wallet-AU": [],
+    "wallet-ID": [],
+    "auction-AU": [],
+    "auction-ID": [],
+    "session-AU": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "session-ID": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "billing-AU": [
+      "resolve_dispute",
+      "view",
+      "view_statement",
+      "view_statement_queue"
+    ],
+    "billing-ID": [
+      "resolve_dispute",
+      "view",
+      "view_statement",
+      "view_statement_queue"
+    ],
+    "business-AU": [],
+    "business-ID": [],
+    "kyb_document-AU": [],
+    "kyb_document-ID": [],
+    "team_invitation-AU": [
+      "accept"
+    ],
+    "team_invitation-ID": [
+      "accept"
+    ],
+    "team-AU": [],
+    "team-ID": [],
+    "campaign_view-AU": [],
+    "campaign_view-ID": [],
+    "charity-AU": [
+      "review",
+      "view_console"
+    ],
+    "charity-ID": [
+      "review",
+      "view_console"
+    ],
+    "platform_setting-AU": [
+      "approve_setting",
+      "propose_setting",
+      "view_setting"
+    ],
+    "platform_setting-ID": [
+      "approve_setting",
+      "propose_setting",
+      "view_setting"
+    ],
+    "redemption-AU": [],
+    "redemption-ID": [],
+    "me-AU": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "me-ID": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "report-AU": [
+      "view"
+    ],
+    "report-ID": [
+      "view"
+    ],
+    "ledger_adjustment-AU": [
+      "approve",
+      "approve_payout",
+      "create",
+      "propose_payout",
+      "view"
+    ],
+    "ledger_adjustment-ID": [
+      "approve",
+      "approve_payout",
+      "create",
+      "propose_payout",
+      "view"
+    ],
+    "staff_console-AU": [
+      "view"
+    ],
+    "staff_console-ID": [
+      "view"
+    ],
+    "voucher_dispute-AU": [
+      "resolve",
+      "view"
+    ],
+    "voucher_dispute-ID": [
+      "resolve",
+      "view"
+    ],
+    "risk_flag-AU": [],
+    "risk_flag-ID": [],
+    "user_account-AU": [],
+    "user_account-ID": [],
+    "listing-AU": [],
+    "listing-ID": [],
+    "voucher_batch-AU": [],
+    "voucher_batch-ID": [],
+    "merchant_location-AU": [],
+    "merchant_location-ID": [],
+    "campaign-AU": [],
+    "campaign-ID": [],
+    "media_asset-AU": [],
+    "media_asset-ID": [],
+    "moderation_item-AU": [],
+    "moderation_item-ID": []
+  },
+  "finance@ID": {
+    "wallet-AU": [],
+    "wallet-ID": [],
+    "auction-AU": [],
+    "auction-ID": [],
+    "session-AU": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "session-ID": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "billing-AU": [
+      "resolve_dispute",
+      "view",
+      "view_statement",
+      "view_statement_queue"
+    ],
+    "billing-ID": [
+      "resolve_dispute",
+      "view",
+      "view_statement",
+      "view_statement_queue"
+    ],
+    "business-AU": [],
+    "business-ID": [],
+    "kyb_document-AU": [],
+    "kyb_document-ID": [],
+    "team_invitation-AU": [
+      "accept"
+    ],
+    "team_invitation-ID": [
+      "accept"
+    ],
+    "team-AU": [],
+    "team-ID": [],
+    "campaign_view-AU": [],
+    "campaign_view-ID": [],
+    "charity-AU": [
+      "review",
+      "view_console"
+    ],
+    "charity-ID": [
+      "review",
+      "view_console"
+    ],
+    "platform_setting-AU": [
+      "approve_setting",
+      "propose_setting",
+      "view_setting"
+    ],
+    "platform_setting-ID": [
+      "approve_setting",
+      "propose_setting",
+      "view_setting"
+    ],
+    "redemption-AU": [],
+    "redemption-ID": [],
+    "me-AU": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "me-ID": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "report-AU": [
+      "view"
+    ],
+    "report-ID": [
+      "view"
+    ],
+    "ledger_adjustment-AU": [
+      "approve",
+      "approve_payout",
+      "create",
+      "propose_payout",
+      "view"
+    ],
+    "ledger_adjustment-ID": [
+      "approve",
+      "approve_payout",
+      "create",
+      "propose_payout",
+      "view"
+    ],
+    "staff_console-AU": [
+      "view"
+    ],
+    "staff_console-ID": [
+      "view"
+    ],
+    "voucher_dispute-AU": [
+      "resolve",
+      "view"
+    ],
+    "voucher_dispute-ID": [
+      "resolve",
+      "view"
+    ],
+    "risk_flag-AU": [],
+    "risk_flag-ID": [],
+    "user_account-AU": [],
+    "user_account-ID": [],
+    "listing-AU": [],
+    "listing-ID": [],
+    "voucher_batch-AU": [],
+    "voucher_batch-ID": [],
+    "merchant_location-AU": [],
+    "merchant_location-ID": [],
+    "campaign-AU": [],
+    "campaign-ID": [],
+    "media_asset-AU": [],
+    "media_asset-ID": [],
+    "moderation_item-AU": [],
+    "moderation_item-ID": []
+  },
+  "ops@AU": {
+    "wallet-AU": [],
+    "wallet-ID": [],
+    "auction-AU": [
+      "review"
+    ],
+    "auction-ID": [
+      "review"
+    ],
+    "session-AU": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "session-ID": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "billing-AU": [
+      "resolve_dispute",
+      "view_statement_queue"
+    ],
+    "billing-ID": [
+      "resolve_dispute",
+      "view_statement_queue"
+    ],
+    "business-AU": [
+      "reinstate",
+      "suspend",
+      "view"
+    ],
+    "business-ID": [
+      "reinstate",
+      "suspend",
+      "view"
+    ],
+    "kyb_document-AU": [
+      "approve",
+      "reject",
+      "view"
+    ],
+    "kyb_document-ID": [
+      "approve",
+      "reject",
+      "view"
+    ],
+    "team_invitation-AU": [
+      "accept"
+    ],
+    "team_invitation-ID": [
+      "accept"
+    ],
+    "team-AU": [],
+    "team-ID": [],
+    "campaign_view-AU": [],
+    "campaign_view-ID": [],
+    "charity-AU": [
+      "review"
+    ],
+    "charity-ID": [
+      "review"
+    ],
+    "platform_setting-AU": [
+      "trip_kill_switch",
+      "view",
+      "view_setting"
+    ],
+    "platform_setting-ID": [
+      "trip_kill_switch",
+      "view",
+      "view_setting"
+    ],
+    "redemption-AU": [],
+    "redemption-ID": [],
+    "me-AU": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "me-ID": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "report-AU": [
+      "view"
+    ],
+    "report-ID": [
+      "view"
+    ],
+    "ledger_adjustment-AU": [],
+    "ledger_adjustment-ID": [],
+    "staff_console-AU": [
+      "view"
+    ],
+    "staff_console-ID": [
+      "view"
+    ],
+    "voucher_dispute-AU": [],
+    "voucher_dispute-ID": [],
+    "risk_flag-AU": [],
+    "risk_flag-ID": [],
+    "user_account-AU": [],
+    "user_account-ID": [],
+    "listing-AU": [
+      "approve_listing",
+      "reject_listing",
+      "view"
+    ],
+    "listing-ID": [
+      "approve_listing",
+      "reject_listing",
+      "view"
+    ],
+    "voucher_batch-AU": [],
+    "voucher_batch-ID": [],
+    "merchant_location-AU": [],
+    "merchant_location-ID": [],
+    "campaign-AU": [],
+    "campaign-ID": [],
+    "media_asset-AU": [],
+    "media_asset-ID": [],
+    "moderation_item-AU": [],
+    "moderation_item-ID": []
+  },
+  "ops@ID": {
+    "wallet-AU": [],
+    "wallet-ID": [],
+    "auction-AU": [
+      "review"
+    ],
+    "auction-ID": [
+      "review"
+    ],
+    "session-AU": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "session-ID": [
+      "change_password",
+      "confirm_email_verification",
+      "confirm_password_reset",
+      "delete",
+      "dev_clock_advance_days",
+      "dev_clock_release_pending",
+      "dev_clock_run_job",
+      "request_email_verification",
+      "request_password_reset",
+      "update_profile",
+      "view_profile"
+    ],
+    "billing-AU": [
+      "resolve_dispute",
+      "view_statement_queue"
+    ],
+    "billing-ID": [
+      "resolve_dispute",
+      "view_statement_queue"
+    ],
+    "business-AU": [
+      "reinstate",
+      "suspend",
+      "view"
+    ],
+    "business-ID": [
+      "reinstate",
+      "suspend",
+      "view"
+    ],
+    "kyb_document-AU": [
+      "approve",
+      "reject",
+      "view"
+    ],
+    "kyb_document-ID": [
+      "approve",
+      "reject",
+      "view"
+    ],
+    "team_invitation-AU": [
+      "accept"
+    ],
+    "team_invitation-ID": [
+      "accept"
+    ],
+    "team-AU": [],
+    "team-ID": [],
+    "campaign_view-AU": [],
+    "campaign_view-ID": [],
+    "charity-AU": [
+      "review"
+    ],
+    "charity-ID": [
+      "review"
+    ],
+    "platform_setting-AU": [
+      "trip_kill_switch",
+      "view",
+      "view_setting"
+    ],
+    "platform_setting-ID": [
+      "trip_kill_switch",
+      "view",
+      "view_setting"
+    ],
+    "redemption-AU": [],
+    "redemption-ID": [],
+    "me-AU": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "me-ID": [
+      "create_link_code",
+      "delete_account",
+      "export_data",
+      "update_consent",
+      "update_follows",
+      "update_interests",
+      "update_notifications",
+      "update_saves",
+      "update_settings",
+      "view_consents",
+      "view_continue_watching",
+      "view_follows",
+      "view_interests",
+      "view_notifications",
+      "view_saves",
+      "view_sessions",
+      "view_settings",
+      "view_streak"
+    ],
+    "report-AU": [
+      "view"
+    ],
+    "report-ID": [
+      "view"
+    ],
+    "ledger_adjustment-AU": [],
+    "ledger_adjustment-ID": [],
+    "staff_console-AU": [
+      "view"
+    ],
+    "staff_console-ID": [
+      "view"
+    ],
+    "voucher_dispute-AU": [],
+    "voucher_dispute-ID": [],
+    "risk_flag-AU": [],
+    "risk_flag-ID": [],
+    "user_account-AU": [],
+    "user_account-ID": [],
+    "listing-AU": [
+      "approve_listing",
+      "reject_listing",
+      "view"
+    ],
+    "listing-ID": [
+      "approve_listing",
+      "reject_listing",
+      "view"
+    ],
+    "voucher_batch-AU": [],
+    "voucher_batch-ID": [],
+    "merchant_location-AU": [],
+    "merchant_location-ID": [],
+    "campaign-AU": [],
+    "campaign-ID": [],
+    "media_asset-AU": [],
+    "media_asset-ID": [],
+    "moderation_item-AU": [],
+    "moderation_item-ID": []
+  },
+  "admin@AU": {
+    "wallet-AU": [],
+    "wallet-ID": [],
+    "auction-AU": [],
+    "auction-ID": [],
+    "session-AU": [],
+    "session-ID": [],
+    "billing-AU": [],
+    "billing-ID": [],
+    "business-AU": [],
+    "business-ID": [],
+    "kyb_document-AU": [],
+    "kyb_document-ID": [],
+    "team_invitation-AU": [],
+    "team_invitation-ID": [],
+    "team-AU": [],
+    "team-ID": [],
+    "campaign_view-AU": [],
+    "campaign_view-ID": [],
+    "charity-AU": [],
+    "charity-ID": [],
+    "platform_setting-AU": [
+      "reset_demo_world",
+      "trip_kill_switch",
+      "view"
+    ],
+    "platform_setting-ID": [
+      "reset_demo_world",
+      "trip_kill_switch",
+      "view"
+    ],
+    "redemption-AU": [],
+    "redemption-ID": [],
+    "me-AU": [],
+    "me-ID": [],
+    "report-AU": [],
+    "report-ID": [],
+    "ledger_adjustment-AU": [],
+    "ledger_adjustment-ID": [],
+    "staff_console-AU": [],
+    "staff_console-ID": [],
+    "voucher_dispute-AU": [],
+    "voucher_dispute-ID": [],
+    "risk_flag-AU": [],
+    "risk_flag-ID": [],
+    "user_account-AU": [],
+    "user_account-ID": [],
+    "listing-AU": [],
+    "listing-ID": [],
+    "voucher_batch-AU": [],
+    "voucher_batch-ID": [],
+    "merchant_location-AU": [],
+    "merchant_location-ID": [],
+    "campaign-AU": [],
+    "campaign-ID": [],
+    "media_asset-AU": [],
+    "media_asset-ID": [],
+    "moderation_item-AU": [],
+    "moderation_item-ID": []
+  },
+  "admin@ID": {
+    "wallet-AU": [],
+    "wallet-ID": [],
+    "auction-AU": [],
+    "auction-ID": [],
+    "session-AU": [],
+    "session-ID": [],
+    "billing-AU": [],
+    "billing-ID": [],
+    "business-AU": [],
+    "business-ID": [],
+    "kyb_document-AU": [],
+    "kyb_document-ID": [],
+    "team_invitation-AU": [],
+    "team_invitation-ID": [],
+    "team-AU": [],
+    "team-ID": [],
+    "campaign_view-AU": [],
+    "campaign_view-ID": [],
+    "charity-AU": [],
+    "charity-ID": [],
+    "platform_setting-AU": [
+      "reset_demo_world",
+      "trip_kill_switch",
+      "view"
+    ],
+    "platform_setting-ID": [
+      "reset_demo_world",
+      "trip_kill_switch",
+      "view"
+    ],
+    "redemption-AU": [],
+    "redemption-ID": [],
+    "me-AU": [],
+    "me-ID": [],
+    "report-AU": [],
+    "report-ID": [],
+    "ledger_adjustment-AU": [],
+    "ledger_adjustment-ID": [],
+    "staff_console-AU": [],
+    "staff_console-ID": [],
+    "voucher_dispute-AU": [],
+    "voucher_dispute-ID": [],
+    "risk_flag-AU": [],
+    "risk_flag-ID": [],
+    "user_account-AU": [],
+    "user_account-ID": [],
+    "listing-AU": [],
+    "listing-ID": [],
+    "voucher_batch-AU": [],
+    "voucher_batch-ID": [],
+    "merchant_location-AU": [],
+    "merchant_location-ID": [],
+    "campaign-AU": [],
+    "campaign-ID": [],
+    "media_asset-AU": [],
+    "media_asset-ID": [],
+    "moderation_item-AU": [],
+    "moderation_item-ID": []
+  }
+}

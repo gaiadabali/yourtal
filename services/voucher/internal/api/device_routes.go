@@ -324,12 +324,22 @@ func (a *API) captureAsDevice(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// 4.6.f: same transaction as the capture — see the migration's own
-		// comment.
-		if err := queries.InsertCaptureOutbox(r.Context(), sqlcgen.InsertCaptureOutboxParams{
-			CaptureID: pgUUID(captureID), Region: voucher.Region, MerchantID: pgUUID(merchantID),
-			AmountMinor: resolved.AmountMinor, Currency: resolved.Currency,
-		}); err != nil {
-			return fmt.Errorf("recording the capture outbox row: %w", err)
+		// comment. 13.3.c: at the settlement share, never the face value the
+		// counter took (a burn only put S into voucher_liability), the same
+		// amount the merchant-HMAC path posts.
+		batch, err := queries.GetBatch(r.Context(), voucher.BatchID)
+		if err != nil {
+			return fmt.Errorf("reading the voucher's batch for its settlement value: %w", err)
+		}
+		payableMinor := redeem.PayableShare(batch.SettlementValueMinor, voucher.FaceValueMinor,
+			voucher.FaceValueMinor-voucher.RemainingValueMinor, voucher.FaceValueMinor-remaining)
+		if payableMinor > 0 {
+			if err := queries.InsertCaptureOutbox(r.Context(), sqlcgen.InsertCaptureOutboxParams{
+				CaptureID: pgUUID(captureID), Region: voucher.Region, MerchantID: pgUUID(merchantID),
+				AmountMinor: payableMinor, Currency: resolved.Currency,
+			}); err != nil {
+				return fmt.Errorf("recording the capture outbox row: %w", err)
+			}
 		}
 
 		// 8.3.e: same outbox redeem.Capture writes for the merchant HMAC path

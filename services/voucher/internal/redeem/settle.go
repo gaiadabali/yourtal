@@ -372,6 +372,14 @@ func afterCapture(policy string, remaining, captured int64) (int64, lifecycle.St
 // `faceValueMinor` has been drawn down. faceValueMinor is always > 0 (the
 // listing and batch both enforce it); captured is always in [0,
 // faceValueMinor], so the result is always in [0, settlementMinor].
+// PayableShare is what the ledger owes the merchant for one capture: its share
+// of ceil(S × captured ÷ face), telescoped over prior captures so the total
+// never exceeds S. Both capture paths (merchant HMAC and counter device) use it.
+func PayableShare(settlementMinor, faceValueMinor, capturedBefore, capturedAfter int64) int64 {
+	return ceilShare(settlementMinor, capturedAfter, faceValueMinor) -
+		ceilShare(settlementMinor, capturedBefore, faceValueMinor)
+}
+
 func ceilShare(settlementMinor, captured, faceValueMinor int64) int64 {
 	if captured <= 0 {
 		return 0

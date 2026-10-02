@@ -56,6 +56,7 @@ async function seedCharityAndVoucher(pool: Pool, adminId: string, ownerId: strin
     ],
   );
   const listingId = randomUUID();
+  const merchantId = randomUUID();
   await pool.query(
     `INSERT INTO store.listings (id, merchant_id, merchant_name, title, description, category,
        face_value_minor, settlement_value_minor, price_in_points, stock_remaining, stock_total,
@@ -64,8 +65,20 @@ async function seedCharityAndVoucher(pool: Pool, adminId: string, ownerId: strin
      VALUES ($1, $2, 'Kopi Nusantara', 'Kopi susu voucher', 'e2e', 'food_beverage', 50000, 15000,
        1000, 10, 10, true, 'single_use_forfeit', NULL, now() + interval '90 days', 'available',
        'IDR', 'ID', 'all_ages', 'food-and-drink', 'http://127.0.0.1:26900/p.jpg', 'both', 'single_use')`,
-    [listingId, randomUUID()],
+    [listingId, merchantId],
   );
+  // Every listing has a location; one without fails listingSchema and takes
+  // the whole region's catalogue down with it (found by 13.3.b).
+  const locationId = randomUUID();
+  await pool.query(
+    `INSERT INTO store.merchant_location (id, merchant_id, name, address, district)
+     VALUES ($1, $2, 'Kopi Nusantara Seminyak', 'Jl. Kayu Aya 1', 'Badung')`,
+    [locationId, merchantId],
+  );
+  await pool.query(`INSERT INTO store.listing_location (listing_id, location_id) VALUES ($1, $2)`, [
+    listingId,
+    locationId,
+  ]);
   const voucherId = randomUUID();
   const code = randomUUID().replace(/-/g, "").slice(0, 16);
   await pool.query(

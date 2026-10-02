@@ -203,10 +203,10 @@ for (const r of REGIONS) {
 
     // In this region's catalogue, priced by the platform; absent from the other's.
     const viewer = callerFor(request, await apiRegister(request, r, "j04-viewer"));
-    const { listings } = await viewer.get<{ listings: { id: string; priceInPoints: number }[] }>(
-      `/api/store/listings?region=${r.region}&limit=100&sort=newest`,
+    const { data } = await viewer.get<{ data: { id: string; priceInPoints: number }[] }>(
+      `/api/store/listings?region=${r.region}&limit=50&sort=newest`,
     );
-    expect(listings.find((l) => l.id === listing.id)?.priceInPoints).toBe(
+    expect(data.find((l) => l.id === listing.id)?.priceInPoints).toBe(
       Number(revisions[1]!.to_price),
     );
     const other = REGIONS.find((x) => x.region !== r.region)!;

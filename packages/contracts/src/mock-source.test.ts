@@ -48,3 +48,23 @@ describe("resolveDataSource", () => {
     expect(first).not.toBe(second);
   });
 });
+
+// 13.3.c: a deployed build never resolves the mock, whatever the env says.
+describe("on staging and production", () => {
+  for (const APP_ENV of ["staging", "production"]) {
+    it(`${APP_ENV} resolves live by default`, () => {
+      expect(parseDataSourceMode({ APP_ENV })).toBe("live");
+      expect(parseDataSourceMode({ APP_ENV, YOURTAL_DATA_SOURCE: "live" })).toBe("live");
+    });
+
+    it(`${APP_ENV} refuses an explicit mock`, () => {
+      expect(() => parseDataSourceMode({ APP_ENV, YOURTAL_DATA_SOURCE: "mock" })).toThrow(
+        /refused/,
+      );
+    });
+  }
+
+  it("dev and test keep the mock default", () => {
+    expect(parseDataSourceMode({ APP_ENV: "dev" })).toBe("mock");
+  });
+});

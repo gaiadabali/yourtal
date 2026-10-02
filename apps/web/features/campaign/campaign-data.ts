@@ -3,7 +3,9 @@ import "server-only";
 // Importing this file from a client graph is now a BUILD FAILURE rather
 // than a review catch. See apps/web/features/README-server-only.md.
 
-import type { Campaign } from "@yourtal/contracts/campaign";
+import * as z from "zod";
+import { campaignSchema, type Campaign } from "@yourtal/contracts/campaign";
+import { apiFetch } from "@/lib/api/api-fetch";
 import {
   longMerchantNameCampaignFixture,
   mockCampaigns,
@@ -43,23 +45,25 @@ const mockDataSource: CampaignDataSource = {
     Promise.resolve(mockCampaignCatalogue.find((campaign) => campaign.id === campaignId)),
 };
 
-/**
- * No BFF exists yet (this whole phase builds against typed mock fixtures —
- * see the phase-u-ui.md preamble). Rather than silently returning mock data
- * under a "live" flag, the live implementation fails loudly and specifically,
- * so flipping `YOURTAL_DATA_SOURCE=live` today demonstrates this route's
- * `error.tsx` honestly instead of faking a failure for a demo.
- */
+/** The real catalogue, through the api (13.3.c: staging and production never read the mock). */
 const liveDataSource: CampaignDataSource = {
-  listCampaigns: () =>
-    Promise.reject(
-      new Error("Live campaign data source is not implemented yet (Phase U is mock-only)."),
-    ),
-  getCampaign: () =>
-    Promise.reject(
-      new Error("Live campaign data source is not implemented yet (Phase U is mock-only)."),
-    ),
+  listCampaigns: async () => {
+    const result = await apiFetch("/api/campaigns", campaignListSchema);
+    if (!result.ok) throw new Error(`campaigns: ${result.error.message}`);
+    return result.data.campaigns;
+  },
+  getCampaign: async (campaignId: string) => {
+    const result = await apiFetch(
+      `/api/campaigns/${encodeURIComponent(campaignId)}`,
+      campaignSchema,
+    );
+    if (result.ok) return result.data;
+    if (result.error.kind === "http" && result.error.status === 404) return undefined;
+    throw new Error(`campaign ${campaignId}: ${result.error.message}`);
+  },
 };
+
+const campaignListSchema = z.object({ campaigns: z.array(campaignSchema) });
 
 const campaignDataSource = resolveDataSource({ mock: mockDataSource, live: liveDataSource });
 

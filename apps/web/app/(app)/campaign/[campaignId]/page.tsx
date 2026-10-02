@@ -19,13 +19,8 @@ export default async function CampaignEntryPage(props: PageProps<"/campaign/[cam
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-4">
-      {/* This route is still Phase U's mock-only data source (`campaign-data.ts`'s
-          `liveDataSource` rejects) — there is no real `CampaignTerms` row to
-          read a bonus from here, so 0 is passed rather than a fabricated
-          split (11.5.a deleted `campaign-reward-split.ts`'s 60/40 ratio for
-          exactly this reason). The real entry point for a live campaign is
-          `/watch/[campaignId]` (`get-watch-campaign.ts`), which reads the
-          genuine terms. */}
+      {/* No terms are read here, so no bonus is shown rather than a made-up
+          split; `/watch/[campaignId]` reads the genuine terms. */}
       <CampaignEntryCard campaign={campaign} accuracyBonusPoints={0} locale={locale} />
     </div>
   );

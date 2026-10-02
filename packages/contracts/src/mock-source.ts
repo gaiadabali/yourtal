@@ -38,9 +38,18 @@ const dataSourceEnvSchema = z.object({
  * (rather than only used internally) so tests can exercise the fail-fast
  * behaviour without mutating `process.env` for the whole test process.
  */
+/** Where real users or the founder's review run: never fixture data (13.3.c). */
+const DEPLOYED = new Set(["staging", "production"]);
+
 export function parseDataSourceMode(
   env: Readonly<Record<string, string | undefined>>,
 ): DataSourceMode {
+  if (DEPLOYED.has(env["APP_ENV"] ?? "")) {
+    if (env["YOURTAL_DATA_SOURCE"] === "mock") {
+      throw new Error(`YOURTAL_DATA_SOURCE=mock is refused on APP_ENV=${String(env["APP_ENV"])}`);
+    }
+    return "live";
+  }
   const result = dataSourceEnvSchema.safeParse(env);
   if (!result.success) {
     throw new Error(

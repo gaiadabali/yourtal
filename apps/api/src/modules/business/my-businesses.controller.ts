@@ -55,6 +55,7 @@ export class MyBusinessesController {
     const result = await acceptInvitation(this.acceptUnitOfWork, {
       token: body.token,
       acceptingUserId: principal.id,
+      acceptingRegion: principal.attr.jurisdiction,
       now: new Date(),
     });
     if (result.isErr()) {

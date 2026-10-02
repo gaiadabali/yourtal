@@ -1,8 +1,11 @@
+import type { Region } from "@yourtal/contracts/region";
 import type { BusinessMember } from "@yourtal/contracts/business/member";
 
 export interface AcceptInvitationInput {
   readonly tokenHash: string;
   readonly acceptingUserId: string;
+  /** F2: only a person in the business's own region can join it. */
+  readonly acceptingRegion: Region;
   readonly now: Date;
 }
 

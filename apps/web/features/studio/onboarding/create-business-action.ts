@@ -20,7 +20,8 @@ const ONBOARDING_PATH = "/studio/onboarding";
  * never a surprise the server repeats in a different shape.
  */
 export async function createBusinessAction(formData: FormData): Promise<void> {
-  const raw = Object.fromEntries(formData.entries());
+  // `roles` is a checkbox group, so it has many values.
+  const raw = { ...Object.fromEntries(formData.entries()), roles: [...new Set(formData.getAll("roles"))] };
   const parsed = createBusinessInputSchema.safeParse(raw);
   if (!parsed.success) {
     const firstIssue = parsed.error.issues[0];

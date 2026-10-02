@@ -1,10 +1,11 @@
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull } from "drizzle-orm";
 import type {
   AcceptInvitationInput,
   AcceptInvitationResult,
   AcceptTeamInvitationUnitOfWork,
 } from "./accept-team-invitation.unit-of-work";
 import type { BusinessDb } from "./drizzle-client";
+import { businessAccounts } from "./schema/business-account.table";
 import { businessMembers } from "./schema/business-member.table";
 import { teamInvitations } from "./schema/team-invitation.table";
 
@@ -30,6 +31,14 @@ export class DrizzleAcceptTeamInvitationUnitOfWork implements AcceptTeamInvitati
             isNull(teamInvitations.acceptedAt),
             isNull(teamInvitations.revokedAt),
             gt(teamInvitations.expiresAt, input.now),
+            // Across the region wall the token stays unconsumed, as if it were wrong.
+            inArray(
+              teamInvitations.businessId,
+              tx
+                .select({ id: businessAccounts.id })
+                .from(businessAccounts)
+                .where(eq(businessAccounts.region, input.acceptingRegion)),
+            ),
           ),
         )
         .returning();

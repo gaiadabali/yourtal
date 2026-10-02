@@ -409,7 +409,7 @@
     },
     "verification": {
       "heading": "Verifikasi bisnis Anda sebelum dapat mengirimkan kampanye",
-      "submittedMessage": "Dokumen terkirim. Kami akan mengirim email setelah ditinjau.",
+      "submittedMessage": "Dokumen terkirim dan menunggu peninjauan. Anda dapat mengirim kampanye setelah bisnis Anda terverifikasi.",
       "documentTypeLabel": "Jenis dokumen",
       "fileLabel": "Berkas",
       "submit": "Kirim untuk ditinjau",
@@ -418,6 +418,12 @@
         "tax_registration_number": "Dokumen NPWP",
         "director_identity": "Identitas direktur",
         "proof_of_address": "Bukti alamat"
+      },
+      "uploading": "Mengunggah…",
+      "error": {
+        "unsupportedType": "Unggah berkas PDF, JPEG, atau PNG.",
+        "tooLarge": "Berkas melebihi 10 MB. Unggah berkas yang lebih kecil.",
+        "uploadFailed": "Dokumen tidak dapat diunggah. Coba lagi."
       }
     },
     "checklist": {
@@ -473,7 +479,8 @@
     "error": {
       "createFailed": "Gagal membuat bisnis — coba lagi.",
       "invalidInput": "Periksa kolom yang ditandai dan coba lagi.",
-      "fieldFallback": "Periksa kolom \"{errorField}\" dan coba lagi."
+      "fieldFallback": "Periksa kolom \"{errorField}\" dan coba lagi.",
+      "roles": "Pilih setidaknya satu hal yang akan dilakukan bisnis Anda."
     },
     "legalNameLabel": "Nama badan hukum",
     "displayNameLabel": "Nama tampilan",
@@ -487,7 +494,25 @@
     "stateLabel": "Negara bagian",
     "selectState": "Pilih negara bagian",
     "postcodeLabel": "Kode pos",
-    "createBusiness": "Buat bisnis"
+    "createBusiness": "Buat bisnis",
+    "rolesLabel": "Apa yang akan dilakukan bisnis Anda di YourTal?",
+    "role": {
+      "advertiser": {
+        "title": "Menjalankan kampanye",
+        "description": "Beri penonton poin karena menonton video Anda."
+      },
+      "supplier": {
+        "title": "Menawarkan hadiah",
+        "description": "Tampilkan voucher yang bisa ditukar dengan poin."
+      },
+      "redeemer": {
+        "title": "Menerima voucher di toko",
+        "description": "Staf kasir Anda me-redeem voucher pelanggan."
+      }
+    },
+    "title": "Daftarkan bisnis Anda",
+    "description": "Siapkan kanal Studio untuk menjalankan kampanye, menawarkan hadiah, atau menerima voucher.",
+    "joinInstead": "Diundang ke tim? Bergabung dengan kode undangan Anda"
   },
   "devices": {
     "panel": {
@@ -598,5 +623,14 @@
     "chargesAmount": "Jumlah",
     "reportTitle": "Boost",
     "reportEmpty": "Belum ada kampanye yang di-boost."
+  },
+  "join": {
+    "title": "Bergabung dengan bisnis",
+    "description": "Masukkan kode undangan dari email Anda untuk bergabung dengan tim di Studio.",
+    "codeLabel": "Kode undangan",
+    "codeHelp": "Kode ada di email undangan yang kami kirim.",
+    "submit": "Bergabung",
+    "error": "Kode itu tidak berlaku. Mungkin sudah kedaluwarsa, sudah dipakai, atau untuk alamat email lain.",
+    "registerInstead": "Daftarkan bisnis baru saja"
   }
 }

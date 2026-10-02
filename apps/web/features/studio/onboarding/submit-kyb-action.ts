@@ -1,27 +1,52 @@
 "use server";
 
-import { redirect } from "next/navigation";
+import * as z from "zod";
+import { kybDocumentSchema, kybDocumentTypeSchema } from "@yourtal/contracts/business/kyb-document";
+import { apiFetch } from "@/lib/api/api-fetch";
 
 /**
- * KYB document submission (task 7.8.b). No live upload/review API exists
- * yet — the real presigned object-store upload is 7.1.b, and the ops review queue
- * that actually flips `Business.isVerified` is 9.3 (docs/tasks note "the
- * policy grant exists and nothing calls it yet" for `kyb_document` review).
- * This action is honest about that: it does not fake an instant verify, it
- * only acknowledges the submission. `document` (a `File`) is accepted and
- * discarded rather than stored anywhere, matching "everything external is
- * simulated" — there is nowhere real to put encrypted PII bytes yet.
+ * KYB upload (13.3.b): the browser asks for a presigned PUT, sends the file
+ * straight to object storage, then records it for ops review. The file never
+ * passes through this server (a server action's body is capped at 1 MB).
  */
-// Next.js requires every export from a "use server" file to be async, even
-// with nothing to await here — do not "simplify" this back to a plain
-// function (a prior pass did, to satisfy eslint's require-await, and broke
-// the build: "Server Actions must be async functions").
-// eslint-disable-next-line @typescript-eslint/require-await
-export async function submitKybDocumentAction(formData: FormData): Promise<void> {
-  const documentType = formData.get("documentType");
-  const file = formData.get("document");
-  if (typeof documentType !== "string" || !(file instanceof File) || file.size === 0) {
-    redirect("/studio?kyb=error");
-  }
-  redirect("/studio?kyb=submitted");
+export type KybActionResult<T> = { ok: true; data: T } | { ok: false; message: string };
+
+const uploadUrlSchema = z.object({
+  storageRef: z.string().min(1),
+  uploadUrl: z.url(),
+  expiresAt: z.iso.datetime({ offset: true }),
+});
+const contentTypeSchema = z.enum(["application/pdf", "image/jpeg", "image/png"]);
+
+export async function createKybUploadUrlAction(
+  businessId: string,
+  contentType: string,
+): Promise<KybActionResult<z.infer<typeof uploadUrlSchema>>> {
+  const type = contentTypeSchema.safeParse(contentType);
+  if (!type.success) return { ok: false, message: "unsupported_type" };
+  const result = await apiFetch(
+    `/api/${encodeURIComponent(businessId)}/business/kyb-documents/upload-url`,
+    uploadUrlSchema,
+    { method: "POST", body: { contentType: type.data } },
+  );
+  return result.ok ? { ok: true, data: result.data } : { ok: false, message: "upload_failed" };
+}
+
+export async function submitKybDocumentAction(
+  businessId: string,
+  documentType: string,
+  storageRef: string,
+): Promise<KybActionResult<{ id: string }>> {
+  const type = kybDocumentTypeSchema.safeParse(documentType);
+  if (!type.success) return { ok: false, message: "upload_failed" };
+  const result = await apiFetch(
+    `/api/${encodeURIComponent(businessId)}/business/kyb-documents`,
+    kybDocumentSchema,
+    {
+      method: "POST",
+      headers: { "idempotency-key": crypto.randomUUID() },
+      body: { documentType: type.data, storageRef, expiresAt: null },
+    },
+  );
+  return result.ok ? { ok: true, data: { id: result.data.id } } : { ok: false, message: "upload_failed" };
 }

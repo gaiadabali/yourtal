@@ -3,10 +3,14 @@ import { Button } from "@yourtal/ui/button";
 import { Input } from "@yourtal/ui/input";
 import { NativeSelect } from "@yourtal/ui/native-select";
 import { Card, CardContent } from "@yourtal/ui/card";
+import { ChoiceCard } from "@yourtal/ui/choice-card";
 import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import { createBusinessAction } from "./create-business-action";
 import { AU_STATES } from "./au-states";
 import { TAX_ID_KINDS_BY_REGION } from "./business-onboarding-input";
+
+/** A business holds any subset of these (docs/17 §2); Inventory needs supplier. */
+const BUSINESS_ROLES = ["advertiser", "supplier", "redeemer"] as const;
 
 export interface BusinessOnboardingFormProps {
   /** Fixed to the signed-in person's own account region (TASKS.md 7.1.a: "region fixed") — never a choice this form offers. */
@@ -32,6 +36,7 @@ export function BusinessOnboardingForm({
   const errorMessages: Record<string, string> = {
     create_failed: t("onboarding.error.createFailed"),
     invalid_input: t("onboarding.error.invalidInput"),
+    roles: t("onboarding.error.roles"),
   };
 
   return (
@@ -59,6 +64,21 @@ export function BusinessOnboardingForm({
             placeholder={t("onboarding.handlePlaceholder")}
             helpText={t("onboarding.handleHelp")}
           />
+
+          <fieldset className="flex flex-col gap-2">
+            <legend className="text-label font-sans text-fg">{t("onboarding.rolesLabel")}</legend>
+            {BUSINESS_ROLES.map((role) => (
+              <ChoiceCard
+                key={role}
+                type="checkbox"
+                name="roles"
+                value={role}
+                defaultChecked={role === "advertiser"}
+                title={t(`onboarding.role.${role}.title`)}
+                description={t(`onboarding.role.${role}.description`)}
+              />
+            ))}
+          </fieldset>
 
           <NativeSelect
             name="taxIdKind"

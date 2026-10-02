@@ -39,4 +39,17 @@ describe("createKybObjectStorage", () => {
     const kyb = storage();
     expect(await kyb.exists(`kyb/${randomUUID()}/${randomUUID()}`)).toBe(false);
   });
+
+  it("signs the upload against the browser-facing endpoint, not the loopback one (staging)", async () => {
+    const kyb = createKybObjectStorage({
+      ...resolveKybObjectStorageConfig(),
+      presignEndpoint: "https://yourtal.example",
+    });
+    const { uploadUrl, storageRef } = await kyb.createUploadUrl({
+      businessId: randomUUID(),
+      contentType: "image/png",
+    });
+    expect(uploadUrl.startsWith("https://yourtal.example/")).toBe(true);
+    expect(uploadUrl).toContain(storageRef);
+  });
 });

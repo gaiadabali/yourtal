@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { expect, type APIRequestContext } from "@playwright/test";
 import { Pool } from "pg";
 import { API, apiLogin, demoEmail, testIp, type RegionCase } from "./demo";
@@ -98,4 +99,24 @@ export async function demoBusinessId(caller: Caller): Promise<string> {
   const first = memberships[0]?.business.id;
   expect(first, "the demo person belongs to no business; run pnpm demo:reset").toBeDefined();
   return first as string;
+}
+
+const catalogues = new Map<string, Record<string, unknown>>();
+/** A string from the web's own catalogue in the region's locale, so each journey reads its own language. */
+export function msg(r: RegionCase, namespace: string, key: string): string {
+  const file = new URL(`../../messages/${r.locale}/${namespace}.json`, import.meta.url);
+  let data = catalogues.get(file.href);
+  if (!data) {
+    data = JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>;
+    catalogues.set(file.href, data);
+  }
+  const value = key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown>)?.[part], data);
+  expect(typeof value, `${r.locale}/${namespace}.json has no ${key}`).toBe("string");
+  return value as string;
+}
+
+/** Exact-match pattern for a catalogue string, ignoring ICU placeholders. */
+export function exact(text: string): RegExp {
+  const parts = text.split(/\{[^}]*\}/).map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  return new RegExp(`^${parts.join(".+")}$`);
 }

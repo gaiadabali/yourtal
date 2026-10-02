@@ -1,5 +1,10 @@
 import * as z from "zod";
-import { auStateSchema, businessHandleSchema, taxIdKindSchema } from "@yourtal/contracts/business";
+import {
+  auStateSchema,
+  businessHandleSchema,
+  businessRoleSchema,
+  taxIdKindSchema,
+} from "@yourtal/contracts/business";
 import type { TaxIdKind } from "@yourtal/contracts/business";
 import { regionSchema } from "@yourtal/contracts/region";
 
@@ -49,6 +54,7 @@ export const createBusinessInputSchema = z
     postcode: auPostcodeSchema.optional(),
     /** ID only. */
     city: z.string().min(1).max(120).optional(),
+    roles: z.array(businessRoleSchema).min(1),
   })
   .refine(
     (input) =>

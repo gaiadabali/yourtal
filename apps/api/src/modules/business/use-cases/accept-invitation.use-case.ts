@@ -1,6 +1,7 @@
 import { errAsync, okAsync } from "neverthrow";
 import type { ResultAsync } from "neverthrow";
 import type { BusinessMember } from "@yourtal/contracts/business/member";
+import type { Region } from "@yourtal/contracts/region";
 import { hashOpaqueToken } from "../crypto/opaque-token";
 import type { AcceptInvitationError } from "../business.errors";
 import type { AcceptTeamInvitationUnitOfWork } from "../persistence/accept-team-invitation.unit-of-work";
@@ -9,6 +10,7 @@ import { wrapPersistence } from "../wrap-persistence";
 export interface AcceptInvitationInput {
   readonly token: string;
   readonly acceptingUserId: string;
+  readonly acceptingRegion: Region;
   readonly now: Date;
 }
 
@@ -25,6 +27,7 @@ export function acceptInvitation(
     unitOfWork.accept({
       tokenHash: hashOpaqueToken(input.token),
       acceptingUserId: input.acceptingUserId,
+      acceptingRegion: input.acceptingRegion,
       now: input.now,
     }),
   ).andThen((result) => {

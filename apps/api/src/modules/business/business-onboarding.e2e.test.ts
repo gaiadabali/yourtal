@@ -52,6 +52,24 @@ describe("7.1.d Check: AU business with an ABN, invited teammate accepted throug
       },
     });
     expect(created.statusCode, created.body).toBe(201);
+
+    // F2: and the owner cannot register one in the other region.
+    const crossRegion = await app.inject({
+      method: "POST",
+      url: "/api/businesses",
+      headers: { ...cookieHeader(owner), "idempotency-key": randomUUID() },
+      payload: {
+        legalName: "PT Wharf Espresso",
+        displayName: "Wharf Espresso ID",
+        taxIdKind: "NIB",
+        taxIdValue: "9120001234567",
+        addressCity: "Denpasar",
+        roles: ["advertiser"],
+        region: "ID",
+        handle: `wharf-espresso-id-${randomUUID().slice(0, 8)}`,
+      },
+    });
+    expect(crossRegion.statusCode, crossRegion.body).toBe(403);
     const business = created.json<{ business: { id: string; taxIdKind: string } }>().business;
     expect(business.taxIdKind).toBe("ABN");
 
@@ -79,6 +97,18 @@ describe("7.1.d Check: AU business with an ABN, invited teammate accepted throug
     expect(mailed, "the invitation email should appear in the dev inbox").toBeDefined();
     const token = mailed?.metadata.token;
     expect(typeof token).toBe("string");
+
+    // F2 (found by journey 1): someone in the other region holding the token
+    // is refused, and the token stays good for the person it was meant for.
+    const outsider = await sessionFor(app, { jurisdiction: "ID" });
+    const crossed = await app.inject({
+      method: "POST",
+      url: "/api/me/businesses/invitations/accept",
+      headers: cookieHeader(outsider),
+      payload: { token },
+    });
+    expect(crossed.statusCode, crossed.body).toBe(400);
+    expect(crossed.json()).toMatchObject({ code: "invitation_invalid" });
 
     const accepted = await app.inject({
       method: "POST",

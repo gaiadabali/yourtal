@@ -34,6 +34,8 @@ export interface KybObjectStorageConfig {
   readonly accessKeyId: string;
   readonly secretAccessKey: string;
   readonly bucket: string;
+  /** Where a browser PUTs (13.3.b): `MEDIA_PRESIGN_ENDPOINT` on staging, where `endpoint` is loopback-only. */
+  readonly presignEndpoint?: string;
 }
 
 export interface KybUploadUrl {
@@ -83,22 +85,27 @@ function readEnv(name: string): string | undefined {
 }
 
 export function createKybObjectStorage(config: KybObjectStorageConfig) {
-  const client = new S3Client({
-    endpoint: config.endpoint,
-    region: "auto",
-    // RustFS needs path-style addressing
-    // (`endpoint/bucket/key`), not the virtual-hosted style AWS itself
-    // defaults to (`bucket.endpoint/key`) — same reasoning `hls-origin.ts`'s
-    // own client construction documents.
-    forcePathStyle: true,
-    credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey },
-    // F58: this mints presigned PUT URLs (`getSignedUrl` below) — same
-    // SDK-v3-vs-RustFS checksum incompatibility `studio-media.ts`'s
-    // `createMediaClient()` documents. Without this, RustFS answers a real
-    // upload's PUT with `400 BadDigest` against a placeholder checksum baked
-    // into the URL before the real bytes existed.
-    requestChecksumCalculation: "WHEN_REQUIRED",
-  });
+  const s3 = (endpoint: string) =>
+    new S3Client({
+      endpoint,
+      region: "auto",
+      // RustFS needs path-style addressing
+      // (`endpoint/bucket/key`), not the virtual-hosted style AWS itself
+      // defaults to (`bucket.endpoint/key`) — same reasoning `hls-origin.ts`'s
+      // own client construction documents.
+      forcePathStyle: true,
+      credentials: { accessKeyId: config.accessKeyId, secretAccessKey: config.secretAccessKey },
+      // F58: this mints presigned PUT URLs (`getSignedUrl` below) — same
+      // SDK-v3-vs-RustFS checksum incompatibility `studio-media.ts`'s
+      // `createMediaClient()` documents. Without this, RustFS answers a real
+      // upload's PUT with `400 BadDigest` against a placeholder checksum baked
+      // into the URL before the real bytes existed.
+      requestChecksumCalculation: "WHEN_REQUIRED",
+    });
+  const client = s3(config.endpoint);
+  const presignClient = s3(
+    config.presignEndpoint ?? readEnv("MEDIA_PRESIGN_ENDPOINT") ?? config.endpoint,
+  );
   const bucket = config.bucket;
   /** Checked once per process, not once per request — `ensureBucket` is a HeadBucket round trip. */
   let bucketReady: Promise<void> | undefined;
@@ -124,7 +131,7 @@ export function createKybObjectStorage(config: KybObjectStorageConfig) {
       await ensureBucket();
       const storageRef = `${KYB_PREFIX}/${input.businessId}/${randomUUID()}`;
       const uploadUrl = await getSignedUrl(
-        client,
+        presignClient,
         new PutObjectCommand({ Bucket: bucket, Key: storageRef, ContentType: input.contentType }),
         { expiresIn: UPLOAD_URL_TTL_SECONDS },
       );

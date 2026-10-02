@@ -1,4 +1,4 @@
-import { Body, Controller, Inject, Post, Req } from "@nestjs/common";
+import { Body, Controller, ForbiddenException, Inject, Post, Req } from "@nestjs/common";
 import { REGION_CONFIG } from "@yourtal/contracts/region";
 import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { CreateBusinessDto } from "./dto/create-business.schema";
@@ -41,6 +41,13 @@ export class CreateBusinessController {
     // policy suite can see. The principal is still resolved here because the
     // caller becomes the business's owner.
     const principal = await this.principals.resolve(request);
+    // F2: a business lives in its owner's own region; nothing crosses the wall.
+    if (principal.attr.jurisdiction !== body.region) {
+      throw new ForbiddenException({
+        code: "region_mismatch",
+        message: "a business can only be registered in your own account's region",
+      });
+    }
 
     const result = await createBusiness(
       this.unitOfWork,

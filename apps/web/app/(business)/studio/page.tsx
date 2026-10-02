@@ -12,6 +12,7 @@ import { buildStudioNavItems } from "@/features/studio/studio-zone-items";
 import { getVisibleZones } from "@/features/studio/studio-zone-access";
 import { listCampaignDrafts } from "@/features/studio/campaign-builder/campaign-builder-data";
 import { getBalance } from "@/features/studio/billing/billing-data";
+import { listKybDocuments } from "@/features/studio/onboarding/kyb-data";
 
 /**
  * `/studio` overview (task 7.8.b). Sends a signed-in person with zero
@@ -33,9 +34,10 @@ export default async function StudioOverviewPage(props: PageProps<"/studio">) {
   const navItems = buildStudioNavItems(visibleZones);
   const businessQuery = business.id === defaultBusinessId ? "" : `?business=${business.id}`;
 
-  const [drafts, balance] = await Promise.all([
+  const [drafts, balance, kybDocuments] = await Promise.all([
     listCampaignDrafts(business.id, business.displayName),
     getBalance(business.id),
+    business.isVerified ? Promise.resolve([]) : listKybDocuments(business.id),
   ]);
 
   const setupStatus = {
@@ -46,7 +48,6 @@ export default async function StudioOverviewPage(props: PageProps<"/studio">) {
     campaignSubmitted: drafts.some((draft) => draft.status !== "draft"),
   };
   const checklist = buildSetupChecklist(setupStatus);
-  const kybParam = searchParams.kyb;
 
   return (
     <StudioChrome
@@ -64,7 +65,11 @@ export default async function StudioOverviewPage(props: PageProps<"/studio">) {
     >
       <div className="flex flex-col gap-6">
         {!business.isVerified ? (
-          <StudioVerificationBanner justSubmitted={kybParam === "submitted"} locale={locale} />
+          <StudioVerificationBanner
+            businessId={business.id}
+            underReview={kybDocuments.some((doc) => doc.status === "submitted")}
+            locale={locale}
+          />
         ) : null}
         {isSetupComplete(setupStatus) ? (
           <StudioZoneGrid items={navItems} businessQuery={businessQuery} />

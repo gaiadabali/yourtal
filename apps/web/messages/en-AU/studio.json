@@ -409,7 +409,7 @@
     },
     "verification": {
       "heading": "Verify your business before you can submit a campaign",
-      "submittedMessage": "Documents submitted. We'll email you once they're reviewed.",
+      "submittedMessage": "Documents submitted and waiting for review. You can submit campaigns once your business is verified.",
       "documentTypeLabel": "Document type",
       "fileLabel": "File",
       "submit": "Submit for review",
@@ -418,6 +418,12 @@
         "tax_registration_number": "Tax registration document",
         "director_identity": "Director identity",
         "proof_of_address": "Proof of address"
+      },
+      "uploading": "Uploading…",
+      "error": {
+        "unsupportedType": "Upload a PDF, JPEG or PNG file.",
+        "tooLarge": "That file is over 10 MB. Upload a smaller one.",
+        "uploadFailed": "We couldn't upload that document. Try again."
       }
     },
     "checklist": {
@@ -473,7 +479,8 @@
     "error": {
       "createFailed": "Could not create the business — try again.",
       "invalidInput": "Check the highlighted fields and try again.",
-      "fieldFallback": "Check the \"{errorField}\" field and try again."
+      "fieldFallback": "Check the \"{errorField}\" field and try again.",
+      "roles": "Choose at least one thing your business will do."
     },
     "legalNameLabel": "Legal name",
     "displayNameLabel": "Display name",
@@ -487,7 +494,25 @@
     "stateLabel": "State",
     "selectState": "Select a state",
     "postcodeLabel": "Postcode",
-    "createBusiness": "Create business"
+    "createBusiness": "Create business",
+    "rolesLabel": "What will your business do on YourTal?",
+    "role": {
+      "advertiser": {
+        "title": "Run campaigns",
+        "description": "Reward viewers with points for watching your videos."
+      },
+      "supplier": {
+        "title": "Offer rewards",
+        "description": "List vouchers people can spend their points on."
+      },
+      "redeemer": {
+        "title": "Accept vouchers in store",
+        "description": "Your counter staff redeem customers' vouchers."
+      }
+    },
+    "title": "Register your business",
+    "description": "Set up a Studio channel to run campaigns, offer rewards or accept vouchers.",
+    "joinInstead": "Invited to a team? Join with your invitation code"
   },
   "devices": {
     "panel": {
@@ -598,5 +623,14 @@
     "chargesAmount": "Amount",
     "reportTitle": "Boost",
     "reportEmpty": "No campaign is boosted yet."
+  },
+  "join": {
+    "title": "Join a business",
+    "description": "Enter the invitation code from your email to join the team in Studio.",
+    "codeLabel": "Invitation code",
+    "codeHelp": "It's in the invitation email we sent you.",
+    "submit": "Join business",
+    "error": "That code didn't work. It may have expired, been used already, or be for a different email address.",
+    "registerInstead": "Register a new business instead"
   }
 }

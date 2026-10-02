@@ -27,7 +27,7 @@ export class EmailInvitationMailer implements InvitationMailer {
       subject: `You're invited to join ${input.businessDisplayName} on YourTal Studio`,
       body:
         `You've been invited to join ${input.businessDisplayName} as ${input.role}. ` +
-        `Use this token in the app to accept: ${input.token}`,
+        `Sign in to YourTal Studio, open "Join a business" (/studio/join) and enter this code: ${input.token}`,
       metadata: { token: input.token, role: input.role },
     });
     if (sent.isErr()) {

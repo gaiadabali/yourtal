@@ -67,4 +67,21 @@ describe("CreateBusinessController", () => {
       owner: { userId: SIGNED_IN_ID, role: "owner" },
     });
   });
+
+  it("refuses a business in the other region (F2, found by journey 1)", async () => {
+    const unitOfWork = new DrizzleBusinessOnboardingUnitOfWork(testBusinessDb());
+    const signedIn: Principal = {
+      id: SIGNED_IN_ID,
+      roles: ["user"],
+      attr: { jurisdiction: "AU", businessRoles: {}, isSuspended: false },
+    };
+    const principals = {
+      resolve: vi.fn().mockResolvedValue(signedIn),
+    } as unknown as AsyncPrincipalResolver;
+    const controller = new CreateBusinessController(principals, unitOfWork);
+
+    await expect(
+      controller.create({ ...validBody, handle: "kopi-cross-region" }, {} as FastifyRequest),
+    ).rejects.toMatchObject({ status: 403, response: { code: "region_mismatch" } });
+  });
 });

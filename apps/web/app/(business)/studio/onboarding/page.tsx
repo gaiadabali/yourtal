@@ -4,7 +4,8 @@ import { PageContainer } from "@yourtal/ui/page-container";
 import { getLocale } from "next-intl/server";
 import { getRegion } from "@/features/region/get-region";
 import { resolveStudioContext } from "@/features/studio/studio-context";
-import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
+import Link from "next/link";
+import { getStudioTranslator, resolveSupportedLocale } from "@/features/studio/studio-i18n";
 import { BusinessOnboardingForm } from "@/features/studio/onboarding/business-onboarding-form";
 
 /**
@@ -22,15 +23,16 @@ export default async function StudioOnboardingPage(props: PageProps<"/studio/onb
 
   const region = await getRegion();
   const locale = resolveSupportedLocale(await getLocale());
+  const t = getStudioTranslator(locale);
   const errorParam = searchParams.error;
   const errorField = typeof errorParam === "string" ? errorParam : null;
 
   return (
     <PageContainer width="narrow" className="flex flex-col gap-6 py-8">
-      <PageHeader
-        title="Register your business"
-        description="Set up a Studio channel to run campaigns and reward viewers with points."
-      />
+      <PageHeader title={t("onboarding.title")} description={t("onboarding.description")} />
+      <Link href="/studio/join" className="w-fit text-body-sm font-sans text-accent underline underline-offset-4">
+        {t("onboarding.joinInstead")}
+      </Link>
       <BusinessOnboardingForm region={region} errorField={errorField} locale={locale} />
     </PageContainer>
   );

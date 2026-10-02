@@ -443,7 +443,12 @@
     "buy": "Beli",
     "purchaseHistoryTitle": "Riwayat pembelian",
     "emptyTitle": "Belum ada pembelian",
-    "emptyDescription": "Beli paket di atas untuk mendanai kampanye pertama Anda."
+    "emptyDescription": "Beli paket di atas untuk mendanai kampanye pertama Anda.",
+    "historyBought": "{formatted} poin dibeli",
+    "historyUsed": "{formatted} terpakai",
+    "historyLeft": "sisa {formatted}",
+    "purchased": "Poin berhasil dibeli dan siap mendanai kampanye Anda.",
+    "purchaseFailed": "Pembelian tidak dapat diselesaikan. Coba lagi."
   },
   "channel": {
     "saved": "Tersimpan.",

@@ -179,11 +179,9 @@ test.describe
     await expect(page).toHaveURL(/purchased=1/);
     // The real balance updates from the real ledger.
     await expect(page.locator('[aria-label="50,000 points available"]')).toBeVisible();
-    // Purchase HISTORY has no live endpoint yet (statements are 10.6.b, a
-    // later phase) — `listPurchases`'s live source always returns `[]`, so
-    // the empty state legitimately still shows even after a real purchase.
-    // This is the documented, honest gap, not a bug this test should catch.
-    await expect(page.getByText("No purchases yet")).toBeVisible();
+    // The purchase shows in the history, all of it still left (journey 2).
+    await expect(page.getByText("50,000 points bought")).toBeVisible();
+    await expect(page.getByText("50,000 left")).toBeVisible();
 
     await context.close();
   });

@@ -5,7 +5,7 @@ import { PointsChip } from "@yourtal/ui/points-chip";
 import { EmptyState } from "@yourtal/ui/empty-state";
 import type { PurchaseQuote } from "@yourtal/contracts/billing";
 import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
-import type { BillingBalance, PurchaseHistoryEntry } from "./billing-data";
+import type { BillingBalance } from "./billing-data";
 import { purchasePointsAction } from "./purchase-points-action";
 
 export interface BillingScreenProps {
@@ -13,7 +13,6 @@ export interface BillingScreenProps {
   balance: BillingBalance;
   /** One real, server-computed quote per preset amount (`PRESET_POINT_AMOUNTS`) — never a client-derived price. */
   quotes: readonly PurchaseQuote[];
-  purchases: readonly PurchaseHistoryEntry[];
   canPurchase: boolean;
   /** Minted once per render (`page.tsx`) and embedded per form, so a double-click of the same button reuses one idempotency key rather than minting a fresh one per submit. */
   idempotencyKey: string;
@@ -24,19 +23,24 @@ export interface BillingScreenProps {
  * The Billing zone (task 7.5 / 7.8.b): a real quote per preset amount, a
  * real purchase against the ledger, real balance. Unused points stay with
  * the business — there are no cash refunds (TASKS.md 7.5.b), so this screen
- * never offers one. Purchase history/statements need 10.1 and are 10.6.b
- * (F40) — not this screen's job yet.
+ * never offers one. Purchase history is each purchase's allocation: bought,
+ * used by campaigns, left (journey 2).
  */
 export function BillingScreen({
   businessId,
   balance,
   quotes,
-  purchases,
   canPurchase,
   idempotencyKey,
   locale,
 }: BillingScreenProps) {
   const t = getStudioTranslator(locale);
+  // One allocation per purchase (FundReserve creates it), so it carries the drawdown too.
+  const purchases = balance.allocations
+    .filter((allocation) => allocation.funderType === "partner")
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const date = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  const number = new Intl.NumberFormat(locale);
   return (
     <div className="flex flex-col gap-6">
       <Card>
@@ -101,16 +105,21 @@ export function BillingScreen({
             <ul className="flex flex-col gap-2">
               {purchases.map((purchase) => (
                 <li
-                  key={purchase.id}
-                  className="flex items-center justify-between gap-3 text-body-sm text-fg"
+                  key={purchase.allocationId}
+                  className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-body-sm text-fg"
                 >
-                  <span>{new Date(purchase.purchasedAt).toLocaleDateString()}</span>
-                  <PointsChip
-                    value={purchase.points}
-                    size="sm"
-                    formatLabel={(formatted) => t("billing.points", { formatted })}
-                  />
-                  <MoneyAmount amountMinor={purchase.paidMinor} currency={purchase.currency} />
+                  <span className="font-semibold">{date.format(new Date(purchase.createdAt))}</span>
+                  <span>
+                    {t("billing.historyBought", { formatted: number.format(purchase.totalPoints) })}
+                  </span>
+                  <span className="text-fg-muted">
+                    {t("billing.historyUsed", {
+                      formatted: number.format(purchase.totalPoints - purchase.remainingPoints),
+                    })}
+                  </span>
+                  <span>
+                    {t("billing.historyLeft", { formatted: number.format(purchase.remainingPoints) })}
+                  </span>
                 </li>
               ))}
             </ul>

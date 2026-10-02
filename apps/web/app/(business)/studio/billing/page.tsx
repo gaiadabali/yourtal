@@ -1,8 +1,9 @@
 import { BoostChargesCard } from "@/features/studio/boost/boost-sections";
+import { Notice } from "@yourtal/ui/notice";
 import { PageHeader } from "@yourtal/ui/page-header";
 import { getLocale } from "next-intl/server";
 import { resolveStudioContext } from "@/features/studio/studio-context";
-import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
+import { getStudioTranslator, resolveSupportedLocale } from "@/features/studio/studio-i18n";
 import { StudioAccessDenied } from "@/features/studio/studio-access-denied";
 import { StudioNoBusiness } from "@/features/studio/studio-no-business";
 import { StudioChrome } from "@/features/studio/studio-chrome";
@@ -10,7 +11,6 @@ import { canEditZone, canViewZone } from "@/features/studio/studio-zone-access";
 import {
   PRESET_POINT_AMOUNTS,
   getBalance,
-  listPurchases,
   quotePoints,
 } from "@/features/studio/billing/billing-data";
 import { BillingScreen } from "@/features/studio/billing/billing-screen";
@@ -20,6 +20,7 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
   const searchParams = await props.searchParams;
   const { current, all, defaultBusinessId } = await resolveStudioContext(searchParams);
   const locale = resolveSupportedLocale(await getLocale());
+  const t = getStudioTranslator(locale);
 
   if (!current) {
     return <StudioNoBusiness locale={locale} />;
@@ -46,10 +47,9 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
   }
 
   const { id: businessId, currency } = current.business;
-  const [balance, quotes, purchases] = await Promise.all([
+  const [balance, quotes] = await Promise.all([
     getBalance(businessId),
     Promise.all(PRESET_POINT_AMOUNTS.map((points) => quotePoints(businessId, points, currency))),
-    listPurchases(businessId),
   ]);
   // Minted once per render, not per submit — see `billing-screen.tsx`'s doc comment.
   const idempotencyKey = crypto.randomUUID();
@@ -63,11 +63,16 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
       header={<PageHeader title="Billing" />}
     >
       <div className="flex flex-col gap-6">
+        {searchParams.purchased === "1" ? (
+          <Notice tone="success">{t("billing.purchased")}</Notice>
+        ) : null}
+        {typeof searchParams.error === "string" ? (
+          <Notice tone="danger">{t("billing.purchaseFailed")}</Notice>
+        ) : null}
         <BillingScreen
           businessId={businessId}
           balance={balance}
           quotes={quotes}
-          purchases={purchases}
           canPurchase={canPurchase}
           idempotencyKey={idempotencyKey}
           locale={locale}

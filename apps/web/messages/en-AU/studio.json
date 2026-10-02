@@ -443,7 +443,12 @@
     "buy": "Buy",
     "purchaseHistoryTitle": "Purchase history",
     "emptyTitle": "No purchases yet",
-    "emptyDescription": "Buy a pack above to fund your first campaign."
+    "emptyDescription": "Buy a pack above to fund your first campaign.",
+    "historyBought": "{formatted} points bought",
+    "historyUsed": "{formatted} used",
+    "historyLeft": "{formatted} left",
+    "purchased": "Points bought. They are ready to fund your campaigns.",
+    "purchaseFailed": "We couldn't complete that purchase. Try again."
   },
   "channel": {
     "saved": "Saved.",

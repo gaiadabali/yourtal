@@ -24,18 +24,9 @@ export interface BillingBalance {
   allocations: BillingAllocation[];
 }
 
-export interface PurchaseHistoryEntry {
-  id: string;
-  points: number;
-  paidMinor: number;
-  currency: Currency;
-  purchasedAt: string;
-}
-
 interface BillingDataSource {
   quotePoints: (businessId: string, points: number, currency: Currency) => Promise<PurchaseQuote>;
   getBalance: (businessId: string) => Promise<BillingBalance>;
-  listPurchases: (businessId: string) => Promise<PurchaseHistoryEntry[]>;
   purchasePoints: (
     businessId: string,
     points: number,
@@ -69,9 +60,6 @@ const liveDataSource: BillingDataSource = {
       allocations: [...result.data.allocations],
     };
   },
-  // No statements/purchase-history endpoint exists yet (10.6.b, F40) — an
-  // honestly empty list, not an invented one.
-  listPurchases: () => Promise.resolve([]),
   purchasePoints: async (businessId, points, currency, idempotencyKey) => {
     const result = await apiFetch(
       `/api/${businessId}/studio/billing/purchases`,
@@ -90,7 +78,6 @@ const liveDataSource: BillingDataSource = {
 interface MockState {
   totalPoints: number;
   remainingPoints: number;
-  purchases: PurchaseHistoryEntry[];
   allocations: BillingAllocation[];
 }
 
@@ -99,7 +86,7 @@ const mockStateByBusinessId = new Map<string, MockState>();
 function mockStateFor(businessId: string): MockState {
   const existing = mockStateByBusinessId.get(businessId);
   if (existing) return existing;
-  const created: MockState = { totalPoints: 0, remainingPoints: 0, purchases: [], allocations: [] };
+  const created: MockState = { totalPoints: 0, remainingPoints: 0, allocations: [] };
   mockStateByBusinessId.set(businessId, created);
   return created;
 }
@@ -124,22 +111,11 @@ const mockDataSource: BillingDataSource = {
       allocations: state.allocations,
     });
   },
-  listPurchases: (businessId) => Promise.resolve(mockStateFor(businessId).purchases),
   purchasePoints: (businessId, points, currency) => {
     const state = mockStateFor(businessId);
     const paidMinor = points * MOCK_MINOR_PER_POINT[currency];
     state.totalPoints += points;
     state.remainingPoints += points;
-    state.purchases = [
-      {
-        id: crypto.randomUUID(),
-        points,
-        paidMinor,
-        currency,
-        purchasedAt: new Date().toISOString(),
-      },
-      ...state.purchases,
-    ];
     const allocation: BillingAllocation = {
       allocationId: crypto.randomUUID(),
       region: currency === "AUD" ? ("AU" as const) : ("ID" as const),
@@ -172,9 +148,6 @@ export function getBalance(businessId: string): Promise<BillingBalance> {
   return billingDataSource.getBalance(businessId);
 }
 
-export function listPurchases(businessId: string): Promise<PurchaseHistoryEntry[]> {
-  return billingDataSource.listPurchases(businessId);
-}
 
 export function purchasePoints(
   businessId: string,

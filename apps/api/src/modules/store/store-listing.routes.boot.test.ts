@@ -101,6 +101,17 @@ function routesFor(tenantId: string) {
       url: `/api/${tenantId}/store/listings/${listingId}/resume`,
     },
     {
+      // 13.3.b: was refused for everyone by an attribute-less coarse check.
+      action: "set_settlement_value",
+      method: "POST" as const,
+      url: `/api/${tenantId}/store/listings/${listingId}/settlement-value`,
+    },
+    {
+      action: "request_settlement_decrease",
+      method: "POST" as const,
+      url: `/api/${tenantId}/store/listings/${listingId}/settlement-decrease-requests`,
+    },
+    {
       action: "archive (retire)",
       method: "POST" as const,
       url: `/api/${tenantId}/store/listings/${listingId}/retire`,

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { expect, type APIRequestContext } from "@playwright/test";
 import { Pool } from "pg";
-import { API, apiLogin, demoEmail, testIp, type RegionCase } from "./demo";
+import { API, apiLogin, apiRegister, demoEmail, inboxToken, testIp, type RegionCase } from "./demo";
 
 /**
  * 13.3.b: shared setup for the business-side journeys (1, 2, 3, 4, 8, 12),
@@ -121,4 +121,63 @@ export function msg(r: RegionCase, namespace: string, key: string): string {
 export function exact(text: string): RegExp {
   const parts = text.split(/\{[^}]*\}/).map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   return new RegExp(`^${parts.join(".+")}$`);
+}
+
+const TAX_IDS = {
+  AU: {
+    taxIdKind: "ABN",
+    taxIdValue: "51824753556",
+    addressState: "VIC",
+    addressPostcode: "3000",
+    addressCity: null,
+  },
+  ID: {
+    taxIdKind: "NIB",
+    taxIdValue: "9120001234567",
+    addressState: null,
+    addressPostcode: null,
+    addressCity: "Denpasar",
+  },
+} as const;
+
+/** A fresh business in the region, KYB-approved by demo ops (journey 1 proves those steps on screen). */
+export async function verifiedBusiness(
+  request: APIRequestContext,
+  r: RegionCase,
+  roles: readonly ("advertiser" | "supplier" | "redeemer")[],
+  prefix: string,
+) {
+  const owner = callerFor(request, await apiRegister(request, r, `${prefix}-owner`));
+  const handle = `${prefix}-${r.slug}-${Date.now().toString(36)}`;
+  const { business } = await owner.post<{ business: { id: string } }>("/api/businesses", {
+    legalName: `${handle} Pty`,
+    displayName: `${prefix} ${r.region}`,
+    handle,
+    roles,
+    region: r.region,
+    logoUrl: null,
+    coverUrl: null,
+    ...TAX_IDS[r.region],
+  });
+  const ops = await staffCaller(request, "ops");
+  await ops.post(`/api/staff/businesses/${business.id}/kyb/approve`, {
+    reason: "Journey fixture.",
+  });
+  return { owner, businessId: business.id };
+}
+
+/** Invites a fresh person by role and accepts as them (journey 1 proves this on screen). */
+export async function addMember(
+  request: APIRequestContext,
+  owner: Caller,
+  businessId: string,
+  r: RegionCase,
+  role: "admin" | "marketer" | "merchandiser" | "finance" | "analyst",
+) {
+  const account = await apiRegister(request, r, `${role}`);
+  await owner.post(`/api/${businessId}/business/team/invite`, { email: account.email, role });
+  const token = await inboxToken(request, account.email, "team_invitation");
+  const member = callerFor(request, account);
+  await member.post("/api/me/businesses/invitations/accept", { token });
+  return member;
 }

@@ -611,7 +611,6 @@
       "create",
       "edit",
       "request_settlement_decrease",
-      "set_settlement_value",
       "view"
     ],
     "listing-ID": [],
@@ -813,7 +812,6 @@
       "create",
       "edit",
       "request_settlement_decrease",
-      "set_settlement_value",
       "view"
     ],
     "voucher_batch-AU": [],

@@ -122,8 +122,13 @@ export class StoreListingController {
    * `SettlementDecreaseController.propose` (YT-0575): a different action,
    * `request_settlement_decrease`, that records a pending request rather
    * than applying anything.
+   *
+   * 13.3.b: the coarse gate is `edit`, not `set_settlement_value`. The policy
+   * allows that action only with `isMaterialSettlementDecrease` present and
+   * false, which this attribute-less decorator can never supply, so every
+   * change of S was refused over HTTP. The second call below decides.
    */
-  @Authorize({ kind: "listing", action: "set_settlement_value" })
+  @Authorize({ kind: "listing", action: "edit" })
   @Idempotent({ retentionMs: LISTING_WRITE_RETENTION_MS })
   @Post(":listingId/settlement-value")
   async setSettlementValue(

@@ -69,7 +69,7 @@ export async function signIn(page: Page, email: string, password = DEMO_PASSWORD
 export async function inboxToken(
   request: APIRequestContext,
   recipient: string,
-  category: "email_verification" | "password_reset",
+  category: "email_verification" | "password_reset" | "team_invitation",
 ): Promise<string> {
   const response = await request.get(`${API}/api/dev/inbox`);
   expect(response.ok()).toBeTruthy();

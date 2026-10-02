@@ -39,9 +39,16 @@ afterAll(async () => {
   }
 });
 
+/**
+ * One merchant per run, and every list read is narrowed to it with `brand`:
+ * other suites leave listings in the shared test database, and a malformed
+ * one on the first page would fail this file for reasons it does not test.
+ */
+const RUN_MERCHANT: string = randomUUID();
+
 async function seedListing(region: "AU" | "ID", audience: "all_ages" | "adult" | "teen") {
   const listings = app.get<ListingRepository>(LISTING_REPOSITORY);
-  const merchantId = randomUUID();
+  const merchantId = RUN_MERCHANT;
   const [location] = await db
     .insert(merchantLocations)
     .values({
@@ -86,7 +93,7 @@ describe("the public catalogue reads a signed-in caller's own region and audienc
 
     const list = await app.inject({
       method: "GET",
-      url: "/api/store/listings?region=AU",
+      url: `/api/store/listings?region=AU&brand=${RUN_MERCHANT}`,
       headers: { cookie: idUser.cookie },
     });
     expect(list.statusCode).toBe(200);
@@ -107,7 +114,7 @@ describe("the public catalogue reads a signed-in caller's own region and audienc
 
     const signedInList = await app.inject({
       method: "GET",
-      url: "/api/store/listings",
+      url: `/api/store/listings?brand=${RUN_MERCHANT}`,
       headers: { cookie: auAdult.cookie },
     });
     expect(signedInList.statusCode).toBe(200);
@@ -123,7 +130,7 @@ describe("the public catalogue reads a signed-in caller's own region and audienc
 
     const anonymousList = await app.inject({
       method: "GET",
-      url: "/api/store/listings?region=AU",
+      url: `/api/store/listings?region=AU&brand=${RUN_MERCHANT}`,
     });
     expect(anonymousList.statusCode).toBe(200);
     const anonymousIds = anonymousList.json<{ data: { id: string }[] }>().data.map((row) => row.id);
@@ -157,7 +164,7 @@ describe("the public catalogue reads a signed-in caller's own region and audienc
 
     const list = await app.inject({
       method: "GET",
-      url: "/api/store/listings",
+      url: `/api/store/listings?brand=${RUN_MERCHANT}`,
       headers: { cookie: teen.cookie },
     });
     expect(list.statusCode).toBe(200);

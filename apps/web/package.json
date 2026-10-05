@@ -28,11 +28,11 @@
     "hls.js": "1.7.3",
     "lucide-react": "1.48.0",
     "next": "16.3.6",
-    "next-intl": "4.14.6",
+    "next-intl": "4.14.7",
     "qrcode": "1.5.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "react-hook-form": "^7.88.0",
+    "react-hook-form": "^7.89.0",
     "server-only": "^0.0.1",
     "serwist": "^9.5.12",
     "web-vitals": "6.2.2",
@@ -50,7 +50,7 @@
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",
     "@testing-library/user-event": "14.6.7",
-    "@types/node": "26.6.2",
+    "@types/node": "26.6.3",
     "@types/pg": "^8.23.1",
     "@types/qrcode": "1.5.6",
     "@types/react": "19.3.0",
@@ -64,6 +64,6 @@
     "postcss": "8.5.28",
     "tailwindcss": "4.3.3",
     "typescript": "6.0.3",
-    "vitest": "5.0.1"
+    "vitest": "5.0.2"
   }
 }

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import type { Listing, SettlementDecreaseRequest } from "@yourtal/contracts/listing";
 import type { MerchantLocation } from "@yourtal/contracts/listing/merchant-location";
+import { toMinorUnits } from "@yourtal/contracts/money";
 import { StudioIntlProvider } from "../studio-test-i18n";
 import { InventoryScreen } from "./inventory-screen";
 import type { InventoryScreenProps } from "./inventory-screen";
@@ -61,8 +62,8 @@ const REQUEST: SettlementDecreaseRequest = {
   id: "00000000-0000-4000-8000-000000000e01",
   listingId: LISTING_ID,
   currency: "AUD",
-  currentSettlementValueMinor: 700,
-  proposedSettlementValueMinor: 600,
+  currentSettlementValueMinor: toMinorUnits(700),
+  proposedSettlementValueMinor: toMinorUnits(600),
   requestedBy: MERCHANDISER,
   reason: "Winter promotion.",
   state: "pending",

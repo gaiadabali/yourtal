@@ -21,7 +21,10 @@ const ONBOARDING_PATH = "/studio/onboarding";
  */
 export async function createBusinessAction(formData: FormData): Promise<void> {
   // `roles` is a checkbox group, so it has many values.
-  const raw = { ...Object.fromEntries(formData.entries()), roles: [...new Set(formData.getAll("roles"))] };
+  const raw = {
+    ...Object.fromEntries(formData.entries()),
+    roles: [...new Set(formData.getAll("roles"))],
+  };
   const parsed = createBusinessInputSchema.safeParse(raw);
   if (!parsed.success) {
     const firstIssue = parsed.error.issues[0];

@@ -48,5 +48,7 @@ export async function submitKybDocumentAction(
       body: { documentType: type.data, storageRef, expiresAt: null },
     },
   );
-  return result.ok ? { ok: true, data: { id: result.data.id } } : { ok: false, message: "upload_failed" };
+  return result.ok
+    ? { ok: true, data: { id: result.data.id } }
+    : { ok: false, message: "upload_failed" };
 }

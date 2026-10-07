@@ -57,7 +57,10 @@ export function KybUploadForm({ businessId }: { businessId: string }) {
   }
 
   return (
-    <form onSubmit={(event) => void upload(event)} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+    <form
+      onSubmit={(event) => void upload(event)}
+      className="flex flex-col gap-3 sm:flex-row sm:items-end"
+    >
       <NativeSelect
         name="documentType"
         label={t("chrome.verification.documentTypeLabel")}

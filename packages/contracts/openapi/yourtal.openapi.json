@@ -642,11 +642,11 @@
         ],
         "responses": {
           "200": {
-            "description": "The voucher.",
+            "description": "The voucher, with its redemption code while it can still be redeemed.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WalletVoucher"
+                  "$ref": "#/components/schemas/WalletVoucherDetail"
                 }
               }
             }
@@ -26356,6 +26356,89 @@
           },
           "giftable": {
             "type": "boolean"
+          }
+        },
+        "required": [
+          "voucherId",
+          "listingId",
+          "state"
+        ],
+        "additionalProperties": false
+      },
+      "WalletVoucherDetail": {
+        "description": "GET /api/wallet/vouchers/{voucherId}: the voucher plus, for its owner while it can still be redeemed, its manual redemption code. Sent no-store; never in the list.",
+        "type": "object",
+        "properties": {
+          "voucherId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "listingId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "reserved",
+              "activated",
+              "released"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/VoucherStatus"
+          },
+          "merchantName": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "faceValueMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "remainingValueMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "location": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "address": {
+                "type": "string"
+              },
+              "district": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "name",
+              "address",
+              "district"
+            ],
+            "additionalProperties": false
+          },
+          "partialRedemptionPolicy": {
+            "$ref": "#/components/schemas/PartialRedemptionPolicy"
+          },
+          "giftable": {
+            "type": "boolean"
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1
           }
         },
         "required": [

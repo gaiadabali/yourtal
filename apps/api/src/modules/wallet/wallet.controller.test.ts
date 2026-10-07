@@ -18,6 +18,8 @@ import {
   VOUCHER_INTERNAL_CLIENT,
   type VoucherInternalClient,
 } from "../../shared/voucher-client/voucher-internal-client";
+import { sql } from "drizzle-orm";
+import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { sessionFor } from "../../shared/testing/session-for";
 
 // 4.8: the wallet over real HTTP, a real PDP and the ledger/voucher clients
@@ -56,6 +58,15 @@ afterAll(async () => {
     process.env["TEEN_ACCOUNTS"] = originalTeenAccounts;
   }
 });
+
+const db = createAppDb(process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"]!);
+
+/** A synthetic listing has no face value, so the fake reads its voucher as already spent; give it value to redeem. */
+async function giveValue(voucherId: string): Promise<void> {
+  await db.execute(
+    sql`UPDATE platform.voucher_fake_voucher SET remaining_value_minor = 2000 WHERE id = ${voucherId}`,
+  );
+}
 
 async function get(url: string, headers: Record<string, string>) {
   return app.inject({ method: "GET", url, headers });
@@ -152,6 +163,7 @@ describe("GET /api/wallet/vouchers", () => {
     expect(reserved.isOk()).toBe(true);
     expect((await vouchers.activate({ sagaId, ownerId: owner.userId })).isOk()).toBe(true);
     const voucherId = reserved._unsafeUnwrap().voucherId;
+    await giveValue(voucherId);
 
     const list = await get("/api/wallet/vouchers", { cookie: owner.cookie });
     expect(list.statusCode).toBe(200);
@@ -184,12 +196,20 @@ describe("GET /api/wallet/vouchers", () => {
 });
 
 describe("GET /api/wallet/vouchers/:voucherId code", () => {
-  it("is withheld once the voucher is voided: nothing left to redeem", async () => {
+  it("is withheld once the voucher is redeemed or voided: nothing left to redeem", async () => {
     const owner = await sessionFor(app, { jurisdiction: "ID", dateOfBirth: "1990-01-01" });
     const sagaId = `saga_${randomUUID()}`;
     const reserved = await vouchers.reserve({ listingId: randomUUID(), sagaId });
     await vouchers.activate({ sagaId, ownerId: owner.userId });
     const voucherId = reserved._unsafeUnwrap().voucherId;
+    const spent = await get(`/api/wallet/vouchers/${voucherId}`, { cookie: owner.cookie });
+    // No face value, so the fake reads it as already redeemed.
+    expect(spent.json()).toMatchObject({ status: "redeemed" });
+    expect(spent.json()).not.toHaveProperty("code");
+
+    await giveValue(voucherId);
+    const live = await get(`/api/wallet/vouchers/${voucherId}`, { cookie: owner.cookie });
+    expect(live.json()).toHaveProperty("code");
     const voided = await vouchers.voidVoucher({
       voucherId,
       ownerId: owner.userId,

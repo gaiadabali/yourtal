@@ -16,7 +16,10 @@ export default async function StudioJoinPage(props: PageProps<"/studio/join">) {
     <PageContainer width="narrow" className="flex flex-col gap-6 py-8">
       <PageHeader title={t("join.title")} description={t("join.description")} />
       <JoinBusinessForm token={token} failed={searchParams.error === "invalid"} locale={locale} />
-      <Link href="/studio/onboarding" className="w-fit text-body-sm font-sans text-accent underline underline-offset-4">
+      <Link
+        href="/studio/onboarding"
+        className="w-fit text-body-sm font-sans text-accent underline underline-offset-4"
+      >
         {t("join.registerInstead")}
       </Link>
     </PageContainer>

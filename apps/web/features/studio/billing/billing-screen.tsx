@@ -118,7 +118,9 @@ export function BillingScreen({
                     })}
                   </span>
                   <span>
-                    {t("billing.historyLeft", { formatted: number.format(purchase.remainingPoints) })}
+                    {t("billing.historyLeft", {
+                      formatted: number.format(purchase.remainingPoints),
+                    })}
                   </span>
                 </li>
               ))}

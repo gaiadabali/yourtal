@@ -148,7 +148,6 @@ export function getBalance(businessId: string): Promise<BillingBalance> {
   return billingDataSource.getBalance(businessId);
 }
 
-
 export function purchasePoints(
   businessId: string,
   points: number,

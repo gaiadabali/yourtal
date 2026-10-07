@@ -24,9 +24,7 @@ export default function StudioError({ error, reset }: StudioErrorProps) {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 p-6">
       <h1 className="text-2xl font-semibold text-fg">YourTal Studio</h1>
-      <p className="text-sm font-sans text-fg-muted">
-        {t("chrome.error.message")}
-      </p>
+      <p className="text-sm font-sans text-fg-muted">{t("chrome.error.message")}</p>
       <Button type="button" onClick={reset} className="w-fit">
         {t("chrome.error.retry")}
       </Button>

@@ -44,10 +44,10 @@ export function submitCampaign(
     }
     return screenCreative(deps, businessId, campaignId).andThen(() =>
       transitionCampaignLifecycle(deps, businessId, campaignId, "in_review").mapErr(
-      (error): SubmitCampaignError =>
-        error.type === "campaign_not_found"
-          ? { type: "campaign_not_found", campaignId: error.campaignId }
-          : error,
+        (error): SubmitCampaignError =>
+          error.type === "campaign_not_found"
+            ? { type: "campaign_not_found", campaignId: error.campaignId }
+            : error,
       ),
     );
   });

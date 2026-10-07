@@ -9899,6 +9899,63 @@
         }
       }
     },
+    "/api/{tenantId}/studio/campaign-funding": {
+      "get": {
+        "summary": "The partner-funded allocations a campaign's reward can draw from",
+        "tags": [
+          "studio",
+          "campaign",
+          "billing"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Every partner-funded allocation the business holds, with what is left in each. For campaign authors, who cannot see Billing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BillingAllocation"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/{tenantId}/studio/media/initiate": {
       "post": {
         "summary": "Start a presigned multipart upload of a campaign's video",

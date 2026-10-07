@@ -13,6 +13,7 @@ package contracts
 import (
 	"encoding/json"
 	"time"
+	"bytes"
 	"fmt"
 )
 
@@ -29,7 +30,6 @@ type BillingAllocation struct {
 	// Platform points. Always a whole number; there is no fractional point.
 	RemainingPoints int64 `json:"remainingPoints"`
 	CreatedAt time.Time `json:"createdAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
-	AdditionalProperties map[string]interface{}
 }
 
 type _BillingAllocation BillingAllocation
@@ -217,11 +217,6 @@ func (o BillingAllocation) ToMap() (map[string]interface{}, error) {
 	toSerialize["totalPoints"] = o.TotalPoints
 	toSerialize["remainingPoints"] = o.RemainingPoints
 	toSerialize["createdAt"] = o.CreatedAt
-
-	for key, value := range o.AdditionalProperties {
-		toSerialize[key] = value
-	}
-
 	return toSerialize, nil
 }
 
@@ -254,25 +249,15 @@ func (o *BillingAllocation) UnmarshalJSON(data []byte) (err error) {
 
 	varBillingAllocation := _BillingAllocation{}
 
-	err = json.Unmarshal(data, &varBillingAllocation)
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varBillingAllocation)
 
 	if err != nil {
 		return err
 	}
 
 	*o = BillingAllocation(varBillingAllocation)
-
-	additionalProperties := make(map[string]interface{})
-
-	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "allocationId")
-		delete(additionalProperties, "region")
-		delete(additionalProperties, "funderType")
-		delete(additionalProperties, "totalPoints")
-		delete(additionalProperties, "remainingPoints")
-		delete(additionalProperties, "createdAt")
-		o.AdditionalProperties = additionalProperties
-	}
 
 	return err
 }

@@ -8,6 +8,7 @@ import { StudioChrome } from "@/features/studio/studio-chrome";
 import { canViewZone } from "@/features/studio/studio-zone-access";
 import { getWebhookLive, listCredentialsLive } from "@/features/studio/developer-credentials-data";
 import { DeveloperCredentialsScreen } from "@/features/studio/developer-credentials-screen";
+import { PUBLIC_SITE_URL } from "@/features/public/public-locale";
 import { DeveloperDocsPanel } from "@/features/studio/developer-docs-panel";
 
 /**
@@ -39,7 +40,7 @@ export default async function StudioDevelopersPage(props: PageProps<"/studio/dev
       {allowed ? (
         <div className="flex flex-col gap-6">
           <StudioDevelopersData businessId={current.business.id} />
-          <DeveloperDocsPanel />
+          <DeveloperDocsPanel baseUrl={`${PUBLIC_SITE_URL}/v1/vouchers`} />
         </div>
       ) : (
         <StudioAccessDenied zoneLabel="Developers" locale={locale} />

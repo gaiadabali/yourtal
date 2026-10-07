@@ -60,8 +60,6 @@ for (const r of REGIONS) {
     baseURL,
   }) => {
     test.setTimeout(180_000);
-    // 13.3.l (A): the simulated payment driver refuses every IDR charge.
-    test.fail(r.region === "ID", "13.3.l: no declared IDR exponent, so IDR purchases are refused");
     requireBusinessEnv();
     const finance = await demoCaller(request, "finance", r);
     const businessId = await demoBusinessId(finance);

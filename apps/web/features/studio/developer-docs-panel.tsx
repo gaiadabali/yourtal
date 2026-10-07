@@ -21,7 +21,7 @@ const CODE = (chunks: ReactNode) => (
  * come from next-intl's real `useTranslations`, which still supports it.
  * No other interactivity lives here.
  */
-export function DeveloperDocsPanel() {
+export function DeveloperDocsPanel({ baseUrl }: { baseUrl: string }) {
   const t = useTranslations("studio");
   return (
     <Card>
@@ -29,6 +29,12 @@ export function DeveloperDocsPanel() {
         <CardTitle as="h2">{t("developers.docs.title")}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 text-sm font-sans text-fg">
+        <section className="flex flex-col gap-1">
+          <h3 className="font-semibold text-fg">{t("developers.docs.baseUrlTitle")}</h3>
+          <p className="text-fg-muted">
+            {t.rich("developers.docs.baseUrlBody", { code: CODE, url: baseUrl })}
+          </p>
+        </section>
         <section className="flex flex-col gap-1">
           <h3 className="font-semibold text-fg">{t("developers.docs.signingTitle")}</h3>
           <p className="text-fg-muted">{t.rich("developers.docs.signingBody", { code: CODE })}</p>

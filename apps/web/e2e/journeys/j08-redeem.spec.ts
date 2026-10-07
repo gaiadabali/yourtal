@@ -51,6 +51,54 @@ async function restockedReward(request: APIRequestContext, owner: Caller, r: Reg
 }
 
 /**
+ * A reward the online merchant can redeem over HMAC. Demo rewards are mostly
+ * in-store only (AU has none online), so the demo owner lists a fresh one, as
+ * journey 4 shows on screen, and restocks it the same way.
+ */
+async function onlineReward(request: APIRequestContext, owner: Caller, r: RegionCase) {
+  const base = await one<{ merchant_id: string; location_id: string; image_url: string }>(
+    `SELECT l.merchant_id::text, ll.location_id::text, l.image_url
+       FROM store.listings l
+       JOIN business.business_members m ON m.business_id = l.merchant_id AND m.role = 'owner'
+       JOIN store.listing_location ll ON ll.listing_id = l.id
+      WHERE m.user_id = $1 AND l.region = $2 AND l.lifecycle_state = 'active'
+      ORDER BY l.id LIMIT 1`,
+    [owner.userId, r.region],
+  );
+  const au = r.region === "AU";
+  const listing = await owner.post<{ id: string }>(`/api/${base.merchant_id}/store/listings`, {
+    merchantName: "Journey 8 online",
+    title: `Journey 8 online voucher ${Date.now().toString(36)}`,
+    description: "Redeemed on the merchant's web shop.",
+    category: "retail",
+    locationIds: [base.location_id],
+    faceValueMinor: au ? 1_000 : 50_000,
+    settlementValueMinor: au ? 700 : 35_000,
+    stockTotal: 2,
+    transferable: false,
+    partialRedemptionPolicy: "single_use_forfeit",
+    minimumSpendMinor: null,
+    expiresAt: new Date(Date.now() + 90 * 86_400_000).toISOString(),
+    status: "available",
+    audience: "all_ages",
+    contentCategory: "electronics",
+    tags: [],
+    imageUrl: base.image_url,
+    channel: "online",
+    partialRedemption: "single_use",
+  });
+  const batch = await owner.post<{ id: string }>(
+    `/api/${base.merchant_id}/store/voucher-batch-requests`,
+    { listingId: listing.id, quantity: 2, reason: "Journey 8 online restock." },
+  );
+  const moderator = await staffCaller(request, "moderator");
+  await moderator.post(`/api/staff/moderation/voucher-batches/${batch.id}/approve`, {
+    reason: "Restock for a verified merchant.",
+  });
+  return listing.id;
+}
+
+/**
  * A fresh customer who buys that reward in the store: an admin goodwill
  * credit (the day's earn cap), released, then checkout, as the demo seed
  * does (journey 7 proves buying on screen).
@@ -268,13 +316,10 @@ for (const r of REGIONS) {
     request,
     baseURL,
   }) => {
-    // Expected to fail until 13.3.n (staging routes /v1/vouchers) and 13.3.o (the voucher code is
-    // readable) land; the online reward here is in-store only, so authorize is refused.
-    test.fail(true, "13.3.n/13.3.o: online redemption is not reachable yet");
     test.setTimeout(240_000);
     requireBusinessEnv();
     const owner = await demoCaller(request, "owner", r);
-    const reward = await restockedReward(request, owner, r);
+    const reward = await onlineReward(request, owner, r);
     const online = await customerWithVoucher(request, reward, r, "online");
 
     // Online: a Studio-issued credential, then authorize and capture over HMAC.

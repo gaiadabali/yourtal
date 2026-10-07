@@ -713,6 +713,8 @@
     },
     "docs": {
       "title": "Integration docs",
+      "baseUrlTitle": "Base URL",
+      "baseUrlBody": "Send every call as a POST to <code>{url}</code>, for example <code>{url}/authorize</code>.",
       "signingTitle": "Signing",
       "signingBody": "Every request carries <code>X-YourTal-Signature: t=[unix seconds],k=[key id],v1=[hex hmac-sha256]</code>. Your key id is the credential's id, and the key is the secret shown once when you issue it, hex-decoded to bytes. The MAC covers a newline-joined canonical string: the timestamp, your key id, the HTTP method, the path and query, the <code>Idempotency-Key</code> header (or an empty string), and base64(sha256(request body)). Use <code>@yourtal/sdk-merchant</code>'s <code>signRequest</code> directly, passing the secret as <code>Buffer.from(secret, \"hex\")</code>. It is byte-identical to the server's own verifier.",
       "callsTitle": "The four calls",

@@ -8,7 +8,8 @@ const JOIN_PATH = "/studio/join";
 
 /** 13.3.b: an invitee joins the business with the code from their invitation email. */
 export async function acceptInvitationAction(formData: FormData): Promise<void> {
-  const token = String(formData.get("token") ?? "").trim();
+  const rawToken = formData.get("token");
+  const token = typeof rawToken === "string" ? rawToken.trim() : "";
   if (token === "") redirect(`${JOIN_PATH}?error=invalid`);
   const result = await apiFetch(
     "/api/me/businesses/invitations/accept",

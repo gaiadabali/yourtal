@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { FormEvent } from "react";
+import type { SyntheticEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@yourtal/ui/button";
 import {
@@ -70,7 +70,7 @@ export function SettlementValueDialog(props: SettlementValueDialogProps) {
     }
   }
 
-  function submit(event: FormEvent) {
+  function submit(event: SyntheticEvent) {
     event.preventDefault();
     if (newMinor === null) {
       setFieldError(t("inventory.form.error.amount"));

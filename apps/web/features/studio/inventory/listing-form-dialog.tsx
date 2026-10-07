@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { FormEvent } from "react";
+import type { SyntheticEvent } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@yourtal/ui/button";
 import {
@@ -54,7 +54,7 @@ export function ListingFormDialog(props: ListingFormDialogProps) {
     }
   }
 
-  function submit(event: FormEvent) {
+  function submit(event: SyntheticEvent) {
     event.preventDefault();
     const built = buildNewListingBody(values, {
       currency: props.currency,

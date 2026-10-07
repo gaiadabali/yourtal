@@ -121,7 +121,7 @@ export function msg(r: RegionCase, namespace: string, key: string): string {
   }
   const value = key
     .split(".")
-    .reduce<unknown>((node, part) => (node as Record<string, unknown>)?.[part], data);
+    .reduce<unknown>((node, part) => (node as Record<string, unknown>)[part], data);
   expect(typeof value, `${r.locale}/${namespace}.json has no ${key}`).toBe("string");
   return value as string;
 }
@@ -183,7 +183,7 @@ export async function addMember(
   r: RegionCase,
   role: "admin" | "marketer" | "merchandiser" | "finance" | "analyst",
 ) {
-  const account = await apiRegister(request, r, `${role}`);
+  const account = await apiRegister(request, r, role);
   await owner.post(`/api/${businessId}/business/team/invite`, { email: account.email, role });
   const token = await inboxToken(request, account.email, "team_invitation");
   const member = callerFor(request, account);

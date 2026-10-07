@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type SyntheticEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@yourtal/ui/button";
@@ -26,11 +26,12 @@ export function KybUploadForm({ businessId }: { businessId: string }) {
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
 
-  async function upload(event: FormEvent<HTMLFormElement>) {
+  async function upload(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const file = form.get("document");
-    const documentType = String(form.get("documentType") ?? "");
+    const rawType = form.get("documentType");
+    const documentType = typeof rawType === "string" ? rawType : "";
     if (!(file instanceof File) || file.size === 0) return;
     if (!ACCEPTED.includes(file.type)) return setFailure("unsupportedType");
     if (file.size > MAX_BYTES) return setFailure("tooLarge");
@@ -56,7 +57,7 @@ export function KybUploadForm({ businessId }: { businessId: string }) {
   }
 
   return (
-    <form onSubmit={upload} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+    <form onSubmit={(event) => void upload(event)} className="flex flex-col gap-3 sm:flex-row sm:items-end">
       <NativeSelect
         name="documentType"
         label={t("chrome.verification.documentTypeLabel")}

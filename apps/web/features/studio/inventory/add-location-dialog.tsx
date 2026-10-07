@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { FormEvent } from "react";
+import type { SyntheticEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@yourtal/ui/button";
 import {
@@ -36,7 +36,7 @@ export function AddLocationDialog({ businessId }: { businessId: string }) {
     }
   }
 
-  function submit(event: FormEvent) {
+  function submit(event: SyntheticEvent) {
     event.preventDefault();
     const input = {
       name: values.name.trim(),

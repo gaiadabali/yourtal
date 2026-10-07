@@ -1,7 +1,15 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
-import { API, REGIONS, apiRegister, inboxToken, testIp, useSession, type RegionCase } from "./demo";
-import { callerFor, closeDb, db, msg, one, requireBusinessEnv, staffCaller } from "./business";
+import {
+  API,
+  REGIONS,
+  apiRegister,
+  testIp,
+  useSession,
+  type RegionCase,
+  type inboxToken,
+} from "./demo";
+import { callerFor, closeDb, msg, one, requireBusinessEnv, staffCaller } from "./business";
 
 const STAFF = REGIONS[0]; // the staff console runs in en-AU
 
@@ -35,7 +43,6 @@ for (const r of REGIONS) {
     test.setTimeout(240_000);
     requireBusinessEnv();
     const ownerAccount = await apiRegister(request, r, "j01-owner");
-    const owner = callerFor(request, ownerAccount);
     const handle = `j01-${r.slug}-${Date.now().toString(36)}`;
 
     // Studio sends a person with no business to onboarding; they register one.

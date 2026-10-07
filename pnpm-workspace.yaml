@@ -24,3 +24,10 @@ overrides:
   # pins browserslist 4.28.6 exactly, and no serwist release fixes it yet.
   # Drop this once serwist unpins it (TASKS.md 0.8.g).
   "browserslist@<4.28.7": "4.29.0"
+auditConfig:
+  ignoreGhsas:
+    # GHSA-vfj7-8cjw-p6xm (high): braces <=3.0.3 stack exhaustion on deeply
+    # nested patterns; no patched release exists (2026-10-07). Only reachable
+    # as a dev-time dep (@next/eslint-plugin-next > fast-glob > micromatch),
+    # never on untrusted input. Remove once a fixed braces ships.
+    - GHSA-vfj7-8cjw-p6xm

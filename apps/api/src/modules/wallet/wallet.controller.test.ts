@@ -200,7 +200,7 @@ describe("GET /api/wallet/vouchers/:voucherId code", () => {
     const owner = await sessionFor(app, { jurisdiction: "ID", dateOfBirth: "1990-01-01" });
     const sagaId = `saga_${randomUUID()}`;
     const reserved = await vouchers.reserve({ listingId: randomUUID(), sagaId });
-    await vouchers.activate({ sagaId, ownerId: owner.userId });
+    expect((await vouchers.activate({ sagaId, ownerId: owner.userId })).isOk()).toBe(true);
     const voucherId = reserved._unsafeUnwrap().voucherId;
     const spent = await get(`/api/wallet/vouchers/${voucherId}`, { cookie: owner.cookie });
     // No face value, so the fake reads it as already redeemed.

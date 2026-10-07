@@ -1,43 +1,56 @@
 import type { Listing } from "@yourtal/contracts/listing";
 import type { MerchantLocation } from "@yourtal/contracts/listing/merchant-location";
-import { Badge } from "@yourtal/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
-import { MoneyAmount } from "@yourtal/ui/money-amount";
 import { EmptyState } from "@yourtal/ui/empty-state";
 import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
+import { AddLocationDialog } from "./add-location-dialog";
 import type { SettlementDecreaseRequest } from "./inventory-data";
-import { TagChips } from "../tag-picker";
-import { ListingTagsEditor } from "./listing-tags-editor";
+import { InventoryListingRow } from "./inventory-listing-row";
+import type { Currency } from "./listing-form";
+import { ListingFormDialog } from "./listing-form-dialog";
+import { PendingDecreasesCard } from "./pending-decreases-card";
 
 export interface InventoryScreenProps {
   businessId: string;
+  merchantName: string;
+  region: "AU" | "ID";
+  currency: Currency;
   listings: readonly Listing[];
   locations: readonly MerchantLocation[];
   pendingDecreaseRequests: readonly SettlementDecreaseRequest[];
+  /** Owner, admin or merchandiser. Cosmetic: the API enforces every write. */
+  canEdit: boolean;
+  /** Owner or admin: the only roles the policy lets approve a cut to S. */
+  canApprove: boolean;
+  currentUserId: string;
   locale: SupportedLocale;
 }
 
 /**
- * The Inventory zone (task 7.8.b): listings and their stock (a read-only
- * projection of unallocated vouchers, 7.4.c), plus any settlement-decrease
- * request awaiting the second approver (7.4.b's two-person flow). Both
- * lists come from `inventory-data.ts`'s mock seam — see that file's comment
- * on the real, already-merged API this should flip to.
+ * The Inventory zone (docs/17 section 2): outlets, listings with the price the
+ * platform computed, changes to S and the second approver's queue. Buttons are
+ * hidden for roles that cannot use them, which is never the security boundary.
  */
 export function InventoryScreen({
   businessId,
+  merchantName,
+  region,
+  currency,
   listings,
   locations,
   pendingDecreaseRequests,
+  canEdit,
+  canApprove,
+  currentUserId,
   locale,
 }: InventoryScreenProps) {
   const t = getStudioTranslator(locale);
-  const listingTitleById = new Map(listings.map((listing) => [listing.id, listing.title]));
   return (
     <div className="flex flex-col gap-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
           <CardTitle as="h2">{t("inventory.locationsTitle")}</CardTitle>
+          {canEdit ? <AddLocationDialog businessId={businessId} /> : null}
         </CardHeader>
         <CardContent>
           {locations.length === 0 ? (
@@ -60,41 +73,27 @@ export function InventoryScreen({
         </CardContent>
       </Card>
 
-      {pendingDecreaseRequests.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle as="h2">{t("inventory.pendingDecreasesTitle")}</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2">
-            {pendingDecreaseRequests.map((request) => (
-              <div
-                key={request.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-control border border-border-subtle p-3"
-              >
-                <span className="text-body-sm text-fg">
-                  {listingTitleById.get(request.listingId) ?? request.listingId}
-                </span>
-                <span className="text-body-sm text-fg-muted">
-                  <MoneyAmount
-                    amountMinor={request.currentSettlementValueMinor}
-                    currency={request.currency}
-                  />{" "}
-                  →{" "}
-                  <MoneyAmount
-                    amountMinor={request.proposedSettlementValueMinor}
-                    currency={request.currency}
-                  />
-                </span>
-                <Badge variant="warning">{t("inventory.awaitingSecondApproval")}</Badge>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      ) : null}
+      <PendingDecreasesCard
+        businessId={businessId}
+        requests={pendingDecreaseRequests}
+        listings={listings}
+        canApprove={canApprove}
+        currentUserId={currentUserId}
+        locale={locale}
+      />
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2">
           <CardTitle as="h2">{t("inventory.listingsTitle")}</CardTitle>
+          {canEdit ? (
+            <ListingFormDialog
+              businessId={businessId}
+              merchantName={merchantName}
+              region={region}
+              currency={currency}
+              locations={locations}
+            />
+          ) : null}
         </CardHeader>
         <CardContent>
           {listings.length === 0 ? (
@@ -105,36 +104,13 @@ export function InventoryScreen({
           ) : (
             <ul className="flex flex-col gap-2">
               {listings.map((listing) => (
-                <li
+                <InventoryListingRow
                   key={listing.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-control border border-border-subtle p-3"
-                >
-                  <div className="flex flex-col gap-1">
-                    <span className="text-body font-sans text-fg">{listing.title}</span>
-                    <span className="text-body-sm text-fg-muted">
-                      {t("inventory.stock", {
-                        remaining: listing.stockRemaining,
-                        total: listing.stockTotal,
-                        locations: listing.locations.length,
-                      })}
-                    </span>
-                  </div>
-                  <Badge variant={listing.status === "sold_out" ? "danger" : "success"}>
-                    {listing.status.replace("_", " ")}
-                  </Badge>
-                  {listing.transferable ? (
-                    <Badge variant="secondary">{t("inventory.transferableBadge")}</Badge>
-                  ) : null}
-                  <TagChips tags={listing.tags} />
-                  <ListingTagsEditor
-                    businessId={businessId}
-                    listingId={listing.id}
-                    listingTitle={listing.title}
-                    contentCategory={listing.contentCategory}
-                    tags={listing.tags}
-                    transferable={listing.transferable}
-                  />
-                </li>
+                  businessId={businessId}
+                  listing={listing}
+                  canEdit={canEdit}
+                  locale={locale}
+                />
               ))}
             </ul>
           )}

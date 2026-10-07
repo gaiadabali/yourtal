@@ -1,11 +1,13 @@
 import { PageHeader } from "@yourtal/ui/page-header";
 import { getLocale } from "next-intl/server";
 import { resolveStudioContext } from "@/features/studio/studio-context";
-import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
+import { getStudioTranslator, resolveSupportedLocale } from "@/features/studio/studio-i18n";
 import { StudioAccessDenied } from "@/features/studio/studio-access-denied";
 import { StudioNoBusiness } from "@/features/studio/studio-no-business";
 import { StudioChrome } from "@/features/studio/studio-chrome";
-import { canViewZone } from "@/features/studio/studio-zone-access";
+import { getCurrentUserId } from "@/features/studio/studio-data";
+import { canEditZone, canViewZone } from "@/features/studio/studio-zone-access";
+import { canApproveSettlementDecrease } from "@/features/studio/inventory/inventory-access";
 import {
   listListings,
   listLocations,
@@ -13,7 +15,7 @@ import {
 } from "@/features/studio/inventory/inventory-data";
 import { InventoryScreen } from "@/features/studio/inventory/inventory-screen";
 
-/** `/studio/inventory` (task 7.4 / 7.8.b): listings, stock and pending settlement-decrease approvals. */
+/** `/studio/inventory` (task 7.4 / 7.8.b, 13.3.m): outlets, listings, S changes and the second approver. */
 export default async function StudioInventoryPage(props: PageProps<"/studio/inventory">) {
   const searchParams = await props.searchParams;
   const { current, all, defaultBusinessId } = await resolveStudioContext(searchParams);
@@ -41,10 +43,12 @@ export default async function StudioInventoryPage(props: PageProps<"/studio/inve
   }
 
   const { id: businessId, displayName, region, currency } = current.business;
-  const [listings, locations, pendingDecreaseRequests] = await Promise.all([
+  const role = current.myRole ?? "analyst";
+  const [listings, locations, pendingDecreaseRequests, currentUserId] = await Promise.all([
     listListings(businessId, displayName, region, currency),
     listLocations(businessId, displayName, region, currency),
     listPendingDecreaseRequests(businessId),
+    getCurrentUserId(),
   ]);
 
   return (
@@ -53,10 +57,16 @@ export default async function StudioInventoryPage(props: PageProps<"/studio/inve
       allMemberships={all}
       defaultBusinessId={defaultBusinessId}
       locale={locale}
-      header={<PageHeader title="Inventory" />}
+      header={<PageHeader title={getStudioTranslator(locale)("inventory.title")} />}
     >
       <InventoryScreen
         businessId={businessId}
+        merchantName={displayName}
+        region={region}
+        currency={currency}
+        canEdit={canEditZone("inventory", role, current.business.roles)}
+        canApprove={canApproveSettlementDecrease(role)}
+        currentUserId={currentUserId}
         listings={listings}
         locations={locations}
         pendingDecreaseRequests={pendingDecreaseRequests}

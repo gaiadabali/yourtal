@@ -59,9 +59,9 @@ export const CONTENT_CATEGORIES = [
 ] as const;
 
 /** Restated from `@yourtal/contracts/campaign`'s `audienceSchema` — this module only ever `import type`s that package's schemas (see this file's own doc comment on why). */
-const AUDIENCES = ["all_ages", "teen", "adult", "parents"] as const;
+export const AUDIENCES = ["all_ages", "teen", "adult", "parents"] as const;
 
-type CategoryStatus = "allowed" | "adult_only" | "prohibited";
+export type CategoryStatus = "allowed" | "adult_only" | "prohibited";
 
 /**
  * TASKS.md 12.3.a: restated from @yourtal/jurisdiction's own categoryPolicy
@@ -95,7 +95,7 @@ const CATEGORY_POLICY: Record<"AU" | "ID", Partial<Record<string, CategoryStatus
   },
 };
 
-function categoryStatusFor(region: "AU" | "ID", category: string): CategoryStatus {
+export function categoryStatusFor(region: "AU" | "ID", category: string): CategoryStatus {
   return CATEGORY_POLICY[region][category] ?? "allowed";
 }
 

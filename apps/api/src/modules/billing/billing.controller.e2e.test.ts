@@ -33,9 +33,13 @@ afterAll(async () => {
   await app.close();
 });
 
-async function ownerAt() {
-  const session = await sessionFor(app, { jurisdiction: "AU" });
-  const businessId = await seedBusinessMembership(db, { userId: session.userId, role: "owner" });
+async function ownerAt(region: "AU" | "ID" = "AU") {
+  const session = await sessionFor(app, { jurisdiction: region });
+  const businessId = await seedBusinessMembership(db, {
+    userId: session.userId,
+    role: "owner",
+    region,
+  });
   return { cookie: session.cookie, businessId };
 }
 
@@ -79,6 +83,22 @@ describe("POST /api/:tenantId/studio/billing/purchases", () => {
     });
     // THE invariant: the replay did not create a second allocation.
     expect(balanceAfterReplay.json<{ totalPoints: number }>().totalPoints).toBe(1_000);
+  });
+
+  it("an Indonesian business can buy points in IDR (whole Rupiah)", async () => {
+    // The payments driver once had no declared IDR unit and declined every IDR charge.
+    const { cookie, businessId } = await ownerAt("ID");
+
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/${businessId}/studio/billing/purchases`,
+      headers: { cookie, "idempotency-key": `test-${randomUUID()}` },
+      payload: { points: 1_000, currency: "IDR" },
+    });
+    expect(response.statusCode).toBe(201);
+    const body = response.json<{ currency: string; paidMinor: number }>();
+    expect(body.currency).toBe("IDR");
+    expect(body.paidMinor).toBeGreaterThan(0);
   });
 
   it("refuses a currency that does not match the business's own", async () => {

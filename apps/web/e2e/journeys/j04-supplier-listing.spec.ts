@@ -211,9 +211,7 @@ for (const r of REGIONS) {
     // A rise in S, on screen, applies at once and reprices the listing.
     await page.goto(inventory);
     const listed = page.getByRole("listitem").filter({ hasText: title });
-    await expect(
-      listed.getByText(t("inventory.status.available"), { exact: true }),
-    ).toBeVisible();
+    await expect(listed.getByText(t("inventory.status.available"), { exact: true })).toBeVisible();
     const changeValue = t("inventory.changeValueFor").replace("{title}", title);
     await listed.getByRole("button", { name: changeValue }).click();
     dialog = page.getByRole("dialog");

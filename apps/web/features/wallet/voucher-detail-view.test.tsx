@@ -164,7 +164,8 @@ describe("VoucherDetailView", () => {
     await flushMicrotasks();
 
     expect(screen.getByText("K7M2-Q9XP")).toBeInTheDocument();
-    expect(JSON.stringify({ ...window.localStorage })).not.toContain("K7M2-Q9XP");
+    const stored = Object.keys(window.localStorage).map((key) => window.localStorage.getItem(key));
+    expect(JSON.stringify(stored)).not.toContain("K7M2-Q9XP");
   });
 
   it("falls back to the QR alone, with the offline caption, when no code can be fetched", async () => {

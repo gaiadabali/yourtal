@@ -4,7 +4,11 @@ import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
-import { walletHistoryPageSchema, walletSummarySchema } from "@yourtal/contracts/wallet/wallet";
+import {
+  walletHistoryPageSchema,
+  walletSummarySchema,
+  walletVoucherDetailSchema,
+} from "@yourtal/contracts/wallet/wallet";
 import { AppModule } from "../../app.module";
 import {
   LEDGER_INTERNAL_CLIENT,
@@ -156,19 +160,45 @@ describe("GET /api/wallet/vouchers", () => {
 
     const one = await get(`/api/wallet/vouchers/${voucherId}`, { cookie: owner.cookie });
     expect(one.statusCode).toBe(200);
+    // 13.3.o: the owner reads the redemption code on the single read, uncached,
+    // and never on the list.
+    const code = (await vouchers.reveal({ voucherId, ownerId: owner.userId }))._unsafeUnwrap().code;
+    expect(walletVoucherDetailSchema.parse(one.json()).code).toBe(code);
+    expect(one.headers["cache-control"]).toBe("no-store");
+    expect(list.body).not.toContain(code);
     const qr = await get(`/api/wallet/vouchers/${voucherId}/qr`, { cookie: owner.cookie });
     expect(qr.statusCode).toBe(200);
     expect(qr.json()).toMatchObject({ voucherId, token: expect.any(String) as unknown });
 
     // Object-level: another viewer cannot learn the voucher exists.
-    expect(
-      (await get(`/api/wallet/vouchers/${voucherId}`, { cookie: stranger.cookie })).statusCode,
-    ).toBe(404);
+    const hidden = await get(`/api/wallet/vouchers/${voucherId}`, { cookie: stranger.cookie });
+    expect(hidden.statusCode).toBe(404);
+    expect(hidden.body).not.toContain(code);
     expect(
       (await get(`/api/wallet/vouchers/${voucherId}/qr`, { cookie: stranger.cookie })).statusCode,
     ).toBe(404);
     expect(
       (await get("/api/wallet/vouchers/not-a-uuid", { cookie: owner.cookie })).statusCode,
     ).toBe(404);
+  });
+});
+
+describe("GET /api/wallet/vouchers/:voucherId code", () => {
+  it("is withheld once the voucher is voided: nothing left to redeem", async () => {
+    const owner = await sessionFor(app, { jurisdiction: "ID", dateOfBirth: "1990-01-01" });
+    const sagaId = `saga_${randomUUID()}`;
+    const reserved = await vouchers.reserve({ listingId: randomUUID(), sagaId });
+    await vouchers.activate({ sagaId, ownerId: owner.userId });
+    const voucherId = reserved._unsafeUnwrap().voucherId;
+    const voided = await vouchers.voidVoucher({
+      voucherId,
+      ownerId: owner.userId,
+      reason: "dispute",
+    });
+    expect(voided.isOk()).toBe(true);
+
+    const one = await get(`/api/wallet/vouchers/${voucherId}`, { cookie: owner.cookie });
+    expect(one.statusCode).toBe(200);
+    expect(one.json()).not.toHaveProperty("code");
   });
 });

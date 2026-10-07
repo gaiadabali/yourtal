@@ -49,6 +49,7 @@ import {
   walletSummarySchema,
   walletVoucherPageSchema,
   walletVoucherSchema,
+  walletVoucherDetailSchema,
 } from "../wallet/wallet";
 import {
   checkoutQuoteRequestSchema,
@@ -482,6 +483,13 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     schema: walletVoucherSchema,
     description:
       "A voucher the caller holds (4.8.a). Its words and value come from the store listing.",
+    crossFieldRules: [],
+  },
+  {
+    id: "WalletVoucherDetail",
+    schema: walletVoucherDetailSchema,
+    description:
+      "GET /api/wallet/vouchers/{voucherId}: the voucher plus, for its owner while it can still be redeemed, its manual redemption code. Sent no-store; never in the list.",
     crossFieldRules: [],
   },
   {

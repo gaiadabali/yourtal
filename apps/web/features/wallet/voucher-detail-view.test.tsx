@@ -9,6 +9,7 @@ import { regionDisplayConfig } from "@/features/region/region-config";
 import enAU from "@/messages/en-AU/wallet.json";
 import idID from "@/messages/id-ID/wallet.json";
 import { VoucherDetailView } from "./voucher-detail-view";
+import { revealVoucherCodeAction } from "./reveal-voucher-code-action";
 import type { VoucherDetailSource } from "./voucher-detail-cache";
 import { buildCachedVoucherDetail, writeVoucherDetailCache } from "./voucher-detail-cache";
 import type { WalletQrDetail } from "./wallet-data";
@@ -36,6 +37,18 @@ vi.mock("qrcode", () => ({
 
 vi.mock("./refresh-voucher-qr-action", () => ({
   refreshVoucherQrAction: vi.fn().mockResolvedValue({ ok: false }),
+}));
+// The real component code-splits the canvas behind next/dynamic, which never settles under fake timers.
+vi.mock("./voucher-qr-code", () => ({
+  VoucherQrCode: ({ code, caption }: { code: string; caption?: string }) => (
+    <div>
+      <span>{code}</span>
+      {caption ? <span>{caption}</span> : null}
+    </div>
+  ),
+}));
+vi.mock("./reveal-voucher-code-action", () => ({
+  revealVoucherCodeAction: vi.fn().mockResolvedValue({ ok: false }),
 }));
 vi.mock("./dispute-voucher-action", () => ({
   disputeVoucherAction: vi.fn(),
@@ -108,7 +121,6 @@ describe("VoucherDetailView", () => {
         voucherId={cachedVoucher.voucherId}
         initialDetail={staleServerDetail}
         initialQr={sampleQr}
-        code={undefined}
       />,
     );
     await flushMicrotasks();
@@ -126,7 +138,6 @@ describe("VoucherDetailView", () => {
         voucherId={cachedVoucher.voucherId}
         initialDetail={detail}
         initialQr={sampleQr}
-        code={undefined}
       />,
     );
     await flushMicrotasks();
@@ -138,6 +149,41 @@ describe("VoucherDetailView", () => {
     expect(screen.getByText("Voucher ini tidak bisa dipakai")).toBeInTheDocument();
   });
 
+  it("shows the redemption code once it is fetched, and never writes it to browser storage", async () => {
+    vi.mocked(revealVoucherCodeAction).mockResolvedValueOnce({ ok: true, code: "K7M2-Q9XP" });
+    const detail = buildCachedVoucherDetail(cachedVoucher, "2026-09-19T09:00:00.000Z");
+
+    renderWithRegion(
+      <VoucherDetailView
+        voucherId={cachedVoucher.voucherId}
+        initialDetail={detail}
+        initialQr={sampleQr}
+      />,
+    );
+
+    await flushMicrotasks();
+
+    expect(screen.getByText("K7M2-Q9XP")).toBeInTheDocument();
+    expect(JSON.stringify({ ...window.localStorage })).not.toContain("K7M2-Q9XP");
+  });
+
+  it("falls back to the QR alone, with the offline caption, when no code can be fetched", async () => {
+    const detail = buildCachedVoucherDetail(cachedVoucher, "2026-09-19T09:00:00.000Z");
+
+    renderWithRegion(
+      <VoucherDetailView
+        voucherId={cachedVoucher.voucherId}
+        initialDetail={detail}
+        initialQr={sampleQr}
+      />,
+    );
+    await flushMicrotasks();
+
+    expect(
+      screen.getByText("Kode tidak tersedia saat offline — pindai kode QR saja."),
+    ).toBeInTheDocument();
+  });
+
   it("shows an archived panel instead of a QR for a released voucher, with no dispute action", async () => {
     const released: VoucherDetailSource = {
       ...cachedVoucher,
@@ -147,12 +193,7 @@ describe("VoucherDetailView", () => {
     const detail = buildCachedVoucherDetail(released, "2026-09-19T09:00:00.000Z");
 
     renderWithRegion(
-      <VoucherDetailView
-        voucherId={released.voucherId}
-        initialDetail={detail}
-        initialQr={null}
-        code={undefined}
-      />,
+      <VoucherDetailView voucherId={released.voucherId} initialDetail={detail} initialQr={null} />,
     );
     await flushMicrotasks();
 
@@ -167,12 +208,7 @@ describe("VoucherDetailView", () => {
     const detail = buildCachedVoucherDetail(voided, "2026-09-19T09:00:00.000Z");
 
     renderWithRegion(
-      <VoucherDetailView
-        voucherId={voided.voucherId}
-        initialDetail={detail}
-        initialQr={null}
-        code={undefined}
-      />,
+      <VoucherDetailView voucherId={voided.voucherId} initialDetail={detail} initialQr={null} />,
     );
     await flushMicrotasks();
 
@@ -197,7 +233,6 @@ describe("VoucherDetailView", () => {
         voucherId={almostExpired.voucherId}
         initialDetail={detail}
         initialQr={sampleQr}
-        code={undefined}
       />,
     );
     await flushMicrotasks();
@@ -224,12 +259,7 @@ describe("VoucherDetailView", () => {
     const detail = buildCachedVoucherDetail(bare, "2026-09-19T09:00:00.000Z");
 
     renderWithRegion(
-      <VoucherDetailView
-        voucherId={bare.voucherId}
-        initialDetail={detail}
-        initialQr={sampleQr}
-        code={undefined}
-      />,
+      <VoucherDetailView voucherId={bare.voucherId} initialDetail={detail} initialQr={sampleQr} />,
     );
     await flushMicrotasks();
 
@@ -250,7 +280,6 @@ describe("VoucherDetailView", () => {
         voucherId={cachedVoucher.voucherId}
         initialDetail={detail}
         initialQr={sampleQr}
-        code={undefined}
       />,
     );
     await flushMicrotasks();
@@ -281,7 +310,6 @@ describe("VoucherDetailView — which branch honours it", () => {
         voucherId={cachedVoucher.voucherId}
         initialDetail={detail}
         initialQr={sampleQr}
-        code={undefined}
       />,
     );
     await flushMicrotasks();
@@ -315,7 +343,6 @@ describe("VoucherDetailView (en-AU)", () => {
         voucherId={auVoucher.voucherId}
         initialDetail={detail}
         initialQr={sampleQr}
-        code={undefined}
       />,
       "AU",
     );
@@ -341,12 +368,7 @@ describe("VoucherDetailView (en-AU)", () => {
     const detail = buildCachedVoucherDetail(released, "2026-09-19T09:00:00.000Z");
 
     renderWithRegion(
-      <VoucherDetailView
-        voucherId={released.voucherId}
-        initialDetail={detail}
-        initialQr={null}
-        code={undefined}
-      />,
+      <VoucherDetailView voucherId={released.voucherId} initialDetail={detail} initialQr={null} />,
       "AU",
     );
     await flushMicrotasks();

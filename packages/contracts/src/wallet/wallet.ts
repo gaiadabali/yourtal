@@ -92,6 +92,19 @@ export const walletVoucherSchema = z.object({
 });
 export type WalletVoucher = z.infer<typeof walletVoucherSchema>;
 
+/**
+ * `GET /api/wallet/vouchers/:voucherId` (13.3.o): the voucher plus, for its
+ * owner and only while it can still be redeemed, the manual redemption code a
+ * cashier or an online checkout asks for. Never in `WalletVoucherPage` (the
+ * list reads no custody at all), never cached (`Cache-Control: no-store`) and
+ * never logged. Absent when the voucher is no longer usable, or when the code
+ * could not be read right now: the QR still works, so a read does not fail.
+ */
+export const walletVoucherDetailSchema = walletVoucherSchema.extend({
+  code: z.string().min(1).optional(),
+});
+export type WalletVoucherDetail = z.infer<typeof walletVoucherDetailSchema>;
+
 export const walletVoucherPageSchema = z.object({
   vouchers: z.array(walletVoucherSchema),
   hasMore: z.boolean(),

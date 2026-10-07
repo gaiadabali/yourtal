@@ -13,6 +13,7 @@ import { useRegion } from "@/features/region/use-region";
 import type { CachedVoucherDetail } from "./voucher-detail-cache";
 import { readVoucherDetailCache, writeVoucherDetailCache } from "./voucher-detail-cache";
 import type { WalletQrDetail } from "./wallet-data";
+import { useVoucherCode } from "./use-voucher-code";
 import { useVoucherQrRotation } from "./use-voucher-qr-rotation";
 import { VoucherQrCode } from "./voucher-qr-code";
 import { VoucherValidityCountdown } from "./voucher-validity-countdown";
@@ -34,15 +35,6 @@ export interface VoucherDetailViewProps {
   initialDetail: CachedVoucherDetail;
   /** Only present when the voucher is in a redeemable (held/active) state — see the route's `page.tsx`. */
   initialQr: WalletQrDetail | null;
-  /**
-   * The manual redemption code, fresh from this render's own server fetch
-   * only — NEVER part of `initialDetail`/the localStorage cache (docs/15
-   * rule 7: a plaintext code is never persisted client-side). It is
-   * therefore only ever present on a live, online first render; a cached
-   * offline render always sees `undefined` here and falls back to the QR
-   * alone, which is exactly the behaviour that rule requires.
-   */
-  code: string | undefined;
   /** 13.20.c: show the Gift action (the server's own `giftable`). */
   giftable?: boolean;
   /** 13.22.d: charities to list this voucher for; omitted, no auction action. */
@@ -78,7 +70,6 @@ export function VoucherDetailView({
   voucherId,
   initialDetail,
   initialQr,
-  code,
   giftable = false,
   charities,
 }: VoucherDetailViewProps) {
@@ -103,6 +94,9 @@ export function VoucherDetailView({
   const isRedeemable = isVoucherRedeemable(detail, Date.now());
   // Voided: nothing left to spend, so none of the spending details apply.
   const isVoid = statusCopy.kind === "void";
+
+  // Memory only, and only while online: offline renders show the QR alone.
+  const code = useVoucherCode(voucherId, isRedeemable && !isOffline);
 
   // The hook must always run (rules of hooks) — `initialQr` is null for an
   // already-archived voucher, so it is handed an inert placeholder that

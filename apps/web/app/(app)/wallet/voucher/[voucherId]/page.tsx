@@ -16,6 +16,10 @@ import { VoucherDetailView } from "@/features/wallet/voucher-detail-view";
  * The QR is only fetched for a voucher that is actually redeemable right
  * now — an archived voucher (released, or past `expiresAt`) has nothing to
  * scan, and asking `services/voucher` for one would just be wasted work.
+ *
+ * The redemption code is deliberately NOT rendered here: it would be stored
+ * in the service worker's page cache. `VoucherDetailView` fetches it after
+ * mount, through a Server Action.
  */
 export default async function WalletVoucherDetailPage(
   props: PageProps<"/wallet/voucher/[voucherId]">,
@@ -44,7 +48,6 @@ export default async function WalletVoucherDetailPage(
         voucherId={voucher.voucherId}
         initialDetail={initialDetail}
         initialQr={qrResult?.ok ? qrResult.data : null}
-        code={voucher.code}
         // F86: teens can neither give nor receive gifts; an unknown age offers nothing.
         giftable={canPass}
         {...(charities ? { charities } : {})}

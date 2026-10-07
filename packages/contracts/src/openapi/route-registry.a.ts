@@ -256,8 +256,8 @@ export const WALLET_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     tags: ["wallet"],
     pathParams: [VOUCHER_ID],
     successStatus: 200,
-    successDescription: "The voucher.",
-    successSchema: ref("WalletVoucher"),
+    successDescription: "The voucher, with its redemption code while it can still be redeemed.",
+    successSchema: ref("WalletVoucherDetail"),
     errors: [...WALLET_ERRORS, VOUCHER_NOT_FOUND],
   },
   {

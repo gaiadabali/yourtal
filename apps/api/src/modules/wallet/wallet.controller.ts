@@ -3,6 +3,7 @@ import {
   ConflictException,
   Controller,
   Get,
+  Header,
   Inject,
   NotFoundException,
   Param,
@@ -16,9 +17,10 @@ import type {
   WalletHistoryPage,
   WalletQr,
   WalletSummary,
-  WalletVoucher,
+  WalletVoucherDetail,
   WalletVoucherPage,
 } from "@yourtal/contracts/wallet/wallet";
+import type { WalletVoucherRow } from "@yourtal/contracts/voucher-internal/wallet";
 import { ageBandFrom, ageYearsFrom } from "@yourtal/jurisdiction/age";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { PrincipalService } from "../../shared/authz/principal.service";
@@ -40,6 +42,14 @@ import { toWalletHistoryEntry, toWalletSummary, toWalletVoucher } from "./wallet
 const TEEN_DAILY_EARN_CAP_SETTING = "teen_daily_earn_cap";
 
 const HISTORY_PAGE = 20;
+
+/** A code is only worth showing while a counter or checkout would still accept it. */
+function isCodeUsable(row: WalletVoucherRow, nowMs: number): boolean {
+  return (
+    (row.lifecycleState === "active" || row.lifecycleState === "held") &&
+    new Date(row.expiresAt).getTime() > nowMs
+  );
+}
 
 /**
  * The viewer's wallet (TASKS.md 4.8.a): points from the ledger, vouchers
@@ -113,14 +123,28 @@ export class WalletController {
     return { vouchers: page.vouchers.map(toWalletVoucher), hasMore: page.hasMore };
   }
 
+  /**
+   * 13.3.o: the one read that carries the redemption code. Ownership is
+   * settled twice before the code leaves custody: `WalletAttributeLoader`
+   * (a voucher the caller does not hold is a 404 before this runs) and the
+   * voucher service's own owner-scoped `reveal`. The code is sent only while
+   * the voucher can still be redeemed, and `no-store` keeps it out of any
+   * cache between here and the screen. A failed reveal drops the code and
+   * keeps the voucher: the QR still works. Never log the code or this body.
+   */
   @Authorize({ kind: "wallet", action: "view" })
+  @Header("Cache-Control", "no-store")
   @Get("vouchers/:voucherId")
   async voucher(
     @Req() request: FastifyRequest,
     @Param("voucherId") voucherId: string,
-  ): Promise<WalletVoucher> {
+  ): Promise<WalletVoucherDetail> {
     const ownerId = (await this.principals.resolve(request)).id;
-    return toWalletVoucher(await unwrap(this.vouchers.get({ voucherId, ownerId })));
+    const row = await unwrap(this.vouchers.get({ voucherId, ownerId }));
+    const voucher = toWalletVoucher(row);
+    if (!isCodeUsable(row, Date.now())) return voucher;
+    const revealed = await this.vouchers.reveal({ voucherId, ownerId });
+    return revealed.isOk() ? { ...voucher, code: revealed.value.code } : voucher;
   }
 
   @Authorize({ kind: "wallet", action: "view" })

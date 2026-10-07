@@ -29,6 +29,11 @@ bin/ledger  bin/voucher     CGO-free linux/amd64
 migrations/ policies/       deploy/  REVISION
 ```
 
+Merchant redemption API: nginx sends `POST /v1/vouchers/*` (authorize, capture, void,
+refund; HMAC-signed per call) to the voucher service on 26303, and nothing else of
+it. Public base URL: `https://yourtal.gaiada.com/v1/vouchers`. The site file is
+installed by hand like the rest of the vhost (backup, `nginx -t`, reload).
+
 Signed HLS: nginx has no `secure_link`, so each `/media/hls/` request is checked by
 the api (`auth_request` to `/api/internal/hls-auth`, `shared/media-auth`).
 

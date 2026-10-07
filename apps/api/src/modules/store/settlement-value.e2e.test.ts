@@ -27,7 +27,12 @@ afterAll(async () => {
   await app.close();
 });
 
-async function call(session: TestSession, method: "GET" | "POST", url: string, payload?: unknown) {
+async function call(
+  session: TestSession,
+  method: "GET" | "POST",
+  url: string,
+  payload?: Record<string, unknown>,
+) {
   return app.inject({
     method,
     url,

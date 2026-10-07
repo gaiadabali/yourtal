@@ -61,23 +61,23 @@ function screenCreative(
   deps: Pick<Parameters<typeof submitCampaign>[0], "drafts" | "moderation">,
   businessId: string,
   campaignId: string,
-): ResultAsync<void, SubmitCampaignError> {
+): ResultAsync<undefined, SubmitCampaignError> {
   return ResultAsync.fromPromise(
     deps.drafts.findById(businessId, campaignId),
     (cause): SubmitCampaignError => ({ type: "persistence_failed", cause: String(cause) }),
   ).andThen((draft) => {
     if (draft === null) {
-      return errAsync<void, SubmitCampaignError>({ type: "campaign_not_found", campaignId });
+      return errAsync<undefined, SubmitCampaignError>({ type: "campaign_not_found", campaignId });
     }
     return ResultAsync.fromSafePromise(
       deps.moderation.classify(`${draft.title}\n${draft.synopsis}`),
     ).andThen((verdict) =>
       verdict.isOk() && verdict.value.outcome === "block"
-        ? errAsync<void, SubmitCampaignError>({
+        ? errAsync<undefined, SubmitCampaignError>({
             type: "creative_blocked",
             category: verdict.value.category,
           })
-        : okAsync<void, SubmitCampaignError>(undefined),
+        : okAsync<undefined, SubmitCampaignError>(undefined),
     );
   });
 }

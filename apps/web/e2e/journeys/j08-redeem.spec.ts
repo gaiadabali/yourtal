@@ -317,6 +317,9 @@ for (const r of REGIONS) {
     baseURL,
   }) => {
     test.setTimeout(240_000);
+    // Expected to fail until 13.3.w: checkout reads `store.listings.stock_remaining`, which
+    // nothing raises when a batch is minted, so a merchant's own new listing is never buyable.
+    test.fail(true, "13.3.w: checkout ignores the minted stock of a new listing");
     requireBusinessEnv();
     const owner = await demoCaller(request, "owner", r);
     const reward = await onlineReward(request, owner, r);

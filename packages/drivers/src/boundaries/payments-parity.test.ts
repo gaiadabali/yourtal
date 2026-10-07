@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MINOR_UNIT, minorUnitExponent } from "@yourtal/contracts/money/minor-unit";
 import { CURRENCY_CODES } from "@yourtal/contracts/money/currency";
-import { createSimulatedPayments } from "./payments";
+import { createPaymentsDriver, createSimulatedPayments } from "./payments";
 import { createSimulatedDisbursement } from "./disbursement";
 import { fromProviderAmount, toProviderAmount } from "./provider-amount";
 
@@ -217,5 +217,29 @@ describe("disbursement converts the same way, in the direction that hides", () =
 
     expect(payout.isErr()).toBe(true);
     expect(payout._unsafeUnwrapErr().kind).toBe("declined");
+  });
+});
+
+describe("the driver the platform actually builds (createPaymentsDriver)", () => {
+  // The API and the worker get their driver from the factory, never from
+  // createSimulatedPayments(): a bare driver refused every IDR charge, so no
+  // Indonesian business could buy points.
+  it.each([
+    { currency: "AUD" as const, amountMinor: 1_250 },
+    { currency: "IDR" as const, amountMinor: 45_000 },
+  ])("accepts a $currency charge and sends our stored unit", async ({ currency, amountMinor }) => {
+    const driver = createPaymentsDriver("simulated", {});
+    expect(driver.declaredMinorUnitExponent[currency]).toBe(minorUnitExponent(currency));
+
+    const charge = await driver.charge({
+      idempotencyKey: `factory-${currency}`,
+      amountMinor,
+      currency,
+      reference: `top-up-${currency}`,
+    });
+    expect(charge.isOk()).toBe(true);
+    if (!("received" in driver)) throw new Error("simulated driver expected");
+    const sim = driver as ReturnType<typeof createSimulatedPayments>;
+    expect(sim.received(charge._unsafeUnwrap().providerReference)?.amount).toBe(amountMinor);
   });
 });

@@ -4,6 +4,7 @@ import { type BoundaryFailure, FaultEngine, failureFor } from "../fault-engine";
 import type { FaultPlan } from "../faults";
 import type { DriverMode, Environment } from "../driver-mode";
 import { refuseLiveDriver } from "../live-driver";
+import { minorUnitExponent } from "@yourtal/contracts/money/minor-unit";
 import { toProviderAmount } from "./provider-amount";
 import { SIGNATURE_HEADER, TIMESTAMP_HEADER, signWebhook } from "./webhook-signature";
 
@@ -254,5 +255,18 @@ export function createPaymentsDriver(
   _env: Environment,
   faultPlan?: FaultPlan,
 ): PaymentsDriver {
-  return mode === "simulated" ? createSimulatedPayments(faultPlan) : refuseLiveDriver("payments");
+  return mode === "simulated"
+    ? createSimulatedPayments(faultPlan, { declaredMinorUnitExponent: simulatedProcessorUnits() })
+    : refuseLiveDriver("payments");
+}
+
+/**
+ * What the simulated processor speaks: our storage unit (AUD cents, IDR whole
+ * Rupiah, T-1), which is also what Xendit takes. Declared here, in the
+ * factory, rather than defaulted inside `createSimulatedPayments`: the parity
+ * suite still builds that one bare to prove an undeclared IDR unit is refused.
+ * A live adapter must declare the unit its own processor speaks.
+ */
+function simulatedProcessorUnits(): Record<Currency, number> {
+  return { AUD: minorUnitExponent("AUD"), IDR: minorUnitExponent("IDR") };
 }

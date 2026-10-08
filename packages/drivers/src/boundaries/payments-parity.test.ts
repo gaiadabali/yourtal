@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { MINOR_UNIT, minorUnitExponent } from "@yourtal/contracts/money/minor-unit";
 import { CURRENCY_CODES } from "@yourtal/contracts/money/currency";
 import { createPaymentsDriver, createSimulatedPayments } from "./payments";
-import { createSimulatedDisbursement } from "./disbursement";
+import { createDisbursementDriver, createSimulatedDisbursement } from "./disbursement";
 import { fromProviderAmount, toProviderAmount } from "./provider-amount";
 
 /**
@@ -241,5 +241,26 @@ describe("the driver the platform actually builds (createPaymentsDriver)", () =>
     if (!("received" in driver)) throw new Error("simulated driver expected");
     const sim = driver as ReturnType<typeof createSimulatedPayments>;
     expect(sim.received(charge._unsafeUnwrap().providerReference)?.amount).toBe(amountMinor);
+  });
+});
+
+describe("the disbursement driver the platform actually builds (createDisbursementDriver)", () => {
+  // Same gap as the payments factory: a bare driver refuses every IDR payout.
+  it.each([
+    { currency: "AUD" as const, amountMinor: 1_250 },
+    { currency: "IDR" as const, amountMinor: 45_000 },
+  ])("accepts a $currency payout and sends our stored unit", async ({ currency, amountMinor }) => {
+    const driver = createDisbursementDriver("simulated", {});
+    expect(driver.declaredMinorUnitExponent[currency]).toBe(minorUnitExponent(currency));
+
+    const payout = await driver.payout({
+      idempotencyKey: `factory-payout-${currency}`,
+      merchantId: "merchant-1",
+      amountMinor,
+      currency,
+    });
+    expect(payout.isOk()).toBe(true);
+    const sim = driver as ReturnType<typeof createSimulatedDisbursement>;
+    expect(sim.sent(payout._unsafeUnwrap().providerReference)).toBe(amountMinor);
   });
 });

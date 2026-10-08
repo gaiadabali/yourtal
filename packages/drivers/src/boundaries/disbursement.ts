@@ -4,6 +4,7 @@ import { type BoundaryFailure, FaultEngine, failureFor } from "../fault-engine";
 import type { FaultPlan } from "../faults";
 import type { DriverMode, Environment } from "../driver-mode";
 import { refuseLiveDriver } from "../live-driver";
+import { minorUnitExponent } from "@yourtal/contracts/money/minor-unit";
 import { toProviderAmount } from "./provider-amount";
 
 /**
@@ -152,6 +153,18 @@ export function createDisbursementDriver(
   faultPlan?: FaultPlan,
 ): DisbursementDriver {
   return mode === "simulated"
-    ? createSimulatedDisbursement(faultPlan)
+    ? createSimulatedDisbursement(faultPlan, {
+        declaredMinorUnitExponent: simulatedProcessorUnits(),
+      })
     : refuseLiveDriver("disbursement");
+}
+
+/**
+ * What the simulated processor speaks: our storage unit (AUD cents, IDR whole
+ * Rupiah, T-1). Declared in the factory, not defaulted inside
+ * `createSimulatedDisbursement`, so the parity suite can still build a bare
+ * driver to prove an undeclared IDR unit is refused. Same as `payments.ts`.
+ */
+function simulatedProcessorUnits(): Record<Currency, number> {
+  return { AUD: minorUnitExponent("AUD"), IDR: minorUnitExponent("IDR") };
 }

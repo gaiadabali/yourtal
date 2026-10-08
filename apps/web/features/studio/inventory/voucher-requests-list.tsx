@@ -19,7 +19,8 @@ export function VoucherRequestsList({ requests, locale }: VoucherRequestsListPro
   const t = getStudioTranslator(locale);
   const date = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
   return (
-    <section className="flex flex-col gap-1.5" aria-label={t("inventory.requests.title")}>
+    // No accessible name: one per listing, so a named section would repeat the same landmark.
+    <section className="flex flex-col gap-1.5">
       <h3 className="text-body-sm font-sans font-medium text-fg">
         {t("inventory.requests.title")}
       </h3>

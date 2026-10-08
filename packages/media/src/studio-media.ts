@@ -338,7 +338,9 @@ export async function createListingImageUpload(input: {
         Key: key,
         ContentType: input.contentType,
       }),
-      { expiresIn: LISTING_IMAGE_URL_TTL_SECONDS },
+      // Content-Type is signed, so the PUT cannot store e.g. text/html under the public,
+      // same-origin posters prefix (by default the SDK leaves it out of the signature).
+      { expiresIn: LISTING_IMAGE_URL_TTL_SECONDS, signableHeaders: new Set(["content-type"]) },
     );
     return {
       uploadUrl,

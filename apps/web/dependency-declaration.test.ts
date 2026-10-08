@@ -108,5 +108,5 @@ describe("apps/web dependency declarations (YT-0512)", () => {
     expect(
       Object.fromEntries([...undeclared].map(([name, files]) => [name, [...new Set(files)]])),
     ).toEqual({});
-  });
+  }, 60_000); // reads every source file; slow when the whole suite runs in parallel
 });

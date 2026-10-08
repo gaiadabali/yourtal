@@ -1,9 +1,10 @@
 import { Badge } from "@yourtal/ui/badge";
+import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import type { ReportProvenance } from "./report-provenance";
-import { PROVENANCE_LABEL } from "./report-provenance";
 
 export interface ReportProvenanceBadgeProps {
   provenance: ReportProvenance;
+  locale: SupportedLocale;
 }
 
 /**
@@ -23,6 +24,11 @@ const PROVENANCE_VARIANT: Record<
   unavailable: "warning",
 };
 
-export function ReportProvenanceBadge({ provenance }: ReportProvenanceBadgeProps) {
-  return <Badge variant={PROVENANCE_VARIANT[provenance]}>{PROVENANCE_LABEL[provenance]}</Badge>;
+export function ReportProvenanceBadge({ provenance, locale }: ReportProvenanceBadgeProps) {
+  const t = getStudioTranslator(locale);
+  return (
+    <Badge variant={PROVENANCE_VARIANT[provenance]}>
+      {t(`reports.provenance.label.${provenance}`)}
+    </Badge>
+  );
 }

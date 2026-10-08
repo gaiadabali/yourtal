@@ -16,9 +16,11 @@ import { detectPiiRequest, detectTeenPersonalQuestion } from "./question-pii-gua
  * be saved into the bank even if a caller bypasses the inline warning.
  */
 export type QuestionBankActionError =
-  | { type: "pii_request"; category: string; reason: string }
+  | { type: "pii_request"; category: string; key: string }
   | { type: "empty_prompt" }
   | { type: "not_found" }
+  /** The question has no usable fields yet (the server refused to save it). */
+  | { type: "unfinished" }
   /** A real `POST .../questions` refusal (7.3.b) with no closer match above — the server's own message, including its own PII/prediction-guard refusals. */
   | { type: "api_error"; message: string };
 
@@ -37,12 +39,12 @@ function validatePrompt(draft: QuestionDraft, audience?: string): QuestionBankAc
   }
   const finding = detectPiiRequest(draft.prompt);
   if (finding) {
-    return { type: "pii_request", category: finding.category, reason: finding.reason };
+    return { type: "pii_request", category: finding.category, key: finding.key };
   }
   if (audience === "teen" || audience === "all_ages") {
     const teenFinding = detectTeenPersonalQuestion(draft.prompt);
     if (teenFinding) {
-      return { type: "pii_request", category: teenFinding.category, reason: teenFinding.reason };
+      return { type: "pii_request", category: teenFinding.category, key: teenFinding.key };
     }
   }
   return null;
@@ -88,14 +90,19 @@ export function removeQuestionFromBank(
   return { ok: true, value: bank.filter((question) => question.id !== questionId) };
 }
 
-export function questionBankActionErrorMessage(error: QuestionBankActionError): string {
+export function questionBankActionErrorMessage(
+  error: QuestionBankActionError,
+  t: (key: string) => string,
+): string {
   switch (error.type) {
     case "pii_request":
-      return error.reason;
+      return t(`questionBank.pii.${error.key}.reason`);
     case "empty_prompt":
-      return "Write the question prompt before saving it.";
+      return t("questionBank.errors.emptyPrompt");
     case "not_found":
-      return "That question is no longer in the bank — it may already have been removed.";
+      return t("questionBank.errors.notFound");
+    case "unfinished":
+      return t("questionBank.errors.unfinished");
     case "api_error":
       return error.message;
     default: {

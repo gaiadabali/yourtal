@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createChapter } from "./campaign-chapter";
+import { getStudioTranslator } from "../studio-i18n";
 import {
+  campaignFormErrorText,
   draftCompleteQuestionCount,
   draftDurationSeconds,
   draftEstimatedDataMb,
@@ -67,5 +69,16 @@ describe("validateCampaignDraftForm", () => {
     draft.rewardPoints = 500;
     draft.budget = { totalBudgetPoints: 100_000, dailyCapPoints: null };
     expect(validateCampaignDraftForm(draftFormValues(draft))).toStrictEqual({});
+  });
+});
+
+describe("campaignFormErrorText", () => {
+  it("words a form error code in the viewer's language, with its limit", () => {
+    expect(campaignFormErrorText(getStudioTranslator("en-AU"), "titleTooLong")).toBe(
+      "Keep the title to 140 characters or fewer.",
+    );
+    expect(campaignFormErrorText(getStudioTranslator("id-ID"), "synopsisTooLong")).toBe(
+      "Sinopsis maksimal 500 karakter.",
+    );
   });
 });

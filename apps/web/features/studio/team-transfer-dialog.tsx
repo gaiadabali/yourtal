@@ -106,7 +106,7 @@ export function TeamTransferDialog({
     }
     const failure = await onTransfer(successorUserId, reauthenticatedAtMs);
     if (failure) {
-      setTransferError(teamActionErrorMessage(failure));
+      setTransferError(teamActionErrorMessage(failure, t));
       // A stale re-auth surfaces here, not before — push the person back to step one honestly.
       if (failure.type === "reauth_expired" || failure.type === "reauth_required") {
         setStep("reauth");

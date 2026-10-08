@@ -27,7 +27,7 @@ describe("campaignDraftFormResolver", () => {
     });
     expect(result.errors.title).toStrictEqual({
       type: "validate",
-      message: "Give the campaign a title.",
+      message: "titleRequired",
     });
   });
 

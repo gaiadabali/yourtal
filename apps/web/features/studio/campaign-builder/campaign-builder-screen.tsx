@@ -2,6 +2,7 @@
 
 import { knownTags } from "../tag-picker";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { BillingAllocation } from "@yourtal/contracts/billing";
 import { draftDurationSeconds } from "./campaign-draft";
 import type { CampaignDraft } from "./campaign-draft";
@@ -53,6 +54,7 @@ export function CampaignBuilderScreen({
   isLiveMode,
   allocations,
 }: CampaignBuilderScreenProps) {
+  const t = useTranslations("studio");
   const [drafts, setDrafts] = useState<CampaignDraft[]>(initialDrafts);
   const [openDraftId, setOpenDraftId] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -63,7 +65,10 @@ export function CampaignBuilderScreen({
 
   async function createDraft() {
     if (isLiveMode) {
-      const result = await createCampaignDraftLive(businessId, merchantName);
+      const result = await createCampaignDraftLive(businessId, merchantName, {
+        title: t("campaignBuilder.newDraft.title"),
+        synopsis: t("campaignBuilder.newDraft.synopsis"),
+      });
       if (!result.ok) {
         setCreateError(result.message);
         return;

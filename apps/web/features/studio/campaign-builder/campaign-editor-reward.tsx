@@ -15,7 +15,7 @@ import { useRegion } from "@/features/region/use-region";
 import { setRewardConfigLive } from "./campaign-builder-actions";
 import { assessRewardToDataCost, describeRewardDataCostRatio } from "./campaign-reward-risk";
 import type { CampaignDraft, CampaignDraftFormValues } from "./campaign-draft";
-import { draftEstimatedDataMb } from "./campaign-draft";
+import { campaignFormErrorText, draftEstimatedDataMb } from "./campaign-draft";
 
 export interface CampaignEditorRewardProps {
   draft: CampaignDraft;
@@ -135,7 +135,7 @@ export function CampaignEditorReward({
           },
         })}
         {...(form.formState.errors.rewardPoints?.message
-          ? { errorMessage: form.formState.errors.rewardPoints.message }
+          ? { errorMessage: campaignFormErrorText(t, form.formState.errors.rewardPoints.message) }
           : {})}
       />
 

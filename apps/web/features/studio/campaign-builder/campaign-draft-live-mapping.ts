@@ -122,13 +122,17 @@ export interface NewCampaignDraftDefaults {
   readonly declaredInterests: readonly string[];
 }
 
-export function newCampaignDraftDefaults(): NewCampaignDraftDefaults {
+export function newCampaignDraftDefaults(copy: {
+  title: string;
+  synopsis: string;
+}): NewCampaignDraftDefaults {
   const now = new Date();
   const endsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
   return {
     kind: "long_form",
-    title: "Untitled campaign",
-    synopsis: "Add a synopsis before you submit for review.",
+    // Worded in the author's language: it becomes their draft's real title.
+    title: copy.title,
+    synopsis: copy.synopsis,
     // A minute — a plausible placeholder until the real video upload
     // (already wired, `media-upload-client.ts`) tells the campaign how
     // long it actually is.

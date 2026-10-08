@@ -10,6 +10,7 @@ import { Switch } from "@yourtal/ui/switch";
 import { cn } from "@yourtal/ui/cn";
 import { useRegion } from "@/features/region/use-region";
 import type { CampaignDraft, CampaignDraftFormValues } from "./campaign-draft";
+import { campaignFormErrorText } from "./campaign-draft";
 
 export interface CampaignEditorDetailsProps {
   draft: CampaignDraft;
@@ -137,7 +138,8 @@ export function CampaignEditorDetails({
   const synopsisHelpId = `${synopsisId}-help`;
   const synopsisErrorId = `${synopsisId}-error`;
   const synopsis = form.watch("synopsis");
-  const synopsisError = form.formState.errors.synopsis?.message;
+  const synopsisErrorCode = form.formState.errors.synopsis?.message;
+  const synopsisError = synopsisErrorCode ? campaignFormErrorText(t, synopsisErrorCode) : undefined;
   const remaining = MAX_SYNOPSIS_LENGTH - synopsis.length;
   const categoryId = useId();
   const categoryStatusId = `${categoryId}-status`;
@@ -192,7 +194,7 @@ export function CampaignEditorDetails({
             onChange({ ...draft, title: event.target.value }),
         })}
         {...(form.formState.errors.title?.message
-          ? { errorMessage: form.formState.errors.title.message }
+          ? { errorMessage: campaignFormErrorText(t, form.formState.errors.title.message) }
           : {})}
       />
 

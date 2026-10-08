@@ -17,7 +17,7 @@ import {
   deleteQuestionLive,
   updateQuestionLive,
 } from "./question-live-actions";
-import { evaluateBankSize } from "./question-bank-rules";
+import { describeBankSize, evaluateBankSize } from "./question-bank-rules";
 import type { QuestionDraft, QuestionDraftType } from "./question-draft";
 import { createEmptyQuestionDraft } from "./question-draft";
 import { toPublishableQuestionInput } from "./question-draft-to-question";
@@ -101,7 +101,11 @@ export function QuestionBankScreen({
         ? await createQuestionLive(businessId, campaignId, editor.draft)
         : await updateQuestionLive(businessId, campaignId, editor.draft);
       if (!liveResult.ok) {
-        setSaveError({ type: "api_error", message: liveResult.message });
+        setSaveError(
+          liveResult.code === "unfinished"
+            ? { type: "unfinished" }
+            : { type: "api_error", message: liveResult.message },
+        );
         return;
       }
       commitBank(
@@ -163,7 +167,7 @@ export function QuestionBankScreen({
             ? t("questionBank.bankSizeOk")
             : t("questionBank.bankTooSmall")}
         </Badge>
-        <p className="text-xs font-sans text-fg-muted">{evaluation.message}</p>
+        <p className="text-xs font-sans text-fg-muted">{describeBankSize(evaluation, t)}</p>
       </div>
 
       {removeError ? (
@@ -214,7 +218,7 @@ export function QuestionBankScreen({
               />
               {saveError ? (
                 <p role="alert" className="text-xs font-sans text-danger">
-                  {questionBankActionErrorMessage(saveError)}
+                  {questionBankActionErrorMessage(saveError, t)}
                 </p>
               ) : null}
               <DialogFooter>

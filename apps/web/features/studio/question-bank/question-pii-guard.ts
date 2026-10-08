@@ -20,66 +20,58 @@ export interface PiiFinding {
   category: string;
   /** The specific term that matched, surfaced in the inline message so the author can see exactly what tripped it. */
   matchedTerm: string;
-  /** The reason shown inline, per this ticket's acceptance criterion ("with the reason"). */
-  reason: string;
+  /** Catalogue key: `questionBank.pii.<key>.category` and `.reason` hold the wording shown inline, with the reason. */
+  key: string;
 }
 
 interface PiiRule {
   category: string;
-  reason: string;
+  key: string;
   pattern: RegExp;
 }
 
 const PII_RULES: PiiRule[] = [
   {
     category: "phone number",
-    reason:
-      "Questions cannot ask for a phone number. A checkpoint checks what someone remembers from the video, not their contact details.",
+    key: "phone",
     pattern:
       /\b(phone|mobile|whatsapp|wa)\s*(number|no\.?)?\b|nomor\s*(telepon|hp|wa|whatsapp)|no\.?\s*(hp|wa)\b/i,
   },
   {
     category: "email address",
-    reason:
-      "Questions cannot ask for an email address — that is lead capture, not a comprehension check.",
+    key: "email",
     pattern: /\bemail\b|\balamat\s*email\b|\be-?mail\b/i,
   },
   {
     category: "home address",
-    reason:
-      "Questions cannot ask where someone lives. That is a data-collection request, not something the video taught.",
+    key: "address",
     pattern: /\b(home\s+)?address\b|alamat\s*(rumah|lengkap|domisili)|\bkode\s*pos\b|\bpostcode\b/i,
   },
   {
     category: "government ID number",
-    reason:
-      "Questions cannot ask for a national ID, tax or passport number. This is identity harvesting, which the platform never allows through a reward gate.",
+    key: "govId",
     pattern:
       /\b(nik|ktp|kartu\s*keluarga|kk)\b|\bpassport\b|\bnpwp\b|\bid\s*number\b|\bnomor\s*(ktp|induk)\b/i,
   },
   {
     category: "income",
-    reason:
-      "Questions cannot ask about income or salary. That is financial profiling, not video comprehension.",
+    key: "income",
     pattern: /\bincome\b|\bsalary\b|\bgaji\b|\bpenghasilan\b/i,
   },
   {
     category: "health status",
-    reason:
-      "Questions cannot ask about health conditions. Health data needs its own explicit, separately-consented flow.",
+    key: "health",
     pattern:
       /\bhealth\s*(condition|status)s?\b|\bkondisi\s*kesehatan\b|\bpenyakit\b|\bmedical\s*history\b/i,
   },
   {
     category: "bank or card details",
-    reason:
-      "Questions cannot ask for a bank account or card number. Payment details are never collected through a quiz.",
+    key: "bank",
     pattern: /\bbank\s*account\b|\brekening\b|\bcredit\s*card\b|\bkartu\s*kredit\b|\bcvv\b/i,
   },
   {
     category: "full name for identification",
-    reason:
-      "Questions cannot ask for someone's full legal name. If you need to identify a respondent, that happens through their account, not the quiz.",
+    key: "fullName",
     pattern: /\b(full|legal)\s*name\b|\bnama\s*lengkap\b/i,
   },
 ];
@@ -98,7 +90,7 @@ export function detectPiiRequest(promptText: string): PiiFinding | null {
   for (const rule of PII_RULES) {
     const match = rule.pattern.exec(trimmed);
     if (match) {
-      return { category: rule.category, matchedTerm: match[0], reason: rule.reason };
+      return { category: rule.category, matchedTerm: match[0], key: rule.key };
     }
   }
   return null;
@@ -119,49 +111,42 @@ export function detectPiiRequest(promptText: string): PiiFinding | null {
 const TEEN_PERSONAL_RULES: PiiRule[] = [
   {
     category: "age or date of birth",
-    reason:
-      "Teen-rated question banks cannot ask someone's age or date of birth. This platform already knows a viewer's age band; a quiz never needs to ask again.",
+    key: "teenAge",
     pattern:
       /\bhow\s+old\s+are\s+you\b|\byour\s+age\b|\bdate\s+of\s+birth\b|\bberapa\s+umur\b|\busia\s*(kamu|anda)\b|\btanggal\s*lahir\b/i,
   },
   {
     category: "school",
-    reason:
-      "Teen-rated question banks cannot ask what school someone goes to. That identifies a minor's physical location, which this platform never collects through a quiz.",
+    key: "teenSchool",
     pattern: /\bwhat\s+school\b|\bwhich\s+school\b|\bsekolah\s*(mana|kamu|anda)\b/i,
   },
   {
     category: "where you live",
-    reason:
-      "Teen-rated question banks cannot ask what city or suburb someone lives in. A comprehension check never needs to know where a minor is.",
+    key: "teenLocation",
     pattern:
       /\bwhat\s+(city|suburb|neighbo(u)?rhood)\s+do\s+you\s+live\b|\bkota\s*(mana|apa)\s*(kamu|anda)?\s*tinggal\b|\btinggal\s*di\s*mana\b/i,
   },
   {
     category: "appearance",
-    reason:
-      "Teen-rated question banks cannot ask about someone's physical appearance. That is personal profiling, not video comprehension.",
+    key: "teenAppearance",
     pattern:
       /\bwhat\s+do\s+you\s+look\s+like\b|\byour\s+(weight|height)\b|\bberat\s*badan\s*(kamu|anda)\b|\btinggi\s*badan\s*(kamu|anda)\b/i,
   },
   {
     category: "family",
-    reason:
-      "Teen-rated question banks cannot ask about someone's parents or siblings. Family details are never something a checkpoint needs.",
+    key: "teenFamily",
     pattern:
       /\byour\s+(parents|mother|father|siblings|brother|sister)\b|\borang\s*tua\s*(kamu|anda)\b|\bsaudara\s*(kamu|anda)\b/i,
   },
   {
     category: "social media handle",
-    reason:
-      "Teen-rated question banks cannot ask for a social media username or handle. That is contact-collection, not a comprehension check.",
+    key: "teenSocial",
     pattern:
       /\b(instagram|tiktok|snapchat|discord)\s*(username|handle|account)?\b|\bakun\s*(instagram|tiktok|snapchat|discord)\b/i,
   },
   {
     category: "relationship status",
-    reason:
-      "Teen-rated question banks cannot ask about someone's relationship or dating status. That is personal profiling of a minor, which this platform never collects.",
+    key: "teenRelationship",
     pattern: /\b(girlfriend|boyfriend|dating\s+anyone)\b|\bpunya\s*pacar\b|\bstatus\s*pacaran\b/i,
   },
 ];
@@ -174,7 +159,7 @@ export function detectTeenPersonalQuestion(promptText: string): PiiFinding | nul
   for (const rule of TEEN_PERSONAL_RULES) {
     const match = rule.pattern.exec(trimmed);
     if (match) {
-      return { category: rule.category, matchedTerm: match[0], reason: rule.reason };
+      return { category: rule.category, matchedTerm: match[0], key: rule.key };
     }
   }
   return null;

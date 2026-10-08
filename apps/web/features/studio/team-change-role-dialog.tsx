@@ -55,7 +55,7 @@ export function TeamChangeRoleDialog({
   async function handleConfirm() {
     const failure = await onChangeRole(role);
     if (failure) {
-      setError(teamActionErrorMessage(failure));
+      setError(teamActionErrorMessage(failure, t));
       return;
     }
     setError(null);

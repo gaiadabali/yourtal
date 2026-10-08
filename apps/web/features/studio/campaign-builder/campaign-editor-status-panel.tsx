@@ -114,7 +114,7 @@ export function CampaignEditorStatusPanel({
 
         {error ? (
           <p role="alert" className="text-xs font-sans text-danger">
-            {campaignDraftActionErrorMessage(error)}
+            {campaignDraftActionErrorMessage(error, t)}
           </p>
         ) : null}
 

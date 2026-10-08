@@ -1,3 +1,4 @@
+import { getStudioTranslator } from "../studio-i18n";
 import { describe, expect, it } from "vitest";
 import { createChapter } from "./campaign-chapter";
 import { createEmptyCampaignDraft } from "./campaign-draft-fixtures";
@@ -52,7 +53,9 @@ describe("submitForReview", () => {
     if (!result.ok && result.error.type === "bank_too_small") {
       expect(result.error.required).toBe(3);
       expect(result.error.actual).toBe(1);
-      expect(campaignDraftActionErrorMessage(result.error)).toContain("at least 3");
+      expect(campaignDraftActionErrorMessage(result.error, getStudioTranslator("en-AU"))).toContain(
+        "at least 3",
+      );
     }
   });
 

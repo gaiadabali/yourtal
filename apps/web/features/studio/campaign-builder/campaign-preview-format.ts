@@ -39,34 +39,30 @@ export function splitPreviewReward(
   };
 }
 
-const NUMBER_FORMATTER = new Intl.NumberFormat("en-US");
+type PreviewT = (key: string, values?: Record<string, string | number>) => string;
 
-export function formatPreviewPoints(points: number): string {
-  return `${NUMBER_FORMATTER.format(points)} points`;
-}
-
-export function formatPreviewDuration(durationSeconds: number): string {
+export function formatPreviewDuration(durationSeconds: number, t: PreviewT): string {
   if (durationSeconds < 60) {
-    return `${Math.round(durationSeconds)} sec`;
+    return t("campaignBuilder.preview.durationSeconds", { value: Math.round(durationSeconds) });
   }
-  const minutes = Math.round(durationSeconds / 60);
-  return `${minutes} min`;
+  return t("campaignBuilder.preview.durationMinutes", {
+    value: Math.round(durationSeconds / 60),
+  });
 }
 
 /** Same "~" convention as `campaign-format.ts`'s `formatDataCost` — an estimate, never a false-precise promise. */
-export function formatPreviewDataCost(estimatedDataMb: number): string {
-  return `~${Math.round(estimatedDataMb)} MB`;
+export function formatPreviewDataCost(estimatedDataMb: number, t: PreviewT): string {
+  return t("campaignBuilder.preview.dataCostMb", { value: Math.round(estimatedDataMb) });
 }
 
-export function describePreviewQuestionCount(questionCount: number): string {
-  if (questionCount === 0) {
-    return "No questions";
-  }
-  return questionCount === 1 ? "1 question" : `${questionCount} questions`;
+export function describePreviewQuestionCount(questionCount: number, t: PreviewT): string {
+  return t("campaignBuilder.preview.questionCount", { count: questionCount });
 }
 
-export function describePreviewScoringRule(hasAccuracyBonus: boolean): string {
-  return hasAccuracyBonus
-    ? "Base reward for completing, plus an accuracy bonus"
-    : "Fixed reward for completing and answering";
+export function describePreviewScoringRule(hasAccuracyBonus: boolean, t: PreviewT): string {
+  return t(
+    hasAccuracyBonus
+      ? "campaignBuilder.preview.scoringWithBonus"
+      : "campaignBuilder.preview.scoringFixed",
+  );
 }

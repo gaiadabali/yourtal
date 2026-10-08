@@ -35,8 +35,8 @@ export interface BankSizeEvaluation {
   requiredBankSize: number;
   actualBankSize: number;
   meetsRequirement: boolean;
-  /** Always populated — the explanation this ticket asks for, not just a boolean. */
-  message: string;
+  /** Which explanation applies; `describeBankSize` words it for the viewer (the explanation this ticket asks for, not just a boolean). */
+  kind: "not_required" | "ok" | "short";
 }
 
 /**
@@ -59,14 +59,39 @@ export function evaluateBankSize(
       requiredBankSize,
       actualBankSize,
       meetsRequirement: true,
-      message:
-        "This video is too short to ask a checkpoint question (minimum 5 minutes for one). No question bank is required.",
+      kind: "not_required",
     };
   }
 
-  const message = meetsRequirement
-    ? `A viewer is asked ${askedCount} question${askedCount === 1 ? "" : "s"} per attempt, drawn at random from your bank of ${actualBankSize}. That is at or above the 3x anti-sharing minimum (${requiredBankSize}), so a leaked answer key can only ever cover a fraction of what any one viewer sees.`
-    : `A viewer is asked ${askedCount} question${askedCount === 1 ? "" : "s"} per attempt. Your bank needs at least ${requiredBankSize} complete questions (3x the asked count) so a shared answer key can't cover everyone who watches — you currently have ${actualBankSize}. Add ${requiredBankSize - actualBankSize} more before this campaign can go to review.`;
+  return {
+    askedCount,
+    requiredBankSize,
+    actualBankSize,
+    meetsRequirement,
+    kind: meetsRequirement ? "ok" : "short",
+  };
+}
 
-  return { askedCount, requiredBankSize, actualBankSize, meetsRequirement, message };
+/** The worked-out explanation under the bank-size badge, in the viewer's language. */
+export function describeBankSize(
+  evaluation: BankSizeEvaluation,
+  t: (key: string, values?: Record<string, number>) => string,
+): string {
+  switch (evaluation.kind) {
+    case "not_required":
+      return t("questionBank.bankRules.notRequired");
+    case "ok":
+      return t("questionBank.bankRules.ok", {
+        asked: evaluation.askedCount,
+        actual: evaluation.actualBankSize,
+        required: evaluation.requiredBankSize,
+      });
+    case "short":
+      return t("questionBank.bankRules.short", {
+        asked: evaluation.askedCount,
+        actual: evaluation.actualBankSize,
+        required: evaluation.requiredBankSize,
+        missing: evaluation.requiredBankSize - evaluation.actualBankSize,
+      });
+  }
 }

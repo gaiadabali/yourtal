@@ -142,7 +142,18 @@
       "statusFailedWithReason": "Unggah gagal: {reason}",
       "videoFileLabel": "Berkas video",
       "progressAriaLabel": "Progres unggah video",
-      "reset": "Atur ulang"
+      "reset": "Atur ulang",
+      "errors": {
+        "unsupportedFormat": "Format video itu tidak didukung (hanya mp4, mov, atau webm).",
+        "invalidRequest": "Permintaan unggah tidak valid.",
+        "invalidCompletion": "Permintaan penyelesaian tidak valid.",
+        "partFailed": "Unggah bagian gagal ({status}).",
+        "noEtag": "Unggahan berhasil, tetapi server tidak mengembalikan ETag untuk bagian ini.",
+        "networkError": "Kesalahan jaringan saat mengunggah bagian ini.",
+        "uploadFailed": "Video tidak dapat diunggah.",
+        "transcodeFailed": "Transkode gagal.",
+        "stillProcessing": "Masih diproses setelah 5 menit — periksa lagi sebentar lagi."
+      }
     },
     "editor": {
       "backToCampaigns": "← Kembali ke kampanye"
@@ -160,7 +171,13 @@
       "scoring": "Penilaian",
       "dataCostBadge": "Biaya data {amount}",
       "startVideo": "Mulai video",
-      "startVideoAriaLabel": "Mulai video — hanya pratinjau, tidak interaktif di sini"
+      "startVideoAriaLabel": "Mulai video — hanya pratinjau, tidak interaktif di sini",
+      "durationSeconds": "{value} dtk",
+      "durationMinutes": "{value} mnt",
+      "dataCostMb": "~{value} MB",
+      "questionCount": "{count, plural, =0 {Tidak ada pertanyaan} other {# pertanyaan}}",
+      "scoringWithBonus": "Hadiah dasar untuk menyelesaikan, ditambah bonus akurasi",
+      "scoringFixed": "Hadiah tetap untuk menyelesaikan dan menjawab"
     },
     "captions": {
       "label": "File teks (.vtt)",
@@ -168,6 +185,24 @@
       "saved": "{name} tersimpan. Penonton mendapat teks ini jika video tidak punya.",
       "invalid": "Itu bukan file WebVTT berisi teks. Pastikan diawali WEBVTT dan memiliki baris berwaktu.",
       "tooLarge": "File terlalu besar. File teks maksimal 512 KB."
+    },
+    "actionErrors": {
+      "wrongStatus": "Kampanye ini sedang berstatus “{status}” — tindakan ini tidak tersedia dari status tersebut.",
+      "noVideo": "Unggah video dan tunggu hingga selesai diproses sebelum dikirim untuk ditinjau.",
+      "noTitle": "Beri judul kampanye sebelum mengirimnya untuk ditinjau.",
+      "bankTooSmall": "Bank pertanyaan membutuhkan minimal {required} pertanyaan lengkap sebelum kampanye ini dapat ditinjau — saat ini ada {actual}."
+    },
+    "validation": {
+      "titleRequired": "Beri judul kampanye.",
+      "titleTooLong": "Judul maksimal {max} karakter.",
+      "synopsisRequired": "Tambahkan sinopsis singkat — ini yang dibaca penonton sebelum mulai.",
+      "synopsisTooLong": "Sinopsis maksimal {max} karakter.",
+      "rewardNegative": "Hadiah tidak boleh negatif.",
+      "budgetRequired": "Atur total anggaran lebih dari nol."
+    },
+    "newDraft": {
+      "title": "Kampanye tanpa judul",
+      "synopsis": "Tambahkan sinopsis sebelum Anda mengirim untuk ditinjau."
     }
   },
   "questionBank": {
@@ -245,7 +280,79 @@
       "false": "Salah",
       "markWarning": "Tandai apakah jawaban benar adalah benar atau salah sebelum menyimpan pertanyaan ini."
     },
-    "saved": "Tersimpan"
+    "saved": "Tersimpan",
+    "errors": {
+      "emptyPrompt": "Tulis pertanyaannya sebelum menyimpan.",
+      "notFound": "Pertanyaan itu sudah tidak ada di bank — mungkin sudah dihapus.",
+      "unfinished": "Pertanyaan ini belum selesai."
+    },
+    "bankRules": {
+      "notRequired": "Video ini terlalu pendek untuk pertanyaan pemeriksaan (minimal 5 menit). Bank pertanyaan tidak diperlukan.",
+      "ok": "Setiap percobaan, penonton diberi {asked} pertanyaan yang dipilih acak dari bank Anda yang berisi {actual}. Jumlah itu sudah memenuhi minimum anti-berbagi 3x ({required}), sehingga kunci jawaban yang bocor hanya mencakup sebagian kecil dari yang dilihat satu penonton.",
+      "short": "Setiap percobaan, penonton diberi {asked} pertanyaan. Bank Anda membutuhkan minimal {required} pertanyaan lengkap (3x jumlah yang ditanyakan) agar kunci jawaban yang dibagikan tidak dapat mencakup semua penonton — saat ini Anda punya {actual}. Tambahkan {missing} lagi sebelum kampanye ini dapat ditinjau."
+    },
+    "pii": {
+      "phone": {
+        "category": "nomor telepon",
+        "reason": "Pertanyaan tidak boleh meminta nomor telepon. Pertanyaan pemeriksaan hanya menguji apa yang diingat penonton dari video, bukan data kontaknya."
+      },
+      "email": {
+        "category": "alamat email",
+        "reason": "Pertanyaan tidak boleh meminta alamat email — itu pengumpulan data calon pelanggan, bukan pemeriksaan pemahaman."
+      },
+      "address": {
+        "category": "alamat rumah",
+        "reason": "Pertanyaan tidak boleh menanyakan tempat tinggal seseorang. Itu permintaan pengumpulan data, bukan sesuatu yang diajarkan video."
+      },
+      "govId": {
+        "category": "nomor identitas resmi",
+        "reason": "Pertanyaan tidak boleh meminta nomor KTP, NPWP, atau paspor. Itu pengambilan identitas, yang tidak pernah diizinkan platform lewat gerbang hadiah."
+      },
+      "income": {
+        "category": "penghasilan",
+        "reason": "Pertanyaan tidak boleh menanyakan penghasilan atau gaji. Itu pembuatan profil keuangan, bukan pemahaman video."
+      },
+      "health": {
+        "category": "kondisi kesehatan",
+        "reason": "Pertanyaan tidak boleh menanyakan kondisi kesehatan. Data kesehatan membutuhkan alur tersendiri dengan persetujuan yang eksplisit."
+      },
+      "bank": {
+        "category": "rincian bank atau kartu",
+        "reason": "Pertanyaan tidak boleh meminta nomor rekening bank atau kartu. Rincian pembayaran tidak pernah dikumpulkan lewat kuis."
+      },
+      "fullName": {
+        "category": "nama lengkap untuk identifikasi",
+        "reason": "Pertanyaan tidak boleh meminta nama lengkap seseorang. Jika responden perlu diidentifikasi, itu dilakukan lewat akunnya, bukan lewat kuis."
+      },
+      "teenAge": {
+        "category": "usia atau tanggal lahir",
+        "reason": "Bank pertanyaan untuk remaja tidak boleh menanyakan usia atau tanggal lahir. Platform ini sudah mengetahui kelompok usia penonton; kuis tidak perlu bertanya lagi."
+      },
+      "teenSchool": {
+        "category": "sekolah",
+        "reason": "Bank pertanyaan untuk remaja tidak boleh menanyakan sekolah seseorang. Itu menunjukkan lokasi fisik anak di bawah umur, yang tidak pernah dikumpulkan platform lewat kuis."
+      },
+      "teenLocation": {
+        "category": "tempat tinggal",
+        "reason": "Bank pertanyaan untuk remaja tidak boleh menanyakan kota atau daerah tempat tinggal. Pemeriksaan pemahaman tidak perlu tahu di mana anak di bawah umur berada."
+      },
+      "teenAppearance": {
+        "category": "penampilan",
+        "reason": "Bank pertanyaan untuk remaja tidak boleh menanyakan penampilan fisik seseorang. Itu pembuatan profil pribadi, bukan pemahaman video."
+      },
+      "teenFamily": {
+        "category": "keluarga",
+        "reason": "Bank pertanyaan untuk remaja tidak boleh menanyakan orang tua atau saudara seseorang. Rincian keluarga tidak pernah dibutuhkan pemeriksaan pemahaman."
+      },
+      "teenSocial": {
+        "category": "akun media sosial",
+        "reason": "Bank pertanyaan untuk remaja tidak boleh meminta nama pengguna media sosial. Itu pengumpulan kontak, bukan pemeriksaan pemahaman."
+      },
+      "teenRelationship": {
+        "category": "status hubungan",
+        "reason": "Bank pertanyaan untuk remaja tidak boleh menanyakan status hubungan atau berpacaran. Itu pembuatan profil pribadi anak di bawah umur, yang tidak pernah dikumpulkan platform ini."
+      }
+    }
   },
   "reports": {
     "metrics": {
@@ -274,7 +381,16 @@
       "statusHeader": "Status",
       "questionsHeader": "Pertanyaan",
       "scoringRuleHeader": "Aturan penilaian",
-      "scoringRuleNotSet": "Belum diatur"
+      "scoringRuleNotSet": "Belum diatur",
+      "scoringRule": {
+        "base_only": "Hanya hadiah dasar",
+        "base_plus_accuracy_bonus": "Dasar + bonus akurasi"
+      },
+      "status": {
+        "active": "Aktif",
+        "paused": "Dijeda",
+        "ended": "Berakhir"
+      }
     },
     "legend": {
       "title": "Cara membaca angka-angka ini",
@@ -321,6 +437,22 @@
       "voucher-ledger-by-status": {
         "label": "Voucher berdasarkan status (aktif, ditukarkan, kedaluwarsa, dipindahkan)",
         "reason": "Kami hanya bisa menunjukkan voucher yang sudah ditukarkan di salah satu lokasi Anda sendiri — daftar itu ada di halaman Penukaran. Kami belum bisa menunjukkan berapa banyak voucher Anda yang masih aktif, kedaluwarsa, atau sudah dipindahkan."
+      }
+    },
+    "provenance": {
+      "label": {
+        "measured": "Terukur",
+        "self_reported": "Dilaporkan sendiri",
+        "inferred": "Disimpulkan",
+        "configured": "Dikonfigurasi",
+        "unavailable": "Tidak tersedia"
+      },
+      "explanation": {
+        "measured": "Dibaca langsung dari sistem pencatatan — di sini, buku besar penukaran. Catatan nyata tentang apa yang terjadi, bukan perkiraan. Tetap bukan bukti bahwa seseorang menonton video: status voucher tidak menjelaskan bagaimana voucher itu diperoleh.",
+        "self_reported": "Dijawab sendiri oleh penonton pada pertanyaan pemeriksaan. Bukti pemahaman, bukan bukti menonton — kumpulan perangkat yang benar-benar memutar video juga dapat menjawab dengan jujur.",
+        "inferred": "Dihitung dari fakta terukur lain dengan aturan yang terdokumentasi, bukan diamati langsung. Aturannya ditampilkan di samping angka, tidak disembunyikan.",
+        "configured": "Menggambarkan apa yang diatur bisnis — jumlah pertanyaan, jenis, aturan penilaian — bukan hasil kinerja. Ditampilkan agar kerangka laporan tetap jelas bahkan sebelum ada satu pun angka kinerja.",
+        "unavailable": "Belum ada kontrak atau log kejadian untuk menghasilkan angka ini secara jujur. Ditampilkan sebagai celah yang disebutkan jelas, bukan angka rekaan yang tampak meyakinkan."
       }
     }
   },
@@ -390,6 +522,14 @@
       "helperText": "Undangan, perubahan peran, dan penghapusan di sini berlaku segera setelah dikonfirmasi oleh Pemilik atau Admin — mengalihkan kepemilikan juga memerlukan autentikasi ulang baru. Persetujuan dua orang (orang kedua yang mengonfirmasi permintaan orang lain) berlaku di bagian lain konsol — penerbitan voucher massal, penurunan nilai penyelesaian material, dan rotasi kredensial API — bukan untuk keanggotaan tim itu sendiri.",
       "auditTrail": "Log aktivitas",
       "noOwner": "Bisnis ini tidak memiliki Pemilik yang tercatat — ini seharusnya tidak pernah terjadi; hubungi dukungan."
+    },
+    "errors": {
+      "cannotTargetOwnerRole": "Peran Pemilik tidak dapat diberikan atau dicabut di sini. Gunakan “Alihkan kepemilikan”.",
+      "cannotRemoveOwner": "Pemilik tidak dapat dikeluarkan dari tim. Alihkan kepemilikan kepada orang lain terlebih dahulu.",
+      "alreadyOnRoster": "{email} sudah menjadi anggota atau masih memiliki undangan yang tertunda.",
+      "reauthRequired": "Masuk ulang sebelum mengalihkan kepemilikan — tindakan ini hanya bisa dilakukan dengan sesi yang baru.",
+      "reauthExpired": "Masuk ulang tadi sudah kedaluwarsa (berlaku 5 menit). Masuk ulang lagi untuk melanjutkan.",
+      "successorNotAMember": "Kepemilikan hanya dapat dialihkan kepada orang yang sudah bergabung dengan tim."
     }
   },
   "chrome": {

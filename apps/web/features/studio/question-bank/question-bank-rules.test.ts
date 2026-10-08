@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { getStudioTranslator } from "../studio-i18n";
 import {
   computeMaxAskedQuestions,
   computeMinBankSize,
+  describeBankSize,
   evaluateBankSize,
 } from "./question-bank-rules";
+
+const t = getStudioTranslator("en-AU");
 
 describe("computeMaxAskedQuestions", () => {
   const table: Array<{ durationSeconds: number; expected: number }> = [
@@ -37,7 +41,7 @@ describe("evaluateBankSize", () => {
     const result = evaluateBankSize(60, 0);
     expect(result.meetsRequirement).toBe(true);
     expect(result.askedCount).toBe(0);
-    expect(result.message.length).toBeGreaterThan(0);
+    expect(describeBankSize(result, t).length).toBeGreaterThan(0);
   });
 
   it("fails an under-sized bank and explains exactly how many more are needed", () => {
@@ -45,7 +49,8 @@ describe("evaluateBankSize", () => {
     expect(result.askedCount).toBe(3);
     expect(result.requiredBankSize).toBe(9);
     expect(result.meetsRequirement).toBe(false);
-    expect(result.message).toContain("5 more");
+    expect(describeBankSize(result, t)).toContain("Add 5 more");
+    expect(describeBankSize(result, getStudioTranslator("id-ID"))).toContain("Tambahkan 5 lagi");
   });
 
   it("passes a bank exactly at the 3x minimum", () => {

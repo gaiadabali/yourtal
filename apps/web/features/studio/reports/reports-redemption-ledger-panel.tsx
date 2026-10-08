@@ -41,7 +41,7 @@ export function ReportsRedemptionLedgerPanel({
             {t("reports.ledger.description", { count: summary.totalVoucherCount })}
           </CardDescription>
         </div>
-        <ReportProvenanceBadge provenance="measured" />
+        <ReportProvenanceBadge provenance="measured" locale={locale} />
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {nonZeroRows.length === 0 ? (

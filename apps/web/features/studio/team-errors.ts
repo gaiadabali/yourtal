@@ -19,20 +19,23 @@ export type TeamActionError =
   /** A real API refusal (`team-live-actions.ts`) with no closer match above — the server's own message, not a guess. */
   | { type: "api_error"; message: string };
 
-export function teamActionErrorMessage(error: TeamActionError): string {
+export function teamActionErrorMessage(
+  error: TeamActionError,
+  t: (key: string, values?: Record<string, string>) => string,
+): string {
   switch (error.type) {
     case "cannot_target_owner_role":
-      return "The Owner role can't be granted or removed here. Use “Transfer ownership” instead.";
+      return t("team.errors.cannotTargetOwnerRole");
     case "cannot_remove_owner":
-      return "The Owner can't be removed from the team. Transfer ownership to someone else first.";
+      return t("team.errors.cannotRemoveOwner");
     case "already_on_roster":
-      return `${error.email} is already a member or has a pending invite.`;
+      return t("team.errors.alreadyOnRoster", { email: error.email });
     case "reauth_required":
-      return "Re-authenticate before transferring ownership — this is a fresh-session-only action.";
+      return t("team.errors.reauthRequired");
     case "reauth_expired":
-      return "That re-authentication has expired (valid for 5 minutes). Re-authenticate again to continue.";
+      return t("team.errors.reauthExpired");
     case "successor_not_a_member":
-      return "Ownership can only transfer to someone who has already joined the team.";
+      return t("team.errors.successorNotAMember");
     case "api_error":
       return error.message;
     default: {

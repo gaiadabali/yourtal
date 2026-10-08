@@ -142,7 +142,18 @@
       "statusFailedWithReason": "Upload failed: {reason}",
       "videoFileLabel": "Video file",
       "progressAriaLabel": "Video upload progress",
-      "reset": "Reset"
+      "reset": "Reset",
+      "errors": {
+        "unsupportedFormat": "That video format isn't supported (mp4, mov or webm only).",
+        "invalidRequest": "Invalid upload request.",
+        "invalidCompletion": "Invalid completion request.",
+        "partFailed": "Part upload failed ({status}).",
+        "noEtag": "Upload succeeded but the server did not return an ETag for this part.",
+        "networkError": "Network error while uploading this part.",
+        "uploadFailed": "Could not upload the video.",
+        "transcodeFailed": "Transcoding failed.",
+        "stillProcessing": "Still processing after 5 minutes — check back shortly."
+      }
     },
     "editor": {
       "backToCampaigns": "← Back to campaigns"
@@ -160,7 +171,13 @@
       "scoring": "Scoring",
       "dataCostBadge": "{amount} data cost",
       "startVideo": "Start video",
-      "startVideoAriaLabel": "Start video — preview only, not interactive here"
+      "startVideoAriaLabel": "Start video — preview only, not interactive here",
+      "durationSeconds": "{value} sec",
+      "durationMinutes": "{value} min",
+      "dataCostMb": "~{value} MB",
+      "questionCount": "{count, plural, =0 {No questions} one {# question} other {# questions}}",
+      "scoringWithBonus": "Base reward for completing, plus an accuracy bonus",
+      "scoringFixed": "Fixed reward for completing and answering"
     },
     "captions": {
       "label": "Captions file (.vtt)",
@@ -168,6 +185,24 @@
       "saved": "{name} saved. Viewers get these captions if the video has none.",
       "invalid": "That isn't a WebVTT file with captions. Check it starts with WEBVTT and has timed lines.",
       "tooLarge": "That file is too large. Captions files are up to 512 KB."
+    },
+    "actionErrors": {
+      "wrongStatus": "This campaign is currently “{status}” — this action isn’t available from that state.",
+      "noVideo": "Upload and finish processing the video before submitting for review.",
+      "noTitle": "Give the campaign a title before submitting for review.",
+      "bankTooSmall": "The question bank needs at least {required} complete questions before this campaign can go to review — it currently has {actual}."
+    },
+    "validation": {
+      "titleRequired": "Give the campaign a title.",
+      "titleTooLong": "Keep the title to {max} characters or fewer.",
+      "synopsisRequired": "Add a short synopsis — this is what the viewer sees before starting.",
+      "synopsisTooLong": "Keep the synopsis to {max} characters or fewer.",
+      "rewardNegative": "Reward cannot be negative.",
+      "budgetRequired": "Set a total budget greater than zero."
+    },
+    "newDraft": {
+      "title": "Untitled campaign",
+      "synopsis": "Add a synopsis before you submit for review."
     }
   },
   "questionBank": {
@@ -245,7 +280,79 @@
       "false": "False",
       "markWarning": "Mark whether the correct answer is true or false before saving this question."
     },
-    "saved": "Saved"
+    "saved": "Saved",
+    "errors": {
+      "emptyPrompt": "Write the question prompt before saving it.",
+      "notFound": "That question is no longer in the bank — it may already have been removed.",
+      "unfinished": "This question is not finished yet."
+    },
+    "bankRules": {
+      "notRequired": "This video is too short to ask a checkpoint question (minimum 5 minutes for one). No question bank is required.",
+      "ok": "A viewer is asked {asked, plural, one {# question} other {# questions}} per attempt, drawn at random from your bank of {actual}. That is at or above the 3x anti-sharing minimum ({required}), so a leaked answer key can only ever cover a fraction of what any one viewer sees.",
+      "short": "A viewer is asked {asked, plural, one {# question} other {# questions}} per attempt. Your bank needs at least {required} complete questions (3x the asked count) so a shared answer key can't cover everyone who watches — you currently have {actual}. Add {missing} more before this campaign can go to review."
+    },
+    "pii": {
+      "phone": {
+        "category": "phone number",
+        "reason": "Questions cannot ask for a phone number. A checkpoint checks what someone remembers from the video, not their contact details."
+      },
+      "email": {
+        "category": "email address",
+        "reason": "Questions cannot ask for an email address — that is lead capture, not a comprehension check."
+      },
+      "address": {
+        "category": "home address",
+        "reason": "Questions cannot ask where someone lives. That is a data-collection request, not something the video taught."
+      },
+      "govId": {
+        "category": "government ID number",
+        "reason": "Questions cannot ask for a national ID, tax or passport number. This is identity harvesting, which the platform never allows through a reward gate."
+      },
+      "income": {
+        "category": "income",
+        "reason": "Questions cannot ask about income or salary. That is financial profiling, not video comprehension."
+      },
+      "health": {
+        "category": "health status",
+        "reason": "Questions cannot ask about health conditions. Health data needs its own explicit, separately-consented flow."
+      },
+      "bank": {
+        "category": "bank or card details",
+        "reason": "Questions cannot ask for a bank account or card number. Payment details are never collected through a quiz."
+      },
+      "fullName": {
+        "category": "full name for identification",
+        "reason": "Questions cannot ask for someone's full legal name. If you need to identify a respondent, that happens through their account, not the quiz."
+      },
+      "teenAge": {
+        "category": "age or date of birth",
+        "reason": "Teen-rated question banks cannot ask someone's age or date of birth. This platform already knows a viewer's age band; a quiz never needs to ask again."
+      },
+      "teenSchool": {
+        "category": "school",
+        "reason": "Teen-rated question banks cannot ask what school someone goes to. That identifies a minor's physical location, which this platform never collects through a quiz."
+      },
+      "teenLocation": {
+        "category": "where you live",
+        "reason": "Teen-rated question banks cannot ask what city or suburb someone lives in. A comprehension check never needs to know where a minor is."
+      },
+      "teenAppearance": {
+        "category": "appearance",
+        "reason": "Teen-rated question banks cannot ask about someone's physical appearance. That is personal profiling, not video comprehension."
+      },
+      "teenFamily": {
+        "category": "family",
+        "reason": "Teen-rated question banks cannot ask about someone's parents or siblings. Family details are never something a checkpoint needs."
+      },
+      "teenSocial": {
+        "category": "social media handle",
+        "reason": "Teen-rated question banks cannot ask for a social media username or handle. That is contact-collection, not a comprehension check."
+      },
+      "teenRelationship": {
+        "category": "relationship status",
+        "reason": "Teen-rated question banks cannot ask about someone's relationship or dating status. That is personal profiling of a minor, which this platform never collects."
+      }
+    }
   },
   "reports": {
     "metrics": {
@@ -274,7 +381,16 @@
       "statusHeader": "Status",
       "questionsHeader": "Questions",
       "scoringRuleHeader": "Scoring rule",
-      "scoringRuleNotSet": "Not set yet"
+      "scoringRuleNotSet": "Not set yet",
+      "scoringRule": {
+        "base_only": "Base reward only",
+        "base_plus_accuracy_bonus": "Base + accuracy bonus"
+      },
+      "status": {
+        "active": "Active",
+        "paused": "Paused",
+        "ended": "Ended"
+      }
     },
     "legend": {
       "title": "How to read these numbers",
@@ -321,6 +437,22 @@
       "voucher-ledger-by-status": {
         "label": "Vouchers by status (active, redeemed, expired, transferred)",
         "reason": "We can only show vouchers already redeemed at one of your own locations — that list lives under Redemptions. We can't yet show how many of your vouchers are still active, expired or transferred."
+      }
+    },
+    "provenance": {
+      "label": {
+        "measured": "Measured",
+        "self_reported": "Self-reported",
+        "inferred": "Inferred",
+        "configured": "Configured",
+        "unavailable": "Not available"
+      },
+      "explanation": {
+        "measured": "Read directly from a system of record — here, the redemption ledger. A real record of what happened, not a proxy for it. Still not proof anyone watched a video: a voucher's status says nothing about how it was earned.",
+        "self_reported": "Answered by the viewer themselves, at a checkpoint question. Evidence of comprehension, not proof of watching — a device farm that actually plays the video back can answer honestly too.",
+        "inferred": "Calculated from other measured facts by a documented rule, not observed directly. The rule is shown next to the number, not hidden behind it.",
+        "configured": "Describes what the business set up — question count, type, scoring rule — not a performance outcome. Shown so the reporting frame is legible even before a single performance number exists.",
+        "unavailable": "No contract or event log exists yet to produce this honestly. Shown as an explicit, named gap rather than a plausible-looking fabricated figure."
       }
     }
   },
@@ -390,6 +522,14 @@
       "helperText": "Invites, role changes and removals here take effect immediately once an Owner or Admin confirms them — transferring ownership additionally needs a fresh re-authentication. Two-person approval (a second person confirming a different person's request) applies elsewhere in the console — bulk voucher issuance, a material settlement-value cut, and API credential rotation — not to team membership itself.",
       "auditTrail": "Audit trail",
       "noOwner": "This business has no recorded Owner — this should never happen; contact support."
+    },
+    "errors": {
+      "cannotTargetOwnerRole": "The Owner role can't be granted or removed here. Use “Transfer ownership” instead.",
+      "cannotRemoveOwner": "The Owner can't be removed from the team. Transfer ownership to someone else first.",
+      "alreadyOnRoster": "{email} is already a member or has a pending invite.",
+      "reauthRequired": "Re-authenticate before transferring ownership — this is a fresh-session-only action.",
+      "reauthExpired": "That re-authentication has expired (valid for 5 minutes). Re-authenticate again to continue.",
+      "successorNotAMember": "Ownership can only transfer to someone who has already joined the team."
     }
   },
   "chrome": {

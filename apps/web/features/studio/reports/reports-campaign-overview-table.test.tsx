@@ -43,7 +43,7 @@ describe("ReportsCampaignOverviewTable", () => {
     render(<ReportsCampaignOverviewTable campaigns={[CAMPAIGN]} locale="en-AU" />);
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(screen.getByRole("row", { name: /Kenali Produk Baru/ })).toBeInTheDocument();
-    expect(screen.getAllByText("active").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Active").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Base + accuracy bonus").length).toBeGreaterThan(0);
   });
 

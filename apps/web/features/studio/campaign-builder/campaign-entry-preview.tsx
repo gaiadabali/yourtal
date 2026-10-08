@@ -1,9 +1,9 @@
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   asDisplayIdr,
   asDisplayPoints,
   formatMoney,
-  formatPoints,
+  formatPointsIn,
 } from "@yourtal/contracts/money/format";
 import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
@@ -51,6 +51,7 @@ export interface CampaignEntryPreviewProps {
  */
 export function CampaignEntryPreview({ draft }: CampaignEntryPreviewProps) {
   const t = useTranslations("studio");
+  const locale = useLocale() === "id-ID" ? "id-ID" : "en-AU";
   const { currency } = useRegion();
   const durationSeconds = draftDurationSeconds(draft);
   const estimatedDataMb = draftEstimatedDataMb(draft);
@@ -80,33 +81,33 @@ export function CampaignEntryPreview({ draft }: CampaignEntryPreviewProps) {
         <dl className="grid grid-cols-2 gap-3">
           <PreviewFact
             label={t("campaignBuilder.preview.duration")}
-            value={formatPreviewDuration(durationSeconds)}
+            value={formatPreviewDuration(durationSeconds, t)}
           />
           <PreviewFact
             label={t("campaignBuilder.preview.dataCost")}
-            value={formatPreviewDataCost(estimatedDataMb)}
+            value={formatPreviewDataCost(estimatedDataMb, t)}
           />
           <PreviewFact
             label={t("campaignBuilder.preview.baseReward")}
-            value={formatPoints(asDisplayPoints(basePoints), "en-AU")}
+            value={formatPointsIn(locale, asDisplayPoints(basePoints))}
             valueClassName="text-reward"
           />
           {maxAccuracyBonusPoints > 0 ? (
             <PreviewFact
               label={t("campaignBuilder.preview.accuracyBonus")}
               value={t("campaignBuilder.preview.upToPoints", {
-                points: formatPoints(asDisplayPoints(maxAccuracyBonusPoints), "en-AU"),
+                points: formatPointsIn(locale, asDisplayPoints(maxAccuracyBonusPoints)),
               })}
               valueClassName="text-reward"
             />
           ) : null}
           <PreviewFact
             label={t("campaignBuilder.preview.questions")}
-            value={describePreviewQuestionCount(questionCount)}
+            value={describePreviewQuestionCount(questionCount, t)}
           />
           <PreviewFact
             label={t("campaignBuilder.preview.scoring")}
-            value={describePreviewScoringRule(hasAccuracyBonus)}
+            value={describePreviewScoringRule(hasAccuracyBonus, t)}
           />
         </dl>
 

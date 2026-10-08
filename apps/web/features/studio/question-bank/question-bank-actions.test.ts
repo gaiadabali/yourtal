@@ -1,3 +1,4 @@
+import { getStudioTranslator } from "../studio-i18n";
 import { describe, expect, it } from "vitest";
 import { createEmptyQuestionDraft } from "./question-draft";
 import {
@@ -7,6 +8,7 @@ import {
   updateQuestionInBank,
 } from "./question-bank-actions";
 
+const t = getStudioTranslator("en-AU");
 const CAMPAIGN_ID = "00000000-0000-4000-8000-000000000900";
 let counter = 0;
 const idFactory = () => {
@@ -41,7 +43,7 @@ describe("addQuestionToBank", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.type).toBe("pii_request");
-      expect(questionBankActionErrorMessage(result.error).length).toBeGreaterThan(0);
+      expect(questionBankActionErrorMessage(result.error, t).length).toBeGreaterThan(0);
     }
   });
 
@@ -52,7 +54,7 @@ describe("addQuestionToBank", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.type).toBe("pii_request");
-      expect(questionBankActionErrorMessage(result.error).length).toBeGreaterThan(0);
+      expect(questionBankActionErrorMessage(result.error, t).length).toBeGreaterThan(0);
     }
   });
 

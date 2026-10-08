@@ -28,8 +28,9 @@ export type CampaignBuilderActionResult<T> =
 export async function createCampaignDraftLive(
   businessId: string,
   merchantName: string,
+  copy: { title: string; synopsis: string },
 ): Promise<CampaignBuilderActionResult<CampaignDraft>> {
-  const defaults = newCampaignDraftDefaults();
+  const defaults = newCampaignDraftDefaults(copy);
   const result = await apiFetch(`/api/${businessId}/studio/campaigns`, apiCampaignDraftSchema, {
     method: "POST",
     headers: { "idempotency-key": crypto.randomUUID() },

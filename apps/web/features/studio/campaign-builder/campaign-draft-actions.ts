@@ -80,16 +80,24 @@ export function reviseRejectedDraft(draft: CampaignDraft): CampaignDraftActionRe
   return { ok: true, value: withUpdate(draft, { status: "draft" }) };
 }
 
-export function campaignDraftActionErrorMessage(error: CampaignDraftActionError): string {
+export function campaignDraftActionErrorMessage(
+  error: CampaignDraftActionError,
+  t: (key: string, values?: Record<string, string | number>) => string,
+): string {
   switch (error.type) {
     case "wrong_status":
-      return `This campaign is currently "${error.status}" — this action isn't available from that state.`;
+      return t("campaignBuilder.actionErrors.wrongStatus", {
+        status: t(`campaignBuilder.status.label.${error.status}`),
+      });
     case "no_video":
-      return "Upload and finish processing the video before submitting for review.";
+      return t("campaignBuilder.actionErrors.noVideo");
     case "no_title":
-      return "Give the campaign a title before submitting for review.";
+      return t("campaignBuilder.actionErrors.noTitle");
     case "bank_too_small":
-      return `The question bank needs at least ${error.required} complete questions before this campaign can go to review — it currently has ${error.actual}.`;
+      return t("campaignBuilder.actionErrors.bankTooSmall", {
+        required: error.required,
+        actual: error.actual,
+      });
     default: {
       const exhaustive: never = error;
       throw new Error(`Unhandled campaign draft action error: ${JSON.stringify(exhaustive)}`);

@@ -1,4 +1,4 @@
-import type { CampaignScoringRule, CampaignStatus } from "@yourtal/contracts/campaign";
+import type { CampaignStatus } from "@yourtal/contracts/campaign";
 import { Badge } from "@yourtal/ui/badge";
 import { DataTable } from "@yourtal/ui/data-table";
 import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
@@ -14,11 +14,6 @@ const STATUS_VARIANT: Record<CampaignStatus, "success" | "secondary" | "outline"
   active: "success",
   paused: "secondary",
   ended: "outline",
-};
-
-const SCORING_RULE_LABEL: Record<CampaignScoringRule, string> = {
-  base_only: "Base reward only",
-  base_plus_accuracy_bonus: "Base + accuracy bonus",
 };
 
 /**
@@ -52,7 +47,9 @@ export function ReportsCampaignOverviewTable({
             key: "status",
             header: t("reports.overview.statusHeader"),
             cell: (campaign) => (
-              <Badge variant={STATUS_VARIANT[campaign.status]}>{campaign.status}</Badge>
+              <Badge variant={STATUS_VARIANT[campaign.status]}>
+                {t(`reports.overview.status.${campaign.status}`)}
+              </Badge>
             ),
           },
           {
@@ -65,12 +62,12 @@ export function ReportsCampaignOverviewTable({
             header: t("reports.overview.scoringRuleHeader"),
             cell: (campaign) =>
               campaign.scoringRule
-                ? SCORING_RULE_LABEL[campaign.scoringRule]
+                ? t(`reports.overview.scoringRule.${campaign.scoringRule}`)
                 : t("reports.overview.scoringRuleNotSet"),
           },
         ]}
       />
-      <ReportProvenanceBadge provenance="configured" />
+      <ReportProvenanceBadge provenance="configured" locale={locale} />
     </div>
   );
 }

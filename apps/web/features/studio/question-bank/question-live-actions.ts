@@ -42,7 +42,10 @@ const bankQuestionRecordSchema = z.object({
  * "remove" a question wants it gone from what they see, not merely marked.
  * Both refuse once the campaign has left `draft` (`campaign_not_draft`).
  */
-export type QuestionLiveActionResult<T> = { ok: true; value: T } | { ok: false; message: string };
+export type QuestionLiveActionResult<T> =
+  | { ok: true; value: T }
+  /** `code` is set when this file refused the save itself, so the screen can word it in the viewer's language. */
+  | { ok: false; message: string; code?: "unfinished" };
 
 function mapApiError(error: ApiError): string {
   return error.message;
@@ -119,7 +122,7 @@ export async function createQuestionLive(
 ): Promise<QuestionLiveActionResult<QuestionDraft>> {
   const publishable = toPublishableQuestionInput(draft);
   if (publishable === null) {
-    return { ok: false, message: "This question is not finished yet." };
+    return { ok: false, message: "unfinished", code: "unfinished" };
   }
   const result = await apiFetch(
     `/api/${businessId}/studio/campaigns/${campaignId}/questions`,
@@ -145,7 +148,7 @@ export async function updateQuestionLive(
 ): Promise<QuestionLiveActionResult<QuestionDraft>> {
   const publishable = toPublishableQuestionInput(draft);
   if (publishable === null) {
-    return { ok: false, message: "This question is not finished yet." };
+    return { ok: false, message: "unfinished", code: "unfinished" };
   }
   const result = await apiFetch(
     `/api/${businessId}/studio/campaigns/${campaignId}/questions/${draft.id}`,

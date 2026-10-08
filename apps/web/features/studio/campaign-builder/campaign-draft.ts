@@ -115,7 +115,26 @@ export function draftFormValues(draft: CampaignDraft): CampaignDraftFormValues {
   };
 }
 
-export type CampaignDraftFieldErrors = Partial<Record<keyof CampaignDraftFormValues, string>>;
+/** A form error is a catalogue code (`campaignBuilder.validation.<code>`), worded for the viewer by `campaignFormErrorText`. */
+export type CampaignFormErrorCode =
+  | "titleRequired"
+  | "titleTooLong"
+  | "synopsisRequired"
+  | "synopsisTooLong"
+  | "rewardNegative"
+  | "budgetRequired";
+
+export type CampaignDraftFieldErrors = Partial<
+  Record<keyof CampaignDraftFormValues, CampaignFormErrorCode>
+>;
+
+export function campaignFormErrorText(
+  t: (key: string, values?: Record<string, number>) => string,
+  code: string,
+): string {
+  const max = code.startsWith("title") ? MAX_TITLE_LENGTH : MAX_SYNOPSIS_LENGTH;
+  return t(`campaignBuilder.validation.${code}`, { max });
+}
 
 /**
  * Validates the editable text/number fields of a draft — the fields a form
@@ -151,23 +170,23 @@ export function validateCampaignDraftForm(
   const errors: CampaignDraftFieldErrors = {};
 
   if (values.title.trim().length === 0) {
-    errors.title = "Give the campaign a title.";
+    errors.title = "titleRequired";
   } else if (values.title.length > MAX_TITLE_LENGTH) {
-    errors.title = `Keep the title to ${MAX_TITLE_LENGTH} characters or fewer.`;
+    errors.title = "titleTooLong";
   }
 
   if (values.synopsis.trim().length === 0) {
-    errors.synopsis = "Add a short synopsis — this is what the viewer sees before starting.";
+    errors.synopsis = "synopsisRequired";
   } else if (values.synopsis.length > MAX_SYNOPSIS_LENGTH) {
-    errors.synopsis = `Keep the synopsis to ${MAX_SYNOPSIS_LENGTH} characters or fewer.`;
+    errors.synopsis = "synopsisTooLong";
   }
 
   if (!Number.isFinite(values.rewardPoints) || values.rewardPoints < 0) {
-    errors.rewardPoints = "Reward cannot be negative.";
+    errors.rewardPoints = "rewardNegative";
   }
 
   if (!Number.isFinite(values.totalBudgetPoints) || values.totalBudgetPoints <= 0) {
-    errors.totalBudgetPoints = "Set a total budget greater than zero.";
+    errors.totalBudgetPoints = "budgetRequired";
   }
 
   return errors;

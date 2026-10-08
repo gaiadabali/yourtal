@@ -62,7 +62,7 @@ export function TeamInviteDialog({ open, onOpenChange, onInvite }: TeamInviteDia
   async function submitInvite(values: InviteFormValues) {
     const failure = await onInvite(values.email, values.role);
     if (failure) {
-      setError("email", { type: "server", message: teamActionErrorMessage(failure) });
+      setError("email", { type: "server", message: teamActionErrorMessage(failure, t) });
       return;
     }
     reset(DEFAULT_VALUES);

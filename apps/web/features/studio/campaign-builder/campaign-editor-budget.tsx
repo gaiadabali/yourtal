@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import type { UseFormReturn } from "react-hook-form";
 import { Input } from "@yourtal/ui/input";
 import type { CampaignBudget, CampaignDraftFormValues } from "./campaign-draft";
+import { campaignFormErrorText } from "./campaign-draft";
 
 export interface CampaignEditorBudgetProps {
   budget: CampaignBudget;
@@ -55,7 +56,12 @@ export function CampaignEditorBudget({
             },
           })}
           {...(form.formState.errors.totalBudgetPoints?.message
-            ? { errorMessage: form.formState.errors.totalBudgetPoints.message }
+            ? {
+                errorMessage: campaignFormErrorText(
+                  t,
+                  form.formState.errors.totalBudgetPoints.message,
+                ),
+              }
             : {})}
         />
       </div>

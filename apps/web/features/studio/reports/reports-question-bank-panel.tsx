@@ -35,7 +35,7 @@ export function ReportsQuestionBankPanel({
           <CardTitle as="h3">{t("reports.questionBank.title")}</CardTitle>
           <CardDescription>{scopeLabel}</CardDescription>
         </div>
-        <ReportProvenanceBadge provenance="configured" />
+        <ReportProvenanceBadge provenance="configured" locale={locale} />
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {total === 0 ? (
@@ -45,7 +45,7 @@ export function ReportsQuestionBankPanel({
             <ReportsBarChart
               rows={typeCounts.map((row) => ({
                 id: row.type,
-                label: row.label,
+                label: t(`questionBank.type.${row.type}.label`),
                 value: row.count,
                 valueLabel: `${row.count}`,
               }))}
@@ -58,7 +58,7 @@ export function ReportsQuestionBankPanel({
                 {
                   key: "type",
                   header: t("reports.questionBank.typeHeader"),
-                  cell: (row) => row.label,
+                  cell: (row) => t(`questionBank.type.${row.type}.label`),
                 },
                 {
                   key: "count",

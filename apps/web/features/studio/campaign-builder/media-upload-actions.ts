@@ -13,7 +13,10 @@ import type {
 } from "@yourtal/contracts/studio/media";
 import { apiFetch } from "@/lib/api/api-fetch";
 
-export type MediaActionResult<T> = { ok: true; data: T } | { ok: false; message: string };
+/** `reason` is set when this file itself refused the request, so the client can word it in the viewer's language. */
+export type MediaActionResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; message: string; reason?: "unsupported_format" | "invalid_request" };
 
 /**
  * Looser than `InitiateMediaUploadRequest` on purpose: `file.type` (the
@@ -48,13 +51,9 @@ export async function initiateMediaUploadAction(
 ): Promise<MediaActionResult<InitiateMediaUploadResponse>> {
   const parsed = initiateMediaUploadRequestSchema.safeParse(input);
   if (!parsed.success) {
-    return {
-      ok: false,
-      message:
-        parsed.error.issues[0]?.path[0] === "contentType"
-          ? "That video format isn't supported (mp4, mov or webm only)."
-          : "Invalid upload request.",
-    };
+    return parsed.error.issues[0]?.path[0] === "contentType"
+      ? { ok: false, message: "unsupported_format", reason: "unsupported_format" }
+      : { ok: false, message: "invalid_request", reason: "invalid_request" };
   }
 
   const result = await apiFetch(
@@ -72,7 +71,7 @@ export async function completeMediaUploadAction(
   input: CompleteMediaUploadRequest,
 ): Promise<MediaActionResult<MediaAsset>> {
   const parsed = completeMediaUploadRequestSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, message: "Invalid completion request." };
+  if (!parsed.success) return { ok: false, message: "invalid_request", reason: "invalid_request" };
 
   const result = await apiFetch(
     `/api/${businessId}/studio/media/${assetId}/complete`,

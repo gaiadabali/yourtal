@@ -41,7 +41,7 @@ export function TeamRemoveDialog({
   async function handleConfirm() {
     const failure = await onConfirm();
     if (failure) {
-      setError(teamActionErrorMessage(failure));
+      setError(teamActionErrorMessage(failure, t));
       return;
     }
     setError(null);

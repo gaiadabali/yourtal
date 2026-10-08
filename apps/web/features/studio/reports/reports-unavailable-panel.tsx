@@ -25,7 +25,7 @@ export function ReportsUnavailablePanel({ metric, locale }: ReportsUnavailablePa
     <Card className="border-dashed">
       <CardHeader className="flex flex-row items-start justify-between gap-2">
         <CardTitle as="h3">{t(`reports.gaps.${metric.id}.label`)}</CardTitle>
-        <ReportProvenanceBadge provenance="unavailable" />
+        <ReportProvenanceBadge provenance="unavailable" locale={locale} />
       </CardHeader>
       <CardContent>
         <p className="text-sm font-sans text-fg-muted">{t(`reports.gaps.${metric.id}.reason`)}</p>

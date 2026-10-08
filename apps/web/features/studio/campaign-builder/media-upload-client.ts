@@ -5,6 +5,18 @@ import {
   initiateMediaUploadAction,
 } from "./media-upload-actions";
 
+/** A part-upload failure with a catalogue code, so the message is worded for the viewer at the end, not here. */
+class UploadFailure extends Error {
+  constructor(
+    readonly code: "partFailed" | "noEtag" | "networkError",
+    readonly values: Record<string, number> = {},
+  ) {
+    super(code);
+  }
+}
+
+export type UploadT = (key: string, values?: Record<string, number>) => string;
+
 const POLL_INTERVAL_MS = 2_000;
 const MAX_POLL_ATTEMPTS = 150; // 5 minutes at 2s — well past 7.2.f's own ~2-minute Check.
 
@@ -28,17 +40,17 @@ function putPart(
     };
     xhr.onload = () => {
       if (xhr.status < 200 || xhr.status >= 300) {
-        reject(new Error(`Part upload failed (${xhr.status}).`));
+        reject(new UploadFailure("partFailed", { status: xhr.status }));
         return;
       }
       const eTag = xhr.getResponseHeader("ETag");
       if (!eTag) {
-        reject(new Error("Upload succeeded but the server did not return an ETag for this part."));
+        reject(new UploadFailure("noEtag"));
         return;
       }
       resolve(eTag);
     };
-    xhr.onerror = () => reject(new Error("Network error while uploading this part."));
+    xhr.onerror = () => reject(new UploadFailure("networkError"));
     xhr.send(chunk);
   });
 }
@@ -53,6 +65,8 @@ export interface UploadCampaignVideoParams {
   campaignId: string;
   teaserStartSeconds: number;
   onUpdate: (video: CampaignVideoUpload) => void;
+  /** The `studio` translator, for the failure messages shown under the file picker. */
+  t: UploadT;
 }
 
 /**
@@ -70,6 +84,7 @@ export async function uploadCampaignVideo({
   campaignId,
   teaserStartSeconds,
   onUpdate,
+  t,
 }: UploadCampaignVideoParams): Promise<void> {
   const fileName = file.name;
   const fail = (message: string) =>
@@ -91,7 +106,13 @@ export async function uploadCampaignVideo({
     teaserStartSeconds,
   });
   if (!initiated.ok) {
-    fail(initiated.message);
+    fail(
+      initiated.reason === "unsupported_format"
+        ? t("campaignBuilder.upload.errors.unsupportedFormat")
+        : initiated.reason === "invalid_request"
+          ? t("campaignBuilder.upload.errors.invalidRequest")
+          : initiated.message,
+    );
     return;
   }
   const { assetId, parts, partSizeBytes } = initiated.data;
@@ -116,7 +137,11 @@ export async function uploadCampaignVideo({
       uploadedParts.push({ partNumber: part.partNumber, eTag });
     }
   } catch (error) {
-    fail(error instanceof Error ? error.message : "Could not upload the video.");
+    fail(
+      error instanceof UploadFailure
+        ? t(`campaignBuilder.upload.errors.${error.code}`, error.values)
+        : t("campaignBuilder.upload.errors.uploadFailed"),
+    );
     return;
   }
 
@@ -124,7 +149,9 @@ export async function uploadCampaignVideo({
 
   const completed = await completeMediaUploadAction(businessId, assetId, { parts: uploadedParts });
   if (!completed.ok) {
-    fail(completed.message);
+    fail(
+      completed.reason ? t("campaignBuilder.upload.errors.invalidCompletion") : completed.message,
+    );
     return;
   }
 
@@ -140,10 +167,10 @@ export async function uploadCampaignVideo({
       return;
     }
     if (polled.data.status === "failed") {
-      fail(polled.data.failureReason ?? "Transcoding failed.");
+      fail(polled.data.failureReason ?? t("campaignBuilder.upload.errors.transcodeFailed"));
       return;
     }
     // "queued"/"processing" — keep polling.
   }
-  fail("Still processing after 5 minutes — check back shortly.");
+  fail(t("campaignBuilder.upload.errors.stillProcessing"));
 }

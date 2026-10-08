@@ -64,8 +64,8 @@ export function QuestionEditor({ draft, onChange, audience }: QuestionEditorProp
         {...(finding
           ? {
               errorMessage: t("questionBank.piiError", {
-                category: finding.category,
-                reason: finding.reason,
+                category: t(`questionBank.pii.${finding.key}.category`),
+                reason: t(`questionBank.pii.${finding.key}.reason`),
               }),
             }
           : {})}

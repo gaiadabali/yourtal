@@ -63,7 +63,7 @@ describe("detectPiiRequest", () => {
     const finding = detectPiiRequest(prompt);
     expect(finding).not.toBeNull();
     expect(finding?.category).toBe(category);
-    expect(finding?.reason.length).toBeGreaterThan(0);
+    expect(finding?.key.length).toBeGreaterThan(0);
   });
 
   it("is case-insensitive", () => {

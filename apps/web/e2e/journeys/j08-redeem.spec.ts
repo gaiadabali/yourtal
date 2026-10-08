@@ -72,8 +72,8 @@ async function onlineReward(request: APIRequestContext, owner: Caller, r: Region
     description: "Redeemed on the merchant's web shop.",
     category: "retail",
     locationIds: [base.location_id],
-    faceValueMinor: au ? 1_000 : 50_000,
-    settlementValueMinor: au ? 700 : 35_000,
+    faceValueMinor: au ? 1_000 : 30_000, // within a demo adult's balance after one goodwill credit
+    settlementValueMinor: au ? 700 : 21_000,
     stockTotal: 2,
     transferable: false,
     partialRedemptionPolicy: "single_use_forfeit",
@@ -99,7 +99,7 @@ async function onlineReward(request: APIRequestContext, owner: Caller, r: Region
 }
 
 /**
- * A fresh customer who buys that reward in the store: an admin goodwill
+ * A customer who buys that reward in the store: an admin goodwill
  * credit (the day's earn cap), released, then checkout, as the demo seed
  * does (journey 7 proves buying on screen).
  */
@@ -109,12 +109,20 @@ async function customerWithVoucher(
   r: RegionCase,
   tag: string,
 ): Promise<Pick> {
-  const viewer = callerFor(request, await apiRegister(request, r, `j08-${tag}`));
+  // Online rewards unlock only once an account has history, so the online half uses the
+  // established demo adult; the counter half starts from a fresh sign-up.
+  const viewer =
+    tag === "online"
+      ? await demoCaller(request, "adult", r)
+      : callerFor(request, await apiRegister(request, r, `j08-${tag}`));
   const admin = await staffCaller(request, "admin");
-  await admin.post(`/api/staff/users/${viewer.userId}/goodwill`, {
+  const credit = admin.post(`/api/staff/users/${viewer.userId}/goodwill`, {
     points: r.region === "AU" ? 500 : 5_000,
     reason: "Journey 8 customer balance.",
   });
+  // The demo adult may already have had today's credit (the day's earn cap); its balance covers the reward.
+  if (tag === "online") await credit.catch(() => undefined);
+  else await credit;
   await viewer.post("/api/dev/clock/release-pending", {});
   const quote = await viewer.post<{ checkoutId: string }>("/api/checkout/quote", { listingId });
   const bought = await viewer.post<{ voucherId: string }>("/api/checkout", {
@@ -159,6 +167,21 @@ async function qrFromWallet(browser: Browser, baseURL: string, pick: Pick, r: Re
     `/api/wallet/vouchers/${pick.voucherId}/qr`,
   );
   return token;
+}
+
+/** The code an online customer reads off the voucher page and types at checkout (13.3.o). */
+async function codeFromWallet(browser: Browser, baseURL: string, pick: Pick, r: RegionCase) {
+  const { code } = await pick.viewer.get<{ code?: string }>(
+    `/api/wallet/vouchers/${pick.voucherId}`,
+  );
+  expect(code, "the owner's voucher detail carries its code").toBeTruthy();
+  const context = await browser.newContext();
+  await useSession(context, baseURL, pick.viewer.token, r);
+  const page = await context.newPage();
+  await page.goto(`/wallet/voucher/${pick.voucherId}`);
+  await expect(page.getByText(code!).first()).toBeVisible();
+  await context.close();
+  return code!;
 }
 
 /** One HMAC-signed merchant call, exactly as the Studio developer docs describe. */
@@ -327,7 +350,7 @@ for (const r of REGIONS) {
       `/api/${online.merchantId}/studio/developers/credentials`,
       { label: `Journey 8 web shop ${r.region}`, sandbox: true },
     );
-    const onlineCode = await qrFromWallet(browser, baseURL!, online, r);
+    const onlineCode = await codeFromWallet(browser, baseURL!, online, r);
     const currency = r.region === "AU" ? "AUD" : "IDR";
     const authorized = await merchantCall(
       credential.credentialId,

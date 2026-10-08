@@ -3,10 +3,14 @@
 import { revalidatePath } from "next/cache";
 import * as z from "zod";
 import { listingSchema, settlementDecreaseRequestSchema } from "@yourtal/contracts/listing";
+import { listingImageUploadSchema } from "@yourtal/contracts/listing/image";
 import { merchantLocationSchema } from "@yourtal/contracts/listing/merchant-location";
+import { voucherBatchRequestSchema } from "@yourtal/contracts/listing/voucher-batch-request";
 import { apiFetch } from "@/lib/api/api-fetch";
 import type { ApiError } from "@/lib/api/api-fetch";
+import type { ListingEditPatch } from "./listing-edit";
 import type { NewListingBody } from "./listing-form";
+import type { VoucherRequestBody } from "./voucher-request";
 
 export interface ListingTagsPatch {
   contentCategory: string;
@@ -160,4 +164,63 @@ export async function approveSettlementDecreaseAction(
   if (!result.ok) return failure(result.error);
   revalidatePath("/studio/inventory");
   return { ok: true, value: { priceInPoints: result.data.updated.priceInPoints } };
+}
+
+/**
+ * `POST /api/:tenantId/store/voucher-batch-requests`: asks for more stock on a listing. A YourTal
+ * reviewer approves it before anything is minted, so this only ever records a pending request.
+ */
+export async function requestVoucherBatchAction(
+  businessId: string,
+  listingId: string,
+  body: VoucherRequestBody,
+): Promise<InventoryResult<{ quantity: number }>> {
+  const result = await apiFetch(
+    `/api/${businessId}/store/voucher-batch-requests`,
+    voucherBatchRequestSchema,
+    {
+      method: "POST",
+      headers: { "idempotency-key": crypto.randomUUID() },
+      body: { listingId, quantity: body.quantity, reason: body.reason },
+    },
+  );
+  if (!result.ok) return failure(result.error);
+  revalidatePath("/studio/inventory");
+  return { ok: true, value: { quantity: result.data.quantity } };
+}
+
+/**
+ * `PATCH /api/:tenantId/store/listings/:listingId` with a title, stock or expiry. The route takes
+ * no price or settlement value, and neither does this: those change through their own routes.
+ */
+export async function editListingAction(
+  businessId: string,
+  listingId: string,
+  patch: ListingEditPatch,
+): Promise<InventoryResult<{ title: string }>> {
+  const result = await apiFetch(
+    `/api/${businessId}/store/listings/${encodeURIComponent(listingId)}`,
+    listingSchema,
+    { method: "PATCH", body: patch },
+  );
+  if (!result.ok) return failure(result.error);
+  revalidatePath("/studio/inventory");
+  return { ok: true, value: { title: result.data.title } };
+}
+
+/**
+ * `POST /api/:tenantId/store/listing-images/upload-url`: a presigned PUT for the picture, and the
+ * public address it will have. The file itself goes from the browser straight to object storage.
+ */
+export async function createListingImageUploadUrlAction(
+  businessId: string,
+  contentType: string,
+): Promise<InventoryResult<{ uploadUrl: string; imageUrl: string }>> {
+  const result = await apiFetch(
+    `/api/${businessId}/store/listing-images/upload-url`,
+    listingImageUploadSchema,
+    { method: "POST", body: { contentType } },
+  );
+  if (!result.ok) return failure(result.error);
+  return { ok: true, value: { uploadUrl: result.data.uploadUrl, imageUrl: result.data.imageUrl } };
 }

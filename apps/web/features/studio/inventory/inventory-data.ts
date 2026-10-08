@@ -1,6 +1,8 @@
 import * as z from "zod";
 import { listingSchema, settlementDecreaseRequestSchema } from "@yourtal/contracts/listing";
 import { merchantLocationSchema } from "@yourtal/contracts/listing/merchant-location";
+import { voucherBatchRequestSchema } from "@yourtal/contracts/listing/voucher-batch-request";
+import type { VoucherBatchRequest } from "@yourtal/contracts/listing/voucher-batch-request";
 import type { Listing, SettlementDecreaseRequest } from "@yourtal/contracts/listing";
 import type { MerchantLocation } from "@yourtal/contracts/listing/merchant-location";
 import type { Currency } from "@yourtal/contracts/money/currency";
@@ -9,13 +11,15 @@ import { resolveStudioDataSource } from "../studio-data-source";
 import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
 import { apiFetch } from "@/lib/api/api-fetch";
 
-export type { SettlementDecreaseRequest };
+export type { SettlementDecreaseRequest, VoucherBatchRequest };
 
 const listingsResponseSchema = z.object({ listings: z.array(listingSchema) });
 const locationsResponseSchema = z.object({ locations: z.array(merchantLocationSchema) });
 const decreaseRequestsResponseSchema = z.object({
   requests: z.array(settlementDecreaseRequestSchema),
 });
+
+const voucherRequestsResponseSchema = z.object({ requests: z.array(voucherBatchRequestSchema) });
 
 interface InventoryDataSource {
   listListings: (
@@ -31,6 +35,8 @@ interface InventoryDataSource {
     currency: Currency,
   ) => Promise<MerchantLocation[]>;
   listPendingDecreaseRequests: (businessId: string) => Promise<SettlementDecreaseRequest[]>;
+  /** `null` when the list could not be loaded, so one failed read never hides the listings. */
+  listVoucherRequests: (businessId: string) => Promise<VoucherBatchRequest[] | null>;
 }
 
 /**
@@ -58,6 +64,13 @@ const liveDataSource: InventoryDataSource = {
       throw new Error(`Could not load pending settlement decreases: ${result.error.message}`);
     }
     return result.data.requests;
+  },
+  listVoucherRequests: async (businessId) => {
+    const result = await apiFetch(
+      `/api/${businessId}/store/voucher-batch-requests`,
+      voucherRequestsResponseSchema,
+    );
+    return result.ok ? result.data.requests : null;
   },
 };
 
@@ -159,6 +172,7 @@ const mockDataSource: InventoryDataSource = {
   listLocations: (businessId, merchantName, region, currency) =>
     Promise.resolve(mockStateFor(businessId, merchantName, region, currency).locations),
   listPendingDecreaseRequests: () => Promise.resolve([]),
+  listVoucherRequests: () => Promise.resolve([]),
 };
 
 const inventoryDataSource = resolveStudioDataSource({ mock: mockDataSource, live: liveDataSource });
@@ -185,4 +199,9 @@ export function listPendingDecreaseRequests(
   businessId: string,
 ): Promise<SettlementDecreaseRequest[]> {
   return inventoryDataSource.listPendingDecreaseRequests(businessId);
+}
+
+/** This business's voucher batch requests, newest first; `null` if they could not be loaded. */
+export function listVoucherRequests(businessId: string): Promise<VoucherBatchRequest[] | null> {
+  return inventoryDataSource.listVoucherRequests(businessId);
 }

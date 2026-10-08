@@ -97,6 +97,7 @@ export function ListingFormDialog(props: ListingFormDialogProps) {
           {created === null ? (
             <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
               <ListingFormFields
+                businessId={props.businessId}
                 values={values}
                 errors={errors}
                 onChange={setValues}

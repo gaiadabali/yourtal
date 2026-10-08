@@ -4,8 +4,13 @@ import { MoneyAmount } from "@yourtal/ui/money-amount";
 import { PointsChip } from "@yourtal/ui/points-chip";
 import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import { TagChips } from "../tag-picker";
+import type { VoucherBatchRequest } from "@yourtal/contracts/listing/voucher-batch-request";
+import { EditListingDialog } from "./edit-listing-dialog";
 import { ListingTagsEditor } from "./listing-tags-editor";
 import { SettlementValueDialog } from "./settlement-value-dialog";
+import { requestableStock } from "./voucher-request";
+import { VoucherRequestDialog } from "./voucher-request-dialog";
+import { VoucherRequestsList } from "./voucher-requests-list";
 
 const STATUS_VARIANT = {
   available: "success",
@@ -18,6 +23,8 @@ export interface InventoryListingRowProps {
   businessId: string;
   listing: Listing;
   canEdit: boolean;
+  /** This listing's voucher requests; `null` if they could not be loaded. Shown only to roles that can ask for vouchers. */
+  requests: readonly VoucherBatchRequest[] | null;
   locale: SupportedLocale;
 }
 
@@ -26,6 +33,7 @@ export function InventoryListingRow({
   businessId,
   listing,
   canEdit,
+  requests,
   locale,
 }: InventoryListingRowProps) {
   const t = getStudioTranslator(locale);
@@ -91,8 +99,25 @@ export function InventoryListingRow({
         · {t(`inventory.row.channel.${listing.channel}`)}
       </p>
       <TagChips tags={listing.tags} />
+      {canEdit ? <VoucherRequestsList requests={requests} locale={locale} /> : null}
       {canEdit ? (
         <div className="flex flex-wrap items-start gap-2">
+          <EditListingDialog
+            businessId={businessId}
+            listingId={listing.id}
+            original={{
+              title: listing.title,
+              stockTotal: listing.stockTotal,
+              expiresAt: listing.expiresAt,
+            }}
+          />
+          <VoucherRequestDialog
+            businessId={businessId}
+            listingId={listing.id}
+            listingTitle={listing.title}
+            stockTotal={listing.stockTotal}
+            requestable={requestableStock(listing.stockTotal, requests ?? [])}
+          />
           <SettlementValueDialog
             businessId={businessId}
             listingId={listing.id}

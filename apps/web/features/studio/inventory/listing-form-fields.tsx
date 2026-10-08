@@ -13,6 +13,7 @@ import {
   categoryStatusFor,
 } from "../campaign-builder/campaign-editor-details";
 import { TagPicker } from "../tag-picker";
+import { ListingImageField } from "./listing-image-field";
 import {
   LISTING_CATEGORY_OPTIONS,
   LISTING_CHANNEL_OPTIONS,
@@ -26,6 +27,7 @@ import type {
 } from "./listing-form";
 
 export interface ListingFormFieldsProps {
+  businessId: string;
   values: ListingFormValues;
   errors: ListingFormErrors;
   onChange: (next: ListingFormValues) => void;
@@ -37,6 +39,7 @@ export interface ListingFormFieldsProps {
 
 /** The listing form's inputs. Amounts stay typed text until `buildNewListingBody` converts them exactly. */
 export function ListingFormFields({
+  businessId,
   values,
   errors,
   onChange,
@@ -93,15 +96,14 @@ export function ListingFormFields({
         onChange={(event) => set("description", event.target.value)}
         {...error("description")}
       />
-      <Input
-        label={t("inventory.form.imageUrlLabel")}
-        helpText={t("inventory.form.imageUrlHelp")}
-        type="url"
-        inputMode="url"
-        value={values.imageUrl}
+      <ListingImageField
+        businessId={businessId}
+        imageUrl={values.imageUrl}
         disabled={disabled}
-        onChange={(event) => set("imageUrl", event.target.value)}
-        {...error("imageUrl")}
+        onChange={(imageUrl) => set("imageUrl", imageUrl)}
+        {...(errors.imageUrl === undefined
+          ? {}
+          : { errorMessage: t(`inventory.form.error.${errors.imageUrl}`) })}
       />
 
       <div className="grid gap-4 sm:grid-cols-2">

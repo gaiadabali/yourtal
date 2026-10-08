@@ -12,6 +12,7 @@ import {
   listListings,
   listLocations,
   listPendingDecreaseRequests,
+  listVoucherRequests,
 } from "@/features/studio/inventory/inventory-data";
 import { InventoryScreen } from "@/features/studio/inventory/inventory-screen";
 
@@ -45,12 +46,16 @@ export default async function StudioInventoryPage(props: PageProps<"/studio/inve
 
   const { id: businessId, displayName, region, currency } = current.business;
   const role = current.myRole ?? "analyst";
-  const [listings, locations, pendingDecreaseRequests, currentUserId] = await Promise.all([
-    listListings(businessId, displayName, region, currency),
-    listLocations(businessId, displayName, region, currency),
-    listPendingDecreaseRequests(businessId),
-    getCurrentUserId(),
-  ]);
+  const canEdit = canEditZone("inventory", role, current.business.roles);
+  const [listings, locations, pendingDecreaseRequests, voucherRequests, currentUserId] =
+    await Promise.all([
+      listListings(businessId, displayName, region, currency),
+      listLocations(businessId, displayName, region, currency),
+      listPendingDecreaseRequests(businessId),
+      // Only the roles that can ask for vouchers may read the requests (analysts cannot).
+      canEdit ? listVoucherRequests(businessId) : Promise.resolve([]),
+      getCurrentUserId(),
+    ]);
 
   return (
     <StudioChrome
@@ -65,12 +70,13 @@ export default async function StudioInventoryPage(props: PageProps<"/studio/inve
         merchantName={displayName}
         region={region}
         currency={currency}
-        canEdit={canEditZone("inventory", role, current.business.roles)}
+        canEdit={canEdit}
         canApprove={canApproveSettlementDecrease(role)}
         currentUserId={currentUserId}
         listings={listings}
         locations={locations}
         pendingDecreaseRequests={pendingDecreaseRequests}
+        voucherRequests={voucherRequests}
         locale={locale}
       />
     </StudioChrome>

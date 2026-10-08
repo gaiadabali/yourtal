@@ -1,6 +1,7 @@
 const TRANSLATED_CODES = new Set([
   "unavailable",
   "forbidden",
+  "listing_not_found",
   "approval_refused",
   "decrease_already_pending",
   "not_a_material_decrease",

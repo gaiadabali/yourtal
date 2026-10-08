@@ -69,7 +69,7 @@ describe("buildNewListingBody", () => {
       settlementValue: "settlementAboveFace",
       stockTotal: "stock",
       locationIds: "locations",
-      imageUrl: "url",
+      imageUrl: "image",
       expiresOn: "expiry",
     });
   });

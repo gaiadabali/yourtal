@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { EmptyState } from "@yourtal/ui/empty-state";
 import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import { AddLocationDialog } from "./add-location-dialog";
-import type { SettlementDecreaseRequest } from "./inventory-data";
+import type { SettlementDecreaseRequest, VoucherBatchRequest } from "./inventory-data";
 import { InventoryListingRow } from "./inventory-listing-row";
 import type { Currency } from "./listing-form";
 import { ListingFormDialog } from "./listing-form-dialog";
@@ -18,6 +18,8 @@ export interface InventoryScreenProps {
   listings: readonly Listing[];
   locations: readonly MerchantLocation[];
   pendingDecreaseRequests: readonly SettlementDecreaseRequest[];
+  /** Every voucher batch request the business has made, newest first; `null` if they could not be loaded. */
+  voucherRequests: readonly VoucherBatchRequest[] | null;
   /** Owner, admin or merchandiser. Cosmetic: the API enforces every write. */
   canEdit: boolean;
   /** Owner or admin: the only roles the policy lets approve a cut to S. */
@@ -39,6 +41,7 @@ export function InventoryScreen({
   listings,
   locations,
   pendingDecreaseRequests,
+  voucherRequests,
   canEdit,
   canApprove,
   currentUserId,
@@ -109,6 +112,11 @@ export function InventoryScreen({
                   businessId={businessId}
                   listing={listing}
                   canEdit={canEdit}
+                  requests={
+                    voucherRequests === null
+                      ? null
+                      : voucherRequests.filter((request) => request.listingId === listing.id)
+                  }
                   locale={locale}
                 />
               ))}

@@ -2,6 +2,7 @@ import "@testing-library/jest-dom/vitest";
 import type { ReactElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import type { VoucherBatchRequest } from "@yourtal/contracts/listing/voucher-batch-request";
 import type { Listing, SettlementDecreaseRequest } from "@yourtal/contracts/listing";
 import type { MerchantLocation } from "@yourtal/contracts/listing/merchant-location";
 import { toMinorUnits } from "@yourtal/contracts/money";
@@ -16,6 +17,9 @@ vi.mock("./inventory-actions", () => ({
   changeSettlementValueAction: vi.fn(),
   approveSettlementDecreaseAction: vi.fn(),
   updateListingTags: vi.fn(),
+  requestVoucherBatchAction: vi.fn(),
+  editListingAction: vi.fn(),
+  createListingImageUploadUrlAction: vi.fn(),
 }));
 
 const BUSINESS_ID = "00000000-0000-4000-8000-000000000a01";
@@ -81,6 +85,7 @@ function renderScreen(overrides: Partial<InventoryScreenProps> = {}) {
     listings: [LISTING],
     locations: [LOCATION],
     pendingDecreaseRequests: [REQUEST],
+    voucherRequests: [],
     canEdit: true,
     canApprove: true,
     currentUserId: OWNER,
@@ -143,5 +148,61 @@ describe("InventoryScreen", () => {
     renderScreen({ locations: [] });
     expect(screen.getByRole("button", { name: "New listing" })).toBeDisabled();
     expect(screen.getByText("Add a location before you create a listing.")).toBeInTheDocument();
+  });
+
+  describe("voucher requests and editing", () => {
+    const VOUCHER_REQUEST: VoucherBatchRequest = {
+      id: "00000000-0000-4000-8000-000000000f01",
+      listingId: LISTING_ID,
+      merchantId: BUSINESS_ID,
+      quantity: 5,
+      requestedBy: MERCHANDISER,
+      reason: null,
+      state: "pending",
+      approvedBy: null,
+      decidedAt: null,
+      mintedBatchId: null,
+      createdAt: "2026-10-07T00:00:00.000Z",
+    };
+
+    it("gives an editor the request and edit buttons, each named for the listing", () => {
+      renderScreen();
+      expect(
+        screen.getByRole("button", { name: "Request vouchers for Flat white" }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Edit Flat white" })).toBeInTheDocument();
+    });
+
+    it("hides both, and the requests, from a role that cannot edit", () => {
+      renderScreen({ canEdit: false });
+      expect(screen.queryByRole("button", { name: /Request vouchers/ })).toBeNull();
+      expect(screen.queryByRole("button", { name: /^Edit / })).toBeNull();
+      expect(screen.queryByText("Voucher requests")).toBeNull();
+    });
+
+    it("says there are no requests yet", () => {
+      renderScreen();
+      expect(screen.getByText("No voucher requests for this listing yet.")).toBeInTheDocument();
+    });
+
+    it("shows each request with where it stands, in words", () => {
+      renderScreen({
+        voucherRequests: [
+          VOUCHER_REQUEST,
+          { ...VOUCHER_REQUEST, id: "00000000-0000-4000-8000-000000000f02", state: "approved" },
+          { ...VOUCHER_REQUEST, id: "00000000-0000-4000-8000-000000000f03", state: "rejected" },
+        ],
+      });
+      expect(screen.getByText("Waiting for review")).toBeInTheDocument();
+      expect(screen.getByText("Approved, vouchers issued")).toBeInTheDocument();
+      expect(screen.getByText("Declined")).toBeInTheDocument();
+      expect(screen.queryByText("pending")).toBeNull();
+    });
+
+    it("says so when the requests could not be loaded, without hiding the listing", () => {
+      renderScreen({ voucherRequests: null });
+      expect(screen.getByRole("alert")).toHaveTextContent("could not be loaded");
+      expect(screen.getByLabelText("1,234 points")).toBeInTheDocument();
+    });
   });
 });

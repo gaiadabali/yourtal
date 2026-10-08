@@ -699,8 +699,6 @@
       "description": "Voucher yang dibeli penonton dengan poin. YourTal menghitung harga poin dari nilai penyelesaian yang Anda masukkan; Anda tidak dapat menetapkannya sendiri.",
       "titleLabel": "Judul",
       "descriptionLabel": "Deskripsi",
-      "imageUrlLabel": "Tautan gambar",
-      "imageUrlHelp": "Tautan ke gambar yang tampil pada kartu hadiah.",
       "categoryLabel": "Jenis hadiah",
       "category": {
         "food_beverage": "Makanan dan minuman",
@@ -737,8 +735,17 @@
         "settlementAboveFace": "Tidak boleh melebihi nilai nominal.",
         "stock": "Masukkan bilangan bulat minimal 1.",
         "locations": "Pilih setidaknya satu lokasi.",
-        "url": "Masukkan tautan yang diawali https://.",
-        "expiry": "Pilih hari di masa depan."
+        "expiry": "Pilih hari di masa depan.",
+        "image": "Tambahkan gambar."
+      },
+      "imageLabel": "Gambar",
+      "imageHelp": "Gambar JPEG, PNG, atau WebP hingga {maxMb} MB, ditampilkan pada kartu hadiah.",
+      "image": {
+        "uploading": "Mengunggah gambar…",
+        "ready": "Gambar ditambahkan.",
+        "unsupported": "Gunakan gambar JPEG, PNG, atau WebP.",
+        "tooLarge": "Gambar itu melebihi {maxMb} MB. Pilih yang lebih kecil.",
+        "failed": "Gambar tidak dapat diunggah. Coba lagi."
       }
     },
     "error": {
@@ -753,7 +760,8 @@
       "audience_must_be_adult": "Jenis hadiah itu hanya untuk orang dewasa.",
       "invalid_locations": "Salah satu lokasi itu bukan milik Anda.",
       "listing_pricing_unavailable": "Harga poin belum dapat dihitung saat ini. Coba lagi nanti.",
-      "persistence_unavailable": "Belum dapat disimpan saat ini. Coba lagi nanti."
+      "persistence_unavailable": "Belum dapat disimpan saat ini. Coba lagi nanti.",
+      "listing_not_found": "Listing itu sudah tidak ada. Muat ulang halaman."
     },
     "editTags": "Ubah kategori dan tag",
     "editTagsFor": "Ubah kategori dan tag untuk {title}",
@@ -762,7 +770,45 @@
     "tagsSaved": "Tersimpan.",
     "transferable": "Dapat dihadiahkan atau dilelang untuk amal",
     "transferableHelp": "Penonton dapat meneruskan voucher yang belum dipakai satu kali: ke orang dewasa lain di wilayah Anda, atau ke lelang amal. Mematikannya berlaku untuk voucher yang diterbitkan mulai sekarang.",
-    "transferableBadge": "Bisa dihadiahkan"
+    "transferableBadge": "Bisa dihadiahkan",
+    "edit": {
+      "open": "Ubah",
+      "openFor": "Ubah {title}",
+      "title": "Ubah listing",
+      "description": "Ubah judul, stok, atau hari terakhir pemakaian {title}. Harga poin dan nilai penyelesaian tidak diubah di sini.",
+      "stockHelp": "Jumlah voucher maksimum yang Anda tawarkan. Menurunkannya tidak menarik kembali voucher yang sudah diterbitkan.",
+      "unchanged": "Ubah sesuatu untuk menyimpan.",
+      "save": "Simpan perubahan",
+      "saving": "Menyimpan…",
+      "saved": "Listing diperbarui."
+    },
+    "voucherRequest": {
+      "open": "Minta voucher",
+      "openFor": "Minta voucher untuk {title}",
+      "title": "Minta voucher",
+      "description": "Minta YourTal menerbitkan voucher untuk {title}. Peninjau YourTal menyetujui setiap permintaan sebelum voucher dihitung sebagai stok.",
+      "quantityLabel": "Jumlah voucher",
+      "quantityHelp": "{requestable, plural, =0 {Anda sudah meminta seluruh {total} stok.} other {Anda dapat meminta hingga # lagi (stok {total}).}}",
+      "reasonLabel": "Catatan untuk peninjau (opsional)",
+      "submit": "Kirim permintaan",
+      "sending": "Mengirim…",
+      "sent": "Permintaan {quantity} voucher terkirim. Permintaan ini menunggu peninjau YourTal.",
+      "error": {
+        "quantity": "Masukkan bilangan bulat minimal 1.",
+        "overStock": "Itu melebihi sisa stok yang bisa diminta ({requestable}). Naikkan stok listing terlebih dahulu."
+      }
+    },
+    "requests": {
+      "title": "Permintaan voucher",
+      "empty": "Belum ada permintaan voucher untuk listing ini.",
+      "unavailable": "Permintaan voucher tidak dapat dimuat. Muat ulang halaman untuk mencoba lagi.",
+      "line": "{quantity} voucher · diminta pada {date}",
+      "state": {
+        "pending": "Menunggu peninjauan",
+        "approved": "Disetujui, voucher diterbitkan",
+        "rejected": "Ditolak"
+      }
+    }
   },
   "onboarding": {
     "error": {

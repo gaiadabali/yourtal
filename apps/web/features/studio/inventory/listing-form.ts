@@ -56,7 +56,7 @@ export type ListingFormField =
   | "expiresOn";
 /** Keys under `studio.inventory.form.error`. */
 export type ListingFormErrorKey =
-  "required" | "amount" | "settlementAboveFace" | "stock" | "locations" | "url" | "expiry";
+  "required" | "amount" | "settlementAboveFace" | "stock" | "locations" | "image" | "expiry";
 export type ListingFormErrors = Partial<Record<ListingFormField, ListingFormErrorKey>>;
 
 /** The body of `POST /api/:tenantId/store/listings`. No price: the server computes it. */
@@ -133,7 +133,7 @@ export function buildNewListingBody(
   const description = values.description.trim();
   if (title === "" || title.length > 140) errors.title = "required";
   if (description === "" || description.length > 500) errors.description = "required";
-  if (!isHttpUrl(values.imageUrl.trim())) errors.imageUrl = "url";
+  if (!isHttpUrl(values.imageUrl.trim())) errors.imageUrl = "image";
 
   const face = minorFromInput(values.faceValue, context.currency);
   const settlement = minorFromInput(values.settlementValue, context.currency);

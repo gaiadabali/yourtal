@@ -97,6 +97,7 @@ const CODE_BUCKET = {
   currency_mismatch: "blocked",
   dispute_window_open: "blocked",
   statement_not_open: "blocked",
+  refused: "blocked",
 } as const satisfies Record<
   LedgerErrorCode | "listing_unavailable",
   "quote_expired" | "insufficient_available" | "unavailable" | "blocked"

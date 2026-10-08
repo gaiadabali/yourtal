@@ -27,7 +27,7 @@ import { pointsForCompletion } from "@yourtal/contracts/watch/reward-for-complet
 import { questionsAskedFor } from "@yourtal/contracts/question/question-bank";
 import { checkpointSchedule } from "@yourtal/contracts/watch/checkpoint-token";
 import { toPoints } from "@yourtal/contracts/money";
-import type { LedgerError } from "@yourtal/contracts/ledger-internal/ledger-error";
+
 import { isQuietHours } from "@yourtal/contracts/me/quiet-hours";
 import { ageBandFrom, ageYearsFrom } from "@yourtal/jurisdiction/age";
 import { Authorize } from "../../shared/authz/authorize.decorator";
@@ -49,6 +49,7 @@ import { CHECKPOINT_SECRET } from "./checkpoint/checkpoint.service";
 import { mintManifestUrl } from "./media/mint-manifest-url";
 import { MANIFEST_SIGNING_SECRET } from "./media/manifest-signing-secret";
 import { DELIVERY_COVERAGE_READER } from "./delivery-coverage";
+import { describeLedgerRefusal } from "./ledger-refusal";
 import { WATCH_COMPLETION_HOOK } from "./watch-completion-hook";
 import type { WatchCompletionHook } from "./watch-completion-hook";
 import type { DeliveryCoverageReader } from "./delivery-coverage";
@@ -475,25 +476,4 @@ function clampTrustTier(trustTier: number): 0 | 1 | 2 | 3 {
   if (trustTier >= 3) return 3;
   if (trustTier <= 0) return 0;
   return trustTier === 1 ? 1 : 2;
-}
-
-/** A short, honest, viewer-facing reason. Never the raw ledger code. */
-function describeLedgerRefusal(error: LedgerError): string {
-  switch (error.code) {
-    case "allocation_exhausted":
-    case "campaign_cap_reached":
-      return "This campaign has run out of funding right now.";
-    case "kill_switch":
-      return "Rewards are paused right now.";
-    case "region_mismatch":
-    case "audience_blocked":
-    case "currency_mismatch":
-      return "This campaign is not available to your account.";
-    case "velocity_capped":
-      return "You have reached today's earning limit.";
-    case "solvency_blocked":
-      return "Rewards are temporarily unavailable.";
-    default:
-      return "This campaign could not be funded right now.";
-  }
 }

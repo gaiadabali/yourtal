@@ -1,9 +1,5 @@
 import type { ResultAsync } from "neverthrow";
 import { ResultAsync as ResultAsyncCtor, err, ok } from "neverthrow";
-import {
-  ledgerError,
-  ledgerErrorCodeSchema,
-} from "@yourtal/contracts/ledger-internal/ledger-error";
 import type { LedgerError } from "@yourtal/contracts/ledger-internal/ledger-error";
 import type {
   LockQuoteRequest,
@@ -86,6 +82,7 @@ import { regionScope } from "../persistence/region-scope";
 import * as settings from "./fake/fake-ledger-settings";
 import type { LedgerInternalClient } from "./ledger-internal-client";
 import { LedgerNotFoundError } from "./ledger-not-found";
+import { parseLedgerRefusal } from "./parse-ledger-refusal";
 
 /** The services allowed to sign a ledger call (services/ledger/internal/serviceauth). */
 export type LedgerCaller = ServiceCaller;
@@ -144,20 +141,8 @@ export class HttpLedgerClient implements LedgerInternalClient {
           return ok((await response.json()) as T);
         }
         const problem: unknown = await response.json().catch(() => null);
-        const refusal =
-          problem !== null && typeof problem === "object"
-            ? (problem as Record<string, unknown>)
-            : {};
-        const code = ledgerErrorCodeSchema.safeParse(refusal["code"]);
-        if (code.success) {
-          const message = refusal["message"];
-          return err(
-            ledgerError(
-              code.data,
-              typeof message === "string" && message !== "" ? message : code.data,
-            ),
-          );
-        }
+        const refusal = parseLedgerRefusal(response.status, problem);
+        if (refusal !== null) return err(refusal);
         const answer = `ledger ${path} answered ${String(response.status)}: ${JSON.stringify(problem)}`;
         if (response.status === 404) throw new LedgerNotFoundError(answer);
         throw new Error(answer);

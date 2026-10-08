@@ -27,6 +27,13 @@ export const ledgerErrorCodeSchema = z.enum([
   "statement_not_open",
   /** 13.1.d: the listing has no unallocated voucher left (the voucher service's refusal). */
   "sold_out",
+  /**
+   * 13.3.j: the ledger refused a request it has no more specific code for (its
+   * HTTP 400 `refused`: an attestation that does not verify, a campaign that
+   * is not live, points that are not what the terms pay), or answered a
+   * refusal code this enum does not know. A caller words it generically.
+   */
+  "refused",
 ]);
 
 export type LedgerErrorCode = z.infer<typeof ledgerErrorCodeSchema>;

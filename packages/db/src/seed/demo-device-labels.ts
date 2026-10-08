@@ -8,7 +8,7 @@ import type pg from "pg";
 export async function relabelCheckDevices(pool: pg.Pool): Promise<number> {
   const result = await pool.query(
     `UPDATE store.counter_device SET label = 'Counter tablet'
-      WHERE label ~ '^[0-9]+\.[0-9]+(\.[a-z])? [Cc]heck'`,
+      WHERE label ~ '^[0-9]+[.][0-9]+([.][a-z])? [Cc]heck'`,
   );
   return result.rowCount ?? 0;
 }

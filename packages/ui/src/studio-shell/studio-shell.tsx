@@ -34,7 +34,7 @@ export const StudioShell = React.forwardRef<HTMLDivElement, StudioShellProps>(
         <div
           className={cn(
             "flex shrink-0 items-center gap-1 overflow-x-auto border-b border-border-subtle bg-surface px-3 py-2",
-            "lg:h-dvh lg:w-60 lg:flex-col lg:items-stretch lg:gap-0.5 lg:overflow-y-auto lg:border-b-0 lg:border-r lg:p-3",
+            "lg:sticky lg:top-0 lg:h-dvh lg:w-60 lg:flex-col lg:items-stretch lg:gap-0.5 lg:overflow-y-auto lg:border-b-0 lg:border-r lg:p-3",
           )}
         >
           {nav}

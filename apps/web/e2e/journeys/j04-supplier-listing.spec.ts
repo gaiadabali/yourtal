@@ -22,6 +22,12 @@ const VALUES = {
   ID: { face: 50_000, s: 35_000, up: 37_500, down: 30_000, down2: 28_000 },
 } as const;
 const STOCK = 5;
+const RAISED_STOCK = 8;
+/** A 1x1 PNG: a real picture the platform accepts, a few dozen bytes. */
+const PICTURE = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==",
+  "base64",
+);
 const WCAG_AA = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 
 /** What a person types for an amount: dollars with cents, or whole rupiah. */
@@ -36,10 +42,14 @@ function typed(minor: number, r: RegionCase): string {
  * platform computes its price, which the screen shows. A rise in S applies at
  * once; any cut needs a second person (docs/17 §2.1): the merchandiser's request
  * has no approve button, the owner's click applies it, and the owner cannot
- * approve a cut they requested themselves. Stock is the one step left on the
- * API (a voucher batch request has no screen yet). Checks the location, listing,
+ * approve a cut they requested themselves. Checks the location, listing,
  * price revision, decrease request and voucher rows, the region wall on the
  * catalogue, and screenshots with axe at 390 and 1280 px, light and dark.
+ *
+ * Everything the Merchandiser does is on screen: the picture is uploaded through the
+ * form, the voucher batch is requested from the listing (a YourTal moderator, who
+ * works in the staff console, approves it through the API), and the title, stock
+ * and expiry are edited in place without touching the price.
  */
 test.afterAll(closeDb);
 
@@ -49,7 +59,13 @@ async function signInAs(page: Page, baseURL: string, token: string, r: RegionCas
 }
 
 /** The list, the approval state and the listing form, at both widths in both themes. */
-async function captureScreens(page: Page, url: string, r: RegionCase, t: (key: string) => string) {
+async function captureScreens(
+  page: Page,
+  url: string,
+  r: RegionCase,
+  t: (key: string) => string,
+  title: string,
+) {
   for (const viewport of [
     { name: "390", width: 390, height: 844 },
     { name: "1280", width: 1280, height: 900 },
@@ -77,6 +93,20 @@ async function captureScreens(page: Page, url: string, r: RegionCase, t: (key: s
         form.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" | ")}`),
       ).toEqual([]);
       await page.keyboard.press("Escape");
+
+      for (const [button, shot] of [
+        [t("inventory.voucherRequest.openFor").replace("{title}", title), "request"],
+        [t("inventory.edit.openFor").replace("{title}", title), "edit"],
+      ] as const) {
+        await page.getByRole("button", { name: button }).click();
+        await expect(page.getByRole("dialog")).toBeVisible();
+        await page.screenshot({ path: `test-results/j04-${shot}-${tag}.png` });
+        const opened = await new AxeBuilder({ page }).withTags(WCAG_AA).analyze();
+        expect(
+          opened.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" | ")}`),
+        ).toEqual([]);
+        await page.keyboard.press("Escape");
+      }
     }
   }
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -127,12 +157,8 @@ for (const r of REGIONS) {
     );
     expect(location).toEqual({ name: locationName, merchant_id: businessId });
 
-    // ...and declares a listing. The form has no price field.
-    const { rows: images } = await db().query<{ image_url: string }>(
-      `SELECT image_url FROM store.listings WHERE region = $1 LIMIT 1`,
-      [r.region],
-    );
-    const title = `Journey 4 flat white ${r.region} ${Date.now().toString(36)}`;
+    // ...and declares a listing. The form has no price field, and the picture is uploaded.
+    let title = `Journey 4 flat white ${r.region} ${Date.now().toString(36)}`;
     const expiresOn = new Date(Date.now() + 90 * 86_400_000).toISOString().slice(0, 10);
     await page.getByRole("button", { name: t("inventory.newListing") }).click();
     dialog = page.getByRole("dialog");
@@ -142,8 +168,9 @@ for (const r of REGIONS) {
       .getByLabel(t("inventory.form.descriptionLabel"), { exact: true })
       .fill("One flat white at the counter.");
     await dialog
-      .getByLabel(t("inventory.form.imageUrlLabel"), { exact: true })
-      .fill(images[0]?.image_url ?? "https://images.example/flat-white.jpg");
+      .getByLabel(t("inventory.form.imageLabel"), { exact: true })
+      .setInputFiles({ name: "flat-white.png", mimeType: "image/png", buffer: PICTURE });
+    await expect(dialog.getByText(t("inventory.form.image.ready"))).toBeVisible();
     await dialog.getByLabel(exact(t("inventory.form.faceValueLabel"))).fill(typed(v.face, r));
     await dialog.getByLabel(exact(t("inventory.form.settlementLabel"))).fill(typed(v.s, r));
     await dialog.getByLabel(t("inventory.form.stockLabel"), { exact: true }).fill(String(STOCK));
@@ -171,10 +198,12 @@ for (const r of REGIONS) {
       channel: string;
       policy: string;
       stock: number;
+      image: string;
     }>(
       `SELECT id::text, region, currency, face_value_minor::text AS face,
               settlement_value_minor::text AS s, price_in_points::text AS price, transferable,
-              channel, partial_redemption_policy AS policy, stock_total AS stock
+              channel, partial_redemption_policy AS policy, stock_total AS stock,
+              image_url AS image
          FROM store.listings WHERE merchant_id = $1 AND title = $2`,
       [businessId, title],
     );
@@ -188,16 +217,50 @@ for (const r of REGIONS) {
       policy: "single_use_forfeit",
       stock: STOCK,
     });
+    // The picture is the one that was uploaded, under this business's own folder, and it is served.
+    expect(row.image).toContain(`/posters/listings/${businessId}/`);
+    const served = await request.get(row.image);
+    expect(served.status()).toBe(200);
+    expect(served.headers()["content-type"]).toContain("image/png");
     // The price on screen is the one the platform stored, not anything typed.
     expect(shownPrice).toBe(Number(row.price));
     expect(shownPrice).toBeGreaterThan(1);
     const listing = { id: row.id, priceInPoints: Number(row.price) };
 
-    // Stock is minted vouchers: the merchandiser asks, a moderator approves the batch.
-    const batch = await merchandiser.post<{ id: string }>(
-      `/api/${businessId}/store/voucher-batch-requests`,
-      { listingId: listing.id, quantity: STOCK, reason: "Opening stock." },
+    // Stock is minted vouchers: the merchandiser asks on screen, a moderator approves the batch.
+    await page.goto(inventory);
+    let listed = page.getByRole("listitem").filter({ hasText: title });
+    await expect(listed.getByText(t("inventory.requests.empty"))).toBeVisible();
+    const requestVouchers = t("inventory.voucherRequest.openFor").replace("{title}", title);
+    await listed.getByRole("button", { name: requestVouchers }).click();
+    dialog = page.getByRole("dialog");
+    await dialog
+      .getByLabel(t("inventory.voucherRequest.quantityLabel"), { exact: true })
+      .fill(String(STOCK));
+    await dialog
+      .getByLabel(t("inventory.voucherRequest.reasonLabel"), { exact: true })
+      .fill("Opening stock.");
+    await dialog.getByRole("button", { name: t("inventory.voucherRequest.submit") }).click();
+    await expect(dialog.getByRole("status")).toContainText(String(STOCK));
+    await dialog.getByRole("button", { name: t("inventory.done") }).click();
+    const batch = await one<{ id: string; state: string; quantity: number; by: string }>(
+      `SELECT id::text, state, quantity, requested_by::text AS by
+         FROM store.voucher_batch_request WHERE listing_id = $1`,
+      [listing.id],
     );
+    expect(batch).toMatchObject({ state: "pending", quantity: STOCK, by: merchandiser.userId });
+    await expect(listed.getByText(t("inventory.requests.state.pending"))).toBeVisible();
+
+    // All the stock is already asked for, so asking for more is refused on screen.
+    await listed.getByRole("button", { name: requestVouchers }).click();
+    dialog = page.getByRole("dialog");
+    await dialog.getByLabel(t("inventory.voucherRequest.quantityLabel"), { exact: true }).fill("1");
+    await dialog.getByRole("button", { name: t("inventory.voucherRequest.submit") }).click();
+    await expect(
+      dialog.getByText(exact(t("inventory.voucherRequest.error.overStock"))),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+
     const moderator = await staffCaller(request, "moderator");
     await moderator.post(`/api/staff/moderation/voucher-batches/${batch.id}/approve`, {
       reason: "Opening stock for a verified merchant.",
@@ -207,10 +270,59 @@ for (const r of REGIONS) {
       [listing.id],
     );
     expect(minted[0]?.n).toBe(String(STOCK));
+    await page.goto(inventory);
+    await expect(listed.getByText(t("inventory.requests.state.approved"))).toBeVisible();
+
+    // The merchandiser edits title, stock and expiry on screen; the price does not move.
+    const original = await one<{ expires: number }>(
+      `SELECT EXTRACT(EPOCH FROM expires_at)::float8 AS expires FROM store.listings WHERE id = $1`,
+      [listing.id],
+    );
+    const renamed = `${title} large`;
+    const longer = new Date(Date.now() + 120 * 86_400_000).toISOString().slice(0, 10);
+    await listed
+      .getByRole("button", { name: t("inventory.edit.openFor").replace("{title}", title) })
+      .click();
+    dialog = page.getByRole("dialog");
+    await expect(dialog.getByLabel(/points price|harga poin|settlement|penyelesaian/i)).toHaveCount(
+      0,
+    );
+    await dialog.getByRole("button", { name: t("inventory.edit.save") }).click();
+    await expect(dialog.getByRole("alert")).toHaveText(t("inventory.edit.unchanged"));
+    await dialog.getByLabel(t("inventory.form.titleLabel"), { exact: true }).fill(renamed);
+    await dialog
+      .getByLabel(t("inventory.form.stockLabel"), { exact: true })
+      .fill(String(RAISED_STOCK));
+    await dialog.getByLabel(t("inventory.form.expiresOnLabel"), { exact: true }).fill(longer);
+    await dialog.getByRole("button", { name: t("inventory.edit.save") }).click();
+    await expect(dialog.getByRole("status")).toHaveText(t("inventory.edit.saved"));
+    await dialog.getByRole("button", { name: t("inventory.done") }).click();
+    const edited = await one<{
+      title: string;
+      stock: number;
+      s: string;
+      price: string;
+      expires: number;
+    }>(
+      `SELECT title, stock_total AS stock, settlement_value_minor::text AS s,
+              price_in_points::text AS price, EXTRACT(EPOCH FROM expires_at)::float8 AS expires
+         FROM store.listings WHERE id = $1`,
+      [listing.id],
+    );
+    expect(edited).toMatchObject({
+      title: renamed,
+      stock: RAISED_STOCK,
+      s: String(v.s),
+      price: String(listing.priceInPoints),
+    });
+    // 90 days became 120: about 30 days later, whatever the browser's time zone.
+    expect(edited.expires - original.expires).toBeGreaterThan(29 * 86_400);
+    expect(edited.expires - original.expires).toBeLessThan(31 * 86_400);
+    title = renamed;
 
     // A rise in S, on screen, applies at once and reprices the listing.
     await page.goto(inventory);
-    const listed = page.getByRole("listitem").filter({ hasText: title });
+    listed = page.getByRole("listitem").filter({ hasText: title });
     await expect(listed.getByText(t("inventory.status.available"), { exact: true })).toBeVisible();
     const changeValue = t("inventory.changeValueFor").replace("{title}", title);
     await listed.getByRole("button", { name: changeValue }).click();
@@ -270,7 +382,7 @@ for (const r of REGIONS) {
 
     // The owner sees it, in the shapes the founder reviews, and approves it.
     await signInAs(page, baseURL!, owner.token, r);
-    await captureScreens(page, inventory, r, t);
+    await captureScreens(page, inventory, r, t, title);
     await page.goto(inventory);
     await page
       .getByRole("button", { name: t("inventory.approval.approveFor").replace("{title}", title) })

@@ -75,26 +75,36 @@ func Run(ctx context.Context, pool *pgxpool.Pool, book *ledger.Ledger, region le
 	cutoff := time.Now().AddDate(0, -months, 0)
 
 	q := sqlcgen.New(pool)
-	candidates, err := q.ListInactiveUserAccounts(ctx, sqlcgen.ListInactiveUserAccountsParams{
-		Region: string(region), Cutoff: pgtype.Timestamptz{Time: cutoff, Valid: true}, LimitCount: limit,
-	})
-	if err != nil {
-		return Result{}, fmt.Errorf("expiry: listing inactive accounts: %w", err)
-	}
-
 	var result Result
-	for _, candidate := range candidates {
-		result.Considered++
-		expired, points, err := expireOne(ctx, pool, book, region, candidate, cutoff)
-		switch {
-		case errors.Is(err, errSkippedEscrow):
-			result.SkippedEscrow++
-		case err != nil:
-			return result, fmt.Errorf("expiry: account %s: %w", candidate.ID, err)
-		case expired:
-			result.Expired++
-			result.PointsExpired += points
+	// Page through every candidate: accounts already at zero stay inactive and
+	// are skipped, so a single page could otherwise hold only those forever.
+	after := sqlcgen.ListInactiveUserAccountsParams{
+		Region: string(region), Cutoff: pgtype.Timestamptz{Time: cutoff, Valid: true}, LimitCount: limit,
+		AfterAt: pgtype.Timestamptz{InfinityModifier: pgtype.NegativeInfinity, Valid: true},
+	}
+	for {
+		candidates, err := q.ListInactiveUserAccounts(ctx, after)
+		if err != nil {
+			return result, fmt.Errorf("expiry: listing inactive accounts: %w", err)
 		}
+		for _, candidate := range candidates {
+			result.Considered++
+			expired, points, err := expireOne(ctx, pool, book, region, candidate, cutoff)
+			switch {
+			case errors.Is(err, errSkippedEscrow):
+				result.SkippedEscrow++
+			case err != nil:
+				return result, fmt.Errorf("expiry: account %s: %w", candidate.ID, err)
+			case expired:
+				result.Expired++
+				result.PointsExpired += points
+			}
+		}
+		if int32(len(candidates)) < limit || len(candidates) == 0 {
+			break
+		}
+		last := candidates[len(candidates)-1]
+		after.AfterAt, after.AfterID = last.LastActivityAt, last.ID
 	}
 
 	for _, milestone := range []int32{30, 7} {

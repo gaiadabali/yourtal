@@ -118,13 +118,16 @@ SELECT id, owner_id AS user_id, last_activity_at
 FROM ledger.account
 WHERE owner_type = 'user' AND purpose = 'available' AND country = $1
   AND last_activity_at < $2::timestamptz
-ORDER BY last_activity_at
-LIMIT $3
+  AND (last_activity_at, id) > ($3::timestamptz, $4::text)
+ORDER BY last_activity_at, id
+LIMIT $5
 `
 
 type ListInactiveUserAccountsParams struct {
 	Region     string
 	Cutoff     pgtype.Timestamptz
+	AfterAt    pgtype.Timestamptz
+	AfterID    string
 	LimitCount int32
 }
 
@@ -138,8 +141,16 @@ type ListInactiveUserAccountsRow struct {
 // since before the cutoff. Balance is checked by the caller (GetAccountBalance)
 // rather than recomputed here, so this query does not duplicate the
 // kind-signed balance arithmetic TrialBalance/GetAccountBalance already own.
+// Keyset-paged on (last_activity_at, id) so zero-balance accounts, which stay
+// inactive forever, cannot crowd later candidates out of a fixed-size page.
 func (q *Queries) ListInactiveUserAccounts(ctx context.Context, arg ListInactiveUserAccountsParams) ([]ListInactiveUserAccountsRow, error) {
-	rows, err := q.db.Query(ctx, listInactiveUserAccounts, arg.Region, arg.Cutoff, arg.LimitCount)
+	rows, err := q.db.Query(ctx, listInactiveUserAccounts,
+		arg.Region,
+		arg.Cutoff,
+		arg.AfterAt,
+		arg.AfterID,
+		arg.LimitCount,
+	)
 	if err != nil {
 		return nil, err
 	}

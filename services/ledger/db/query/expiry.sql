@@ -16,11 +16,14 @@ SELECT last_activity_at FROM ledger.account WHERE id = $1;
 -- since before the cutoff. Balance is checked by the caller (GetAccountBalance)
 -- rather than recomputed here, so this query does not duplicate the
 -- kind-signed balance arithmetic TrialBalance/GetAccountBalance already own.
+-- Keyset-paged on (last_activity_at, id) so zero-balance accounts, which stay
+-- inactive forever, cannot crowd later candidates out of a fixed-size page.
 SELECT id, owner_id AS user_id, last_activity_at
 FROM ledger.account
 WHERE owner_type = 'user' AND purpose = 'available' AND country = sqlc.arg(region)
   AND last_activity_at < sqlc.arg(cutoff)::timestamptz
-ORDER BY last_activity_at
+  AND (last_activity_at, id) > (sqlc.arg(after_at)::timestamptz, sqlc.arg(after_id)::text)
+ORDER BY last_activity_at, id
 LIMIT sqlc.arg(limit_count);
 
 -- name: ListAccountsApproachingExpiry :many

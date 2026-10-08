@@ -98,7 +98,9 @@ export async function staffCaller(
   request: APIRequestContext,
   role: "ops" | "moderator" | "finance" | "admin" | "support",
 ) {
-  return callerFor(request, await apiLogin(request, `${role}@demo.yourtal.test`));
+  // Staff demo logins keep their own password on staging (F95); locally it is the same one.
+  const password = process.env["STAFF_PASSWORD"] ?? process.env["DEMO_PASSWORD"] ?? "";
+  return callerFor(request, await apiLogin(request, `${role}@demo.yourtal.test`, password));
 }
 
 /** The demo business the region's demo owner, marketer and finance work at. */

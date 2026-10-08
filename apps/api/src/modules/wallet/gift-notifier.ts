@@ -64,7 +64,12 @@ export class GiftNotifier implements OnModuleInit, OnModuleDestroy {
 
   onModuleInit(): void {
     if (process.env["NODE_ENV"] === "test") return;
-    this.timer = setInterval(() => void this.sweep(), SWEEP_MS);
+    // `sweep` never rejects, but a timer callback that did would take the process down.
+    this.timer = setInterval(() => {
+      this.sweep().catch((error: unknown) => {
+        this.logger.warn(`gift sweep crashed: ${String(error)}`);
+      });
+    }, SWEEP_MS);
     this.timer.unref();
   }
 
@@ -80,15 +85,34 @@ export class GiftNotifier implements OnModuleInit, OnModuleDestroy {
     return this.notify("gift_returned", gift.senderId, gift);
   }
 
-  /** Returns every gift past its window, and tells each sender. */
+  /**
+   * Returns every gift past its window, and tells each sender. Never throws:
+   * the voucher service answering 500 (an unmapped status rejects the client
+   * call rather than returning an error) just skips this run, and the next
+   * tick sweeps again. A failure telling one sender is logged and the rest
+   * still go. 13.3.u.
+   */
   async sweep(): Promise<number> {
-    const swept = await this.vouchers.sweepGifts();
-    if (swept.isErr()) {
-      this.logger.warn(`gift sweep failed: ${swept.error.code}`);
+    let gifts: readonly VoucherGift[];
+    try {
+      const swept = await this.vouchers.sweepGifts();
+      if (swept.isErr()) {
+        this.logger.warn(`gift sweep failed: ${swept.error.code}`);
+        return 0;
+      }
+      gifts = swept.value.gifts;
+    } catch (error) {
+      this.logger.warn(`gift sweep failed, will retry next run: ${String(error)}`);
       return 0;
     }
-    for (const gift of swept.value.gifts) await this.returned(gift);
-    return swept.value.gifts.length;
+    for (const gift of gifts) {
+      try {
+        await this.returned(gift);
+      } catch (error) {
+        this.logger.warn(`gift ${gift.giftId} return notice failed: ${String(error)}`);
+      }
+    }
+    return gifts.length;
   }
 
   private async notify(kind: Kind, userId: string, gift: VoucherGift): Promise<void> {

@@ -47,6 +47,9 @@ export interface VoucherBatchRequestRepository {
    * through 4.5's `VoucherInternalClient` BEFORE calling this, then records
    * the real `mintedBatchId` here in the same breath as flipping the state,
    * so a request is never left `approved` with no batch to show for it.
+   * The same transaction raises the listing's `stock_remaining` (and, if
+   * needed, `stock_total`) by the batch size, which is what checkout's
+   * buyable gate reads (13.3.w).
    */
   approve(
     requestId: string,

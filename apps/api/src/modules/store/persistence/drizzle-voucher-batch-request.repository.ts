@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, ne } from "drizzle-orm";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import { listings } from "./schema/listing.table";
 import { voucherBatchRequests } from "./schema/voucher-batch-request.table";
@@ -106,23 +106,37 @@ export class DrizzleVoucherBatchRequestRepository implements VoucherBatchRequest
     approvedBy: string,
     mintedBatchId: string,
   ): Promise<VoucherBatchRequest | null> {
-    const [row] = await this.db
-      .update(voucherBatchRequests)
-      .set({
-        state: "approved",
-        approvedBy,
-        decidedAt: new Date(),
-        mintedBatchId,
-      })
-      .where(
-        and(
-          eq(voucherBatchRequests.id, requestId),
-          eq(voucherBatchRequests.state, "pending"),
-          ne(voucherBatchRequests.requestedBy, approvedBy),
-        ),
-      )
-      .returning();
-    return row === undefined ? null : toRecord(row);
+    // One transaction: a request is only `approved` if the listing's stock rose
+    // with it, so a minted batch is never left unbuyable (13.3.w).
+    return this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(voucherBatchRequests)
+        .set({
+          state: "approved",
+          approvedBy,
+          decidedAt: new Date(),
+          mintedBatchId,
+        })
+        .where(
+          and(
+            eq(voucherBatchRequests.id, requestId),
+            eq(voucherBatchRequests.state, "pending"),
+            ne(voucherBatchRequests.requestedBy, approvedBy),
+          ),
+        )
+        .returning();
+      if (row === undefined) return null;
+      // Checkout's gate reads these columns and only a successful mint raises
+      // them. `stock_total` stays the merchant's figure unless the batch outgrows it.
+      await tx
+        .update(listings)
+        .set({
+          stockRemaining: sql`${listings.stockRemaining} + ${row.quantity}`,
+          stockTotal: sql`GREATEST(${listings.stockTotal}, ${listings.stockRemaining} + ${row.quantity})`,
+        })
+        .where(eq(listings.id, row.listingId));
+      return toRecord(row);
+    });
   }
 
   async reject(requestId: string, decidedBy: string): Promise<VoucherBatchRequest | null> {

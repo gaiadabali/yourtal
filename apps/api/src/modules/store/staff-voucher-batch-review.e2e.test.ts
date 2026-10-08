@@ -4,7 +4,9 @@ import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AppModule } from "../../app.module";
+import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { sessionFor } from "../../shared/testing/session-for";
+import { findListingForCheckout } from "../checkout/persistence/listing-for-checkout";
 import { grantStaffRole, ownerPool } from "../staff/staff.test-helper";
 
 /**
@@ -149,6 +151,35 @@ describe("9.2.c: staff voucher-batch approval", () => {
       outcome: "succeeded",
       reason: "stock request looks legitimate",
     });
+  });
+
+  it("13.3.w: approving a batch makes the merchant's new listing buyable at checkout", async () => {
+    const owner = await sessionFor(app, { jurisdiction: "AU" });
+    const businessId = await createBusiness(owner.cookie);
+    const listingId = await createListing(owner.cookie, businessId, 3);
+    const requested = await requestBatch(owner.cookie, businessId, listingId, 5);
+    const staff = await moderatorStaff();
+    const db = createAppDb(process.env["DATABASE_OWNER_URL"] ?? "");
+
+    expect((await findListingForCheckout(db, listingId))?.buyable).toBe(false);
+
+    const approved = await app.inject({
+      method: "POST",
+      url: `/api/staff/moderation/voucher-batches/${requested.id}/approve`,
+      headers: { cookie: staff.cookie, "idempotency-key": randomUUID() },
+      payload: { reason: "stock request looks legitimate" },
+    });
+    expect(approved.statusCode, approved.body).toBe(201);
+
+    expect((await findListingForCheckout(db, listingId))?.buyable).toBe(true);
+    const pool = ownerPool();
+    const { rows } = await pool.query<{ stock_remaining: number; stock_total: number }>(
+      `SELECT stock_remaining, stock_total FROM store.listings WHERE id = $1`,
+      [listingId],
+    );
+    await pool.end();
+    // Raised by exactly the batch; the declared total grows only because 5 > 3.
+    expect(rows[0]).toEqual({ stock_remaining: 5, stock_total: 5 });
   });
 
   it("a moderator rejects a pending request", async () => {

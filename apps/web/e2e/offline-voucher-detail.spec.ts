@@ -71,6 +71,7 @@ const ACCOUNT: TestAccount = {
 const GRANT_POINTS = 500;
 
 let voucherId: string;
+let voucherCode: string;
 let token: string;
 let pool: pg.Pool;
 
@@ -91,6 +92,15 @@ test.beforeAll(async ({ request }) => {
     listingId,
   );
   voucherId = minted;
+
+  // 13.3.o hands the owner the code online; it must never reach the cache.
+  const detail = await request.get(`${apiBaseUrl()}/api/wallet/vouchers/${voucherId}`, {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(detail.ok()).toBeTruthy();
+  const { code } = (await detail.json()) as { code?: string };
+  expect(code, "the owner's detail read should carry the code").toBeTruthy();
+  voucherCode = code ?? "";
 });
 
 test.afterAll(async ({ request }) => {
@@ -150,6 +160,8 @@ test("voucher detail page renders from the service worker cache with the network
   // service worker actually intercepts and caches.
   await page.reload({ waitUntil: "networkidle" });
   await expect(statusBadge).toBeVisible();
+  // Online, the code is fetched after mount and shown.
+  await expect(page.getByText(voucherCode).first()).toBeVisible();
 
   // Step 5: disable the network at the browser level, not by mocking fetch.
   await context.setOffline(true);
@@ -164,6 +176,21 @@ test("voucher detail page renders from the service worker cache with the network
     // accident, because it never actually required a session).
     await expect(statusBadge).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`/wallet/voucher/${voucherId}$`));
+
+    // 13.3.r: the cached page, and nothing else the worker stored, carries the code.
+    expect(await page.content()).not.toContain(voucherCode);
+    const cachedWithCode = await page.evaluate(async (code) => {
+      const hits: string[] = [];
+      for (const name of await caches.keys()) {
+        const cache = await caches.open(name);
+        for (const req of await cache.keys()) {
+          const res = await cache.match(req);
+          if (res !== undefined && (await res.text()).includes(code)) hits.push(req.url);
+        }
+      }
+      return hits;
+    }, voucherCode);
+    expect(cachedWithCode, "cache entries holding the voucher code").toEqual([]);
   } finally {
     // Always restore connectivity, even on failure, so this worker/context
     // is not left offline for whatever Playwright runs next.

@@ -58,8 +58,7 @@ export const PUBLIC_ROUTE_RATE_LIMIT: RateLimitPolicy = {
  */
 export const REGISTER_RATE_LIMIT: RateLimitOptions = {
   routeId: "auth.register",
-  // TEMPORARY (founder, 2026-10-08): 30 while 13.3.b's journeys run on staging; back to 5 after.
-  ip: { max: 30, windowSeconds: 60 * 60 },
+  ip: { max: 5, windowSeconds: 60 * 60 },
   route: { max: 500, windowSeconds: 60 * 60 },
 };
 

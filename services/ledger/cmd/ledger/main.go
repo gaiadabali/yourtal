@@ -33,6 +33,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/yourtal/services/ledger/internal/api"
+	"github.com/yourtal/services/ledger/internal/expiry"
 	"github.com/yourtal/services/ledger/internal/heartbeat"
 	"github.com/yourtal/services/ledger/internal/httpx"
 	"github.com/yourtal/services/ledger/internal/ledger"
@@ -63,6 +64,10 @@ const (
 	// interval is "hasn't run" (heartbeat.Recorder.Check) — this is how
 	// often that check itself runs, not a job's own interval.
 	heartbeatCheckInterval = 5 * time.Minute
+	// 13.3.h: points expiry moves in months, so an hourly sweep is plenty. It
+	// is a no-op for any region whose points_expiry setting is off (F2).
+	expirySweepInterval = time.Hour
+	expirySweepLimit    = 1000
 
 	defaultAddr     = "127.0.0.1:3010"
 	requestTimeout  = 10 * time.Second
@@ -155,6 +160,7 @@ func run(logger *slog.Logger) error {
 		checker := proof.New(pool, pager).WithRootStore(proof.NewFileRootStore(rootStoreDir))
 		go runChecker(ctx, logger, checker, sqlcgen.New(pool), pager, hb)
 		go runRepricer(ctx, logger, pricing.New(pool), hb)
+		go runExpirySweeper(ctx, logger, pool, book, hb)
 		go runProofVerifier(ctx, logger, checker, pager, hb)
 		go runHeartbeatCheck(ctx, logger, pager, hb)
 	} else {
@@ -409,6 +415,35 @@ func runHeartbeatCheck(ctx context.Context, logger *slog.Logger, alerter proof.A
 			}
 		}
 
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
+// runExpirySweeper is 13.3.h: points expiry (10.2) had no caller. Each tick
+// sweeps only the regions whose points_expiry is on, which also writes their
+// 30/7-day warning notices for apps/worker to announce. Errors are logged and
+// the loop continues, as runChecker does.
+func runExpirySweeper(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, book *ledger.Ledger, hb *heartbeat.Recorder) {
+	const jobName = "ledger.expiry_sweeper"
+	ticker := time.NewTicker(expirySweepInterval)
+	defer ticker.Stop()
+	for {
+		results, err := expiry.Sweep(ctx, pool, book, expirySweepLimit)
+		if err != nil {
+			logger.Error("points expiry sweep failed", "error", err)
+		}
+		for region, result := range results {
+			logger.Info("points expiry swept", "region", region, "considered", result.Considered,
+				"expired", result.Expired, "skipped_escrow", result.SkippedEscrow,
+				"points_expired", result.PointsExpired, "notices", result.Notices)
+		}
+		if err := hb.Touch(ctx, jobName, expirySweepInterval); err != nil {
+			logger.Error("touching this job's own heartbeat failed", "job", jobName, "error", err)
+		}
 		select {
 		case <-ctx.Done():
 			return

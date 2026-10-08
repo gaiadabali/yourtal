@@ -7,6 +7,8 @@
     "empty": "Belum ada apa-apa — notifikasi Anda akan muncul di sini.",
     "markRead": "Tandai sudah dibaca",
     "markAllRead": "Tandai semua sudah dibaca",
-    "loadError": "Notifikasi tidak dapat dimuat saat ini."
+    "loadError": "Notifikasi tidak dapat dimuat saat ini.",
+    "voucherExpiringTitle": "Voucher segera berakhir",
+    "voucherExpiringBody": "Voucher {reward} Anda berakhir pada {date}."
   }
 }

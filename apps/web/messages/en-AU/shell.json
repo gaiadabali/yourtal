@@ -7,6 +7,8 @@
     "empty": "Nothing yet — your notifications will show up here.",
     "markRead": "Mark as read",
     "markAllRead": "Mark all as read",
-    "loadError": "Notifications couldn't load right now."
+    "loadError": "Notifications couldn't load right now.",
+    "voucherExpiringTitle": "Voucher ending soon",
+    "voucherExpiringBody": "Your {reward} voucher ends on {date}."
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { Bell } from "lucide-react";
 import { Button } from "@yourtal/ui/button";
 import { Badge } from "@yourtal/ui/badge";
@@ -9,6 +9,7 @@ import { EmptyState } from "@yourtal/ui/empty-state";
 import { ListRow } from "@yourtal/ui/list-row";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@yourtal/ui/sheet";
 import type { Notification } from "@yourtal/contracts/me/notification";
+import { notificationCopy } from "./notification-copy";
 import { markNotificationReadAction } from "./notifications-actions";
 
 export interface NotificationsBellProps {
@@ -31,6 +32,15 @@ export interface NotificationsBellProps {
  */
 export function NotificationsBell({ initialNotifications }: NotificationsBellProps) {
   const t = useTranslations("shell.notifications");
+  const format = useFormatter();
+  const copyTools = {
+    voucherExpiringTitle: t("voucherExpiringTitle"),
+    voucherExpiringBody: (reward: string, date: Date) =>
+      t("voucherExpiringBody", {
+        reward,
+        date: format.dateTime(date, { dateStyle: "medium", timeZone: "UTC" }),
+      }),
+  };
   const [notifications, setNotifications] = useState<readonly Notification[]>(initialNotifications);
   const [, startTransition] = useTransition();
   const unreadCount = notifications.filter((n) => n.readAt === null).length;
@@ -76,26 +86,29 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
           <EmptyState title={t("empty")} />
         ) : (
           <ul className="flex flex-1 flex-col gap-1 overflow-y-auto">
-            {notifications.map((notification) => (
-              <li key={notification.id}>
-                <ListRow
-                  title={notification.title}
-                  subtitle={notification.body}
-                  onClick={() => {
-                    if (notification.readAt === null) markRead(notification.id);
-                  }}
-                  trailing={
-                    notification.readAt === null ? (
-                      <span
-                        aria-label={t("markRead")}
-                        className="block size-2 shrink-0 rounded-full bg-accent"
-                      />
-                    ) : null
-                  }
-                  {...(notification.readAt === null ? { className: "bg-surface-sunken" } : {})}
-                />
-              </li>
-            ))}
+            {notifications.map((notification) => {
+              const copy = notificationCopy(notification, copyTools);
+              return (
+                <li key={notification.id}>
+                  <ListRow
+                    title={copy.title}
+                    subtitle={copy.body}
+                    onClick={() => {
+                      if (notification.readAt === null) markRead(notification.id);
+                    }}
+                    trailing={
+                      notification.readAt === null ? (
+                        <span
+                          aria-label={t("markRead")}
+                          className="block size-2 shrink-0 rounded-full bg-accent"
+                        />
+                      ) : null
+                    }
+                    {...(notification.readAt === null ? { className: "bg-surface-sunken" } : {})}
+                  />
+                </li>
+              );
+            })}
           </ul>
         )}
       </SheetContent>

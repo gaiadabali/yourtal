@@ -38,21 +38,12 @@ export const ASSIGNABLE_ROLES = STUDIO_ROLES.filter(
   (role): role is Exclude<BusinessTeamRole, "owner"> => role !== "owner",
 );
 
-export const ROLE_LABELS: Record<BusinessTeamRole, string> = {
-  owner: "Owner",
-  admin: "Admin",
-  marketer: "Marketer",
-  merchandiser: "Merchandiser",
-  finance: "Finance",
-  analyst: "Analyst",
-};
+/** A role's display name, from the `studio` catalogue's `roles.label.*` keys. */
+export function roleLabel(t: (key: string) => string, role: BusinessTeamRole): string {
+  return t(`roles.label.${role}`);
+}
 
-export const ROLE_DESCRIPTIONS: Record<BusinessTeamRole, string> = {
-  owner: "Full control, including billing and deleting the business. Exactly one per business.",
-  admin:
-    "Runs campaigns, inventory, redemption, reports and the team. Cannot touch billing beyond viewing it.",
-  marketer: "Creates and edits campaigns. Views reports.",
-  merchandiser: "Creates and edits inventory listings. Views reports.",
-  finance: "Manages billing and views reports. No access to campaigns, inventory or redemption.",
-  analyst: "Read-only across campaigns, inventory and reports.",
-};
+/** One line on what a role may do, from `roles.description.*`. */
+export function roleDescription(t: (key: string) => string, role: BusinessTeamRole): string {
+  return t(`roles.description.${role}`);
+}

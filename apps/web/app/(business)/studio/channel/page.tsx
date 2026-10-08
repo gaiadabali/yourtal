@@ -1,7 +1,7 @@
 import { PageHeader } from "@yourtal/ui/page-header";
 import { getLocale } from "next-intl/server";
 import { resolveStudioContext } from "@/features/studio/studio-context";
-import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
+import { getStudioTranslator, resolveSupportedLocale } from "@/features/studio/studio-i18n";
 import { StudioAccessDenied } from "@/features/studio/studio-access-denied";
 import { StudioNoBusiness } from "@/features/studio/studio-no-business";
 import { StudioChrome } from "@/features/studio/studio-chrome";
@@ -13,6 +13,7 @@ export default async function StudioChannelPage(props: PageProps<"/studio/channe
   const searchParams = await props.searchParams;
   const { current, all, defaultBusinessId } = await resolveStudioContext(searchParams);
   const locale = resolveSupportedLocale(await getLocale());
+  const t = getStudioTranslator(locale);
 
   if (!current) {
     return <StudioNoBusiness locale={locale} />;
@@ -30,7 +31,7 @@ export default async function StudioChannelPage(props: PageProps<"/studio/channe
         defaultBusinessId={defaultBusinessId}
         locale={locale}
       >
-        <StudioAccessDenied zoneLabel="Channel settings" locale={locale} />
+        <StudioAccessDenied zoneLabel={t("zones.channel")} locale={locale} />
       </StudioChrome>
     );
   }
@@ -44,7 +45,7 @@ export default async function StudioChannelPage(props: PageProps<"/studio/channe
       allMemberships={all}
       defaultBusinessId={defaultBusinessId}
       locale={locale}
-      header={<PageHeader title="Channel settings" />}
+      header={<PageHeader title={t("zones.channel")} />}
     >
       <ChannelSettingsScreen
         business={current.business}

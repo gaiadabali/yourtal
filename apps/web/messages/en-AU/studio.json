@@ -327,7 +327,15 @@
   "team": {
     "cancel": "Cancel",
     "audit": {
-      "empty": "No team actions recorded yet."
+      "empty": "No team actions recorded yet.",
+      "invited": "{actor} invited {name} as {role}",
+      "invitedByYou": "You invited {name} as {role}",
+      "joined": "{name} accepted the invite and joined as {role}",
+      "roleChanged": "{name}'s role changed from {fromRole} to {toRole}",
+      "roleChangedTo": "{name}'s role changed to {toRole}",
+      "removed": "{name} was removed from the team",
+      "ownershipTransferred": "You transferred ownership to {name}",
+      "fallbackMember": "a team member"
     },
     "changeRole": {
       "title": "Change {name}'s role",
@@ -429,7 +437,14 @@
     },
     "checklist": {
       "title": "Finish setting up",
-      "progress": "{doneCount} of {total} done"
+      "progress": "{doneCount} of {total} done",
+      "steps": {
+        "channelSet": "Set up your channel",
+        "pointsBought": "Buy points",
+        "campaignUploaded": "Upload a campaign video",
+        "questionsWritten": "Write your question bank",
+        "campaignSubmitted": "Submit for review"
+      }
     },
     "error": {
       "message": "Something went wrong loading this business. Check your connection and try again.",
@@ -768,5 +783,44 @@
     "submit": "Join business",
     "error": "That code didn't work. It may have expired, been used already, or be for a different email address.",
     "registerInstead": "Register a new business instead"
+  },
+  "zones": {
+    "overview": "Overview",
+    "campaigns": "Campaigns",
+    "inventory": "Inventory",
+    "reports": "Reports",
+    "billing": "Billing",
+    "team": "Team",
+    "redemptions": "Redemptions",
+    "developers": "Developers",
+    "channel": "Channel settings"
+  },
+  "zoneBlurbs": {
+    "campaigns": "Video campaigns, chapters, question banks, targeting and budget.",
+    "inventory": "Listings, settlement value, stock and redemption policy.",
+    "reports": "Completion, accuracy, recall and redemption attribution.",
+    "billing": "Buy points, balance and purchase history.",
+    "team": "Members, roles, invitations and the audit trail.",
+    "redemptions": "Today's and recent voucher captures, per location and device.",
+    "developers": "API credentials, webhooks and the integration docs.",
+    "channel": "Logo, cover image and your public handle."
+  },
+  "roles": {
+    "label": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "marketer": "Marketer",
+      "merchandiser": "Merchandiser",
+      "finance": "Finance",
+      "analyst": "Analyst"
+    },
+    "description": {
+      "owner": "Full control, including billing and deleting the business. Exactly one per business.",
+      "admin": "Runs campaigns, inventory, redemption, reports and the team. Cannot touch billing beyond viewing it.",
+      "marketer": "Creates and edits campaigns. Views reports.",
+      "merchandiser": "Creates and edits inventory listings. Views reports.",
+      "finance": "Manages billing and views reports. No access to campaigns, inventory or redemption.",
+      "analyst": "Read-only across campaigns, inventory and reports."
+    }
   }
 }

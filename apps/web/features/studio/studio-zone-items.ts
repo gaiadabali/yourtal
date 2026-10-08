@@ -1,5 +1,5 @@
 import type { StudioZone } from "./studio-zone-access";
-import { ZONE_LABELS } from "./studio-zone-access";
+import { zoneLabel } from "./studio-zone-access";
 
 /**
  * Zone -> route mapping and pure active-tab logic, mirroring
@@ -33,11 +33,21 @@ export interface StudioNavItem {
   zone: StudioZone;
   href: ZonePath;
   label: string;
+  /** One-line description for the overview grid. */
+  blurb: string;
 }
 
 /** Builds the ordered nav item list for exactly the zones `visibleZones` allows. */
-export function buildStudioNavItems(visibleZones: readonly StudioZone[]): StudioNavItem[] {
-  return visibleZones.map((zone) => ({ zone, href: ZONE_PATHS[zone], label: ZONE_LABELS[zone] }));
+export function buildStudioNavItems(
+  visibleZones: readonly StudioZone[],
+  t: (key: string) => string,
+): StudioNavItem[] {
+  return visibleZones.map((zone) => ({
+    zone,
+    href: ZONE_PATHS[zone],
+    label: zoneLabel(t, zone),
+    blurb: t(`zoneBlurbs.${zone}`),
+  }));
 }
 
 /**

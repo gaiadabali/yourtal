@@ -22,16 +22,10 @@ export const STUDIO_ZONES = [
 ] as const;
 export type StudioZone = (typeof STUDIO_ZONES)[number];
 
-export const ZONE_LABELS: Record<StudioZone, string> = {
-  campaigns: "Campaigns",
-  inventory: "Inventory",
-  reports: "Reports",
-  billing: "Billing",
-  team: "Team",
-  redemptions: "Redemptions",
-  developers: "Developers",
-  channel: "Channel settings",
-};
+/** A zone's display name, from the `studio` catalogue's `zones.*` keys. */
+export function zoneLabel(t: (key: string) => string, zone: StudioZone | "overview"): string {
+  return t(`zones.${zone}`);
+}
 
 interface ZoneAccessRule {
   /**

@@ -2,7 +2,7 @@ import { Badge } from "@yourtal/ui/badge";
 import { getStudioTranslator, type SupportedLocale } from "./studio-i18n";
 import type { BusinessMembership } from "./studio-data";
 import { StudioBusinessSwitcher } from "./studio-business-switcher";
-import { ROLE_LABELS } from "./studio-roles";
+import { roleLabel } from "./studio-roles";
 
 export interface StudioIdentityPanelProps {
   current: BusinessMembership;
@@ -38,7 +38,7 @@ export function StudioIdentityPanel({
           ) : null}
         </div>
         <p className="text-label text-fg-muted">
-          {current.myRole ? ROLE_LABELS[current.myRole] : t("chrome.identity.unassignedMember")}
+          {current.myRole ? roleLabel(t, current.myRole) : t("chrome.identity.unassignedMember")}
         </p>
       </div>
       {allMemberships.length > 1 ? (
@@ -49,7 +49,7 @@ export function StudioIdentityPanel({
             id: membership.business.id,
             displayName: membership.business.displayName,
             myRole: membership.myRole
-              ? ROLE_LABELS[membership.myRole]
+              ? roleLabel(t, membership.myRole)
               : t("chrome.identity.noRole"),
           }))}
         />

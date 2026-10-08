@@ -15,7 +15,7 @@ import {
 } from "@yourtal/ui/dialog";
 import { Input } from "@yourtal/ui/input";
 import { NativeSelect } from "@yourtal/ui/native-select";
-import { ASSIGNABLE_ROLES, ROLE_LABELS } from "./studio-roles";
+import { ASSIGNABLE_ROLES, roleLabel } from "./studio-roles";
 import type { TeamActionError } from "./team-errors";
 import { teamActionErrorMessage } from "./team-errors";
 
@@ -101,7 +101,7 @@ export function TeamInviteDialog({ open, onOpenChange, onInvite }: TeamInviteDia
           <NativeSelect label={t("team.invite.roleLabel")} id={roleSelectId} {...register("role")}>
             {ASSIGNABLE_ROLES.map((assignableRole) => (
               <option key={assignableRole} value={assignableRole}>
-                {ROLE_LABELS[assignableRole]}
+                {roleLabel(t, assignableRole)}
               </option>
             ))}
           </NativeSelect>

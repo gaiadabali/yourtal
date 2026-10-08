@@ -6,7 +6,7 @@ import { getLocale } from "next-intl/server";
 import { PageHeader } from "@yourtal/ui/page-header";
 import { studioDataSourceMode } from "@/features/studio/studio-data-source";
 import { resolveStudioContext } from "@/features/studio/studio-context";
-import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
+import { getStudioTranslator, resolveSupportedLocale } from "@/features/studio/studio-i18n";
 import { StudioAccessDenied } from "@/features/studio/studio-access-denied";
 import { StudioNoBusiness } from "@/features/studio/studio-no-business";
 import { StudioChrome } from "@/features/studio/studio-chrome";
@@ -35,6 +35,7 @@ export default async function StudioTeamPage(props: PageProps<"/studio/team">) {
   const searchParams = await props.searchParams;
   const { current, all, defaultBusinessId } = await resolveStudioContext(searchParams);
   const locale = resolveSupportedLocale(await getLocale());
+  const t = getStudioTranslator(locale);
 
   if (!current) {
     return <StudioNoBusiness locale={locale} />;
@@ -50,7 +51,7 @@ export default async function StudioTeamPage(props: PageProps<"/studio/team">) {
       allMemberships={all}
       defaultBusinessId={defaultBusinessId}
       locale={locale}
-      header={<PageHeader title="Team" />}
+      header={<PageHeader title={t("zones.team")} />}
     >
       {allowed && current.myRole && isTeamManagerRole(current.myRole) ? (
         <div className="flex flex-col gap-6">
@@ -68,7 +69,7 @@ export default async function StudioTeamPage(props: PageProps<"/studio/team">) {
           />
         </div>
       ) : (
-        <StudioAccessDenied zoneLabel="Team" locale={locale} />
+        <StudioAccessDenied zoneLabel={t("zones.team")} locale={locale} />
       )}
     </StudioChrome>
   );

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
 import { PageHeader } from "@yourtal/ui/page-header";
 import { resolveStudioContext } from "@/features/studio/studio-context";
-import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
+import { getStudioTranslator, resolveSupportedLocale } from "@/features/studio/studio-i18n";
 import { StudioChrome } from "@/features/studio/studio-chrome";
 import { StudioZoneGrid } from "@/features/studio/studio-zone-grid";
 import { StudioVerificationBanner } from "@/features/studio/studio-verification-banner";
@@ -24,6 +24,7 @@ export default async function StudioOverviewPage(props: PageProps<"/studio">) {
   const searchParams = await props.searchParams;
   const { current, all, defaultBusinessId } = await resolveStudioContext(searchParams);
   const locale = resolveSupportedLocale(await getLocale());
+  const t = getStudioTranslator(locale);
 
   if (!current) {
     redirect("/studio/onboarding");
@@ -31,7 +32,7 @@ export default async function StudioOverviewPage(props: PageProps<"/studio">) {
 
   const { business, myRole } = current;
   const visibleZones = myRole ? getVisibleZones(myRole, business.roles) : [];
-  const navItems = buildStudioNavItems(visibleZones);
+  const navItems = buildStudioNavItems(visibleZones, t);
   const businessQuery = business.id === defaultBusinessId ? "" : `?business=${business.id}`;
 
   const [drafts, balance, kybDocuments] = await Promise.all([
@@ -65,7 +66,7 @@ export default async function StudioOverviewPage(props: PageProps<"/studio">) {
       // overflows into the content below it. The name is already shown in
       // the sidebar identity panel, so nothing is lost by not repeating it
       // here too.
-      header={<PageHeader title="Overview" />}
+      header={<PageHeader title={t("zones.overview")} />}
     >
       <div className="flex flex-col gap-6">
         {!business.isVerified ? (

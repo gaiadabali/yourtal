@@ -13,17 +13,17 @@ export interface StudioSetupStatus {
 
 export interface StudioSetupStep {
   id: keyof StudioSetupStatus;
-  label: string;
   href: string;
   done: boolean;
 }
 
-const STEP_ORDER: readonly { id: keyof StudioSetupStatus; label: string; href: string }[] = [
-  { id: "channelSet", label: "Set up your channel", href: "/studio/channel" },
-  { id: "pointsBought", label: "Buy points", href: "/studio/billing" },
-  { id: "campaignUploaded", label: "Upload a campaign video", href: "/studio/campaigns" },
-  { id: "questionsWritten", label: "Write your question bank", href: "/studio/campaigns" },
-  { id: "campaignSubmitted", label: "Submit for review", href: "/studio/campaigns" },
+/** Each step's label lives in the catalogue at `chrome.checklist.steps.<id>`. */
+const STEP_ORDER: readonly { id: keyof StudioSetupStatus; href: string }[] = [
+  { id: "channelSet", href: "/studio/channel" },
+  { id: "pointsBought", href: "/studio/billing" },
+  { id: "campaignUploaded", href: "/studio/campaigns" },
+  { id: "questionsWritten", href: "/studio/campaigns" },
+  { id: "campaignSubmitted", href: "/studio/campaigns" },
 ];
 
 /** Builds the ordered checklist (task 7.8.b's empty state), from whichever steps are already done. */

@@ -28,7 +28,7 @@ export function StudioSetupChecklistCard({ steps, locale }: StudioSetupChecklist
             <li key={step.id}>
               <ListRow
                 href={step.href}
-                title={step.label}
+                title={t(`chrome.checklist.steps.${step.id}`)}
                 leading={
                   <span
                     className={

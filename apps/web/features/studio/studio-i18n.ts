@@ -27,6 +27,9 @@ export const getStudioTranslator = makeSyncTranslator("studio", {
   "id-ID": idID,
 });
 
+/** What a label helper needs from a translator: the sync one above and `useTranslations("studio")` both fit. */
+export type StudioT = (key: string, values?: Record<string, string | number>) => string;
+
 const SUPPORTED_LOCALES: readonly SupportedLocale[] = ["en-AU", "id-ID"];
 
 /**

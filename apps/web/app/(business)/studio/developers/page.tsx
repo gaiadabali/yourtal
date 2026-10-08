@@ -1,7 +1,7 @@
 import { getLocale } from "next-intl/server";
 import { PageHeader } from "@yourtal/ui/page-header";
 import { resolveStudioContext } from "@/features/studio/studio-context";
-import { resolveSupportedLocale } from "@/features/studio/studio-i18n";
+import { getStudioTranslator, resolveSupportedLocale } from "@/features/studio/studio-i18n";
 import { StudioAccessDenied } from "@/features/studio/studio-access-denied";
 import { StudioNoBusiness } from "@/features/studio/studio-no-business";
 import { StudioChrome } from "@/features/studio/studio-chrome";
@@ -20,6 +20,7 @@ export default async function StudioDevelopersPage(props: PageProps<"/studio/dev
   const searchParams = await props.searchParams;
   const { current, all, defaultBusinessId } = await resolveStudioContext(searchParams);
   const locale = resolveSupportedLocale(await getLocale());
+  const t = getStudioTranslator(locale);
 
   if (!current) {
     return <StudioNoBusiness locale={locale} />;
@@ -35,7 +36,7 @@ export default async function StudioDevelopersPage(props: PageProps<"/studio/dev
       allMemberships={all}
       defaultBusinessId={defaultBusinessId}
       locale={locale}
-      header={<PageHeader title="Developers" />}
+      header={<PageHeader title={t("zones.developers")} />}
     >
       {allowed ? (
         <div className="flex flex-col gap-6">
@@ -43,7 +44,7 @@ export default async function StudioDevelopersPage(props: PageProps<"/studio/dev
           <DeveloperDocsPanel baseUrl={`${PUBLIC_SITE_URL}/v1/vouchers`} />
         </div>
       ) : (
-        <StudioAccessDenied zoneLabel="Developers" locale={locale} />
+        <StudioAccessDenied zoneLabel={t("zones.developers")} locale={locale} />
       )}
     </StudioChrome>
   );

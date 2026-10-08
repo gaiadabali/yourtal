@@ -327,7 +327,15 @@
   "team": {
     "cancel": "Batal",
     "audit": {
-      "empty": "Belum ada aktivitas tim yang tercatat."
+      "empty": "Belum ada aktivitas tim yang tercatat.",
+      "invited": "{actor} mengundang {name} sebagai {role}",
+      "invitedByYou": "Anda mengundang {name} sebagai {role}",
+      "joined": "{name} menerima undangan dan bergabung sebagai {role}",
+      "roleChanged": "Peran {name} diubah dari {fromRole} menjadi {toRole}",
+      "roleChangedTo": "Peran {name} diubah menjadi {toRole}",
+      "removed": "{name} dikeluarkan dari tim",
+      "ownershipTransferred": "Anda mengalihkan kepemilikan kepada {name}",
+      "fallbackMember": "seorang anggota tim"
     },
     "changeRole": {
       "title": "Ubah peran {name}",
@@ -429,7 +437,14 @@
     },
     "checklist": {
       "title": "Selesaikan penyiapan",
-      "progress": "{doneCount} dari {total} selesai"
+      "progress": "{doneCount} dari {total} selesai",
+      "steps": {
+        "channelSet": "Siapkan kanal Anda",
+        "pointsBought": "Beli poin",
+        "campaignUploaded": "Unggah video kampanye",
+        "questionsWritten": "Tulis bank pertanyaan Anda",
+        "campaignSubmitted": "Kirim untuk ditinjau"
+      }
     },
     "error": {
       "message": "Terjadi kesalahan saat memuat bisnis ini. Periksa koneksi Anda dan coba lagi.",
@@ -768,5 +783,44 @@
     "submit": "Bergabung",
     "error": "Kode itu tidak berlaku. Mungkin sudah kedaluwarsa, sudah dipakai, atau untuk alamat email lain.",
     "registerInstead": "Daftarkan bisnis baru saja"
+  },
+  "zones": {
+    "overview": "Ringkasan",
+    "campaigns": "Kampanye",
+    "inventory": "Inventaris",
+    "reports": "Laporan",
+    "billing": "Tagihan",
+    "team": "Tim",
+    "redemptions": "Penukaran",
+    "developers": "Pengembang",
+    "channel": "Pengaturan kanal"
+  },
+  "zoneBlurbs": {
+    "campaigns": "Kampanye video, bab, bank pertanyaan, penargetan, dan anggaran.",
+    "inventory": "Daftar produk, nilai penyelesaian, stok, dan kebijakan penukaran.",
+    "reports": "Penyelesaian, akurasi, daya ingat, dan atribusi penukaran.",
+    "billing": "Beli poin, saldo, dan riwayat pembelian.",
+    "team": "Anggota, peran, undangan, dan jejak audit.",
+    "redemptions": "Voucher yang diterima hari ini dan baru-baru ini, per lokasi dan perangkat.",
+    "developers": "Kredensial API, webhook, dan dokumentasi integrasi.",
+    "channel": "Logo, gambar sampul, dan nama pengguna publik Anda."
+  },
+  "roles": {
+    "label": {
+      "owner": "Pemilik",
+      "admin": "Admin",
+      "marketer": "Pemasar",
+      "merchandiser": "Pengelola produk",
+      "finance": "Keuangan",
+      "analyst": "Analis"
+    },
+    "description": {
+      "owner": "Kendali penuh, termasuk tagihan dan penghapusan bisnis. Hanya satu per bisnis.",
+      "admin": "Mengelola kampanye, inventaris, penukaran, laporan, dan tim. Tidak dapat mengubah tagihan, hanya melihatnya.",
+      "marketer": "Membuat dan mengubah kampanye. Melihat laporan.",
+      "merchandiser": "Membuat dan mengubah daftar produk di inventaris. Melihat laporan.",
+      "finance": "Mengelola tagihan dan melihat laporan. Tidak memiliki akses ke kampanye, inventaris, atau penukaran.",
+      "analyst": "Hanya-baca untuk kampanye, inventaris, dan laporan."
+    }
   }
 }

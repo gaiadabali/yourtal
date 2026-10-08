@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { businessMemberSchema } from "@yourtal/contracts/business/member";
-import { buildTeamAuditTrail } from "./studio-audit";
+import { buildTeamAuditTrail, describeAuditEntry } from "./studio-audit";
+import { getStudioTranslator } from "./studio-i18n";
 
 const OWNER_ID = "00000000-0000-4000-8000-000000000710";
 
@@ -59,5 +60,24 @@ describe("buildTeamAuditTrail", () => {
 
     expect(trail[0]?.id).toBe("invite-00000000-0000-4000-8000-000000000712");
     expect(trail[1]?.id).toBe("invite-00000000-0000-4000-8000-000000000711");
+  });
+});
+
+describe("describeAuditEntry", () => {
+  const entry = {
+    id: "x",
+    occurredAt: "2025-02-01T09:00:00.000Z",
+    action: "role_changed" as const,
+    message: "roleChanged" as const,
+    params: { name: "Sari", fromRole: "marketer" as const, toRole: "finance" as const },
+  };
+
+  it("words an entry in the viewer's language, role names included", () => {
+    expect(describeAuditEntry(entry, getStudioTranslator("en-AU"))).toBe(
+      "Sari's role changed from Marketer to Finance",
+    );
+    expect(describeAuditEntry(entry, getStudioTranslator("id-ID"))).toBe(
+      "Peran Sari diubah dari Pemasar menjadi Keuangan",
+    );
   });
 });

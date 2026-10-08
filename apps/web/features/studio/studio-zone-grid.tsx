@@ -8,17 +8,6 @@ export interface StudioZoneGridProps {
   businessQuery: string;
 }
 
-const ZONE_BLURBS: Record<StudioNavItem["zone"], string> = {
-  campaigns: "Video campaigns, chapters, question banks, targeting and budget.",
-  inventory: "Listings, settlement value, stock and redemption policy.",
-  reports: "Completion, accuracy, recall and redemption attribution.",
-  billing: "Buy points, balance and purchase history.",
-  team: "Members, roles, invitations and the audit trail.",
-  redemptions: "Today's and recent voucher captures, per location and device.",
-  developers: "API credentials, webhooks and the integration docs.",
-  channel: "Logo, cover image and your public handle.",
-};
-
 /**
  * The `/studio` overview once setup is complete: one card per zone the
  * signed-in person's role permits on this business — `items` already
@@ -35,7 +24,7 @@ export function StudioZoneGrid({ items, businessQuery }: StudioZoneGridProps) {
               <CardTitle as="h2">{item.label}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm font-sans text-fg-muted">{ZONE_BLURBS[item.zone]}</p>
+              <p className="text-sm font-sans text-fg-muted">{item.blurb}</p>
             </CardContent>
           </Card>
         </Link>

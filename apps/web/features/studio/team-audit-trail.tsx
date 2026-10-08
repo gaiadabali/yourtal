@@ -1,4 +1,5 @@
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { describeAuditEntry } from "./studio-audit";
 import type { TeamAuditEntry } from "./studio-audit";
 
 export interface TeamAuditTrailProps {
@@ -8,6 +9,7 @@ export interface TeamAuditTrailProps {
 /** Plain-language audit log (docs/17 §2.1: "Every team action is audit-logged and visible to the business itself"). */
 export function TeamAuditTrail({ entries }: TeamAuditTrailProps) {
   const t = useTranslations("studio");
+  const locale = useLocale();
   if (entries.length === 0) {
     return <p className="text-sm font-sans text-fg-muted">{t("team.audit.empty")}</p>;
   }
@@ -19,9 +21,9 @@ export function TeamAuditTrail({ entries }: TeamAuditTrailProps) {
           key={entry.id}
           className="flex flex-col gap-0.5 border-b border-border pb-2 last:border-b-0"
         >
-          <span className="text-sm font-sans text-fg">{entry.description}</span>
+          <span className="text-sm font-sans text-fg">{describeAuditEntry(entry, t)}</span>
           <time dateTime={entry.occurredAt} className="text-xs font-sans text-fg-subtle">
-            {new Date(entry.occurredAt).toLocaleString("en-AU", {
+            {new Date(entry.occurredAt).toLocaleString(locale, {
               dateStyle: "medium",
               timeStyle: "short",
             })}

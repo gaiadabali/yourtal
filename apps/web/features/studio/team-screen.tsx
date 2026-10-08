@@ -9,7 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { buildTeamAuditTrail } from "./studio-audit";
 import type { TeamAuditEntry } from "./studio-audit";
 import { getMemberProfile } from "./studio-member-directory";
-import { ROLE_LABELS } from "./studio-roles";
 import { changeMemberRole, inviteMember, removeMember, transferOwnership } from "./team-actions";
 import {
   changeMemberRoleLive,
@@ -89,13 +88,18 @@ export function TeamScreen({
   const [dialogState, setDialogState] = useState<TeamDialogState>({ dialog: "none" });
   const [selfRemoved, setSelfRemoved] = useState(false);
 
-  function appendAudit(description: string, action: TeamAuditEntry["action"]) {
+  function appendAudit(
+    action: TeamAuditEntry["action"],
+    message: TeamAuditEntry["message"],
+    params: TeamAuditEntry["params"],
+  ) {
     setAuditEntries((current) => [
       {
         id: `${action}-live-${current.length}-${Date.now()}`,
         occurredAt: new Date().toISOString(),
         action,
-        description,
+        message,
+        params,
       },
       ...current,
     ]);
@@ -127,7 +131,7 @@ export function TeamScreen({
       // No roster row to add — see this component's doc comment: a real
       // invite creates only a `team_invitations` row, not a member, until
       // it is accepted elsewhere.
-      appendAudit(`You invited ${email} as ${ROLE_LABELS[role]}`, "invited");
+      appendAudit("invited", "invitedByYou", { name: email, role });
       return null;
     }
     const result = inviteMember({
@@ -146,7 +150,7 @@ export function TeamScreen({
       ...current,
       [result.value.invitedMember.userId]: email,
     }));
-    appendAudit(`You invited ${email} as ${ROLE_LABELS[role]}`, "invited");
+    appendAudit("invited", "invitedByYou", { name: email, role });
     return null;
   }
 
@@ -171,10 +175,11 @@ export function TeamScreen({
       setRoster(result.value);
     }
     const name = resolveProfile(targetUserId).name;
-    appendAudit(
-      `${name}'s role changed from ${before ? ROLE_LABELS[before.role] : "?"} to ${ROLE_LABELS[newRole]}`,
-      "role_changed",
-    );
+    appendAudit("role_changed", before ? "roleChanged" : "roleChangedTo", {
+      name,
+      ...(before ? { fromRole: before.role } : {}),
+      toRole: newRole,
+    });
     if (targetUserId === currentUserId && newRole === "admin") {
       setViewerRole(newRole);
     } else if (targetUserId === currentUserId) {
@@ -200,7 +205,7 @@ export function TeamScreen({
       }
       setRoster(result.value);
     }
-    appendAudit(`${removedName} was removed from the team`, "removed");
+    appendAudit("removed", "removed", { name: removedName });
     if (targetUserId === currentUserId) {
       setSelfRemoved(true);
     }
@@ -242,8 +247,8 @@ export function TeamScreen({
     setViewerRole("admin");
     const successorName =
       transferCandidates.find((candidate) => candidate.userId === successorUserId)?.name ??
-      "a team member";
-    appendAudit(`You transferred ownership to ${successorName}`, "ownership_transferred");
+      t("team.audit.fallbackMember");
+    appendAudit("ownership_transferred", "ownershipTransferred", { name: successorName });
     return null;
   }
 

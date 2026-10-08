@@ -20,6 +20,7 @@ export default async function StudioInventoryPage(props: PageProps<"/studio/inve
   const searchParams = await props.searchParams;
   const { current, all, defaultBusinessId } = await resolveStudioContext(searchParams);
   const locale = resolveSupportedLocale(await getLocale());
+  const t = getStudioTranslator(locale);
 
   if (!current) {
     return <StudioNoBusiness locale={locale} />;
@@ -37,7 +38,7 @@ export default async function StudioInventoryPage(props: PageProps<"/studio/inve
         defaultBusinessId={defaultBusinessId}
         locale={locale}
       >
-        <StudioAccessDenied zoneLabel="Inventory" locale={locale} />
+        <StudioAccessDenied zoneLabel={t("zones.inventory")} locale={locale} />
       </StudioChrome>
     );
   }

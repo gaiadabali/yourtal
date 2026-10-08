@@ -1,7 +1,11 @@
 import { getLocale } from "next-intl/server";
 import { PageHeader } from "@yourtal/ui/page-header";
 import { resolveStudioContext } from "@/features/studio/studio-context";
-import { resolveSupportedLocale, type SupportedLocale } from "@/features/studio/studio-i18n";
+import {
+  getStudioTranslator,
+  resolveSupportedLocale,
+  type SupportedLocale,
+} from "@/features/studio/studio-i18n";
 import { StudioAccessDenied } from "@/features/studio/studio-access-denied";
 import { StudioNoBusiness } from "@/features/studio/studio-no-business";
 import { StudioChrome } from "@/features/studio/studio-chrome";
@@ -18,6 +22,7 @@ export default async function StudioRedemptionsPage(props: PageProps<"/studio/re
   const searchParams = await props.searchParams;
   const { current, all, defaultBusinessId } = await resolveStudioContext(searchParams);
   const locale = resolveSupportedLocale(await getLocale());
+  const t = getStudioTranslator(locale);
 
   if (!current) {
     return <StudioNoBusiness locale={locale} />;
@@ -33,12 +38,12 @@ export default async function StudioRedemptionsPage(props: PageProps<"/studio/re
       allMemberships={all}
       defaultBusinessId={defaultBusinessId}
       locale={locale}
-      header={<PageHeader title="Redemptions" />}
+      header={<PageHeader title={t("zones.redemptions")} />}
     >
       {allowed ? (
         <StudioRedemptionsData businessId={current.business.id} locale={locale} />
       ) : (
-        <StudioAccessDenied zoneLabel="Redemptions" locale={locale} />
+        <StudioAccessDenied zoneLabel={t("zones.redemptions")} locale={locale} />
       )}
     </StudioChrome>
   );

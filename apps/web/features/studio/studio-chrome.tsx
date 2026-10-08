@@ -47,8 +47,8 @@ export function StudioChrome({
   const visibleZones = current.myRole
     ? getVisibleZones(current.myRole, current.business.roles)
     : [];
-  const navItems = buildStudioNavItems(visibleZones);
   const t = getStudioTranslator(locale);
+  const navItems = buildStudioNavItems(visibleZones, t);
 
   return (
     // The BUSINESS's own region, never the viewer's personal one — a client

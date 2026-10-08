@@ -41,7 +41,7 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
         defaultBusinessId={defaultBusinessId}
         locale={locale}
       >
-        <StudioAccessDenied zoneLabel="Billing" locale={locale} />
+        <StudioAccessDenied zoneLabel={t("zones.billing")} locale={locale} />
       </StudioChrome>
     );
   }
@@ -60,7 +60,7 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
       allMemberships={all}
       defaultBusinessId={defaultBusinessId}
       locale={locale}
-      header={<PageHeader title="Billing" />}
+      header={<PageHeader title={t("zones.billing")} />}
     >
       <div className="flex flex-col gap-6">
         {searchParams.purchased === "1" ? (

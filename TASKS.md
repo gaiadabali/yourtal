@@ -45,8 +45,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
-| **Phase 13** Ready for live review | all | 🔄 in progress | 20/23 | 87/103 | `████████░░`  84% |
-| **All** | | | **103/106** | **529/545** | `██████████`  97% |
+| **Phase 13** Ready for live review | all | 🔄 in progress | 20/23 | 88/103 | `█████████░`  85% |
+| **All** | | | **103/106** | **530/545** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1469,7 +1469,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [x] 13.3.p (found by the lead, for A) The Security workflow's `pnpm audit` has been red since at least 2026-10-05: `sharp` <0.35.5 (via next), `source-map-js` <1.2.2, `smol-toml` <=1.8.0 (via knip) have fixes; `braces` <=3.0.3 has none yet, so it needs a reasoned, dated ignore until one ships. — ✅ 6f6ff0e2: sharp 0.35.5, source-map-js 1.2.2, smol-toml 1.9.0 by re-resolving (next 16.3.8, knip 6.39.0, postcss 8.5.29), no overrides; braces ignored for GHSA-vfj7-8cjw-p6xm only, dated, in `pnpm-workspace.yaml` `auditConfig`. `pnpm audit --audit-level low` exits 0.
   - [ ] 13.3.q (found by 13.3.l, for A) `createDisbursementDriver` has the same undeclared-IDR gap 13.3.l fixed for payments. Nothing calls it outside the registry today. — 🔄 lead
   - [ ] 13.3.r (found by 13.3.o, for B) Run `apps/web/e2e/offline-voucher-detail.spec.ts` on a production build and assert the cached voucher page carries no code.
-  - [ ] 13.3.s (found by 13.3.o, for the lead) On staging with the review login: an ID business buys points (13.3.l) and a viewer sees a live voucher's code (13.3.o).
+  - [x] 13.3.s (found by 13.3.o, for the lead) On staging with the review login: an ID business buys points (13.3.l) and a viewer sees a live voucher's code (13.3.o). — ✅ 2026-10-08 on staging 315a02b6, through the public API with the /review login: `finance.id` quoted 1,000 pts at IDR 9,000 and bought them (201, partner allocation of 1,000 written, simulated provider reference); `viewer.id`'s active voucher detail carries its code, the wallet list carries none, and `adult.id` reading the same voucher gets 404.
   - [ ] 13.3.t (found by 13.3.m, for A) The api process exits when a Postgres connection drops: pg-boss emits an unhandled "Connection terminated unexpectedly". Handle the error and let pg-boss reconnect. — 🔄 lead
   - [ ] 13.3.u (found by 13.3.m, for A) The wallet gift sweep throws unhandled when the voucher service answers 500. — 🔄 lead
   - [ ] 13.3.v (found by 13.3.m, for C) Studio has no screen to request a voucher batch (journey 4 does it through the API) and no way to edit an existing listing's title, stock or expiry; the listing image is a typed URL, not an upload. — 🔄 lead

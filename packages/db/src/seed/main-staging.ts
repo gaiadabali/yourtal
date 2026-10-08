@@ -1,4 +1,5 @@
 import { backfillDemoTags } from "./demo-tags";
+import { ensureDemoSuppliers } from "./demo-suppliers";
 import { posterKeyOf, shrinkPosters } from "@yourtal/media/poster-shrink";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -343,12 +344,21 @@ async function main(): Promise<void> {
       demoTagsSummary = `demo tags: FAILED (${detail}) — not failing the deploy over it`;
     }
 
+    // Demo brands sell vouchers, so they are suppliers (Studio's Inventory). Never fails the deploy.
+    let demoSuppliersSummary = "demo suppliers: skipped";
+    try {
+      demoSuppliersSummary = `demo suppliers: ${String(await ensureDemoSuppliers(pool))} added`;
+    } catch (error) {
+      const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+      demoSuppliersSummary = `demo suppliers: FAILED (${detail}) — not failing the deploy over it`;
+    }
+
     console.log(
       `Staging seed — ${worldSummary}; marketing funding: ${result.marketingFunding}; ` +
         `${grantSummary}; ${voucherSummary}; ${affordableListingsSummary}; ` +
         `${redemptionBalanceSummary}; ${mediaSummary}; ${demoMediaSummary}; ` +
         `${demoCampaignFundingSummary}; ${demoMediaVouchersSummary}; ${demoAudiencesSummary}; ` +
-        `${demoTagsSummary}.`,
+        `${demoTagsSummary}; ${demoSuppliersSummary}.`,
     );
 
     if (

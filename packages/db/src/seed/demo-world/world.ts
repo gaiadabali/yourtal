@@ -49,7 +49,7 @@ async function ensureBusiness(pool: pg.Pool, brand: DemoBrandSpec): Promise<void
     `INSERT INTO business.business_accounts
        (id, legal_name, display_name, roles, is_verified, region, currency, handle,
         tax_id_kind, tax_id_value, address_state, address_postcode, address_city)
-     VALUES ($1, $2, $2, '["advertiser","redeemer"]'::jsonb, true, $3, $4, $5, $6, $7, $8, $9, $10)
+     VALUES ($1, $2, $2, '["advertiser","supplier","redeemer"]'::jsonb, true, $3, $4, $5, $6, $7, $8, $9, $10)
      ON CONFLICT (id) DO NOTHING`,
     [
       businessIdFor(brand.slug),

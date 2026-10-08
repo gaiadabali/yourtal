@@ -19,7 +19,7 @@ export function StudioAccessDenied({ zoneLabel, locale }: StudioAccessDeniedProp
   return (
     <Card>
       <CardHeader>
-        <CardTitle as="h2">{t("chrome.accessDenied.title", { zoneLabel })}</CardTitle>
+        <CardTitle as="h1">{t("chrome.accessDenied.title", { zoneLabel })}</CardTitle>
       </CardHeader>
       <CardContent>
         <p className="text-sm font-sans text-fg-muted">

@@ -46,11 +46,13 @@ describe("sessionFor", () => {
       method: "POST",
       url: "/api/businesses",
       headers: { cookie: session.cookie, "idempotency-key": randomUUID() },
-      payload: {},
+      // The account's own region (AU by default), so the controller's region
+      // wall does not answer 403 for a reason other than the PDP.
+      payload: { region: "AU" },
     });
     // Same assertion app.boot.test.ts makes for a signed-in caller: the PDP
-    // let the request through. What the use-case does with an empty body
-    // (400 on validation) is not this test's concern.
+    // let the request through. What the use-case does with an incomplete body
+    // is not this test's concern.
     expect(response.statusCode).not.toBe(403);
   });
 

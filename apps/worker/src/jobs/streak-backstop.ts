@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { Pool } from "pg";
+import type { Pool } from "pg";
+import { createPool } from "../pool";
 import type { PoolClient } from "pg";
 import {
   advanceStreak,
@@ -83,7 +84,7 @@ function dateOnlyString(value: Date): string {
 
 let pool: Pool | undefined;
 function poolFor(databaseUrl: string): Pool {
-  pool ??= new Pool({ connectionString: databaseUrl });
+  pool ??= createPool(databaseUrl);
   return pool;
 }
 

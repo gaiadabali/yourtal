@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { Pool } from "pg";
+import { createPool } from "../../shared/persistence/create-pool";
 import { AuthzModule } from "../../shared/authz/authz.module";
 import { PdpClientModule } from "../../shared/pdp/pdp-client.module";
 import { APP_CONFIG } from "../../config/app-config.module";
@@ -94,7 +94,7 @@ import {
       // is dead from here; delete it once nothing else depends on it.
       provide: DELIVERY_COVERAGE_READER,
       useFactory: (config: AppConfig) =>
-        new RealDeliveryCoverageReader(new Pool({ connectionString: config.databaseUrl })),
+        new RealDeliveryCoverageReader(createPool(config.databaseUrl)),
       inject: [APP_CONFIG],
     },
     {

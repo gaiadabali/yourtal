@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { Pool } from "pg";
+import type { Pool } from "pg";
+import { createPool } from "../pool";
 import { defineJob } from "../job";
 
 /**
@@ -133,7 +134,7 @@ export async function ingestDeliveryLog(pool: Pool, logPath: string): Promise<nu
 
 let pool: Pool | undefined;
 function poolFor(databaseUrl: string): Pool {
-  pool ??= new Pool({ connectionString: databaseUrl });
+  pool ??= createPool(databaseUrl);
   return pool;
 }
 

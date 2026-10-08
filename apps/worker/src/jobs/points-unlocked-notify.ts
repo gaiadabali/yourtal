@@ -1,4 +1,5 @@
-import { Pool } from "pg";
+import type { Pool } from "pg";
+import { createPool } from "../pool";
 import type { Job } from "pg-boss";
 import { POINTS_UNLOCKED_QUEUE } from "@yourtal/contracts/ledger-internal/releases";
 import type { PointsUnlockedEvent } from "@yourtal/contracts/ledger-internal/releases";
@@ -25,7 +26,7 @@ import { isPushEnabledFor } from "../push-default";
  */
 let pool: Pool | undefined;
 function poolFor(databaseUrl: string): Pool {
-  pool ??= new Pool({ connectionString: databaseUrl });
+  pool ??= createPool(databaseUrl);
   return pool;
 }
 

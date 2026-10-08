@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { Pool } from "pg";
+import { createPool } from "../../shared/persistence/create-pool";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
@@ -92,7 +92,7 @@ export { IDENTITY_DB };
     // exists, on the same physical database as `IDENTITY_DB`.
     {
       provide: IDENTITY_PG_POOL,
-      useFactory: (config: AppConfig) => new Pool({ connectionString: config.databaseUrl }),
+      useFactory: (config: AppConfig) => createPool(config.databaseUrl),
       inject: [APP_CONFIG],
     },
   ],

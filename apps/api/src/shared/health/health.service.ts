@@ -3,7 +3,8 @@ import { join } from "node:path";
 import { Inject, Injectable } from "@nestjs/common";
 import type { OnModuleDestroy } from "@nestjs/common";
 import { ResultAsync } from "neverthrow";
-import { Pool } from "pg";
+import type { Pool } from "pg";
+import { createPool } from "../persistence/create-pool";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import type { HealthCheckResult, HealthResponse } from "./health-check.schema";
@@ -58,8 +59,7 @@ export class HealthService implements OnModuleDestroy {
   private readonly pool: Pool;
 
   constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {
-    this.pool = new Pool({
-      connectionString: config.databaseUrl,
+    this.pool = createPool(config.databaseUrl, {
       max: 1,
       connectionTimeoutMillis: CHECK_TIMEOUT_MS,
     });

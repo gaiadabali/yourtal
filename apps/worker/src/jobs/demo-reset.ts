@@ -1,4 +1,4 @@
-import { Pool } from "pg";
+import { createPool } from "../pool";
 import { runDemoActivity } from "@yourtal/db/demo-world/activity";
 import { runDemoMarketplace } from "@yourtal/db/demo-world/marketplace";
 import { resetDemoWorld } from "@yourtal/db/demo-world/reset";
@@ -20,7 +20,7 @@ export const job = defineJob({
       console.log("[demo-reset] skipped: no demo configuration here (or production)");
       return;
     }
-    const pool = new Pool({ connectionString: config.demo.ownerDatabaseUrl });
+    const pool = createPool(config.demo.ownerDatabaseUrl);
     try {
       const result = await resetDemoWorld(
         pool,

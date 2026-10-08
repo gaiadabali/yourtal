@@ -1,5 +1,6 @@
 import { createDecipheriv, createHash, createHmac } from "node:crypto";
-import { Pool } from "pg";
+import type { Pool } from "pg";
+import { createPool } from "../pool";
 import type { Job } from "pg-boss";
 import { WEBHOOK_DELIVERY_QUEUE } from "@yourtal/contracts/device/webhook-delivery-event";
 import type { WebhookDeliveryEvent } from "@yourtal/contracts/device/webhook-delivery-event";
@@ -23,7 +24,7 @@ import type { JobContext } from "../job";
  */
 let pool: Pool | undefined;
 function poolFor(databaseUrl: string): Pool {
-  pool ??= new Pool({ connectionString: databaseUrl });
+  pool ??= createPool(databaseUrl);
   return pool;
 }
 

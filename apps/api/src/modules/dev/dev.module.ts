@@ -1,8 +1,9 @@
 import { Module, type OnApplicationShutdown } from "@nestjs/common";
 import { Injectable } from "@nestjs/common";
-import { Pool } from "pg";
+import type { Pool } from "pg";
+import { createPool } from "../../shared/persistence/create-pool";
 import type { PgBoss } from "pg-boss";
-import { createQueueClient } from "@yourtal/queue/client";
+import { createApiQueueClient } from "../../shared/queue/create-api-queue-client";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import {
@@ -45,12 +46,12 @@ class DevClockQueueShutdown implements OnApplicationShutdown {
     {
       provide: SIM_OUTBOX_READER,
       useFactory: (config: AppConfig) =>
-        new PostgresSimOutboxReader(new Pool({ connectionString: config.databaseUrl })),
+        new PostgresSimOutboxReader(createPool(config.databaseUrl)),
       inject: [APP_CONFIG],
     },
     {
       provide: DEV_CLOCK_DB_POOL,
-      useFactory: (config: AppConfig): Pool => new Pool({ connectionString: config.databaseUrl }),
+      useFactory: (config: AppConfig): Pool => createPool(config.databaseUrl),
       inject: [APP_CONFIG],
     },
     // A second, dedicated connection for `LedgerInternalClient` (1.2.d) —
@@ -71,7 +72,7 @@ class DevClockQueueShutdown implements OnApplicationShutdown {
     {
       provide: DEV_CLOCK_QUEUE_CLIENT,
       useFactory: async (config: AppConfig): Promise<PgBoss> => {
-        const boss = createQueueClient({ databaseUrl: config.databaseUrl });
+        const boss = createApiQueueClient(config.databaseUrl);
         await boss.start();
         return boss;
       },

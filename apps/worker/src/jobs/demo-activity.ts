@@ -1,4 +1,4 @@
-import { Pool } from "pg";
+import { createPool } from "../pool";
 import { runDemoActivity } from "@yourtal/db/demo-world/activity";
 import { defineJob } from "../job";
 
@@ -13,7 +13,7 @@ export const job = defineJob({
   queueOptions: { retryLimit: 0, expireInSeconds: 2 * 60 * 60 },
   async handle(_job, { config }) {
     if (config.demo === undefined) return;
-    const pool = new Pool({ connectionString: config.demo.ownerDatabaseUrl });
+    const pool = createPool(config.demo.ownerDatabaseUrl);
     try {
       const summary = await runDemoActivity(
         pool,

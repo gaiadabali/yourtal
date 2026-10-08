@@ -1,5 +1,5 @@
 import { Global, Inject, Module } from "@nestjs/common";
-import { Pool } from "pg";
+import { createPool } from "../persistence/create-pool";
 import { PostgresIdempotencyStore } from "@yourtal/idempotency/postgres-store";
 import type { IdempotencyStore } from "@yourtal/idempotency/store";
 import { AuthzModule } from "../authz/authz.module";
@@ -29,7 +29,7 @@ export const IDEMPOTENCY_STORE = Symbol("IDEMPOTENCY_STORE");
  * same reasoning YT-0540 records for throttling counters.
  */
 function selectStore(config: AppConfig): IdempotencyStore {
-  return new PostgresIdempotencyStore(new Pool({ connectionString: config.databaseUrl }));
+  return new PostgresIdempotencyStore(createPool(config.databaseUrl));
 }
 
 @Global()

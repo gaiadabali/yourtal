@@ -1,6 +1,7 @@
 import { Inject, Module, type OnApplicationShutdown } from "@nestjs/common";
 import { APP_INTERCEPTOR } from "@nestjs/core";
-import { Pool } from "pg";
+import type { Pool } from "pg";
+import { createPool } from "../../shared/persistence/create-pool";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import { SettingsModule } from "../../shared/settings/settings.module";
@@ -64,7 +65,7 @@ class StaffPoolShutdown implements OnApplicationShutdown {
   providers: [
     {
       provide: STAFF_DB_POOL,
-      useFactory: (config: AppConfig): Pool => new Pool({ connectionString: config.databaseUrl }),
+      useFactory: (config: AppConfig): Pool => createPool(config.databaseUrl),
       inject: [APP_CONFIG],
     },
     {

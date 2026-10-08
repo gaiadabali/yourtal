@@ -1,6 +1,6 @@
 import { Injectable, Module, type OnApplicationShutdown } from "@nestjs/common";
 import type { PgBoss } from "pg-boss";
-import { createQueueClient } from "@yourtal/queue/client";
+import { createApiQueueClient } from "../../shared/queue/create-api-queue-client";
 import { PdpClientModule } from "../../shared/pdp/pdp-client.module";
 import { RateLimitModule } from "../../shared/rate-limit/rate-limit.module";
 import { APP_CONFIG } from "../../config/app-config.module";
@@ -146,7 +146,7 @@ class DevicesQueueShutdown implements OnApplicationShutdown {
     {
       provide: DEVICES_QUEUE_CLIENT,
       useFactory: async (config: AppConfig): Promise<PgBoss> => {
-        const boss = createQueueClient({ databaseUrl: config.databaseUrl });
+        const boss = createApiQueueClient(config.databaseUrl);
         await boss.start();
         return boss;
       },

@@ -1,4 +1,4 @@
-import { Pool } from "pg";
+import { createPool } from "./create-pool";
 
 /**
  * Refuses to let the API run as a Postgres superuser. YT-0554, risk 45.
@@ -45,7 +45,7 @@ export class PrivilegedDatabaseRoleError extends Error {
  * thing that matters and the thing that can drift.
  */
 export async function assertUnprivilegedRole(databaseUrl: string): Promise<void> {
-  const pool = new Pool({ connectionString: databaseUrl, max: 1 });
+  const pool = createPool(databaseUrl, { max: 1 });
   try {
     const result = await pool.query<{
       role: string;

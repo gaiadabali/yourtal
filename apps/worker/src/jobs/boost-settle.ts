@@ -1,4 +1,5 @@
-import { Pool } from "pg";
+import type { Pool } from "pg";
+import { createPool } from "../pool";
 import { createPaymentsDriver } from "@yourtal/drivers/payments";
 import type { PaymentsDriver } from "@yourtal/drivers/payments";
 import { describeProblem, resolveDriverMode } from "@yourtal/drivers/driver-mode";
@@ -14,7 +15,7 @@ import { defineJob } from "../job";
  */
 let pool: Pool | undefined;
 function poolFor(databaseUrl: string): Pool {
-  pool ??= new Pool({ connectionString: databaseUrl });
+  pool ??= createPool(databaseUrl);
   return pool;
 }
 

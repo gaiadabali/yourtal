@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { Pool } from "pg";
+import { createPool } from "../persistence/create-pool";
 import { createEmailDriver } from "@yourtal/drivers/email";
 import type { EmailDriver } from "@yourtal/drivers/email";
 import { resolveDriverMode, describeProblem } from "@yourtal/drivers/driver-mode";
@@ -25,7 +25,7 @@ function buildEmailDriver(config: AppConfig): EmailDriver {
   if (mode.isErr()) {
     throw new Error(describeProblem(mode.error));
   }
-  const store = new PostgresSimOutboxStore(new Pool({ connectionString: config.databaseUrl }));
+  const store = new PostgresSimOutboxStore(createPool(config.databaseUrl));
   return createEmailDriver(mode.value, process.env, undefined, store);
 }
 

@@ -1,4 +1,5 @@
-import { Pool } from "pg";
+import type { Pool } from "pg";
+import { createPool } from "../pool";
 import type { Job } from "pg-boss";
 import { CAMPAIGN_PUBLISHED_QUEUE } from "@yourtal/contracts/studio/campaign-published-event";
 import type { CampaignPublishedEvent } from "@yourtal/contracts/studio/campaign-published-event";
@@ -21,7 +22,7 @@ import { isPushEnabledFor } from "../push-default";
  */
 let pool: Pool | undefined;
 function poolFor(databaseUrl: string): Pool {
-  pool ??= new Pool({ connectionString: databaseUrl });
+  pool ??= createPool(databaseUrl);
   return pool;
 }
 

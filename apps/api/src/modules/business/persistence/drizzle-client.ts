@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { createPool } from "../../../shared/persistence/create-pool";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 export type BusinessDb = NodePgDatabase;
@@ -12,6 +12,6 @@ export type BusinessDb = NodePgDatabase;
  * the individual repository files and `drizzle-business-onboarding.unit-of-work.test.ts`.
  */
 export function createBusinessDb(databaseUrl: string): BusinessDb {
-  const pool = new Pool({ connectionString: databaseUrl });
+  const pool = createPool(databaseUrl);
   return drizzle(pool);
 }

@@ -52,14 +52,44 @@ export interface CreateQueueClientOptions {
   /** `AppConfig.databaseUrl` — always the `yourtal_app` role. */
   readonly databaseUrl: string;
   readonly schema?: string;
+  /**
+   * Called with every `error` pg-boss emits (a dropped Postgres connection,
+   * a failed maintenance pass). Defaults to `console.error`. Whatever it is,
+   * it must not throw: the point is that the process survives.
+   */
+  readonly onError?: (error: Error) => void;
 }
 
 export function createQueueClient(options: CreateQueueClientOptions): PgBoss {
-  return new PgBoss({
+  const boss = new PgBoss({
     connectionString: options.databaseUrl,
     schema: options.schema ?? PGBOSS_SCHEMA,
     migrate: false,
     createSchema: false,
     persistQueueStats: false,
   });
+  attachQueueErrorHandler(boss, options.onError ?? defaultOnError);
+  return boss;
+}
+
+/**
+ * pg-boss is an EventEmitter and re-emits connection errors ("Connection
+ * terminated unexpectedly" when Postgres restarts or a pooled connection is
+ * cut) as `error`. An `error` event with no listener is thrown by Node and
+ * takes the whole process down, so the api and the worker both used to exit
+ * on a database blip. With a listener, pg-boss keeps its own pool and
+ * supervisor timers and reconnects on the next tick; we only log. 13.3.t.
+ */
+export function attachQueueErrorHandler(boss: PgBoss, onError: (error: Error) => void): void {
+  boss.on("error", (error: Error) => {
+    try {
+      onError(error);
+    } catch {
+      // A throwing logger must not turn a survivable error into a crash.
+    }
+  });
+}
+
+function defaultOnError(error: Error): void {
+  console.error(`[queue] pg-boss error (it will reconnect): ${error.message}`);
 }

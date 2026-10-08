@@ -133,7 +133,8 @@ export function createKybObjectStorage(config: KybObjectStorageConfig) {
       const uploadUrl = await getSignedUrl(
         presignClient,
         new PutObjectCommand({ Bucket: bucket, Key: storageRef, ContentType: input.contentType }),
-        { expiresIn: UPLOAD_URL_TTL_SECONDS },
+        // The declared type is signed, so the PUT must carry it.
+        { expiresIn: UPLOAD_URL_TTL_SECONDS, signableHeaders: new Set(["content-type"]) },
       );
       return {
         storageRef,

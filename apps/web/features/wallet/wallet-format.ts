@@ -33,6 +33,30 @@ const WALLET_DATE_FORMATTERS: Record<SupportedLocale, Intl.DateTimeFormat> = {
   }),
 };
 
+const ZONES: Record<SupportedLocale, string> = {
+  "en-AU": "Australia/Sydney",
+  "id-ID": "Asia/Jakarta",
+};
+
+// Same fixed zones as above, day and month only: used when the year is the current one.
+const SHORT_DATE_FORMATTERS: Record<SupportedLocale, Intl.DateTimeFormat> = {
+  "en-AU": new Intl.DateTimeFormat("en-AU", {
+    day: "numeric",
+    month: "short",
+    timeZone: ZONES["en-AU"],
+  }),
+  "id-ID": new Intl.DateTimeFormat("id-ID", {
+    day: "numeric",
+    month: "short",
+    timeZone: ZONES["id-ID"],
+  }),
+};
+
+const YEAR_FORMATTERS: Record<SupportedLocale, Intl.DateTimeFormat> = {
+  "en-AU": new Intl.DateTimeFormat("en-AU", { year: "numeric", timeZone: ZONES["en-AU"] }),
+  "id-ID": new Intl.DateTimeFormat("id-ID", { year: "numeric", timeZone: ZONES["id-ID"] }),
+};
+
 // `numeric: "always"`, not "auto" — "auto" substitutes idioms like "kemarin
 // dulu" (the day before yesterday) / "yesterday" for small day counts, which
 // reads as vague next to a wallet's unlock/expiry countdown. Always spelling
@@ -49,6 +73,23 @@ const MS_PER_DAY = 24 * MS_PER_HOUR;
 /** Formats an ISO instant as a short date, e.g. "19 Sep 2026". */
 export function formatWalletDate(iso: string, locale: SupportedLocale): string {
   return WALLET_DATE_FORMATTERS[locale].format(new Date(iso));
+}
+
+/**
+ * 13.15.d: the date a voucher or listing card prints, in the region's zone.
+ * "1 Oct" in the current year, "1 Oct 2027" in any other, so a date next year
+ * never reads as one that has already passed. `nowMs` is explicit, like
+ * `formatRelativeToNow`'s, so callers and tests own the clock.
+ */
+export function formatShortDate(
+  iso: string,
+  locale: SupportedLocale,
+  nowMs: number = Date.now(),
+): string {
+  const date = new Date(iso);
+  const sameYear =
+    YEAR_FORMATTERS[locale].format(date) === YEAR_FORMATTERS[locale].format(new Date(nowMs));
+  return sameYear ? SHORT_DATE_FORMATTERS[locale].format(date) : formatWalletDate(iso, locale);
 }
 
 /**

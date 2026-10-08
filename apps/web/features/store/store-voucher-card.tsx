@@ -2,6 +2,7 @@ import type { PublicListing } from "@yourtal/contracts/listing";
 import { CoinMark } from "@yourtal/ui/brand/coin-mark";
 import { cn } from "@yourtal/ui/cn";
 import { formatListingPrice, formatStockRemaining } from "./store-format";
+import { formatShortDate } from "@/features/wallet/wallet-format";
 import { getStoreTranslator, type SupportedLocale } from "./store-i18n";
 import { listingStatusPresentation } from "./store-status";
 
@@ -11,11 +12,6 @@ export interface StoreVoucherCardProps {
   /** 13.4.a: the first row's images load first. */
   priority?: boolean;
 }
-
-const SHORT_DATE: Record<SupportedLocale, Intl.DateTimeFormat> = {
-  "en-AU": new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short" }),
-  "id-ID": new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short" }),
-};
 
 /** Fewer than this many left is called out in amber. */
 const LOW_STOCK = 10;
@@ -92,7 +88,7 @@ export function StoreVoucherCard({ listing, locale, priority = false }: StoreVou
               {formatStockRemaining(listing.stockRemaining, locale)}
             </span>
             <span className="text-fg-subtle">
-              {t("shop.ends", { date: SHORT_DATE[locale].format(new Date(listing.expiresAt)) })}
+              {t("shop.ends", { date: formatShortDate(listing.expiresAt, locale) })}
             </span>
           </p>
         </div>

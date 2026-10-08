@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatRelativeToNow, formatWalletDate } from "./wallet-format";
+import { formatRelativeToNow, formatShortDate, formatWalletDate } from "./wallet-format";
 
 describe("formatWalletDate", () => {
   it("formats an ISO instant as a short Indonesian date", () => {
@@ -44,5 +44,25 @@ describe("en-AU locale (YT-0405)", () => {
 
     const twoDaysAgo = new Date(nowMs - 2 * 24 * 60 * 60 * 1000).toISOString();
     expect(formatRelativeToNow(twoDaysAgo, nowMs, "en-AU")).toMatch(/ago$/);
+  });
+});
+
+describe("formatShortDate (13.15.d)", () => {
+  const nowMs = Date.parse("2026-09-19T09:00:00.000Z");
+
+  it("leaves the year off a date in the current year", () => {
+    expect(formatShortDate("2026-10-01T09:00:00.000Z", "en-AU", nowMs)).toBe("1 Oct");
+    expect(formatShortDate("2026-10-01T09:00:00.000Z", "id-ID", nowMs)).not.toMatch(/2026/);
+  });
+
+  it("adds the year to a date in another year", () => {
+    expect(formatShortDate("2027-10-01T09:00:00.000Z", "en-AU", nowMs)).toBe("1 Oct 2027");
+    expect(formatShortDate("2027-10-01T09:00:00.000Z", "id-ID", nowMs)).toMatch(/1 Okt 2027/);
+    expect(formatShortDate("2025-12-31T09:00:00.000Z", "en-AU", nowMs)).toMatch(/2025/);
+  });
+
+  it("judges the year in the region's zone, not UTC", () => {
+    // 31 Dec 2026 18:00 UTC is already 1 Jan 2027 in Sydney.
+    expect(formatShortDate("2026-12-31T18:00:00.000Z", "en-AU", nowMs)).toBe("1 Jan 2027");
   });
 });

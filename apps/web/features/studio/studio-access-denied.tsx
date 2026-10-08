@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
+import { Card, CardContent, CardHeader } from "@yourtal/ui/card";
 import { getStudioTranslator, type SupportedLocale } from "./studio-i18n";
 
 export interface StudioAccessDeniedProps {
@@ -19,7 +19,10 @@ export function StudioAccessDenied({ zoneLabel, locale }: StudioAccessDeniedProp
   return (
     <Card>
       <CardHeader>
-        <CardTitle as="h1">{t("chrome.accessDenied.title", { zoneLabel })}</CardTitle>
+        {/* The page's only heading, so it is the h1 (CardTitle stops at h2). */}
+        <h1 className="text-title font-sans text-fg">
+          {t("chrome.accessDenied.title", { zoneLabel })}
+        </h1>
       </CardHeader>
       <CardContent>
         <p className="text-sm font-sans text-fg-muted">

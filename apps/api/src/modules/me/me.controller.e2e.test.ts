@@ -392,8 +392,22 @@ describe("GET /api/me/data-export and DELETE /api/me", () => {
       headers: { cookie: session.cookie },
     });
     expect(exported.statusCode).toBe(200);
-    const exportBody = exported.json<{ consents: unknown[]; otherDataDomains: { id: string }[] }>();
+    const exportBody = exported.json<{
+      consents: unknown[];
+      otherDataDomains: { id: string; holds: string }[];
+      account: { region: string; ageBand: string } | null;
+      wallet: unknown[];
+      vouchers: unknown[];
+      watchSessions: unknown[];
+    }>();
     expect(exportBody.consents.length).toBeGreaterThan(0);
+    expect(exportBody.account).toMatchObject({ region: "AU", ageBand: "adult" });
+    expect(Array.isArray(exportBody.wallet)).toBe(true);
+    expect(Array.isArray(exportBody.vouchers)).toBe(true);
+    expect(Array.isArray(exportBody.watchSessions)).toBe(true);
+    expect(exportBody.otherDataDomains.find((d) => d.id === "identity")?.holds).not.toMatch(
+      /phone/i,
+    );
     expect(exportBody.otherDataDomains.some((d) => d.id === "ledger")).toBe(true);
 
     const deleted = await app.inject({

@@ -1,4 +1,7 @@
-import { Controller, Delete, Get, Inject, Req } from "@nestjs/common";
+import { BadGatewayException, Controller, Delete, Get, Inject, Req } from "@nestjs/common";
+import type { ResultAsync } from "neverthrow";
+import type { LedgerHistoryEntry } from "@yourtal/contracts/ledger-internal/wallet";
+import type { WalletVoucherRow } from "@yourtal/contracts/voucher-internal/wallet";
 import type { FastifyRequest } from "fastify";
 import type { DeletionReport } from "@yourtal/consent/dsar-orchestrator";
 import { executeDeletion } from "@yourtal/consent/dsar-orchestrator";
@@ -6,10 +9,13 @@ import { deletionPlan } from "@yourtal/consent/dsar";
 import { deletionHandlers } from "../../shared/dsar/deletion-handlers";
 import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
 import type { LedgerInternalClient } from "../../shared/ledger-client/ledger-internal-client";
+import { VOUCHER_INTERNAL_CLIENT } from "../../shared/voucher-client/voucher-internal-client";
+import type { VoucherInternalClient } from "../../shared/voucher-client/voucher-internal-client";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { PrincipalService } from "../../shared/authz/principal.service";
 import type { PrincipalResolver } from "../../shared/authz/principal-resolver";
+import { buildDataExportSections } from "./data-export";
 import { ME_PG_POOL } from "./me.tokens";
 import type { MePgPool } from "./me.tokens";
 import { CONSENT_RECORD_REPOSITORY } from "./persistence/consent-record.repository";
@@ -20,8 +26,26 @@ import { FOLLOW_REPOSITORY } from "./persistence/follow.repository";
 import type { FollowRepository } from "./persistence/follow.repository";
 import { SAVE_REPOSITORY } from "./persistence/save.repository";
 import type { SaveRepository } from "./persistence/save.repository";
+import { DATA_EXPORT_READER } from "./persistence/data-export.reader";
+import type { DataExportReader } from "./persistence/data-export.reader";
 import { STREAK_STATE_REPOSITORY } from "./persistence/streak-state.repository";
 import type { StreakStateRepository } from "./persistence/streak-state.repository";
+
+const EXPORT_PAGE = 100;
+/** A ceiling on pages per list, so one export cannot hold a request open forever. */
+const EXPORT_MAX_PAGES = 50;
+const EXPORT_MAX_SESSIONS = 5000;
+
+async function settle<T>(result: ResultAsync<T, { code: string }>): Promise<T> {
+  const settled = await result;
+  if (settled.isErr()) {
+    throw new BadGatewayException({
+      code: settled.error.code,
+      message: "Your wallet could not be read just now.",
+    });
+  }
+  return settled.value;
+}
 
 /**
  * `DELETE /api/me` and `GET /api/me/data-export` (5.4.b). Deletion runs
@@ -44,7 +68,48 @@ export class AccountController {
     @Inject(SAVE_REPOSITORY) private readonly saves: SaveRepository,
     @Inject(STREAK_STATE_REPOSITORY) private readonly streaks: StreakStateRepository,
     @Inject(LEDGER_INTERNAL_CLIENT) private readonly ledger: LedgerInternalClient,
+    @Inject(VOUCHER_INTERNAL_CLIENT) private readonly vouchers: VoucherInternalClient,
+    @Inject(DATA_EXPORT_READER) private readonly exportReader: DataExportReader,
   ) {}
+
+  /** Every ledger entry for the caller, newest first, page by page. */
+  private async allHistory(userId: string): Promise<LedgerHistoryEntry[]> {
+    const entries: LedgerHistoryEntry[] = [];
+    let startingAfter: string | undefined;
+    for (let page = 0; page < EXPORT_MAX_PAGES; page += 1) {
+      const rows = await settle(
+        this.ledger.history({
+          userId,
+          limit: EXPORT_PAGE,
+          ...(startingAfter === undefined ? {} : { startingAfter }),
+        }),
+      );
+      entries.push(...rows);
+      const last = rows.at(-1);
+      if (rows.length < EXPORT_PAGE || last === undefined) break;
+      startingAfter = last.id;
+    }
+    return entries;
+  }
+
+  private async allVouchers(userId: string): Promise<WalletVoucherRow[]> {
+    const rows: WalletVoucherRow[] = [];
+    let startingAfter: string | undefined;
+    for (let page = 0; page < EXPORT_MAX_PAGES; page += 1) {
+      const result = await settle(
+        this.vouchers.listForUser({
+          userId,
+          limit: EXPORT_PAGE,
+          ...(startingAfter === undefined ? {} : { startingAfter }),
+        }),
+      );
+      rows.push(...result.vouchers);
+      const last = result.vouchers.at(-1);
+      if (!result.hasMore || last === undefined) break;
+      startingAfter = last.voucherId;
+    }
+    return rows;
+  }
 
   // A repeated delete-account call must not run the deletion a second time.
   @Idempotent({ retentionMs: 24 * 60 * 60 * 1000 })
@@ -60,16 +125,27 @@ export class AccountController {
   @Get("data-export")
   async exportData(@Req() request: FastifyRequest) {
     const userId = (await this.principals.resolve(request)).id;
-    const [consents, interests, followed, saved, streak] = await Promise.all([
-      this.consents.listForUser(userId),
-      this.interests.listForUser(userId),
-      this.follows.listForUser(userId),
-      this.saves.listForUser(userId),
-      this.streaks.find(userId),
-    ]);
+    const [consents, interests, followed, saved, streak, account, history, vouchers, sessions] =
+      await Promise.all([
+        this.consents.listForUser(userId),
+        this.interests.listForUser(userId),
+        this.follows.listForUser(userId),
+        this.saves.listForUser(userId),
+        this.streaks.find(userId),
+        this.exportReader.account(userId),
+        this.allHistory(userId),
+        this.allVouchers(userId),
+        this.exportReader.watchSessions(userId, EXPORT_MAX_SESSIONS),
+      ]);
+    const now = new Date();
+    const held = buildDataExportSections({ now, account, history, vouchers, sessions });
 
     return {
-      generatedAt: new Date().toISOString(),
+      generatedAt: now.toISOString(),
+      account: held.account,
+      wallet: held.wallet,
+      vouchers: held.vouchers,
+      watchSessions: held.watchSessions,
       consents,
       interests,
       follows: followed,

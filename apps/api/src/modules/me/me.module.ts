@@ -8,6 +8,7 @@ import { IdentityModule } from "../identity/identity.module";
 import { WalletModule } from "../wallet/wallet.module";
 import { CampaignModule, CAMPAIGN_DB } from "../campaign/campaign.module";
 import { ME_PG_POOL } from "./me.tokens";
+import { DATA_EXPORT_READER, DrizzleDataExportReader } from "./persistence/data-export.reader";
 import {
   CONSENT_RECORD_REPOSITORY,
   DrizzleConsentRecordRepository,
@@ -125,6 +126,11 @@ export const ME_DB = Symbol("ME_DB");
     {
       provide: NOTIFICATION_REPOSITORY,
       useFactory: (db: AppDb) => new DrizzleNotificationRepository(db),
+      inject: [ME_DB],
+    },
+    {
+      provide: DATA_EXPORT_READER,
+      useFactory: (db: AppDb) => new DrizzleDataExportReader(db),
       inject: [ME_DB],
     },
     {

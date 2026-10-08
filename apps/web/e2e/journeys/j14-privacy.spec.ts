@@ -44,11 +44,22 @@ for (const r of REGIONS) {
     const file = await download;
     expect(file.suggestedFilename()).toMatch(/^yourtal-data-export-\d{4}-\d{2}-\d{2}\.json$/);
     const exported = await readFile(await file.path(), "utf8");
-    // Their consent history, both records. (The export does not carry the account
-    // itself, the wallet or the vouchers yet: 13.3.d.)
+    // Their consent history, both records, plus the account, wallet, vouchers
+    // and watch sessions.
     const data = JSON.parse(exported) as {
       consents: { userId: string; purpose: string; state: string }[];
+      account: { email: string; region: string; createdAt: string } | null;
+      wallet: unknown[];
+      vouchers: unknown[];
+      watchSessions: unknown[];
     };
+    expect(data.account?.email).toBe(viewer.email);
+    expect(data.account?.region).toBe(r.region);
+    expect(data.account?.createdAt).toBeTruthy();
+    expect(Array.isArray(data.wallet)).toBe(true);
+    expect(Array.isArray(data.vouchers)).toBe(true);
+    expect(Array.isArray(data.watchSessions)).toBe(true);
+    expect(exported).not.toMatch(/"code"|externalRef|sagaId/);
     const history = data.consents.filter((c) => c.purpose === "declared_interest_targeting");
     expect(history.map((c) => c.state).sort()).toEqual(["granted", "withdrawn"]);
     expect(history.every((c) => c.userId === viewer.userId)).toBe(true);

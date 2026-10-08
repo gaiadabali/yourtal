@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
@@ -18,6 +19,7 @@ import {
   HLS_PREFIX,
   objectKey as hlsObjectKey,
   isAccessDenied,
+  publicMediaUrl as publicObjectUrl,
   resolveCredentials,
   resolveMediaBucket,
   resolveMediaCorsOrigins,
@@ -291,6 +293,62 @@ export async function createRawUpload(
     parts.push({ partNumber, url });
   }
   return { key, uploadId, parts };
+}
+
+const LISTING_IMAGE_EXTENSIONS: Readonly<Record<string, string>> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+/** How long a listing picture's presigned PUT stays valid. */
+const LISTING_IMAGE_URL_TTL_SECONDS = 15 * 60;
+
+export interface ListingImageUpload {
+  readonly uploadUrl: string;
+  /** Where the picture is served once uploaded: under `posters/`, which nginx and the bucket policy already serve publicly. */
+  readonly imageUrl: string;
+  readonly expiresAt: string;
+}
+
+/**
+ * A presigned PUT for one listing picture. The browser sends the file straight to
+ * object storage (the same direct-upload shape as the campaign video, minus the
+ * multipart and transcode a small image does not need); the content type is part of
+ * the signature, so the PUT must carry the type the caller named here. The key sits
+ * under `posters/listings/<businessId>/`, a public-read prefix, so no infra change is
+ * needed to serve it.
+ */
+export async function createListingImageUpload(input: {
+  readonly businessId: string;
+  readonly contentType: string;
+}): Promise<ListingImageUpload> {
+  const extension = LISTING_IMAGE_EXTENSIONS[input.contentType];
+  if (extension === undefined) {
+    throw new Error(`unsupported listing image type: ${input.contentType}`);
+  }
+  const client = createMediaClient();
+  const presignClient = createPresignClient();
+  try {
+    await ensureStudioMediaBucket(client);
+    const key = `${POSTER_PREFIX}/listings/${input.businessId}/${randomUUID()}.${extension}`;
+    const uploadUrl = await getSignedUrl(
+      presignClient,
+      new PutObjectCommand({
+        Bucket: resolveMediaBucket(),
+        Key: key,
+        ContentType: input.contentType,
+      }),
+      { expiresIn: LISTING_IMAGE_URL_TTL_SECONDS },
+    );
+    return {
+      uploadUrl,
+      imageUrl: publicObjectUrl(key),
+      expiresAt: new Date(Date.now() + LISTING_IMAGE_URL_TTL_SECONDS * 1000).toISOString(),
+    };
+  } finally {
+    client.destroy();
+    presignClient.destroy();
+  }
 }
 
 export interface CompleteRawUploadInput {

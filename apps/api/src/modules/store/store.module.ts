@@ -9,6 +9,7 @@ import { SettlementDecreaseController } from "./settlement-decrease.controller";
 import { SettlementDecreaseListController } from "./settlement-decrease-list.controller";
 import { StoreCatalogueController } from "./store-catalogue.controller";
 import { StoreListingController } from "./store-listing.controller";
+import { StoreListingImageController } from "./store-listing-image.controller";
 import { StoreLocationController } from "./store-location.controller";
 import { StaffVoucherBatchReviewController } from "./staff-voucher-batch-review.controller";
 import { StaffListingModerationController } from "./staff-listing-moderation.controller";
@@ -25,6 +26,8 @@ import { LISTING_REPOSITORY } from "./persistence/listing.repository";
 import { LOCATION_REPOSITORY } from "./persistence/location.repository";
 import { SETTLEMENT_DECREASE_REQUEST_REPOSITORY } from "./persistence/settlement-decrease-request.repository";
 import { VOUCHER_BATCH_REQUEST_REPOSITORY } from "./persistence/voucher-batch-request.repository";
+import { LISTING_IMAGE_STORAGE } from "./object-storage/listing-image-storage";
+import { createListingImageUpload } from "@yourtal/media/studio-media";
 import { WalletModule } from "../wallet/wallet.module";
 import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
 import type { LedgerInternalClient } from "../../shared/ledger-client/ledger-internal-client";
@@ -61,6 +64,7 @@ export const STORE_DB = Symbol("STORE_DB");
   imports: [AuthzModule, PdpClientModule, WalletModule],
   controllers: [
     StoreListingController,
+    StoreListingImageController,
     StoreLocationController,
     StoreCatalogueController,
     SettlementDecreaseController,
@@ -104,6 +108,10 @@ export const STORE_DB = Symbol("STORE_DB");
       provide: VOUCHER_BATCH_REQUEST_REPOSITORY,
       useFactory: (db: AppDb) => new DrizzleVoucherBatchRequestRepository(db),
       inject: [STORE_DB],
+    },
+    {
+      provide: LISTING_IMAGE_STORAGE,
+      useValue: { createUploadUrl: createListingImageUpload },
     },
     {
       provide: BUSINESS_REGION_LOOKUP,

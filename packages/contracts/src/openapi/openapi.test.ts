@@ -68,6 +68,14 @@ const LEDGER_AND_VOUCHER_INTERNAL_REASON =
   "ledger-internal/voucher-internal (1.2.a-c): an internal service-to-service operation type, not a public/business-facing HTTP contract -- see this file's comment above NOT_PUBLISHED.";
 
 const NOT_PUBLISHED: Readonly<Record<string, string>> = {
+  createListingImageUploadUrlRequestSchema:
+    "13.3.v: POST /api/{tenantId}/store/listing-images/upload-url's body; StoreModule routes wait for their contract (see route-drift.test.ts's ledger).",
+  listingImageUploadSchema:
+    "Same as createListingImageUploadUrlRequestSchema above, for the response.",
+  voucherBatchRequestStateSchema:
+    "13.3.v: a leaf enum of VoucherBatchRequest, which describes GET /api/{tenantId}/store/voucher-batch-requests (a StoreModule route, see route-drift.test.ts's ledger).",
+  voucherBatchRequestSchema:
+    "13.3.v: the response of the StoreModule's voucher-batch-request routes, which wait for their contract (see route-drift.test.ts's ledger).",
   voucherEscrowHoldRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   voucherEscrowSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   voucherEscrowReleaseRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,

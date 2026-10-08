@@ -211,6 +211,11 @@ const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   "GET /api/{tenantId}/store/voucher-batch-requests/{requestId}":
     "StoreModule -- TASKS.md 7.4.c, this pass's own ticket.",
 
+  // StoreListingImageController -- 13.3.v: a presigned PUT for a listing's picture. Same
+  // "StoreModule routes wait for their contract" reasoning as every entry above.
+  "POST /api/{tenantId}/store/listing-images/upload-url":
+    "StoreModule -- 13.3.v, the Studio listing form's picture upload.",
+
   // BillingModule -- TASKS.md 7.5, this pass's own ticket. Statements and
   // their dispute route needed 10.1 and are now 10.6.b (F40) -- not this
   // controller at all.

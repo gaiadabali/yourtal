@@ -3,6 +3,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import {
   abortRawUpload,
   completeRawUpload,
+  createListingImageUpload,
   createMediaClient,
   createRawUpload,
   getRawObject,
@@ -72,5 +73,31 @@ describe("studio media object store", () => {
     await putMediaOutput(client, { kind: "poster", key, body: Buffer.from("fake-jpeg-bytes") });
     const downloaded = await getRawObject(client, key);
     expect(Buffer.from(downloaded).toString()).toBe("fake-jpeg-bytes");
+  });
+
+  it("mints a presigned PUT for a listing picture under the public posters prefix", async () => {
+    const businessId = randomUUID();
+    const upload = await createListingImageUpload({ businessId, contentType: "image/png" });
+    expect(upload.imageUrl).toContain(`posters/listings/${businessId}/`);
+    expect(upload.imageUrl).toMatch(/\.png$/);
+
+    const key = upload.imageUrl.slice(upload.imageUrl.indexOf("posters/"));
+    cleanupKeys.push(key);
+    const body = Buffer.from("fake-png-bytes");
+    const put = await fetch(upload.uploadUrl, {
+      method: "PUT",
+      headers: { "content-type": "image/png" },
+      body,
+    });
+    expect(put.ok, `PUT to the presigned URL failed: ${String(put.status)}`).toBe(true);
+    expect(Buffer.from(await getRawObject(client, key)).equals(body)).toBe(true);
+  });
+
+  it("refuses anything that is not a web picture, before touching storage", async () => {
+    for (const contentType of ["image/svg+xml", "text/html", "application/pdf"]) {
+      await expect(
+        createListingImageUpload({ businessId: randomUUID(), contentType }),
+      ).rejects.toThrow(/unsupported listing image type/);
+    }
   });
 });

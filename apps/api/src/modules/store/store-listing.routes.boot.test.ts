@@ -74,6 +74,12 @@ const listingId = randomUUID();
 function routesFor(tenantId: string) {
   return [
     { action: "create", method: "POST" as const, url: `/api/${tenantId}/store/listings` },
+    {
+      // 13.3.v: the listing form's picture upload asks the same question as create.
+      action: "create (picture upload)",
+      method: "POST" as const,
+      url: `/api/${tenantId}/store/listing-images/upload-url`,
+    },
     { action: "view (list)", method: "GET" as const, url: `/api/${tenantId}/store/listings` },
     {
       action: "view (one)",

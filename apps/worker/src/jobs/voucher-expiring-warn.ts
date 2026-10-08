@@ -1,4 +1,5 @@
-import { Pool } from "pg";
+import type { Pool } from "pg";
+import { createPool } from "../pool";
 import { createSimulatedPush } from "@yourtal/drivers/push";
 import { defineJob } from "../job";
 import { isPushEnabledFor } from "../push-default";
@@ -108,7 +109,7 @@ export async function warnExpiringVouchers(
 
 let pool: Pool | undefined;
 function poolFor(databaseUrl: string): Pool {
-  pool ??= new Pool({ connectionString: databaseUrl });
+  pool ??= createPool(databaseUrl);
   return pool;
 }
 

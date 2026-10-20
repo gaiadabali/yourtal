@@ -1,0 +1,4 @@
+{
+  "extends": "@yourtal/tsconfig/base.json",
+  "include": ["src/**/*.ts"]
+}

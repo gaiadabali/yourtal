@@ -1,4 +1,4 @@
-h1:il369gvh10ML0cCyWSJPW8N4LfQOg2rqjyFQZdkSebk=
+h1:kzecO0OUWR6i44Tg3H/Y+sv2GO9E+Ql5KsM886m70oU=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -126,3 +126,4 @@ h1:il369gvh10ML0cCyWSJPW8N4LfQOg2rqjyFQZdkSebk=
 20261020120826_campaign_budget_and_districts.sql h1:SrgQYvYhhy7PJFc6lEo96OsC/2P++kXDssZPnRIWJqc=
 20261020134042_platform_partner_link.sql h1:3NRmUjpdPxYTtEdG8yLKnfQA4L9J7DwAuqis4WYrgGE=
 20261020134044_platform_forget_partner_subject.sql h1:T+b/neo1L3pCRKZFw1SSz7m11g0ZaSySpLBqJVL9J9Y=
+20261020134318_paysim.sql h1:fl+GrpDW7okVQ0m7kXHz5DTFl5CjvyVfZcCJNxx7sls=

@@ -11,6 +11,7 @@ const env = {
   WEBHOOK_SECRET_ENCRYPTION_KEY: "test-only-webhook-secret-encryption-key-not-a-real-secret",
   SNAP_APP_PARTNER_SECRET: "test-only-snap-app-partner-secret-not-a-real-secret",
   HLS_SIGNING_SECRET: "test-only-hls-signing-secret-not-a-real-one",
+  TOTP_SECRET_ENCRYPTION_KEY: "test-only-totp-secret-encryption-key-not-a-real-one",
 };
 
 describe("mountPaySim (5.1.e)", () => {

@@ -317,8 +317,13 @@ test.describe.serial("6.2.a: register, forgot/reset, login, verify — against a
     await page.getByLabel("Password").fill(auAccount.password);
     await page.getByRole("button", { name: "Sign in" }).click();
 
+    // The first password sign-in in this browser offers a passkey, once.
+    await expect(page).toHaveURL(/\/passkey/);
+    await expect(page.getByText("Add a passkey?")).toBeVisible();
+    await page.getByRole("button", { name: "Not now" }).click();
     await expect(page).toHaveURL(/\/home/);
     const cookies = await context.cookies();
+    expect(cookies.find((c) => c.name === "yt_passkey_prompt")?.value).toBe("seen");
     expect(cookies.find((c) => c.name === "yt_session")?.value).toBeTruthy();
   });
 

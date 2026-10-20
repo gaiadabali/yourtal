@@ -4,6 +4,7 @@ import type pg from "pg";
 import type { DeleteGuardianAccountResult } from "@yourtal/contracts/identity/guardian";
 import { executeDeletion } from "@yourtal/consent/dsar-orchestrator";
 import { deletionHandlers } from "../../../shared/dsar/deletion-handlers";
+import type { RegionPaymentProviders } from "../../../shared/drivers/payment-providers.module";
 import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-internal-client";
 import { hashOpaqueToken } from "../../auth/crypto/opaque-token";
 import type { GuardianConsentRepository } from "../persistence/guardian-consent.repository";
@@ -29,6 +30,7 @@ export async function deleteGuardianAccount(
   pool: pg.Pool,
   consents: GuardianConsentRepository,
   ledger: LedgerInternalClient,
+  payments: RegionPaymentProviders,
   rawToken: string,
 ): Promise<Result<DeleteGuardianAccountResult, DeleteGuardianAccountError>> {
   const tokenHash = hashOpaqueToken(rawToken);
@@ -36,7 +38,7 @@ export async function deleteGuardianAccount(
   const row = await consents.findByTokenHash(tokenHash);
   if (row === null) return err({ type: "not_found" });
 
-  await executeDeletion(row.userId, deletionHandlers(pool, ledger));
+  await executeDeletion(row.userId, deletionHandlers(pool, ledger, payments));
 
   return ok({ deleted: true });
 }

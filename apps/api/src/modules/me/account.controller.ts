@@ -7,6 +7,8 @@ import type { DeletionReport } from "@yourtal/consent/dsar-orchestrator";
 import { executeDeletion } from "@yourtal/consent/dsar-orchestrator";
 import { deletionPlan } from "@yourtal/consent/dsar";
 import { deletionHandlers } from "../../shared/dsar/deletion-handlers";
+import { PAYMENT_PROVIDERS } from "../../shared/drivers/payment-providers.module";
+import type { RegionPaymentProviders } from "../../shared/drivers/payment-providers.module";
 import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
 import type { LedgerInternalClient } from "../../shared/ledger-client/ledger-internal-client";
 import { VOUCHER_INTERNAL_CLIENT } from "../../shared/voucher-client/voucher-internal-client";
@@ -73,6 +75,7 @@ export class AccountController {
     @Inject(LEDGER_INTERNAL_CLIENT) private readonly ledger: LedgerInternalClient,
     @Inject(VOUCHER_INTERNAL_CLIENT) private readonly vouchers: VoucherInternalClient,
     @Inject(DATA_EXPORT_READER) private readonly exportReader: DataExportReader,
+    @Inject(PAYMENT_PROVIDERS) private readonly payments: RegionPaymentProviders,
   ) {}
 
   /** Every ledger entry for the caller, newest first, page by page. */
@@ -120,7 +123,7 @@ export class AccountController {
   @Delete()
   async deleteAccount(@Req() request: FastifyRequest): Promise<DeletionReport> {
     const userId = (await this.principals.resolve(request)).id;
-    return executeDeletion(userId, deletionHandlers(this.pool, this.ledger));
+    return executeDeletion(userId, deletionHandlers(this.pool, this.ledger, this.payments));
   }
 
   @Authorize({ kind: "me", action: "export_data" })
@@ -171,6 +174,8 @@ export class AccountController {
       showLess: personal.showLess,
       linkCodes: personal.linkCodes,
       voucherExpiryWarnings: personal.voucherExpiryWarnings,
+      // 5.1.h: the saved card, without the processor's references.
+      savedCard: personal.savedCard,
       streak,
       // F116: the postcode the viewer picked as "my area", or null. Declared by them, not located.
       declaredArea: declaredArea === null ? null : { postcode: declaredArea },

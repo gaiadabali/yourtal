@@ -62,6 +62,50 @@ describe("the Stripe payments driver", () => {
     ]);
   });
 
+  describe("deleting a customer", () => {
+    it("DELETEs /v1/customers/:id and succeeds on Stripe's deleted:true", async () => {
+      const { payments, calls } = driver({
+        status: 200,
+        body: { id: "cus_1", object: "customer", deleted: true },
+      });
+      expect((await payments.deleteCustomer("cus_1")).isOk()).toBe(true);
+      expect(calls).toHaveLength(1);
+      expect(calls[0]).toMatchObject({ method: "DELETE", url: `${TEST_BASE}/v1/customers/cus_1` });
+    });
+
+    it("treats a customer Stripe no longer has as deleted, so a retry ends cleanly", async () => {
+      const { payments } = driver({
+        status: 404,
+        body: {
+          error: {
+            type: "invalid_request_error",
+            code: "resource_missing",
+            message: "No such customer: 'cus_1'",
+          },
+        },
+      });
+      expect((await payments.deleteCustomer("cus_1")).isOk()).toBe(true);
+    });
+
+    it("fails, possibly succeeded, when Stripe is down or does not confirm", async () => {
+      const down = driver({ status: 503, body: { error: { type: "api_error", message: "down" } } });
+      expect((await down.payments.deleteCustomer("cus_1"))._unsafeUnwrapErr()).toMatchObject({
+        kind: "server_error",
+        mayHaveSucceeded: true,
+      });
+      const vague = driver({ status: 200, body: { id: "cus_1", object: "customer" } });
+      expect((await vague.payments.deleteCustomer("cus_1"))._unsafeUnwrapErr().kind).toBe(
+        "server_error",
+      );
+    });
+
+    it("refuses a blank reference without calling Stripe", async () => {
+      const { payments, calls } = driver();
+      expect((await payments.deleteCustomer(" "))._unsafeUnwrapErr().kind).toBe("declined");
+      expect(calls).toHaveLength(0);
+    });
+  });
+
   it("starts a payment-mode Checkout Session with one line item and our reference everywhere", async () => {
     const { payments, calls } = driver({
       status: 200,

@@ -50,13 +50,14 @@ export interface Kit {
   advance(ms: number): void;
   now(): Date;
   call(
-    method: "GET" | "POST",
+    method: "GET" | "POST" | "DELETE",
     path: string,
     params?: Params,
     headers?: Record<string, string>,
   ): Promise<Call>;
   get(path: string, params?: Params, headers?: Record<string, string>): Promise<Call>;
   post(path: string, params?: Params, headers?: Record<string, string>): Promise<Call>;
+  del(path: string, headers?: Record<string, string>): Promise<Call>;
 }
 
 export async function makeKit(opts: { start?: string } = {}): Promise<Kit> {
@@ -114,6 +115,7 @@ export async function makeKit(opts: { start?: string } = {}): Promise<Kit> {
     call,
     get: (path, params, headers) => call("GET", path, params, headers),
     post: (path, params, headers) => call("POST", path, params, headers),
+    del: (path, headers) => call("DELETE", path, {}, headers),
   };
 }
 

@@ -53,6 +53,13 @@ export interface StripeClient {
     query?: StripeParams,
     options?: StripeGetOptions,
   ): Promise<Result<StripeObject, BoundaryFailure>>;
+  /** DELETE has no body and needs no idempotency key: repeating it is answered 404, which callers read as "gone". */
+  delete(path: string, options?: StripeGetOptions): Promise<Result<StripeObject, BoundaryFailure>>;
+}
+
+/** Whether a failure is Stripe's 404 `resource_missing` (the object does not exist, or no longer does). */
+export function isResourceMissing(failure: BoundaryFailure): boolean {
+  return /^Stripe 404 \S+ \(resource_missing\) on /.test(failure.detail);
 }
 
 /** `/v1/payment_intents/pi_x/capture`, with each id segment escaped. */
@@ -104,7 +111,7 @@ export function createStripeClient(config: StripeClientConfig): StripeClient {
     });
 
   async function send(
-    method: "GET" | "POST",
+    method: "GET" | "POST" | "DELETE",
     path: string,
     params: StripeParams,
     idempotencyKey: string | undefined,
@@ -181,6 +188,9 @@ export function createStripeClient(config: StripeClientConfig): StripeClient {
     },
     get(path, query = {}, options = {}) {
       return send("GET", path, query, undefined, options.stripeAccount);
+    },
+    delete(path, options = {}) {
+      return send("DELETE", path, {}, undefined, options.stripeAccount);
     },
   };
 }

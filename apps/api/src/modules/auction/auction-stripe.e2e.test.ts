@@ -5,16 +5,23 @@ import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
 import { ZodValidationPipe } from "nestjs-zod";
 import pg from "pg";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { err } from "neverthrow";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { DemoApi } from "@yourtal/db/demo-world/api-client";
 import { ensureBidderCard } from "@yourtal/db/demo-world/card";
-import { createPaymentProviders } from "@yourtal/drivers/payment-providers";
+import { purgeDeletedAccountCustomers } from "@yourtal/db/dsar-payment-handlers";
+import {
+  createPaymentProviders,
+  processorCustomerDeleter,
+} from "@yourtal/drivers/payment-providers";
 import { signStripePayload } from "@yourtal/drivers/stripe/signature";
 import { createBrowser } from "@yourtal/paysim/browser";
 import type { PaySimBrowser } from "@yourtal/paysim/browser";
 import { startPaySimServer } from "@yourtal/paysim/server";
 import type { PaySimServer } from "@yourtal/paysim/server";
 import { AppModule } from "../../app.module";
+import { PAYMENT_PROVIDERS } from "../../shared/drivers/payment-providers.module";
+import type { RegionPaymentProviders } from "../../shared/drivers/payment-providers.module";
 import { sessionFor } from "../../shared/testing/session-for";
 import type { TestSession } from "../../shared/testing/session-for";
 
@@ -302,7 +309,7 @@ describe("the demo world's bidders (5.1.d)", () => {
 });
 
 describe("account deletion (5.1.d)", () => {
-  it("erases the bidder's customer, saved card and setup history, and no one else's", async () => {
+  it("erases the bidder's customer, saved card and setup history here and at Stripe, and no one else's", async () => {
     const [leaving, staying] = [await adult(), await adult()];
     await saveCard(leaving, randomUUID());
     await saveCard(staying, randomUUID());
@@ -317,6 +324,35 @@ describe("account deletion (5.1.d)", () => {
         }),
       );
     expect(await count(leaving.userId)).toEqual([1, 1, 1]);
+    const customerOf = async (userId: string): Promise<string> =>
+      (
+        await pool.query<{ customer_ref: string }>(
+          `SELECT customer_ref FROM payment.customer WHERE owner_kind = 'user' AND owner_id = $1`,
+          [userId],
+        )
+      ).rows[0]?.customer_ref ?? "";
+    const [leavingCustomer, stayingCustomer] = [
+      await customerOf(leaving.userId),
+      await customerOf(staying.userId),
+    ];
+    const atStripe = async (customerRef: string) =>
+      fetch(`${paysim.baseUrl}/v1/customers/${customerRef}`, {
+        headers: { authorization: `Bearer ${paysim.secretKey}` },
+      });
+    expect((await atStripe(leavingCustomer)).status).toBe(200);
+
+    // 5.1.h: the export lists the card, never the processor's references.
+    const exported = await call("GET", "/api/me/data-export", leaving);
+    expect(exported.statusCode, exported.body).toBe(200);
+    expect(exported.json<{ savedCard: unknown }>().savedCard).toMatchObject({
+      brand: "visa",
+      last4: "4242",
+      expMonth: 12,
+      expYear: 2034,
+      usedFor: "auction_bids",
+    });
+    expect(exported.body).not.toContain(leavingCustomer);
+    expect(exported.body).not.toMatch(/pm_[A-Za-z0-9]/);
 
     const deleted = await app.inject({
       method: "DELETE",
@@ -328,6 +364,56 @@ describe("account deletion (5.1.d)", () => {
     expect(report.results.find((r) => r.domain === "payment_cards")?.outcome.status).toBe("erased");
     expect(await count(leaving.userId)).toEqual([0, 0, 0]);
     expect(await count(staying.userId)).toEqual([1, 1, 1]);
+    // The customer is gone at Stripe too, and the other bidder's is not.
+    const missing = await atStripe(leavingCustomer);
+    expect(missing.status).toBe(404);
+    expect(await missing.json()).toMatchObject({ error: { code: "resource_missing" } });
+    expect((await atStripe(stayingCustomer)).status).toBe(200);
+  });
+});
+
+describe("account deletion while Stripe is down (5.1.h)", () => {
+  it("keeps the rows as the record to retry from, reports the domain failed, and the sweep finishes it", async () => {
+    const leaving = await adult();
+    await saveCard(leaving, randomUUID());
+    const rows = async (): Promise<number> =>
+      (
+        await pool.query<{ n: number }>(
+          `SELECT count(*)::int AS n FROM payment.customer WHERE owner_kind = 'user' AND owner_id = $1`,
+          [leaving.userId],
+        )
+      ).rows[0]?.n ?? 0;
+
+    const providers = app.get<RegionPaymentProviders>(PAYMENT_PROVIDERS);
+    const down = vi.spyOn(providers.AU.payments, "deleteCustomer").mockResolvedValue(
+      err({
+        kind: "server_error",
+        boundary: "payments",
+        detail: "Stripe answered 503.",
+        mayHaveSucceeded: true,
+      }),
+    );
+    let report: { complete: boolean; results: { domain: string; outcome: { status: string } }[] };
+    try {
+      const deleted = await app.inject({
+        method: "DELETE",
+        url: "/api/me",
+        headers: { cookie: leaving.cookie, "idempotency-key": randomUUID() },
+      });
+      expect(deleted.statusCode, deleted.body).toBe(200);
+      report = deleted.json();
+    } finally {
+      down.mockRestore();
+    }
+    expect(report.complete).toBe(false);
+    expect(report.results.find((r) => r.domain === "payment_cards")?.outcome.status).toBe("failed");
+    // The account itself is gone, and the customer record is not.
+    expect(await rows()).toBe(1);
+
+    // Stripe is back: the worker's sweep deletes the customer there and then the rows.
+    const result = await purgeDeletedAccountCustomers(pool, processorCustomerDeleter(providers));
+    expect(result.failed).toBe(0);
+    expect(await rows()).toBe(0);
   });
 });
 

@@ -88,6 +88,12 @@ describe("the simulated payments driver on the 14.7 seam", () => {
     });
   });
 
+  it("deletes a customer as a no-op, and shapes it with the fault plan", async () => {
+    expect((await driver().deleteCustomer("simcus_c1")).isOk()).toBe(true);
+    const down = createSimulatedPayments({ kind: "timeout" });
+    expect((await down.deleteCustomer("simcus_c1"))._unsafeUnwrapErr().kind).toBe("timeout");
+  });
+
   it("shapes the new calls with the fault plan, like the old one", async () => {
     const declining = createSimulatedPayments({ kind: "decline" });
     const charged = await declining.chargeSaved({

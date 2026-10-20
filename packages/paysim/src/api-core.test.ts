@@ -116,6 +116,42 @@ describe("customers", () => {
     });
   });
 
+  it("deletes as Stripe does, and every later use of the customer is resource_missing", async () => {
+    const c = await k.post("/v1/customers", { email: "gone@example.test" });
+    const id = c.json["id"] as string;
+    const del = await k.del(`/v1/customers/${id}`);
+    expect(del.status).toBe(200);
+    expect(del.json).toEqual({ id, object: "customer", deleted: true });
+
+    for (const call of [
+      await k.get(`/v1/customers/${id}`),
+      await k.post(`/v1/customers/${id}`, { name: "Back" }),
+      await k.del(`/v1/customers/${id}`),
+      await k.post("/v1/checkout/sessions", {
+        mode: "setup",
+        currency: "aud",
+        success_url: "https://app.test/ok",
+        customer: id,
+      }),
+    ]) {
+      expect(call.status).toBe(404);
+      expect(call.json["error"]).toMatchObject({ code: "resource_missing" });
+    }
+  });
+
+  it("answers DELETE for a customer that never existed with resource_missing", async () => {
+    const res = await k.del("/v1/customers/cus_nope");
+    expect(res.status).toBe(404);
+    expect(res.json["error"]).toMatchObject({ code: "resource_missing" });
+  });
+
+  it("needs the platform key to delete", async () => {
+    const c = await k.post("/v1/customers", {});
+    const res = await fetch(`${k.sim.baseUrl}/v1/customers/${c.json["id"]}`, { method: "DELETE" });
+    expect(res.status).toBe(401);
+    expect((await k.get(`/v1/customers/${c.json["id"]}`)).status).toBe(200);
+  });
+
   it("refuses a default payment method that is not attached to the customer", async () => {
     const c = await k.post("/v1/customers", {});
     const res = await k.post(`/v1/customers/${c.json["id"]}`, {

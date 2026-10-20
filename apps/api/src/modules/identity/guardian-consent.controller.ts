@@ -9,6 +9,8 @@ import {
 } from "../../shared/rate-limit/rate-limit.decorator";
 import { Idempotent } from "../../shared/idempotency/idempotent.decorator";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
+import { PAYMENT_PROVIDERS } from "../../shared/drivers/payment-providers.module";
+import type { RegionPaymentProviders } from "../../shared/drivers/payment-providers.module";
 import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
 import type { LedgerInternalClient } from "../../shared/ledger-client/ledger-internal-client";
 import { IDENTITY_DB } from "./persistence/identity-db.token";
@@ -53,6 +55,7 @@ export class GuardianConsentController {
     @Inject(GUARDIAN_CONSENT_REPOSITORY) private readonly consents: GuardianConsentRepository,
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
     @Inject(LEDGER_INTERNAL_CLIENT) private readonly ledger: LedgerInternalClient,
+    @Inject(PAYMENT_PROVIDERS) private readonly payments: RegionPaymentProviders,
   ) {}
 
   @RateLimit(GUARDIAN_CONSENT_VIEW_RATE_LIMIT)
@@ -118,7 +121,13 @@ export class GuardianConsentController {
   async deleteAccount(@Param("token") token: string, @Body() _body: DeleteGuardianAccountDto) {
     // `_body.confirm` is already proven `true` by the DTO's own schema, same
     // shape `approve`'s own `_body.confirmAdult` is above.
-    const result = await deleteGuardianAccount(this.pool, this.consents, this.ledger, token);
+    const result = await deleteGuardianAccount(
+      this.pool,
+      this.consents,
+      this.ledger,
+      this.payments,
+      token,
+    );
     if (result.isErr()) throw mapGuardianConsentErrorToHttpException(result.error);
     return result.value;
   }

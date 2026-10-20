@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./dsar-handlers": "./src/dsar-handlers.ts",
+    "./dsar-payment-handlers": "./src/dsar-payment-handlers.ts",
     "./invoicing/issue": "./src/invoicing/issue-invoice.ts",
     "./invoicing/sources": "./src/invoicing/sources.ts",
     "./invoicing/types": "./src/invoicing/types.ts",

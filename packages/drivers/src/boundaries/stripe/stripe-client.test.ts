@@ -3,6 +3,7 @@ import {
   STRIPE_API_VERSION,
   STRIPE_TIMEOUT_MS,
   createStripeClient,
+  isResourceMissing,
   redactSecrets,
   stripeConfigFromEnv,
   stripePath,
@@ -61,6 +62,34 @@ describe("the Stripe transport", () => {
       Authorization: `Bearer ${TEST_KEY}`,
       "Stripe-Version": STRIPE_API_VERSION,
     });
+  });
+
+  it("DELETEs with no body and no idempotency key, and reads 404 resource_missing as the object being gone", async () => {
+    const gone = recordingFetch({
+      status: 404,
+      body: {
+        error: {
+          type: "invalid_request_error",
+          code: "resource_missing",
+          message: "No such customer",
+        },
+      },
+    });
+    const result = await clientWith(gone.fetch).delete(stripePath("customers", "cus_1"));
+    expect(gone.calls[0]).toMatchObject({
+      method: "DELETE",
+      url: "https://api.stripe.com/v1/customers/cus_1",
+      body: undefined,
+    });
+    expect(gone.calls[0]?.headers).not.toHaveProperty("Idempotency-Key");
+    expect(isResourceMissing(result._unsafeUnwrapErr())).toBe(true);
+
+    const refused = recordingFetch({
+      status: 400,
+      body: { error: { type: "invalid_request_error", message: "Nope" } },
+    });
+    const other = await clientWith(refused.fetch).delete(stripePath("customers", "cus_1"));
+    expect(isResourceMissing(other._unsafeUnwrapErr())).toBe(false);
   });
 
   it("escapes an id segment so it cannot rewrite the path", () => {

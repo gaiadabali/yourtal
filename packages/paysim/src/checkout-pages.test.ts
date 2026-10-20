@@ -271,6 +271,30 @@ describe("the checkout page, setup mode", () => {
     );
   });
 
+  it("a deleted customer's saved card reads as detached, and the customer cannot be charged", async () => {
+    const { id, customer } = await setupSession();
+    await k.browser.submitCheckout(id, CARD_OK);
+    const got = await k.get(`/v1/checkout/sessions/${id}`, { expand: ["setup_intent"] });
+    const pmId = got.json["setup_intent"].payment_method as string;
+    expect((await k.get(`/v1/payment_methods/${pmId}`)).json["customer"]).toBe(customer);
+
+    expect((await k.del(`/v1/customers/${customer}`)).json).toMatchObject({ deleted: true });
+    const pm = await k.get(`/v1/payment_methods/${pmId}`);
+    expect(pm.status).toBe(200);
+    expect(pm.json["customer"]).toBeNull();
+
+    const charge = await k.post("/v1/payment_intents", {
+      amount: 500,
+      currency: "aud",
+      customer,
+      payment_method: pmId,
+      confirm: true,
+      off_session: true,
+    });
+    expect(charge.status).toBe(404);
+    expect(charge.json["error"]).toMatchObject({ code: "resource_missing", param: "customer" });
+  });
+
   it("declines and 3-D Secure behave as in payment mode, without payment events", async () => {
     const declined = await setupSession();
     const res = await k.browser.submitCheckout(declined.id, CARD_DECLINED);

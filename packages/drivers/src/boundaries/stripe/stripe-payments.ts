@@ -5,6 +5,7 @@ import { type PaymentsDriver, type SavedCard, webhookHeader } from "../payments"
 import {
   type StripeClient,
   createStripeClient,
+  isResourceMissing,
   stripeConfigFromEnv,
   stripePath,
   unexpectedAnswer,
@@ -17,7 +18,7 @@ import {
   stripeCurrency,
   toStripeAmount,
 } from "./stripe-money";
-import { type StripeObject, idOf, int, obj, str } from "./stripe-object";
+import { type StripeObject, bool, idOf, int, obj, str } from "./stripe-object";
 import { STRIPE_SIGNATURE_HEADER, verifyStripeSignature } from "./stripe-signature";
 
 /**
@@ -124,6 +125,19 @@ export function createStripePayments(config: StripePaymentsConfig): PaymentsDriv
       return customerRef === undefined
         ? err(unexpectedAnswer(BOUNDARY, "Stripe created a customer without an id."))
         : ok({ customerRef });
+    },
+
+    async deleteCustomer(customerRef) {
+      if (customerRef.trim() === "") return err(declined("A customer reference is required."));
+      // Stripe deletes the customer's payment methods with it. A 404 means it is already gone: a retry succeeds.
+      const deleted = await client.delete(stripePath("customers", customerRef));
+      if (deleted.isErr())
+        return isResourceMissing(deleted.error) ? ok(undefined) : err(deleted.error);
+      return str(deleted.value, "id") === customerRef && bool(deleted.value, "deleted") === true
+        ? ok(undefined)
+        : err(
+            unexpectedAnswer(BOUNDARY, `Stripe did not confirm deleting customer ${customerRef}.`),
+          );
     },
 
     async startCheckout(request) {

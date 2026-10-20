@@ -17,7 +17,7 @@ export interface Req {
 }
 
 export interface Route {
-  method: "GET" | "POST";
+  method: "GET" | "POST" | "DELETE";
   path: string;
   run(ctx: Ctx, req: Req): Promise<Out>;
 }

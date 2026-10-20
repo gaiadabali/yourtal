@@ -1,7 +1,7 @@
 import type pg from "pg";
 import type { DomainHandler, HandlerRegistry } from "@yourtal/consent/dsar-orchestrator";
 import { meHandlers } from "./dsar-me-handlers";
-import { paymentHandlers } from "./dsar-payment-handlers";
+import { type ProcessorCustomerDeleter, paymentHandlers } from "./dsar-payment-handlers";
 
 /**
  * The deletion handlers for domains this database actually holds. YT-0036.
@@ -273,7 +273,10 @@ export function forgetPartnerLinks(pool: pg.Pool): DomainHandler {
  * value path through `voucher.anonymise_owner` rather than through a wider
  * grant — see the note on `anonymiseVouchers`.
  */
-export function postgresHandlers(pool: pg.Pool): HandlerRegistry {
+export function postgresHandlers(
+  pool: pg.Pool,
+  options: { readonly deleteAtProcessor?: ProcessorCustomerDeleter } = {},
+): HandlerRegistry {
   return {
     vouchers: anonymiseVouchers(pool),
     // 1.4.f: business membership plus identity.user_profile, .credential
@@ -282,7 +285,8 @@ export function postgresHandlers(pool: pg.Pool): HandlerRegistry {
     partner_links: forgetPartnerLinks(pool),
     // 1.20: me.*, account-security tokens, org memberships and watch sessions.
     ...meHandlers(pool),
-    // 5.1.d: a bidder's saved card.
-    ...paymentHandlers(pool),
+    // 5.1.d, 5.1.h: a bidder's saved card, here and at the processor. Without a deleter the
+    // domain stays unhandled: erasing the rows alone would orphan the processor's customer.
+    ...paymentHandlers(pool, options.deleteAtProcessor),
   };
 }

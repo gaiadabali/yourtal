@@ -17,7 +17,9 @@ export interface Card {
 
 export interface PaySimBrowser {
   get(path: string): Promise<BrowserResult>;
-  submitCheckout(sessionId: string, card: Card): Promise<BrowserResult>;
+  /** The CSRF token a page would send back; a stale tab keeps its old one. */
+  csrfFrom(path: string): Promise<string>;
+  submitCheckout(sessionId: string, card: Card, csrf?: string): Promise<BrowserResult>;
   decideThreeDS(sessionId: string, outcome: "complete" | "fail"): Promise<BrowserResult>;
   completeOnboarding(
     token: string,
@@ -54,9 +56,10 @@ export function createBrowser(pageBase: string, fetchImpl: typeof fetch = fetch)
 
   return {
     get,
-    async submitCheckout(sessionId, card) {
-      const csrf = await csrfFrom(`/checkout/${sessionId}`);
-      return post(`/checkout/${sessionId}`, { csrf, ...card });
+    csrfFrom,
+    async submitCheckout(sessionId, card, csrf) {
+      const token = csrf ?? (await csrfFrom(`/checkout/${sessionId}`));
+      return post(`/checkout/${sessionId}`, { csrf: token, ...card });
     },
     async decideThreeDS(sessionId, outcome) {
       const csrf = await csrfFrom(`/checkout/${sessionId}/3ds`);

@@ -143,7 +143,7 @@ export class InteractionService {
       },
       { mergeWithLastSubmission: false },
     );
-    await loaded.store.logSignIn(account.userId, loaded.client.clientId, "signed_in");
+    // The sign-in log row is written when the code is issued (provider-middleware.ts).
     return { redirectTo };
   }
 

@@ -187,6 +187,16 @@ describe("docs/26 §1.1 provider settings", () => {
     );
   });
 
+  it("lets the JWKS be cached for 10 minutes and discovery for 1 hour", async () => {
+    const jwks = await kit.fastify.inject({ method: "GET", url: "/oidc/jwks" });
+    expect(jwks.headers["cache-control"]).toBe("public, max-age=600");
+    const config = await kit.fastify.inject({
+      method: "GET",
+      url: "/oidc/.well-known/openid-configuration",
+    });
+    expect(config.headers["cache-control"]).toBe("public, max-age=3600");
+  });
+
   it("publishes public signing keys only", async () => {
     const jwks = (await kit.fastify.inject({ method: "GET", url: "/oidc/jwks" })).json();
     expect(jwks.keys.length).toBeGreaterThan(0);

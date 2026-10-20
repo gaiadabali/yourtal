@@ -14,6 +14,7 @@ import { createPgOidcStore } from "./oidc-store";
 import { pairwiseIdentifierFor } from "./pairwise";
 import { pgAdapterFactory } from "./pg-adapter";
 import { providerConfiguration } from "./provider-config";
+import { addProviderMiddleware } from "./provider-middleware";
 
 export const OIDC_RUNTIME = Symbol("OIDC_RUNTIME");
 
@@ -76,6 +77,9 @@ export function createOidcRuntime(config: AppConfig, pool?: Pool): OidcRuntime {
   );
   // Behind nginx: trust X-Forwarded-Proto for secure cookies and https URLs.
   provider.proxy = true;
+  addProviderMiddleware(provider, store, (message) => {
+    logger.error(message);
+  });
   logger.log(`provider ready at ${oidc.issuer} with ${String(loaded.registered.length)} clients`);
   return new OidcRuntime(provider, loaded.registered, store, ownPool);
 }

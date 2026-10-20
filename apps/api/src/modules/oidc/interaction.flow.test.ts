@@ -102,6 +102,7 @@ beforeAll(async () => {
   kit = await buildTestProvider({
     issuer,
     findAccount: findAccountFrom(memory.store),
+    store: memory.store,
     pairwiseIdentifier: (accountId, clientId) =>
       pairwiseIdentifierFor(memory.store, registered)(accountId, clientId),
   });

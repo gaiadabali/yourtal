@@ -12,6 +12,8 @@ import { loadProviderKeys } from "../keys";
 import { mountOidc } from "../mount-oidc";
 import { OidcRuntime } from "../oidc-runtime";
 import { providerConfiguration } from "../provider-config";
+import { addProviderMiddleware } from "../provider-middleware";
+import type { OidcStore } from "../oidc-store";
 
 /** Test-only: what a provider needs, without Postgres. */
 export const TEST_ISSUER = "http://127.0.0.1:26999/oidc";
@@ -114,6 +116,7 @@ export interface TestProviderOptions {
   readonly issuer?: string;
   readonly findAccount?: FindAccount;
   readonly pairwiseIdentifier?: (accountId: string, clientId: string) => Promise<string>;
+  readonly store?: Pick<OidcStore, "logSignIn">;
 }
 
 /** A provider over the real registry and settings, mounted on a bare Fastify, with no database. */
@@ -134,6 +137,7 @@ export async function buildTestProvider(options: TestProviderOptions = {}): Prom
     }),
   );
   provider.proxy = true;
+  addProviderMiddleware(provider, options.store ?? null, () => undefined);
   const fastify = Fastify();
   await mountOidc(fastify, new OidcRuntime(provider, loaded.registered, null, null));
   await fastify.ready();

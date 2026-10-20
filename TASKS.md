@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 7/17 | 38/63 | `██████░░░░`  60% |
-| **All** | | | **112/123** | **584/610** | `██████████`  96% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 7/17 | 39/63 | `██████░░░░`  62% |
+| **All** | | | **112/123** | **585/610** | `██████████`  96% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1673,7 +1673,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.8.a Stripe Connect payouts to AU brands: on the simulation, a brand and a charity onboard a connected account through the simulated onboarding page, and payouts land in it. ID has no real payouts (F104) → cef84dd8
   - [x] 14.8.b Settlement statements trigger real payouts, after approval → cef84dd8
   - [ ] 14.8.c Read a payout back when its webhook never arrives (`getPayout`), and a staff action for disbursements left unconfirmed or refused (group 5.2.c)
-  - [ ] 14.8.d The weekly statement job 10.1.b names but which was never built, with a backfill of recent closed weeks (group 5.2.d)
+  - [x] 14.8.d The weekly statement job 10.1.b names but which was never built, with a backfill of recent closed weeks (group 5.2.d) → 1742a5ce
 - [ ] **14.9 GST tax invoices** (group 5.3) · C · needs: — (real invoices need the AU company, group 6.1.a) — 🔄 g5 (helper `g-phase5-inv`)
   - [x] 14.9.a GST tax invoices (AU) for points and boosts; PPN waits until ID takes real money (F104) → 216cc736
   - [x] 14.9.b Invoice numbering, the company's details read from the settings store, and a PDF downloadable in Studio → 216cc736

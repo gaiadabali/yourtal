@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 7/17 | 41/63 | `███████░░░`  65% |
-| **All** | | | **112/123** | **587/610** | `██████████`  96% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 7/17 | 42/63 | `███████░░░`  67% |
+| **All** | | | **112/123** | **588/610** | `██████████`  96% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1660,7 +1660,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
 - [ ] **14.6 Faster video start** (group 5.6, moved from 13.4.a by F97) · B · needs: — — 🔄 g5 (helper `g-phase5-video`)
   - [ ] 14.6.a First frame on Shorts in 1.0 s or less on the mid-tier Android profile (median 1,044 ms at 0ee372e4) → 7df06ebe; staging 2026-10-21: median 1,040 ms (3 of 9 under 1.0 s), was 1,388 ms on the same machine; not yet met
   - [x] 14.6.b Responsive poster sizes (`srcset`; the contract carries one `posterUrl` today, 13.4.f) → 7df06ebe; staging serves every recorded size
-  - [ ] 14.6.c Signed out, `/shorts` shows the error state; show Open Viewing Shorts or a sign-in prompt (group 5.6.c)
+  - [ ] 14.6.c Signed out, `/shorts` shows the error state; show Open Viewing Shorts or a sign-in prompt (group 5.6.c) → merged 63ab2a04; left: confirm on staging
 - [ ] **14.7 Stripe payments in AU, on the payment simulation** (group 5.1, F103, F106) · A + C · needs: — — 🔄 g5
   - [x] 14.7.a The payment simulation (group 5.1.e): it speaks Stripe's API, has a checkout page that takes only Stripe's test cards (4242… pays, 4000…0002 is declined, 4000 0025 0000 3155 asks for 3-D Secure) and never stores or logs a card number, sends signed webhooks and retries them, and does refunds and Connect. Every page says "Simulated payment, no real money"; a production host refuses to start it → `packages/paysim`, mounted at `/api/paysim` behind `PAYSIM_ENABLED` (abd99d89)
   - [ ] 14.7.b A Stripe driver (AU) for `PAYMENTS_DRIVER=live` (group 5.1.a), written against Stripe's real API: points purchases, boosts, refunds and webhooks; staging points it at the simulation. The Xendit-shaped simulated driver stays for ID (F104) → driver f873e760; the app on it 8b5bddc0 (Checkout purchases, webhook, saved cards, boost charges, GST). Auctions on it at cef84dd8, so live payments boot. Left: staging
@@ -1668,7 +1668,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.7.d Charity auction escrow on the Stripe driver: a bid is held, the winning bid captured and the losing ones released (group 5.1.d) → cef84dd8
   - [ ] 14.7.e Check on staging (group 5.1.f): a brand buys points (`billing/purchases`), pays for a boost, has a purchase approved by staff (`staff/economy/…/purchases`) and has a card declined; a charity auction holds, captures and releases bids. No refund step (F107); the driver's refunds are checked against the simulation → passed on staging 2026-10-21: purchase, declined card, 3-D Secure, charity auction hold/capture/release. staff-approved purchase (YT-AU-000003). Left: a boost day through Stripe (13:15 UTC 2026-10-21)
   - [ ] 14.7.f A staff queue for card purchases parked as `needs_review`, with a way to settle each (group 5.1.g): settled by a full card refund, two-person (F123)
-  - [ ] 14.7.g Account deletion also deletes the Stripe customer, and the data export lists a bidder's saved card (group 5.1.h)
+  - [x] 14.7.g Account deletion also deletes the Stripe customer, and the data export lists a bidder's saved card (group 5.1.h) → 63ab2a04
 - [ ] **14.8 Stripe Connect payouts in AU** (group 5.2, F103) · A + C · needs: 14.7 — 🔄 g5 (helper `g-phase5-pay`)
   - [x] 14.8.a Stripe Connect payouts to AU brands: on the simulation, a brand and a charity onboard a connected account through the simulated onboarding page, and payouts land in it. ID has no real payouts (F104) → cef84dd8
   - [x] 14.8.b Settlement statements trigger real payouts, after approval → cef84dd8

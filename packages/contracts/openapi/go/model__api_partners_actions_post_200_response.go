@@ -22,6 +22,8 @@ var _ MappedNullable = &ApiPartnersActionsPost200Response{}
 type ApiPartnersActionsPost200Response struct {
 	Granted bool `json:"granted"`
 	Points int64 `json:"points"`
+	LinkId NullableString `json:"linkId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	Duplicate bool `json:"duplicate"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -31,10 +33,12 @@ type _ApiPartnersActionsPost200Response ApiPartnersActionsPost200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiPartnersActionsPost200Response(granted bool, points int64) *ApiPartnersActionsPost200Response {
+func NewApiPartnersActionsPost200Response(granted bool, points int64, linkId NullableString, duplicate bool) *ApiPartnersActionsPost200Response {
 	this := ApiPartnersActionsPost200Response{}
 	this.Granted = granted
 	this.Points = points
+	this.LinkId = linkId
+	this.Duplicate = duplicate
 	return &this
 }
 
@@ -94,6 +98,56 @@ func (o *ApiPartnersActionsPost200Response) SetPoints(v int64) {
 	o.Points = v
 }
 
+// GetLinkId returns the LinkId field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *ApiPartnersActionsPost200Response) GetLinkId() string {
+	if o == nil || o.LinkId.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.LinkId.Get()
+}
+
+// GetLinkIdOk returns a tuple with the LinkId field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiPartnersActionsPost200Response) GetLinkIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.LinkId.Get(), o.LinkId.IsSet()
+}
+
+// SetLinkId sets field value
+func (o *ApiPartnersActionsPost200Response) SetLinkId(v string) {
+	o.LinkId.Set(&v)
+}
+
+// GetDuplicate returns the Duplicate field value
+func (o *ApiPartnersActionsPost200Response) GetDuplicate() bool {
+	if o == nil {
+		var ret bool
+		return ret
+	}
+
+	return o.Duplicate
+}
+
+// GetDuplicateOk returns a tuple with the Duplicate field value
+// and a boolean to check if the value has been set.
+func (o *ApiPartnersActionsPost200Response) GetDuplicateOk() (*bool, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Duplicate, true
+}
+
+// SetDuplicate sets field value
+func (o *ApiPartnersActionsPost200Response) SetDuplicate(v bool) {
+	o.Duplicate = v
+}
+
 func (o ApiPartnersActionsPost200Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -106,6 +160,8 @@ func (o ApiPartnersActionsPost200Response) ToMap() (map[string]interface{}, erro
 	toSerialize := map[string]interface{}{}
 	toSerialize["granted"] = o.Granted
 	toSerialize["points"] = o.Points
+	toSerialize["linkId"] = o.LinkId.Get()
+	toSerialize["duplicate"] = o.Duplicate
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -121,6 +177,8 @@ func (o *ApiPartnersActionsPost200Response) UnmarshalJSON(data []byte) (err erro
 	requiredProperties := []string{
 		"granted",
 		"points",
+		"linkId",
+		"duplicate",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -152,6 +210,8 @@ func (o *ApiPartnersActionsPost200Response) UnmarshalJSON(data []byte) (err erro
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
 		delete(additionalProperties, "granted")
 		delete(additionalProperties, "points")
+		delete(additionalProperties, "linkId")
+		delete(additionalProperties, "duplicate")
 		o.AdditionalProperties = additionalProperties
 	}
 

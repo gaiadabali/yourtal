@@ -20,7 +20,8 @@ var _ MappedNullable = &ApiPartnersActionsPostRequest{}
 
 // ApiPartnersActionsPostRequest struct for ApiPartnersActionsPostRequest
 type ApiPartnersActionsPostRequest struct {
-	User string `json:"user"`
+	User *string `json:"user,omitempty"`
+	LinkId NullableString `json:"linkId,omitempty" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Action string `json:"action"`
 	ExternalRef string `json:"externalRef"`
 	Evidence map[string]*interface{} `json:"evidence"`
@@ -33,9 +34,8 @@ type _ApiPartnersActionsPostRequest ApiPartnersActionsPostRequest
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiPartnersActionsPostRequest(user string, action string, externalRef string, evidence map[string]*interface{}) *ApiPartnersActionsPostRequest {
+func NewApiPartnersActionsPostRequest(action string, externalRef string, evidence map[string]*interface{}) *ApiPartnersActionsPostRequest {
 	this := ApiPartnersActionsPostRequest{}
-	this.User = user
 	this.Action = action
 	this.ExternalRef = externalRef
 	this.Evidence = evidence
@@ -50,28 +50,78 @@ func NewApiPartnersActionsPostRequestWithDefaults() *ApiPartnersActionsPostReque
 	return &this
 }
 
-// GetUser returns the User field value
+// GetUser returns the User field value if set, zero value otherwise.
 func (o *ApiPartnersActionsPostRequest) GetUser() string {
-	if o == nil {
+	if o == nil || IsNil(o.User) {
 		var ret string
 		return ret
 	}
-
-	return o.User
+	return *o.User
 }
 
-// GetUserOk returns a tuple with the User field value
+// GetUserOk returns a tuple with the User field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ApiPartnersActionsPostRequest) GetUserOk() (*string, bool) {
+	if o == nil || IsNil(o.User) {
+		return nil, false
+	}
+	return o.User, true
+}
+
+// HasUser returns a boolean if a field has been set.
+func (o *ApiPartnersActionsPostRequest) HasUser() bool {
+	if o != nil && !IsNil(o.User) {
+		return true
+	}
+
+	return false
+}
+
+// SetUser gets a reference to the given string and assigns it to the User field.
+func (o *ApiPartnersActionsPostRequest) SetUser(v string) {
+	o.User = &v
+}
+
+// GetLinkId returns the LinkId field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *ApiPartnersActionsPostRequest) GetLinkId() string {
+	if o == nil || IsNil(o.LinkId.Get()) {
+		var ret string
+		return ret
+	}
+	return *o.LinkId.Get()
+}
+
+// GetLinkIdOk returns a tuple with the LinkId field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiPartnersActionsPostRequest) GetLinkIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.User, true
+	return o.LinkId.Get(), o.LinkId.IsSet()
 }
 
-// SetUser sets field value
-func (o *ApiPartnersActionsPostRequest) SetUser(v string) {
-	o.User = v
+// HasLinkId returns a boolean if a field has been set.
+func (o *ApiPartnersActionsPostRequest) HasLinkId() bool {
+	if o != nil && o.LinkId.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetLinkId gets a reference to the given NullableString and assigns it to the LinkId field.
+func (o *ApiPartnersActionsPostRequest) SetLinkId(v string) {
+	o.LinkId.Set(&v)
+}
+// SetLinkIdNil sets the value for LinkId to be an explicit nil
+func (o *ApiPartnersActionsPostRequest) SetLinkIdNil() {
+	o.LinkId.Set(nil)
+}
+
+// UnsetLinkId ensures that no value is present for LinkId, not even an explicit nil
+func (o *ApiPartnersActionsPostRequest) UnsetLinkId() {
+	o.LinkId.Unset()
 }
 
 // GetAction returns the Action field value
@@ -156,7 +206,12 @@ func (o ApiPartnersActionsPostRequest) MarshalJSON() ([]byte, error) {
 
 func (o ApiPartnersActionsPostRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["user"] = o.User
+	if !IsNil(o.User) {
+		toSerialize["user"] = o.User
+	}
+	if o.LinkId.IsSet() {
+		toSerialize["linkId"] = o.LinkId.Get()
+	}
 	toSerialize["action"] = o.Action
 	toSerialize["externalRef"] = o.ExternalRef
 	toSerialize["evidence"] = o.Evidence
@@ -173,7 +228,6 @@ func (o *ApiPartnersActionsPostRequest) UnmarshalJSON(data []byte) (err error) {
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"user",
 		"action",
 		"externalRef",
 		"evidence",
@@ -207,6 +261,7 @@ func (o *ApiPartnersActionsPostRequest) UnmarshalJSON(data []byte) (err error) {
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
 		delete(additionalProperties, "user")
+		delete(additionalProperties, "linkId")
 		delete(additionalProperties, "action")
 		delete(additionalProperties, "externalRef")
 		delete(additionalProperties, "evidence")

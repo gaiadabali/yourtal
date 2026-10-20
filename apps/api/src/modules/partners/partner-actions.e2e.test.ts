@@ -82,7 +82,7 @@ function signedHeaders(partnerId: string, secret: string, rawBody: string, idemp
   };
 }
 
-describe("POST /api/partners/actions (8.4.a)", () => {
+describe("POST /api/partners/actions (8.4.a, 14.3.b)", () => {
   it("grants AU's receipt_points (10) once, replays idempotently, and refuses a second receipt", async () => {
     const { partnerId, secret } = await seedPartner();
     const session = await sessionFor(app, { jurisdiction: "AU" });
@@ -111,7 +111,8 @@ describe("POST /api/partners/actions (8.4.a)", () => {
       payload: rawBody,
     });
     expect(first.statusCode, first.body).toBe(200);
-    expect(first.json()).toEqual({ granted: true, points: 10 });
+    const { linkId } = first.json<{ linkId: string }>();
+    expect(first.json()).toEqual({ granted: true, points: 10, linkId, duplicate: false });
 
     // The real DB row: the wallet's own available balance moved by exactly
     // AU's receipt_points (20260925193000_platform_region_setting.sql), via
@@ -133,7 +134,7 @@ describe("POST /api/partners/actions (8.4.a)", () => {
       payload: rawBody,
     });
     expect(replay.statusCode).toBe(200);
-    expect(replay.json()).toEqual({ granted: true, points: 10 });
+    expect(replay.json()).toEqual({ granted: true, points: 10, linkId, duplicate: false });
 
     const walletAfterReplay = await app.inject({
       method: "GET",
@@ -143,16 +144,34 @@ describe("POST /api/partners/actions (8.4.a)", () => {
     expect(walletAfterReplay.json<{ availablePoints: number }>().availablePoints).toBe(10);
 
     // The SAME receipt under a fresh idempotency key (not a replay of the
-    // first call) is still refused: partner_receipt's own (partner, hash)
-    // uniqueness, not just the idempotency table, is what stops a second
-    // grant for one physical receipt.
+    // first call), now through the lasting link (14.3.b): a success that
+    // pays nothing new. partner_receipt's own (partner, hash) uniqueness,
+    // not just the idempotency table, is what stops a second grant.
+    const linkedBody = JSON.stringify({ linkId, action: "receipt_scanned", externalRef });
     const duplicate = await app.inject({
+      method: "POST",
+      url: "/api/partners/actions",
+      headers: signedHeaders(partnerId, secret, linkedBody, randomUUID()),
+      payload: linkedBody,
+    });
+    expect(duplicate.statusCode, duplicate.body).toBe(200);
+    expect(duplicate.json()).toEqual({ granted: true, points: 10, linkId, duplicate: true });
+    const walletAfterDuplicate = await app.inject({
+      method: "GET",
+      url: "/api/wallet",
+      headers: { cookie: session.cookie },
+    });
+    expect(walletAfterDuplicate.json<{ availablePoints: number }>().availablePoints).toBe(10);
+
+    // The code itself was single-use: the link replaced it.
+    const codeAgain = await app.inject({
       method: "POST",
       url: "/api/partners/actions",
       headers: signedHeaders(partnerId, secret, rawBody, randomUUID()),
       payload: rawBody,
     });
-    expect(duplicate.statusCode).toBe(409);
+    expect(codeAgain.statusCode).toBe(400);
+    expect(codeAgain.json<{ code: string }>().code).toBe("invalid_link_code");
   });
 
   it("refuses a signature made with the wrong secret", async () => {
@@ -224,7 +243,7 @@ describe("POST /api/partners/actions (8.4.a)", () => {
       payload: bodyA,
     });
     expect(grantedA.statusCode, grantedA.body).toBe(200);
-    expect(grantedA.json()).toEqual({ granted: true, points: 10 });
+    expect(grantedA.json()).toMatchObject({ granted: true, points: 10, duplicate: false });
 
     const grantedB = await app.inject({
       method: "POST",
@@ -233,7 +252,7 @@ describe("POST /api/partners/actions (8.4.a)", () => {
       payload: bodyB,
     });
     expect(grantedB.statusCode, grantedB.body).toBe(200);
-    expect(grantedB.json()).toEqual({ granted: true, points: 10 });
+    expect(grantedB.json()).toMatchObject({ granted: true, points: 10, duplicate: false });
 
     // Both wallets moved -- two real, independent grants, not one shared
     // (or stolen) response.
@@ -259,7 +278,7 @@ describe("POST /api/partners/actions (8.4.a)", () => {
       payload: bodyA,
     });
     expect(replayA.statusCode, replayA.body).toBe(200);
-    expect(replayA.json()).toEqual({ granted: true, points: 10 });
+    expect(replayA.json()).toMatchObject({ granted: true, points: 10, duplicate: false });
     const walletAAfterReplay = await app.inject({
       method: "GET",
       url: "/api/wallet",
@@ -305,7 +324,7 @@ describe("POST /api/partners/actions (8.4.a)", () => {
       payload: rawBody,
     });
     expect(correctlySigned.statusCode, correctlySigned.body).toBe(200);
-    expect(correctlySigned.json()).toEqual({ granted: true, points: 10 });
+    expect(correctlySigned.json()).toMatchObject({ granted: true, points: 10, duplicate: false });
   });
 
   it("refuses an unknown or expired link code", async () => {

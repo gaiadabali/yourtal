@@ -49,15 +49,22 @@ for (const r of REGIONS) {
       data: body,
     });
     expect(earned.status(), await earned.text()).toBe(200);
-    expect(await earned.json()).toEqual({ granted: true, points: RECEIPT_POINTS[r.region] });
-
-    // The same receipt again (a new request) earns nothing.
-    const again = await request.post(`${API}/api/partners/actions`, {
-      headers: signed(body),
-      data: body,
+    const grant = (await earned.json()) as { linkId: string };
+    expect(grant).toMatchObject({
+      granted: true,
+      points: RECEIPT_POINTS[r.region],
+      duplicate: false,
     });
-    expect(again.status()).toBe(409);
-    expect(await again.json()).toMatchObject({ code: "duplicate_receipt" });
+
+    // The same receipt again (a new request, through the lasting link the
+    // first call returned) succeeds without paying again (14.3.b).
+    const linked = JSON.stringify({ linkId: grant.linkId, action: "receipt_scanned", externalRef });
+    const again = await request.post(`${API}/api/partners/actions`, {
+      headers: signed(linked),
+      data: linked,
+    });
+    expect(again.status()).toBe(200);
+    expect(await again.json()).toMatchObject({ duplicate: true, linkId: grant.linkId });
 
     // A forged signature is refused outright.
     const forged = await request.post(`${API}/api/partners/actions`, {

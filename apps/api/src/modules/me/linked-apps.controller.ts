@@ -1,11 +1,25 @@
 import { randomBytes } from "node:crypto";
-import { Controller, ForbiddenException, Inject, Post, Req } from "@nestjs/common";
+import {
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  Inject,
+  NotFoundException,
+  Param,
+  Post,
+  Req,
+} from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
-import { Idempotent } from "../../shared/idempotency/idempotent.decorator";
+import { z } from "zod";
+import type { LinkedAppsResponse, UnlinkAppResponse } from "@yourtal/contracts/me/linked-app";
+import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { LINK_CODE_REPOSITORY } from "./persistence/link-code.repository";
 import type { LinkCodeRepository } from "./persistence/link-code.repository";
+import { LINKED_APP_REPOSITORY } from "./persistence/linked-app.repository";
+import type { LinkedAppRepository } from "./persistence/linked-app.repository";
 import { USER_PROFILE_REPOSITORY } from "../identity/persistence/user-profile.repository";
 import type { UserProfileRepository } from "../identity/persistence/user-profile.repository";
 import { requireRegion } from "./require-region";
@@ -13,6 +27,7 @@ import { requireRegion } from "./require-region";
 const CODE_TTL_MS = 10 * 60 * 1000;
 /** Crockford-ish, unambiguous when read off a screen and typed elsewhere. */
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const linkIdParam = z.uuid();
 
 function randomCode(length = 8): string {
   const bytes = randomBytes(length);
@@ -20,13 +35,16 @@ function randomCode(length = 8): string {
 }
 
 /**
- * `POST /api/me/linked-apps/code` (5.4.c) — a one-time code the user
- * copies into snap-app (8.4, not built yet: this only issues the code).
+ * Me → Linked apps. `POST /api/me/linked-apps/code` (5.4.c) issues a
+ * one-time code the user copies into a partner app, which exchanges it for
+ * a lasting link (14.3.b, `partners`). `GET` lists the caller's active
+ * links and `DELETE /:linkId` unlinks one (14.3.c): the partner's next call
+ * with that link gets `link_revoked` and earns nothing.
  *
  * 12.4.b (#2): linking a sister app is exactly `sister_app_profile_sharing`
  * -- a teen may not self-consent to it (`TEEN_CONSENT_NOT_ALLOWED`,
  * `consent.controller.ts`'s own gate), so a teen never even reaches a code
- * to hand a sister app in the first place.
+ * to hand a sister app in the first place (F101, F105).
  */
 @Controller("api/me/linked-apps")
 export class LinkedAppsController {
@@ -36,8 +54,32 @@ export class LinkedAppsController {
     // own doc comment.
     private readonly principals: AsyncPrincipalResolver,
     @Inject(LINK_CODE_REPOSITORY) private readonly codes: LinkCodeRepository,
+    @Inject(LINKED_APP_REPOSITORY) private readonly linkedApps: LinkedAppRepository,
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
   ) {}
+
+  @Authorize({ kind: "me", action: "view_linked_apps" })
+  @NotValueMoving("A read of the caller's own linked apps.")
+  @Get()
+  async list(@Req() request: FastifyRequest): Promise<LinkedAppsResponse> {
+    const principal = await this.principals.resolve(request);
+    return { linkedApps: [...(await this.linkedApps.listActive(principal.id))] };
+  }
+
+  @NotValueMoving("Unlinking twice ends in the same unlinked state as unlinking once.")
+  @Authorize({ kind: "me", action: "unlink_app" })
+  @Delete(":linkId")
+  async unlink(
+    @Req() request: FastifyRequest,
+    @Param("linkId") linkId: string,
+  ): Promise<UnlinkAppResponse> {
+    const principal = await this.principals.resolve(request);
+    // Another user's link and a malformed id both read as "no such link".
+    const found =
+      linkIdParam.safeParse(linkId).success && (await this.linkedApps.revoke(principal.id, linkId));
+    if (!found) throw new NotFoundException({ code: "unknown_link", message: "No such link." });
+    return { linkId, unlinked: true };
+  }
 
   // A fresh code every call by design — replaying the same idempotency key
   // would otherwise hand back an already-issued (and possibly consumed)

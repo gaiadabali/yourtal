@@ -29,6 +29,8 @@ tests:
           delete_account,
           export_data,
           create_link_code,
+          view_linked_apps,
+          unlink_app,
           view_settings,
           update_settings,
         ]
@@ -53,6 +55,8 @@ tests:
             delete_account: EFFECT_ALLOW,
             export_data: EFFECT_ALLOW,
             create_link_code: EFFECT_ALLOW,
+            view_linked_apps: EFFECT_ALLOW,
+            unlink_app: EFFECT_ALLOW,
             view_settings: EFFECT_ALLOW,
             update_settings: EFFECT_ALLOW,
           }
@@ -76,6 +80,8 @@ tests:
             delete_account: EFFECT_ALLOW,
             export_data: EFFECT_ALLOW,
             create_link_code: EFFECT_ALLOW,
+            view_linked_apps: EFFECT_ALLOW,
+            unlink_app: EFFECT_ALLOW,
             view_settings: EFFECT_ALLOW,
             update_settings: EFFECT_ALLOW,
           }
@@ -99,6 +105,8 @@ tests:
             delete_account: EFFECT_ALLOW,
             export_data: EFFECT_ALLOW,
             create_link_code: EFFECT_ALLOW,
+            view_linked_apps: EFFECT_ALLOW,
+            unlink_app: EFFECT_ALLOW,
             view_settings: EFFECT_ALLOW,
             update_settings: EFFECT_ALLOW,
           }
@@ -107,7 +115,8 @@ tests:
     input:
       principals: [anon]
       resources: [me_self]
-      actions: [view_consents, update_consent, delete_account, export_data]
+      actions:
+        [view_consents, update_consent, delete_account, export_data, view_linked_apps, unlink_app]
     expected:
       - principal: anon
         resource: me_self
@@ -117,6 +126,8 @@ tests:
             update_consent: EFFECT_DENY,
             delete_account: EFFECT_DENY,
             export_data: EFFECT_DENY,
+            view_linked_apps: EFFECT_DENY,
+            unlink_app: EFFECT_DENY,
           }
 
   - name: a store device has no me surface either

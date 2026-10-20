@@ -9,6 +9,8 @@ import { meResponseSchema } from "@/lib/api/me-schema";
 import { clearSessionCookie, setSessionCookies, setThemeCookie } from "@/lib/api/session-cookies";
 import { themeResponseSchema } from "@yourtal/contracts/me/theme-setting";
 import type { ThemeResponse, ThemeSetting } from "@yourtal/contracts/me/theme-setting";
+import { unlinkAppResponseSchema } from "@yourtal/contracts/me/linked-app";
+import type { UnlinkAppResponse } from "@yourtal/contracts/me/linked-app";
 import {
   autoplayResponseSchema,
   consentsResponseSchema,
@@ -144,6 +146,13 @@ export async function changePasswordAction(
 
 export async function issueLinkCodeAction(): Promise<ApiResult<LinkCodeResponse>> {
   return apiFetch("/api/me/linked-apps/code", linkCodeResponseSchema, { method: "POST" });
+}
+
+/** 14.3.c: the partner's next call with this link earns nothing and gets `link_revoked`. */
+export async function unlinkAppAction(linkId: string): Promise<ApiResult<UnlinkAppResponse>> {
+  return apiFetch(`/api/me/linked-apps/${encodeURIComponent(linkId)}`, unlinkAppResponseSchema, {
+    method: "DELETE",
+  });
 }
 
 export async function fetchDataExportAction(): Promise<ApiResult<DataExportResponse>> {

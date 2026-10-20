@@ -104,10 +104,18 @@
   },
   "linkedApps": {
     "heading": "Linked apps",
-    "intro": "Generate a one-time code to link this account in another app.",
+    "intro": "Link this account in another app, such as SnapApp, to earn points there. Generate a one-time code and enter it in that app within 10 minutes.",
     "generateCta": "Generate code",
     "codeLabel": "Your code",
-    "expiresPrefix": "Expires at"
+    "expiresPrefix": "Expires at",
+    "linkedTitle": "{app} linked",
+    "linkedSince": "Linked {date}",
+    "unlinkCta": "Unlink",
+    "teenRefused": "Teen accounts can't link other apps to earn points.",
+    "failed": "That didn't work. Try again.",
+    "apps": {
+      "snap-app": "SnapApp"
+    }
   },
   "dataExport": {
     "heading": "Download my data",

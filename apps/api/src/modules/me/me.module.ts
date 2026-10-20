@@ -21,6 +21,10 @@ import {
   DrizzleLinkCodeRepository,
 } from "./persistence/link-code.repository";
 import {
+  LINKED_APP_REPOSITORY,
+  DrizzleLinkedAppRepository,
+} from "./persistence/linked-app.repository";
+import {
   STREAK_STATE_REPOSITORY,
   DrizzleStreakStateRepository,
 } from "./persistence/streak-state.repository";
@@ -116,6 +120,11 @@ export const ME_DB = Symbol("ME_DB");
     {
       provide: LINK_CODE_REPOSITORY,
       useFactory: (db: AppDb) => new DrizzleLinkCodeRepository(db),
+      inject: [ME_DB],
+    },
+    {
+      provide: LINKED_APP_REPOSITORY,
+      useFactory: (db: AppDb) => new DrizzleLinkedAppRepository(db),
       inject: [ME_DB],
     },
     {

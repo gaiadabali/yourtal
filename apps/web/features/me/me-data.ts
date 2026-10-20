@@ -4,6 +4,8 @@ import { apiFetch } from "@/lib/api/api-fetch";
 import type { ApiResult } from "@/lib/api/api-fetch";
 import { meResponseSchema } from "@/lib/api/me-schema";
 import type { MeResponse } from "@/lib/api/me-schema";
+import { linkedAppsResponseSchema } from "@yourtal/contracts/me/linked-app";
+import type { LinkedAppsResponse } from "@yourtal/contracts/me/linked-app";
 import {
   autoplayResponseSchema,
   consentsResponseSchema,
@@ -51,4 +53,8 @@ export function getNotificationPreferences(): Promise<ApiResult<NotificationPref
 
 export function getAutoplaySetting(): Promise<ApiResult<AutoplayResponse>> {
   return apiFetch("/api/me/settings/autoplay", autoplayResponseSchema);
+}
+
+export function listLinkedApps(): Promise<ApiResult<LinkedAppsResponse>> {
+  return apiFetch("/api/me/linked-apps", linkedAppsResponseSchema);
 }

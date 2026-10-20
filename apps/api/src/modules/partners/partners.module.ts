@@ -15,6 +15,9 @@ import { PARTNER_RECEIPT_REPOSITORY } from "./persistence/partner-receipt.reposi
 import { DrizzlePartnerReceiptRepository } from "./persistence/drizzle-partner-receipt.repository";
 import { LINK_CODE_LOOKUP } from "./persistence/link-code-lookup";
 import { DrizzleLinkCodeLookup } from "./persistence/drizzle-link-code-lookup";
+import { PARTNER_LINK_REPOSITORY } from "./persistence/partner-link.repository";
+import { DrizzlePartnerLinkRepository } from "./persistence/drizzle-partner-link.repository";
+import { ACCOUNT_AGE_LOOKUP, DrizzleAccountAgeLookup } from "./persistence/account-age-lookup";
 
 const PARTNERS_DB = Symbol("PARTNERS_DB");
 
@@ -52,6 +55,16 @@ const PARTNERS_DB = Symbol("PARTNERS_DB");
     {
       provide: LINK_CODE_LOOKUP,
       useFactory: (db: AppDb) => new DrizzleLinkCodeLookup(db),
+      inject: [PARTNERS_DB],
+    },
+    {
+      provide: PARTNER_LINK_REPOSITORY,
+      useFactory: (db: AppDb) => new DrizzlePartnerLinkRepository(db),
+      inject: [PARTNERS_DB],
+    },
+    {
+      provide: ACCOUNT_AGE_LOOKUP,
+      useFactory: (db: AppDb) => new DrizzleAccountAgeLookup(db),
       inject: [PARTNERS_DB],
     },
   ],

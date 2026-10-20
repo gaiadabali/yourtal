@@ -1,4 +1,10 @@
-import { partnerActionRequestSchema, partnerActionResultSchema } from "../device/partner-action";
+import {
+  partnerActionRequestSchema,
+  partnerActionResultSchema,
+  partnerLinkRequestSchema,
+  partnerLinkResultSchema,
+  partnerLinkRevokeResultSchema,
+} from "../device/partner-action";
 import {
   SERVICE_UNAVAILABLE,
   VALIDATION_400,
@@ -7,7 +13,7 @@ import {
   type RouteErrorResponse,
 } from "./route-registry-shared";
 
-/** `partner-actions.controller.ts` (TASKS.md 8.4.a) — snap-app's receipt-scan integration. */
+/** `partners/*.controller.ts` (TASKS.md 8.4.a, 14.3) — a partner app's (SnapApp's) integration. */
 
 const INVALID_PARTNER_SIGNATURE: RouteErrorResponse = {
   status: 401,
@@ -17,37 +23,100 @@ const INVALID_PARTNER_SIGNATURE: RouteErrorResponse = {
 
 const INVALID_LINK_CODE: RouteErrorResponse = {
   status: 400,
-  description: "The link code is unknown or expired (partners.errors.ts's invalid_link_code).",
+  description: "The link code is unknown, expired or already used (invalid_link_code).",
   documented: true,
 };
 
-const DUPLICATE_RECEIPT: RouteErrorResponse = {
+const UNKNOWN_LINK: RouteErrorResponse = {
+  status: 400,
+  description: "No link with this id exists for this partner (unknown_link).",
+  documented: true,
+};
+
+const TEEN_NOT_ALLOWED: RouteErrorResponse = {
+  status: 403,
+  description: "A teen account cannot link a partner app (teen_consent_not_allowed, F101/F105).",
+  documented: true,
+};
+
+const LINK_REVOKED: RouteErrorResponse = {
+  status: 403,
+  description: "The user unlinked this app; the link earns nothing (link_revoked).",
+  documented: true,
+};
+
+const LEDGER_REFUSED: RouteErrorResponse = {
   status: 409,
   description:
-    "This (partner, receipt hash) pair was already granted (partners.errors.ts's duplicate_receipt).",
+    "The ledger refused the grant (its own code, e.g. a daily cap or an unfunded region).",
   documented: true,
 };
 
 export const PARTNERS_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   {
     method: "post",
+    path: "/api/partners/links",
+    summary: "Exchange a user's one-time link code for a lasting link",
+    tags: ["partners"],
+    pathParams: [],
+    requestBody: {
+      description: "The one-time code the user copied from YourTal's Me → Linked apps.",
+      schema: inlineSchema(partnerLinkRequestSchema),
+    },
+    successStatus: 200,
+    successDescription:
+      "The link. A user already linked to this partner gets their existing link back.",
+    successSchema: inlineSchema(partnerLinkResultSchema),
+    errors: [
+      VALIDATION_400,
+      INVALID_LINK_CODE,
+      INVALID_PARTNER_SIGNATURE,
+      TEEN_NOT_ALLOWED,
+      SERVICE_UNAVAILABLE,
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/partners/links/{linkId}/revoke",
+    summary: "End a link from the partner's side (the user left the partner app)",
+    tags: ["partners"],
+    pathParams: [
+      {
+        name: "linkId",
+        description: "A link this partner holds.",
+        schema: { type: "string", format: "uuid" },
+      },
+    ],
+    successStatus: 200,
+    successDescription:
+      "The link is revoked. Revoking an already-revoked link answers the same, with the original revokedAt.",
+    successSchema: inlineSchema(partnerLinkRevokeResultSchema),
+    errors: [UNKNOWN_LINK, INVALID_PARTNER_SIGNATURE, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "post",
     path: "/api/partners/actions",
-    summary: "Grant points for a partner-verified action (snap-app's receipt scan)",
+    summary: "Grant points for a partner-verified action (a scanned receipt)",
     tags: ["partners"],
     pathParams: [],
     requestBody: {
       description:
-        "The 5.4.c link code naming the account, the action, and the receipt's own reference.",
+        "The account (a link id, or a one-time link code on the first call), the action, and " +
+        "the receipt's own reference.",
       schema: inlineSchema(partnerActionRequestSchema),
     },
     successStatus: 200,
-    successDescription: "The grant.",
+    successDescription:
+      "The grant. A receipt already reported is still a 200, with duplicate: true and no new payout.",
     successSchema: inlineSchema(partnerActionResultSchema),
     errors: [
       VALIDATION_400,
-      INVALID_PARTNER_SIGNATURE,
       INVALID_LINK_CODE,
-      DUPLICATE_RECEIPT,
+      UNKNOWN_LINK,
+      INVALID_PARTNER_SIGNATURE,
+      TEEN_NOT_ALLOWED,
+      LINK_REVOKED,
+      LEDGER_REFUSED,
       SERVICE_UNAVAILABLE,
     ],
   },

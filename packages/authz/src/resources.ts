@@ -304,6 +304,8 @@ export const RESOURCE_ACTIONS = {
     "delete_account",
     "export_data",
     "create_link_code",
+    "view_linked_apps",
+    "unlink_app",
     "view_settings",
     "update_settings",
   ],

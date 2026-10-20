@@ -7,9 +7,26 @@ export interface InvalidLinkCodeError {
   readonly type: "invalid_link_code";
 }
 
-export interface DuplicateReceiptError {
-  readonly type: "duplicate_receipt";
+/** 14.3.b: no link with this id for this partner. */
+export interface UnknownLinkError {
+  readonly type: "unknown_link";
 }
 
-export type PartnerActionError =
-  PersistenceFailedError | InvalidLinkCodeError | DuplicateReceiptError;
+/** 14.3.b: the user unlinked the app, so the link earns nothing. */
+export interface LinkRevokedError {
+  readonly type: "link_revoked";
+}
+
+/** F101/F105: a teen account cannot link a partner app. */
+export interface TeenNotAllowedError {
+  readonly type: "teen_not_allowed";
+}
+
+export type PartnerLinkError =
+  | PersistenceFailedError
+  | InvalidLinkCodeError
+  | UnknownLinkError
+  | LinkRevokedError
+  | TeenNotAllowedError;
+
+export type PartnerActionError = PartnerLinkError;

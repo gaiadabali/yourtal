@@ -13083,16 +13083,202 @@
         }
       }
     },
-    "/api/partners/actions": {
+    "/api/partners/links": {
       "post": {
-        "summary": "Grant points for a partner-verified action (snap-app's receipt scan)",
+        "summary": "Exchange a user's one-time link code for a lasting link",
         "tags": [
           "partners"
         ],
         "parameters": [],
         "requestBody": {
           "required": true,
-          "description": "The 5.4.c link code naming the account, the action, and the receipt's own reference.",
+          "description": "The one-time code the user copied from YourTal's Me → Linked apps.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "code"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The link. A user already linked to this partner gets their existing link back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "linkId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "AU",
+                        "ID"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    }
+                  },
+                  "required": [
+                    "linkId",
+                    "region",
+                    "createdAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here. OR: The link code is unknown, expired or already used (invalid_link_code).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid partner signature presented (partners/partner-auth.ts).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A teen account cannot link a partner app (teen_consent_not_allowed, F101/F105).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/partners/links/{linkId}/revoke": {
+      "post": {
+        "summary": "End a link from the partner's side (the user left the partner app)",
+        "tags": [
+          "partners"
+        ],
+        "parameters": [
+          {
+            "name": "linkId",
+            "in": "path",
+            "required": true,
+            "description": "A link this partner holds.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The link is revoked. Revoking an already-revoked link answers the same, with the original revokedAt.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "linkId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "revokedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    }
+                  },
+                  "required": [
+                    "linkId",
+                    "revokedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No link with this id exists for this partner (unknown_link).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid partner signature presented (partners/partner-auth.ts).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/partners/actions": {
+      "post": {
+        "summary": "Grant points for a partner-verified action (a scanned receipt)",
+        "tags": [
+          "partners"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The account (a link id, or a one-time link code on the first call), the action, and the receipt's own reference.",
           "content": {
             "application/json": {
               "schema": {
@@ -13101,6 +13287,11 @@
                   "user": {
                     "type": "string",
                     "minLength": 1
+                  },
+                  "linkId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                   },
                   "action": {
                     "type": "string",
@@ -13122,7 +13313,6 @@
                   }
                 },
                 "required": [
-                  "user",
                   "action",
                   "externalRef",
                   "evidence"
@@ -13134,7 +13324,7 @@
         },
         "responses": {
           "200": {
-            "description": "The grant.",
+            "description": "The grant. A receipt already reported is still a 200, with duplicate: true and no new payout.",
             "content": {
               "application/json": {
                 "schema": {
@@ -13148,11 +13338,21 @@
                       "minimum": 0,
                       "maximum": 9007199254740991,
                       "format": "int64"
+                    },
+                    "linkId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "duplicate": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
                     "granted",
-                    "points"
+                    "points",
+                    "linkId",
+                    "duplicate"
                   ],
                   "additionalProperties": false
                 }
@@ -13160,7 +13360,7 @@
             }
           },
           "400": {
-            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here. OR: The link code is unknown or expired (partners.errors.ts's invalid_link_code).",
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here. OR: The link code is unknown, expired or already used (invalid_link_code). OR: No link with this id exists for this partner (unknown_link).",
             "content": {
               "application/json": {
                 "schema": {
@@ -13179,8 +13379,18 @@
               }
             }
           },
+          "403": {
+            "description": "A teen account cannot link a partner app (teen_consent_not_allowed, F101/F105). OR: The user unlinked this app; the link earns nothing (link_revoked).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "409": {
-            "description": "This (partner, receipt hash) pair was already granted (partners.errors.ts's duplicate_receipt).",
+            "description": "The ledger refused the grant (its own code, e.g. a daily cap or an unfunded region).",
             "content": {
               "application/json": {
                 "schema": {

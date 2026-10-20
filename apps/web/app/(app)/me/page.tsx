@@ -8,6 +8,7 @@ import {
   listConsents,
   listFollows,
   listInterests,
+  listLinkedApps,
 } from "@/features/me/me-data";
 import { earnedToday, getWalletBalance } from "@/features/wallet/wallet-data";
 import { LogoutButton } from "@/features/me/logout-button";
@@ -43,7 +44,7 @@ import { MeSectionError } from "@/features/me/me-section-states";
  */
 export default async function MePage() {
   const t = await getTranslations("me");
-  const [profile, consents, interests, follows, notificationPreferences, autoplay] =
+  const [profile, consents, interests, follows, notificationPreferences, autoplay, linkedApps] =
     await Promise.all([
       getMeProfile(),
       listConsents(),
@@ -51,6 +52,7 @@ export default async function MePage() {
       listFollows(),
       getNotificationPreferences(),
       getAutoplaySetting(),
+      listLinkedApps(),
     ]);
 
   // 12.2.b: the teen daily-cap meter is its own, teen-only read -- most
@@ -124,7 +126,11 @@ export default async function MePage() {
           />
         )}
 
-        <MeLinkedAppsSection />
+        {linkedApps.ok ? (
+          <MeLinkedAppsSection initialLinkedApps={linkedApps.data.linkedApps} isTeen={isTeen} />
+        ) : (
+          <MeSectionError title={t("linkedApps.heading")} error={linkedApps.error} />
+        )}
         <MeDataExportSection />
         <MeDeleteAccountSection />
       </div>

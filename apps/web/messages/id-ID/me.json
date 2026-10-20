@@ -104,10 +104,18 @@
   },
   "linkedApps": {
     "heading": "Aplikasi tertaut",
-    "intro": "Buat kode sekali pakai untuk menautkan akun ini di aplikasi lain.",
+    "intro": "Tautkan akun ini di aplikasi lain, seperti SnapApp, untuk mendapatkan poin di sana. Buat kode sekali pakai dan masukkan di aplikasi itu dalam 10 menit.",
     "generateCta": "Buat kode",
     "codeLabel": "Kodemu",
-    "expiresPrefix": "Berlaku sampai"
+    "expiresPrefix": "Berlaku sampai",
+    "linkedTitle": "{app} tertaut",
+    "linkedSince": "Ditautkan {date}",
+    "unlinkCta": "Putuskan tautan",
+    "teenRefused": "Akun remaja tidak bisa menautkan aplikasi lain untuk mendapatkan poin.",
+    "failed": "Gagal. Coba lagi.",
+    "apps": {
+      "snap-app": "SnapApp"
+    }
   },
   "dataExport": {
     "heading": "Unduh data saya",

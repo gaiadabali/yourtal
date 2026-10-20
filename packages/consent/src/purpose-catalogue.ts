@@ -154,7 +154,8 @@ const DEFINITIONS: readonly PurposeDefinition[] = [
   {
     purpose: "sister_app_profile_sharing",
     lawfulBasis: "consent",
-    description: "Let an app you signed into with YourtalID see your profile and balance.",
+    description:
+      "Let an app you sign in to with YourTal see your name, email, age group and country.",
     sensitive: false,
     prohibitedIn: [],
     availableFromPhase: "P1",

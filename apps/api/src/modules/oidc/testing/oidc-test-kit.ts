@@ -7,6 +7,7 @@ import Provider from "oidc-provider";
 import type { Adapter, AdapterFactory, AdapterPayload, FindAccount } from "oidc-provider";
 import { loadClients } from "../client-keys";
 import { clientsFor } from "../clients";
+import type { YourTalClient } from "../clients";
 import { loadProviderKeys } from "../keys";
 import { mountOidc } from "../mount-oidc";
 import { OidcRuntime } from "../oidc-runtime";
@@ -106,28 +107,35 @@ export interface TestProvider {
   readonly provider: Provider;
   readonly fastify: FastifyInstance;
   readonly keys: TestClientKeys;
+  readonly registered: readonly YourTalClient[];
+}
+
+export interface TestProviderOptions {
+  readonly issuer?: string;
+  readonly findAccount?: FindAccount;
+  readonly pairwiseIdentifier?: (accountId: string, clientId: string) => Promise<string>;
 }
 
 /** A provider over the real registry and settings, mounted on a bare Fastify, with no database. */
-export async function buildTestProvider(
-  findAccount: FindAccount = () => undefined,
-): Promise<TestProvider> {
+export async function buildTestProvider(options: TestProviderOptions = {}): Promise<TestProvider> {
   const keys = makeTestClientKeys();
   const loaded = loadClients(clientsFor("dev"), CLIENT_KEYS_DIR, keys.files);
   const provider = new Provider(
-    TEST_ISSUER,
+    options.issuer ?? TEST_ISSUER,
     providerConfiguration({
       clients: loaded.metadata,
       keys: loadProviderKeys({ appEnv: "dev", jwksPath: "/test/oidc/none.json" }, () => undefined),
       webOrigin: TEST_WEB_ORIGIN,
       adapter: memoryAdapterFactory(),
-      findAccount,
-      pairwiseIdentifier: (accountId, clientId) => Promise.resolve(`${clientId}:${accountId}`),
+      findAccount: options.findAccount ?? (() => undefined),
+      pairwiseIdentifier:
+        options.pairwiseIdentifier ??
+        ((accountId, clientId) => Promise.resolve(`${clientId}:${accountId}`)),
     }),
   );
   provider.proxy = true;
   const fastify = Fastify();
   await mountOidc(fastify, new OidcRuntime(provider, loaded.registered, null, null));
   await fastify.ready();
-  return { provider, fastify, keys };
+  return { provider, fastify, keys, registered: loaded.registered };
 }

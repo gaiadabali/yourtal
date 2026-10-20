@@ -176,6 +176,7 @@ describe("docs/26 §1.1 provider settings", () => {
         "sub",
         "sid",
         "auth_time",
+        "amr",
         "iss",
         "email",
         "email_verified",

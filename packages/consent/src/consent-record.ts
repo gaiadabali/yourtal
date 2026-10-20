@@ -34,7 +34,7 @@ export const consentSourceSchema = z.enum([
   "onboarding",
   /** A just-in-time prompt at the point the purpose first applies. */
   "contextual_prompt",
-  /** The YourtalID scope consent screen for a sister app. docs/02 §8. */
+  /** The consent screen when signing in to another app with YourTal (docs/26 §1.4). */
   "oidc_consent_screen",
   /** Carried over from a sister app. Weakest: verify before relying on it. */
   "import_from_sister_app",

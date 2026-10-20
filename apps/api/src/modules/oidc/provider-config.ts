@@ -137,7 +137,9 @@ export function providerConfiguration(deps: ProviderConfigDeps): Configuration {
 
     scopes: [...SCOPES],
     claims: {
-      openid: [...SCOPE_CLAIMS.openid],
+      // auth_time and amr ride on openid, so every ID token carries them (docs/26 §1.3);
+      // the library only includes a claim that some granted scope names.
+      openid: [...SCOPE_CLAIMS.openid, "auth_time", "amr"],
       email: [...SCOPE_CLAIMS.email],
       profile: [...SCOPE_CLAIMS.profile],
       account: [...SCOPE_CLAIMS.account],

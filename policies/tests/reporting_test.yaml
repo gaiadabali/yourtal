@@ -79,6 +79,28 @@ tests:
           purchase_points: EFFECT_DENY
           raise_dispute: EFFECT_DENY
 
+  - name: billing -- only owner and finance set where payouts go (5.2)
+    input:
+      principals: [budi_owner, citra_admin, fajar_finance, dewi_marketer, rival_owner]
+      resources: [billing_kopi]
+      actions: [manage_payouts]
+    expected:
+      - principal: budi_owner
+        resource: billing_kopi
+        actions: { manage_payouts: EFFECT_ALLOW }
+      - principal: citra_admin
+        resource: billing_kopi
+        actions: { manage_payouts: EFFECT_DENY }
+      - principal: fajar_finance
+        resource: billing_kopi
+        actions: { manage_payouts: EFFECT_ALLOW }
+      - principal: dewi_marketer
+        resource: billing_kopi
+        actions: { manage_payouts: EFFECT_DENY }
+      - principal: rival_owner
+        resource: billing_kopi
+        actions: { manage_payouts: EFFECT_DENY }
+
   - name: a rival reads neither
     input:
       principals: [rival_owner]

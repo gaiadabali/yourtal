@@ -21,6 +21,7 @@ import { BOOST_ROUTE_DEFINITIONS } from "./route-registry.c-boost";
 import { BILLING_CARD_ROUTE_DEFINITIONS } from "./route-registry.c-billing";
 import { INVOICE_ROUTE_DEFINITIONS } from "./route-registry.c-invoices";
 import { CHARITY_ROUTE_DEFINITIONS } from "./route-registry.c-charity";
+import { PAYOUT_ROUTE_DEFINITIONS } from "./route-registry.c-payouts";
 import { AUCTION_ROUTE_DEFINITIONS } from "./route-registry.a-auction";
 import { COUNTER_ROUTE_DEFINITIONS } from "./route-registry.c-counter";
 import { DEVELOPERS_ROUTE_DEFINITIONS } from "./route-registry.c-developers";
@@ -109,6 +110,7 @@ export const ALL_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   ...BILLING_CARD_ROUTE_DEFINITIONS,
   ...INVOICE_ROUTE_DEFINITIONS,
   ...CHARITY_ROUTE_DEFINITIONS,
+  ...PAYOUT_ROUTE_DEFINITIONS,
   ...AUCTION_ROUTE_DEFINITIONS,
   ...COUNTER_ROUTE_DEFINITIONS,
   ...DEVELOPERS_ROUTE_DEFINITIONS,

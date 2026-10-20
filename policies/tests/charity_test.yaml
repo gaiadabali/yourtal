@@ -76,6 +76,34 @@ tests:
         resource: charity_harapan
         actions: { view_console: EFFECT_ALLOW }
 
+  - name: only an AU charity's own members set up its payouts (5.2, F104)
+    input:
+      principals: [adi_au, adi_adult, wina_au, finance_yani, ops_zul]
+      resources: [charity_harbour_au, charity_harapan]
+      actions: [manage_payouts]
+    expected:
+      - principal: adi_au
+        resource: charity_harbour_au
+        actions: { manage_payouts: EFFECT_ALLOW }
+      - principal: adi_au
+        resource: charity_harapan
+        actions: { manage_payouts: EFFECT_DENY }
+      - principal: adi_adult
+        resource: charity_harbour_au
+        actions: { manage_payouts: EFFECT_DENY }
+      - principal: adi_adult
+        resource: charity_harapan
+        actions: { manage_payouts: EFFECT_DENY }
+      - principal: wina_au
+        resource: charity_harbour_au
+        actions: { manage_payouts: EFFECT_DENY }
+      - principal: finance_yani
+        resource: charity_harbour_au
+        actions: { manage_payouts: EFFECT_DENY }
+      - principal: ops_zul
+        resource: charity_harbour_au
+        actions: { manage_payouts: EFFECT_DENY }
+
   - name: ops decide only with a reason; moderators and users never do
     input:
       principals: [ops_zul, moderator_tono, adi_adult]

@@ -13,6 +13,8 @@ import { StaffDisputesController } from "./staff-disputes.controller";
 import { StaffRiskQueueController } from "./staff-risk-queue.controller";
 import { StaffEconomyController } from "./economy/staff-economy.controller";
 import { StaffSettlementController } from "./settlement/staff-settlement.controller";
+import { StaffDisbursementsController } from "./settlement/staff-disbursements.controller";
+import { PayoutsModule } from "../payouts/payouts.module";
 import { StaffAuditInterceptor } from "./staff-audit.interceptor";
 import { UserAccountAttributeLoader } from "./user-account-attribute-loader";
 import {
@@ -53,7 +55,7 @@ class StaffPoolShutdown implements OnApplicationShutdown {
  * The audit interceptor is global but acts only on `@StaffAction` routes.
  */
 @Module({
-  imports: [WalletModule, SettingsModule, StoreModule],
+  imports: [WalletModule, SettingsModule, StoreModule, PayoutsModule],
   controllers: [
     StaffConsoleController,
     StaffUsersController,
@@ -61,6 +63,7 @@ class StaffPoolShutdown implements OnApplicationShutdown {
     StaffRiskQueueController,
     StaffEconomyController,
     StaffSettlementController,
+    StaffDisbursementsController,
   ],
   providers: [
     {

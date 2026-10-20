@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 6/16 | 36/61 | `██████░░░░`  59% |
-| **All** | | | **111/122** | **582/608** | `██████████`  96% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 7/16 | 38/61 | `██████░░░░`  62% |
+| **All** | | | **112/122** | **584/608** | `██████████`  96% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1696,9 +1696,9 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.14.a receipt_points is 1 (AU) and 10 (ID demo), by an add-only settings migration → yourtal@880aaebb; staging reads AU 1, ID 10 (2026-10-21)
   - [ ] 14.14.b SnapApp’s receipt grants draw from a partner allocation bought at B = 3c (an at-cost purchase kind; RecordPurchase refuses anything under P_issue today)
   - [ ] 14.14.c When that package is spent, receipts stop earning and the partner API says so
-- [ ] **14.15 Account deletion: the last gaps** (group 1.24) · A · needs: — — 🔄 2026-10-21 (group plan, god-ff)
-  - [ ] 14.15.a Pending team invitations to an erased email are removed inside the identity domain, before the address goes (group 1.24.a)
-  - [ ] 14.15.b `DELETE /api/me` reports `complete: true`: research_answers and support_cases get a table and handler, or their declarations go (group 1.24.b)
+- [x] **14.15 Account deletion: the last gaps** (group 1.24) · A · needs: — — ✅ 2026-10-21 0551286a
+  - [x] 14.15.a Pending team invitations to an erased email are removed inside the identity domain, before the address goes (group 1.24.a) → 0551286a
+  - [x] 14.15.b `DELETE /api/me` reports `complete: true`: research_answers and support_cases get a table and handler, or their declarations go (group 1.24.b) → 0551286a
 - [ ] **14.16 Sign in with YourTal: YourTal is the OpenID Connect provider** (group 3.9, F99, docs/26) · A + B · needs: 14.4 — 🔄 2026-10-21 (slot g3)
   - [ ] 14.16.a The provider at `/oidc` on `oidc-provider` 9.x: the `oidc` schema, discovery, authorize, token, JWKS, userinfo, pairwise `sub`, the client registry, the §1.5 checks and the interaction API (group 3.9.a, 3.9.d)
   - [ ] 14.16.b The `/connect/[uid]` sign-in, consent and refusal screens, en-AU and id-ID (group 3.9.b)
@@ -1797,6 +1797,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-10-21 · 14.15 (group 1.24) done: erasure removes pending invitations to the subject’s email, and DELETE /api/me reports complete (0551286a).
 - 2026-10-21 · 14.2 (group 1.6) done: budget, daily cap and postcode districts saved and enforced, search and feed use the viewer’s area, staging checked in AU and ID, and the player tells a refused viewer before playing (00b21ed5).
 - 2026-10-20 · g5 · **14.11** (group 0.7.g): docs/16 records F106, every payment simulated until real Stripe, and F107, no brand refunds · fbcd08d5
 - 2026-10-08 · lead · **13.3 closed**: business journeys pass on staging in AU and ID (F98; registration limit raised to 30 for the run and restored to 5); 13.3.k, m, v, x, y done; a stored-HTML hole in picture uploads found on staging and fixed (13.3.y) · 45ec04a9

@@ -6,7 +6,6 @@ import type {
   PublicKeyCredentialRequestOptionsJSON,
 } from "@simplewebauthn/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { sessionFor } from "../../../shared/testing/session-for";
 import type { TestSession } from "../../../shared/testing/session-for";
 import { createAppDb } from "../../../shared/persistence/drizzle-client";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
@@ -14,6 +13,7 @@ import { SoftAuthenticator } from "./testing/soft-authenticator";
 import {
   E2E_ORIGIN,
   E2E_RP_ID,
+  accountFor,
   ageSessions,
   amrOf,
   bearer,
@@ -83,7 +83,7 @@ async function signInWith(device: SoftAuthenticator) {
 
 describe("passkeys", () => {
   it("adds a passkey, lists it, and signs in with it as amr hwk", async () => {
-    const session = await sessionFor(app);
+    const session = await accountFor(app);
     expect(await amrOf(owner, session.token)).toEqual(["pwd"]);
     const device = await addPasskey(session, "Work laptop");
 
@@ -126,7 +126,7 @@ describe("passkeys", () => {
   });
 
   it("stores only the public key, under a random user handle", async () => {
-    const session = await sessionFor(app);
+    const session = await accountFor(app);
     const device = await addPasskey(session);
     const { rows } = await owner.execute<{ user_id: string; name: string; transports: string[] }>(
       sql`SELECT user_id, name, transports FROM identity.passkey WHERE credential_id = ${device.credentialId}`,
@@ -143,7 +143,7 @@ describe("passkeys", () => {
   });
 
   it("needs a recent sign-in to add one", async () => {
-    const session = await sessionFor(app);
+    const session = await accountFor(app);
     await ageSessions(owner, session.userId);
     const options = await app.inject({
       method: "POST",
@@ -155,20 +155,21 @@ describe("passkeys", () => {
   });
 
   it("refuses a passkey sign-in from a signed-in caller, and the list to a signed-out one", async () => {
-    const session = await sessionFor(app);
+    const session = await accountFor(app);
     const signedInCaller = await app.inject({
       method: "POST",
       url: "/api/auth/passkeys/sign-in/options",
       headers: bearer(session.token),
     });
     expect(signedInCaller.statusCode).toBe(403);
+    // A signed-out caller is asked to sign in.
     const anonymous = await app.inject({ method: "GET", url: "/api/auth/sign-in-methods" });
-    expect(anonymous.statusCode).toBe(403);
+    expect(anonymous.statusCode).toBe(401);
   });
 
   it("proves a passkey again for a step-up, and removes passkeys, never someone else's", async () => {
-    const session = await sessionFor(app);
-    const other = await sessionFor(app);
+    const session = await accountFor(app);
+    const other = await accountFor(app);
     const device = await addPasskey(session);
 
     const stepUp = await app.inject({
@@ -203,7 +204,7 @@ describe("passkeys", () => {
   });
 
   it("is erased with the account", async () => {
-    const leaving = await sessionFor(app);
+    const leaving = await accountFor(app);
     const device = await addPasskey(leaving);
     const deleted = await app.inject({
       method: "DELETE",

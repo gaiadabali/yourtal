@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
@@ -6,6 +6,8 @@ import { Test } from "@nestjs/testing";
 import type { LightMyRequestResponse } from "fastify";
 import { AppModule } from "../../../../app.module";
 import type { AppDb } from "../../../../shared/persistence/drizzle-client";
+import type { TestSession } from "../../../../shared/testing/session-for";
+import { AuthService } from "../../auth.service";
 import { hashOpaqueToken } from "../../crypto/opaque-token";
 
 /** The relying party the e2e app is booted with, and the soft authenticator answers for. */
@@ -66,4 +68,39 @@ export function bearer(token: string): Record<string, string> {
 
 export function errorCode(response: LightMyRequestResponse): string | undefined {
   return response.json<{ code?: string }>().code;
+}
+
+/**
+ * A signed-in adult, like `sessionFor`, but registered through `AuthService`
+ * rather than `POST /api/auth/register`: that route's suite-wide hourly cap
+ * is shared by every e2e file, and these suites need many fresh accounts.
+ * The sign-in itself is the real `POST /api/auth/login`.
+ */
+export async function accountFor(
+  app: NestFastifyApplication,
+  password = "factors-e2e-not-a-real-secret-1",
+): Promise<TestSession> {
+  const email = `factors-e2e+${randomUUID()}@example.test`;
+  const registered = await app.get(AuthService).register(
+    email,
+    password,
+    {
+      region: "AU",
+      locale: "en-AU",
+      displayName: "Factors E2E",
+      dateOfBirth: "1990-01-01",
+      timezone: "Australia/Sydney",
+    },
+    new Date(),
+  );
+  if (registered.isErr()) throw new Error(`accountFor: ${registered.error.type}`);
+  const login = await app.inject({
+    method: "POST",
+    url: "/api/auth/login",
+    remoteAddress: testIp(),
+    payload: { email, password },
+  });
+  const { token, userId } = login.json<{ token?: string; userId?: string }>();
+  if (token === undefined || userId === undefined) throw new Error(`accountFor: ${login.body}`);
+  return { userId, email, token, cookie: `yt_session=${token}` };
 }

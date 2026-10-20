@@ -1,7 +1,6 @@
 import { DemoApi, field, loginAs, ok } from "./api-client";
-import { ensureDemoCard } from "./card";
-import { ensureDemoPayouts } from "./payouts";
 import { ensureBidderCard, ensureDemoCard } from "./card";
+import { ensureDemoPayouts } from "./payouts";
 import type { DemoPasswords } from "./api-client";
 import { DEMO_BRANDS } from "./catalogue";
 import type { Region } from "./catalogue";

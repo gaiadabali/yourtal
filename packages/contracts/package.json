@@ -72,6 +72,7 @@
     "./money/value": "./src/money/money-value.ts",
     "./merchant/roster": "./src/merchant/merchant-roster.ts",
     "./money/format": "./src/money/money-format.ts",
+    "./money/tax": "./src/money/tax.ts",
     "./region": "./src/region/region.ts",
     "./staff/session": "./src/staff/staff-session.ts",
     "./staff/users": "./src/staff/users.ts",

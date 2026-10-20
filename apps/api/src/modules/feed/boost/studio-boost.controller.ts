@@ -3,6 +3,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpException,
+  HttpStatus,
   Inject,
   NotFoundException,
   Param,
@@ -22,6 +24,8 @@ import { BOOST_DB, BOOST_REPOSITORY } from "./boost.tokens";
 import type { BoostRepository } from "./boost.repository";
 import { spendMinorOf } from "./boost.repository";
 import { reserveCpmFor } from "./boost-reserve";
+import { PAYMENT_ACCOUNTS_SERVICE } from "../../payments/payment-accounts.service";
+import type { PaymentAccountsService } from "../../payments/payment-accounts.service";
 
 interface OwnedCampaign {
   readonly region: Region;
@@ -41,13 +45,14 @@ export class StudioBoostController {
     @Inject(BOOST_REPOSITORY) private readonly boosts: BoostRepository,
     @Inject(BOOST_DB) private readonly db: AppDb,
     @Inject(REGION_SETTINGS_READER) private readonly settings: RegionSettingsReader,
+    @Inject(PAYMENT_ACCOUNTS_SERVICE) private readonly accounts: PaymentAccountsService,
   ) {}
 
   @Authorize({ kind: "billing", action: "view" })
   @Get("campaigns/:campaignId/boost")
   async get(@Param("tenantId") tenantId: string, @Param("campaignId") campaignId: string) {
     const campaign = await this.owned(tenantId, campaignId);
-    return this.view(campaignId, campaign);
+    return this.view(tenantId, campaignId, campaign);
   }
 
   @Authorize({ kind: "billing", action: "purchase_points" })
@@ -79,6 +84,18 @@ export class StudioBoostController {
         message: `The maximum bid must be at least the reserve of ${String(reserve)}.`,
       });
     }
+    // 5.1.a: where boosts charge a saved card (Stripe), a new or larger budget needs one first.
+    const existing = await this.boosts.find(campaignId);
+    const raising = existing === null || parsed.data.dailyBudgetMinor > existing.dailyBudgetMinor;
+    if (raising && (await this.accounts.cardRequired(this.ownerOf(tenantId, campaign)))) {
+      throw new HttpException(
+        {
+          code: "card_required",
+          message: "Add a card for boosts before setting or raising a budget.",
+        },
+        HttpStatus.PAYMENT_REQUIRED,
+      );
+    }
     await this.boosts.upsert({
       campaignId,
       businessId: tenantId,
@@ -86,7 +103,7 @@ export class StudioBoostController {
       currency: campaign.currency,
       ...parsed.data,
     });
-    return this.view(campaignId, campaign);
+    return this.view(tenantId, campaignId, campaign);
   }
 
   @Authorize({ kind: "billing", action: "view_statement" })
@@ -110,11 +127,20 @@ export class StudioBoostController {
     };
   }
 
-  private async view(campaignId: string, campaign: OwnedCampaign): Promise<BoostView> {
-    const [setting, totals, reserve] = await Promise.all([
+  private ownerOf(tenantId: string, campaign: OwnedCampaign) {
+    return { kind: "business" as const, id: tenantId, region: campaign.region };
+  }
+
+  private async view(
+    tenantId: string,
+    campaignId: string,
+    campaign: OwnedCampaign,
+  ): Promise<BoostView> {
+    const [setting, totals, reserve, cardRequired] = await Promise.all([
       this.boosts.find(campaignId),
       this.boosts.totals(campaignId),
       reserveCpmFor(this.settings, campaign.region),
+      this.accounts.cardRequired(this.ownerOf(tenantId, campaign)),
     ]);
     const impressions = totals.days.reduce((sum, day) => sum + day.impressions, 0);
     return {
@@ -139,6 +165,7 @@ export class StudioBoostController {
         impressions: day.impressions,
         spendMinor: spendMinorOf(day.spentMilli),
       })),
+      cardRequired,
     };
   }
 }

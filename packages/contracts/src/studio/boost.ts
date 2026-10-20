@@ -60,17 +60,30 @@ export const boostViewSchema = z.object({
   /** Average price actually paid per 1,000 impressions, or `null` with none. */
   averageCpmMinor: z.number().int().min(0).nullable(),
   days: z.array(boostDaySchema),
+  /**
+   * 5.1.a: boosts here charge a saved card and this business has none yet, so
+   * a boost cannot be set or raised until one is added (`card_required`).
+   */
+  cardRequired: z.boolean(),
 });
 export type BoostView = z.infer<typeof boostViewSchema>;
 
-/** A day's boost spend, charged through the simulated payment driver. */
+/**
+ * A day's boost spend, charged through the payment driver. Days below the
+ * processor's minimum are charged together, so several days can share one
+ * `providerReference`.
+ */
 export const boostChargeSchema = z.object({
   id: z.uuid(),
   campaignId: z.uuid(),
   campaignTitle: z.string(),
   day: z.iso.date(),
   impressions: z.number().int().min(0),
+  /** What was charged for the day, GST included (F118). */
   amountMinor: positiveMinor,
+  /** The ex-GST spend and its GST; null on charges from before GST was recorded. */
+  subtotalMinor: minorUnitsSchema.nullable(),
+  taxMinor: minorUnitsSchema.nullable(),
   currency: currencySchema,
   providerReference: z.string().min(1),
   chargedAt: z.iso.datetime(),

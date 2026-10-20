@@ -11,6 +11,7 @@ import { FeedController } from "./feed.controller";
 import { StudioBoostController } from "./boost/studio-boost.controller";
 import { BoostRepository } from "./boost/boost.repository";
 import { BOOST_DB, BOOST_REPOSITORY } from "./boost/boost.tokens";
+import { PaymentsModule } from "../payments/payments.module";
 import { FEED_SIGNALS_REPOSITORY } from "./persistence/feed-signals.repository";
 import { DrizzleFeedSignalsRepository } from "./persistence/drizzle-feed-signals.repository";
 import { PACING_STATE_REPOSITORY } from "./persistence/pacing-state.repository";
@@ -38,7 +39,7 @@ export const FEED_DB = Symbol("FEED_DB");
  * tables, migration `20260927150000_feed_module.sql`.
  */
 @Module({
-  imports: [CampaignModule, WalletModule, StoreModule, SettingsModule],
+  imports: [CampaignModule, WalletModule, StoreModule, SettingsModule, PaymentsModule],
   controllers: [FeedController, StudioBoostController],
   providers: [
     {

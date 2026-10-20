@@ -5,19 +5,26 @@ import {
   Inject,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Query,
   Req,
   Res,
 } from "@nestjs/common";
 import type { FastifyRequest, FastifyReply } from "fastify";
-import type { PaymentsDriver } from "@yourtal/drivers/payments";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
 import type { LedgerInternalClient } from "../../shared/ledger-client/ledger-internal-client";
 import { LedgerNotFoundError } from "../../shared/ledger-client/ledger-not-found";
-import { PAYMENTS_DRIVER } from "../../shared/drivers/payments-driver.module";
+import { APP_CONFIG } from "../../config/app-config.module";
+import type { AppConfig } from "../../config/app-config";
+import { REGION_SETTINGS_READER } from "../../shared/settings/region-settings-reader";
+import type { RegionSettingsReader } from "../../shared/settings/region-settings-reader";
+import { PAYMENT_ACCOUNTS_SERVICE } from "../payments/payment-accounts.service";
+import type { PaymentAccountsService } from "../payments/payment-accounts.service";
+import { CARD_PURCHASES, toCardPurchase } from "./persistence/card-purchase.repository";
+import type { CardPurchaseRepository } from "./persistence/card-purchase.repository";
 import { BUSINESS_REGION_LOOKUP } from "../store/persistence/business-region-lookup";
 import type { BusinessRegionLookup } from "../store/persistence/business-region-lookup";
 import { quotePurchaseQuerySchema } from "./dto/quote-purchase-query";
@@ -28,12 +35,13 @@ import { mapBillingErrorToHttpException } from "./to-http-exception";
 import { getBalance } from "./use-cases/get-balance.use-case";
 import { getCampaignSpend } from "./use-cases/get-campaign-spend.use-case";
 import { listStatements, toBillingStatement } from "./use-cases/list-statements.use-case";
-import { purchasePoints } from "./use-cases/purchase-points.use-case";
+import { startPurchase } from "./use-cases/start-purchase.use-case";
 import { quotePurchase } from "./use-cases/quote-purchase.use-case";
 import { statementsToCsv } from "./statements-csv";
 
 /**
- * 7.5: Studio billing -- buying points. Every route is `/api/:tenantId/studio/billing/*`
+ * 7.5 / 5.1.a: Studio billing -- buying points by card (granted when the
+ * processor's verified webhook confirms the payment, F106). Every route is `/api/:tenantId/studio/billing/*`
  * per Phase 7's own routing rule ("Every Studio route sits under
  * `api/:tenantId/studio/...`").
  *
@@ -46,8 +54,11 @@ import { statementsToCsv } from "./statements-csv";
 export class BillingController {
   constructor(
     @Inject(LEDGER_INTERNAL_CLIENT) private readonly ledger: LedgerInternalClient,
-    @Inject(PAYMENTS_DRIVER) private readonly payments: PaymentsDriver,
     @Inject(BUSINESS_REGION_LOOKUP) private readonly businessRegionLookup: BusinessRegionLookup,
+    @Inject(REGION_SETTINGS_READER) private readonly settings: RegionSettingsReader,
+    @Inject(CARD_PURCHASES) private readonly purchases: CardPurchaseRepository,
+    @Inject(PAYMENT_ACCOUNTS_SERVICE) private readonly accounts: PaymentAccountsService,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   @Authorize({ kind: "billing", action: "view" })
@@ -61,6 +72,7 @@ export class BillingController {
     const result = await quotePurchase(
       this.ledger,
       this.businessRegionLookup,
+      this.settings,
       tenantId,
       parsed.points,
     );
@@ -84,14 +96,36 @@ export class BillingController {
     const rawKey = request.headers["idempotency-key"];
     const idempotencyKey = `${tenantId}:${Array.isArray(rawKey) ? rawKey[0] : rawKey}`;
 
-    const result = await purchasePoints(this.ledger, this.payments, this.businessRegionLookup, {
-      merchantId: tenantId,
-      points: body.points,
-      currency: body.currency,
-      idempotencyKey,
-    });
+    const result = await startPurchase(
+      {
+        ledger: this.ledger,
+        businesses: this.businessRegionLookup,
+        settings: this.settings,
+        purchases: this.purchases,
+        accounts: this.accounts,
+        webOrigin: this.config.webOrigin,
+        now: () => new Date(),
+      },
+      { merchantId: tenantId, points: body.points, currency: body.currency, idempotencyKey },
+    );
     if (result.isErr()) throw mapBillingErrorToHttpException(result.error);
     return result.value;
+  }
+
+  /** 5.1.a: the return page polls this until the webhook has landed. */
+  @Authorize({ kind: "billing", action: "view" })
+  @NotValueMoving("A read.")
+  @Get("purchases/:purchaseId")
+  async purchaseStatus(
+    @Param("tenantId") tenantId: string,
+    @Param("purchaseId", new ParseUUIDPipe()) purchaseId: string,
+  ) {
+    const row = await this.purchases.find(purchaseId);
+    // Another business's purchase looks exactly like a missing one.
+    if (row?.businessId !== tenantId) {
+      throw mapBillingErrorToHttpException({ type: "purchase_not_found", purchaseId });
+    }
+    return toCardPurchase(row);
   }
 
   @Authorize({ kind: "billing", action: "view" })

@@ -13,9 +13,16 @@ import { regionSchema } from "../region/region";
  * `backingRateId`, no `demandMultiplierBps` -- neither is Studio's business).
  */
 
+/** Basis points (1000 = 10%). F118: AU adds GST on top of an ex-GST price; Indonesia adds none. */
+export const taxRateBpsSchema = z.number().int().min(0).max(10_000);
+
+/** F118: the price is ex-GST (`subtotalMinor`); `totalMinor` = subtotal + GST is what the card is charged. */
 export const purchaseQuoteSchema = z.object({
   points: pointsSchema,
+  subtotalMinor: minorUnitsSchema,
+  taxMinor: minorUnitsSchema,
   totalMinor: minorUnitsSchema,
+  taxRateBps: taxRateBpsSchema,
   currency: currencySchema,
 });
 export type PurchaseQuote = z.infer<typeof purchaseQuoteSchema>;
@@ -44,14 +51,67 @@ export const billingAllocationSchema = z.object({
 });
 export type BillingAllocation = z.infer<typeof billingAllocationSchema>;
 
-export const purchaseResultSchema = z.object({
-  allocation: billingAllocationSchema,
-  paidMinor: minorUnitsSchema,
+/**
+ * 5.1.a: a card purchase of points. `pending` until the processor's verified
+ * webhook says it was paid; `needs_review` is money received that staff must
+ * settle (the rate rose while the checkout was open). F107: no refunds here.
+ */
+export const cardPurchaseStatusSchema = z.enum(["pending", "paid", "expired", "needs_review"]);
+export type CardPurchaseStatus = z.infer<typeof cardPurchaseStatusSchema>;
+
+export const cardPurchaseSchema = z.object({
+  purchaseId: z.uuid(),
+  status: cardPurchaseStatusSchema,
+  points: pointsSchema,
+  subtotalMinor: minorUnitsSchema,
+  taxMinor: minorUnitsSchema,
+  totalMinor: minorUnitsSchema,
+  taxRateBps: taxRateBpsSchema,
   currency: currencySchema,
-  /** The simulated payments driver's own reference (`ChargeAccepted.providerReference`). */
-  providerReference: z.string().min(1),
+  /** Set once the points are granted. */
+  allocationId: z.string().min(1).nullable(),
+  createdAt: z.iso.datetime(),
+  paidAt: z.iso.datetime().nullable(),
+});
+export type CardPurchase = z.infer<typeof cardPurchaseSchema>;
+
+/**
+ * `POST .../billing/purchases`. `awaiting_payment`: send the browser to
+ * `checkoutUrl`; the points arrive with the webhook. `paid` (a processor that
+ * settles at once): `allocation` holds the points already. A replay of an
+ * older key can answer `needs_review` or `expired`.
+ */
+export const purchaseResultSchema = z.object({
+  status: z.enum(["awaiting_payment", "paid", "needs_review", "expired"]),
+  purchaseId: z.uuid(),
+  checkoutUrl: z.url().nullable(),
+  purchase: cardPurchaseSchema,
+  allocation: billingAllocationSchema.nullable(),
 });
 export type PurchaseResult = z.infer<typeof purchaseResultSchema>;
+
+/** A saved card as Studio shows it: never more than brand, last four digits and expiry. */
+export const savedCardSchema = z.object({
+  brand: z.string().min(1),
+  last4: z.string().regex(/^[0-9]{4}$/),
+  expMonth: z.number().int().min(1).max(12),
+  expYear: z.number().int().min(2000).max(2100),
+});
+export type SavedCardView = z.infer<typeof savedCardSchema>;
+
+/** `GET .../billing/card`. `required`: boosts in this region charge a saved card (Stripe). */
+export const billingCardSchema = z.object({
+  card: savedCardSchema.nullable(),
+  required: z.boolean(),
+});
+export type BillingCard = z.infer<typeof billingCardSchema>;
+
+/** `POST .../billing/card`: a page to save the card on, or the card itself when it is saved at once. */
+export const startCardSetupResultSchema = z.object({
+  checkoutUrl: z.url().nullable(),
+  card: savedCardSchema.nullable(),
+});
+export type StartCardSetupResult = z.infer<typeof startCardSetupResultSchema>;
 
 /**
  * `remainingPoints` is already "remaining minus active holds" (TASKS.md

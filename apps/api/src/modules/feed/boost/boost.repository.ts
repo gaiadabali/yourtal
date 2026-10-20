@@ -141,6 +141,12 @@ export class BoostRepository {
       day: String(row["day_text"]),
       impressions: Number(row["impressions"]),
       amountMinor: Number(row["amount_minor"]) as BoostCharge["amountMinor"],
+      subtotalMinor:
+        row["subtotal_minor"] === null
+          ? null
+          : (Number(row["subtotal_minor"]) as BoostCharge["amountMinor"]),
+      taxMinor:
+        row["tax_minor"] === null ? null : (Number(row["tax_minor"]) as BoostCharge["amountMinor"]),
       currency: row["currency"] as BoostCharge["currency"],
       providerReference: String(row["provider_reference"]),
       chargedAt: iso(row["charged_at"]),

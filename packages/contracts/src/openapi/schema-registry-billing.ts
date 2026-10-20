@@ -2,12 +2,17 @@ import {
   billingAllocationSchema,
   billingBalanceSchema,
   billingCampaignSpendSchema,
+  billingCardSchema,
   billingStatementSchema,
+  cardPurchaseSchema,
+  cardPurchaseStatusSchema,
   funderTypeSchema,
   purchasePointsRequestSchema,
   purchaseQuoteSchema,
   purchaseResultSchema,
   raiseStatementDisputeRequestSchema,
+  savedCardSchema,
+  startCardSetupResultSchema,
 } from "../billing/billing";
 import type { ContractComponent } from "./schema-registry";
 
@@ -38,7 +43,7 @@ export const BILLING_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     id: "PurchaseQuote",
     schema: purchaseQuoteSchema,
     description:
-      "A points pack's price at F12's fixed rate (P_issue) -- never the backing rate B, which no Studio surface ever carries.",
+      "A points pack's price at F12's fixed rate (P_issue) -- never the backing rate B, which no Studio surface ever carries. subtotalMinor is ex-GST; totalMinor adds GST at taxRateBps (F118: AU 10%, ID none).",
     crossFieldRules: [],
   },
   {
@@ -59,8 +64,44 @@ export const BILLING_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     id: "PurchaseResult",
     schema: purchaseResultSchema,
     description:
-      "What buying a pack produced: the funded allocation, what was actually charged, and the simulated payments driver's own reference.",
+      "5.1.a: a started card purchase. awaiting_payment carries the checkout page to send the browser to; paid carries the allocation already funded.",
+    crossFieldRules: [
+      "checkoutUrl is set exactly when status is awaiting_payment.",
+      "allocation is set exactly when status is paid.",
+    ],
+  },
+  {
+    id: "CardPurchaseStatus",
+    schema: cardPurchaseStatusSchema,
+    description:
+      "pending until the processor's verified webhook confirms payment; needs_review is money received that staff must settle; there are no refunds (F107).",
     crossFieldRules: [],
+  },
+  {
+    id: "CardPurchase",
+    schema: cardPurchaseSchema,
+    description: "5.1.a: one card purchase of points, with its GST split, for the return page.",
+    crossFieldRules: ["totalMinor = subtotalMinor + taxMinor."],
+  },
+  {
+    id: "SavedCard",
+    schema: savedCardSchema,
+    description: "A saved card as Studio shows it: brand, last four digits and expiry only.",
+    crossFieldRules: [],
+  },
+  {
+    id: "BillingCard",
+    schema: billingCardSchema,
+    description:
+      "The business's card for boosts. required is true where boosts charge a saved card (AU on Stripe).",
+    crossFieldRules: [],
+  },
+  {
+    id: "StartCardSetupResult",
+    schema: startCardSetupResultSchema,
+    description:
+      "Either a page to save the card on (checkoutUrl) or, when the processor saves it at once, the card.",
+    crossFieldRules: ["Exactly one of checkoutUrl and card is set."],
   },
   {
     id: "BillingBalance",

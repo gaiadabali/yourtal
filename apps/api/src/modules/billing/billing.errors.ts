@@ -23,6 +23,22 @@ export interface PaymentDeclinedError {
   readonly detail: string;
 }
 
+/** 5.1.a: the processor could not be reached or answered oddly; the same key is safe to retry. */
+export interface PaymentUnavailableError {
+  readonly type: "payment_unavailable";
+  readonly detail: string;
+}
+
+/** 5.1.a: an Idempotency-Key already used for a different purchase. */
+export interface PurchaseConflictError {
+  readonly type: "purchase_conflict";
+}
+
+export interface PurchaseNotFoundError {
+  readonly type: "purchase_not_found";
+  readonly purchaseId: string;
+}
+
 export interface CampaignSpendNotOwnedError {
   readonly type: "campaign_spend_not_owned";
   readonly campaignId: string;
@@ -40,6 +56,8 @@ export type PurchasePointsError =
   | BusinessNotFoundError
   | CurrencyMismatchError
   | PaymentDeclinedError
+  | PaymentUnavailableError
+  | PurchaseConflictError
   | LedgerRefusedError
   | PersistenceFailedError;
 

@@ -772,7 +772,19 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
   "feed.boost_impression":
     "13.23.b: one row per slot won, for the average price paid; aggregated into boostViewSchema, never listed.",
   "feed.boost_charge":
-    "13.23.c: mirrored by boostChargeSchema (studio/boost.ts) joined with the campaign title; business_id and region stay server-side.",
+    "13.23.c: mirrored by boostChargeSchema (studio/boost.ts) joined with the campaign title; business_id and region stay server-side. 5.1.a added the GST split (subtotal_minor, tax_minor) and batch_id, the batch that charged it.",
+  "feed.boost_charge_batch":
+    "5.1.a (F118): boost days charged together once they reach the processor's minimum; written before the charge so a retry reuses its key. Internal to boost-settle; Studio sees the per-day boost_charge rows.",
+  "payment.customer":
+    "5.1.a: an owner's provider customer id, used server-side for checkouts and saved-card charges; never returned.",
+  "payment.saved_card":
+    "5.1.a: mirrored by savedCardSchema (billing/billing.ts) -- brand, last4 and expiry only; the provider refs stay server-side.",
+  "payment.card_setup":
+    "5.1.a: one card-saving checkout, matched to its webhook; the client sees only startCardSetupResultSchema's checkoutUrl or card.",
+  "payment.card_purchase":
+    "5.1.a: mirrored by cardPurchaseSchema (billing/billing.ts) for the return page; provider refs, the idempotency key and review_reason stay server-side.",
+  "payment.provider_event":
+    "5.1.a: the webhook inbox (claimed event ids), infrastructure for exactly-once handling; no client reads it.",
   "feed.demotion":
     "TASKS.md 7.7.a, this pass's own ticket. POST /api/feed/:campaignId/not-interested writes a row here but returns only `{ok: true}` (feed.controller.ts) -- the row itself (which campaigns a viewer demoted) is a ranking input read back through FeedItem.why, never returned as a list.",
 };

@@ -13,7 +13,10 @@ import type {
   CurrencyMismatchError,
   LedgerRefusedError,
   PaymentDeclinedError,
+  PaymentUnavailableError,
   PersistenceFailedError,
+  PurchaseConflictError,
+  PurchaseNotFoundError,
 } from "./billing.errors";
 
 const logger = new Logger("BillingErrorMapper");
@@ -23,6 +26,9 @@ export type BillingDomainError =
   | CurrencyMismatchError
   | LedgerRefusedError
   | PaymentDeclinedError
+  | PaymentUnavailableError
+  | PurchaseConflictError
+  | PurchaseNotFoundError
   | CampaignSpendNotOwnedError
   | PersistenceFailedError;
 
@@ -43,6 +49,22 @@ export function mapBillingErrorToHttpException(error: BillingDomainError): HttpE
         { code: "payment_declined", message: error.detail },
         HttpStatus.PAYMENT_REQUIRED,
       );
+    case "payment_unavailable":
+      logger.warn(error.detail);
+      return new ServiceUnavailableException({
+        code: "payment_unavailable",
+        message: "The payment could not be started. Try again.",
+      });
+    case "purchase_conflict":
+      return new ConflictException({
+        code: "idempotency_conflict",
+        message: "This Idempotency-Key was already used for a different purchase.",
+      });
+    case "purchase_not_found":
+      return new NotFoundException({
+        code: "purchase_not_found",
+        message: `no purchase ${error.purchaseId} was found for this business`,
+      });
     case "ledger_refused":
       // 10.1.c/10.6.c: a state conflict (the F12 dispute window is still
       // open, or the statement is not `open` any more), not a malformed

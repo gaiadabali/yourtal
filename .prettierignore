@@ -38,3 +38,6 @@ packages/media/fixtures/
 
 # Written by vitest (the authorization matrix, 13.3.c); its own format is the reviewed one.
 apps/api/src/shared/authz/__snapshots__/
+
+# Written by packages/contracts/scripts/build-areas.mjs from the ABS allocation files (F116).
+packages/contracts/data/areas/au.json

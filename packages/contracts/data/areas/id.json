@@ -1,0 +1,79 @@
+{
+  "region": "ID",
+  "kind": "postcode",
+  "source": "Hand-written demo list of well-known Indonesian cities and districts with a representative kode pos each (F104: Indonesia is a demo)",
+  "licence": "Public facts, written for this repository",
+  "attribution": "",
+  "states": [
+    {
+      "code": "JK",
+      "name": "DKI Jakarta",
+      "places": [
+        ["Jakarta Barat", "11110"],
+        ["Jakarta Pusat", "10110"],
+        ["Jakarta Selatan", "12110"],
+        ["Jakarta Timur", "13110"],
+        ["Jakarta Utara", "14110"],
+        ["Kemang", "12730"]
+      ]
+    },
+    {
+      "code": "JB",
+      "name": "Jawa Barat",
+      "places": [
+        ["Bandung", "40111"],
+        ["Bekasi", "17111"],
+        ["Bogor", "16111"],
+        ["Depok", "16411"]
+      ]
+    },
+    {
+      "code": "BT",
+      "name": "Banten",
+      "places": [
+        ["Serpong", "15310"],
+        ["Tangerang", "15111"]
+      ]
+    },
+    {
+      "code": "JT",
+      "name": "Jawa Tengah",
+      "places": [
+        ["Semarang", "50111"],
+        ["Surakarta", "57111"]
+      ]
+    },
+    {
+      "code": "YO",
+      "name": "DI Yogyakarta",
+      "places": [["Yogyakarta", "55111"]]
+    },
+    {
+      "code": "JI",
+      "name": "Jawa Timur",
+      "places": [
+        ["Malang", "65111"],
+        ["Surabaya", "60111"]
+      ]
+    },
+    {
+      "code": "BA",
+      "name": "Bali",
+      "places": [
+        ["Denpasar", "80111"],
+        ["Kuta", "80361"],
+        ["Ubud", "80571"]
+      ]
+    },
+    {
+      "code": "SU",
+      "name": "Sumatera Utara",
+      "places": [["Medan", "20111"]]
+    },
+    {
+      "code": "SN",
+      "name": "Sulawesi Selatan",
+      "places": [["Makassar", "90111"]]
+    }
+  ]
+}

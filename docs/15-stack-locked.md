@@ -58,6 +58,8 @@ This is what we use. No options, no "either/or". Reasoning lives in [`10-tech-st
 | Search            | Postgres full-text                                                                                           |
 | Migrations        | **Atlas** (declarative, with a CI safety check)                                                              |
 
+**Third-party data** (a licence a reader must be able to find). The Australian area list (every postcode with its suburbs, F116) is built from the Australian Bureau of Statistics' ASGS Edition 3 Suburbs and Localities and Postal Areas allocation files, **CC BY 4.0**, attributed "Based on Australian Bureau of Statistics data, © Commonwealth of Australia". Source, rule, hashes and the rebuild command are in `packages/contracts/data/areas/NOTICE.md`. A community postcode list on GitHub was rejected for having no licence.
+
 ## Media
 
 | Concern              | Locked choice                                                                                |

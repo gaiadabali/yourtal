@@ -305,9 +305,11 @@ describe("erasing identity: profile, credential, session, guardian consent and b
 
     const left = await pool.query<{ email: string; accepted: boolean }>(
       `SELECT email, accepted_at IS NOT NULL AS accepted
-         FROM business.team_invitations WHERE business_id = $1 ORDER BY email`,
+         FROM business.team_invitations WHERE business_id = $1
+        ORDER BY accepted_at IS NOT NULL DESC`,
       [businessId],
     );
+    // Ordered by accepted, not email: both addresses embed a random UUID.
     expect(left.rows).toEqual([
       { email, accepted: true },
       { email: otherEmail, accepted: false },

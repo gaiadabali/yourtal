@@ -181,7 +181,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | Reward ceiling | **8 / 150 pts per minute, including the maximum accuracy bonus** (F14), so 20 min in AU stays under AUD 5. Studio refuses anything higher. |
 | Demo campaign rewards | 5 / 80 pts per minute. Accuracy bonus is 25% in the demo, capped at 40% of base (J10). |
 | Streak | A streak day is a calendar day on the region clock (AU: Australia/Sydney, ID: Asia/Jakarta; F16) with ≥ 1 completed reward session. The bonus pays on day 3 and day 7: 5 then 10 pts / 60 then 120 pts. Paused while coverage is below 1.1. A broken streak never costs points. |
-| snap-app receipt | 10 / 100 pts, one per receipt hash per partner. |
+| snap-app receipt | **1 / 10 pts** (F119, 2026-10-21; was 10 / 100), one per receipt hash per partner. |
 | Daily earn cap | 500 / 5,000 pts. Teens get half. The monthly cap is 30× the daily cap. |
 | Holdback by trust tier | 72 / 48 / 24 / 0 h. Tier 1 = verified email + 7 days. Tier 2 = 30 days + 10 clean completions. Tier 3 = staff-set only. **Demo viewer accounts are tier 3.** The tier is never shown to users. |
 | Goodwill per case | ≤ 500 / 5,000 pts. |
@@ -1689,7 +1689,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [ ] 14.13.b Alerts at 50%, 80% and 100% of a package or campaign budget, by email and in Studio; rewards stop at 100% (the campaign half builds on 14.2's spend tracking, merged at 4c4d8281)
   - [ ] 14.13.c Check on staging: a small package reaches each alert and then stops
 - [ ] **14.14 Receipt points: 1 a receipt, bought by SnapApp at cost** (group 2.10, F119, F120) · A · needs: — — 🔄 2026-10-21
-  - [ ] 14.14.a receipt_points is 1 (AU) and 10 (ID demo), by an add-only settings migration
+  - [x] 14.14.a receipt_points is 1 (AU) and 10 (ID demo), by an add-only settings migration → yourtal@880aaebb; staging reads AU 1, ID 10 (2026-10-21)
   - [ ] 14.14.b SnapApp’s receipt grants draw from a partner allocation bought at B = 3c (an at-cost purchase kind; RecordPurchase refuses anything under P_issue today)
   - [ ] 14.14.c When that package is spent, receipts stop earning and the partner API says so
 Group 5.7, the founder's walkthrough, is 13.6 here.

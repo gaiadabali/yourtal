@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 1/5 | 2/16 | `█░░░░░░░░░`  13% |
-| **All** | | | **106/111** | **548/563** | `██████████`  97% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 2/5 | 6/16 | `████░░░░░░`  38% |
+| **All** | | | **107/111** | **552/563** | `██████████`  98% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1607,7 +1607,7 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of record is `god/TASKS.md`; each task here names its ID there, and both are ticked together.
 
 - [ ] **14.1 Live email through Resend** (group 1.3) · A · needs: — — 🔄 2026-10-20
-  - [ ] 14.1.a A live driver for Resend in `packages/drivers/src/boundaries/email.ts`
+  - [x] 14.1.a A live driver for Resend in `packages/drivers/src/boundaries/email.ts`
   - [ ] 14.1.b Staging: `EMAIL_DRIVER=live` with Free Tax Returns' Resend account (a proof of concept, F103), sending from its verified domain
   - [ ] 14.1.c Check: sign-up verification, password reset, team invite and guardian approval emails arrive
 - [ ] **14.2 Campaign budget, daily cap and districts are saved and enforced** (group 1.6) · A + C · needs: — — 🔄 2026-10-20
@@ -1620,10 +1620,10 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [ ] 14.3.b The first partner call with a valid code creates the link and returns its ID; later calls use the link ID
   - [ ] 14.3.c Me → Linked apps shows “SnapApp linked”, with unlink; teens are still refused
   - [ ] 14.3.d Tests: a call 11 minutes after linking still earns; an unlinked user earns nothing
-- [ ] **14.4 The “Sign in with YourTal” contract** (group 3.2, F99) · A · needs: — — 🔄 2026-10-20
-  - [ ] 14.4.a The claims, clients and token rules each app may rely on
-  - [ ] 14.4.b How every app hears that an account was deleted
-  - [ ] 14.4.c The consent wording; a teen reaches SnapApp only through a parent's invite (F105)
+- [x] **14.4 The “Sign in with YourTal” contract** (group 3.2, F99) · A · needs: — — ✅ 2026-10-20 72e404bf
+  - [x] 14.4.a The claims, clients and token rules each app may rely on → docs/26 §1
+  - [x] 14.4.b How every app hears that an account was deleted → docs/26 §2
+  - [x] 14.4.c The consent wording; a teen reaches SnapApp only through a parent's invite (F105) → docs/26 §3
 - [x] **14.5 Tidy this plan** (group 5.8) · lead · needs: — — ✅ 2026-10-20 c2a38d04
   - [x] 14.5.a Take gifting and charity off the deferred list (built in 13.20–13.22)
   - [x] 14.5.b Fix the main checkout's path in `CLAUDE.md` and `scripts/progress.mjs` (now `god/yourtal`)

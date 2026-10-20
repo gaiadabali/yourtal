@@ -55,9 +55,9 @@ async function settle<T>(result: ResultAsync<T, { code: string }>): Promise<T> {
  * (A's, 13.24: Postgres's plus the ledger's) — the `identity` handler erases
  * business membership, `user_profile`, `credential` and `session` in one
  * pass (1.4.f, done for exactly this ticket), which is what ends every
- * session and removes the profile. Domains with no handler yet
- * (`research_answers`, `support_cases`) come back `unhandled` in the report rather than
- * silently reported done — see `dsar-orchestrator.ts`'s own header for why.
+ * session and removes the profile. A domain with no handler comes back
+ * `unhandled` in the report rather than silently reported done — see
+ * `dsar-orchestrator.ts`'s own header for why.
  */
 @Controller("api/me")
 export class AccountController {

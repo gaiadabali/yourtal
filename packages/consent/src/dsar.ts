@@ -165,15 +165,6 @@ const DOMAINS: readonly DataDomain[] = [
     onDeletion: "erase",
   },
   {
-    id: "research_answers",
-    holds: "Answers sold to a panel buyer",
-    service: "watch",
-    owner: "ops",
-    onDeletion: "anonymise",
-    basis:
-      "Already delivered to a buyer as part of an aggregate. Withdrawal stops future inclusion; it cannot recall a cohort statistic already published.",
-  },
-  {
     id: "risk_signals",
     holds: "Device fingerprints, IP history, cluster membership, trust tier",
     service: "risk",
@@ -181,14 +172,6 @@ const DOMAINS: readonly DataDomain[] = [
     onDeletion: "retain",
     basis:
       "Fraud prevention (docs/14 §3). Erasing the signals of a farmed account on request would make deletion the last step of the attack.",
-  },
-  {
-    id: "support_cases",
-    holds: "Case notes, goodwill credits, correspondence",
-    service: "support",
-    owner: "support",
-    onDeletion: "anonymise",
-    basis: "Dispute history and the audit of who granted what must survive the subject.",
   },
   {
     id: "tax_records",

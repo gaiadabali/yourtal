@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- tests read dynamic JSON bodies */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument -- tests read dynamic JSON bodies */
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createBrowser } from "./browser";
@@ -70,12 +70,27 @@ describe("objects", () => {
 describe("idempotency records", () => {
   it("stores by scope and key, and ignores a record older than the cutoff", async () => {
     const key = uid("k");
-    const rec = { scope: "platform", key, requestHash: "h", status: 200, body: '{"a":1}', createdAt: at(0) };
+    const rec = {
+      scope: "platform",
+      key,
+      requestHash: "h",
+      status: 200,
+      body: '{"a":1}',
+      createdAt: at(0),
+    };
     await store.transaction((tx) => tx.putIdempotency(rec));
-    expect(await store.transaction((tx) => tx.getIdempotency("platform", key, at(-60)))).toEqual(rec);
-    expect(await store.transaction((tx) => tx.getIdempotency("acct_other", key, at(-60)))).toBeUndefined();
-    expect(await store.transaction((tx) => tx.getIdempotency("platform", key, at(60)))).toBeUndefined();
-    await store.transaction((tx) => tx.putIdempotency({ ...rec, requestHash: "h2", createdAt: at(100) }));
+    expect(await store.transaction((tx) => tx.getIdempotency("platform", key, at(-60)))).toEqual(
+      rec,
+    );
+    expect(
+      await store.transaction((tx) => tx.getIdempotency("acct_other", key, at(-60))),
+    ).toBeUndefined();
+    expect(
+      await store.transaction((tx) => tx.getIdempotency("platform", key, at(60))),
+    ).toBeUndefined();
+    await store.transaction((tx) =>
+      tx.putIdempotency({ ...rec, requestHash: "h2", createdAt: at(100) }),
+    );
     const again = await store.transaction((tx) => tx.getIdempotency("platform", key, at(50)));
     expect(again?.requestHash).toBe("h2");
   });
@@ -114,7 +129,10 @@ describe("claims across processes", () => {
   });
 
   it("deliveries are leased, so two workers do not send the same one", async () => {
-    const event = obj({ type: "event", data: { id: "evt_1", created: Math.floor(T0.getTime() / 1000) } });
+    const event = obj({
+      type: "event",
+      data: { id: "evt_1", created: Math.floor(T0.getTime() / 1000) },
+    });
     const d1 = uid("whd");
     const d2 = uid("whd");
     await store.transaction(async (tx) => {
@@ -136,18 +154,34 @@ describe("claims across processes", () => {
     expect(early.filter((d) => d.id === d1 || d.id === d2)).toEqual([]);
     await store.recordDelivery(
       d1,
-      { attempts: 1, status: "pending", nextAttemptAt: at(70), lastStatusCode: 500, lastError: "HTTP 500" },
+      {
+        attempts: 1,
+        status: "pending",
+        nextAttemptAt: at(70),
+        lastStatusCode: 500,
+        lastError: "HTTP 500",
+      },
       at(62),
     );
     const late = await store.claimDeliveries(at(120), 100, 60_000);
     expect(late.map((d) => d.id)).toContain(d1);
     await store.recordDelivery(
       d1,
-      { attempts: 2, status: "delivered", nextAttemptAt: at(120), lastStatusCode: 200, lastError: null },
+      {
+        attempts: 2,
+        status: "delivered",
+        nextAttemptAt: at(120),
+        lastStatusCode: 200,
+        lastError: null,
+      },
       at(121),
     );
     const rows = await store.listDeliveries();
-    expect(rows.find((d) => d.id === d1)).toMatchObject({ status: "delivered", attempts: 2, lastStatusCode: 200 });
+    expect(rows.find((d) => d.id === d1)).toMatchObject({
+      status: "delivered",
+      attempts: 2,
+      lastStatusCode: 200,
+    });
   });
 });
 
@@ -165,18 +199,36 @@ describe("the whole simulation on Postgres", () => {
         return Promise.resolve(new Response("ok"));
       },
     });
-    const headers = { authorization: `Bearer ${sim.secretKey}`, "content-type": "application/x-www-form-urlencoded" };
+    const headers = {
+      authorization: `Bearer ${sim.secretKey}`,
+      "content-type": "application/x-www-form-urlencoded",
+    };
     const post = async (path: string, p: Params, extra: Record<string, string> = {}) =>
-      (await fetch(`${sim.baseUrl}${path}`, { method: "POST", headers: { ...headers, ...extra }, body: form(p) })).json() as Promise<Record<string, any>>;
+      (
+        await fetch(`${sim.baseUrl}${path}`, {
+          method: "POST",
+          headers: { ...headers, ...extra },
+          body: form(p),
+        })
+      ).json() as Promise<Record<string, any>>;
 
     const s = await post("/v1/checkout/sessions", {
       mode: "payment",
       success_url: "https://app.test/ok",
-      line_items: [{ quantity: 1, price_data: { currency: "aud", unit_amount: 4500, product_data: { name: "V" } } }],
+      line_items: [
+        {
+          quantity: 1,
+          price_data: { currency: "aud", unit_amount: 4500, product_data: { name: "V" } },
+        },
+      ],
     });
     const done = await createBrowser(sim.config.publicBaseUrl).submitCheckout(s["id"], CARD_OK);
     expect(done.status).toBe(303);
-    const got = (await (await fetch(`${sim.baseUrl}/v1/checkout/sessions/${s["id"]}?expand[]=payment_intent`, { headers })).json()) as Record<string, any>;
+    const got = (await (
+      await fetch(`${sim.baseUrl}/v1/checkout/sessions/${s["id"]}?expand[]=payment_intent`, {
+        headers,
+      })
+    ).json()) as Record<string, any>;
     expect(got["payment_status"]).toBe("paid");
     expect(got["payment_intent"].status).toBe("succeeded");
     expect((await sim.tick()).delivered).toBeGreaterThanOrEqual(2);
@@ -192,20 +244,35 @@ describe("the whole simulation on Postgres", () => {
 
     // Connect: onboard, transfer, payout, sweep to paid.
     const acct = await post("/v1/accounts", {
-      type: "express", capabilities: { transfers: { requested: true } },
+      type: "express",
+      capabilities: { transfers: { requested: true } },
       settings: { payouts: { schedule: { interval: "manual" } } },
     });
     const link = await post("/v1/account_links", {
-      account: acct["id"], type: "account_onboarding", refresh_url: "https://app.test/r", return_url: "https://app.test/x",
+      account: acct["id"],
+      type: "account_onboarding",
+      refresh_url: "https://app.test/r",
+      return_url: "https://app.test/x",
     });
     const browser = createBrowser(sim.config.publicBaseUrl);
-    await browser.completeOnboarding((link["url"] as string).split("/").pop() ?? "", { bsb: "110000", account: "000123456" });
+    await browser.completeOnboarding((link["url"] as string).split("/").pop() ?? "", {
+      bsb: "110000",
+      account: "000123456",
+    });
     await post("/v1/transfers", { amount: 3000, currency: "aud", destination: acct["id"] });
-    const po = await post("/v1/payouts", { amount: 3000, currency: "aud" }, { "stripe-account": acct["id"] });
+    const po = await post(
+      "/v1/payouts",
+      { amount: 3000, currency: "aud" },
+      { "stripe-account": acct["id"] },
+    );
     expect(po["status"]).toBe("pending");
     clock = new Date(clock.getTime() + 31_000);
     await sim.tick();
-    const paid = (await (await fetch(`${sim.baseUrl}/v1/payouts/${po["id"]}`, { headers: { ...headers, "stripe-account": acct["id"] } })).json()) as Record<string, any>;
+    const paid = (await (
+      await fetch(`${sim.baseUrl}/v1/payouts/${po["id"]}`, {
+        headers: { ...headers, "stripe-account": acct["id"] },
+      })
+    ).json()) as Record<string, any>;
     expect(paid["status"]).toBe("paid");
     await sim.close();
   });

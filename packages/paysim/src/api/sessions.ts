@@ -16,7 +16,9 @@ const MAX_LIFETIME_S = 24 * 60 * 60;
 /** Redirect targets must be absolute http(s) URLs; nothing else is ever followed. */
 export function httpUrl(param: string, value: string): string {
   const protocol = URL.canParse(value) ? new URL(value).protocol : "";
-  if (protocol !== "https:" && protocol !== "http:") {
+  // No whitespace or control characters: the value is later sent as a Location header.
+  const clean = !/[\s\p{Cc}]/u.test(value);
+  if (!clean || (protocol !== "https:" && protocol !== "http:")) {
     throw invalidRequest(`Invalid URL: ${param} must be an http or https URL.`, { param });
   }
   return value;

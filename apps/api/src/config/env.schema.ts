@@ -231,6 +231,34 @@ export const envSchema = z.object({
    * coordinator's note: the default has to be right with no env change).
    */
   PUBLIC_WEB_ORIGIN: z.url().optional(),
+
+  /**
+   * 5.1.e / F106: every payment is simulated. With this on, the API mounts its
+   * own Stripe-speaking simulation at `/api/paysim` (packages/paysim) and the
+   * real Stripe driver runs against it; going live later is a key and an
+   * address. `true`/`false` only, like TEEN_ACCOUNTS, so a typo cannot mean
+   * on. Boot refuses it on APP_ENV=production.
+   */
+  PAYSIM_ENABLED: z.enum(["true", "false"]).default("false"),
+  /**
+   * Browser-facing base of the simulation's pages (a Checkout session `url` is
+   * `<this>/checkout/<id>`). Unset: this API's own loopback address, see
+   * `loadAppConfig`; staging sets its public https origin.
+   */
+  PAYSIM_PUBLIC_URL: z.url().optional(),
+  /** Where the simulation POSTs its events. Unset: this API's own Stripe webhook route. */
+  PAYSIM_WEBHOOK_URL: z.url().optional(),
+  /** The merchant name on the simulated pages. */
+  PAYSIM_ACCOUNT_NAME: z.string().min(1).default("YourTal"),
+  /**
+   * The one key the simulation accepts and the one the Stripe driver sends.
+   * Dev defaults are public on purpose: they only ever open the simulation.
+   */
+  STRIPE_SECRET_KEY: z.string().min(8).default("sk_test_paysim_dev"),
+  /** What the simulation signs webhooks with and the receiver verifies against. */
+  STRIPE_WEBHOOK_SECRET: z.string().min(8).default("whsec_paysim_dev"),
+  /** The Stripe API origin the driver calls; staging points it at `/api/paysim`. */
+  STRIPE_API_BASE: z.url().default("https://api.stripe.com"),
 });
 
 export type Env = z.infer<typeof envSchema>;

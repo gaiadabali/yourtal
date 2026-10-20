@@ -180,6 +180,14 @@ describe("checkout sessions", () => {
       paymentSession({ success_url: "javascript:alert(1)" }),
     );
     expect(js.status).toBe(400);
+    for (const bad of [
+      "https://a.test/x y",
+      "https://a.test/x\r\nSet-Cookie: a=b",
+      "ftp://a.test",
+    ]) {
+      const res = await k.post("/v1/checkout/sessions", paymentSession({ cancel_url: bad }));
+      expect(res.json["error"].param).toBe("cancel_url");
+    }
     const two = paymentSession();
     two["line_items"] = [
       { price_data: { currency: "aud", unit_amount: 100, product_data: { name: "a" } } },

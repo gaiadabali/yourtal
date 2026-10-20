@@ -81,7 +81,11 @@ async function handle(deps: PipelineDeps, route: Route, req: FastifyRequest, rep
     const post = route.method === "POST";
     const params = post ? bodyParams(req) : queryParams(req);
     const now = deps.now();
-    const apiVersion = header(req, "stripe-version") ?? DEFAULT_API_VERSION;
+    const versionHeader = header(req, "stripe-version");
+    const apiVersion =
+      versionHeader !== undefined && /^[\w.-]{1,64}$/.test(versionHeader)
+        ? versionHeader
+        : DEFAULT_API_VERSION;
     const account = header(req, "stripe-account") ?? null;
     const idemKey = post ? (header(req, "idempotency-key") ?? null) : null;
     if (idemKey !== null && idemKey.length > 255) {

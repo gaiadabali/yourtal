@@ -6,6 +6,8 @@ import { ZodValidationPipe } from "nestjs-zod";
 import { assertDriversConfiguredForBoot } from "@yourtal/drivers/driver-mode";
 import { AppModule } from "./app.module";
 import { loadAppConfig } from "./config/app-config";
+import { assertPaySimAllowed } from "@yourtal/paysim/gate";
+import { mountPaySim } from "./paysim/mount-paysim";
 import { TRUSTED_PROXIES } from "./shared/http/trusted-proxies";
 
 /**
@@ -25,6 +27,9 @@ import { TRUSTED_PROXIES } from "./shared/http/trusted-proxies";
  */
 async function bootstrap(): Promise<void> {
   const config = loadAppConfig();
+  // 5.1.e / F106: the payment simulation impersonates Stripe, so it must never
+  // run where real money could be expected. Refused before anything else boots.
+  if (config.paysim?.enabled === true) assertPaySimAllowed(config.appEnv);
   // 2.3.b: refuses to start on APP_ENV=staging unless every external driver
   // (packages/drivers/src/boundary.ts) is simulated — before anything else
   // boots, same reasoning as the ordinary misconfiguration check it wraps
@@ -53,6 +58,9 @@ async function bootstrap(): Promise<void> {
     },
   );
   app.useGlobalPipes(new ZodValidationPipe());
+  // On the raw Fastify instance, before listen: Nest's global guards, pipes and
+  // interceptors never run on /api/paysim/*, which speaks Stripe's own API.
+  if (await mountPaySim(app.getHttpAdapter().getInstance(), config)) app.enableShutdownHooks();
   await app.listen(config.port, config.host ?? "127.0.0.1");
 }
 

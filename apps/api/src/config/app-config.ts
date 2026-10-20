@@ -53,6 +53,19 @@ export interface AppConfig {
   };
   /** 12.1.a — builds the guardian consent email's links. See `loadAppConfig`'s own comment for the per-`APP_ENV` default. */
   readonly webOrigin: string;
+  /** 5.1.e / F106 — the payment simulation. Optional so hand-built test configs need not name it. */
+  readonly paysim?: {
+    readonly enabled: boolean;
+    readonly publicUrl: string;
+    readonly webhookUrl: string;
+    readonly accountName: string;
+  };
+  /** The key pair the Stripe driver and the simulation share, and the API origin the driver calls. */
+  readonly stripe?: {
+    readonly secretKey: string;
+    readonly webhookSecret: string;
+    readonly apiBase: string;
+  };
 }
 
 /**
@@ -107,5 +120,17 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
     webOrigin:
       env.PUBLIC_WEB_ORIGIN ??
       (env.APP_ENV === "staging" ? "https://yourtal.gaiada.com" : "http://localhost:3000"),
+    paysim: {
+      enabled: env.PAYSIM_ENABLED === "true",
+      publicUrl: env.PAYSIM_PUBLIC_URL ?? `http://127.0.0.1:${String(env.PORT)}/api/paysim`,
+      webhookUrl:
+        env.PAYSIM_WEBHOOK_URL ?? `http://127.0.0.1:${String(env.PORT)}/api/webhooks/stripe`,
+      accountName: env.PAYSIM_ACCOUNT_NAME,
+    },
+    stripe: {
+      secretKey: env.STRIPE_SECRET_KEY,
+      webhookSecret: env.STRIPE_WEBHOOK_SECRET,
+      apiBase: env.STRIPE_API_BASE,
+    },
   };
 }

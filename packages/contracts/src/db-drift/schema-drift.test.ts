@@ -793,6 +793,10 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "5.3: mirrored by invoiceSchema (invoice/invoice.ts), composed with the issuer, buyer and lines; the table stores the issuer's and buyer's details as flat issuer_*/buyer_* snapshot columns, and seq (the number's counter value) and source_id stay server-side. Never changed once issued.",
   "invoice.line":
     "5.3: mirrored by invoiceLineSchema (invoice/invoice.ts) as the lines of invoiceSchema, returned inside the invoice and never alone.",
+  "payment.connected_account":
+    "5.2 (F103): a brand's or charity's connected account. Composed into payoutAccountSchema (billing/payouts.ts) as a state and the bank's last4; the provider ref and flags stay server-side.",
+  "payment.disbursement":
+    "5.2.b: one approved statement's transfer and payout, written by apps/worker's settlement-disburse. Mirrored by staffDisbursementSchema and summarised by statementPayoutSchema (billing/payouts.ts); provider refs and request times stay server-side.",
   "feed.demotion":
     "TASKS.md 7.7.a, this pass's own ticket. POST /api/feed/:campaignId/not-interested writes a row here but returns only `{ok: true}` (feed.controller.ts) -- the row itself (which campaigns a viewer demoted) is a ranking input read back through FeedItem.why, never returned as a list.",
 };

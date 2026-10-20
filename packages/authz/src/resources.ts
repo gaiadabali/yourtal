@@ -173,6 +173,8 @@ export const RESOURCE_ACTIONS = {
     "purchase_points",
     "raise_dispute",
     "update_payment_method",
+    // 5.2 (F103): set up the account statements are paid to, or change its bank.
+    "manage_payouts",
     // TASKS.md 10.6.a: the staff console's own settlement queue and dispute
     // resolution -- finance/ops, never a business role (billing.yaml's own
     // `staff-work-the-settlement-queue` rule).
@@ -236,7 +238,7 @@ export const RESOURCE_ACTIONS = {
 
   /** Phase 3 placeholder. */
   charity_settlement: ["view", "view_statement"],
-  charity: ["apply", "list_mine", "view_console", "review", "decide"],
+  charity: ["apply", "list_mine", "view_console", "review", "decide", "manage_payouts"],
 
   /**
    * A principal's own credential and session lifecycle. YT-0540. This is

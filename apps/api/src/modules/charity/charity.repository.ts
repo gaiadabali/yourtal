@@ -117,6 +117,18 @@ export class CharityRepository {
     }));
   }
 
+  /**
+   * 5.2: once an AU charity's Stripe account takes charges and pays out, its
+   * auctions' captures go there. Nothing else ever changes this column, and
+   * only a Stripe account id is written (the simulated provider's is not).
+   */
+  async setStripePayoutReference(id: string, accountRef: string): Promise<void> {
+    if (!accountRef.startsWith("acct_")) return;
+    await this.db.execute(sql`
+      UPDATE charity.charity SET payout_reference = ${accountRef}
+       WHERE id = ${id} AND region = 'AU' AND payout_reference IS DISTINCT FROM ${accountRef}`);
+  }
+
   /** The PDP's view of one charity: region, state and its members. */
   async authzAttributes(
     id: string,

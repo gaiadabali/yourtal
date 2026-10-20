@@ -132,6 +132,17 @@ principals:
   # 1.5.b's own audience-wall comment names (never produced by
   # AsyncPrincipalResolver for a real account, but the schema still allows
   # it, so the policy must still answer it safely).
+  adi_au:
+    # adi registered in AU: a member of an AU charity (5.2's payouts).
+    id: adi
+    roles: ["user"]
+    attr:
+      jurisdiction: "AU"
+      businessRoles: {}
+      isSuspended: false
+      ageBand: "adult"
+      guardianConsent: "not_required"
+
   wina_no_ageband:
     id: wina
     roles: ["user"]

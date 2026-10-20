@@ -4,6 +4,7 @@ import { AppConfigModule } from "./config/app-config.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { BillingModule } from "./modules/billing/billing.module";
 import { InvoicesModule } from "./modules/invoices/invoices.module";
+import { PayoutsModule } from "./modules/payouts/payouts.module";
 import { BusinessModule } from "./modules/business/business.module";
 import { CampaignModule } from "./modules/campaign/campaign.module";
 import { FeedModule } from "./modules/feed/feed.module";
@@ -60,6 +61,7 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
     StoreModule,
     BillingModule,
     InvoicesModule,
+    PayoutsModule,
     ReportsModule,
     FeedModule,
     CharityModule,

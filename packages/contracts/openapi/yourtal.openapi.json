@@ -12101,6 +12101,471 @@
         }
       }
     },
+    "/api/{tenantId}/studio/billing/payouts": {
+      "get": {
+        "summary": "Where approved statements are paid, and each one's payout",
+        "tags": [
+          "studio",
+          "billing",
+          "payouts"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The connected account (not set up, in progress, ready with the bank's last four digits) and the approved payouts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudioPayouts"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such business.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/{tenantId}/studio/billing/payouts/link": {
+      "post": {
+        "summary": "Set up payouts, or change the bank, on the processor's page",
+        "tags": [
+          "studio",
+          "billing",
+          "payouts"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The processor's onboarding page (account_onboarding the first time, account_update afterwards).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayoutLink"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Payouts are not offered in this region.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The processor refused to open the page.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/charities/{charityId}/payouts": {
+      "get": {
+        "summary": "The charity's connected account, where auction proceeds are captured",
+        "tags": [
+          "charity",
+          "payouts"
+        ],
+        "parameters": [
+          {
+            "name": "charityId",
+            "in": "path",
+            "required": true,
+            "description": "A charity in the registry.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The account's state and the bank's last four digits.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CharityPayouts"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such charity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/charities/{charityId}/payouts/link": {
+      "post": {
+        "summary": "A charity member sets up payouts, or changes the bank, on the processor's page",
+        "tags": [
+          "charity",
+          "payouts"
+        ],
+        "parameters": [
+          {
+            "name": "charityId",
+            "in": "path",
+            "required": true,
+            "description": "A charity in the registry.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The processor's onboarding page.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PayoutLink"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Payouts are not offered in this region.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The charity is not approved yet.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The processor refused to open the page.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/settlement/{region}/disbursements": {
+      "get": {
+        "summary": "What became of each approved payout: transfer, payout, failure",
+        "tags": [
+          "staff",
+          "settlement",
+          "payouts"
+        ],
+        "parameters": [
+          {
+            "name": "region",
+            "in": "path",
+            "required": true,
+            "description": "AU or ID (F2). Indonesia has no real payouts (F104).",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "AU",
+                "ID"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The region's disbursements, newest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffDisbursements"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown region.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/wallet/vouchers/{voucherId}/auction": {
       "post": {
         "summary": "List an unused voucher in a 3-day auction for a charity",
@@ -24196,6 +24661,19 @@
         ],
         "additionalProperties": false
       },
+      "CharityPayouts": {
+        "description": "A charity's connected account, where its auctions' proceeds are captured.",
+        "type": "object",
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/PayoutAccount"
+          }
+        },
+        "required": [
+          "account"
+        ],
+        "additionalProperties": false
+      },
       "CharityProceed": {
         "description": "One auction's proceeds, paid straight to the charity's own account.",
         "type": "object",
@@ -24725,6 +25203,17 @@
         "enum": [
           "AUD",
           "IDR"
+        ]
+      },
+      "DisbursementStatus": {
+        "description": "An approved statement's payout: queued, waiting for the account, sent to the account (payout to the bank pending), paid to the bank, or failed.",
+        "type": "string",
+        "enum": [
+          "queued",
+          "awaiting_account",
+          "transferred",
+          "paid",
+          "failed"
         ]
       },
       "DisplayLocale": {
@@ -26183,6 +26672,62 @@
           "minimum_spend"
         ]
       },
+      "PayoutAccount": {
+        "description": "Where a brand or charity is paid. available is false outside Australia (F104). Only the bank's last four digits ever leave the server.",
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "state": {
+            "$ref": "#/components/schemas/PayoutAccountState"
+          },
+          "bankLast4": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]{4}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hostedOnboarding": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "available",
+          "state",
+          "bankLast4",
+          "hostedOnboarding"
+        ],
+        "additionalProperties": false
+      },
+      "PayoutAccountState": {
+        "description": "A connected account: not set up, being set up or checked, or ready to be paid.",
+        "type": "string",
+        "enum": [
+          "not_started",
+          "in_progress",
+          "ready"
+        ]
+      },
+      "PayoutLink": {
+        "description": "Where to send the browser: the processor's page to set up the account or change its bank, or straight back when nothing is asked.",
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "additionalProperties": false
+      },
       "PiiScreenVerdict": {
         "description": "Whether a question has been screened for smuggled personal-data collection (docs/18 section 6). A reward-gated question is a uniquely effective way to harvest data a business could not otherwise ask for, so a clear verdict is required to reach `approved`. `needs_review` is deliberately distinct from `rejected` — 'nobody has looked' is a different fact from 'a human said no'.",
         "type": "string",
@@ -27340,6 +27885,145 @@
           "approved"
         ]
       },
+      "StaffDisbursement": {
+        "description": "The staff settlement screen's view of one approved payout's transfer and payout.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "statementId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "proposalId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "businessId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "region": {
+            "$ref": "#/components/schemas/Region"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "amountMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DisbursementStatus"
+          },
+          "failureCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "attempt": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "bankLast4": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]{4}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "transferredAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "paidAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "failedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "statementId",
+          "proposalId",
+          "businessId",
+          "region",
+          "currency",
+          "amountMinor",
+          "status",
+          "failureCode",
+          "attempt",
+          "bankLast4",
+          "createdAt",
+          "transferredAt",
+          "paidAt",
+          "failedAt"
+        ],
+        "additionalProperties": false
+      },
+      "StaffDisbursements": {
+        "description": "A region's approved payouts and what became of each. Empty in Indonesia (F104).",
+        "type": "object",
+        "properties": {
+          "region": {
+            "$ref": "#/components/schemas/Region"
+          },
+          "disbursements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffDisbursement"
+            }
+          }
+        },
+        "required": [
+          "region",
+          "disbursements"
+        ],
+        "additionalProperties": false
+      },
       "StartCardSetupResult": {
         "description": "Either a page to save the card on (checkoutUrl) or, when the processor saves it at once, the card; exactly one is set.",
         "type": "object",
@@ -27369,6 +28053,92 @@
         "required": [
           "checkoutUrl",
           "card"
+        ],
+        "additionalProperties": false
+      },
+      "StatementPayout": {
+        "description": "How one approved statement's payable is reaching the brand's bank.",
+        "type": "object",
+        "properties": {
+          "statementId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "$ref": "#/components/schemas/DisbursementStatus"
+          },
+          "amountMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "bankLast4": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]{4}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "paidAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "failureCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "statementId",
+          "status",
+          "amountMinor",
+          "currency",
+          "bankLast4",
+          "paidAt",
+          "failureCode"
+        ],
+        "additionalProperties": false
+      },
+      "StudioPayouts": {
+        "description": "Studio's payouts panel: the account, whether a payout failed or waits for the account, and each approved statement's payout.",
+        "type": "object",
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/PayoutAccount"
+          },
+          "payoutFailed": {
+            "type": "boolean"
+          },
+          "waitingForAccount": {
+            "type": "boolean"
+          },
+          "payouts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatementPayout"
+            }
+          }
+        },
+        "required": [
+          "account",
+          "payoutFailed",
+          "waitingForAccount",
+          "payouts"
         ],
         "additionalProperties": false
       },

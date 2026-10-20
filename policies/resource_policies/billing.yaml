@@ -21,6 +21,14 @@ resourcePolicy:
       derivedRoles:
         - business_billing_editor_of
 
+    - name: owner-and-finance-set-where-payouts-go
+      # 5.2 (F103): the account approved statements are paid to, and its bank.
+      # Where the money lands, so the same editors as spending, never Admin.
+      actions: ["manage_payouts"]
+      effect: EFFECT_ALLOW
+      derivedRoles:
+        - business_billing_editor_of
+
     - name: admin-looks-but-does-not-spend
       actions: ["view", "view_statement"]
       effect: EFFECT_ALLOW
@@ -52,7 +60,14 @@ resourcePolicy:
       # for an action with no resource yet (a create) or a kind whose
       # controller does not populate region yet.
       actions:
-        ["view", "view_statement", "purchase_points", "raise_dispute", "update_payment_method"]
+        [
+          "view",
+          "view_statement",
+          "purchase_points",
+          "raise_dispute",
+          "update_payment_method",
+          "manage_payouts",
+        ]
       effect: EFFECT_DENY
       roles: ["user", "business_user"]
       condition:

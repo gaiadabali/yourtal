@@ -4,8 +4,12 @@ import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import type { ResourceAttributeLoader } from "../../shared/authz/resource-attribute-loader";
+import { CONNECTED_ACCOUNTS_SERVICE } from "../payouts/connected-accounts.service";
+import type { ConnectedAccountsService } from "../payouts/connected-accounts.service";
+import { PayoutsModule } from "../payouts/payouts.module";
 import { CHARITY_DB, CharityRepository } from "./charity.repository";
 import { CharityController } from "./charity.controller";
+import { CharityPayoutsController } from "./charity-payouts.controller";
 import { StaffCharityController } from "./staff-charity.controller";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -25,13 +29,29 @@ export class CharityAttributeLoader implements ResourceAttributeLoader<"charity"
   }
 }
 
+const CHARITY_PAYOUT_REFERENCE = Symbol("CHARITY_PAYOUT_REFERENCE");
+
 @Module({
-  controllers: [CharityController, StaffCharityController],
+  imports: [PayoutsModule],
+  controllers: [CharityController, StaffCharityController, CharityPayoutsController],
   providers: [
     {
       provide: CHARITY_DB,
       useFactory: (config: AppConfig) => new CharityRepository(createAppDb(config.databaseUrl)),
       inject: [APP_CONFIG],
+    },
+    {
+      // 5.2: an AU charity's ready Stripe account becomes where its auctions capture to.
+      provide: CHARITY_PAYOUT_REFERENCE,
+      useFactory: (accounts: ConnectedAccountsService, charities: CharityRepository) => {
+        accounts.whenReady(async (row) => {
+          if (row.owner.kind === "charity") {
+            await charities.setStripePayoutReference(row.owner.id, row.accountRef);
+          }
+        });
+        return true;
+      },
+      inject: [CONNECTED_ACCOUNTS_SERVICE, CHARITY_DB],
     },
     CharityAttributeLoader,
   ],

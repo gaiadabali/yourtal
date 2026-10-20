@@ -40,6 +40,19 @@ resourcePolicy:
         match:
           expr: has(R.attr.memberIds) && P.id in R.attr.memberIds
 
+    - name: a-member-sets-up-its-charitys-payouts
+      # 5.2 (F103, F104): the Stripe account auction proceeds are paid to.
+      # Members only (not finance), and in Australia only: Indonesia has none.
+      actions: ["manage_payouts"]
+      effect: EFFECT_ALLOW
+      roles: ["user"]
+      condition:
+        match:
+          all:
+            of:
+              - expr: has(R.attr.memberIds) && P.id in R.attr.memberIds
+              - expr: has(R.attr.region) && R.attr.region == "AU"
+
     - name: ops-review-the-registry
       actions: ["review"]
       effect: EFFECT_ALLOW
@@ -59,7 +72,7 @@ resourcePolicy:
       roles: ["finance"]
 
     - name: f2-region-wall
-      actions: ["apply", "view_console"]
+      actions: ["apply", "view_console", "manage_payouts"]
       effect: EFFECT_DENY
       roles: ["user"]
       condition:

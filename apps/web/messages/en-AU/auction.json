@@ -71,6 +71,18 @@
     "invalidAud": "Enter an amount in dollars, like 21.50.",
     "invalidIdr": "Enter a whole amount in rupiah, like 25000.",
     "fineprint": "Bids are in cash and binding. Payments are simulated on this site.",
+    "card": {
+      "title": "Add a card to bid",
+      "why": "Your bid holds its amount on this card. It's only charged if you win; otherwise the hold is released when the auction ends.",
+      "add": "Add a card to bid",
+      "replace": "Replace card",
+      "saved": "Bids use your {brand} ending in {last4}, expires {month}/{year}.",
+      "added": "Card saved. You can bid now.",
+      "saving": "Saving your card. This usually takes a few seconds.",
+      "stillSaving": "Your card hasn't been confirmed yet. Refresh this page in a minute to check again.",
+      "cancelled": "No card was saved.",
+      "failed": "We couldn't open the card page. Try again."
+    },
     "refusal": {
       "charity_unavailable": "That charity can't take auctions right now.",
       "voucher_not_unused": "Only an unused voucher can be listed.",
@@ -82,7 +94,9 @@
       "auction_closed": "This auction has ended.",
       "bid_too_low": "That's below the minimum bid. Bid at least the amount shown.",
       "payment_declined": "Your card declined the hold. Try another card.",
-      "failed": "That didn't go through. Try again."
+      "failed": "That didn't go through. Try again.",
+      "card_required": "Add a card before you bid.",
+      "charity_not_ready": "This charity is still setting up to take payments. Try again later."
     }
   },
   "list": {
@@ -108,7 +122,8 @@
       "auction_closed": "This auction has ended.",
       "bid_too_low": "Someone bid first. Bid at least the new minimum.",
       "payment_declined": "Your card declined the hold. Try another card.",
-      "failed": "That didn't go through. Try again."
+      "failed": "That didn't go through. Try again.",
+      "charity_not_ready": "This charity is still setting up to take payments. Try another charity or try again later."
     }
   },
   "charitiesLink": "Browse charities"

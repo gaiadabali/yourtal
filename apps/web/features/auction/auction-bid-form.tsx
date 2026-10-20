@@ -22,7 +22,8 @@ const KNOWN: ReadonlySet<string> = new Set(AUCTION_REFUSALS);
 
 /**
  * 13.22.b/d: a bid in the region's currency. The server takes it only at or
- * above its own minimum; the hold goes through the simulated payment driver.
+ * above its own minimum, then holds the bidder's card (5.1.d: the page asks for a
+ * saved card first where the processor needs one, and a refusal says so in words).
  */
 export function AuctionBidForm({
   auctionId,

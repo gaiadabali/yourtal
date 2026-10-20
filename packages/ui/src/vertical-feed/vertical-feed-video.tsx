@@ -11,6 +11,15 @@ export interface VerticalFeedVideoProps {
   active: boolean;
   src: string;
   poster: string;
+  /**
+   * 14.6.b: the poster at other sizes (`srcset`'s value). A `<video>`'s own `poster` cannot
+   * take one, so when this is set the poster is an `<img>` laid over the video until its
+   * first frame is shown. Without it, the browser's own poster is used, as before.
+   */
+  posterSrcSet?: string;
+  posterSizes?: string;
+  /** This is the first item on the page: its poster loads at high priority, not lazily. */
+  posterPriority?: boolean;
   posterAlt: string;
   /** Accessible name for the `<video>` element itself. */
   label: string;
@@ -47,6 +56,9 @@ export const VerticalFeedVideo = React.forwardRef<HTMLVideoElement | null, Verti
       active,
       src,
       poster,
+      posterSrcSet,
+      posterSizes,
+      posterPriority = false,
       posterAlt,
       label,
       playLabel,
@@ -62,6 +74,8 @@ export const VerticalFeedVideo = React.forwardRef<HTMLVideoElement | null, Verti
     const videoRef = React.useRef<HTMLVideoElement | null>(null);
     const [paused, setPaused] = React.useState(false);
     const [started, setStarted] = React.useState(false);
+    // True once the video has put a frame on screen; only used with `posterSrcSet`.
+    const [framed, setFramed] = React.useState(false);
     const reducedMotion = usePrefersReducedMotion();
     React.useImperativeHandle(ref, () => videoRef.current as HTMLVideoElement);
 
@@ -87,6 +101,24 @@ export const VerticalFeedVideo = React.forwardRef<HTMLVideoElement | null, Verti
     }, [active]);
 
     React.useEffect(() => {
+      const el = videoRef.current;
+      if (!mounted) {
+        setFramed(false);
+        return;
+      }
+      if (!el || !posterSrcSet) {
+        return;
+      }
+      const shown = () => setFramed(true);
+      if (typeof el.requestVideoFrameCallback === "function") {
+        const handle = el.requestVideoFrameCallback(shown);
+        return () => el.cancelVideoFrameCallback(handle);
+      }
+      el.addEventListener("playing", shown, { once: true });
+      return () => el.removeEventListener("playing", shown);
+    }, [mounted, posterSrcSet]);
+
+    React.useEffect(() => {
       const track = videoRef.current?.textTracks[0];
       if (track) {
         track.mode = muted ? "showing" : "hidden";
@@ -98,15 +130,21 @@ export const VerticalFeedVideo = React.forwardRef<HTMLVideoElement | null, Verti
       setPaused((current) => (reducedMotion && !started ? false : !current));
     };
 
+    const posterImage = (extra: string, eager: boolean) => (
+      <img
+        src={poster}
+        {...(posterSrcSet ? { srcSet: posterSrcSet } : {})}
+        {...(posterSizes ? { sizes: posterSizes } : {})}
+        alt={posterAlt}
+        loading={eager ? "eager" : "lazy"}
+        fetchPriority={eager ? "high" : "auto"}
+        decoding="async"
+        className={cn("h-full w-full object-cover", extra)}
+      />
+    );
+
     if (!mounted) {
-      return (
-        <img
-          src={poster}
-          alt={posterAlt}
-          loading="lazy"
-          className={cn("h-full w-full object-cover", className)}
-        />
-      );
+      return posterImage(className ?? "", posterPriority);
     }
 
     return (
@@ -114,7 +152,7 @@ export const VerticalFeedVideo = React.forwardRef<HTMLVideoElement | null, Verti
         <video
           ref={videoRef}
           src={src}
-          poster={poster}
+          {...(posterSrcSet ? {} : { poster })}
           muted={muted}
           playsInline
           loop={loop}
@@ -126,6 +164,9 @@ export const VerticalFeedVideo = React.forwardRef<HTMLVideoElement | null, Verti
             <track kind="captions" src={captionsSrc} srcLang="en" label={captionsLabel} default />
           ) : null}
         </video>
+        {posterSrcSet && !framed
+          ? posterImage("pointer-events-none absolute inset-0", posterPriority)
+          : null}
         <button
           type="button"
           onClick={toggle}

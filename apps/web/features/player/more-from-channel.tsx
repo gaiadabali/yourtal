@@ -1,6 +1,7 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
 import { Card, CardContent } from "@yourtal/ui/card";
 import { formatDuration } from "@/features/campaign/campaign-format";
+import { POSTER_SIZES, posterImgProps } from "@/features/feed/poster-srcset";
 import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
 
 export interface MoreFromChannelProps {
@@ -34,6 +35,7 @@ export function MoreFromChannel({ displayName, campaigns, locale }: MoreFromChan
                 <CardContent className="flex items-center gap-3 p-3">
                   <img
                     src={campaign.posterUrl}
+                    {...posterImgProps(campaign.posterVariants, POSTER_SIZES.thumbSmall)}
                     alt=""
                     className="h-14 w-24 shrink-0 rounded-md object-cover"
                   />

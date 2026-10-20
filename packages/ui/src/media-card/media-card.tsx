@@ -6,6 +6,12 @@ import { Progress } from "../progress/progress";
 
 type MediaCardCore = {
   poster: string;
+  /** 14.6.b: the poster at other sizes, as `srcset`'s value; `poster` stays the fallback. */
+  posterSrcSet?: string;
+  /** What `posterSrcSet` needs to choose a size: the width the card is shown at. */
+  posterSizes?: string;
+  /** Load this poster at high priority (the first card on a page); the rest are lazy. */
+  posterPriority?: boolean;
   posterAlt: string;
   aspect: "16:9" | "9:16";
   title: string;
@@ -28,6 +34,9 @@ type MediaCardContentProps = MediaCardCore & MediaCardProgress;
 // exception to "tokens only", matching the founder-approved reference.
 function MediaCardBody({
   poster,
+  posterSrcSet,
+  posterSizes,
+  posterPriority = false,
   posterAlt,
   aspect,
   title,
@@ -44,7 +53,15 @@ function MediaCardBody({
         aspect === "16:9" ? "aspect-video" : "aspect-[9/16]",
       )}
     >
-      <img src={poster} alt={posterAlt} loading="lazy" className="h-full w-full object-cover" />
+      <img
+        src={poster}
+        {...(posterSrcSet ? { srcSet: posterSrcSet } : {})}
+        {...(posterSizes ? { sizes: posterSizes } : {})}
+        alt={posterAlt}
+        loading={posterPriority ? "eager" : "lazy"}
+        {...(posterPriority ? { fetchPriority: "high" as const } : {})}
+        className="h-full w-full object-cover"
+      />
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-overlay to-transparent"

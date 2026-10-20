@@ -19,6 +19,26 @@ describe("MediaCard", () => {
     expect(screen.getByText("How we roast our beans")).toBeInTheDocument();
   });
 
+  it("14.6.b: passes srcset and sizes to the poster, and loads the first card eagerly at high priority", () => {
+    const srcSet = "https://example.com/poster-320.jpg 320w, https://example.com/poster.jpg 640w";
+    render(
+      <MediaCard {...baseProps} posterSrcSet={srcSet} posterSizes="256px" posterPriority />,
+    );
+    const img = screen.getByAltText("A barista pouring coffee");
+    expect(img).toHaveAttribute("srcset", srcSet);
+    expect(img).toHaveAttribute("sizes", "256px");
+    expect(img).toHaveAttribute("src", baseProps.poster);
+    expect(img).toHaveAttribute("loading", "eager");
+    expect(img).toHaveAttribute("fetchpriority", "high");
+  });
+
+  it("leaves srcset off and loads lazily when the caller gives no sizes", () => {
+    render(<MediaCard {...baseProps} />);
+    const img = screen.getByAltText("A barista pouring coffee");
+    expect(img).not.toHaveAttribute("srcset");
+    expect(img).toHaveAttribute("loading", "lazy");
+  });
+
   it("renders the duration badge when given", () => {
     render(<MediaCard {...baseProps} durationLabel="2:14" />);
     expect(screen.getByText("2:14")).toBeInTheDocument();

@@ -65,7 +65,7 @@ export function posterWidth(longSide: PosterLongSide, aspect: PosterAspect): num
  */
 export function posterVariantsFor(posterUrl: string, aspect: PosterAspect): PosterVariant[] {
   const match = BASE_KEY.exec(posterUrl);
-  if (match === null || match.index === undefined) return [];
+  if (match === null) return [];
   const origin = posterUrl.slice(0, match.index);
   return POSTER_LONG_SIDES.map((longSide) => ({
     url:

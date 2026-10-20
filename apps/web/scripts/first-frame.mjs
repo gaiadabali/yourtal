@@ -42,15 +42,22 @@ const MOBILE_UA =
 // Runs before any page script. Records paints and the first Short's poster and video frame.
 function probe() {
   const state = (window.__ff = { lcp: [], paint: {}, poster: null, frame: null, posterUrl: null });
-  const posterOf = () => {
+  // The first Short's poster: the video's own `poster`, or (14.6.b) the <img> laid over it,
+  // where the browser picks one candidate of its srcset.
+  const posterUrls = () => {
     const v = document.querySelector("video");
-    return v?.getAttribute("poster") ?? null;
+    if (!v) return [];
+    const own = v.getAttribute("poster");
+    if (own) return [new URL(own, location.href).href];
+    const img = v.parentElement?.querySelector("img");
+    if (!img) return [];
+    const set = (img.getAttribute("srcset") ?? "").split(",").map((c) => c.trim().split(/\s+/)[0]).filter(Boolean);
+    return [img.src, img.currentSrc, ...set].filter(Boolean).map((u) => new URL(u, location.href).href);
   };
   new PerformanceObserver((list) => {
     for (const e of list.getEntries()) {
       state.lcp.push({ t: e.renderTime || e.loadTime, url: e.url, tag: e.element?.tagName ?? null });
-      const url = posterOf();
-      if (state.poster === null && url && e.url && (e.url === url || e.url.endsWith(new URL(url, location.href).pathname))) {
+      if (state.poster === null && e.url && posterUrls().includes(e.url)) {
         state.poster = e.renderTime || e.loadTime;
         state.posterUrl = e.url;
       }

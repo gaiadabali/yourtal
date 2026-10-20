@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { formatDuration } from "@/features/campaign/campaign-format";
+import { POSTER_SIZES, posterImgProps } from "@/features/feed/poster-srcset";
 import { FollowButton } from "@/features/player/follow-button";
 import { isFollowingBusiness } from "@/features/player/follow-actions";
 import { getChannelByHandle } from "@/features/player/get-channel-by-handle";
@@ -86,6 +87,7 @@ export default async function ChannelPage({ params }: ChannelPageProps) {
                     <CardContent className="flex items-center gap-3 p-3">
                       <img
                         src={campaign.posterUrl}
+                        {...posterImgProps(campaign.posterVariants, POSTER_SIZES.thumbSmall)}
                         alt=""
                         className="h-14 w-24 shrink-0 rounded-md object-cover"
                       />

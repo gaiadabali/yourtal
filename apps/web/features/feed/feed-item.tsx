@@ -7,6 +7,7 @@ import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
 import { ChannelAvatar } from "@yourtal/ui/channel-avatar";
 import { VerticalFeedVideo } from "@yourtal/ui/vertical-feed/video";
+import { POSTER_SIZES, posterCardProps } from "./poster-srcset";
 import { earnsInFeed, feedTermsLine, type FeedLocale } from "./feed-terms";
 import { FeedItemActions } from "./feed-item-actions";
 import { QuickEarnAction, QuickEarnVideo } from "./quick-earn";
@@ -19,6 +20,8 @@ export interface FeedItemProps {
   mounted: boolean;
   /** Autoplay setting says no teaser video right now; show the poster instead. */
   postersOnly: boolean;
+  /** The first Short on the page: its poster is the first frame, so it loads first. */
+  priority?: boolean;
   saved: boolean;
   /** Absolute URL of the public campaign page, for Share. */
   shareUrl: string;
@@ -32,6 +35,7 @@ export function FeedItem({
   active,
   mounted,
   postersOnly,
+  priority = false,
   saved,
   shareUrl,
   onHidden,
@@ -51,6 +55,8 @@ export function FeedItem({
         active={active}
         src={item.teaserUrl}
         poster={item.posterUrl}
+        {...posterCardProps(item.posterVariants, POSTER_SIZES.shorts)}
+        posterPriority={priority}
         posterAlt=""
         label={item.title}
         playLabel={t("item.play", { title: item.title })}

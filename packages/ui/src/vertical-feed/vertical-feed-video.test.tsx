@@ -217,4 +217,69 @@ describe("VerticalFeedVideo", () => {
     );
     expect(screen.getByLabelText("Clip").querySelector("track")).not.toBeInTheDocument();
   });
+
+  describe("14.6.b: a poster with several sizes", () => {
+    const sizes = {
+      posterSrcSet: "/clip-320.jpg 320w, /clip.jpg 640w, /clip-960.jpg 960w",
+      posterSizes: "min(440px, calc(100vw - 2rem))",
+    };
+    const props = {
+      src: "/clip.mp4",
+      poster: "/clip.jpg",
+      posterAlt: "",
+      label: "Clip",
+      playLabel: "Play",
+      pauseLabel: "Pause",
+      ...sizes,
+    };
+
+    it("shows the unmounted poster with its srcset and sizes", () => {
+      const { container } = render(<VerticalFeedVideo mounted={false} active={false} {...props} />);
+      const img = container.querySelector("img");
+      expect(img).toHaveAttribute("srcset", sizes.posterSrcSet);
+      expect(img).toHaveAttribute("sizes", sizes.posterSizes);
+      expect(img).toHaveAttribute("src", "/clip.jpg");
+    });
+
+    it("lays the poster over the video, leaves the video's own poster off, and drops it at the first frame", () => {
+      const { container } = render(<VerticalFeedVideo mounted active posterPriority {...props} />);
+      const video = screen.getByLabelText("Clip");
+      expect(video).not.toHaveAttribute("poster");
+      const img = container.querySelector("img");
+      expect(img).toHaveAttribute("srcset", sizes.posterSrcSet);
+      expect(img).toHaveAttribute("fetchpriority", "high");
+      expect(img).toHaveAttribute("loading", "eager");
+
+      fireEvent(video, new Event("playing"));
+      expect(container.querySelector("img")).not.toBeInTheDocument();
+    });
+
+    it("brings the poster back when the video unmounts and mounts again", () => {
+      const { container, rerender } = render(<VerticalFeedVideo mounted active {...props} />);
+      fireEvent(screen.getByLabelText("Clip"), new Event("playing"));
+      expect(container.querySelector("img")).not.toBeInTheDocument();
+
+      rerender(<VerticalFeedVideo mounted={false} active={false} {...props} />);
+      expect(container.querySelector("img")).toBeInTheDocument();
+      rerender(<VerticalFeedVideo mounted active {...props} />);
+      expect(container.querySelector("img")).toBeInTheDocument();
+    });
+
+    it("keeps the browser's own poster when there is only one size", () => {
+      const { container } = render(
+        <VerticalFeedVideo
+          mounted
+          active
+          src="/clip.mp4"
+          poster="/clip.jpg"
+          posterAlt=""
+          label="Clip"
+          playLabel="Play"
+          pauseLabel="Pause"
+        />,
+      );
+      expect(screen.getByLabelText("Clip")).toHaveAttribute("poster", "/clip.jpg");
+      expect(container.querySelector("img")).not.toBeInTheDocument();
+    });
+  });
 });

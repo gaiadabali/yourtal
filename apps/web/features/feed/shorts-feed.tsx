@@ -70,6 +70,7 @@ export function ShortsFeed({ data, locale, publicBase }: ShortsFeedProps) {
               active={state.active}
               mounted={state.mounted}
               postersOnly={postersOnly}
+              priority={state.index === 0}
               saved={saved.has(item.campaignId)}
               shareUrl={`${publicBase}/c/${item.campaignId}`}
               onHidden={(id) => setHidden((current) => new Set(current).add(id))}

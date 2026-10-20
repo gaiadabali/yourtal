@@ -112,3 +112,56 @@ describe("TEEN_ACCOUNTS (12.1.d)", () => {
     ).toBe(true);
   });
 });
+
+describe("the payment simulation's variables (5.1.e, F106)", () => {
+  const base = {
+    DATABASE_URL: "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal",
+    CHECKPOINT_TOKEN_SECRET: "test-only-checkpoint-signing-key-not-a-real-secret",
+    WEBHOOK_SECRET_ENCRYPTION_KEY: "test-only-webhook-secret-encryption-key-not-a-real-secret",
+    SNAP_APP_PARTNER_SECRET: "test-only-snap-app-partner-secret-not-a-real-secret",
+    HLS_SIGNING_SECRET: "test-only-hls-signing-secret-not-a-real-one",
+  };
+
+  it("is off by default and every variable has a dev default", () => {
+    const config = loadAppConfig(base);
+    expect(config.paysim).toEqual({
+      enabled: false,
+      publicUrl: "http://127.0.0.1:3001/api/paysim",
+      webhookUrl: "http://127.0.0.1:3001/api/webhooks/stripe",
+      accountName: "YourTal",
+    });
+    expect(config.stripe).toEqual({
+      secretKey: "sk_test_paysim_dev",
+      webhookSecret: "whsec_paysim_dev",
+      apiBase: "https://api.stripe.com",
+    });
+  });
+
+  it("derives the loopback URLs from PORT and lets explicit values win", () => {
+    const derived = loadAppConfig({ ...base, PORT: "26301", PAYSIM_ENABLED: "true" });
+    expect(derived.paysim?.enabled).toBe(true);
+    expect(derived.paysim?.publicUrl).toBe("http://127.0.0.1:26301/api/paysim");
+    const set = loadAppConfig({
+      ...base,
+      PAYSIM_PUBLIC_URL: "https://yourtal.gaiada.com/api/paysim",
+      PAYSIM_WEBHOOK_URL: "http://127.0.0.1:26301/api/webhooks/stripe",
+      STRIPE_API_BASE: "http://127.0.0.1:26301/api/paysim",
+    });
+    expect(set.paysim?.publicUrl).toBe("https://yourtal.gaiada.com/api/paysim");
+    expect(set.stripe?.apiBase).toBe("http://127.0.0.1:26301/api/paysim");
+  });
+
+  it("takes only true or false for PAYSIM_ENABLED", () => {
+    expect(() => loadAppConfig({ ...base, PAYSIM_ENABLED: "yes" })).toThrow();
+  });
+
+  it(".env.example turns it on for dev with the same defaults the schema has", () => {
+    const envExample = readFileSync(path.join(repoRoot, ".env.example"), "utf8");
+    const value = (name: string): string | undefined =>
+      new RegExp(`^${name}=(.+)$`, "m").exec(envExample)?.[1]?.trim();
+    expect(value("PAYSIM_ENABLED")).toBe("true");
+    expect(value("PAYSIM_ACCOUNT_NAME")).toBe("YourTal");
+    expect(value("STRIPE_SECRET_KEY")).toBe("sk_test_paysim_dev");
+    expect(value("STRIPE_WEBHOOK_SECRET")).toBe("whsec_paysim_dev");
+  });
+});

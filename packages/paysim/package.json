@@ -1,0 +1,33 @@
+{
+  "name": "@yourtal/paysim",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./config": "./src/config.ts",
+    "./gate": "./src/gate.ts",
+    "./store": "./src/store.ts",
+    "./memory-store": "./src/memory-store.ts",
+    "./pg-store": "./src/pg-store.ts",
+    "./plugin": "./src/plugin.ts",
+    "./dispatcher": "./src/dispatcher.ts",
+    "./server": "./src/server.ts",
+    "./browser": "./src/browser.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:pg": "node ../db/scripts/with-test-db.mjs -- vitest run --config vitest.pg.config.ts",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "fastify": "5.12.5"
+  },
+  "devDependencies": {
+    "@types/pg": "8.23.1",
+    "@yourtal/tsconfig": "workspace:*",
+    "pg": "8.23.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.1"
+  }
+}

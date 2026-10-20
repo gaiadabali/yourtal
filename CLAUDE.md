@@ -7,12 +7,12 @@
 The founder follows progress through `TASKS.md` and should never have to ask. So:
 
 1. **Starting a task:** append `— 🔄 slot <n>` to its line, and update your slot's row in **Now**.
-2. **Finishing a subtask:** tick it `[x]` **immediately**, then run `node C:/Users/Hansel/Documents/Hansel/Projects/yourtal/scripts/progress.mjs`. One tick per finished subtask, as it happens. Never batch ticks at the end of a task or a session.
+2. **Finishing a subtask:** tick it `[x]` **immediately**, then run `node C:/Users/Hansel/Documents/Hansel/Projects/god/yourtal/scripts/progress.mjs`. One tick per finished subtask, as it happens. Never batch ticks at the end of a task or a session.
 3. **Finishing a task:** only when every subtask is ticked and its **Check** has passed on merged `main`. Mark it `✅ YYYY-MM-DD <sha>`, add a line to the top of **Log**, update **Now**, and commit `TASKS.md`.
 4. **Blocked:** append `— ⛔ <reason>` and take your next unblocked task.
 5. **New work:** add it as a subtask or task with the next free ID. Never delete one; mark it `— ✂️ cut: <reason>`.
 
-Always edit the **main checkout's** `TASKS.md` at `C:/Users/Hansel/Documents/Hansel/Projects/yourtal/TASKS.md`, never the copy in your worktree. Edit only your own phase's lines. Work in task order within your phase, and respect each task's `needs:`.
+Always edit the **main checkout's** `TASKS.md` at `C:/Users/Hansel/Documents/Hansel/Projects/god/yourtal/TASKS.md`, never the copy in your worktree. Edit only your own phase's lines. Work in task order within your phase, and respect each task's `needs:`.
 
 ## When you need the founder
 

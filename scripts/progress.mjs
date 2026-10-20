@@ -37,7 +37,7 @@ try {
     resolve(root, execFileSync("git", ["rev-parse", arg], { cwd: root }).toString().trim());
   if (!printOnly && git("--git-dir") !== git("--git-common-dir")) {
     console.error("progress.mjs: this is a worktree copy. Run the main checkout's script:");
-    console.error("  node C:/Users/Hansel/Documents/Hansel/Projects/yourtal/scripts/progress.mjs");
+    console.error("  node C:/Users/Hansel/Documents/Hansel/Projects/god/yourtal/scripts/progress.mjs");
     process.exit(1);
   }
 } catch {

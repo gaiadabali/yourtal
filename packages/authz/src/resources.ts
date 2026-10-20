@@ -137,8 +137,11 @@ export const RESOURCE_ACTIONS = {
   /** A consumer's own balance, history and vouchers. */
   wallet: ["view", "view_history", "redeem", "transfer", "receive_voucher"],
 
-  /** 13.22 (F86): a charity auction in the caller's region. Teens take no part. */
-  auction: ["view", "bid", "review", "cancel"],
+  /**
+   * 13.22 (F86): a charity auction in the caller's region. Teens take no part.
+   * `view_card` and `update_card` are the bidder's own saved card (no auction named: the caller's region).
+   */
+  auction: ["view", "bid", "review", "cancel", "view_card", "update_card"],
 
   /**
    * The merchant redemption network and its credentials. Note the absence of

@@ -13033,6 +13033,100 @@
         }
       }
     },
+    "/api/me/payment-card": {
+      "get": {
+        "summary": "The card a bid holds: brand, last four and expiry, and whether one is required",
+        "tags": [
+          "auction"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The saved card or null. required is true where a bid charges a saved card (AU on Stripe).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingCard"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Add or replace the card a bid holds",
+        "tags": [
+          "auction"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Optionally the auction page the card page returns to.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartBidderCardBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "A page to save the card on (the card arrives with the processor's webhook), or the card when saved at once.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartCardSetupResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10). OR: Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/counter/lookup": {
       "post": {
         "summary": "Preview a scanned or typed voucher code, before authorizing it",
@@ -22903,7 +22997,9 @@
           "own_auction",
           "auction_closed",
           "bid_too_low",
-          "payment_declined"
+          "payment_declined",
+          "card_required",
+          "charity_not_ready"
         ]
       },
       "Audience": {
@@ -28022,6 +28118,18 @@
           "region",
           "disbursements"
         ],
+        "additionalProperties": false
+      },
+      "StartBidderCardBody": {
+        "description": "Optionally the auction the bidder came from, so the card page returns there. Never a URL.",
+        "type": "object",
+        "properties": {
+          "auctionId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
         "additionalProperties": false
       },
       "StartCardSetupResult": {

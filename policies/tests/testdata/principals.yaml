@@ -128,6 +128,28 @@ principals:
       ageBand: "adult"
       guardianConsent: "not_required"
 
+  # An adult whose account is suspended: keeps no bidding card.
+  adi_suspended:
+    id: adi
+    roles: ["user"]
+    attr:
+      jurisdiction: "ID"
+      businessRoles: {}
+      isSuspended: true
+      ageBand: "adult"
+      guardianConsent: "not_required"
+
+  # An adult in the other region: the auction wall holds for the card as well.
+  adi_adult_au:
+    id: adi
+    roles: ["user"]
+    attr:
+      jurisdiction: "AU"
+      businessRoles: {}
+      isSuspended: false
+      ageBand: "adult"
+      guardianConsent: "not_required"
+
   # A signed-in principal missing ageBand entirely -- the fail-closed case
   # 1.5.b's own audience-wall comment names (never produced by
   # AsyncPrincipalResolver for a real account, but the schema still allows

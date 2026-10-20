@@ -24,6 +24,10 @@ export const AUCTION_DURATION_HOURS = 72;
 /** A bid in the last 2 minutes pushes the close out to 2 minutes from that bid. */
 export const AUCTION_EXTENSION_SECONDS = 120;
 
+/** The card a bid holds. `auctionId` is the page the processor sends the bidder back to. */
+export const startBidderCardBodySchema = z.object({ auctionId: z.uuid().optional() });
+export type StartBidderCardBody = z.infer<typeof startBidderCardBodySchema>;
+
 export const listVoucherForAuctionBodySchema = z.object({ charityId: z.uuid() });
 export type ListVoucherForAuctionBody = z.infer<typeof listVoucherForAuctionBodySchema>;
 

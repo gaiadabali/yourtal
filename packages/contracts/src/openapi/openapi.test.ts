@@ -333,6 +333,8 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   statementsRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   statementSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   generateStatementRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  dueStatementsRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  dueStatementsSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   disputeStatementRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   resolveStatementDisputeRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   approvePayoutRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,

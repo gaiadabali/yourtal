@@ -25,7 +25,7 @@ const allocationId = randomUUID();
 const businessId = randomUUID();
 const budgetCampaign = randomUUID(); // a budget of exactly one completion
 const cappedCampaign = randomUUID(); // a daily cap of one completion
-const targetedCampaign = randomUUID(); // shown in Bondi only
+const targetedCampaign = randomUUID(); // shown in postcode 2026 (Bondi) only
 const campaignIds = [budgetCampaign, cappedCampaign, targetedCampaign];
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- a narrow, per-call-site type instead of `any` from `.json()`.
@@ -77,7 +77,7 @@ beforeAll(async () => {
   `);
   await seedCampaign(budgetCampaign, { max: REWARD, dailyCap: null, districts: [] });
   await seedCampaign(cappedCampaign, { max: 100 * REWARD, dailyCap: REWARD, districts: [] });
-  await seedCampaign(targetedCampaign, { max: 100 * REWARD, dailyCap: null, districts: ["Bondi"] });
+  await seedCampaign(targetedCampaign, { max: 100 * REWARD, dailyCap: null, districts: ["2026"] });
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
@@ -193,7 +193,38 @@ describe("14.2: district targeting in the feed", () => {
   it("shows a targeted campaign only in its districts, and never without one", async () => {
     const viewer = await sessionFor(app);
     expect(await feedIds(viewer.cookie)).not.toContain(targetedCampaign);
-    expect(await feedIds(viewer.cookie, "?district=%20bondi%20")).toContain(targetedCampaign);
-    expect(await feedIds(viewer.cookie, "?district=Manly")).not.toContain(targetedCampaign);
+    expect(await feedIds(viewer.cookie, "?district=%202026%20")).toContain(targetedCampaign);
+    expect(await feedIds(viewer.cookie, "?district=2095")).not.toContain(targetedCampaign);
+  });
+
+  it("uses the viewer's declared area when no district is sent, and an explicit district wins", async () => {
+    const viewer = await sessionFor(app);
+    const set = (postcode: string) =>
+      app.inject({
+        method: "PUT",
+        url: "/api/me/settings/area",
+        headers: { cookie: viewer.cookie },
+        payload: { postcode },
+      });
+    expect((await set("2026")).statusCode).toBe(200);
+    expect(await feedIds(viewer.cookie)).toContain(targetedCampaign);
+    // An explicit ?district= for somewhere else wins over the declared area.
+    expect(await feedIds(viewer.cookie, "?district=2095")).not.toContain(targetedCampaign);
+
+    expect((await set("2095")).statusCode).toBe(200);
+    expect(await feedIds(viewer.cookie)).not.toContain(targetedCampaign);
+
+    const cleared = await app.inject({
+      method: "DELETE",
+      url: "/api/me/settings/area",
+      headers: { cookie: viewer.cookie },
+    });
+    expect(cleared.statusCode).toBe(200);
+    expect(await feedIds(viewer.cookie)).not.toContain(targetedCampaign);
+  });
+
+  it("never shows a targeted campaign to a viewer in the other region, whatever their area", async () => {
+    const indonesian = await sessionFor(app, { jurisdiction: "ID" });
+    expect(await feedIds(indonesian.cookie)).not.toContain(targetedCampaign);
   });
 });

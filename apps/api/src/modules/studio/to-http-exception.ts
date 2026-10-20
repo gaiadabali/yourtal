@@ -22,6 +22,7 @@ import type {
   CreativeBlockedError,
   OpenViewingRequiresAllAgesError,
   QuickTooLongError,
+  UnknownDistrictError,
   PersistenceFailedError,
   PiiRequestError,
   PredictionRequestError,
@@ -58,6 +59,7 @@ export type StudioDomainError =
   | IllegalTransitionError
   | OpenViewingRequiresAllAgesError
   | QuickTooLongError
+  | UnknownDistrictError
   | PersistenceFailedError;
 
 export function mapStudioErrorToHttpException(error: StudioDomainError): HttpException {
@@ -151,6 +153,11 @@ export function mapStudioErrorToHttpException(error: StudioDomainError): HttpExc
       return new BadRequestException({
         code: "open_viewing_requires_all_ages",
         message: "Open Viewing may only be enabled for an all_ages campaign (F8)",
+      });
+    case "unknown_district":
+      return new BadRequestException({
+        code: "unknown_district",
+        message: `Pick districts from the list: ${error.postcodes.join(", ")} ${error.postcodes.length === 1 ? "is" : "are"} not on it.`,
       });
     case "quick_too_long":
       return new BadRequestException({

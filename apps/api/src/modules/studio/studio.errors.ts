@@ -42,6 +42,12 @@ export interface QuickTooLongError {
   readonly type: "quick_too_long";
 }
 
+/** F116: a target district is not a postcode on the campaign's region's area list. */
+export interface UnknownDistrictError {
+  readonly type: "unknown_district";
+  readonly postcodes: readonly string[];
+}
+
 export type CreateCampaignDraftError =
   | BusinessNotFoundError
   | ProhibitedCategoryError
@@ -57,6 +63,7 @@ export type UpdateCampaignDraftError =
   | AudienceMustBeAdultError
   | OpenViewingRequiresAllAgesError
   | QuickTooLongError
+  | UnknownDistrictError
   | PersistenceFailedError;
 
 export interface PiiRequestError {

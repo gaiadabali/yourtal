@@ -14,7 +14,7 @@ import { campaignKindSchema, campaignScoringRuleSchema } from "../campaign/campa
 import { audienceSchema } from "../audience/audience";
 import { campaignLifecycleStateSchema } from "../campaign/campaign-lifecycle";
 import { campaignChapterSchema } from "../campaign/campaign-chapter";
-import { MAX_DISTRICT_LENGTH, MAX_TARGET_DISTRICTS } from "../campaign/target-districts";
+import { MAX_TARGET_DISTRICTS } from "../campaign/target-districts";
 import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";
 import { regionSchema } from "../region/region";
 import { questionSchema } from "../question/question";
@@ -764,11 +764,14 @@ const ILLEGAL_TRANSITION: RouteErrorResponse = {
   documented: true,
 };
 
-/** 14.2: the districts a campaign is shown in; empty is every district. */
+/**
+ * 14.2, F116: the districts a campaign is shown in, as postcodes from the area
+ * list (`GET /api/areas`) of the campaign's own region; empty is every district.
+ */
 const TARGET_DISTRICTS_SCHEMA: Record<string, unknown> = {
   type: "array",
   maxItems: MAX_TARGET_DISTRICTS,
-  items: { type: "string", minLength: 1, maxLength: MAX_DISTRICT_LENGTH },
+  items: { type: "string", pattern: "^[0-9]{4,5}$" },
 };
 
 const DAILY_CAP_POINTS_SCHEMA: Record<string, unknown> = {

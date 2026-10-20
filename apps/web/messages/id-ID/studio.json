@@ -139,7 +139,8 @@
       "tagPlaceholder": "Ketik lalu tekan Enter",
       "add": "Tambah",
       "removeTag": "Hapus {value}",
-      "districtsHint": "Hanya ditampilkan kepada penonton di wilayah ini, maksimal {max}. Kosongkan agar kampanye tampil di mana saja."
+      "districtsHint": "Penonton hanya melihat kampanye ini jika mereka memilih salah satu area ini di Me, maksimal {max}. Pilih lokasi dan kode posnya ditambahkan. Penonton yang belum memilih area tidak akan melihat kampanye yang dibatasi area. Kosongkan agar kampanye tampil di mana saja.",
+      "districtsFull": "Kamu sudah menambahkan jumlah area maksimal ({max}). Hapus satu untuk menambah yang lain."
     },
     "upload": {
       "statusIdle": "Belum ada video diunggah",

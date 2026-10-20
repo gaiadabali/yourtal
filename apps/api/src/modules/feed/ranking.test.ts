@@ -167,14 +167,14 @@ describe("passesFilter: 14.2 budget and districts", () => {
   });
 
   it("shows a district-targeted campaign only in its districts", () => {
-    const c = candidate({ targetDistricts: ["Kemang"] });
-    expect(passesFilter(c, baseContext({ viewerDistrict: "kemang" }))).toBe(true);
-    expect(passesFilter(c, baseContext({ viewerDistrict: "Menteng" }))).toBe(false);
+    const c = candidate({ targetDistricts: ["12730"] });
+    expect(passesFilter(c, baseContext({ viewerDistrict: "12730" }))).toBe(true);
+    expect(passesFilter(c, baseContext({ viewerDistrict: "10310" }))).toBe(false);
     expect(passesFilter(c, baseContext({ viewerDistrict: null }))).toBe(false);
   });
 
   it("shows an untargeted campaign in every district", () => {
-    expect(passesFilter(candidate(), baseContext({ viewerDistrict: "Menteng" }))).toBe(true);
+    expect(passesFilter(candidate(), baseContext({ viewerDistrict: "10310" }))).toBe(true);
   });
 });
 

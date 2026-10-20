@@ -103,10 +103,10 @@ describe("14.2.a: budget, daily cap and districts are saved", () => {
       method: "PATCH",
       url: `/api/${ctx.businessId}/studio/campaigns/${ctx.campaignId}`,
       headers: { cookie: ctx.cookie },
-      payload: { targetDistricts: ["  Bondi ", "bondi", "Surry   Hills"] },
+      payload: { targetDistricts: ["  2026 ", "2026", "2010"] },
     });
     expect(patched.statusCode).toBe(200);
-    expect(patched.json<SavedDraft>().targetDistricts).toEqual(["Bondi", "Surry Hills"]);
+    expect(patched.json<SavedDraft>().targetDistricts).toEqual(["2026", "2010"]);
 
     const saved = await putReward(ctx, { maxPointsForCampaign: 5_000, dailyCapPoints: 600 });
     expect(saved.statusCode).toBe(200);
@@ -125,7 +125,7 @@ describe("14.2.a: budget, daily cap and districts are saved", () => {
     });
     expect(reopened.statusCode).toBe(200);
     const body = reopened.json<SavedDraft>();
-    expect(body.targetDistricts).toEqual(["Bondi", "Surry Hills"]);
+    expect(body.targetDistricts).toEqual(["2026", "2010"]);
     expect(body.rewardConfig).toMatchObject({ maxPointsForCampaign: 5_000, dailyCapPoints: 600 });
 
     const rows = await db.execute<{ daily_cap_points: string; target_districts: string[] }>(sql`
@@ -134,7 +134,7 @@ describe("14.2.a: budget, daily cap and districts are saved", () => {
        WHERE r.campaign_id = ${ctx.campaignId}
     `);
     expect(Number(rows.rows[0]?.daily_cap_points)).toBe(600);
-    expect(rows.rows[0]?.target_districts).toEqual(["Bondi", "Surry Hills"]);
+    expect(rows.rows[0]?.target_districts).toEqual(["2026", "2010"]);
   });
 
   it("clears the daily cap when it is sent as null or left out", async () => {
@@ -162,11 +162,38 @@ describe("14.2.a: budget, daily cap and districts are saved", () => {
     expect(rows.rows).toHaveLength(0);
   });
 
-  it("refuses more than 20 districts, or one longer than 60 characters", async () => {
+  it("refuses a postcode that is not on the campaign's region's list", async () => {
+    const ctx = await draftWithAllocation();
+    for (const targetDistricts of [["9999"], ["12110"], ["2026", "0001"]]) {
+      const refused = await app.inject({
+        method: "PATCH",
+        url: `/api/${ctx.businessId}/studio/campaigns/${ctx.campaignId}`,
+        headers: { cookie: ctx.cookie },
+        payload: { targetDistricts },
+      });
+      expect(refused.statusCode).toBe(400);
+    }
+    const refused = await app.inject({
+      method: "PATCH",
+      url: `/api/${ctx.businessId}/studio/campaigns/${ctx.campaignId}`,
+      headers: { cookie: ctx.cookie },
+      payload: { targetDistricts: ["2026", "9999"] },
+    });
+    expect(refused.json<{ code: string }>().code).toBe("unknown_district");
+    const reopened = await app.inject({
+      method: "GET",
+      url: `/api/${ctx.businessId}/studio/campaigns/${ctx.campaignId}`,
+      headers: { cookie: ctx.cookie },
+    });
+    expect(reopened.json<SavedDraft>().targetDistricts).toEqual([]);
+  });
+
+  it("refuses more than 20 districts, or one that is not a postcode", async () => {
     const ctx = await draftWithAllocation();
     for (const targetDistricts of [
-      Array.from({ length: 21 }, (_, index) => `District ${String(index)}`),
-      ["x".repeat(61)],
+      Array.from({ length: 21 }, (_, index) => String(2000 + index)),
+      ["Bondi"],
+      ["20260"],
     ]) {
       const refused = await app.inject({
         method: "PATCH",

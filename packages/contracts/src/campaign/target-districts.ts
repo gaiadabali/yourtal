@@ -1,8 +1,11 @@
 /**
- * 14.2: the districts a campaign is shown in. Free-form names as a business
- * types them, the same 1-60 characters a store location's `district` takes,
- * matched without regard to case or spacing. Dependency-free, so Studio's
- * client code can use it without pulling in Zod.
+ * 14.2, F116: the districts a campaign is shown in. A district is a postcode
+ * from the fixed area list (`../areas`), picked by suburb in Studio and
+ * declared by the viewer as "my area" in Me, and matched exactly: no
+ * neighbouring postcodes, no radius. (Before F116 these were free-text names;
+ * `20261020140746_my_area.sql` kept the ones that were already postcodes.)
+ * The length limit is the loose one `GET /api/feed?district=` still takes.
+ * Dependency-free, so Studio's client code can use it without pulling in Zod.
  */
 export const MAX_TARGET_DISTRICTS = 20;
 export const MAX_DISTRICT_LENGTH = 60;
@@ -33,8 +36,8 @@ export function cleanTargetDistricts(names: readonly string[]): string[] {
 
 /**
  * An untargeted campaign (no districts) is shown everywhere. A targeted one
- * is shown only to a viewer in one of its districts, so a viewer whose
- * district is unknown sees untargeted campaigns only: a business paying to
+ * is shown only to a viewer whose area is one of its postcodes, so a viewer
+ * with no declared area sees untargeted campaigns only: a business paying to
  * reach one area never pays for a viewer outside it.
  */
 export function districtTargetMatches(

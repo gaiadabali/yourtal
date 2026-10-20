@@ -139,7 +139,8 @@
       "tagPlaceholder": "Type and press Enter",
       "add": "Add",
       "removeTag": "Remove {value}",
-      "districtsHint": "Shown only to viewers in these districts, up to {max}. Leave it empty to show the campaign everywhere."
+      "districtsHint": "Viewers see this campaign only if they have chosen one of these areas in Me, up to {max}. Pick a suburb and its postcode is added. Viewers who haven't chosen an area won't see a campaign that is limited to areas. Leave it empty to show the campaign everywhere.",
+      "districtsFull": "You have added the most areas allowed ({max}). Remove one to add another."
     },
     "upload": {
       "statusIdle": "No video uploaded yet",

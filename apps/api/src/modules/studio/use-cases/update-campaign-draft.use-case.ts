@@ -4,6 +4,7 @@ import type {
   CampaignDraftRepository,
   UpdateCampaignDraftInput,
 } from "../persistence/campaign-draft.repository";
+import { isKnownPostcode } from "@yourtal/contracts/areas/data";
 import type { UpdateCampaignDraftError } from "../studio.errors";
 import { categoryRefusal, openViewingRefusal } from "./category-policy";
 
@@ -36,6 +37,16 @@ export function updateCampaignDraft(
     // 13.9.d: the database CHECK would refuse this as a 503; say it plainly instead.
     if (existing.kind === "quick" && (patch.durationSeconds ?? existing.durationSeconds) > 60) {
       return errAsync<CampaignDraft, UpdateCampaignDraftError>({ type: "quick_too_long" });
+    }
+    // F116: a district is a postcode on the campaign's own region's list.
+    const unknownDistricts = (patch.targetDistricts ?? []).filter(
+      (postcode) => !isKnownPostcode(existing.region, postcode),
+    );
+    if (unknownDistricts.length > 0) {
+      return errAsync<CampaignDraft, UpdateCampaignDraftError>({
+        type: "unknown_district",
+        postcodes: unknownDistricts,
+      });
     }
     const category = patch.contentCategory ?? existing.contentCategory;
     const audience = patch.audience ?? existing.audience;

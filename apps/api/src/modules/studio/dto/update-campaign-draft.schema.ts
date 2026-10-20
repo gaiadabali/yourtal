@@ -5,7 +5,6 @@ import { audienceSchema } from "@yourtal/contracts/campaign";
 import { campaignChapterSchema } from "@yourtal/contracts/campaign/chapter";
 import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";
 import {
-  MAX_DISTRICT_LENGTH,
   MAX_TARGET_DISTRICTS,
   cleanTargetDistricts,
   normaliseDistrict,
@@ -31,9 +30,18 @@ export const updateCampaignDraftSchema = z.object({
   declaredInterests: interestTagsSchema.optional(),
   chapters: z.array(campaignChapterSchema).optional(),
   captionsUrl: z.url().nullable().optional(),
-  /** 14.2: replaces the whole set; normalised and de-duplicated. Empty is every district. */
+  /**
+   * 14.2, F116: replaces the whole set of postcodes; de-duplicated. Empty is
+   * every district. The shape is checked here, and that each is on the
+   * campaign's own region's list by `updateCampaignDraft`.
+   */
   targetDistricts: z
-    .array(z.string().transform(normaliseDistrict).pipe(z.string().min(1).max(MAX_DISTRICT_LENGTH)))
+    .array(
+      z
+        .string()
+        .transform(normaliseDistrict)
+        .pipe(z.string().regex(/^[0-9]{4,5}$/)),
+    )
     .max(MAX_TARGET_DISTRICTS)
     .transform(cleanTargetDistricts)
     .optional(),

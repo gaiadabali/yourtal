@@ -1,18 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
-import { Input } from "@yourtal/ui/input";
-import type { CampaignTargeting } from "./campaign-draft";
 import {
-  MAX_DISTRICT_LENGTH,
   MAX_TARGET_DISTRICTS,
   cleanTargetDistricts,
-  districtKey,
-  normaliseDistrict,
 } from "@yourtal/contracts/campaign/target-districts";
+import { fetchAreaSummariesAction } from "@/features/areas/area-actions";
+import { AreaPicker } from "@/features/areas/area-picker";
+import { areaSummaryLabel } from "@/features/areas/area-label";
+import type { CampaignTargeting } from "./campaign-draft";
 import { TagPicker } from "../tag-picker";
 
 export interface CampaignEditorTargetingProps {
@@ -22,10 +21,11 @@ export interface CampaignEditorTargetingProps {
 }
 
 /**
- * Targeting: interest tags from the taxonomy (13.11.a) and free-form districts (docs/17 §2's
- * Campaigns zone: "targeting"). Untargeted (empty) is a valid, honest choice — shown as "targets
- * everyone", not left ambiguous. 14.2: districts save with the details and the feed shows a
- * targeted campaign only in them; spelling and case are normalised the way the server does.
+ * Targeting: interest tags from the taxonomy (13.11.a) and districts (docs/17 §2's Campaigns
+ * zone: "targeting"). Untargeted (empty) is a valid, honest choice, shown as "targets everyone",
+ * not left ambiguous. F116: a district is a postcode, picked by state and suburb from the fixed
+ * area list (never typed), and the feed shows a targeted campaign only to viewers who declared
+ * one of them as "my area" in Me.
  */
 export function CampaignEditorTargeting({
   targeting,
@@ -33,6 +33,7 @@ export function CampaignEditorTargeting({
   disabled,
 }: CampaignEditorTargetingProps) {
   const t = useTranslations("studio");
+  const full = targeting.districts.length >= MAX_TARGET_DISTRICTS;
   return (
     <div className="flex flex-col gap-4">
       {/* 13.11.a: tags come from the interest taxonomy and are saved as the campaign's tags. */}
@@ -41,89 +42,103 @@ export function CampaignEditorTargeting({
         disabled={disabled}
         onChange={(interests) => onChange({ ...targeting, interests })}
       />
-      <p className="text-xs font-sans text-fg-muted">
-        {t("campaignBuilder.targeting.districtsHint", { max: MAX_TARGET_DISTRICTS })}
-      </p>
-      <TagList
-        label={t("campaignBuilder.targeting.districtsLabel")}
-        emptyMessage={t("campaignBuilder.targeting.noDistricts")}
-        values={targeting.districts}
-        disabled={disabled === true || targeting.districts.length >= MAX_TARGET_DISTRICTS}
-        onAdd={(value) =>
-          onChange({
-            ...targeting,
-            districts: cleanTargetDistricts([...targeting.districts, value]).slice(
-              0,
-              MAX_TARGET_DISTRICTS,
-            ),
-          })
-        }
-        onRemove={(value) =>
-          onChange({
-            ...targeting,
-            districts: targeting.districts.filter((item) => item !== value),
-          })
-        }
-      />
+      <fieldset className="flex flex-col gap-3">
+        <legend className="text-label font-sans text-fg">
+          {t("campaignBuilder.targeting.districtsLabel")}
+        </legend>
+        <p className="text-xs font-sans text-fg-muted">
+          {t("campaignBuilder.targeting.districtsHint", { max: MAX_TARGET_DISTRICTS })}
+        </p>
+        <DistrictChips
+          postcodes={targeting.districts}
+          disabled={disabled === true}
+          onRemove={(postcode) =>
+            onChange({
+              ...targeting,
+              districts: targeting.districts.filter((item) => item !== postcode),
+            })
+          }
+        />
+        {full ? (
+          <p className="text-xs font-sans text-fg-muted">
+            {t("campaignBuilder.targeting.districtsFull", { max: MAX_TARGET_DISTRICTS })}
+          </p>
+        ) : null}
+        <AreaPicker
+          chosen={targeting.districts}
+          disabled={disabled === true || full}
+          onPick={(place) =>
+            onChange({
+              ...targeting,
+              districts: cleanTargetDistricts([...targeting.districts, place.postcode]).slice(
+                0,
+                MAX_TARGET_DISTRICTS,
+              ),
+            })
+          }
+        />
+      </fieldset>
     </div>
   );
 }
 
-interface TagListProps {
-  label: string;
-  emptyMessage: string;
-  values: string[];
-  onAdd: (value: string) => void;
-  onRemove: (value: string) => void;
-  disabled?: boolean | undefined;
+interface DistrictChipsProps {
+  postcodes: string[];
+  onRemove: (postcode: string) => void;
+  disabled: boolean;
 }
 
-/** Local subcomponent, never reused outside this file's two calls above. */
-function TagList({ label, emptyMessage, values, onAdd, onRemove, disabled }: TagListProps) {
+/** The chosen postcodes, each with the suburbs it covers so a business reads places, not digits. */
+function DistrictChips({ postcodes, onRemove, disabled }: DistrictChipsProps) {
   const t = useTranslations("studio");
-  const [draft, setDraft] = useState("");
+  const tAreas = useTranslations("areas");
+  const [labels, setLabels] = useState<Record<string, string>>({});
+  const missingKey = postcodes.filter((postcode) => labels[postcode] === undefined).join(",");
 
-  function commit() {
-    const name = normaliseDistrict(draft);
-    if (name.length > 0 && !values.some((value) => districtKey(value) === districtKey(name))) {
-      onAdd(name);
-    }
-    setDraft("");
+  useEffect(() => {
+    if (missingKey.length === 0) return;
+    let live = true;
+    void fetchAreaSummariesAction(missingKey.split(",")).then((result) => {
+      if (!live || !result.ok) return;
+      setLabels((previous) => ({
+        ...previous,
+        ...Object.fromEntries(
+          result.data.areas.map((area) => [
+            area.postcode,
+            areaSummaryLabel(area, (count) => tAreas("andMore", { count })),
+          ]),
+        ),
+      }));
+    });
+    return () => {
+      live = false;
+    };
+  }, [missingKey, tAreas]);
+
+  if (postcodes.length === 0) {
+    return (
+      <p className="text-xs font-sans text-fg-muted">
+        {t("campaignBuilder.targeting.noDistricts")}
+      </p>
+    );
   }
-
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-end gap-2">
-        <div className="flex-1">
-          <Input
-            label={label}
-            value={draft}
-            maxLength={MAX_DISTRICT_LENGTH}
-            disabled={disabled}
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                commit();
-              }
-            }}
-            placeholder={t("campaignBuilder.targeting.tagPlaceholder")}
-          />
-        </div>
-        <Button type="button" variant="secondary" size="sm" onClick={commit} disabled={disabled}>
-          {t("campaignBuilder.targeting.add")}
-        </Button>
-      </div>
-      {values.length > 0 ? (
-        <div className="flex flex-wrap gap-1.5">
-          {values.map((value) => (
-            <Badge key={value} variant="secondary" className="gap-1.5">
+    <ul
+      className="flex flex-wrap gap-1.5"
+      aria-label={t("campaignBuilder.targeting.districtsLabel")}
+    >
+      {postcodes.map((postcode) => {
+        const value =
+          labels[postcode] === undefined ? postcode : `${postcode} · ${labels[postcode]}`;
+        return (
+          <li key={postcode}>
+            <Badge variant="secondary" className="gap-1.5">
               {value}
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                onClick={() => onRemove(value)}
+                onClick={() => onRemove(postcode)}
                 disabled={disabled}
                 aria-label={t("campaignBuilder.targeting.removeTag", { value })}
                 className="size-4 text-fg-subtle hover:text-fg"
@@ -131,11 +146,9 @@ function TagList({ label, emptyMessage, values, onAdd, onRemove, disabled }: Tag
                 ×
               </Button>
             </Badge>
-          ))}
-        </div>
-      ) : (
-        <p className="text-xs font-sans text-fg-muted">{emptyMessage}</p>
-      )}
-    </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

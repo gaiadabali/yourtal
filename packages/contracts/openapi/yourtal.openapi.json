@@ -5455,8 +5455,7 @@
                       "maxItems": 20,
                       "items": {
                         "type": "string",
-                        "minLength": 1,
-                        "maxLength": 60
+                        "pattern": "^[0-9]{4,5}$"
                       }
                     },
                     "rewardConfig": {
@@ -5845,8 +5844,7 @@
                         "maxItems": 20,
                         "items": {
                           "type": "string",
-                          "minLength": 1,
-                          "maxLength": 60
+                          "pattern": "^[0-9]{4,5}$"
                         }
                       },
                       "rewardConfig": {
@@ -6236,8 +6234,7 @@
                       "maxItems": 20,
                       "items": {
                         "type": "string",
-                        "minLength": 1,
-                        "maxLength": 60
+                        "pattern": "^[0-9]{4,5}$"
                       }
                     },
                     "rewardConfig": {
@@ -6524,8 +6521,7 @@
                     "maxItems": 20,
                     "items": {
                       "type": "string",
-                      "minLength": 1,
-                      "maxLength": 60
+                      "pattern": "^[0-9]{4,5}$"
                     }
                   }
                 },
@@ -6784,8 +6780,7 @@
                       "maxItems": 20,
                       "items": {
                         "type": "string",
-                        "minLength": 1,
-                        "maxLength": 60
+                        "pattern": "^[0-9]{4,5}$"
                       }
                     },
                     "rewardConfig": {
@@ -7194,8 +7189,7 @@
                       "maxItems": 20,
                       "items": {
                         "type": "string",
-                        "minLength": 1,
-                        "maxLength": 60
+                        "pattern": "^[0-9]{4,5}$"
                       }
                     },
                     "rewardConfig": {
@@ -10108,8 +10102,7 @@
                           "maxItems": 20,
                           "items": {
                             "type": "string",
-                            "minLength": 1,
-                            "maxLength": 60
+                            "pattern": "^[0-9]{4,5}$"
                           }
                         },
                         "rewardConfig": {

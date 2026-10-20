@@ -58,6 +58,8 @@ func (a *API) purchasePoints(w http.ResponseWriter, r *http.Request) {
 		Points         int64  `json:"points"`
 		PaidMinor      int64  `json:"paidMinor"`
 		IdempotencyKey string `json:"idempotencyKey"`
+		// TierKey (F122): a package tier, priced at its discount.
+		TierKey string `json:"tierKey,omitempty"`
 	}
 	if !a.decode(w, r, &body) {
 		return
@@ -68,7 +70,7 @@ func (a *API) purchasePoints(w http.ResponseWriter, r *http.Request) {
 	}
 	bought, err := engine.PurchasePoints(r.Context(), reward.PurchaseRequest{
 		ID: body.IdempotencyKey, PartnerID: body.BusinessID, Points: body.Points,
-		AmountMinor: body.PaidMinor, Currency: body.Currency,
+		AmountMinor: body.PaidMinor, Currency: body.Currency, TierKey: body.TierKey,
 	})
 	if err != nil {
 		a.fail(w, err)

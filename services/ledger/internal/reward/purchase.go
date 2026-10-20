@@ -53,6 +53,10 @@ type PurchaseRequest struct {
 	// platform runs two and an untagged amount cannot be settled.
 	AmountMinor int64
 	Currency    string
+	// TierKey names a package tier (F122): the purchase is then priced at the
+	// tier's discount and must be exactly its size. Empty is the untiered
+	// price at P_issue, which staff manual purchases still use.
+	TierKey string
 }
 
 // PurchaseResult links the two sides so a caller can follow either.
@@ -106,15 +110,16 @@ func (e *Engine) RecordPurchase(ctx context.Context, req PurchaseRequest) (Purch
 			return err
 		}
 
-		// K6: a point is only ever sold at or above P_issue, priced in this
-		// transaction at the database's now().
-		quote, err := pricing.QuotePurchaseIn(ctx, queries, e.region, req.Points)
+		// K6: a point is only ever sold at or above its price, P_issue or the
+		// tier's (never below B), priced in this transaction at the
+		// database's now().
+		price, err := purchasePrice(ctx, tx, queries, e.region, req)
 		if err != nil {
 			return err
 		}
-		if req.AmountMinor < quote.AmountMinor {
+		if req.AmountMinor < price {
 			return fmt.Errorf("%w: %d paid for %d points, the price is %d",
-				ErrUnderpriced, req.AmountMinor, req.Points, quote.AmountMinor)
+				ErrUnderpriced, req.AmountMinor, req.Points, price)
 		}
 
 		// Fact one: the points, as an allocation the engine can draw down.
@@ -160,6 +165,24 @@ func (e *Engine) RecordPurchase(ctx context.Context, req PurchaseRequest) (Purch
 		return PurchaseResult{}, err
 	}
 	return result, nil
+}
+
+// purchasePrice is the least a purchase may pay: the untiered P_issue price,
+// or the named tier's, which also checks the tier against B and its size.
+func purchasePrice(ctx context.Context, tx pgx.Tx, q *sqlcgen.Queries, region ledger.Region, req PurchaseRequest) (int64, error) {
+	if req.TierKey == "" {
+		quote, err := pricing.QuotePurchaseIn(ctx, q, region, req.Points)
+		return quote.AmountMinor, err
+	}
+	quote, err := pricing.QuoteTierIn(ctx, q, tx, region, req.TierKey)
+	if err != nil {
+		return 0, err
+	}
+	if quote.Points != req.Points {
+		return 0, fmt.Errorf("%w: %s is %d points, not %d",
+			pricing.ErrTierPointsMismatch, req.TierKey, quote.Points, req.Points)
+	}
+	return quote.AmountMinor, nil
 }
 
 // PartnerPurchases returns both facts of every purchase a partner has made.

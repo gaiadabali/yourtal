@@ -106,6 +106,9 @@ func (a *API) platformRoutes(r chi.Router) {
 	r.Post("/pricing/listing", a.priceListing)
 	r.Post("/pricing/purchase-quote", a.quotePurchase)
 	r.Post("/pricing/points-value", a.valuePoints)
+	r.Post("/pricing/package-tiers", a.packageTiers)
+	r.Post("/pricing/package-tiers/check", a.checkPackageTiers)
+	r.Post("/pricing/package-quote", a.quotePackage)
 
 	r.Post("/allocations/purchase", a.purchasePoints)
 	r.Post("/allocations/list", a.listAllocations)
@@ -288,6 +291,9 @@ func (a *API) fail(w http.ResponseWriter, err error) {
 	case errors.Is(err, pricing.ErrNotAPack), errors.Is(err, pricing.ErrNoRateInForce),
 		errors.Is(err, pricing.ErrMarginTooThin), errors.Is(err, pricing.ErrSameApprover),
 		errors.Is(err, pricing.ErrRateCutTooSoon), errors.Is(err, reward.ErrSameApprover),
+		errors.Is(err, pricing.ErrNoTierCatalogue), errors.Is(err, pricing.ErrTierCatalogue),
+		errors.Is(err, pricing.ErrUnknownTier), errors.Is(err, pricing.ErrTierBelowBacking),
+		errors.Is(err, pricing.ErrTierPointsMismatch),
 		errors.Is(err, reward.ErrUnderpriced), errors.Is(err, reward.ErrWrongFunder),
 		errors.Is(err, reward.ErrUnknownAction), errors.Is(err, reward.ErrAttestation),
 		errors.Is(err, reward.ErrCampaignNotLive), errors.Is(err, reward.ErrPointsMismatch),

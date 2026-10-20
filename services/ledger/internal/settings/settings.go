@@ -50,8 +50,19 @@ func New(pool *pgxpool.Pool) *Reader {
 // 20260925193000's seed comments) -- this package does not know, or need to
 // know, what any individual key means.
 func (r *Reader) Get(ctx context.Context, region, key string) (json.RawMessage, error) {
+	return GetIn(ctx, r.pool, region, key)
+}
+
+// Querier is a pool or a transaction.
+type Querier interface {
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
+
+// GetIn is Get on the caller's pool or transaction, so a purchase reads the
+// setting it prices by inside its own Serializable transaction.
+func GetIn(ctx context.Context, db Querier, region, key string) (json.RawMessage, error) {
 	var value json.RawMessage
-	err := r.pool.QueryRow(
+	err := db.QueryRow(
 		ctx,
 		`SELECT value FROM platform.ledger_setting WHERE region = $1 AND key = $2`,
 		region, key,

@@ -250,6 +250,60 @@ func (q *Queries) InsertStatement(ctx context.Context, arg InsertStatementParams
 	return i, err
 }
 
+const listBusinessesDueStatement = `-- name: ListBusinessesDueStatement :many
+SELECT a.owner_id AS business_id
+FROM ledger.account a
+WHERE a.purpose = 'payable' AND a.owner_type = 'merchant' AND a.country = $1::text
+  AND NOT EXISTS (
+    SELECT 1 FROM ledger.statement s
+    WHERE s.business_id = a.owner_id AND s.region = $1::text
+      AND s.period_to > $2::timestamptz)
+  AND (
+    EXISTS (
+      SELECT 1 FROM ledger.entry e
+      WHERE e.account_id = a.id
+        AND e.created_at >= $2::timestamptz AND e.created_at < $3::timestamptz)
+    OR (
+      NOT EXISTS (
+        SELECT 1 FROM ledger.statement s
+        WHERE s.business_id = a.owner_id AND s.region = $1::text)
+      AND COALESCE((
+        SELECT SUM(e.amount_minor) FROM ledger.entry e
+        WHERE e.account_id = a.id AND e.created_at < $3::timestamptz), 0) <> 0))
+ORDER BY a.owner_id
+`
+
+type ListBusinessesDueStatementParams struct {
+	Region string
+	FromTs pgtype.Timestamptz
+	ToTs   pgtype.Timestamptz
+}
+
+// The weekly job's read: merchants in a region whose statement for [from, to)
+// is still to be generated. Due means the payable account moved in the period,
+// or it holds a balance no statement has ever covered. Never due: a business
+// with a statement ending after `from` (a period is only ever generated after
+// the ones before it, or the later statement would count its figures twice).
+func (q *Queries) ListBusinessesDueStatement(ctx context.Context, arg ListBusinessesDueStatementParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listBusinessesDueStatement, arg.Region, arg.FromTs, arg.ToTs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var business_id string
+		if err := rows.Scan(&business_id); err != nil {
+			return nil, err
+		}
+		items = append(items, business_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listOpenStatementsPastDisputeWindow = `-- name: ListOpenStatementsPastDisputeWindow :many
 SELECT id, business_id, region, currency, period_from, period_to,
   opening_payable_minor, captures_minor, refunds_minor, recoveries_minor,
@@ -611,4 +665,39 @@ func (q *Queries) PointPurchasesForBusiness(ctx context.Context, arg PointPurcha
 	var points int64
 	err := row.Scan(&points)
 	return points, err
+}
+
+const statementCarryNotYetPaid = `-- name: StatementCarryNotYetPaid :one
+SELECT COALESCE(SUM(s.closing_payable_minor), 0)::bigint AS carried_minor
+FROM ledger.statement s
+LEFT JOIN ledger.transfer t ON t.id = s.payout_transfer_id
+WHERE s.business_id = $1 AND s.region = $2
+  AND s.period_to <= $3::timestamptz
+  AND s.closing_payable_minor > 0
+  AND (t.id IS NULL OR t.created_at >= $4::timestamptz)
+`
+
+type StatementCarryNotYetPaidParams struct {
+	BusinessID string
+	Region     string
+	FromTs     pgtype.Timestamptz
+	ToTs       pgtype.Timestamptz
+}
+
+// What earlier statements of this business and region already claim, and the
+// account still holds at `to`: their closing payable, unless its payout was
+// posted before `to`. A statement's opening leaves it out, because paying the
+// earlier statement moves it, and a payout would otherwise be asked for twice.
+// A payout posted inside the period shows in that period's own net instead.
+// Zero or negative closings are never carried: nothing was paid for them.
+func (q *Queries) StatementCarryNotYetPaid(ctx context.Context, arg StatementCarryNotYetPaidParams) (int64, error) {
+	row := q.db.QueryRow(ctx, statementCarryNotYetPaid,
+		arg.BusinessID,
+		arg.Region,
+		arg.FromTs,
+		arg.ToTs,
+	)
+	var carried_minor int64
+	err := row.Scan(&carried_minor)
+	return carried_minor, err
 }

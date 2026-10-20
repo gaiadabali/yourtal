@@ -129,3 +129,45 @@ RETURNING id, capture_id, region, merchant_id, amount_minor, currency, reason, t
 SELECT id, capture_id, region, merchant_id, amount_minor, currency, reason, transfer_id, created_at
 FROM ledger.capture_recovery
 WHERE capture_id = $1;
+
+-- name: StatementCarryNotYetPaid :one
+-- What earlier statements of this business and region already claim, and the
+-- account still holds at `to`: their closing payable, unless its payout was
+-- posted before `to`. A statement's opening leaves it out, because paying the
+-- earlier statement moves it, and a payout would otherwise be asked for twice.
+-- A payout posted inside the period shows in that period's own net instead.
+-- Zero or negative closings are never carried: nothing was paid for them.
+SELECT COALESCE(SUM(s.closing_payable_minor), 0)::bigint AS carried_minor
+FROM ledger.statement s
+LEFT JOIN ledger.transfer t ON t.id = s.payout_transfer_id
+WHERE s.business_id = $1 AND s.region = $2
+  AND s.period_to <= sqlc.arg(from_ts)::timestamptz
+  AND s.closing_payable_minor > 0
+  AND (t.id IS NULL OR t.created_at >= sqlc.arg(to_ts)::timestamptz);
+
+-- name: ListBusinessesDueStatement :many
+-- The weekly job's read: merchants in a region whose statement for [from, to)
+-- is still to be generated. Due means the payable account moved in the period,
+-- or it holds a balance no statement has ever covered. Never due: a business
+-- with a statement ending after `from` (a period is only ever generated after
+-- the ones before it, or the later statement would count its figures twice).
+SELECT a.owner_id AS business_id
+FROM ledger.account a
+WHERE a.purpose = 'payable' AND a.owner_type = 'merchant' AND a.country = sqlc.arg(region)::text
+  AND NOT EXISTS (
+    SELECT 1 FROM ledger.statement s
+    WHERE s.business_id = a.owner_id AND s.region = sqlc.arg(region)::text
+      AND s.period_to > sqlc.arg(from_ts)::timestamptz)
+  AND (
+    EXISTS (
+      SELECT 1 FROM ledger.entry e
+      WHERE e.account_id = a.id
+        AND e.created_at >= sqlc.arg(from_ts)::timestamptz AND e.created_at < sqlc.arg(to_ts)::timestamptz)
+    OR (
+      NOT EXISTS (
+        SELECT 1 FROM ledger.statement s
+        WHERE s.business_id = a.owner_id AND s.region = sqlc.arg(region)::text)
+      AND COALESCE((
+        SELECT SUM(e.amount_minor) FROM ledger.entry e
+        WHERE e.account_id = a.id AND e.created_at < sqlc.arg(to_ts)::timestamptz), 0) <> 0))
+ORDER BY a.owner_id;

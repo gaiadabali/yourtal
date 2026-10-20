@@ -121,10 +121,11 @@ describe("12.1.a — guardian consent: register -> pending -> outbox -> approve 
 
     const email = await latestGuardianConsentEmail(guardianEmail);
     expect(email).not.toBeNull();
-    // The links this ticket's own spec names — approve, and the SAME link
-    // with ?action=revoke — both present in the one email body.
-    expect(email!.body).toContain(`/guardian/${email!.token}`);
-    expect(email!.body).toContain(`/guardian/${email!.token}?action=revoke`);
+    // One link (group 1.3.c): `/guardian/<token>` approves while the request
+    // is pending and withdraws once granted, so the email no longer carries a
+    // second `?action=revoke` link (Gmail filed the two-link copy as Spam).
+    expect(email!.body).toContain(`/guardian/${encodeURIComponent(email!.token)}`);
+    expect(email!.body).not.toContain("action=revoke");
     // 12.4.b (#3, guardian half): the "what is kept" paragraph links to the
     // region's own privacy page (region is AU for this suite's own payload).
     expect(email!.body).toContain("/au/privacy");

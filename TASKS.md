@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 6/15 | 36/55 | `███████░░░`  65% |
-| **All** | | | **111/121** | **582/602** | `██████████`  97% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 6/16 | 36/61 | `██████░░░░`  59% |
+| **All** | | | **111/122** | **582/608** | `██████████`  96% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -88,6 +88,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 4 | `yourtal-4` | **13** — viewer side (agent V), paused | 2026-10-02 | Branch `phase/13` (merged), db `yourtal_s4`, ports 26360–26369. Next for V: 13.15.d (store date without its year), 13.3.d (data export), the B half of 13.3.i. (13.4.a moved to the optimisation pass, F97.) |
 | 2b | `yourtal-p11` | free | 2026-09-29 | Phase 11 moved to slot 4. 11.3.a ✅ (d2ae6ab), 11.3.b merged except `VideoObject` (11fc23d). Worktree left detached |
 | g5 | `.claude/worktrees/g-phase5` | **14** — group Phase 5 on the payment simulation (F106) | 2026-10-21 | Branch `group/5-payments`. On main: 14.7.a, 14.7.c (simulation, driver, parity). In CI: `group/5-billing` (Checkout purchases, webhook, saved cards, boost charges, GST). Agents: auctions 14.7.d (`g-phase5-drv`, `group/5-auctions`), payouts 14.8 (`g-phase5-pay`), invoices 14.9 (`g-phase5-inv`), video 14.6 (`g-phase5-video`). Next: 14.13 packages, then the 14.7.e staging check (lead applies the env). 14.10 waits for group 3.9.c; 13.6 is the founder's |
+| g3 | `.claude/worktrees/g3-oidc`, `g3-passkeys` | **14.16** — group Phase 3, Sign in with YourTal (god-ca) | 2026-10-21 | Branches `group/3.9-oidc` (the provider) and `group/3.9c-passkeys`. Next: the `/connect` screens, events and the teen invite API once the provider is on main; the lead does nginx and the keys on Helios |
 | 8 | free | **8** Voucher engine for clients — ✅ done | 2026-09-29 | Phase 8 done (all 4 tasks ✅). Helper worktrees `yourtal-p8`, `-p8-b`, `-p8-c` removed; databases `yourtal_s8`, `_s8b`, `_s8c` and ports 26371–26387, 26471–26477 kept for reuse |
 
 **Ready to start, no slot yet:** none.
@@ -1698,6 +1699,13 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
 - [ ] **14.15 Account deletion: the last gaps** (group 1.24) · A · needs: — — 🔄 2026-10-21 (group plan, god-ff)
   - [ ] 14.15.a Pending team invitations to an erased email are removed inside the identity domain, before the address goes (group 1.24.a)
   - [ ] 14.15.b `DELETE /api/me` reports `complete: true`: research_answers and support_cases get a table and handler, or their declarations go (group 1.24.b)
+- [ ] **14.16 Sign in with YourTal: YourTal is the OpenID Connect provider** (group 3.9, F99, docs/26) · A + B · needs: 14.4 — 🔄 2026-10-21 (slot g3)
+  - [ ] 14.16.a The provider at `/oidc` on `oidc-provider` 9.x: the `oidc` schema, discovery, authorize, token, JWKS, userinfo, pairwise `sub`, the client registry, the §1.5 checks and the interaction API (group 3.9.a, 3.9.d)
+  - [ ] 14.16.b The `/connect/[uid]` sign-in, consent and refusal screens, en-AU and id-ID (group 3.9.b)
+  - [ ] 14.16.c Passkeys and authenticator-app codes on YourTal accounts, and `amr` in ID tokens (group 3.9.c)
+  - [ ] 14.16.d Teens: every client refuses them except SnapApp by a guardian's invite; the teen invite API (group 3.9.e)
+  - [ ] 14.16.e Deletion and ended access reach every app as signed events, with the `connected_apps` data domain (group 3.9.f)
+  - [ ] 14.16.f Rate limits, a sign-in log per client, an uptime check and one restore test (group 3.9.h)
 Group 5.7, the founder's walkthrough, is 13.6 here.
 
 ## Not in this plan (deferred)

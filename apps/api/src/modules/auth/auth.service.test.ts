@@ -6,7 +6,9 @@ import { Logger } from "@nestjs/common";
 import { Redis } from "ioredis";
 import { desc, eq } from "drizzle-orm";
 import pg from "pg";
+import { err, ok } from "neverthrow";
 import { createEmailDriver, createSimulatedEmail } from "@yourtal/drivers/email";
+import type { EmailDriver, EmailMessage } from "@yourtal/drivers/email";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { PostgresSimOutboxStore } from "../../shared/drivers/postgres-sim-outbox-store";
 import type { AppConfig } from "../../config/app-config";
@@ -667,12 +669,13 @@ describe("1.6.a: deliver() actually sends, against the real platform.sim_outbox"
         WHERE boundary = 'email' AND recipient = $1`,
       [emailAddress],
     );
-    expect(rows).toHaveLength(1);
-    expect(rows[0]?.category).toBe("email_verification");
-    expect(rows[0]?.region).toBe(ADULT_PROFILE.region);
+    // Two sends: registration's own (1.3.c) and the explicit request above.
+    expect(rows).toHaveLength(2);
+    expect(rows.map((row) => row.category)).toEqual(["email_verification", "email_verification"]);
+    expect(rows.every((row) => row.region === ADULT_PROFILE.region)).toBe(true);
     // The token in the outbox is the SAME real token `devTokenAccess` has —
     // one delivery, recorded to both seams, not two different values.
-    expect(rows[0]?.metadata.token).toBe(realToken);
+    expect(rows.map((row) => row.metadata.token)).toContain(realToken);
   });
 });
 
@@ -824,6 +827,177 @@ describe("the raw token never reaches a logger", () => {
     expect(loggerCallLines.length).toBeGreaterThan(0);
     for (const line of loggerCallLines) {
       expect(line).not.toMatch(/\$\{(raw)?[a-zA-Z]*[tT]oken\}/);
+    }
+  });
+});
+
+describe("1.3.c: the emails registration sends, and what is logged when one fails", () => {
+  const TEEN_CONFIG = {
+    ...CONFIG,
+    teenAccounts: true,
+    webOrigin: "https://staging.example.test",
+  } as AppConfig;
+
+  function authWith(driver: EmailDriver): AuthService {
+    return new AuthService(
+      TEEN_CONFIG,
+      db,
+      credentials,
+      verificationTokens,
+      profiles,
+      staffRoles,
+      guardianConsents,
+      sessionService,
+      throttle,
+      devTokenAccess,
+      driver,
+    );
+  }
+
+  /** A driver that records every message and answers with `answer`. */
+  function recordingDriver(answer: EmailDriver["send"]): {
+    driver: EmailDriver;
+    sent: EmailMessage[];
+  } {
+    const sent: EmailMessage[] = [];
+    return {
+      sent,
+      driver: {
+        mode: "live",
+        send: (message) => {
+          sent.push(message);
+          return answer(message);
+        },
+      },
+    };
+  }
+
+  const TEEN_PROFILE: RegisterProfile = {
+    ...ADULT_PROFILE,
+    displayName: "Teen Test",
+    // 15 or 16 years old whenever this runs, inside 13-17.
+    dateOfBirth: `${String(new Date().getUTCFullYear() - 16)}-06-15`,
+  };
+
+  it("an adult registration sends the sign-up verification email, to the new account's address", async () => {
+    const { driver, sent } = recordingDriver(() =>
+      Promise.resolve(ok({ id: "m1", route: "live" })),
+    );
+    const email = freshEmail();
+    const result = await authWith(driver).register(
+      email,
+      "the-original-password",
+      ADULT_PROFILE,
+      new Date(),
+    );
+    expect(result.isOk()).toBe(true);
+    expect(sent.map((message) => [message.category, message.to])).toEqual([
+      ["email_verification", email],
+    ]);
+  });
+
+  it("a teen registration sends the guardian approval email to the guardian and the verification email to the teen", async () => {
+    const { driver, sent } = recordingDriver(() =>
+      Promise.resolve(ok({ id: "m1", route: "live" })),
+    );
+    const email = freshEmail();
+    const guardianEmail = `guardian-${randomUUID()}@example.test`;
+    const result = await authWith(driver).register(
+      email,
+      "the-original-password",
+      { ...TEEN_PROFILE, guardianEmail },
+      new Date(),
+    );
+    expect(result.isOk()).toBe(true);
+    expect(sent.map((message) => [message.category, message.to])).toEqual([
+      ["guardian_consent", guardianEmail],
+      ["email_verification", email],
+    ]);
+    const guardianMessage = sent[0];
+    expect(guardianMessage?.body).toContain("https://staging.example.test/guardian/");
+  });
+
+  it("a refused guardian send is logged with its failure kind and the provider's reason, never the address", async () => {
+    const guardianEmail = `guardian-${randomUUID()}@example.test`;
+    const email = freshEmail();
+    const { driver } = recordingDriver(() =>
+      Promise.resolve(
+        err({
+          kind: "declined" as const,
+          boundary: "email",
+          detail: "The email provider rejected the message (422 validation_error).",
+          mayHaveSucceeded: false,
+        }),
+      ),
+    );
+    const errorLog = vi.spyOn(Logger.prototype, "error").mockImplementation(() => undefined);
+    try {
+      const result = await authWith(driver).register(
+        email,
+        "the-original-password",
+        { ...TEEN_PROFILE, guardianEmail },
+        new Date(),
+      );
+      // Best-effort: the account exists and the caller is signed in regardless.
+      expect(result.isOk()).toBe(true);
+
+      const lines = errorLog.mock.calls.map((call) => String(call[0]));
+      const guardianLine = lines.find((line) => line.startsWith("guardian_consent email not sent"));
+      expect(guardianLine).toContain("kind=declined");
+      expect(guardianLine).toContain("mayHaveSucceeded=false");
+      expect(guardianLine).toContain("422 validation_error");
+      expect(lines.some((line) => line.startsWith("email_verification email not sent"))).toBe(true);
+      const everything = lines.join(" | ");
+      expect(everything).not.toContain(guardianEmail);
+      expect(everything).not.toContain(email);
+    } finally {
+      errorLog.mockRestore();
+    }
+  });
+
+  it("a driver that throws does not fail a registration that already committed, and is logged by name only", async () => {
+    const email = freshEmail();
+    const guardianEmail = `guardian-${randomUUID()}@example.test`;
+    const { driver } = recordingDriver(() =>
+      Promise.reject(new TypeError(`connection refused for ${guardianEmail}`)),
+    );
+    const errorLog = vi.spyOn(Logger.prototype, "error").mockImplementation(() => undefined);
+    try {
+      const result = await authWith(driver).register(
+        email,
+        "the-original-password",
+        { ...TEEN_PROFILE, guardianEmail },
+        new Date(),
+      );
+      expect(result.isOk()).toBe(true);
+      const credential = await credentials.findByKindAndIdentifier(PASSWORD_CREDENTIAL_KIND, email);
+      expect(credential).not.toBeNull();
+
+      const lines = errorLog.mock.calls.map((call) => String(call[0]));
+      expect(lines).toContain("guardian_consent email threw before it could be sent: TypeError");
+      expect(lines.join(" | ")).not.toContain(guardianEmail);
+    } finally {
+      errorLog.mockRestore();
+    }
+  });
+
+  it("a successful send logs its route and id, so a live send can be matched to the provider's dashboard", async () => {
+    const { driver } = recordingDriver(() =>
+      Promise.resolve(ok({ id: "msg_abc123", route: "live" as const })),
+    );
+    const infoLog = vi.spyOn(Logger.prototype, "log").mockImplementation(() => undefined);
+    try {
+      const result = await authWith(driver).register(
+        freshEmail(),
+        "the-original-password",
+        ADULT_PROFILE,
+        new Date(),
+      );
+      expect(result.isOk()).toBe(true);
+      const lines = infoLog.mock.calls.map((call) => String(call[0]));
+      expect(lines).toContain("email_verification email accepted: route=live id=msg_abc123");
+    } finally {
+      infoLog.mockRestore();
     }
   });
 });

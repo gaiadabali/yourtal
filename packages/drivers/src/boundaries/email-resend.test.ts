@@ -29,7 +29,7 @@ describe("resend email driver", () => {
     const fetchMock = reply(200, { id: "msg_123" });
     const result = await driverWith(fetchMock).send(message);
 
-    expect(result._unsafeUnwrap()).toStrictEqual({ id: "msg_123" });
+    expect(result._unsafeUnwrap()).toStrictEqual({ id: "msg_123", route: "live" });
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("https://api.resend.com/emails");
     expect(init.method).toBe("POST");

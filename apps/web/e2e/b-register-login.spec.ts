@@ -73,6 +73,15 @@ function uniqueAccount(prefix: string): NewAccount {
 }
 
 /** ISO date (`YYYY-MM-DD`) for someone who turned `years` old within the last year — 1.4.b's own age bands. */
+/** A password sign-in through the real form is offered a passkey once; this test declines. */
+async function passPasskeyOffer(page: Page): Promise<void> {
+  await page.waitForURL((url) => url.pathname !== "/login");
+  if (new URL(page.url()).pathname === "/passkey") {
+    await page.getByRole("button", { name: "Not now" }).click();
+    await page.waitForURL((url) => url.pathname !== "/passkey");
+  }
+}
+
 function isoDateYearsAgo(years: number): string {
   const now = new Date();
   const d = new Date(
@@ -325,6 +334,7 @@ test.describe.serial("6.2.a: register, forgot/reset, login, verify — against a
     await page.getByLabel("Email").fill(auAccount.email);
     await page.getByLabel("Password").fill(auAccount.password);
     await page.getByRole("button", { name: "Sign in" }).click();
+    await passPasskeyOffer(page);
     await expect(page).toHaveURL(/\/home/);
 
     const token = (await context.cookies()).find((c) => c.name === "yt_session")?.value;
@@ -355,6 +365,7 @@ test.describe.serial("6.2.a: register, forgot/reset, login, verify — against a
       await page.getByLabel("Email").fill(auAccount.email);
       await page.getByLabel("Password").fill(auAccount.password);
       await page.getByRole("button", { name: "Sign in" }).click();
+      await passPasskeyOffer(page);
       await expect(page).toHaveURL(/\/home/);
 
       await expect(page.getByText("Sponsored").first()).toBeVisible();

@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 5/14 | 24/48 | `█████░░░░░`  50% |
-| **All** | | | **110/120** | **570/595** | `██████████`  96% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 5/14 | 26/51 | `█████░░░░░`  51% |
+| **All** | | | **110/120** | **572/598** | `██████████`  96% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1633,13 +1633,16 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.2.a Add-only migration, and the campaign API takes the three fields → 4c4d8281
   - [x] 14.2.b Rewards stop when the budget is spent, and the feed targets by district → 4c4d8281; districts need F116’s list and “my area” to reach viewers
   - [x] 14.2.c Studio sends them → 4c4d8281
-  - [ ] 14.2.d Check on staging
+  - [x] 14.2.d Check on staging → staging 2026-10-21 (group 1.6.e): budget, cap and districts saved and enforced at the API in AU and ID; the web player does not show the refusal (14.2.k)
   - [x] 14.2.e The district list: every Australian postcode with suburbs and state, from an openly licensed list (group 1.6.f, F116) → f767e846
   - [x] 14.2.f Me → “My area”: optional, a visible state → suburb picker, postcode stored, not for teens (group 1.6.g) → f767e846
   - [x] 14.2.g Studio picks districts from the list; the feed uses the viewer’s area (group 1.6.h) → f767e846
   - [x] 14.2.h Search uses the viewer’s area too (group 1.6.i) → 1db8f6ca (search and feed share resolveViewerDistrict)
-  - [ ] 14.2.i Staging screenshots of Me → My area, the Studio picker and the privacy page, AU and ID (group 1.6.j)
+  - [x] 14.2.i Staging screenshots of Me → My area, the Studio picker and the privacy page, AU and ID (group 1.6.j) → 24 shots, 0 serious/critical axe findings (group 1.6.j, 2026-10-21)
   - [ ] 14.2.j Replace the ID demo area list with the BPS or Pos Indonesia list before ID takes real users (group 1.6.k) — ✂️ cut: Indonesia stays a demo (F104); re-add before ID takes real users
+  - [ ] 14.2.k The web player tells a viewer refused for budget or cap before the video plays (group 1.6.l): `nonEarningReason` is parsed but never shown
+  - [ ] 14.2.l Studio shows the real video duration in the list and preview (group 1.6.m)
+  - [ ] 14.2.m `DELETE /api/me/settings/area` accepts an empty JSON body (group 1.6.n)
 - [x] **14.3 A lasting partner link for SnapApp** (group 2.1) · A · needs: — — ✅ 2026-10-20 bff9833c
   - [x] 14.3.a Add-only migration: a partner link table (partner, user, region, created, revoked) → bff9833c
   - [x] 14.3.b The first partner call with a valid code creates the link and returns its ID; later calls use the link ID → bff9833c

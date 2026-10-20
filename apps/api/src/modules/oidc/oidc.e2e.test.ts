@@ -16,6 +16,7 @@ import {
   interactionRedirectSchema,
 } from "@yourtal/contracts/oidc/interaction";
 import { AppModule } from "../../app.module";
+import { SessionService } from "../auth/session/session.service";
 import { mountOidc } from "./mount-oidc";
 import { OIDC_RUNTIME } from "./oidc-runtime";
 import type { OidcRuntime } from "./oidc-runtime";
@@ -113,39 +114,30 @@ interface Person {
   readonly email: string;
 }
 
+/**
+ * A YourTal account and a live session, written straight to the tables rather
+ * than through /api/auth/register, whose route-wide hourly limit the rest of
+ * the suite already leans on.
+ */
 async function person(options: { region?: "AU" | "ID"; teen?: boolean; verified?: boolean } = {}) {
   const region = options.region ?? "AU";
-  const email = `Oidc-${randomUUID()}@Example.test`;
-  const response = await app.inject({
-    method: "POST",
-    url: "/api/auth/register",
-    remoteAddress: `10.${[...randomBytes(3)].join(".")}`,
-    headers: { "idempotency-key": randomUUID() },
-    payload: {
-      email,
-      password: `oidc-test-${randomUUID()}`,
-      region,
-      locale: region === "AU" ? "en-AU" : "id-ID",
-      displayName: "Ana",
-      dateOfBirth: "1990-01-01",
-      timezone: region === "AU" ? "Australia/Sydney" : "Asia/Jakarta",
-    },
-  });
-  expect(response.statusCode, response.body).toBeLessThan(300);
-  const { userId, token } = response.json<{ userId: string; token: string }>();
-  if (options.verified !== false) {
-    await pool.query("UPDATE identity.credential SET verified_at = now() WHERE user_id = $1", [
-      userId,
-    ]);
-  }
-  if (options.teen === true) {
-    await pool.query(
-      `UPDATE identity.user_profile SET date_of_birth = (now() - interval '15 years')::date,
-              parent_consent_status = 'granted' WHERE user_id = $1`,
-      [userId],
-    );
-  }
-  return { userId, token, email: email.toLowerCase() } satisfies Person;
+  const userId = randomUUID();
+  const email = `oidc-${randomUUID()}@example.test`;
+  await pool.query(
+    `INSERT INTO identity.credential (user_id, kind, identifier, secret_hash, verified_at)
+     VALUES ($1, 'password', $2, 'not-a-password-hash', $3)`,
+    [userId, email, options.verified === false ? null : new Date()],
+  );
+  await pool.query(
+    `INSERT INTO identity.user_profile
+       (user_id, region, display_locale, display_name, date_of_birth, timezone, parent_consent_status)
+     VALUES ($1, $2, $3, 'Ana',
+             CASE WHEN $4 THEN (now() - interval '15 years')::date ELSE DATE '1990-01-01' END,
+             'Australia/Sydney', CASE WHEN $4 THEN 'granted' ELSE 'not_required' END)`,
+    [userId, region, region === "AU" ? "en-AU" : "id-ID", options.teen === true],
+  );
+  const token = await app.get(SessionService, { strict: false }).issue(userId, new Date());
+  return { userId, token, email } satisfies Person;
 }
 
 function rp(clientId: string, auth: client.ClientAuth): Promise<client.Configuration> {

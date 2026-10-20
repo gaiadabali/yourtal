@@ -6,11 +6,17 @@ import type { SessionRepository, StoredSession } from "./session.repository";
 export class DrizzleSessionRepository implements SessionRepository {
   constructor(private readonly db: AppDb) {}
 
-  async create(input: { id: string; userId: string; absoluteExpiresAt: Date }): Promise<void> {
+  async create(input: {
+    id: string;
+    userId: string;
+    absoluteExpiresAt: Date;
+    amr: readonly string[];
+  }): Promise<void> {
     await this.db.insert(sessions).values({
       id: input.id,
       userId: input.userId,
       absoluteExpiresAt: input.absoluteExpiresAt,
+      amr: [...input.amr],
     });
   }
 

@@ -15,4 +15,6 @@ export const sessions = authIdentityPgSchema.table("session", {
   lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
   absoluteExpiresAt: timestamp("absolute_expires_at", { withTimezone: true }).notNull(),
   revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  /** OIDC `amr` values: how this session was signed in to. */
+  amr: text("amr").array().notNull().default(["pwd"]),
 });

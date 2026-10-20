@@ -135,6 +135,56 @@ tests:
             dev_clock_advance_days: EFFECT_ALLOW,
           }
 
+  - name: only a signed-out visitor signs in with a passkey or finishes a code step
+    input:
+      principals: [anon, wina, budi_owner, support_sari, counter_kemang, admin_root]
+      resources: [session_self]
+      actions: [create_with_passkey, complete_second_factor]
+    expected:
+      - principal: anon
+        resource: session_self
+        actions: { create_with_passkey: EFFECT_ALLOW, complete_second_factor: EFFECT_ALLOW }
+      - principal: wina
+        resource: session_self
+        actions: { create_with_passkey: EFFECT_DENY, complete_second_factor: EFFECT_DENY }
+      - principal: budi_owner
+        resource: session_self
+        actions: { create_with_passkey: EFFECT_DENY, complete_second_factor: EFFECT_DENY }
+      - principal: support_sari
+        resource: session_self
+        actions: { create_with_passkey: EFFECT_DENY, complete_second_factor: EFFECT_DENY }
+      - principal: counter_kemang
+        resource: session_self
+        actions: { create_with_passkey: EFFECT_DENY, complete_second_factor: EFFECT_DENY }
+      - principal: admin_root
+        resource: session_self
+        actions: { create_with_passkey: EFFECT_DENY, complete_second_factor: EFFECT_DENY }
+
+  - name: only a real signed-in identity sees or changes its own sign-in methods
+    input:
+      principals: [anon, wina, budi_owner, support_sari, counter_kemang, admin_root]
+      resources: [session_self]
+      actions: [view_sign_in_methods, manage_sign_in_methods]
+    expected:
+      - principal: anon
+        resource: session_self
+        actions: { view_sign_in_methods: EFFECT_DENY, manage_sign_in_methods: EFFECT_DENY }
+      - principal: wina
+        resource: session_self
+        actions: { view_sign_in_methods: EFFECT_ALLOW, manage_sign_in_methods: EFFECT_ALLOW }
+      - principal: budi_owner
+        resource: session_self
+        actions: { view_sign_in_methods: EFFECT_ALLOW, manage_sign_in_methods: EFFECT_ALLOW }
+      - principal: support_sari
+        resource: session_self
+        actions: { view_sign_in_methods: EFFECT_ALLOW, manage_sign_in_methods: EFFECT_ALLOW }
+      - principal: counter_kemang
+        resource: session_self
+        actions: { view_sign_in_methods: EFFECT_DENY, manage_sign_in_methods: EFFECT_DENY }
+      - principal: admin_root
+        resource: session_self
+        actions: { view_sign_in_methods: EFFECT_DENY, manage_sign_in_methods: EFFECT_DENY }
+
   - name: a store device has no email-and-password identity to manage
     input:
       principals: [counter_kemang]

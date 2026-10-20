@@ -92,6 +92,7 @@
     "./identity/guardian": "./src/identity/guardian.ts",
     "./oidc/interaction": "./src/oidc/interaction.ts",
     "./oidc/protocol-routes": "./src/oidc/protocol-routes.ts",
+    "./identity/sign-in-methods": "./src/identity/sign-in-methods.ts",
     "./mock-source": "./src/mock-source.ts",
     "./mock-seed": "./src/mock-seed.ts",
     "./*": "./src/*.ts"

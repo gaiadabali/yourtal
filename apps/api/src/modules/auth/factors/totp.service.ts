@@ -1,0 +1,123 @@
+import { Inject, Injectable } from "@nestjs/common";
+import { err, ok } from "neverthrow";
+import type { Result } from "neverthrow";
+import { APP_CONFIG } from "../../../config/app-config.module";
+import type { AppConfig } from "../../../config/app-config";
+import {
+  CREDENTIAL_REPOSITORY,
+  PASSWORD_CREDENTIAL_KIND,
+  TOTP_CREDENTIAL_KIND,
+} from "../persistence/credential.repository";
+import type { CredentialRepository } from "../persistence/credential.repository";
+import { ThrottleService } from "../throttle/throttle.service";
+import type { ThrottleLimits } from "../throttle/throttle.service";
+import { FACTOR_STORE } from "./factor-store";
+import type { FactorStore } from "./factor-store";
+import type { FactorError } from "./factor.errors";
+import { openSecret, sealSecret } from "./sealed-secret";
+import {
+  TOTP_DRIFT_STEPS,
+  TOTP_PERIOD_SECONDS,
+  generateTotpSeed,
+  matchTotpCode,
+  totpUri,
+} from "./totp-code";
+
+/**
+ * Wrong codes per account, across every route that takes one. Three codes are
+ * valid at any moment (the drift window) out of a million, so five tries a
+ * quarter hour leaves a guesser who already has the password about one chance
+ * in 700 a day.
+ */
+export const TOTP_THROTTLE_LIMITS: ThrottleLimits = { maxAttempts: 5, windowSeconds: 15 * 60 };
+
+/** Long enough to outlive every step a code can still match in. */
+const USED_STEP_TTL_SECONDS = TOTP_PERIOD_SECONDS * (2 * TOTP_DRIFT_STEPS + 2);
+
+type Outcome<T> = Promise<Result<T, FactorError>>;
+
+/** Authenticator-app codes: enrol, confirm, check, and turn off. */
+@Injectable()
+export class TotpService {
+  constructor(
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+    @Inject(CREDENTIAL_REPOSITORY) private readonly credentials: CredentialRepository,
+    @Inject(FACTOR_STORE) private readonly store: FactorStore,
+    private readonly throttle: ThrottleService,
+  ) {}
+
+  async isEnabled(userId: string): Promise<boolean> {
+    const credential = await this.credentials.findByUserAndKind(userId, TOTP_CREDENTIAL_KIND);
+    return credential !== null && credential.verifiedAt !== null;
+  }
+
+  /**
+   * Starts enrolment with a fresh seed, replacing any unfinished one. The app
+   * is not switched on until `confirm` sees a first code from it.
+   */
+  async enrol(userId: string): Outcome<{ otpauthUri: string; secret: string }> {
+    const key = this.config.authFactors?.totpSecretKey;
+    if (key === undefined) return err({ type: "factors_unavailable" });
+
+    const seed = generateTotpSeed();
+    const written = await this.credentials.putUnverified({
+      userId,
+      kind: TOTP_CREDENTIAL_KIND,
+      identifier: userId,
+      secretHash: sealSecret(seed, key, userId),
+    });
+    if (!written) return err({ type: "totp_already_enabled" });
+
+    const password = await this.credentials.findByUserAndKind(userId, PASSWORD_CREDENTIAL_KIND);
+    return ok({ otpauthUri: totpUri(seed, password?.identifier ?? "YourTal"), secret: seed });
+  }
+
+  async confirm(userId: string, code: string, now: Date): Outcome<void> {
+    const credential = await this.credentials.findByUserAndKind(userId, TOTP_CREDENTIAL_KIND);
+    if (credential === null) return err({ type: "factor_invalid" });
+    if (credential.verifiedAt !== null) return err({ type: "totp_already_enabled" });
+
+    const checked = await this.check(userId, credential.secretHash, code, now);
+    if (checked.isErr()) return err(checked.error);
+    await this.credentials.markVerified(userId, TOTP_CREDENTIAL_KIND, now);
+    return ok(undefined);
+  }
+
+  /** Checks a code against a switched-on authenticator app. */
+  async verify(userId: string, code: string, now: Date): Outcome<void> {
+    const credential = await this.credentials.findByUserAndKind(userId, TOTP_CREDENTIAL_KIND);
+    if (credential === null || credential.verifiedAt === null) {
+      return err({ type: "factor_invalid" });
+    }
+    return this.check(userId, credential.secretHash, code, now);
+  }
+
+  /** Turns the app off. The caller has already proved a code or a passkey. */
+  async remove(userId: string): Outcome<void> {
+    const removed = await this.credentials.deleteByUserAndKind(userId, TOTP_CREDENTIAL_KIND);
+    return removed ? ok(undefined) : err({ type: "totp_not_enabled" });
+  }
+
+  private async check(userId: string, sealed: string, code: string, now: Date): Outcome<void> {
+    const key = this.config.authFactors?.totpSecretKey;
+    if (key === undefined) return err({ type: "factors_unavailable" });
+
+    const throttleKey = `totp:${userId}`;
+    const verdict = await this.throttle.peek("account", throttleKey, TOTP_THROTTLE_LIMITS);
+    if (verdict.blocked) {
+      return err({ type: "throttled", retryAfterSeconds: verdict.retryAfterSeconds ?? 900 });
+    }
+
+    const step = matchTotpCode(openSecret(sealed, key, userId), code, now);
+    // A code used once is refused like a wrong one: a code read over someone's
+    // shoulder must not open a second session.
+    const fresh =
+      step !== null && (await this.store.claimTotpStep(userId, step, USED_STEP_TTL_SECONDS));
+    if (!fresh) {
+      await this.throttle.recordFailure("account", throttleKey, TOTP_THROTTLE_LIMITS);
+      return err({ type: "factor_invalid" });
+    }
+    await this.throttle.reset("account", throttleKey);
+    return ok(undefined);
+  }
+}

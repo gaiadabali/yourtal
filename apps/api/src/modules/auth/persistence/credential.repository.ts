@@ -2,8 +2,11 @@ import type { AppDb } from "../../../shared/persistence/drizzle-client";
 
 export const CREDENTIAL_REPOSITORY = Symbol("CREDENTIAL_REPOSITORY");
 
-/** Today's only kind. A second (`phone_otp`, an OIDC subject) is YT-0541's. */
 export const PASSWORD_CREDENTIAL_KIND = "password";
+/** An authenticator-app seed, sealed. `verifiedAt` set means it is switched on. */
+export const TOTP_CREDENTIAL_KIND = "totp";
+/** Marks an account that has passkeys; the keys are in `identity.passkey`. */
+export const PASSKEY_CREDENTIAL_KIND = "passkey";
 
 export interface Credential {
   readonly userId: string;
@@ -71,4 +74,19 @@ export interface CredentialRepository {
    * and is worth distinguishing from a silent no-op if it ever does.
    */
   markVerified(userId: string, kind: string, verifiedAt: Date): Promise<boolean>;
+
+  /**
+   * Starts (or restarts) an unconfirmed credential: inserts it, or replaces
+   * the secret of one still unverified. Returns `false`, changing nothing,
+   * when one of this kind is already verified (switched on).
+   */
+  putUnverified(input: {
+    userId: string;
+    kind: string;
+    identifier: string;
+    secretHash: string;
+  }): Promise<boolean>;
+
+  /** Returns `false` when there was nothing to delete. */
+  deleteByUserAndKind(userId: string, kind: string): Promise<boolean>;
 }

@@ -120,6 +120,9 @@ const DOMAINS: readonly DataDomain[] = [
       "The subject's seat on a charity's roster, and the team invitation they accepted (which carries the email it was sent to)",
     service: "charity, business",
     owner: "ops",
+    onDeletion: "erase",
+  },
+  {
     id: "payment_cards",
     holds:
       "A bidder's saved card as the app keeps it (brand, last four digits, expiry, the processor's customer and card references) and the history of card-setup pages",

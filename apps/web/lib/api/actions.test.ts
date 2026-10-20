@@ -304,7 +304,13 @@ describe("identity Server Actions (1.7.b)", () => {
       lastUsedAt: null,
       synced: false,
     };
-    const credentials = formData({ email: "a@example.com", password: "x", returnTo: "/wallet" });
+    // What the real sign-in form posts: it alone asks for the passkey offer.
+    const credentials = formData({
+      email: "a@example.com",
+      password: "x",
+      returnTo: "/wallet",
+      offerPasskey: "1",
+    });
 
     it("holds the pending token in a cookie, not the URL, and sets no session", async () => {
       mockApi({ secondFactor: "totp", pendingToken: "pending-1", expiresInSeconds: 300 }, []);
@@ -329,6 +335,16 @@ describe("identity Server Actions (1.7.b)", () => {
       expect(jar.get("yt_session")).toBe("tok-1");
 
       expect(await expectRedirectTo(loginAction(credentials))).toBe("/wallet");
+    });
+
+    it("does not offer one when the form did not ask (the dev harness)", async () => {
+      mockApi(SIGNED_IN, []);
+      const { jar, api } = createCookieJar();
+      const { loginAction } = await loadActions(api);
+
+      const harness = formData({ email: "a@example.com", password: "x", returnTo: "/wallet" });
+      expect(await expectRedirectTo(loginAction(harness))).toBe("/wallet");
+      expect(jar.has("yt_passkey_prompt")).toBe(false);
     });
 
     it("does not offer one to an account that already has a passkey", async () => {

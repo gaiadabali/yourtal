@@ -84,10 +84,12 @@ export async function loginAction(formData: FormData): Promise<void> {
     redirect(codeStepPath(returnTo) as Route);
   }
 
+  // Only the real sign-in form asks for the passkey offer; the dev harness
+  // and any other caller of this action land straight on returnTo.
   const finished = await finishSignIn({
     token: loginResult.data.token,
     returnTo,
-    offerPasskey: true,
+    offerPasskey: formData.get("offerPasskey") === "1",
   });
   if (!finished.ok) {
     redirectWithError("/login", returnTo, finished.code);

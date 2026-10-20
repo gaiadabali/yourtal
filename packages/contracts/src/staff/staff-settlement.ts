@@ -2,6 +2,7 @@ import * as z from "zod";
 import { regionSchema } from "../region/region";
 import { statementSchema } from "../ledger-internal/economy";
 import { economyProposalSchema } from "./staff-economy";
+import { staffDisbursementSchema } from "../billing/payouts";
 
 /**
  * TASKS.md 10.6.a: the staff console's settlement screens -- the queue of
@@ -46,3 +47,38 @@ export const decideSettlementProposalBodySchema = z.object({
 export type DecideSettlementProposalBody = z.infer<typeof decideSettlementProposalBodySchema>;
 
 export const payoutProposalListSchema = z.array(economyProposalSchema);
+
+// -- 5.2.c: a payout never in flight unseen -----------------------------------
+
+/**
+ * "Check again" reads the payout (or the transfer) back from the processor and
+ * settles the row on what it shows. It moves no money: a transfer found lets
+ * the job pay out under the approval the statement already has.
+ *
+ * - `paid`, `failed`: the processor's payout reached an end; the row says so.
+ * - `pending`: the payout exists and is still on its way; the row waits for it.
+ * - `transferred`: the transfer exists; the job pays it out next.
+ * - `nothing_found`: the processor shows nothing moved. A retry may be proposed.
+ */
+export const checkDisbursementOutcomeSchema = z.enum([
+  "paid",
+  "failed",
+  "pending",
+  "transferred",
+  "nothing_found",
+]);
+export type CheckDisbursementOutcome = z.infer<typeof checkDisbursementOutcomeSchema>;
+
+export const checkDisbursementResultSchema = z
+  .object({
+    outcome: checkDisbursementOutcomeSchema,
+    disbursement: staffDisbursementSchema,
+  })
+  .strict();
+export type CheckDisbursementResult = z.infer<typeof checkDisbursementResultSchema>;
+
+/** A retry is two-person: a new payout attempt (never a second transfer) once the processor shows nothing moved. */
+export const proposeDisbursementRetryBodySchema = z.object({
+  reason: z.string().min(1).max(500),
+});
+export type ProposeDisbursementRetryBody = z.infer<typeof proposeDisbursementRetryBodySchema>;

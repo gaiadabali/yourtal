@@ -1971,15 +1971,25 @@
     "ledger_adjustment-AU": [
       "approve",
       "approve_payout",
+      "approve_payout_retry",
+      "approve_refund",
+      "check_payout",
       "create",
       "propose_payout",
+      "propose_payout_retry",
+      "propose_refund",
       "view"
     ],
     "ledger_adjustment-ID": [
       "approve",
       "approve_payout",
+      "approve_payout_retry",
+      "approve_refund",
+      "check_payout",
       "create",
       "propose_payout",
+      "propose_payout_retry",
+      "propose_refund",
       "view"
     ],
     "staff_console-AU": [
@@ -2143,15 +2153,25 @@
     "ledger_adjustment-AU": [
       "approve",
       "approve_payout",
+      "approve_payout_retry",
+      "approve_refund",
+      "check_payout",
       "create",
       "propose_payout",
+      "propose_payout_retry",
+      "propose_refund",
       "view"
     ],
     "ledger_adjustment-ID": [
       "approve",
       "approve_payout",
+      "approve_payout_retry",
+      "approve_refund",
+      "check_payout",
       "create",
       "propose_payout",
+      "propose_payout_retry",
+      "propose_refund",
       "view"
     ],
     "staff_console-AU": [

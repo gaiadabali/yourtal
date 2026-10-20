@@ -27,7 +27,15 @@ resourcePolicy:
       ref: cerbos:///resource/ledger_adjustment.json
   rules:
     - name: no-business-role-ever-grants-points
-      actions: ["create", "approve", "view"]
+      actions:
+        - create
+        - approve
+        - view
+        - propose_refund
+        - approve_refund
+        - check_payout
+        - propose_payout_retry
+        - approve_payout_retry
       effect: EFFECT_DENY
       roles: ["business_user", "store_device", "user", "anonymous"]
 
@@ -36,7 +44,7 @@ resourcePolicy:
       # `approve` (a statement payout, proposed by one finance staffer and
       # approved by a different one) -- covered by the same rule rather than
       # a second one, so there is only ever one place this check can drift.
-      actions: ["approve", "approve_payout"]
+      actions: ["approve", "approve_payout", "approve_refund", "approve_payout_retry"]
       effect: EFFECT_DENY
       roles: ["*"]
       condition:
@@ -54,6 +62,23 @@ resourcePolicy:
       # is what actually calls `ledger.approvePayout`. Dual-approved by the
       # rule above, same as every other action on this resource.
       actions: ["propose_payout", "approve_payout"]
+      effect: EFFECT_ALLOW
+      roles: ["finance"]
+
+    - name: finance-settles-what-the-processor-left-open
+      # 5.1.g (F123) and 5.2.c: staff money follow-ups. A paid card purchase the
+      # ledger would not turn into points is refunded in full, and a payout the
+      # job could not confirm is checked again or retried. Proposing and
+      # approving a refund or a retry are dual-approved by the rule above, like
+      # every other action here. `check_payout` only reads the processor and
+      # records what it shows (no money moves; a transfer found lets the job pay
+      # out under the statement's own approval), so it is single-person.
+      actions:
+        - propose_refund
+        - approve_refund
+        - check_payout
+        - propose_payout_retry
+        - approve_payout_retry
       effect: EFFECT_ALLOW
       roles: ["finance"]
 

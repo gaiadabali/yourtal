@@ -86,6 +86,7 @@
     "./staff/disputes": "./src/staff/disputes.ts",
     "./staff/economy": "./src/staff/staff-economy.ts",
     "./staff/settlement": "./src/staff/staff-settlement.ts",
+    "./staff/parked-purchases": "./src/staff/staff-parked-purchases.ts",
     "./region/mock": "./src/region/region.mock.ts",
     "./identity/user-profile": "./src/identity/user-profile.ts",
     "./identity/guardian": "./src/identity/guardian.ts",

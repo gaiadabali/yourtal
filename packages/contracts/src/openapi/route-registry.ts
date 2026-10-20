@@ -36,6 +36,7 @@ import {
 import { STAFF_ECONOMY_ROUTE_DEFINITIONS } from "./route-registry.c-staff-economy";
 import { STAFF_RISK_ROUTE_DEFINITIONS } from "./route-registry.c-staff-risk";
 import { STAFF_SETTLEMENT_ROUTE_DEFINITIONS } from "./route-registry.c-staff-settlement";
+import { STAFF_OPS_ROUTE_DEFINITIONS } from "./route-registry.c-staff-ops";
 import { buildPathsFrom, type RouteDefinition } from "./route-registry-shared";
 
 /**
@@ -86,6 +87,7 @@ export {
   STAFF_ECONOMY_ROUTE_DEFINITIONS,
   STAFF_RISK_ROUTE_DEFINITIONS,
   STAFF_SETTLEMENT_ROUTE_DEFINITIONS,
+  STAFF_OPS_ROUTE_DEFINITIONS,
 };
 // `export *` is banned (docs/13b section 5) — named re-exports only, and only
 // the pieces something outside this file's own siblings actually needs.
@@ -123,6 +125,7 @@ export const ALL_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   ...STAFF_ECONOMY_ROUTE_DEFINITIONS,
   ...STAFF_RISK_ROUTE_DEFINITIONS,
   ...STAFF_SETTLEMENT_ROUTE_DEFINITIONS,
+  ...STAFF_OPS_ROUTE_DEFINITIONS,
 ];
 
 /** Builds the `paths` object `build-document.ts` embeds in the document. */

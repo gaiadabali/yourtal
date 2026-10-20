@@ -221,6 +221,15 @@ export const RESOURCE_ACTIONS = {
     // `nobody-approves-their-own-adjustment` rule covers both actions).
     "propose_payout",
     "approve_payout",
+    // 5.1.g (F123): refunding a paid card purchase the ledger would not turn
+    // into points, two-person like `approve`. 5.2.c: a payout the processor
+    // left unconfirmed is checked again (`check_payout`, reads only) or
+    // retried (two-person, a new payout attempt and never a second transfer).
+    "propose_refund",
+    "approve_refund",
+    "check_payout",
+    "propose_payout_retry",
+    "approve_payout_retry",
   ],
 
   moderation_item: ["view", "approve", "reject"],

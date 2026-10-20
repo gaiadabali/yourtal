@@ -1,0 +1,82 @@
+---
+name: StaffMoneyFollowUpsSuite
+description: |-
+  5.1.g (F123) and 5.2.c: refunding a paid card purchase the ledger would not
+  turn into points, and checking or retrying a payout the processor left
+  unconfirmed. Refunds and retries move money, so they are dual-approved by
+  the same `nobody-approves-their-own-adjustment` rule as every other
+  ledger_adjustment action; `check_payout` only reads the processor and
+  records what it shows, so any finance staff member may run it.
+tests:
+  - name: a refund or a retry is proposed by finance and approved by a different finance person
+    input:
+      principals: [finance_yani, finance_zaki]
+      resources: [adjustment_by_yani]
+      actions: [propose_refund, approve_refund, propose_payout_retry, approve_payout_retry]
+    expected:
+      # yani raised this one (adjustment_by_yani's createdBy), so yani cannot approve it.
+      - principal: finance_yani
+        resource: adjustment_by_yani
+        actions:
+          propose_refund: EFFECT_ALLOW
+          approve_refund: EFFECT_DENY
+          propose_payout_retry: EFFECT_ALLOW
+          approve_payout_retry: EFFECT_DENY
+      - principal: finance_zaki
+        resource: adjustment_by_yani
+        actions:
+          propose_refund: EFFECT_ALLOW
+          approve_refund: EFFECT_ALLOW
+          propose_payout_retry: EFFECT_ALLOW
+          approve_payout_retry: EFFECT_ALLOW
+
+  - name: only finance moves money back or sends it again; no other staff role and no business role or consumer does
+    input:
+      principals: [ops_zul, risk_umi, moderator_tono, support_sari, budi_owner, wina, anon]
+      resources: [adjustment_by_yani]
+      actions:
+        - propose_refund
+        - approve_refund
+        - check_payout
+        - propose_payout_retry
+        - approve_payout_retry
+    expected:
+      - principal: ops_zul
+        resource: adjustment_by_yani
+        actions: &denied
+          propose_refund: EFFECT_DENY
+          approve_refund: EFFECT_DENY
+          check_payout: EFFECT_DENY
+          propose_payout_retry: EFFECT_DENY
+          approve_payout_retry: EFFECT_DENY
+      - principal: risk_umi
+        resource: adjustment_by_yani
+        actions: *denied
+      - principal: moderator_tono
+        resource: adjustment_by_yani
+        actions: *denied
+      - principal: support_sari
+        resource: adjustment_by_yani
+        actions: *denied
+      - principal: budi_owner
+        resource: adjustment_by_yani
+        actions: *denied
+      - principal: wina
+        resource: adjustment_by_yani
+        actions: *denied
+      - principal: anon
+        resource: adjustment_by_yani
+        actions: *denied
+
+  - name: checking a payout again is single-person finance, even on a row the same person proposed something for
+    input:
+      principals: [finance_yani, finance_zaki]
+      resources: [adjustment_by_yani]
+      actions: [check_payout]
+    expected:
+      - principal: finance_yani
+        resource: adjustment_by_yani
+        actions: { check_payout: EFFECT_ALLOW }
+      - principal: finance_zaki
+        resource: adjustment_by_yani
+        actions: { check_payout: EFFECT_ALLOW }

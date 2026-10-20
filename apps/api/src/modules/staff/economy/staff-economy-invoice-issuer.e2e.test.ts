@@ -28,6 +28,7 @@ beforeAll(async () => {
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
   owner = ownerPool();
+  [first, second] = [await finance(), await finance()];
 });
 
 afterAll(async () => {
@@ -38,6 +39,11 @@ afterAll(async () => {
   await owner.end();
   await app.close();
 });
+
+// Made once: registering is rate limited route-wide, and the whole suite shares that budget.
+type Session = Awaited<ReturnType<typeof sessionFor>>;
+let first: Session;
+let second: Session;
 
 async function finance() {
   const session = await sessionFor(app, { jurisdiction: "ID" });
@@ -63,7 +69,7 @@ const approve = (cookie: string, id: string) =>
 
 describe("invoice_issuer (5.3.c)", () => {
   it("refuses a malformed company when proposed, naming the field, and stores nothing", async () => {
-    const staff = await finance();
+    const staff = first;
     const cases: [unknown, string][] = [
       [{ ...GOOD, legalName: "" }, "legalName"],
       [{ ...GOOD, address: "   " }, "address"],
@@ -89,7 +95,7 @@ describe("invoice_issuer (5.3.c)", () => {
   });
 
   it("checks again at approval, and a whole company with an ABN or none is approved by a second person", async () => {
-    const [a, b] = [await finance(), await finance()];
+    const [a, b] = [first, second];
     const slipped = await propose(a.cookie, GOOD);
     expect(slipped.statusCode).toBe(201);
     const id = slipped.json<{ id: string }>().id;

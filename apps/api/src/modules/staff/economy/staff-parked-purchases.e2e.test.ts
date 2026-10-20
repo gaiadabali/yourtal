@@ -65,6 +65,12 @@ beforeAll(async () => {
   webhookUrl = `http://127.0.0.1:${String(address.port)}/api/webhooks/stripe`;
   paysim.config.webhookUrl = webhookUrl;
   owner = ownerPool();
+  [A, B, OPS, buyer] = [
+    await staff("finance"),
+    await staff("finance"),
+    await staff("ops"),
+    await sessionFor(app, { jurisdiction: "AU" }),
+  ];
 });
 
 afterAll(async () => {
@@ -73,7 +79,14 @@ afterAll(async () => {
   await paysim.close();
 });
 
-async function staff(role: "finance" | "ops" = "finance") {
+// Sessions are made once: registering is rate limited route-wide, and the whole suite shares that budget.
+type Session = Awaited<ReturnType<typeof sessionFor>>;
+let A: Session;
+let B: Session;
+let OPS: Session;
+let buyer: Session;
+
+async function staff(role: "finance" | "ops") {
   const session = await sessionFor(app, { jurisdiction: "AU" });
   await grantStaffRole(owner, session.userId, role);
   return session;
@@ -81,7 +94,7 @@ async function staff(role: "finance" | "ops" = "finance") {
 
 /** A card purchase paid on the checkout page, whose total no longer matches what was paid, so the webhook parks it. */
 async function parkedPurchase() {
-  const session = await sessionFor(app, { jurisdiction: "AU" });
+  const session = buyer;
   const businessId = await seedBusinessMembership(db, { userId: session.userId, role: "owner" });
   const started = await app.inject({
     method: "POST",
@@ -143,7 +156,7 @@ const queue = async (cookie: string) =>
 describe("parked purchases and their refund (5.1.g)", () => {
   it("lists a parked purchase for finance only, with business, amounts, reason and when paid", async () => {
     const parked = await parkedPurchase();
-    const finance = await staff();
+    const finance = A;
     const listed = await queue(finance.cookie);
     const row = listed.purchases.find((p) => p.purchaseId === parked.purchaseId);
     expect(row).toMatchObject({
@@ -160,7 +173,7 @@ describe("parked purchases and their refund (5.1.g)", () => {
     expect(row?.reason).toMatch(/^paid 4950 AUD, expected 4951 AUD$/);
     expect(row?.paidAt).not.toBeNull();
 
-    const ops = await staff("ops");
+    const ops = OPS;
     const refused = await app.inject({
       method: "GET",
       url: "/api/staff/economy/AU/parked-purchases",
@@ -171,7 +184,7 @@ describe("parked purchases and their refund (5.1.g)", () => {
 
   it("refunds the card in full once a second finance person approves, and only once", async () => {
     const parked = await parkedPurchase();
-    const [a, b] = [await staff(), await staff()];
+    const [a, b] = [A, B];
 
     const proposed = await propose(a.cookie, parked.purchaseId);
     expect(proposed.statusCode).toBe(201);
@@ -254,7 +267,7 @@ describe("parked purchases and their refund (5.1.g)", () => {
 
   it("finishes an approval after the processor already refunded it under the same key, without refunding twice", async () => {
     const parked = await parkedPurchase();
-    const [a, b] = [await staff(), await staff()];
+    const [a, b] = [A, B];
     const proposal = (await propose(a.cookie, parked.purchaseId)).json<{ id: string }>();
     const row = await purchase(parked.purchaseId);
 
@@ -285,7 +298,7 @@ describe("parked purchases and their refund (5.1.g)", () => {
 
   it("a refund staff did not ask for leaves the purchase parked, and approving then is refused by the processor and frees it", async () => {
     const parked = await parkedPurchase();
-    const [a, b] = [await staff(), await staff()];
+    const [a, b] = [A, B];
     const row = await purchase(parked.purchaseId);
     const proposal = (await propose(a.cookie, parked.purchaseId)).json<{ id: string }>();
 
@@ -314,7 +327,7 @@ describe("parked purchases and their refund (5.1.g)", () => {
 
   it("a proposal can be declined, by its proposer too, and the purchase can then be proposed again", async () => {
     const parked = await parkedPurchase();
-    const [a, b] = [await staff(), await staff()];
+    const [a, b] = [A, B];
     const first = (await propose(a.cookie, parked.purchaseId)).json<{ id: string }>();
     const rejected = await decide(a.cookie, first.id, "reject");
     expect(rejected.statusCode).toBe(201);
@@ -324,7 +337,7 @@ describe("parked purchases and their refund (5.1.g)", () => {
   });
 
   it("refuses a purchase that is not parked, is in another region, or has no payment to refund", async () => {
-    const a = await staff();
+    const a = A;
     expect((await propose(a.cookie, randomUUID())).statusCode).toBe(404);
     const parked = await parkedPurchase();
     expect((await propose(a.cookie, parked.purchaseId, "ID")).statusCode).toBe(404);
@@ -341,7 +354,7 @@ describe("parked purchases and their refund (5.1.g)", () => {
 
   it("requires a reason, and finance", async () => {
     const parked = await parkedPurchase();
-    const [a, ops] = [await staff(), await staff("ops")];
+    const [a, ops] = [A, OPS];
     const noReason = await app.inject({
       method: "POST",
       url: `/api/staff/economy/AU/parked-purchases/${parked.purchaseId}/refund-proposals`,
@@ -353,7 +366,7 @@ describe("parked purchases and their refund (5.1.g)", () => {
   });
 
   it("Indonesia refunds through its simulated driver, which settles at once", async () => {
-    const [a, b] = [await staff(), await staff()];
+    const [a, b] = [A, B];
     const id = randomUUID();
     await owner.query(
       `INSERT INTO payment.card_purchase

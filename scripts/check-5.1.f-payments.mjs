@@ -794,6 +794,12 @@ async function stepAuction() {
   );
 
   const id = auctionId;
+  // Printed into SQL the lead runs as the owner: only a well-formed UUID ever gets there.
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id))) {
+    throw new Error(
+      `refusing to print SQL for an auction id that is not a UUID: ${String(id).slice(0, 40)}`,
+    );
+  }
   say("");
   say(
     "== run this on the box, as the database owner, to end the auction now (it ends after 72 h otherwise) ==",
@@ -1038,6 +1044,9 @@ async function stepPayout(args) {
     `status ${staffRow?.status}`,
   );
   say("");
+  if (!/^[A-Za-z0-9_-]{1,80}$/.test(String(target.statementId))) {
+    throw new Error(`refusing to print SQL for a statement id with unexpected characters`);
+  }
   say("== run this on the box to get the simulation's references, then the command it prints ==");
   say(
     `SELECT 'node check-5.1.f-payments.mjs payout-sim ' || statement_id || ' ' || account_ref || ' ' || payout_ref FROM payment.disbursement WHERE statement_id = '${target.statementId}';`,

@@ -102,7 +102,9 @@ export async function listVoucher(
 /**
  * 13.22.b: one bid. The auction row is locked for the whole bid, so bids
  * on one auction are processed one at a time; the hold is placed before
- * the bid is recorded, and a bidder's own earlier hold is released.
+ * the bid is recorded, and a bidder's own earlier hold is released. Where the
+ * processor charges a saved card (AU on Stripe) the hold is on the bidder's card
+ * and pays the charity's connected account, or the bid is refused (5.1.d).
  */
 export async function placeBid(
   deps: {

@@ -155,7 +155,9 @@
       "view_history"
     ],
     "auction-AU": [
-      "view"
+      "update_card",
+      "view",
+      "view_card"
     ],
     "auction-ID": [],
     "session-AU": [
@@ -312,7 +314,9 @@
     ],
     "auction-AU": [],
     "auction-ID": [
-      "view"
+      "update_card",
+      "view",
+      "view_card"
     ],
     "session-AU": [
       "change_password",
@@ -467,7 +471,9 @@
       "view_history"
     ],
     "auction-AU": [
-      "view"
+      "update_card",
+      "view",
+      "view_card"
     ],
     "auction-ID": [],
     "session-AU": [
@@ -673,7 +679,9 @@
     ],
     "auction-AU": [],
     "auction-ID": [
-      "view"
+      "update_card",
+      "view",
+      "view_card"
     ],
     "session-AU": [
       "change_password",

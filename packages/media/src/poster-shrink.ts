@@ -3,8 +3,9 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
-import { POSTER_LONG_SIDE } from "./ffmpeg-transcode";
+import { posterScaleFilter } from "./ffmpeg-transcode";
 import { resolveMediaBucket } from "./hls-origin";
+import { POSTER_LONG_SIDE } from "./poster-variants";
 import { createMediaClient, putMediaOutput } from "./studio-media";
 
 /**
@@ -13,12 +14,6 @@ import { createMediaClient, putMediaOutput } from "./studio-media";
  * same key, at the size `renderPoster` now makes. A no-op once they all fit.
  */
 export const POSTER_BUDGET_BYTES = 40 * 1024;
-
-/** The object key a public poster URL points at, if it is one of ours. */
-export function posterKeyOf(url: string): string | null {
-  const match = /\/(posters\/[0-9a-f-]+\.jpg)$/i.exec(url);
-  return match?.[1] ?? null;
-}
 
 export async function shrinkPosters(
   keys: readonly string[],
@@ -36,7 +31,6 @@ export async function shrinkPosters(
       const input = path.join(work, "in.jpg");
       const output = path.join(work, "out.jpg");
       writeFileSync(input, await got.Body.transformToByteArray());
-      const side = String(POSTER_LONG_SIDE);
       execFileSync("ffmpeg", [
         "-hide_banner",
         "-loglevel",
@@ -45,7 +39,7 @@ export async function shrinkPosters(
         "-i",
         input,
         "-vf",
-        `scale='if(gt(iw,ih),${side},-2)':'if(gt(iw,ih),-2,${side})'`,
+        posterScaleFilter(POSTER_LONG_SIDE),
         "-q:v",
         "5",
         output,

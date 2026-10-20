@@ -3,6 +3,8 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { promisify } from "node:util";
 import path from "node:path";
 
+import { POSTER_JPEG_QUALITY, POSTER_LONG_SIDES, type PosterLongSide } from "./poster-variants";
+
 const execFileAsync = promisify(execFile);
 
 export interface ProbeResult {
@@ -159,12 +161,38 @@ export async function renderHlsLadder(
   return { v360: bytesOf("v0"), v540: bytesOf("v1"), v720: bytesOf("v2") };
 }
 
-/** A poster frame, taken partway through the clip so it is rarely a black opening frame. */
-export async function renderPoster(
+export interface RenderedPoster {
+  readonly longSide: PosterLongSide;
+  readonly path: string;
+}
+
+/** Scales to `longSide` on the long edge, keeping the aspect ratio (14.6.b). */
+export function posterScaleFilter(longSide: number): string {
+  const side = String(longSide);
+  return `scale='if(gt(iw,ih),${side},-2)':'if(gt(iw,ih),-2,${side})'`;
+}
+
+/**
+ * Every poster size from one frame, taken partway through the clip so it is
+ * rarely a black opening frame. 13.4.f: 640 px is the card-size poster (~20-40
+ * KB) that is the LCP image on Home, Store and Shorts; 14.6.b adds 320 and 960
+ * for `srcset`. Files land in `outputDir` as `poster-<longSide>.jpg`.
+ */
+export async function renderPosterLadder(
   inputPath: string,
-  outputPath: string,
+  outputDir: string,
   atSeconds: number,
-): Promise<void> {
+): Promise<RenderedPoster[]> {
+  const rendered = POSTER_LONG_SIDES.map((longSide) => ({
+    longSide,
+    path: path.join(outputDir, `poster-${String(longSide)}.jpg`),
+  }));
+  const graph = [
+    `[0:v]split=${String(rendered.length)}${rendered.map((_, i) => `[s${String(i)}]`).join("")}`,
+    ...rendered.map(
+      (poster, i) => `[s${String(i)}]${posterScaleFilter(poster.longSide)}[p${String(i)}]`,
+    ),
+  ].join(";");
   await execFileAsync("ffmpeg", [
     "-hide_banner",
     "-loglevel",
@@ -174,19 +202,20 @@ export async function renderPoster(
     String(atSeconds),
     "-i",
     inputPath,
-    "-vframes",
-    "1",
-    // 13.4.f: card size. The poster is the LCP image on Home, Store and Shorts
-    // and a Short's first frame, so its longest side is 640 px (~20-40 KB).
-    "-vf",
-    `scale='if(gt(iw,ih),${String(POSTER_LONG_SIDE)},-2)':'if(gt(iw,ih),-2,${String(POSTER_LONG_SIDE)})'`,
-    "-q:v",
-    "5",
-    outputPath,
+    "-filter_complex",
+    graph,
+    ...rendered.flatMap((poster, i) => [
+      "-map",
+      `[p${String(i)}]`,
+      "-frames:v",
+      "1",
+      "-q:v",
+      String(POSTER_JPEG_QUALITY[poster.longSide]),
+      poster.path,
+    ]),
   ]);
+  return rendered;
 }
-
-export const POSTER_LONG_SIDE = 640;
 
 export interface TeaserInput {
   readonly inputPath: string;

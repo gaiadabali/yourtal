@@ -13,7 +13,7 @@ import pg from "pg";
 // makes esbuild inline the manifest's contents into the bundle at build
 // time, so there is no file to find at runtime at all.
 import demoMediaManifestJson from "../demo-media.json" with { type: "json" };
-import { probeInput, renderHlsLadder, renderPoster, renderTeaser } from "./ffmpeg-transcode";
+import { probeInput, renderHlsLadder, renderPosterLadder, renderTeaser } from "./ffmpeg-transcode";
 import { publicMediaUrl } from "./hls-origin";
 import {
   captionsObjectKey,
@@ -21,6 +21,7 @@ import {
   hlsAssetObjectKey,
   posterObjectKey,
   putMediaOutput,
+  putPosterLadder,
   teaserObjectKey,
 } from "./studio-media";
 
@@ -521,8 +522,7 @@ async function seedOneCampaign(
   const hlsDir = path.join(workDir, "hls");
   mkdirSync(hlsDir, { recursive: true });
   const renditionBytes = await renderHlsLadder(finalPath, hlsDir);
-  const posterPath = path.join(workDir, "poster.jpg");
-  await renderPoster(finalPath, posterPath, 5);
+  const posters = await renderPosterLadder(finalPath, workDir, 5);
   const teaserPath = path.join(workDir, "teaser.mp4");
   await renderTeaser({
     inputPath: finalPath,
@@ -539,11 +539,7 @@ async function seedOneCampaign(
       body: readFileSync(path.join(hlsDir, ...file.split("/"))),
     });
   }
-  await putMediaOutput(client, {
-    kind: "poster",
-    key: posterObjectKey(campaignId),
-    body: readFileSync(posterPath),
-  });
+  await putPosterLadder(client, campaignId, posters);
   await putMediaOutput(client, {
     kind: "teaser",
     key: teaserObjectKey(campaignId),
@@ -856,8 +852,11 @@ export async function renderDemoVideo(request: DemoVideoRequest): Promise<DemoVi
   const hlsDir = path.join(workDir, "hls");
   mkdirSync(hlsDir, { recursive: true });
   const renditionBytes = await renderHlsLadder(finalPath, hlsDir);
-  const posterPath = path.join(workDir, "poster.jpg");
-  await renderPoster(finalPath, posterPath, Math.min(5, request.durationSeconds / 2));
+  const posters = await renderPosterLadder(
+    finalPath,
+    workDir,
+    Math.min(5, request.durationSeconds / 2),
+  );
   const teaserPath = path.join(workDir, "teaser.mp4");
   await renderTeaser({
     inputPath: finalPath,
@@ -874,11 +873,7 @@ export async function renderDemoVideo(request: DemoVideoRequest): Promise<DemoVi
       body: readFileSync(path.join(hlsDir, ...file.split("/"))),
     });
   }
-  await putMediaOutput(client, {
-    kind: "poster",
-    key: posterObjectKey(request.assetId),
-    body: readFileSync(posterPath),
-  });
+  await putPosterLadder(client, request.assetId, posters);
   await putMediaOutput(client, {
     kind: "teaser",
     key: teaserObjectKey(request.assetId),

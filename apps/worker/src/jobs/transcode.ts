@@ -10,6 +10,7 @@ import {
   hlsAssetObjectKey,
   posterObjectKey,
   putMediaOutput,
+  putPosterLadder,
   teaserObjectKey,
 } from "@yourtal/media/studio-media";
 import { publicMediaUrl } from "@yourtal/media/hls-origin";
@@ -19,7 +20,7 @@ import {
   extractCaptions,
   probeInput,
   renderHlsLadder,
-  renderPoster,
+  renderPosterLadder,
   renderTeaser,
 } from "@yourtal/media/ffmpeg-transcode";
 import { callReady } from "./transcode-ready-client";
@@ -77,8 +78,11 @@ async function transcode(
   mkdirSync(hlsDir, { recursive: true });
   const renditionBytes = await renderHlsLadder(inputPath, hlsDir);
 
-  const posterPath = path.join(workDir, "poster.jpg");
-  await renderPoster(inputPath, posterPath, Math.min(1, Math.floor(probe.durationSeconds / 10)));
+  const posters = await renderPosterLadder(
+    inputPath,
+    workDir,
+    Math.min(1, Math.floor(probe.durationSeconds / 10)),
+  );
 
   const teaserPath = path.join(workDir, "teaser.mp4");
   await renderTeaser({
@@ -93,11 +97,7 @@ async function transcode(
 
   // Uploads: HLS ladder (master + every rendition file), then poster/teaser.
   await uploadHlsTree(client, data.assetId, hlsDir);
-  await putMediaOutput(client, {
-    kind: "poster",
-    key: posterObjectKey(data.assetId),
-    body: readFileSync(posterPath),
-  });
+  await putPosterLadder(client, data.assetId, posters);
   await putMediaOutput(client, {
     kind: "teaser",
     key: teaserObjectKey(data.assetId),

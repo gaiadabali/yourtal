@@ -11,7 +11,9 @@
     "./hls-session-url": "./src/hls-session-url.ts",
     "./ffmpeg-transcode": "./src/ffmpeg-transcode.ts",
     "./demo-media": "./src/demo-media.ts",
-    "./poster-shrink": "./src/poster-shrink.ts"
+    "./poster-shrink": "./src/poster-shrink.ts",
+    "./poster-variants": "./src/poster-variants.ts",
+    "./poster-ladder": "./src/poster-ladder.ts"
   },
   "scripts": {
     "publish:fixture": "node --import @swc-node/register/esm-register src/publish-fixture.ts",

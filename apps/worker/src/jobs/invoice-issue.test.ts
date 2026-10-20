@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Pool } from "pg";
 import {
@@ -66,6 +67,29 @@ describe("invoice-issue", () => {
     await runInvoiceIssue(pool, quiet);
     expect(await invoiceCount(au.id)).toBe(0);
     expect(await invoiceCount(id.id)).toBe(0);
+  });
+
+  it("does not let 201 unissuable sources keep a good one waiting", async () => {
+    // Paid, but their business does not exist: they can never be invoiced.
+    for (let i = 0; i < 201; i += 1) await seedCardPurchase(pool, randomUUID());
+    const buyer = await seedBusiness(pool);
+    const good = await seedCardPurchase(pool, buyer.id);
+
+    // The oldest 200 fill the first batch and are remembered as skipped...
+    await runInvoiceIssue(pool, quiet);
+    // ...so the next batch moves on past them to the good one.
+    await runInvoiceIssue(pool, quiet);
+    await runInvoiceIssue(pool, quiet);
+    expect(await invoiceCount(buyer.id)).toBe(1);
+    const { rows } = await pool.query(
+      `SELECT 1 FROM invoice.invoice WHERE source_kind = 'card_purchase' AND source_id = $1`,
+      [good.id],
+    );
+    expect(rows).toHaveLength(1);
+    const skipped = await pool.query<{ count: string }>(
+      `SELECT count(*)::text AS count FROM invoice.issue_skip WHERE reason = 'buyer_not_found'`,
+    );
+    expect(Number(skipped.rows[0]?.count)).toBeGreaterThanOrEqual(201);
   });
 
   it("waits, then issues once the company's details are approved", async () => {

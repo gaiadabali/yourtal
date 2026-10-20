@@ -50,7 +50,10 @@ function baseItem(overrides: Partial<FeedItemData> = {}): FeedItemData {
   };
 }
 
-function renderItem(item: FeedItemData, props: { mounted?: boolean; priority?: boolean } = {}) {
+function renderItem(
+  item: FeedItemData,
+  props: { mounted?: boolean; priority?: boolean; signedOut?: boolean } = {},
+) {
   return render(
     <NextIntlClientProvider locale="en-AU" messages={{ feed: feedMessages }}>
       <FeedItem
@@ -61,6 +64,7 @@ function renderItem(item: FeedItemData, props: { mounted?: boolean; priority?: b
         {...(props.priority ? { priority: true } : {})}
         postersOnly
         saved={false}
+        signedOut={props.signedOut ?? false}
         shareUrl="https://yourtal.com/au/c/campaign-id"
         onHidden={() => undefined}
       />
@@ -106,5 +110,33 @@ describe("FeedItem — responsive poster", () => {
     const { container } = renderItem(baseItem());
     const img = container.querySelector("img[src='https://cdn.example.com/poster.jpg']");
     expect(img).not.toHaveAttribute("srcset");
+  });
+});
+
+// 5.6.c (F8, F79): a visitor watches Open Viewing Shorts and earns nothing, so the card
+// offers sign-up where the earn control would be, and no save or hide, which need an account.
+describe("FeedItem: signed out", () => {
+  const quick = () => baseItem({ kind: "quick", durationSeconds: 30, openViewing: true });
+
+  it("offers Sign up to earn, to the sign-up page returning to Shorts, and no earn control", () => {
+    renderItem(quick(), { signedOut: true });
+    const signUp = screen.getByRole("link", { name: "Sign up to earn" });
+    expect(signUp).toHaveAttribute("href", "/register?returnTo=%2Fshorts");
+    expect(screen.queryByRole("button", { name: /^Earn/ })).not.toBeInTheDocument();
+    expect(screen.queryByText("Watch & earn")).not.toBeInTheDocument();
+  });
+
+  it("keeps Share and Why, and drops Save and Not interested", () => {
+    renderItem(quick(), { signedOut: true });
+    expect(screen.getByRole("button", { name: "Share" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Save/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Not interested" })).not.toBeInTheDocument();
+  });
+
+  it("still shows the earn control to a signed-in viewer", () => {
+    renderItem(quick());
+    expect(screen.queryByRole("link", { name: "Sign up to earn" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Earn/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Save/ })).toBeInTheDocument();
   });
 });

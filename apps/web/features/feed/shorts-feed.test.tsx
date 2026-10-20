@@ -8,6 +8,7 @@ import { ShortsFeed } from "./shorts-feed";
 
 function baseData(overrides: Partial<ShortsFeedData> = {}): ShortsFeedData {
   return {
+    signedOut: false,
     items: [],
     savedIds: [],
     earnedToday: 0,
@@ -37,5 +38,21 @@ describe("ShortsFeed (13.14.a)", () => {
   it("shows a teen no Ending soon", () => {
     renderFeed(baseData({ ageBand: "teen" }));
     expect(screen.queryByText("Ending soon")).not.toBeInTheDocument();
+  });
+
+  // 5.6.c: a visitor's last card asks them to sign up instead of reporting points they cannot have.
+  it("ends a visitor's feed with Sign up to earn, not today's points", () => {
+    renderFeed(baseData({ signedOut: true }));
+    expect(screen.getByRole("link", { name: "Sign up to earn" })).toHaveAttribute(
+      "href",
+      "/register?returnTo=%2Fshorts",
+    );
+    expect(screen.queryByText(/earned today/)).not.toBeInTheDocument();
+  });
+
+  it("ends a member's feed with what they earned today", () => {
+    renderFeed(baseData({ earnedToday: 40 }));
+    expect(screen.getByText(/earned today/)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Sign up to earn" })).not.toBeInTheDocument();
   });
 });

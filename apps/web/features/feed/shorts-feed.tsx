@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Button } from "@yourtal/ui/button";
 import { VerticalFeed } from "@yourtal/ui/vertical-feed";
 import {
   isCellularConnection,
@@ -12,6 +13,7 @@ import { FeedItem } from "./feed-item";
 import { WatchTimeReminder } from "./watch-time-reminder";
 import { useWatchTimeReminder } from "./use-watch-time-reminder";
 import { formatFeedPoints, type FeedLocale } from "./feed-terms";
+import { SHORTS_SIGN_UP_HREF } from "./shorts-signup-href";
 
 export interface ShortsFeedProps {
   data: ShortsFeedData;
@@ -58,9 +60,18 @@ export function ShortsFeed({ data, locale, publicBase }: ShortsFeedProps) {
           endSlot={
             <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
               <p className="font-display text-headline text-fg">{t("end.caughtUp")}</p>
-              <p className="text-body font-sans text-fg-muted">
-                {t("end.earnedToday", { points: formatFeedPoints(locale, data.earnedToday) })}
-              </p>
+              {data.signedOut ? (
+                <>
+                  <p className="text-body font-sans text-fg-muted">{t("end.signUpBody")}</p>
+                  <Button asChild size="lg">
+                    <a href={SHORTS_SIGN_UP_HREF}>{t("item.signUpToEarn")}</a>
+                  </Button>
+                </>
+              ) : (
+                <p className="text-body font-sans text-fg-muted">
+                  {t("end.earnedToday", { points: formatFeedPoints(locale, data.earnedToday) })}
+                </p>
+              )}
             </div>
           }
           renderItem={(item, state) => (
@@ -72,6 +83,7 @@ export function ShortsFeed({ data, locale, publicBase }: ShortsFeedProps) {
               postersOnly={postersOnly}
               priority={state.index === 0}
               saved={saved.has(item.campaignId)}
+              signedOut={data.signedOut}
               shareUrl={`${publicBase}/c/${item.campaignId}`}
               onHidden={(id) => setHidden((current) => new Set(current).add(id))}
             />

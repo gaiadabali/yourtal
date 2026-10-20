@@ -51,8 +51,8 @@ import { getNavTranslator } from "@/features/shell/nav-i18n";
  * **F79 (11.1.d): the chrome is `ViewerShell`, in its signed-out mode, not
  * `PublicHeader`.** A logged-out visitor gets the same side rail/bottom
  * nav/top bar as a signed-in one — Home (`/${locale}`) and Store
- * (`/${locale}/rewards`) are real public destinations; Watch, Wallet and Me
- * have none, so their nav links go straight to `/login?returnTo=`, and the
+ * (`/${locale}/rewards`) are real public destinations; Shorts is the signed-out Open
+ * Viewing feed (5.6.c); Wallet and Me have none, so their nav links go straight to `/login?returnTo=`, and the
  * top bar shows "Sign up to earn" instead of the points chip. This never
  * reads the session (no `cookies()`) — every href below is a plain string
  * computed from `locale`, so the page this renders stays exactly as
@@ -97,7 +97,7 @@ export default async function PublicLocaleLayout({ children, params }: PublicLoc
           homeHref: `/${locale}`,
           hrefs: {
             home: `/${locale}`,
-            shorts: `/login?returnTo=${encodeURIComponent("/shorts")}`,
+            shorts: "/shorts",
             store: `/${locale}/rewards`,
             wallet: `/login?returnTo=${encodeURIComponent("/wallet")}`,
             me: `/login?returnTo=${encodeURIComponent("/me")}`,

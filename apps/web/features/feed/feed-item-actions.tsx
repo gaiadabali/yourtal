@@ -21,6 +21,8 @@ export interface FeedItemActionsProps {
   onSavedChange: (saved: boolean) => void;
   shareUrl: string;
   onHidden: (campaignId: string) => void;
+  /** A visitor has no list to save to and no feed to tune: Share and "Why" only. */
+  signedOut?: boolean;
 }
 
 const RAIL_BUTTON =
@@ -33,6 +35,7 @@ export function FeedItemActions({
   onSavedChange,
   shareUrl,
   onHidden,
+  signedOut = false,
 }: FeedItemActionsProps) {
   const t = useTranslations("feed");
   const [pending, startTransition] = useTransition();
@@ -79,20 +82,24 @@ export function FeedItemActions({
         <ShareIcon />
         <span>{copied ? t("actions.linkCopied") : t("actions.share")}</span>
       </Button>
-      <Button
-        variant="ghost"
-        className={RAIL_BUTTON}
-        aria-pressed={saved}
-        onClick={toggleSave}
-        disabled={pending}
-      >
-        <SaveIcon filled={saved} />
-        <span>{saved ? t("actions.unsave") : t("actions.save")}</span>
-      </Button>
-      <Button variant="ghost" className={RAIL_BUTTON} onClick={hide} disabled={pending}>
-        <HideIcon />
-        <span>{t("actions.notInterested")}</span>
-      </Button>
+      {signedOut ? null : (
+        <>
+          <Button
+            variant="ghost"
+            className={RAIL_BUTTON}
+            aria-pressed={saved}
+            onClick={toggleSave}
+            disabled={pending}
+          >
+            <SaveIcon filled={saved} />
+            <span>{saved ? t("actions.unsave") : t("actions.save")}</span>
+          </Button>
+          <Button variant="ghost" className={RAIL_BUTTON} onClick={hide} disabled={pending}>
+            <HideIcon />
+            <span>{t("actions.notInterested")}</span>
+          </Button>
+        </>
+      )}
       <BottomSheet>
         <BottomSheetTrigger asChild>
           <Button variant="ghost" className={RAIL_BUTTON}>

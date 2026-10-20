@@ -244,7 +244,25 @@ describe("sign in with YourTal, end to end", () => {
       amr: ["pwd"],
     });
     expect(Number(claims?.exp) - Number(claims?.iat)).toBe(300);
-    expect(JSON.stringify(claims)).not.toMatch(/1990|date_of_birth|birth/);
+    // Exactly the protocol's claims and docs/26 §1.3's: never the date of birth or the user id.
+    expect(Object.keys(claims ?? {}).sort()).toEqual(
+      [
+        "age_band",
+        "amr",
+        "aud",
+        "auth_time",
+        "email",
+        "email_verified",
+        "exp",
+        "iat",
+        "iss",
+        "name",
+        "nonce",
+        "region",
+        "sub",
+      ].sort(),
+    );
+    expect(JSON.stringify(claims)).not.toContain(ana.userId);
     expect(tokens.refresh_token).toBeUndefined();
     expect(tokens.expires_in).toBeGreaterThan(590);
     expect(tokens.expires_in).toBeLessThanOrEqual(600);

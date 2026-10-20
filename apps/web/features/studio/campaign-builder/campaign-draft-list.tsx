@@ -21,10 +21,11 @@ export function CampaignDraftList({ drafts, onOpen, onCreate, canEdit }: Campaig
   const t = useTranslations("studio");
 
   function formatMinutes(durationSeconds: number): string {
-    const minutes = Math.round(durationSeconds / 60);
-    return minutes <= 0
-      ? t("campaignBuilder.list.noVideoYet")
-      : t("campaignBuilder.list.minutes", { minutes });
+    if (durationSeconds <= 0) return t("campaignBuilder.list.noVideoYet");
+    if (durationSeconds < 60) {
+      return t("campaignBuilder.list.seconds", { seconds: Math.round(durationSeconds) });
+    }
+    return t("campaignBuilder.list.minutes", { minutes: Math.round(durationSeconds / 60) });
   }
 
   return (

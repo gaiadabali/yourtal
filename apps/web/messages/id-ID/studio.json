@@ -8,6 +8,7 @@
       "rejected": "Ditolak",
       "noVideoYet": "belum ada video",
       "minutes": "{minutes} mnt",
+      "seconds": "{seconds} dtk",
       "rewardPoints": "{points} poin"
     },
     "budget": {

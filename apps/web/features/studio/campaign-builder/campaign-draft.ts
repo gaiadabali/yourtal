@@ -1,6 +1,7 @@
 import type { CampaignKind, CampaignScoringRule } from "@yourtal/contracts/campaign";
 import type { CampaignChapter } from "./campaign-chapter";
 import { estimateDataMb, totalDurationSeconds } from "./campaign-chapter";
+import { questionsAskedFor } from "@/features/player/question-schedule";
 import type { CampaignDraftStatus } from "./campaign-draft-status";
 import type { QuestionDraft } from "../question-bank/question-draft";
 import { toPublishableQuestionInput } from "../question-bank/question-draft-to-question";
@@ -80,10 +81,26 @@ export interface CampaignDraft {
   /** The server's own priced value for one completion (base + bonus), in the business's own currency — 7.3.h. `null` until a real `PUT .../reward` has returned one this session. */
   rewardValueMinorUnits: number | null;
   rewardCurrency: string | null;
+  /** The campaign's real length and asked-question count as the API holds them (`null` in mock mode, or before the server knows). Chapters alone cannot give these: a campaign with a ready video often has none. */
+  durationSeconds: number | null;
+  questionsAsked: number | null;
 }
 
+/**
+ * A ready video's real length wins (the API's own figure, the same one the
+ * viewer's campaign page shows). Before that, the chapters the author is
+ * laying out; with neither, whatever the server holds.
+ */
 export function draftDurationSeconds(draft: CampaignDraft): number {
-  return totalDurationSeconds(draft.chapters);
+  const known = draft.durationSeconds ?? 0;
+  if (draft.video.status === "ready" && known > 0) return known;
+  const fromChapters = totalDurationSeconds(draft.chapters);
+  return fromChapters > 0 ? fromChapters : known;
+}
+
+/** How many questions a viewer will actually be asked: the server's count when live, else the F10 formula on the length. Not the size of the question bank, which only has to be big enough to draw from. */
+export function draftQuestionsAsked(draft: CampaignDraft): number {
+  return draft.questionsAsked ?? questionsAskedFor(draftDurationSeconds(draft));
 }
 
 export function draftEstimatedDataMb(draft: CampaignDraft): number {

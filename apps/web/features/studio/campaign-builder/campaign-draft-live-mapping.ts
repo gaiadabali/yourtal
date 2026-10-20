@@ -105,6 +105,8 @@ export function apiDraftToWebDraft(api: ApiCampaignDraft, merchantName: string):
     accuracyBonusPoints: api.rewardConfig?.accuracyBonusPoints ?? 0,
     rewardValueMinorUnits: null,
     rewardCurrency: null,
+    durationSeconds: api.durationSeconds > 0 ? api.durationSeconds : null,
+    questionsAsked: api.questionCount,
   };
 }
 

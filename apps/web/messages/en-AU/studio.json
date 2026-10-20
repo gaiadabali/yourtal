@@ -8,6 +8,7 @@
       "rejected": "Rejected",
       "noVideoYet": "no video yet",
       "minutes": "{minutes} min",
+      "seconds": "{seconds} sec",
       "rewardPoints": "{points} points"
     },
     "budget": {

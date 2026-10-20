@@ -10,11 +10,7 @@ import { Button } from "@yourtal/ui/button";
 import { Card, CardContent } from "@yourtal/ui/card";
 import { useRegion } from "@/features/region/use-region";
 import type { CampaignDraft } from "./campaign-draft";
-import {
-  draftCompleteQuestionCount,
-  draftDurationSeconds,
-  draftEstimatedDataMb,
-} from "./campaign-draft";
+import { draftDurationSeconds, draftEstimatedDataMb, draftQuestionsAsked } from "./campaign-draft";
 import { assessRewardToDataCost, describeRewardDataCostRatio } from "./campaign-reward-risk";
 import {
   describePreviewQuestionCount,
@@ -55,7 +51,7 @@ export function CampaignEntryPreview({ draft }: CampaignEntryPreviewProps) {
   const { currency } = useRegion();
   const durationSeconds = draftDurationSeconds(draft);
   const estimatedDataMb = draftEstimatedDataMb(draft);
-  const questionCount = draftCompleteQuestionCount(draft);
+  const questionCount = draftQuestionsAsked(draft);
   const hasAccuracyBonus = draft.scoringRule === "base_plus_accuracy_bonus" && questionCount > 0;
   const { basePoints, maxAccuracyBonusPoints } = splitPreviewReward(
     draft.rewardPoints,

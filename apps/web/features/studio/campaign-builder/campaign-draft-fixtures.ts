@@ -36,6 +36,8 @@ export function createEmptyCampaignDraft(
     accuracyBonusPoints: 0,
     rewardValueMinorUnits: null,
     rewardCurrency: null,
+    durationSeconds: null,
+    questionsAsked: null,
   };
 }
 

@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 5/14 | 32/51 | `██████░░░░`  63% |
-| **All** | | | **110/120** | **578/598** | `██████████`  97% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 5/14 | 33/52 | `██████░░░░`  63% |
+| **All** | | | **110/120** | **579/599** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1656,8 +1656,9 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.5.a Take gifting and charity off the deferred list (built in 13.20–13.22)
   - [x] 14.5.b Fix the main checkout's path in `CLAUDE.md` and `scripts/progress.mjs` (now `god/yourtal`)
 - [ ] **14.6 Faster video start** (group 5.6, moved from 13.4.a by F97) · B · needs: — — 🔄 g5 (helper `g-phase5-video`)
-  - [ ] 14.6.a First frame on Shorts in 1.0 s or less on the mid-tier Android profile (median 1,044 ms at 0ee372e4) → merged 7df06ebe; left: the staging measurement
-  - [ ] 14.6.b Responsive poster sizes (`srcset`; the contract carries one `posterUrl` today, 13.4.f) → merged 7df06ebe; left: confirm staging's backfill
+  - [ ] 14.6.a First frame on Shorts in 1.0 s or less on the mid-tier Android profile (median 1,044 ms at 0ee372e4) → 7df06ebe; staging 2026-10-21: median 1,040 ms (3 of 9 under 1.0 s), was 1,388 ms on the same machine; not yet met
+  - [x] 14.6.b Responsive poster sizes (`srcset`; the contract carries one `posterUrl` today, 13.4.f) → 7df06ebe; staging serves every recorded size
+  - [ ] 14.6.c Signed out, `/shorts` shows the error state; show Open Viewing Shorts or a sign-in prompt (group 5.6.c)
 - [ ] **14.7 Stripe payments in AU, on the payment simulation** (group 5.1, F103, F106) · A + C · needs: — — 🔄 g5
   - [x] 14.7.a The payment simulation (group 5.1.e): it speaks Stripe's API, has a checkout page that takes only Stripe's test cards (4242… pays, 4000…0002 is declined, 4000 0025 0000 3155 asks for 3-D Secure) and never stores or logs a card number, sends signed webhooks and retries them, and does refunds and Connect. Every page says "Simulated payment, no real money"; a production host refuses to start it → `packages/paysim`, mounted at `/api/paysim` behind `PAYSIM_ENABLED` (abd99d89)
   - [ ] 14.7.b A Stripe driver (AU) for `PAYMENTS_DRIVER=live` (group 5.1.a), written against Stripe's real API: points purchases, boosts, refunds and webhooks; staging points it at the simulation. The Xendit-shaped simulated driver stays for ID (F104) → driver f873e760; the app on it 8b5bddc0 (Checkout purchases, webhook, saved cards, boost charges, GST). Auctions on it at cef84dd8, so live payments boot. Left: staging

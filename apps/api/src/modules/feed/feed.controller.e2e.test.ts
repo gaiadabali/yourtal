@@ -419,6 +419,49 @@ describe("GET /api/search", () => {
   });
 });
 
+describe("GET /api/search: 14.2 district targeting", () => {
+  it("finds a district-targeted campaign only for a viewer in that postcode, as the feed does", async () => {
+    const targeted = await seedCampaign({ region: "AU" });
+    const untargeted = await seedCampaign({ region: "AU" });
+    await owner.execute(
+      sql`UPDATE campaign.campaigns SET target_districts = '["2026"]'::jsonb WHERE id = ${targeted.campaignId}`,
+    );
+    for (const seeded of [targeted, untargeted]) {
+      await fundCampaign(seeded.campaignId, seeded.businessId, "AU");
+    }
+    const find = async (cookie: string, extra = "") => {
+      const response = await app.inject({
+        method: "GET",
+        url: `/api/search?q=${encodeURIComponent("Feed e2e")}&region=AU${extra}`,
+        headers: { cookie },
+      });
+      expect(response.statusCode).toBe(200);
+      return response
+        .json<{ campaigns: { campaignId: string }[] }>()
+        .campaigns.map((item) => item.campaignId);
+    };
+
+    const local = await sessionFor(app, { jurisdiction: "AU" });
+    const declared = await app.inject({
+      method: "PUT",
+      url: "/api/me/settings/area",
+      headers: { cookie: local.cookie },
+      payload: { postcode: "2026" },
+    });
+    expect(declared.statusCode).toBe(200);
+    const localIds = await find(local.cookie);
+    expect(localIds).toContain(targeted.campaignId);
+    expect(localIds).toContain(untargeted.campaignId);
+
+    const elsewhere = await sessionFor(app, { jurisdiction: "AU" });
+    const elsewhereIds = await find(elsewhere.cookie);
+    expect(elsewhereIds).not.toContain(targeted.campaignId);
+    expect(elsewhereIds).toContain(untargeted.campaignId);
+
+    expect(await find(elsewhere.cookie, "&district=2026")).toContain(targeted.campaignId);
+  });
+});
+
 describe("POST /api/feed/:campaignId/not-interested", () => {
   it("demotes a campaign for a signed-in caller without removing it from the feed", async () => {
     const user = await sessionFor(app, { jurisdiction: "AU" });

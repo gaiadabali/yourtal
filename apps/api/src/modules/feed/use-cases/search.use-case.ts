@@ -10,6 +10,8 @@ import { resolveCatalogueScope } from "../../store/catalogue-scope";
 import type { ChannelSearchRepository } from "../persistence/channel-search.repository";
 import type { ChannelLookupRepository } from "../persistence/channel-lookup.repository";
 import type { SuspendedBusinessLookup } from "../persistence/suspended-business-lookup";
+import type { FeedSignalsRepository } from "../persistence/feed-signals.repository";
+import { resolveViewerDistrict } from "../viewer-district";
 import { fetchFundedCampaigns } from "../candidates";
 import { passesFilter, signalsFor, toFeedItem } from "../ranking";
 import type { RankingContext } from "../ranking";
@@ -33,6 +35,7 @@ export async function search(
   listings: Pick<ListingRepository, "browsePublic">,
   suspendedBusinesses: SuspendedBusinessLookup,
   channelLookup: ChannelLookupRepository,
+  signals: Pick<FeedSignalsRepository, "declaredAreaPostcode">,
   principal: Principal,
   query: string,
   queryRegion: Region | undefined,
@@ -40,6 +43,8 @@ export async function search(
   narrow: {
     readonly kind?: CampaignKind | undefined;
     readonly category?: ContentCategory | undefined;
+    /** 14.2: as the feed's `?district=`; otherwise the viewer's own area. */
+    readonly district?: string | undefined;
   } = {},
 ): Promise<
   { readonly kind: "ok"; readonly result: SearchResponse } | { readonly kind: "region_required" }
@@ -53,6 +58,8 @@ export async function search(
   const { region, audiences } = scope;
   const anonymous = principal.id === "anonymous";
   const needle = query.toLowerCase();
+
+  const viewerDistrict = await resolveViewerDistrict(signals, principal, narrow.district);
 
   const candidates = await fetchFundedCampaigns(campaigns, ledger, suspendedBusinesses, region);
   const channelMap = await channelLookup.channelsFor(
@@ -74,8 +81,7 @@ export async function search(
     demotedCampaignIds: new Set(),
     canServe: () => true,
     anonymous,
-    // 14.2: search takes no district, so it finds untargeted campaigns only.
-    viewerDistrict: null,
+    viewerDistrict,
     channelOf,
   };
   const matchingCampaigns = candidates

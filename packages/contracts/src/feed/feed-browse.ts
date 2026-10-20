@@ -61,5 +61,7 @@ export const searchQuerySchema = z.object({
   region: regionSchema.optional(),
   kind: campaignKindSchema.optional(),
   category: contentCategorySchema.optional(),
+  /** 14.2: as the feed's `district`; omitted means the viewer's own area. */
+  district: z.string().trim().min(1).max(MAX_DISTRICT_LENGTH).optional(),
 });
 export type SearchQuery = z.infer<typeof searchQuerySchema>;

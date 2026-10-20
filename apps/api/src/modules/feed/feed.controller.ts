@@ -127,10 +127,11 @@ export class FeedController {
       this.listings,
       this.suspendedBusinesses,
       this.channelLookup,
+      this.signals,
       principal,
       parsed.q,
       parsed.region,
-      { kind: parsed.kind, category: parsed.category },
+      { kind: parsed.kind, category: parsed.category, district: parsed.district },
     );
     if (result.kind === "region_required") {
       throw new BadRequestException({

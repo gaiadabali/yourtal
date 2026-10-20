@@ -12,6 +12,7 @@ import type { FeedSignalsRepository } from "../persistence/feed-signals.reposito
 import type { PacingStateRepository } from "../persistence/pacing-state.repository";
 import type { SuspendedBusinessLookup } from "../persistence/suspended-business-lookup";
 import { buildFeed, matchedInterestNodes } from "../ranking";
+import { resolveViewerDistrict } from "../viewer-district";
 import { fetchFundedCampaigns } from "../candidates";
 import { applyFeedBrowse, feedFacets } from "../browse";
 import type { FeedBrowseFilter } from "../browse";
@@ -201,7 +202,7 @@ export async function getFeed(
     alreadyEarned,
     demoted,
     minSegmentSetting,
-    declaredArea,
+    viewerDistrict,
   ] = await Promise.all([
     signals.followedBusinessIds(principal.id),
     signals.declaredInterestNodeIds(principal.id),
@@ -209,8 +210,7 @@ export async function getFeed(
     signals.alreadyEarnedCampaignIds(principal.id),
     signals.demotedCampaignIds(principal.id),
     settings.getSetting<number>(region, "interest_targeting_min_segment"),
-    // F116: a teen never has one (the API refuses it), and is not asked here either.
-    ageBand === "teen" ? Promise.resolve(null) : signals.declaredAreaPostcode(principal.id),
+    resolveViewerDistrict(signals, principal, browse.district),
   ]);
 
   const interestTargetingAllowed = mayUseSignalFor({
@@ -271,8 +271,7 @@ export async function getFeed(
     demotedCampaignIds: demoted,
     canServe: (id) => canServeMap.get(id) ?? true,
     anonymous: false,
-    // F116: an explicit ?district= wins; otherwise the viewer's declared area.
-    viewerDistrict: browse.district ?? declaredArea,
+    viewerDistrict,
     channelOf,
   });
   return {

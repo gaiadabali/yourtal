@@ -46,6 +46,8 @@ export type WatchEarnPhase =
       token: string;
       answerTimerMs: number;
     }
+  /** D1 (1.6.l): the server refused the reward at start (budget or daily cap used up, paused, ...). Shown BEFORE any video plays; the viewer may still watch without earning. */
+  | { kind: "refused"; reason: string | null }
   | { kind: "claiming" }
   | { kind: "earned"; points: number; unlockAt: string | null }
   | { kind: "not_earning"; reason: string | null }
@@ -89,6 +91,43 @@ export function useWatchEarnSession(campaignId: string) {
   /** Set only when the viewer chose "resume" — applied once the video element (re-)mounts into the "watching" phase. */
   const pendingSeekRef = useRef<number | null>(null);
 
+  /** Resume prompt or straight into playback, from the server's recorded coverage. */
+  const beginPlayback = useCallback(
+    async (sessionId: string, manifestUrl: string, durationSeconds: number, earning: boolean) => {
+      // A resumed session (this is not the viewer's first visit) may already
+      // have real server coverage. `detail.ok === false` degrades to "start
+      // fresh" — a resume prompt is a nicety, never a blocker.
+      const detail = await getWatchSessionAction(sessionId);
+      const coveredSoFar = detail.ok ? detail.data.coveredSeconds : 0;
+      reportedTo.current = coveredSoFar;
+      const firstGap = detail.ok ? detail.data.gaps[0] : undefined;
+
+      if (coveredSoFar >= MIN_RESUMABLE_SECONDS && firstGap !== undefined) {
+        setPhase({
+          kind: "resume_prompt",
+          sessionId,
+          manifestUrl,
+          durationSeconds,
+          totalQuestions: totalQuestionsRef.current,
+          earning,
+          resumeAtSeconds: firstGap.fromSecond,
+        });
+        return;
+      }
+
+      setPhase({
+        kind: "watching",
+        sessionId,
+        manifestUrl,
+        durationSeconds,
+        totalQuestions: totalQuestionsRef.current,
+        earning,
+        coveredSeconds: coveredSoFar,
+      });
+    },
+    [],
+  );
+
   const start = useCallback(async () => {
     setPhase({ kind: "starting" });
     const started = await startWatchSessionAction(campaignId);
@@ -109,37 +148,22 @@ export function useWatchEarnSession(campaignId: string) {
     earningRef.current = earning;
     totalQuestionsRef.current = earning ? questionsAskedFor(durationSeconds) : 0;
 
-    // A resumed session (this is not the viewer's first visit) may already
-    // have real server coverage. `detail.ok === false` degrades to "start
-    // fresh" — a resume prompt is a nicety, never a blocker.
-    const detail = await getWatchSessionAction(session.id);
-    const coveredSoFar = detail.ok ? detail.data.coveredSeconds : 0;
-    reportedTo.current = coveredSoFar;
-    const firstGap = detail.ok ? detail.data.gaps[0] : undefined;
-
-    if (coveredSoFar >= MIN_RESUMABLE_SECONDS && firstGap !== undefined) {
-      setPhase({
-        kind: "resume_prompt",
-        sessionId: session.id,
-        manifestUrl,
-        durationSeconds,
-        totalQuestions: totalQuestionsRef.current,
-        earning,
-        resumeAtSeconds: firstGap.fromSecond,
-      });
+    // A repeat visit (already earned) just plays; any other refusal is told to
+    // the viewer first, and playback waits for their choice.
+    if (!earning && session.nonEarningReason !== "already_earned") {
+      setPhase({ kind: "refused", reason: session.nonEarningReason });
       return;
     }
+    await beginPlayback(session.id, manifestUrl, durationSeconds, earning);
+  }, [campaignId, beginPlayback]);
 
-    setPhase({
-      kind: "watching",
-      sessionId: session.id,
-      manifestUrl,
-      durationSeconds,
-      totalQuestions: totalQuestionsRef.current,
-      earning,
-      coveredSeconds: coveredSoFar,
-    });
-  }, [campaignId]);
+  /** The refusal notice's "watch without earning" choice. */
+  const watchWithoutEarning = useCallback(async () => {
+    const sessionId = sessionIdRef.current;
+    if (sessionId === null) return;
+    setPhase({ kind: "starting" });
+    await beginPlayback(sessionId, manifestUrlRef.current, durationRef.current, false);
+  }, [beginPlayback]);
 
   /** The resume prompt's own choice — never auto-resumes (resume-prompt.tsx's own rule). */
   const chooseResume = useCallback(
@@ -318,7 +342,7 @@ export function useWatchEarnSession(campaignId: string) {
     );
   }, [report]);
 
-  return { phase, videoRef, start, chooseResume, answer, finish };
+  return { phase, videoRef, start, watchWithoutEarning, chooseResume, answer, finish };
 }
 
 export type UseWatchEarnSession = ReturnType<typeof useWatchEarnSession>;

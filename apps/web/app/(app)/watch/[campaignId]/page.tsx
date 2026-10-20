@@ -5,7 +5,6 @@ import { isFollowingBusiness } from "@/features/player/follow-actions";
 import { getWatchCampaign } from "@/features/player/get-watch-campaign";
 import { getWatchChannel } from "@/features/player/get-watch-channel";
 import { MoreFromChannel } from "@/features/player/more-from-channel";
-import { TermsCard } from "@/features/player/terms-card";
 import { VideoPlayer } from "@/features/player/video-player";
 import { getDisplayLocale } from "@/i18n/get-locale";
 // 12.2.e: gates the player's teen-only watch-time reminder -- same read
@@ -82,7 +81,6 @@ export default async function WatchPage({ params }: WatchPageProps) {
           locale={locale}
         />
       ) : null}
-      <TermsCard terms={terms} locale={locale} />
       {channelData !== null ? (
         <MoreFromChannel
           displayName={channelData.channel.displayName}

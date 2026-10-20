@@ -11,10 +11,12 @@ import { ChapterTrack } from "./chapter-track";
 import { CaptionsToggle } from "./captions-toggle";
 import { CheckpointOverlay } from "./checkpoint-overlay";
 import { EarnMoment, NotEarningMoment } from "./earn-moment";
+import { nonEarningReasonKey } from "./non-earning-reason";
 import { playerChapters } from "./player-chapters";
 import { PlayIcon } from "./player-icons";
 import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
 import { SpendAtBrand } from "./spend-at-brand";
+import { TermsCard } from "./terms-card";
 import { UpNextCard } from "./up-next-card";
 import { useCaptions } from "./use-captions";
 import { useWatchEarnSession } from "./use-watch-earn-session";
@@ -71,7 +73,8 @@ export function VideoPlayer({
   isTeen = false,
 }: VideoPlayerProps) {
   const t = getPlayerTranslator(locale);
-  const { phase, videoRef, start, chooseResume, answer, finish } = useWatchEarnSession(campaign.id);
+  const { phase, videoRef, start, watchWithoutEarning, chooseResume, answer, finish } =
+    useWatchEarnSession(campaign.id);
   const captions = useCaptions(videoRef, campaign.captionsUrl !== null);
   const [nativeHls, setNativeHls] = useState<boolean | null>(null);
   const [currentSeconds, setCurrentSeconds] = useState(0);
@@ -80,6 +83,12 @@ export function VideoPlayer({
   // minutes -- teen-only, same threshold and "one nudge, never a nag" rule
   // as the feed's own (12.2.b). Never pauses or alters playback.
   const watchTimeReminder = useWatchTimeReminder(isTeen);
+  // Once the server has said this view will not earn, the "earn N points"
+  // terms would be a false promise, so they are not shown.
+  const notEarning =
+    phase.kind === "refused" ||
+    phase.kind === "not_earning" ||
+    ((phase.kind === "watching" || phase.kind === "resume_prompt") && !phase.earning);
   const maxPoints = terms.rewardPoints + terms.accuracyBonusPoints;
   const chapters = playerChapters(campaign);
 
@@ -181,6 +190,22 @@ export function VideoPlayer({
           </button>
         ) : null}
 
+        {/* 1.6.l: a refused reward is told BEFORE any video plays. */}
+        {phase.kind === "refused" ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 overflow-y-auto bg-fg/85 p-4 text-center text-primary-fg">
+            <p role="status" className="text-base font-sans font-semibold">
+              {t("refusal.title")}
+            </p>
+            <p className="text-sm font-sans">
+              {t(`refusal.reasons.${nonEarningReasonKey(phase.reason)}`)}
+            </p>
+            <p className="text-sm font-sans">{t("refusal.noPoints")}</p>
+            <Button type="button" size="sm" onClick={() => void watchWithoutEarning()}>
+              {t("refusal.watchAnyway")}
+            </Button>
+          </div>
+        ) : null}
+
         {phase.kind === "checkpoint" ? (
           <CheckpointOverlay
             key={phase.question.id}
@@ -272,6 +297,8 @@ export function VideoPlayer({
       {phase.kind === "not_earning" ? (
         <NotEarningMoment reason={phase.reason} locale={locale} />
       ) : null}
+
+      {notEarning ? null : <TermsCard terms={terms} locale={locale} />}
 
       {/* 11.5.c: the completion screen only — Up Next and the funder's own
           vouchers never show before the video is actually finished, and

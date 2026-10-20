@@ -405,6 +405,84 @@ describe("VideoPlayer", () => {
     if (!video) throw new Error("expected a <video> element");
     fireEvent.ended(video);
 
-    expect(await screen.findByText("already_earned")).toBeInTheDocument();
+    expect(
+      await screen.findByText("You have already earned points for this video."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("already_earned")).not.toBeInTheDocument();
+  });
+
+  describe("when the server refuses the reward at start (1.6.l)", () => {
+    const refusedSession = {
+      id: "session-1",
+      nonEarning: true,
+      nonEarningReason: "This campaign has given out all its rewards.",
+      questionsAsked: 0,
+    };
+    function refuseStart() {
+      startWatchSessionActionMock.mockResolvedValue({
+        ok: true,
+        data: {
+          session: refusedSession,
+          durationSeconds: 90,
+          alreadyEarned: false,
+          manifestUrl: "/media/hls/1/2/session-1/index.m3u8",
+        },
+      });
+    }
+
+    it("says why before any video plays, drops the earn promise, and waits for the viewer", async () => {
+      refuseStart();
+      render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
+      expect(screen.getByText(/Finish the video to earn your points/)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Play Test Campaign" }));
+
+      expect(await screen.findByText("This video won't earn points")).toBeInTheDocument();
+      expect(screen.getByText("This campaign has given out all its rewards.")).toBeInTheDocument();
+      expect(screen.queryByText(/Finish the video to earn your points/)).not.toBeInTheDocument();
+      expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+      expect(getWatchSessionActionMock).not.toHaveBeenCalled();
+      expect(document.querySelector("video")?.getAttribute("src")).toBeNull();
+    });
+
+    it("tells an Indonesian viewer in Indonesian", async () => {
+      refuseStart();
+      render(<VideoPlayer campaign={campaign} terms={terms} locale="id-ID" />);
+      fireEvent.click(screen.getByRole("button", { name: /Putar/ }));
+      expect(await screen.findByText("Video ini tidak memberi poin")).toBeInTheDocument();
+      expect(
+        screen.getByText("Kampanye ini sudah membagikan semua reward-nya."),
+      ).toBeInTheDocument();
+    });
+
+    it("plays without tracking a reward once the viewer chooses to, and the finish screen claims no points", async () => {
+      refuseStart();
+      completeWatchSessionActionMock.mockResolvedValue({
+        ok: true,
+        data: {
+          completed: true,
+          granted: false,
+          pendingPoints: 0,
+          reason: "This campaign has given out all its rewards.",
+        },
+      });
+      render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
+      fireEvent.click(screen.getByRole("button", { name: "Play Test Campaign" }));
+      fireEvent.click(await screen.findByRole("button", { name: "Watch without earning" }));
+
+      await waitFor(() =>
+        expect(document.querySelector("video")?.getAttribute("autoplay")).not.toBeNull(),
+      );
+      expect(screen.queryByText("This video won't earn points")).not.toBeInTheDocument();
+      expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+
+      const video = document.querySelector("video");
+      if (!video) throw new Error("expected a <video> element");
+      fireEvent.ended(video);
+      expect(
+        await screen.findByText("This campaign has given out all its rewards."),
+      ).toBeInTheDocument();
+      expect(screen.queryByText(/^\+/)).not.toBeInTheDocument();
+      expect(reportWatchProgressActionMock).not.toHaveBeenCalled();
+    });
   });
 });

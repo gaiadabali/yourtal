@@ -87,5 +87,23 @@
   "watchTimeReminder": {
     "body": "Kamu sudah menonton cukup lama -- boleh istirahat sebentar kalau mau.",
     "dismiss": "Oke"
+  },
+  "refusal": {
+    "title": "Video ini tidak memberi poin",
+    "noPoints": "Kamu tetap bisa menontonnya, tetapi tontonan ini tidak akan memberi poin.",
+    "watchAnyway": "Tonton tanpa poin",
+    "reasons": {
+      "alreadyEarned": "Kamu sudah mendapatkan poin dari video ini.",
+      "campaignCapReached": "Kampanye ini sudah membagikan semua reward-nya.",
+      "campaignDailyCapReached": "Kampanye ini sudah membagikan reward hari ini. Kamu bisa mendapatkan poin lagi besok.",
+      "outOfFunding": "Reward kampanye ini sedang habis.",
+      "noFunding": "Kampanye ini sedang tidak membagikan reward.",
+      "paused": "Reward sedang dijeda.",
+      "notAvailable": "Kampanye ini tidak tersedia untuk akunmu.",
+      "velocityCapped": "Kamu sudah mencapai batas perolehan poin hari ini.",
+      "unavailable": "Reward sedang tidak tersedia.",
+      "notConfirmed": "Poinmu belum bisa dikonfirmasi saat ini.",
+      "generic": "Video ini sedang tidak memberi poin."
+    }
   }
 }

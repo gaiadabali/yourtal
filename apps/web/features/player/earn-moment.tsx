@@ -1,4 +1,5 @@
 import { PointsChip } from "@yourtal/ui/points-chip";
+import { nonEarningReasonKey } from "./non-earning-reason";
 import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
 
 /** Plain `Intl`, not next-intl's `useFormatter` — this feature keeps zero next-intl calls (6.1.d). */
@@ -56,7 +57,11 @@ export function NotEarningMoment({ reason, locale }: NotEarningMomentProps) {
       role="status"
       className="flex flex-col items-center gap-2 rounded-lg border border-border bg-surface-raised p-6 text-center"
     >
-      <p className="text-sm font-sans text-fg-muted">{reason ?? t("earn.notEarningGeneric")}</p>
+      <p className="text-sm font-sans text-fg-muted">
+        {reason === null
+          ? t("earn.notEarningGeneric")
+          : t(`refusal.reasons.${nonEarningReasonKey(reason)}`)}
+      </p>
     </div>
   );
 }

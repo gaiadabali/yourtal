@@ -87,5 +87,23 @@
   "watchTimeReminder": {
     "body": "You've been watching a while -- take a break if you'd like.",
     "dismiss": "Got it"
+  },
+  "refusal": {
+    "title": "This video won't earn points",
+    "noPoints": "You can still watch it, but you won't earn any points for this view.",
+    "watchAnyway": "Watch without earning",
+    "reasons": {
+      "alreadyEarned": "You have already earned points for this video.",
+      "campaignCapReached": "This campaign has given out all its rewards.",
+      "campaignDailyCapReached": "This campaign has given out today's rewards. You can earn from it again tomorrow.",
+      "outOfFunding": "This campaign has run out of rewards right now.",
+      "noFunding": "This campaign isn't giving out rewards right now.",
+      "paused": "Rewards are paused right now.",
+      "notAvailable": "This campaign is not available to your account.",
+      "velocityCapped": "You have reached today's earning limit.",
+      "unavailable": "Rewards are temporarily unavailable.",
+      "notConfirmed": "Your points could not be confirmed right now.",
+      "generic": "This video isn't giving out points right now."
+    }
   }
 }

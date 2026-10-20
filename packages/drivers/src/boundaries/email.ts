@@ -3,6 +3,7 @@ import { type BoundaryFailure, FaultEngine, failureFor } from "../fault-engine";
 import type { FaultPlan } from "../faults";
 import type { DriverMode, Environment } from "../driver-mode";
 import { createResendEmail, resendConfigFromEnv } from "./email-resend";
+import { createAllowListEmail, isAllowListEmpty, parseEmailAllowList } from "./email-allowlist";
 import { type SimOutboxStore, createInMemorySimOutboxStore } from "../sim-outbox";
 
 /**
@@ -76,7 +77,11 @@ export function createEmailDriver(
   faultPlan?: FaultPlan,
   store?: SimOutboxStore,
 ): EmailDriver {
-  return mode === "simulated"
-    ? createSimulatedEmail(store, faultPlan)
-    : createResendEmail(resendConfigFromEnv(env));
+  if (mode === "simulated") return createSimulatedEmail(store, faultPlan);
+  const live = createResendEmail(resendConfigFromEnv(env));
+  // F115: a non-empty `EMAIL_LIVE_ALLOWLIST` limits real sends (staging); empty or unset is production.
+  const list = parseEmailAllowList(env.EMAIL_LIVE_ALLOWLIST);
+  return isAllowListEmpty(list)
+    ? live
+    : createAllowListEmail(live, createSimulatedEmail(store, faultPlan), list);
 }

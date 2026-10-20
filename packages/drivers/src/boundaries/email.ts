@@ -2,7 +2,7 @@ import { type Result, err, ok } from "neverthrow";
 import { type BoundaryFailure, FaultEngine, failureFor } from "../fault-engine";
 import type { FaultPlan } from "../faults";
 import type { DriverMode, Environment } from "../driver-mode";
-import { refuseLiveDriver } from "../live-driver";
+import { createResendEmail, resendConfigFromEnv } from "./email-resend";
 import { type SimOutboxStore, createInMemorySimOutboxStore } from "../sim-outbox";
 
 /**
@@ -72,9 +72,11 @@ export function createSimulatedEmail(
 
 export function createEmailDriver(
   mode: DriverMode,
-  _env: Environment,
+  env: Environment,
   faultPlan?: FaultPlan,
   store?: SimOutboxStore,
 ): EmailDriver {
-  return mode === "simulated" ? createSimulatedEmail(store, faultPlan) : refuseLiveDriver("email");
+  return mode === "simulated"
+    ? createSimulatedEmail(store, faultPlan)
+    : createResendEmail(resendConfigFromEnv(env));
 }

@@ -150,8 +150,8 @@ export const BOUNDARIES: Record<BoundaryName, BoundaryDefinition> = {
       "platform.sim_outbox, so /api/dev/inbox (1.6.b) can show a reviewer exactly what would " +
       "have gone out.",
     modeEnvVar: "EMAIL_DRIVER",
-    liveCredentialEnvVars: ["EMAIL_API_KEY"],
-    liveVendor: "A transactional email provider, not yet chosen.",
+    liveCredentialEnvVars: ["EMAIL_API_KEY", "EMAIL_FROM"],
+    liveVendor: "Resend (F103), over its REST API.",
     liveTicket: "1.6",
   },
   push: {

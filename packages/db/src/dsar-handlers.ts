@@ -177,6 +177,32 @@ export function eraseViewerArea(pool: pg.Pool): DomainHandler {
 }
 
 /**
+ * 1.24.a: team invitations still waiting for the subject's email address.
+ *
+ * An invitation is keyed by the address it was sent to, and the address lives
+ * only in `identity.credential.identifier`. Once `eraseCredentials` has run
+ * nothing can say whose address it was, so this has to run BEFORE it, inside
+ * the same domain; `org_memberships` (a later domain) can no longer find it.
+ * `eraseIdentity` runs this first and the rest after it.
+ *
+ * Pending means not accepted: open, revoked or expired rows all still hold the
+ * address. An accepted one became a membership and is deleted by
+ * `org_memberships` through `accepted_by_user_id`. The app already holds
+ * DELETE on the table. Match is case-insensitive, as the open-invitation index is.
+ */
+export function eraseInvitationsToSubject(pool: pg.Pool): DomainHandler {
+  return async (subjectId: string): Promise<number> => {
+    const result = await pool.query(
+      `DELETE FROM business.team_invitations
+        WHERE accepted_at IS NULL
+          AND lower(email) IN (SELECT lower(identifier) FROM identity.credential WHERE user_id = $1)`,
+      [subjectId],
+    );
+    return result.rowCount ?? 0;
+  };
+}
+
+/**
  * The `identity` domain's full erasure, 1.4.f: business membership plus the
  * three tables above. All four are `erase`, not `anonymise`, for the same
  * reason membership already was: none of them records an obligation to
@@ -202,7 +228,10 @@ export function eraseIdentity(pool: pg.Pool): DomainHandler {
   // F116: the declared area is account data the viewer entered themselves, so
   // it goes with the account.
   const viewerArea = eraseViewerArea(pool);
+  const invitations = eraseInvitationsToSubject(pool);
   return async (subjectId: string): Promise<number> => {
+    // 1.24.a: first, while the credential still holds the address.
+    const invited = await invitations(subjectId);
     const counts = await Promise.all([
       memberships(subjectId),
       profile(subjectId),
@@ -211,7 +240,7 @@ export function eraseIdentity(pool: pg.Pool): DomainHandler {
       guardianConsent(subjectId),
       viewerArea(subjectId),
     ]);
-    return counts.reduce((total, n) => total + n, 0);
+    return counts.reduce((total, n) => total + n, invited);
   };
 }
 

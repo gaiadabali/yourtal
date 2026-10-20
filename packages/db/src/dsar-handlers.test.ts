@@ -258,6 +258,71 @@ describe("erasing identity: profile, credential, session, guardian consent and b
     ).toBe(0);
   });
 
+  it("1.24.a: erases pending invitations to the subject's email, and only those", async () => {
+    const subjectId = randomUUID();
+    const otherId = randomUUID();
+    const email = `dsar-invite-${subjectId}@example.test`;
+    const otherEmail = `dsar-invite-${otherId}@example.test`;
+    const { rows } = await pool.query<{ id: string }>(
+      `INSERT INTO business.business_accounts
+         (legal_name, display_name, tax_id_kind, tax_id_value, address_state, address_postcode,
+          roles, region, currency, handle)
+       VALUES ('DSAR Invite Pty Ltd', 'DSAR Invite', 'ABN', '12345678901', 'NSW', '2000',
+               '["advertiser"]'::jsonb, 'AU', 'AUD', $1)
+       RETURNING id`,
+      [`dsar-invite-${subjectId.slice(0, 8)}`],
+    );
+    const businessId = rows[0]?.id;
+    await pool.query(
+      `INSERT INTO identity.credential (user_id, kind, identifier, secret_hash)
+       VALUES ($1, 'password', $2, 'not-a-real-hash')`,
+      [subjectId, email],
+    );
+    const invite = (to: string, accepted: boolean, revoked = false) =>
+      pool.query(
+        `INSERT INTO business.team_invitations
+           (business_id, email, role, token_hash, invited_by_user_id, expires_at,
+            accepted_at, accepted_by_user_id, revoked_at)
+         VALUES ($1, $2, 'analyst', $3, 'inviter', now() + interval '7 days', $4, $5, $6)`,
+        [
+          businessId,
+          to,
+          `hash-${randomUUID()}`,
+          accepted ? new Date() : null,
+          accepted ? "someone-else" : null,
+          revoked ? new Date() : null,
+        ],
+      );
+    await invite(email.toUpperCase(), false); // pending, different case
+    await invite(email, false, true); // revoked rows still hold the address
+    await invite(email, true); // accepted: org_memberships' to handle, not this
+    await invite(otherEmail, false); // somebody else's
+
+    const report = await executeDeletion(subjectId, postgresHandlers(pool));
+    const identity = report.results.find((result) => result.domain === "identity");
+    // The credential and the two unaccepted invitations.
+    expect(identity?.outcome).toMatchObject({ status: "erased", records: 3 });
+
+    const left = await pool.query<{ email: string; accepted: boolean }>(
+      `SELECT email, accepted_at IS NOT NULL AS accepted
+         FROM business.team_invitations WHERE business_id = $1 ORDER BY email`,
+      [businessId],
+    );
+    expect(left.rows).toEqual([
+      { email, accepted: true },
+      { email: otherEmail, accepted: false },
+    ]);
+
+    // Idempotent: a second run finds nothing.
+    const again = await executeDeletion(subjectId, postgresHandlers(pool));
+    expect(again.results.find((r) => r.domain === "identity")?.outcome).toMatchObject({
+      status: "erased",
+      records: 0,
+    });
+    await owner.query(`DELETE FROM business.team_invitations WHERE business_id = $1`, [businessId]);
+    await owner.query(`DELETE FROM business.business_accounts WHERE id = $1`, [businessId]);
+  });
+
   it("reports zero, not an error, for a subject who never existed", async () => {
     const report = await executeDeletion(randomUUID(), postgresHandlers(pool));
     const identity = report.results.find((result) => result.domain === "identity");
@@ -280,8 +345,8 @@ describe("erasing identity: profile, credential, session, guardian consent and b
 
 describe("the report against the real domain map", () => {
   it("is still incomplete, and says exactly who owes a handler", async () => {
-    // The honest state: two domains handled, the rest not. The request must
-    // NOT report success — that is the whole point of the orchestrator.
+    // These handlers alone leave the ledger (the API supplies that one), so the
+    // request must NOT report success — that is the whole point of the orchestrator.
     const report = await executeDeletion(SEEDED_OWNER, postgresHandlers(pool));
 
     expect(report.complete).toBe(false);

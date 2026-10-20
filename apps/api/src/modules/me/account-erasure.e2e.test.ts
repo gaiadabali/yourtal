@@ -224,3 +224,81 @@ describe("DELETE /api/me erases every personal table", () => {
     expect(after.statusCode).toBe(401);
   });
 });
+
+describe("DELETE /api/me and team invitations, and the completeness of the report", () => {
+  const businessIds: string[] = [];
+
+  afterAll(async () => {
+    for (const id of businessIds) {
+      await owner.execute(sql`DELETE FROM business.team_invitations WHERE business_id = ${id}`);
+      await owner.execute(sql`DELETE FROM business.business_accounts WHERE id = ${id}`);
+    }
+  });
+
+  async function business(): Promise<string> {
+    const id = randomUUID();
+    await owner.execute(sql`
+      INSERT INTO business.business_accounts
+        (id, legal_name, display_name, tax_id_kind, tax_id_value,
+         address_state, address_postcode, roles, region, currency, handle)
+      VALUES (${id}, 'Invite Fixture Pty Ltd', 'Invite Fixture', 'ABN', '12345678901',
+              'NSW', '2000', '["advertiser"]'::jsonb, 'AU', 'AUD', ${`inv-${id.slice(0, 8)}`})`);
+    businessIds.push(id);
+    return id;
+  }
+
+  async function invite(businessId: string, email: string): Promise<void> {
+    await owner.execute(sql`
+      INSERT INTO business.team_invitations
+        (business_id, email, role, token_hash, invited_by_user_id, expires_at)
+      VALUES (${businessId}, ${email}, 'analyst', ${`hash-${randomUUID()}`}, 'inviter',
+              now() + interval '7 days')`);
+  }
+
+  async function invitedEmails(businessId: string): Promise<string[]> {
+    const result = await owner.execute<{ email: string }>(
+      sql`SELECT email FROM business.team_invitations WHERE business_id = ${businessId}`,
+    );
+    return result.rows.map((row) => row.email).sort();
+  }
+
+  const del = (session: TestSession) =>
+    app.inject({
+      method: "DELETE",
+      url: "/api/me",
+      headers: { cookie: session.cookie, "idempotency-key": randomUUID() },
+    });
+
+  it("1.24: removes pending invitations to the deleted person's email, keeps everyone else's, and reports complete", async () => {
+    const leaving = await sessionFor(app, { jurisdiction: "AU" });
+    const staying = await sessionFor(app, { jurisdiction: "AU" });
+    const businessId = await business();
+    const elsewhere = await business();
+    const thirdParty = `third-${randomUUID()}@example.test`;
+    await invite(businessId, leaving.email);
+    await invite(elsewhere, leaving.email.toUpperCase());
+    await invite(businessId, staying.email);
+    await invite(businessId, thirdParty);
+
+    const deleted = await del(leaving);
+    expect(deleted.statusCode, deleted.body).toBe(200);
+    const report = deleted.json<{
+      complete: boolean;
+      results: { domain: string; outcome: { status: string } }[];
+    }>();
+    expect(report.complete).toBe(true);
+    expect(report.results.filter((r) => r.outcome.status === "unhandled")).toEqual([]);
+
+    expect(await invitedEmails(businessId)).toEqual([staying.email, thirdParty].sort());
+    expect(await invitedEmails(elsewhere)).toEqual([]);
+
+    // A second request: the session is gone, so it is refused and changes nothing.
+    expect((await del(leaving)).statusCode).toBe(401);
+    expect(await invitedEmails(businessId)).toEqual([staying.email, thirdParty].sort());
+
+    // The other person's own deletion is complete too, and leaves the third party's.
+    const second = await del(staying);
+    expect(second.json<{ complete: boolean }>().complete).toBe(true);
+    expect(await invitedEmails(businessId)).toEqual([thirdParty]);
+  });
+});

@@ -1,5 +1,6 @@
 import { type Result, err, ok } from "neverthrow";
 import { BOUNDARIES, BOUNDARY_NAMES, type BoundaryName } from "./boundary";
+import { isAllowListEmpty, parseEmailAllowList } from "./boundaries/email-allowlist";
 
 /**
  * Choosing which implementation of a boundary runs. YT-0535.
@@ -144,19 +145,32 @@ export class StagingDriverModeError extends Error {
           .map((boundary) => `${boundary} (${BOUNDARIES[boundary].modeEnvVar}=live)`)
           .join(", ") +
         `. Staging holds demo data only (red line 11) — a live driver here would reach a ` +
-        `real vendor with simulated money. Set ${boundaries.map((boundary) => BOUNDARIES[boundary].modeEnvVar).join("/")} to "simulated".`,
+        `real vendor with simulated money. Set ${boundaries.map((boundary) => BOUNDARIES[boundary].modeEnvVar).join("/")} to "simulated".` +
+        (boundaries.includes("email")
+          ? ` The only exception is email (F115): EMAIL_DRIVER=live is allowed on staging when ` +
+            `EMAIL_LIVE_ALLOWLIST is a non-empty list, so set the allow-list or go back to simulated.`
+          : ` The only exception is email (F115), allowed live when EMAIL_LIVE_ALLOWLIST is a non-empty list.`),
     );
     this.name = "StagingDriverModeError";
     this.boundaries = boundaries;
   }
 }
 
+/** F115: email is the one boundary allowed live on staging, and only behind a non-empty allow-list. */
+function isEmailAllowedLiveOnStaging(env: Environment): boolean {
+  return !isAllowListEmpty(parseEmailAllowList(env.EMAIL_LIVE_ALLOWLIST));
+}
+
 export function assertStagingDriversSimulated(
   appEnv: string,
   modes: Record<BoundaryName, DriverMode>,
+  env: Environment = {},
 ): void {
   if (appEnv !== "staging") return;
-  const live = BOUNDARY_NAMES.filter((boundary) => modes[boundary] === "live");
+  const emailExempt = modes.email === "live" && isEmailAllowedLiveOnStaging(env);
+  const live = BOUNDARY_NAMES.filter(
+    (boundary) => modes[boundary] === "live" && !(boundary === "email" && emailExempt),
+  );
   if (live.length > 0) {
     throw new StagingDriverModeError(live);
   }
@@ -232,7 +246,8 @@ export function assertDriversConfigured(env: Environment): Record<BoundaryName, 
  * misconfiguration first (`assertDriversConfigured`, in every environment),
  * then staging's stricter "must actually be simulated" rule on top. Kept as
  * one function so a caller cannot wire the first check and forget the
- * second — the same reasoning `assertDriversConfigured` itself gives for
+ * second (with `env`, so the F115 email allow-list exception can be
+ * evaluated) — the same reasoning `assertDriversConfigured` itself gives for
  * checking every boundary in one pass rather than one call site at a time.
  */
 export function assertDriversConfiguredForBoot(
@@ -240,6 +255,6 @@ export function assertDriversConfiguredForBoot(
   appEnv: string,
 ): Record<BoundaryName, DriverMode> {
   const modes = assertDriversConfigured(env);
-  assertStagingDriversSimulated(appEnv, modes);
+  assertStagingDriversSimulated(appEnv, modes, env);
   return modes;
 }

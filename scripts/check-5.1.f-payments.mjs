@@ -552,13 +552,13 @@ async function stepManual() {
   const admin = await login(staff("admin"));
   const before = await balanceOf(owner, biz);
   const quote = await ok(
-    await call("GET", `${billing(biz)}/purchases/quote?points=500`, owner),
+    await call("GET", `${billing(biz)}/purchases/quote?points=1000`, owner),
     "quote",
   );
   const bankReference = `check-5.1.f-${RUN}`;
   const proposed = await call("POST", "/api/staff/economy/AU/purchases", finance, {
     businessId: biz,
-    points: 500,
+    points: 1000,
     paidMinor: quote.subtotalMinor,
     bankReference,
     reason: "5.1.f check: manual bank-transfer purchase",
@@ -594,8 +594,8 @@ async function stepManual() {
   );
   const after = await balanceOf(owner, biz);
   expect(
-    after.totalPoints === before.totalPoints + 500,
-    "the brand's points rose by 500",
+    after.totalPoints === before.totalPoints + 1000,
+    "the brand's points rose by 1,000",
     `${before.totalPoints} -> ${after.totalPoints}`,
   );
   const tax = halfUpTax(quote.subtotalMinor, quote.taxRateBps);

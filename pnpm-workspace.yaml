@@ -24,6 +24,10 @@ overrides:
   # pins browserslist 4.28.6 exactly, and no serwist release fixes it yet.
   # Drop this once serwist unpins it (TASKS.md 0.8.g).
   "browserslist@<4.28.7": "4.29.0"
+  # GHSA-698v-4r3x-3vcv (moderate, 2026-10-20): vite 8.3.0-8.3.2 bundles a launch-editor
+  # that skips % escaping on Windows. vite comes in only through vitest (dev-only).
+  # Drop this once vitest itself resolves vite >= 8.3.3.
+  "vite@>=8.3.0 <8.3.3": "8.3.4"
 auditConfig:
   ignoreGhsas:
     # GHSA-vfj7-8cjw-p6xm (high): braces <=3.0.3 stack exhaustion on deeply

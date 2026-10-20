@@ -1,4 +1,7 @@
 import { randomUUID } from "node:crypto";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import {
   abortRawUpload,
@@ -9,6 +12,7 @@ import {
   getRawObject,
   posterObjectKey,
   putMediaOutput,
+  putPosterLadder,
   rawObjectKey,
 } from "./studio-media";
 
@@ -73,6 +77,28 @@ describe("studio media object store", () => {
     await putMediaOutput(client, { kind: "poster", key, body: Buffer.from("fake-jpeg-bytes") });
     const downloaded = await getRawObject(client, key);
     expect(Buffer.from(downloaded).toString()).toBe("fake-jpeg-bytes");
+  });
+
+  it("writes every poster size, the 640 under the original key", async () => {
+    const assetId = randomUUID();
+    const dir = mkdtempSync(path.join(tmpdir(), "yt-poster-ladder-put-"));
+    const posters = ([320, 640, 960] as const).map((longSide) => {
+      const file = path.join(dir, `poster-${String(longSide)}.jpg`);
+      writeFileSync(file, `jpeg-${String(longSide)}`);
+      return { longSide, path: file };
+    });
+    const base = posterObjectKey(assetId);
+    const keys = [`posters/${assetId}-320.jpg`, base, `posters/${assetId}-960.jpg`];
+    cleanupKeys.push(...keys);
+    try {
+      await putPosterLadder(client, assetId, posters);
+      for (const [i, key] of keys.entries()) {
+        const expected = `jpeg-${String(posters[i]?.longSide)}`;
+        expect(Buffer.from(await getRawObject(client, key)).toString()).toBe(expected);
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("mints a presigned PUT for a listing picture under the public posters prefix", async () => {

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import {
   AbortMultipartUploadCommand,
   CompleteMultipartUploadCommand,
@@ -26,6 +27,11 @@ import {
   resolveOriginEndpoint,
   resolvePresignEndpoint,
 } from "./hls-origin";
+import {
+  POSTER_LONG_SIDE,
+  posterVariantKey,
+  type PosterLongSide,
+} from "./poster-variants";
 
 /**
  * The studio media pipeline's object layout (TASKS.md 7.2), on the SAME
@@ -438,6 +444,24 @@ export async function putMediaOutput(
           : "public, max-age=31536000, immutable",
     }),
   );
+}
+
+/**
+ * 14.6.b: writes every poster size for one asset, the 640 under the original
+ * `posters/<id>.jpg` key (that is `posterUrl`) and the others beside it. An id
+ * that is not a uuid has no variant keys, so only the base poster is written.
+ */
+export async function putPosterLadder(
+  client: S3Client,
+  assetId: string,
+  posters: readonly { readonly longSide: PosterLongSide; readonly path: string }[],
+): Promise<void> {
+  const base = posterObjectKey(assetId);
+  for (const poster of posters) {
+    const key = posterVariantKey(base, poster.longSide) ?? (poster.longSide === POSTER_LONG_SIDE ? base : null);
+    if (key === null) continue;
+    await putMediaOutput(client, { kind: "poster", key, body: readFileSync(poster.path) });
+  }
 }
 
 export { HLS_PREFIX };

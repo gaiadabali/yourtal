@@ -31,3 +31,13 @@ export const partnerReceipts = platformPgSchema.table("partner_receipt", {
   externalRef: text("external_ref").notNull(),
   grantedAt: timestamp("granted_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** 14.3.a (20261020134042): a lasting partner link; at most one active per (partner, user). */
+export const partnerLinks = platformPgSchema.table("partner_link", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  partnerId: text("partner_id").notNull(),
+  userId: text("user_id").notNull(),
+  region: text("region").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+});

@@ -89,6 +89,16 @@ const DOMAINS: readonly DataDomain[] = [
     onDeletion: "erase",
   },
   {
+    id: "partner_links",
+    holds:
+      "Which partner apps (such as SnapApp) the account linked, its one-time link codes, and which receipts it reported",
+    service: "partners",
+    owner: "ops",
+    onDeletion: "anonymise",
+    basis:
+      "A receipt earns once (F101), so its record must outlive the account or the same receipt could be paid again to someone else; the subject is detached from it. Links are revoked rather than deleted so a partner calling with one is told it was revoked, keyed only by the opaque user id as the ledger's rows are (F88). Link codes are deleted.",
+  },
+  {
     id: "consent_records",
     holds: "Which purposes were agreed to, when, at which policy version",
     service: "consent",

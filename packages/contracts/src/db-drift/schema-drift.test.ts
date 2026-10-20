@@ -658,6 +658,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "2.3.d's append-only audit trail for /dev/clock -- a reviewer's own action log, gated out of production by APP_ENV, never a domain contract any consumer parses.",
   "platform.partner_credential":
     "TASKS.md 8.4.a (20260927190000_partner_actions.sql): the HMAC signing secret for a partner integration (snap-app) -- held in plaintext because verification needs the key material itself, not a hash (docs/16, Helios red line 11: simulated/demo-only). Never read back through any endpoint.",
+  "platform.partner_link":
+    "TASKS.md 14.3.a: a lasting partner link (partner, user, region, revoked). Read back only through linkedAppSchema (me/linked-app.ts) and partnerLinkResultSchema, each a partial projection (id as linkId, created_at as linkedAt/createdAt); user_id and revoked_at never reach a client.",
   "platform.partner_receipt":
     "TASKS.md 8.4.a: the (partner, receipt hash) dedup/audit row behind grant-partner-action.use-case.ts's duplicate check. No contract mirrors it -- POST /api/partners/actions only ever returns partnerActionResultSchema's {granted, points}.",
   "store.listing_location":

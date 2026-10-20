@@ -197,6 +197,23 @@ export function eraseIdentity(pool: pg.Pool): DomainHandler {
 }
 
 /**
+ * The `partner_links` domain (14.3): revokes the subject's partner links,
+ * detaches them from the receipts they reported and deletes their link
+ * codes, all inside `platform.forget_partner_subject` (SECURITY DEFINER, like
+ * `voucher.anonymise_owner`), so the app needs no wider grant for it.
+ * `anonymise`: the receipt rows must survive, or a receipt could earn twice.
+ */
+export function forgetPartnerLinks(pool: pg.Pool): DomainHandler {
+  return async (subjectId: string): Promise<number> => {
+    const { rows } = await pool.query<{ forgotten: number }>(
+      "SELECT platform.forget_partner_subject($1) AS forgotten",
+      [subjectId],
+    );
+    return rows[0]?.forgotten ?? 0;
+  };
+}
+
+/**
  * The handlers this database can supply today.
  *
  * Deliberately NOT a complete registry. Passing it to `executeDeletion` still
@@ -214,5 +231,6 @@ export function postgresHandlers(pool: pg.Pool): HandlerRegistry {
     // 1.4.f: business membership plus identity.user_profile, .credential
     // and .session — see eraseIdentity's own doc comment.
     identity: eraseIdentity(pool),
+    partner_links: forgetPartnerLinks(pool),
   };
 }

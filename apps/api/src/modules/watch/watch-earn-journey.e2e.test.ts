@@ -156,10 +156,12 @@ beforeAll(async () => {
     INSERT INTO platform.ledger_fake_allocation (id, business_id, region, funder_type, currency, total_points, remaining_points)
     VALUES (${allocationId}, ${businessId}, 'AU', 'partner', 'AUD', 1000000, 1000000)
   `);
+  // 14.2: live session holds count against the budget, and this file starts
+  // many sessions, so the budget is not the one-completion it used to be.
   await owner.execute(sql`
     INSERT INTO campaign.reward_config
       (campaign_id, allocation_id, funder_type, max_points_for_campaign, reward_points_per_completion, accuracy_bonus_points)
-    VALUES (${campaignId}, ${allocationId}, 'partner', ${REWARD_POINTS}, ${REWARD_POINTS}, 0)
+    VALUES (${campaignId}, ${allocationId}, 'partner', ${100 * REWARD_POINTS}, ${REWARD_POINTS}, 0)
   `);
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();

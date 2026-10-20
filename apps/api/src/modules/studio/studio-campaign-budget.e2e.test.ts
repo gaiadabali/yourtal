@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
+import { ZodValidationPipe } from "nestjs-zod";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AppModule } from "../../app.module";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
@@ -20,6 +21,8 @@ const db = createAppDb(process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE
 beforeAll(async () => {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+  // main.ts's own pipe: the DTOs' normalising and limits are under test here.
+  app.useGlobalPipes(new ZodValidationPipe());
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
 });

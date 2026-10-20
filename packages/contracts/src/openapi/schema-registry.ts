@@ -68,6 +68,7 @@ import {
   userProfileSchema,
 } from "../identity/user-profile";
 import { BILLING_CONTRACT_COMPONENTS } from "./schema-registry-billing";
+import { INVOICE_CONTRACT_COMPONENTS } from "./schema-registry-invoices";
 import { PROOF_CONTRACT_COMPONENTS } from "./schema-registry-proof";
 import { BUSINESS_CONTRACT_COMPONENTS } from "./schema-registry-business";
 import { DEVICE_CONTRACT_COMPONENTS } from "./schema-registry-devices";
@@ -582,6 +583,7 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
   // components here.
   ...BUSINESS_CONTRACT_COMPONENTS,
   ...BILLING_CONTRACT_COMPONENTS,
+  ...INVOICE_CONTRACT_COMPONENTS,
   // --- devices, counter, studio developers: see schema-registry-devices.ts (TASKS.md 8.1-8.3). ---
   ...DEVICE_CONTRACT_COMPONENTS,
   ...REPORT_CONTRACT_COMPONENTS,

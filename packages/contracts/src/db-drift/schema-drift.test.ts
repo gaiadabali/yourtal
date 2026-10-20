@@ -785,6 +785,14 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "5.1.a: mirrored by cardPurchaseSchema (billing/billing.ts) for the return page; provider refs, the idempotency key and review_reason stay server-side.",
   "payment.provider_event":
     "5.1.a: the webhook inbox (claimed event ids), infrastructure for exactly-once handling; no client reads it.",
+  "invoice.issue_skip":
+    "5.3: sources the invoice job could not invoice (business gone, invalid payload), remembered so the job leaves them out of its next batches for a while. Infrastructure; no client reads it.",
+  "invoice.counter":
+    "5.3 (20261020164821_invoice_tax_invoices.sql): one gapless invoice-number counter per region, locked by the issuer in the transaction that inserts the invoice. Infrastructure; no client reads it.",
+  "invoice.invoice":
+    "5.3: mirrored by invoiceSchema (invoice/invoice.ts), composed with the issuer, buyer and lines; the table stores the issuer's and buyer's details as flat issuer_*/buyer_* snapshot columns, and seq (the number's counter value) and source_id stay server-side. Never changed once issued.",
+  "invoice.line":
+    "5.3: mirrored by invoiceLineSchema (invoice/invoice.ts) as the lines of invoiceSchema, returned inside the invoice and never alone.",
   "feed.demotion":
     "TASKS.md 7.7.a, this pass's own ticket. POST /api/feed/:campaignId/not-interested writes a row here but returns only `{ok: true}` (feed.controller.ts) -- the row itself (which campaigns a viewer demoted) is a ranking input read back through FeedItem.why, never returned as a list.",
 };

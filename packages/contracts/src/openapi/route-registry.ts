@@ -19,6 +19,7 @@ import {
 import { STUDIO_MEDIA_ROUTE_DEFINITIONS } from "./route-registry.c-media";
 import { BOOST_ROUTE_DEFINITIONS } from "./route-registry.c-boost";
 import { BILLING_CARD_ROUTE_DEFINITIONS } from "./route-registry.c-billing";
+import { INVOICE_ROUTE_DEFINITIONS } from "./route-registry.c-invoices";
 import { CHARITY_ROUTE_DEFINITIONS } from "./route-registry.c-charity";
 import { AUCTION_ROUTE_DEFINITIONS } from "./route-registry.a-auction";
 import { COUNTER_ROUTE_DEFINITIONS } from "./route-registry.c-counter";
@@ -106,6 +107,7 @@ export const ALL_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   ...STUDIO_MEDIA_ROUTE_DEFINITIONS,
   ...BOOST_ROUTE_DEFINITIONS,
   ...BILLING_CARD_ROUTE_DEFINITIONS,
+  ...INVOICE_ROUTE_DEFINITIONS,
   ...CHARITY_ROUTE_DEFINITIONS,
   ...AUCTION_ROUTE_DEFINITIONS,
   ...COUNTER_ROUTE_DEFINITIONS,

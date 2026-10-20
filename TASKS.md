@@ -207,6 +207,8 @@ The founder's answers to Phase 0 of the cross-app plan, `god/TASKS.md` (its IDs 
 | **F103** | Real vendors (0.7) | **Email: Resend. Payments: Stripe. Brand payouts in AU: Stripe Connect. Business checks (KYB): staff review only for now**, no vendor (H7 stands). |
 | **F104** | Indonesia (0.8) | **Australia is the market; Indonesia is a proof of concept** and stays a demo: no real money moves in ID. ID keeps the simulated payments driver and demo data. Xendit, the ID company (PT) and PSE registration are parked until ID takes real money. F2’s hard walls are unchanged. |
 | **F105** | Teens and SnapApp (0.9) | A teen can use their YourTal account in **SnapApp only, and only when a parent invites them**. The teen gets their own space; the inviting parent can view it, and the teen is told so. No teen uses Free Tax Returns, and teens earn no receipt points (F101). |
+| **F106** | Stripe for now (group 0.7.f) | **Every payment is simulated; no Stripe account for now.** The real Stripe driver runs on staging against YourTal's own payment simulation, which speaks Stripe's API: a checkout page that takes only Stripe's test cards, signed and retried webhooks, refunds, and Connect onboarding, transfers and payouts. A production host refuses to start the simulation. Going live (group 6.8) is keys and an address, not new code. |
+| **F107** | Brand refunds (group 5.1) | **None: a brand's points purchase is final.** The Stripe driver and the simulation keep refunds for later; the staging check has no refund step. Offered: a full refund while unused (recommended), refunds of unused packs. |
 
 ## How to update this file — the rule
 
@@ -1636,7 +1638,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [ ] 14.7.b A Stripe driver (AU) for `PAYMENTS_DRIVER=live` (group 5.1.a), written against Stripe's real API: points purchases, boosts, refunds and webhooks; staging points it at the simulation. The Xendit-shaped simulated driver stays for ID (F104)
   - [ ] 14.7.c The payment parity tests pass for both drivers, Stripe and simulated (group 5.1.c)
   - [ ] 14.7.d Charity auction escrow on the Stripe driver: a bid is held, the winning bid captured and the losing ones released (group 5.1.d)
-  - [ ] 14.7.e Check on staging (group 5.1.f): a brand buys points (`billing/purchases`), pays for a boost, has a purchase approved by staff (`staff/economy/…/purchases`), gets a refund and has a card declined; a charity auction holds, captures and releases bids
+  - [ ] 14.7.e Check on staging (group 5.1.f): a brand buys points (`billing/purchases`), pays for a boost, has a purchase approved by staff (`staff/economy/…/purchases`) and has a card declined; a charity auction holds, captures and releases bids. No refund step (F107); the driver's refunds are checked against the simulation
 - [ ] **14.8 Stripe Connect payouts in AU** (group 5.2, F103) · A + C · needs: 14.7
   - [ ] 14.8.a Stripe Connect payouts to AU brands: on the simulation, a brand and a charity onboard a connected account through the simulated onboarding page, and payouts land in it. ID has no real payouts (F104)
   - [ ] 14.8.b Settlement statements trigger real payouts, after approval

@@ -16,6 +16,10 @@ import {
 } from "./connected-account.repository";
 import { CONNECTED_ACCOUNTS_SERVICE, ConnectedAccountsService } from "./connected-accounts.service";
 import { DISBURSEMENTS, DisbursementRepository } from "./disbursement.repository";
+import {
+  DISBURSEMENT_RECOVERY,
+  DisbursementRecoveryRepository,
+} from "./disbursement-recovery.repository";
 import { StudioPayoutsController } from "./studio-payouts.controller";
 
 /**
@@ -44,6 +48,11 @@ import { StudioPayoutsController } from "./studio-payouts.controller";
       inject: [PAYOUTS_DB],
     },
     {
+      provide: DISBURSEMENT_RECOVERY,
+      useFactory: (db: AppDb) => new DisbursementRecoveryRepository(db),
+      inject: [PAYOUTS_DB],
+    },
+    {
       provide: CONNECTED_ACCOUNTS_SERVICE,
       useFactory: (
         providers: RegionPaymentProviders,
@@ -65,7 +74,7 @@ import { StudioPayoutsController } from "./studio-payouts.controller";
       ],
     },
   ],
-  exports: [CONNECTED_ACCOUNTS_SERVICE, DISBURSEMENTS],
+  exports: [CONNECTED_ACCOUNTS_SERVICE, DISBURSEMENTS, DISBURSEMENT_RECOVERY],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata
 export class PayoutsModule {}

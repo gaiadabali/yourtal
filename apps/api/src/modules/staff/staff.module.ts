@@ -12,9 +12,15 @@ import { StaffUsersController } from "./staff-users.controller";
 import { StaffDisputesController } from "./staff-disputes.controller";
 import { StaffRiskQueueController } from "./staff-risk-queue.controller";
 import { StaffEconomyController } from "./economy/staff-economy.controller";
+import { StaffParkedPurchasesController } from "./economy/staff-parked-purchases.controller";
+import { ParkedPurchasesService } from "./economy/parked-purchases.service";
 import { StaffSettlementController } from "./settlement/staff-settlement.controller";
 import { StaffDisbursementsController } from "./settlement/staff-disbursements.controller";
+import { StaffDisbursementRecoveryController } from "./settlement/staff-disbursement-recovery.controller";
+import { DisbursementRecoveryService } from "./settlement/disbursement-recovery.service";
 import { PayoutsModule } from "../payouts/payouts.module";
+import { BillingModule } from "../billing/billing.module";
+import { PaymentProvidersModule } from "../../shared/drivers/payment-providers.module";
 import { StaffAuditInterceptor } from "./staff-audit.interceptor";
 import { UserAccountAttributeLoader } from "./user-account-attribute-loader";
 import {
@@ -55,15 +61,24 @@ class StaffPoolShutdown implements OnApplicationShutdown {
  * The audit interceptor is global but acts only on `@StaffAction` routes.
  */
 @Module({
-  imports: [WalletModule, SettingsModule, StoreModule, PayoutsModule],
+  imports: [
+    WalletModule,
+    SettingsModule,
+    StoreModule,
+    PayoutsModule,
+    BillingModule,
+    PaymentProvidersModule,
+  ],
   controllers: [
     StaffConsoleController,
     StaffUsersController,
     StaffDisputesController,
     StaffRiskQueueController,
     StaffEconomyController,
+    StaffParkedPurchasesController,
     StaffSettlementController,
     StaffDisbursementsController,
+    StaffDisbursementRecoveryController,
   ],
   providers: [
     {
@@ -109,6 +124,8 @@ class StaffPoolShutdown implements OnApplicationShutdown {
       useFactory: (pool: Pool) => new PostgresEconomyProposalRepository(pool),
       inject: [STAFF_DB_POOL],
     },
+    ParkedPurchasesService,
+    DisbursementRecoveryService,
     UserAccountAttributeLoader,
     StaffPoolShutdown,
     { provide: APP_INTERCEPTOR, useClass: StaffAuditInterceptor },

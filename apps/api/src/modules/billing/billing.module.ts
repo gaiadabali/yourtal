@@ -19,6 +19,10 @@ import {
   CARD_PURCHASES,
   CardPurchaseRepository,
 } from "./persistence/card-purchase.repository";
+import {
+  CARD_PURCHASE_REFUNDS,
+  CardPurchaseRefundRepository,
+} from "./persistence/card-purchase-refund.repository";
 import { registerPurchaseEvents } from "./use-cases/purchase-events";
 import { BUDGET_ALERTS, BudgetAlertRepository } from "./alerts/budget-alert.repository";
 import { BudgetAlertsService } from "./alerts/budget-alerts.service";
@@ -48,6 +52,11 @@ const PURCHASE_EVENTS = Symbol("PURCHASE_EVENTS");
       inject: [BILLING_DB],
     },
     {
+      provide: CARD_PURCHASE_REFUNDS,
+      useFactory: (db: AppDb) => new CardPurchaseRefundRepository(db),
+      inject: [BILLING_DB],
+    },
+    {
       provide: BUDGET_ALERTS,
       useFactory: (db: AppDb) => new BudgetAlertRepository(db),
       inject: [BILLING_DB],
@@ -61,14 +70,20 @@ const PURCHASE_EVENTS = Symbol("PURCHASE_EVENTS");
         handlers: PaymentEventHandlers,
         ledger: LedgerInternalClient,
         purchases: CardPurchaseRepository,
+        refunds: CardPurchaseRefundRepository,
       ) => {
-        registerPurchaseEvents(handlers, { ledger, purchases });
+        registerPurchaseEvents(handlers, { ledger, purchases, refunds });
         return true;
       },
-      inject: [PAYMENT_EVENT_HANDLERS, LEDGER_INTERNAL_CLIENT, CARD_PURCHASES],
+      inject: [
+        PAYMENT_EVENT_HANDLERS,
+        LEDGER_INTERNAL_CLIENT,
+        CARD_PURCHASES,
+        CARD_PURCHASE_REFUNDS,
+      ],
     },
   ],
-  exports: [BudgetAlertsService],
+  exports: [BudgetAlertsService, CARD_PURCHASE_REFUNDS],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata, YT-0100
 export class BillingModule {}

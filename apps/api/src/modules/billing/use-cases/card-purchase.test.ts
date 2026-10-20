@@ -98,10 +98,22 @@ function fakeLedger(refuse?: {
   };
 }
 
+function memoryRefunds() {
+  const settled: { paymentRef: string; refundRef: string }[] = [];
+  return {
+    settled,
+    settleFromEvent: (paymentRef: string, refundRef: string) => {
+      settled.push({ paymentRef, refundRef });
+      return Promise.resolve(true);
+    },
+  };
+}
+
 function deps(driver: PaymentsDriver, ledger = fakeLedger(), purchases = memoryPurchases()) {
   return {
     ledger,
     purchases,
+    refunds: memoryRefunds(),
     businesses: {
       findRegionAndCurrency: () =>
         Promise.resolve({ region: "AU" as const, currency: "AUD" as const }),
@@ -362,6 +374,33 @@ describe("fulfilPurchase and the webhook handlers", () => {
       reference: "card-setup:6f0e1d1a-3b7e-4c55-9d43-2b1d2d1f0a01",
     });
     expect([...d.purchases.rows.values()].map((r) => r.status)).toEqual(["pending"]);
+  });
+
+  it("never turns a refunded purchase into points when its payment is delivered again (F123)", async () => {
+    const { d, id } = await pendingOnStripe();
+    const row = d.purchases.rows.get(id);
+    if (row === undefined) throw new Error("no row");
+    const refunded = { ...row, status: "refunded" as const };
+    const result = await fulfilPurchase(d, refunded, {
+      amountMinor: row.totalMinor,
+      currency: "AUD",
+      paymentRef: "pi_1",
+    });
+    expect(result.row).toBe(refunded);
+    expect(d.ledger.grants).toEqual([]);
+  });
+
+  it("hands a refund.succeeded to the refund settler, by the payment it refunds", async () => {
+    const { d, handlers } = await pendingOnStripe();
+    await handlers.dispatch({
+      type: "refund.succeeded",
+      eventId: "evt_refund",
+      refundReference: "re_1",
+      paymentReference: "pi_1",
+      amountMinor: 4_950,
+      currency: "AUD",
+    });
+    expect(d.refunds.settled).toEqual([{ paymentRef: "pi_1", refundRef: "re_1" }]);
   });
 
   it("leaves an already-paid purchase alone", async () => {

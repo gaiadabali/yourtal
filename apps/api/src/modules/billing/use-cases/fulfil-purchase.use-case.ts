@@ -41,7 +41,10 @@ export async function fulfilPurchase(
   row: CardPurchaseRow,
   paid: PaymentReceived,
 ): Promise<{ readonly row: CardPurchaseRow; readonly allocation: Allocation | null }> {
-  if (row.status === "paid" || row.status === "needs_review") return { row, allocation: null };
+  // Parked and refunded money is never turned into points by a replayed delivery (F123).
+  if (row.status === "paid" || row.status === "needs_review" || row.status === "refunded") {
+    return { row, allocation: null };
+  }
 
   const park = async (reason: string) => {
     logger.error(`card purchase ${row.id} needs review: ${reason}`);

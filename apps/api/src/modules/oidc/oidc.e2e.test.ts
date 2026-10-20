@@ -314,7 +314,9 @@ describe("sign in with YourTal, end to end", () => {
       expectedNonce: started.nonce,
     };
     await client.authorizationCodeGrant(config, callback, checks);
-    await expect(client.authorizationCodeGrant(config, callback, checks)).rejects.toThrow();
+    await expect(client.authorizationCodeGrant(config, callback, checks)).rejects.toMatchObject({
+      error: "invalid_grant",
+    });
   });
 });
 
@@ -409,10 +411,10 @@ describe("what the provider refuses", () => {
     expect(token.expires_in).toBeLessThanOrEqual(600);
     await expect(
       client.clientCredentialsGrant(await webApp(), { scope: "teen_invites" }),
-    ).rejects.toThrow(/unauthorized_client|grant/);
-    await expect(client.clientCredentialsGrant(server, { scope: "openid" })).rejects.toThrow(
-      /invalid_scope|scope/,
-    );
+    ).rejects.toMatchObject({ error: "unauthorized_client" });
+    await expect(client.clientCredentialsGrant(server, { scope: "openid" })).rejects.toMatchObject({
+      error: "invalid_scope",
+    });
   });
 });
 

@@ -57,13 +57,25 @@ function makeTx(c: PgClientLike): PaySimTx {
     },
     async put(o) {
       await c.query(
-        `INSERT INTO paysim.object (${OBJECT_COLUMNS})
-         VALUES ($1, $2, $3, $4::jsonb, $5::jsonb, $6)
+        // created_at is clock_timestamp(), not the transaction's now(), so objects made in one transaction still
+        // list in the order they were inserted.
+        `INSERT INTO paysim.object (${OBJECT_COLUMNS}, created_at)
+         VALUES ($1, $2, $3, $4::jsonb, $5::jsonb, $6, clock_timestamp())
          ON CONFLICT (id) DO UPDATE
            SET type = EXCLUDED.type, account = EXCLUDED.account, data = EXCLUDED.data,
                internal = EXCLUDED.internal, due_at = EXCLUDED.due_at, updated_at = now()`,
         [o.id, o.type, o.account, JSON.stringify(o.data), JSON.stringify(o.internal), o.dueAt],
       );
+    },
+    async list(type, account) {
+      const scoped = account !== undefined;
+      const { rows } = await c.query(
+        `SELECT ${OBJECT_COLUMNS} FROM paysim.object
+          WHERE type = $1${scoped ? " AND account IS NOT DISTINCT FROM $2" : ""}
+          ORDER BY created_at, id`,
+        scoped ? [type, account] : [type],
+      );
+      return rows.map(toObject);
     },
     async getIdempotency(scope, key, notBefore) {
       // Two requests with one key queue here until the first commits.

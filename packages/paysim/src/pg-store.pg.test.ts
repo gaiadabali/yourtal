@@ -67,6 +67,31 @@ describe("objects", () => {
   });
 });
 
+describe("list", () => {
+  it("lists a type oldest first, narrowed by account, in insertion order even within one transaction", async () => {
+    const type = uid("listed");
+    const mine = uid("acct");
+    const [a, b, c, d] = [
+      obj({ type, account: mine }),
+      obj({ type, account: null }),
+      obj({ type, account: mine }),
+      obj({ type: "other", account: mine }),
+    ] as const;
+    // Ids are random, so only the insertion clock can order these three.
+    await store.transaction(async (tx) => {
+      await tx.put(c);
+      await tx.put(a);
+      await tx.put(b);
+      await tx.put(d);
+    });
+    await store.transaction((tx) => tx.put({ ...c, data: { touched: true } }));
+    const ids = (rows: StoredObject[]): string[] => rows.map((x) => x.id);
+    expect(ids(await store.transaction((tx) => tx.list(type)))).toEqual([c.id, a.id, b.id]);
+    expect(ids(await store.transaction((tx) => tx.list(type, mine)))).toEqual([c.id, a.id]);
+    expect(ids(await store.transaction((tx) => tx.list(type, null)))).toEqual([b.id]);
+  });
+});
+
 describe("idempotency records", () => {
   it("stores by scope and key, and ignores a record older than the cutoff", async () => {
     const key = uid("k");

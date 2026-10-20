@@ -44,6 +44,37 @@ export interface MoneyToAccountRequest {
   readonly reference: string;
 }
 
+export type PayoutProgress = "pending" | "paid" | "failed";
+
+/** A payout as the processor shows it. `pending` covers Stripe's pending and in_transit. */
+export interface PayoutDetails {
+  readonly payoutRef: string;
+  readonly status: PayoutProgress;
+  /** OUR minor units (converted back from provider units). */
+  readonly amountMinor: number;
+  readonly currency: Currency;
+  /** The metadata.reference we sent with the payout, e.g. "disbursement:<id>:<attempt>". */
+  readonly reference: string | null;
+  /** Set only when status is "failed". */
+  readonly failureCode: string | null;
+}
+
+export interface TransferDetails {
+  readonly transferRef: string;
+  readonly amountMinor: number;
+  readonly currency: Currency;
+  /** metadata.reference, e.g. "disbursement:<id>". */
+  readonly reference: string | null;
+}
+
+export interface FindMoneyRequest {
+  readonly accountRef: string;
+  /** The metadata.reference to look for. */
+  readonly reference: string;
+  /** Only objects created at or after this are looked at. */
+  readonly since: Date;
+}
+
 export interface PayoutAccountsDriver {
   readonly mode: DriverMode;
   readonly provider: "stripe" | "simulated";
@@ -63,6 +94,13 @@ export interface PayoutAccountsDriver {
   ): Promise<
     Result<{ readonly payoutRef: string; readonly status: "pending" | "paid" }, BoundaryFailure>
   >;
+  getPayout(accountRef: string, payoutRef: string): Promise<Result<PayoutDetails, BoundaryFailure>>;
+  /**
+   * For a lost answer: the app has only the reference it sent. `null` MEANS "the processor shows nothing", so it is
+   * returned only after scanning everything since `since`; a scan cut short is a may-have-succeeded failure.
+   */
+  findPayout(request: FindMoneyRequest): Promise<Result<PayoutDetails | null, BoundaryFailure>>;
+  findTransfer(request: FindMoneyRequest): Promise<Result<TransferDetails | null, BoundaryFailure>>;
 }
 
 export interface SimulatedPayoutAccountsDriver extends PayoutAccountsDriver {
@@ -94,6 +132,9 @@ export function createSimulatedPayoutAccounts(
 ): SimulatedPayoutAccountsDriver {
   const engine = new FaultEngine(faultPlan);
   const sentToProvider = new Map<string, number>();
+  // What was moved, by ref and by the reference sent, so a read-back can answer within one driver instance.
+  const payouts = new Map<string, PayoutDetails>();
+  const transfers = new Map<string, TransferDetails>();
   const now = options.nowMs ?? Date.now;
   const exponents: Partial<Record<Currency, number>> = {
     AUD: options.declaredMinorUnitExponent?.AUD ?? 2,
@@ -103,6 +144,12 @@ export function createSimulatedPayoutAccounts(
   };
   const refuse = (detail: string): Result<never, BoundaryFailure> =>
     err({ kind: "declined", boundary: "disbursement", detail, mayHaveSucceeded: false });
+
+  function gate(accountRef: string): Result<void, BoundaryFailure> {
+    if (!accountRef.startsWith(ACCOUNT_PREFIX)) return refuse(`No such account ${accountRef}.`);
+    const directive = engine.nextCall();
+    return directive === "proceed" ? ok(undefined) : err(failureFor("disbursement", directive));
+  }
 
   function move(prefix: string, request: MoneyToAccountRequest): Result<string, BoundaryFailure> {
     const exponent = exponents[request.currency];
@@ -116,6 +163,26 @@ export function createSimulatedPayoutAccounts(
     if (amount.isErr()) return refuse(amount.error.detail);
     const ref = reference(prefix, request.idempotencyKey);
     sentToProvider.set(ref, amount.value);
+    const known = { amountMinor: request.amountMinor, currency: request.currency };
+    if (prefix === "simpo_") {
+      const details: PayoutDetails = {
+        payoutRef: ref,
+        status: "paid",
+        ...known,
+        reference: request.reference,
+        failureCode: null,
+      };
+      payouts.set(ref, details);
+      payouts.set(request.reference, details);
+    } else {
+      const details: TransferDetails = {
+        transferRef: ref,
+        ...known,
+        reference: request.reference,
+      };
+      transfers.set(ref, details);
+      transfers.set(request.reference, details);
+    }
     return ok(ref);
   }
 
@@ -157,6 +224,24 @@ export function createSimulatedPayoutAccounts(
       return Promise.resolve(
         move("simpo_", request).map((payoutRef) => ({ payoutRef, status: "paid" as const })),
       );
+    },
+    getPayout(accountRef, payoutRef) {
+      const allowed = gate(accountRef);
+      if (allowed.isErr()) return Promise.resolve(err(allowed.error));
+      const found = payouts.get(payoutRef);
+      return Promise.resolve(
+        found?.payoutRef === payoutRef ? ok(found) : refuse(`No such payout ${payoutRef}.`),
+      );
+    },
+    findPayout(request) {
+      const allowed = gate(request.accountRef);
+      if (allowed.isErr()) return Promise.resolve(err(allowed.error));
+      return Promise.resolve(ok(payouts.get(request.reference) ?? null));
+    },
+    findTransfer(request) {
+      const allowed = gate(request.accountRef);
+      if (allowed.isErr()) return Promise.resolve(err(allowed.error));
+      return Promise.resolve(ok(transfers.get(request.reference) ?? null));
     },
   };
 }

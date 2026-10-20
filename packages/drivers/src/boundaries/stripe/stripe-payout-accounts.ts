@@ -10,6 +10,7 @@ import {
   unexpectedAnswer,
 } from "./stripe-client";
 import { STRIPE_EXPONENTS, stripeCurrency, toStripeAmount } from "./stripe-money";
+import { findPayout, findTransfer, getPayout } from "./stripe-payout-readback";
 import { bankLast4, bool, int, str } from "./stripe-object";
 
 /**
@@ -140,6 +141,10 @@ export function createStripePayoutAccounts(
         return ok({ payoutRef, status: "pending" as const });
       return err(declined(`Payout ${payoutRef} is ${status ?? "unknown"}.`));
     },
+
+    getPayout: (accountRef, payoutRef) => getPayout(client, accountRef, payoutRef),
+    findPayout: (request) => findPayout(client, request),
+    findTransfer: (request) => findTransfer(client, request),
   };
 }
 

@@ -83,4 +83,88 @@ describe("simulated payout accounts", () => {
       mayHaveSucceeded: true,
     });
   });
+
+  describe("read-back", () => {
+    const move = {
+      idempotencyKey: "disb:1",
+      amountMinor: 4_500,
+      currency: "AUD" as const,
+      accountRef: "simacct_1",
+      reference: "disbursement:1",
+    };
+    const since = new Date(0);
+
+    it("reads back what it moved, by ref and by the reference it was sent", async () => {
+      const driver = accounts();
+      const transfer = (await driver.transfer(move))._unsafeUnwrap();
+      const payout = (
+        await driver.payout({ ...move, reference: "disbursement:1:1" })
+      )._unsafeUnwrap();
+      const details = {
+        payoutRef: payout.payoutRef,
+        status: "paid",
+        amountMinor: 4_500,
+        currency: "AUD",
+        reference: "disbursement:1:1",
+        failureCode: null,
+      };
+      expect((await driver.getPayout("simacct_1", payout.payoutRef))._unsafeUnwrap()).toStrictEqual(
+        details,
+      );
+      const foundPayout = await driver.findPayout({
+        accountRef: "simacct_1",
+        reference: "disbursement:1:1",
+        since,
+      });
+      expect(foundPayout._unsafeUnwrap()).toStrictEqual(details);
+      const foundTransfer = await driver.findTransfer({
+        accountRef: "simacct_1",
+        reference: "disbursement:1",
+        since,
+      });
+      expect(foundTransfer._unsafeUnwrap()).toStrictEqual({
+        transferRef: transfer.transferRef,
+        amountMinor: 4_500,
+        currency: "AUD",
+        reference: "disbursement:1",
+      });
+    });
+
+    it("says nothing was found as null, and refuses an unknown payout or account", async () => {
+      const driver = accounts();
+      (await driver.payout(move))._unsafeUnwrap();
+      const find = { accountRef: "simacct_1", reference: "disbursement:9", since };
+      expect((await driver.findPayout(find))._unsafeUnwrap()).toBeNull();
+      expect((await driver.findTransfer(find))._unsafeUnwrap()).toBeNull();
+      // A reference is not a ref.
+      const byReference = await driver.getPayout("simacct_1", "disbursement:1");
+      expect(byReference._unsafeUnwrapErr()).toMatchObject({
+        kind: "declined",
+        mayHaveSucceeded: false,
+      });
+      expect((await driver.getPayout("simacct_1", "simpo_nope"))._unsafeUnwrapErr().kind).toBe(
+        "declined",
+      );
+      expect((await driver.getPayout("acct_real", "simpo_x"))._unsafeUnwrapErr().kind).toBe(
+        "declined",
+      );
+      expect((await driver.findPayout({ ...find, accountRef: "acct_real" })).isErr()).toBe(true);
+      expect((await driver.findTransfer({ ...find, accountRef: "acct_real" })).isErr()).toBe(true);
+    });
+
+    it("returns the fault for a faulted read-back", async () => {
+      const driver = createSimulatedPayoutAccounts({ kind: "timeout" });
+      const find = { accountRef: "simacct_1", reference: "r", since };
+      for (const failed of [
+        await driver.getPayout("simacct_1", "simpo_x"),
+        await driver.findPayout(find),
+        await driver.findTransfer(find),
+      ]) {
+        expect(failed._unsafeUnwrapErr()).toMatchObject({
+          kind: "timeout",
+          mayHaveSucceeded: true,
+        });
+      }
+    });
+  });
 });

@@ -5,6 +5,7 @@ import { accountBalance, platformBalance } from "../domain/money";
 import { jo, load, sv } from "../domain/repo";
 import { createTransfer } from "../domain/transfers";
 import { type Route, ok } from "./common";
+import { createdFilter, listPage } from "./lists";
 
 function aud(param: string, value: string): void {
   if (value !== "aud") {
@@ -57,6 +58,40 @@ export const moneyRoutes: Route[] = [
         metadata: metadata(params, "metadata"),
       });
       return ok(ctx, payout, params);
+    },
+  },
+  {
+    method: "GET",
+    path: "/v1/payouts",
+    async run(ctx, { params }) {
+      if (ctx.account === null) {
+        throw invalidRequest(
+          "Payouts are listed on a connected account in this simulation: send the Stripe-Account header.",
+        );
+      }
+      const payouts = await ctx.tx.list("payout", ctx.account);
+      return listPage(ctx, params, "payout", "/v1/payouts", payouts, createdFilter(params));
+    },
+  },
+  {
+    method: "GET",
+    path: "/v1/transfers",
+    async run(ctx, { params }) {
+      const transfers = await ctx.tx.list("transfer", null);
+      const inRange = createdFilter(params);
+      const destination = str(params, "destination");
+      const group = str(params, "transfer_group");
+      return listPage(
+        ctx,
+        params,
+        "transfer",
+        "/v1/transfers",
+        transfers,
+        (o) =>
+          inRange(o) &&
+          (destination === undefined || o.data["destination"] === destination) &&
+          (group === undefined || o.data["transfer_group"] === group),
+      );
     },
   },
   {

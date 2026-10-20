@@ -40,6 +40,13 @@ export function createMemoryPaySimStore(): PaySimStore {
       state.objects.set(obj.id, structuredClone(obj));
       return Promise.resolve();
     },
+    list(type, account) {
+      // A Map keeps first-insertion order, which a later put of the same id does not change.
+      const found = [...state.objects.values()].filter(
+        (o) => o.type === type && (account === undefined || o.account === account),
+      );
+      return Promise.resolve(structuredClone(found));
+    },
     getIdempotency(scope, key, notBefore) {
       const rec = state.idempotency.get(idemKey(scope, key));
       const live = rec !== undefined && rec.createdAt >= notBefore;

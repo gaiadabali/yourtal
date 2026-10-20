@@ -251,4 +251,105 @@ describe("Stripe Connect payout accounts", () => {
       settings: { payouts: { schedule: { interval: "daily" } } },
     });
   });
+
+  describe("read-back", () => {
+    async function paidOut(key: string, bank?: string) {
+      const account = await onboardedAccount(h, key, "business", bank);
+      const request = {
+        idempotencyKey: `disbursement:${key}`,
+        amountMinor: 7_500,
+        currency: "AUD" as const,
+        accountRef: account,
+        reference: `disbursement:${key}`,
+      };
+      (await h.payoutAccounts.transfer(request))._unsafeUnwrap();
+      const payout = (
+        await h.payoutAccounts.payout({ ...request, reference: `disbursement:${key}:1` })
+      )._unsafeUnwrap();
+      return { account, payout };
+    }
+    const since = () => new Date(h.now().getTime() - 60_000);
+
+    it("reads a fresh payout as pending, then paid after the sweep", async () => {
+      const { account, payout } = await paidOut("rb1");
+      const before = h.apiCalls.length;
+      const pending = await h.payoutAccounts.getPayout(account, payout.payoutRef);
+      expect(pending._unsafeUnwrap()).toStrictEqual({
+        payoutRef: payout.payoutRef,
+        status: "pending",
+        amountMinor: 7_500,
+        currency: "AUD",
+        reference: "disbursement:rb1:1",
+        failureCode: null,
+      });
+      const calls = h.apiCalls.slice(before);
+      expect(calls.map((c) => c.method)).toStrictEqual(["GET"]);
+      expect(calls[0]?.url).toMatch(new RegExp(`/v1/payouts/${payout.payoutRef}$`));
+      h.advance(30_000);
+      await h.deliver();
+      const paid = await h.payoutAccounts.getPayout(account, payout.payoutRef);
+      expect(paid._unsafeUnwrap()).toMatchObject({ status: "paid", failureCode: null });
+    });
+
+    it("reads a payout to 111111116 as failed with no_account", async () => {
+      const { account, payout } = await paidOut("rb2", "111111116");
+      h.advance(30_000);
+      await h.deliver();
+      const failed = await h.payoutAccounts.getPayout(account, payout.payoutRef);
+      expect(failed._unsafeUnwrap()).toMatchObject({
+        status: "failed",
+        failureCode: "no_account",
+        amountMinor: 7_500,
+      });
+    });
+
+    it("finds a payout by the reference sent, and null for one never sent", async () => {
+      const { account, payout } = await paidOut("rb3");
+      const before = h.apiCalls.length;
+      const found = await h.payoutAccounts.findPayout({
+        accountRef: account,
+        reference: "disbursement:rb3:1",
+        since: since(),
+      });
+      expect(found._unsafeUnwrap()).toMatchObject({
+        payoutRef: payout.payoutRef,
+        status: "pending",
+      });
+      const unknown = await h.payoutAccounts.findPayout({
+        accountRef: account,
+        reference: "disbursement:rb3:2",
+        since: since(),
+      });
+      expect(unknown._unsafeUnwrap()).toBeNull();
+      const gets = h.apiCalls.slice(before);
+      expect(gets.map((c) => c.method)).toStrictEqual(["GET", "GET"]);
+      expect(gets[0]?.url).toContain("/v1/payouts?limit=100&created[gte]=");
+    });
+
+    it("finds a transfer by reference, honours since, and sees none for another account", async () => {
+      const { account } = await paidOut("rb4");
+      const other = await onboardedAccount(h, "rb5", "business");
+      const find = { accountRef: account, reference: "disbursement:rb4", since: since() };
+      expect((await h.payoutAccounts.findTransfer(find))._unsafeUnwrap()).toMatchObject({
+        transferRef: expect.stringMatching(/^tr_/),
+        amountMinor: 7_500,
+        currency: "AUD",
+        reference: "disbursement:rb4",
+      });
+      const later = new Date(h.now().getTime() + 3_600_000);
+      const tooLate = await h.payoutAccounts.findTransfer({ ...find, since: later });
+      expect(tooLate._unsafeUnwrap()).toBeNull();
+      const elsewhere = await h.payoutAccounts.findTransfer({ ...find, accountRef: other });
+      expect(elsewhere._unsafeUnwrap()).toBeNull();
+      expect(h.apiCalls[h.apiCalls.length - 1]?.url).toContain(
+        `/v1/transfers?destination=${other}&limit=100`,
+      );
+    });
+
+    it("declines a payout the simulation does not know", async () => {
+      const account = await onboardedAccount(h, "rb6", "business");
+      const ghost = await h.payoutAccounts.getPayout(account, "po_ghost");
+      expect(ghost._unsafeUnwrapErr()).toMatchObject({ kind: "declined", mayHaveSucceeded: false });
+    });
+  });
 });

@@ -39,6 +39,7 @@ import { RegionScopeInterceptor } from "./shared/persistence/region-scope.interc
 import { IdempotencyModule } from "./shared/idempotency/idempotency.module";
 import { PdpClientModule } from "./shared/pdp/pdp-client.module";
 import { PersistenceModule } from "./shared/persistence/persistence.module";
+import { EmptyDeleteBodyHook } from "./shared/http/empty-delete-body";
 import { RateLimitGuard } from "./shared/rate-limit/rate-limit.guard";
 import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
 
@@ -82,6 +83,8 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
   // instead of having to remember it. It acts only on routes carrying
   // @Idempotent, and mutating-routes.test.ts is what ensures none is missing.
   providers: [
+    // 1.6.n: a DELETE that declares JSON but sends no body is not a 400.
+    EmptyDeleteBodyHook,
     // Guard before interceptor, which is the order docs/13a specifies:
     // auth -> Cerbos -> idempotency -> module. An unauthenticated caller
     // must not reach the idempotency table at all, or they could poison a

@@ -203,6 +203,14 @@ describe("/api/me/settings/area (my area)", () => {
     expect(rows.rows).toEqual([{ region: "ID" }]);
   });
 
+  it("clears the area on a DELETE that declares JSON but sends no body (1.6.n)", async () => {
+    const session = await sessionFor(app, { jurisdiction: "AU" });
+    const headers = { cookie: session.cookie, "content-type": "application/json" };
+    const cleared = await app.inject({ method: "DELETE", url: "/api/me/settings/area", headers });
+    expect(cleared.statusCode).toBe(200);
+    expect(cleared.json<{ area: unknown }>().area).toBeNull();
+  });
+
   it("is refused for a teen on every route, and nothing is stored", async () => {
     const teen = await registerTeen();
     const headers = { cookie: teen.cookie };

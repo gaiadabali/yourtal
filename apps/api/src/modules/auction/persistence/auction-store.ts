@@ -26,6 +26,8 @@ export interface AuctionRow {
   readonly charityName: string;
   readonly charityCause: string;
   readonly charityLogoUrl: string | null;
+  /** The provider account a winning bid settles into. Never presented. */
+  readonly charityPayoutReference: string;
   readonly title: string;
   readonly merchantName: string;
   readonly category: string;
@@ -55,7 +57,8 @@ type RawAuction = Record<string, unknown>;
 
 const AUCTION_SELECT = sql`
   SELECT a.id, a.region, a.currency, a.seller_id, a.charity_id, c.name AS charity_name,
-         c.cause AS charity_cause, c.logo_url AS charity_logo_url, a.title, a.merchant_name,
+         c.cause AS charity_cause, c.logo_url AS charity_logo_url,
+         c.payout_reference AS charity_payout_reference, a.title, a.merchant_name,
          a.category, a.face_value_minor, a.voucher_expires_at, a.reserve_minor,
          a.current_amount_minor, a.bid_count, lb.bidder_id AS leader_bidder_id, a.starts_at,
          a.ends_at, a.extensions, a.state, a.outcome, s.winner_id
@@ -79,6 +82,7 @@ function toAuction(row: RawAuction): AuctionRow {
     charityName: String(row["charity_name"]),
     charityCause: String(row["charity_cause"]),
     charityLogoUrl: orNull(row["charity_logo_url"], String),
+    charityPayoutReference: String(row["charity_payout_reference"]),
     title: String(row["title"]),
     merchantName: String(row["merchant_name"]),
     category: String(row["category"]),
@@ -201,6 +205,19 @@ export class AuctionStore {
     await tx.execute(
       sql`UPDATE auction.bid SET state = ${state}, resolved_at = now() WHERE id = ${bidId}`,
     );
+  }
+
+  /**
+   * A hold the provider cancelled (its 7-day sweep, or any cancellation) is released: nothing
+   * is left to capture or release. Only a held bid changes, so a replay changes nothing.
+   */
+  async markHoldCanceled(holdReference: string): Promise<boolean> {
+    const { rows } = await this.db.execute(sql`
+      UPDATE auction.bid SET state = 'released', resolved_at = now()
+       WHERE hold_reference = ${holdReference} AND state = 'held'
+      RETURNING id
+    `);
+    return rows.length > 0;
   }
 
   async dueIds(limit = 20): Promise<string[]> {

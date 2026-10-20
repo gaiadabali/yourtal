@@ -1,11 +1,11 @@
 import { sql } from "drizzle-orm";
-import type { MarketplacePaymentsDriver } from "@yourtal/drivers/marketplace-payments";
 import type { VoucherInternalClient } from "../../../shared/voucher-client/voucher-internal-client";
 import type { AuctionStore } from "../persistence/auction-store";
+import type { MarketplaceFor } from "./list-and-bid";
 
 export interface SettleDeps {
   readonly store: AuctionStore;
-  readonly payments: MarketplacePaymentsDriver;
+  readonly marketplace: MarketplaceFor;
   readonly vouchers: VoucherInternalClient;
 }
 
@@ -23,7 +23,8 @@ export interface SettledParties {
 
 /**
  * 13.22.c: close one auction, effectively once. Under the auction's row lock:
- * capture the highest hold straight into the charity's own account (a
+ * capture the highest hold straight into the charity's own account (named
+ * again on the capture, which the Stripe driver checks against the hold; a
  * failed capture falls to the next bid), release every other hold, hand the
  * voucher to the winner (the charity if nobody bid, the seller on a cancel),
  * and write the one settlement row. Returns null when there is nothing to do.
@@ -43,13 +44,14 @@ export async function settleAuction(
     if (charity === null)
       throw new Error(`auction ${auctionId}: its charity is no longer approved`);
 
+    const payments = deps.marketplace(auction.region);
     const bids = await deps.store.heldBids(tx, auctionId);
     let winner: (typeof bids)[number] | null = null;
     let capture: { captureReference: string; destinationReference: string } | null = null;
     const failed = new Set<string>();
     if (cancel === undefined) {
       for (const bid of bids) {
-        const captured = await deps.payments.capture({
+        const captured = await payments.capture({
           idempotencyKey: `auction-capture:${auctionId}:${bid.id}`,
           holdReference: bid.holdReference,
           amountMinor: bid.amountMinor,
@@ -69,7 +71,10 @@ export async function settleAuction(
     // Every other hold is let go; a failed capture's hold is released too.
     for (const bid of bids) {
       if (bid.id === winner?.id) continue;
-      const released = await deps.payments.release(bid.holdReference);
+      const released = await payments.release({
+        idempotencyKey: `auction-release:${bid.id}`,
+        holdReference: bid.holdReference,
+      });
       if (released.isOk() && !failed.has(bid.id)) {
         await deps.store.setBidState(tx, bid.id, "released");
       }

@@ -352,13 +352,22 @@ async function checkInvoices() {
 
 // ----------------------------------------------------------------- steps
 
-async function buy({ card, expect: want, points = 1000 }) {
+async function buy({ card, expect: want, tier = "starter" }) {
   const { owner, biz } = await ownerAndBrand();
   const before = await balanceOf(owner, biz);
+  // F121/F122: a business buys a package; bigger ones cost less per point.
+  const { packages } = await ok(await call("GET", `${billing(biz)}/packages`, owner), "packages");
+  const per1000 = Object.fromEntries(packages.map((p) => [p.tierKey, p.pricePer1000Minor]));
+  expect(
+    per1000.starter > 0 && per1000.grow < per1000.starter && per1000.scale < per1000.grow,
+    "packages on sale, bigger ones cheaper per 1,000 points",
+    packages.map((p) => `${p.tierKey} ${p.points} pts at ${p.pricePer1000Minor}/1,000`).join(", "),
+  );
   const quote = await ok(
-    await call("GET", `${billing(biz)}/purchases/quote?points=${points}`, owner),
+    await call("GET", `${billing(biz)}/purchases/quote?tier=${tier}`, owner),
     "quote",
   );
+  const points = quote.points;
   expect(
     quote.subtotalMinor > 0 &&
       quote.taxMinor === halfUpTax(quote.subtotalMinor, quote.taxRateBps) &&
@@ -369,7 +378,10 @@ async function buy({ card, expect: want, points = 1000 }) {
     `${quote.subtotalMinor} + ${quote.taxMinor} GST (${quote.taxRateBps} bps) = ${quote.totalMinor} ${quote.currency}`,
   );
   const startedAt = new Date();
-  const res = await call("POST", `${billing(biz)}/purchases`, owner, { points, currency: "AUD" });
+  const res = await call("POST", `${billing(biz)}/purchases`, owner, {
+    tierKey: tier,
+    currency: "AUD",
+  });
   const started = await ok(res, "start purchase");
   const sessionId = /\/checkout\/([^/?#]+)/.exec(started.checkoutUrl ?? "")?.[1];
   if (
@@ -552,7 +564,8 @@ async function stepManual() {
   const admin = await login(staff("admin"));
   const before = await balanceOf(owner, biz);
   const quote = await ok(
-    await call("GET", `${billing(biz)}/purchases/quote?points=1000`, owner),
+    // Starter is 1,000 points at the undiscounted rate: what a bank purchase of 1,000 pays.
+    await call("GET", `${billing(biz)}/purchases/quote?tier=starter`, owner),
     "quote",
   );
   const bankReference = `check-5.1.f-${RUN}`;

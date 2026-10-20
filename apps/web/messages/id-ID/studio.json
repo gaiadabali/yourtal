@@ -644,6 +644,7 @@
     "returnStillWaiting": "Pembayaran belum terkonfirmasi. Muat ulang halaman ini sebentar lagi untuk memeriksanya.",
     "returnCancelled": "Pembayaran dibatalkan. Tidak ada yang ditagih.",
     "returnExpired": "Pembayaran ini kedaluwarsa sebelum selesai. Tidak ada yang ditagih.",
+    "returnRefunded": "Pembayaran ini sudah dikembalikan penuh ke kartu Anda. Anda bisa membeli lagi dengan harga hari ini.",
     "returnReview": "Pembayaran Anda sudah kami terima dan sedang diperiksa. Poin Anda akan segera ditambahkan.",
     "cardTitle": "Kartu untuk boost",
     "cardIntro": "Boost ditagihkan ke kartu ini sekali sehari, terpisah dari poin.",

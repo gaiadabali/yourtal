@@ -197,7 +197,14 @@ export function StaffSettlementScreen({
         </CardContent>
       </Card>
 
-      <StaffApprovedPayouts t={t} proposals={payoutProposals} disbursements={disbursements} />
+      <StaffApprovedPayouts
+        t={t}
+        region={region}
+        proposals={payoutProposals}
+        disbursements={disbursements}
+        canAct={canProposePayout}
+        currentStaffId={currentStaffId}
+      />
     </div>
   );
 }

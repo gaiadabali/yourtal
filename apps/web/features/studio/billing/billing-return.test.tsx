@@ -31,6 +31,11 @@ describe("the Billing page after the checkout (5.1.a)", () => {
     ["pending", true, "Payment cancelled. Nothing was charged."],
     ["expired", false, "This payment expired before it was completed. Nothing was charged."],
     [
+      "refunded",
+      false,
+      "This payment was refunded to your card in full. You can buy again at today's price.",
+    ],
+    [
       "needs_review",
       false,
       "We received your payment and are checking it. Your points will be added shortly.",

@@ -26,6 +26,9 @@ const row = (over: Partial<StaffDisbursement>): StaffDisbursement => ({
   transferredAt: null,
   paidAt: null,
   failedAt: null,
+  checkedAt: null,
+  needsStaff: false,
+  retryProposal: null,
   ...over,
 });
 
@@ -41,6 +44,14 @@ describe("disbursementLine (5.2)", () => {
     [
       row({ status: "failed", failureCode: "account_closed", attempt: 2 }),
       "Failed (account_closed) (attempt 2)",
+    ],
+    [
+      row({ status: "failed", failureCode: "payout_unconfirmed" }),
+      "Failed: The processor did not confirm the payout within a day",
+    ],
+    [
+      row({ status: "failed", failureCode: "transfer_declined", attempt: 2 }),
+      "Failed: The processor declined the transfer (attempt 2)",
     ],
   ] as const)("%#", (disbursement, text) => {
     expect(disbursementLine(t, disbursement)).toBe(text);

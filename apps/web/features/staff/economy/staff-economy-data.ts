@@ -10,6 +10,10 @@ import {
   type RateScreen,
   type SettingsScreen,
 } from "@yourtal/contracts/staff/economy";
+import {
+  parkedPurchasesSchema,
+  type ParkedPurchases,
+} from "@yourtal/contracts/staff/parked-purchases";
 import { killSwitchSchema, type KillSwitch } from "@yourtal/contracts/voucher-internal/kill-switch";
 import * as z from "zod";
 import type { ApiError } from "@/lib/api/api-fetch";
@@ -72,5 +76,15 @@ export async function getKillSwitches(): Promise<readonly KillSwitch[]> {
 export async function getSettingsScreen(region: "AU" | "ID"): Promise<SettingsScreen> {
   const result = await apiFetch(`/api/staff/economy/${region}/settings`, settingsScreenSchema);
   if (!result.ok) throwOrForbid("load region settings", result.error);
+  return result.data;
+}
+
+/** 5.1.g: card purchases the ledger would not turn into points. Finance only, so a 403 is a real 403. */
+export async function getParkedPurchases(region: "AU" | "ID"): Promise<ParkedPurchases> {
+  const result = await apiFetch(
+    `/api/staff/economy/${region}/parked-purchases`,
+    parkedPurchasesSchema,
+  );
+  if (!result.ok) throwOrForbid("load parked purchases", result.error);
   return result.data;
 }

@@ -644,6 +644,7 @@
     "returnStillWaiting": "The payment hasn't confirmed yet. Refresh this page in a minute to check again.",
     "returnCancelled": "Payment cancelled. Nothing was charged.",
     "returnExpired": "This payment expired before it was completed. Nothing was charged.",
+    "returnRefunded": "This payment was refunded to your card in full. You can buy again at today's price.",
     "returnReview": "We received your payment and are checking it. Your points will be added shortly.",
     "cardTitle": "Card for boosts",
     "cardIntro": "Boosts are charged to this card once a day, apart from points.",

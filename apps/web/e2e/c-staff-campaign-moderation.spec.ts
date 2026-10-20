@@ -247,7 +247,8 @@ async function createSubmittedCampaign(
     `${apiBaseUrl()}/api/${businessId}/studio/billing/purchases`,
     {
       headers: { cookie: owner.cookie, "idempotency-key": crypto.randomUUID() },
-      data: { points: 10_000, currency: "AUD" },
+      // The Grow package: 10,000 points.
+      data: { tierKey: "grow", currency: "AUD" },
     },
   );
   expect(purchase.ok(), await purchase.text()).toBeTruthy();

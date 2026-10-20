@@ -47,7 +47,8 @@ export const BILLING_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
   {
     id: "PackageTierKey",
     schema: packageTierKeySchema,
-    description: "14.13 (F122): a point package's key in its region's catalogue, e.g. starter, grow, scale.",
+    description:
+      "14.13 (F122): a point package's key in its region's catalogue, e.g. starter, grow, scale.",
     crossFieldRules: [],
   },
   {

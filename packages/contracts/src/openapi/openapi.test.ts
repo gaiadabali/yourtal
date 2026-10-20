@@ -239,7 +239,8 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   checkPackageTiersRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   packageTierSchema:
     "14.13: one entry of the point_package_tiers region setting, which staff send as ProposeSettingBody.value (unknown in the contract); validated server-side, never a route body of its own.",
-  packageTierCatalogueSchema: "14.13: the whole point_package_tiers value; same as packageTierSchema.",
+  packageTierCatalogueSchema:
+    "14.13: the whole point_package_tiers value; same as packageTierSchema.",
   valuePointsResultSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
 
   // --- ledger-internal: funding and allocations ---

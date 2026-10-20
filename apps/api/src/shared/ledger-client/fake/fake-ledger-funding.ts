@@ -142,7 +142,9 @@ async function purchasePrice(
 ): Promise<Result<number, LedgerError>> {
   if (request.tierKey === undefined) {
     if (request.points <= 0 || request.points % 1_000 !== 0) {
-      return err(ledgerError("refused", `points are sold in packs of 1,000, not ${String(request.points)}`));
+      return err(
+        ledgerError("refused", `points are sold in packs of 1,000, not ${String(request.points)}`),
+      );
     }
     return priceAtIssueRate(request.region, request.points).map((quote) => quote.totalMinor);
   }

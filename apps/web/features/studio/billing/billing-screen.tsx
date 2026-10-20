@@ -1,18 +1,19 @@
-import { Button } from "@yourtal/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
-import { MoneyAmount } from "@yourtal/ui/money-amount";
 import { PointsChip } from "@yourtal/ui/points-chip";
 import { EmptyState } from "@yourtal/ui/empty-state";
-import type { PurchaseQuote } from "@yourtal/contracts/billing";
+import type { BudgetAlert, PointPackage } from "@yourtal/contracts/billing";
 import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import type { BillingBalance } from "./billing-data";
-import { purchasePointsAction } from "./purchase-points-action";
+import { BillingAlertsPanel } from "./billing-alerts-panel";
+import { BillingPackagePicker } from "./billing-package-picker";
 
 export interface BillingScreenProps {
   businessId: string;
   balance: BillingBalance;
-  /** One real, server-computed quote per preset amount (`PRESET_POINT_AMOUNTS`) — never a client-derived price. */
-  quotes: readonly PurchaseQuote[];
+  /** The packages on sale, priced by the server (ex-GST price, GST, total) — never a client-derived price. */
+  packages: readonly PointPackage[];
+  /** Package and campaign budget alerts, newest first. */
+  alerts: readonly BudgetAlert[];
   canPurchase: boolean;
   /** Minted once per render (`page.tsx`) and embedded per form, so a double-click of the same button reuses one idempotency key rather than minting a fresh one per submit. */
   idempotencyKey: string;
@@ -20,9 +21,9 @@ export interface BillingScreenProps {
 }
 
 /**
- * The Billing zone (task 7.5 / 7.8.b / 5.1.a): a real quote per preset
- * amount (ex-GST price, GST, total), paid on the processor's checkout page,
- * real balance. Unused points stay with
+ * The Billing zone (task 7.5 / 7.8.b / 5.1.a / 14.13): the point packages on
+ * sale (ex-GST price, GST, total), paid on the processor's checkout page, real
+ * balance and budget alerts. Unused points stay with
  * the business — there are no cash refunds (TASKS.md 7.5.b), so this screen
  * never offers one. Purchase history is each purchase's allocation: bought,
  * used by campaigns, left (journey 2).
@@ -30,7 +31,8 @@ export interface BillingScreenProps {
 export function BillingScreen({
   businessId,
   balance,
-  quotes,
+  packages,
+  alerts,
   canPurchase,
   idempotencyKey,
   locale,
@@ -61,36 +63,18 @@ export function BillingScreen({
         <CardHeader>
           <CardTitle as="h2">{t("billing.buyPointsTitle")}</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          {quotes.map((quote) => (
-            <div
-              key={quote.points}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-control border border-border-subtle p-3"
-            >
-              <div className="flex flex-col gap-1">
-                <PointsChip
-                  value={quote.points}
-                  formatLabel={(formatted) => t("billing.points", { formatted })}
-                />
-                <PriceBreakdown quote={quote} locale={locale} />
-              </div>
-              {canPurchase ? (
-                <form action={purchasePointsAction}>
-                  <input type="hidden" name="businessId" value={businessId} />
-                  <input type="hidden" name="points" value={quote.points} />
-                  <input type="hidden" name="currency" value={quote.currency} />
-                  <input
-                    type="hidden"
-                    name="idempotencyKey"
-                    value={`${idempotencyKey}:${quote.points}`}
-                  />
-                  <Button type="submit">{t("billing.buy")}</Button>
-                </form>
-              ) : null}
-            </div>
-          ))}
+        <CardContent>
+          <BillingPackagePicker
+            businessId={businessId}
+            packages={packages}
+            canPurchase={canPurchase}
+            idempotencyKey={idempotencyKey}
+            locale={locale}
+          />
         </CardContent>
       </Card>
+
+      <BillingAlertsPanel alerts={alerts} locale={locale} />
 
       <Card>
         <CardHeader>
@@ -130,27 +114,5 @@ export function BillingScreen({
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-/** F118: the ex-GST price, the GST on top, and the total charged. No tax line where none applies. */
-function PriceBreakdown({ quote, locale }: { quote: PurchaseQuote; locale: SupportedLocale }) {
-  const t = getStudioTranslator(locale);
-  const money = (amountMinor: number) => (
-    <MoneyAmount amountMinor={amountMinor} currency={quote.currency} locale={locale} />
-  );
-  return (
-    <dl className="grid grid-cols-[auto_auto] gap-x-4 text-body-sm font-sans text-fg-muted">
-      {quote.taxMinor > 0 ? (
-        <>
-          <dt>{t("billing.subtotal")}</dt>
-          <dd className="text-end">{money(quote.subtotalMinor)}</dd>
-          <dt>{t("billing.gst", { rate: quote.taxRateBps / 100 })}</dt>
-          <dd className="text-end">{money(quote.taxMinor)}</dd>
-        </>
-      ) : null}
-      <dt className="font-semibold text-fg">{t("billing.total")}</dt>
-      <dd className="text-end font-semibold text-fg">{money(quote.totalMinor)}</dd>
-    </dl>
   );
 }

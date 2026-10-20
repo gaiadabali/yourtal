@@ -102,7 +102,10 @@ describe("passesFilter", () => {
   it("excludes a campaign whose package cannot fund one more session", () => {
     const config = { rewardPointsPerCompletion: 100, accuracyBonusPoints: 20 };
     const short = candidate({ allocationRemainingPoints: 119, rewardConfig: rewardConfig(config) });
-    const enough = candidate({ allocationRemainingPoints: 120, rewardConfig: rewardConfig(config) });
+    const enough = candidate({
+      allocationRemainingPoints: 120,
+      rewardConfig: rewardConfig(config),
+    });
     expect(passesFilter(short, baseContext())).toBe(false);
     expect(passesFilter(enough, baseContext())).toBe(true);
   });

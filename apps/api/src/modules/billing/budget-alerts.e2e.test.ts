@@ -47,7 +47,10 @@ afterAll(async () => {
 async function business() {
   const ownerSession = await sessionFor(app, { jurisdiction: "AU" });
   const finance = await sessionFor(app, { jurisdiction: "AU" });
-  const businessId = await seedBusinessMembership(db, { userId: ownerSession.userId, role: "owner" });
+  const businessId = await seedBusinessMembership(db, {
+    userId: ownerSession.userId,
+    role: "owner",
+  });
   await owner.execute(sql`
     INSERT INTO business.business_members (business_id, user_id, role, invited_by_user_id, joined_at)
     VALUES (${businessId}, ${finance.userId}, 'finance', ${ownerSession.userId}, now())`);
@@ -117,8 +120,9 @@ async function startSession(cookie: string, campaignId: string) {
     payload: { campaignId },
   });
   expect(response.statusCode).toBe(201);
-  return response.json<{ session: { id: string; nonEarning: boolean; nonEarningReason: string | null } }>()
-    .session;
+  return response.json<{
+    session: { id: string; nonEarning: boolean; nonEarningReason: string | null };
+  }>().session;
 }
 
 async function complete(cookie: string, sessionId: string) {
@@ -203,8 +207,14 @@ describe("14.13.b: a package's alerts, and rewards stopping at 100%", () => {
     );
 
     // The admitted viewer is paid; the refused one earns nothing and nothing fails.
-    expect(await complete(first.cookie, paid.id)).toMatchObject({ granted: true, pendingPoints: REWARD });
-    expect(await complete(third.cookie, refused.id)).toMatchObject({ granted: false, pendingPoints: 0 });
+    expect(await complete(first.cookie, paid.id)).toMatchObject({
+      granted: true,
+      pendingPoints: REWARD,
+    });
+    expect(await complete(third.cookie, refused.id)).toMatchObject({
+      granted: false,
+      pendingPoints: 0,
+    });
 
     const listed = await app.inject({
       method: "GET",
@@ -212,7 +222,9 @@ describe("14.13.b: a package's alerts, and rewards stopping at 100%", () => {
       headers: { cookie: biz.cookie },
     });
     expect(listed.statusCode).toBe(200);
-    const body = listed.json<{ alerts: { kind: string; thresholdPct: number; campaignTitle: string | null }[] }>();
+    const body = listed.json<{
+      alerts: { kind: string; thresholdPct: number; campaignTitle: string | null }[];
+    }>();
     expect(body.alerts).toHaveLength(4);
     expect(body.alerts.find((a) => a.kind === "campaign")?.campaignTitle).toBe("Spring launch");
     // One email per subject per sweep that found something new, to each of
@@ -228,7 +240,11 @@ describe("14.13.b: a campaign budget's alerts", () => {
     await owner.execute(sql`
       INSERT INTO platform.ledger_fake_allocation (id, business_id, region, funder_type, currency, total_points, remaining_points)
       VALUES (${allocationId}, ${biz.businessId}, 'AU', 'partner', 'AUD', 1000000, 1000000)`);
-    return { biz, allocationId, campaignId: await liveCampaign(biz.businessId, allocationId, budget) };
+    return {
+      biz,
+      allocationId,
+      campaignId: await liveCampaign(biz.businessId, allocationId, budget),
+    };
   }
 
   it("alerts once at each threshold, and at 100% refuses the next session's hold", async () => {

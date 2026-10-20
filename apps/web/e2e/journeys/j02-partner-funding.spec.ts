@@ -8,7 +8,9 @@ import { REGIONS, useSession, type RegionCase } from "./demo";
 import { closeDb, db, demoBusinessId, demoCaller, msg, one, requireBusinessEnv } from "./business";
 import { finishPurchase } from "../checkout-page";
 
-const POINTS = 50_000;
+// The Grow package: 10,000 points.
+const TIER = "grow";
+const POINTS = 10_000;
 const DRAWN = 1_200;
 
 /**
@@ -66,7 +68,7 @@ for (const r of REGIONS) {
     const businessId = await demoBusinessId(finance);
     const currency = r.region === "AU" ? "AUD" : "IDR";
     const quote = await finance.get<{ subtotalMinor: number; currency: string }>(
-      `/api/${businessId}/studio/billing/purchases/quote?points=${POINTS}`,
+      `/api/${businessId}/studio/billing/purchases/quote?tier=${TIER}`,
     );
     expect(quote.currency).toBe(currency);
     const { rows: before } = await db().query<{ id: string }>(
@@ -74,13 +76,11 @@ for (const r of REGIONS) {
       [businessId],
     );
 
-    // Finance buys the first preset block in Studio Billing.
+    // Finance picks the Grow package in Studio Billing and buys it.
     await useSession(page.context(), baseURL!, finance.token, r);
     await page.goto(`/studio/billing?business=${businessId}`);
-    await page
-      .getByRole("button", { name: msg(r, "studio", "billing.buy") })
-      .first()
-      .click();
+    await page.getByRole("radio", { name: msg(r, "studio", `billing.tier.${TIER}`) }).check();
+    await page.getByRole("button", { name: msg(r, "studio", "billing.buy") }).click();
     await page.waitForURL(/purchased=1|error=|\/checkout\/cs_/);
     if (page.url().includes("error=")) {
       await expect(page.getByText(msg(r, "studio", "billing.purchaseFailed"))).toBeVisible();
@@ -174,7 +174,7 @@ for (const r of REGIONS) {
     const marketer = await demoCaller(request, "member", r);
     await marketer.post(
       `/api/${businessId}/studio/billing/purchases`,
-      { points: POINTS, currency },
+      { tierKey: TIER, currency },
       403,
     );
   });

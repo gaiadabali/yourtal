@@ -1100,3 +1100,74 @@ describe("dev/staging holdback (2.3.d/2.3.f)", () => {
 // service's current 501s. `HttpLedgerClient` already POSTs to the paths it
 // will need — see that file's own header.
 describe.todo("HttpLedgerClient against a live services/ledger (4.1)");
+
+/**
+ * 14.13 (F122): the same tier rules on both clients. Tier prices depend on
+ * P_issue only (AU 4.5c, ID IDR 9), which nothing in this file moves; B
+ * moves (AU to 3.5c above), and every F122 tier stays above it.
+ */
+describe("point packages (14.13, F122)", () => {
+  it("lists the seeded tiers at P_issue less each discount, rounded up", async () => {
+    const au = (await client.packageTiers("AU"))._unsafeUnwrap();
+    expect(au.map((t) => [t.tierKey, t.points, t.totalMinor, t.undiscountedMinor])).toEqual([
+      ["starter", 1_000, 4_500, 4_500],
+      ["grow", 10_000, 42_750, 45_000],
+      ["scale", 50_000, 202_500, 225_000],
+    ]);
+    const grow = (await client.quotePackage({ region: "ID", tierKey: "grow" }))._unsafeUnwrap();
+    expect(grow).toEqual({
+      tierKey: "grow",
+      points: 10_000,
+      discountBps: 500,
+      totalMinor: 85_500,
+      undiscountedMinor: 90_000,
+      currency: "IDR",
+    });
+    const unknown = await client.quotePackage({ region: "ID", tierKey: "platinum" });
+    expect(unknown._unsafeUnwrapErr().code).toBe("refused");
+  });
+
+  it("checks a proposed catalogue's shape and its B floor", async () => {
+    const ok = await client.checkPackageTiers({
+      region: "AU",
+      tiers: [{ key: "starter", points: 1_000, discountBps: 0 }],
+    });
+    expect(ok.isOk()).toBe(true);
+    for (const tiers of [
+      // 50% off 4.5c is 2.25c, under any AU B this file sets.
+      [{ key: "deep", points: 1_000, discountBps: 5_000 }],
+      [{ key: "odd", points: 1_500, discountBps: 0 }],
+      [{ key: "a", points: 1_000, discountBps: 0, priceMinor: 1 }],
+    ]) {
+      const refused = await client.checkPackageTiers({ region: "AU", tiers });
+      expect(refused._unsafeUnwrapErr().code).toBe("refused");
+    }
+  });
+
+  it("buys a tier at its price, and refuses less, another size, or an unknown tier", async () => {
+    const buy = (overrides: { points?: number; paidMinor?: number; tierKey?: string }) =>
+      client.purchasePoints({
+        businessId: randomUUID(),
+        region: "ID",
+        currency: "IDR",
+        points: toPoints(overrides.points ?? 10_000),
+        paidMinor: toMinorUnits(overrides.paidMinor ?? 85_500),
+        idempotencyKey: randomUUID(),
+        tierKey: overrides.tierKey ?? "grow",
+      });
+    expect((await buy({}))._unsafeUnwrap().totalPoints).toBe(10_000);
+    expect((await buy({ paidMinor: 85_499 }))._unsafeUnwrapErr().code).toBe("refused");
+    expect((await buy({ points: 1_000 }))._unsafeUnwrapErr().code).toBe("refused");
+    expect((await buy({ tierKey: "platinum" }))._unsafeUnwrapErr().code).toBe("refused");
+    // Untiered, the same 10,000 points cost P_issue in full.
+    const untiered = await client.purchasePoints({
+      businessId: randomUUID(),
+      region: "ID",
+      currency: "IDR",
+      points: toPoints(10_000),
+      paidMinor: toMinorUnits(85_500),
+      idempotencyKey: randomUUID(),
+    });
+    expect(untiered._unsafeUnwrapErr().code).toBe("refused");
+  });
+});

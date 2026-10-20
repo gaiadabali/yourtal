@@ -12,6 +12,7 @@ vi.mock("./purchase-points-action", () => ({ startCardSetupAction: vi.fn() }));
 const purchase = (status: CardPurchase["status"]): CardPurchase => ({
   purchaseId: "7d9b8a52-6c9a-4b3e-9d0e-0a2f5d3c1b10",
   status,
+  tierKey: "starter",
   points: toPoints(1_000),
   subtotalMinor: toMinorUnits(4_500),
   taxMinor: toMinorUnits(450),

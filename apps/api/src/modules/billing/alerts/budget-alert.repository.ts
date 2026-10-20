@@ -105,7 +105,11 @@ export class BudgetAlertRepository {
        WHERE b.notified_at IS NULL
        ORDER BY b.created_at
        LIMIT ${limit}`);
-    return rows.map((row) => ({ ...toNewAlert(row), id: String(row["id"]), campaignTitle: title(row) }));
+    return rows.map((row) => ({
+      ...toNewAlert(row),
+      id: String(row["id"]),
+      campaignTitle: title(row),
+    }));
   }
 
   async markNotified(ids: readonly string[]): Promise<void> {

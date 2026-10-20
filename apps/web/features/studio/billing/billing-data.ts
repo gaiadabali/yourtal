@@ -3,8 +3,9 @@ import {
   billingBalanceSchema,
   billingCardSchema,
   billingStatementSchema,
+  budgetAlertsSchema,
   cardPurchaseSchema,
-  purchaseQuoteSchema,
+  pointPackagesSchema,
   purchaseResultSchema,
   startCardSetupResultSchema,
 } from "@yourtal/contracts/billing";
@@ -12,26 +13,19 @@ import type {
   BillingAllocation,
   BillingCard,
   BillingStatement,
+  BudgetAlert,
   CardPurchase,
-  PurchaseQuote,
+  PointPackage,
   PurchaseResult,
   StartCardSetupResult,
 } from "@yourtal/contracts/billing";
 import { payoutLinkSchema, studioPayoutsSchema } from "@yourtal/contracts/billing/payouts";
 import type { PayoutLink, StudioPayouts } from "@yourtal/contracts/billing/payouts";
 import type { Currency } from "@yourtal/contracts/money/currency";
-import { withTax } from "@yourtal/contracts/money/tax";
 import { resolveStudioDataSource } from "../studio-data-source";
-import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
+import { toPoints } from "@yourtal/contracts/money";
 import { apiFetch } from "@/lib/api/api-fetch";
-
-/**
- * Point amounts Studio offers to buy in one click. Not a server-defined
- * "pack" — 7.5.a's real endpoint quotes an arbitrary `points` amount, so
- * these are only this screen's own preset shortcuts; the price beside each
- * one is always the real, server-computed quote (never derived here).
- */
-export const PRESET_POINT_AMOUNTS: readonly number[] = [50_000, 250_000, 1_000_000];
+import { mockPackages } from "./billing-mock-packages";
 
 export interface BillingBalance {
   totalPoints: number;
@@ -41,11 +35,14 @@ export interface BillingBalance {
 }
 
 interface BillingDataSource {
-  quotePoints: (businessId: string, points: number, currency: Currency) => Promise<PurchaseQuote>;
+  /** F121/F122: the packages on sale in this business's region, smallest first. The server prices them; `currency` only picks the fixture's catalogue. */
+  listPackages: (businessId: string, currency: Currency) => Promise<PointPackage[]>;
+  /** 14.13.b: package and campaign budget alerts, newest first. */
+  getAlerts: (businessId: string) => Promise<BudgetAlert[]>;
   getBalance: (businessId: string) => Promise<BillingBalance>;
   purchasePoints: (
     businessId: string,
-    points: number,
+    tierKey: string,
     currency: Currency,
     idempotencyKey: string,
   ) => Promise<PurchaseResult>;
@@ -71,13 +68,18 @@ const NO_PAYOUTS: StudioPayouts = {
  * module states — a business only ever buys points for itself.
  */
 const liveDataSource: BillingDataSource = {
-  quotePoints: async (businessId, points) => {
+  listPackages: async (businessId) => {
     const result = await apiFetch(
-      `/api/${businessId}/studio/billing/purchases/quote?points=${points}`,
-      purchaseQuoteSchema,
+      `/api/${businessId}/studio/billing/packages`,
+      pointPackagesSchema,
     );
-    if (!result.ok) throw new Error(`Could not quote points: ${result.error.message}`);
-    return result.data;
+    if (!result.ok) throw new Error(`Could not load packages: ${result.error.message}`);
+    return result.data.packages;
+  },
+  getAlerts: async (businessId) => {
+    const result = await apiFetch(`/api/${businessId}/studio/billing/alerts`, budgetAlertsSchema);
+    // A failed read hides the list rather than breaking the whole Billing page.
+    return result.ok ? result.data.alerts : [];
   },
   getBalance: async (businessId) => {
     const result = await apiFetch(
@@ -91,14 +93,14 @@ const liveDataSource: BillingDataSource = {
       allocations: [...result.data.allocations],
     };
   },
-  purchasePoints: async (businessId, points, currency, idempotencyKey) => {
+  purchasePoints: async (businessId, tierKey, currency, idempotencyKey) => {
     const result = await apiFetch(
       `/api/${businessId}/studio/billing/purchases`,
       purchaseResultSchema,
       {
         method: "POST",
         headers: { "idempotency-key": idempotencyKey },
-        body: { points, currency },
+        body: { tierKey, currency },
       },
     );
     if (!result.ok) throw new Error(`Could not buy points: ${result.error.message}`);
@@ -164,27 +166,9 @@ function mockStateFor(businessId: string): MockState {
   return created;
 }
 
-// Flat, fixture-only price-per-point — never derived from B (the backing
-// rate), which never reaches a client (CLAUDE.md, task 7.8.c). The real
-// `quotePurchase` (7.5.a) is what this mock stands in for.
-const MOCK_MINOR_PER_POINT: Record<Currency, number> = { AUD: 3, IDR: 4 };
-/** F118: the same GST rates the region settings seed. */
-const MOCK_TAX_RATE_BPS: Record<Currency, number> = { AUD: 1_000, IDR: 0 };
-
-function mockQuote(points: number, currency: Currency): PurchaseQuote {
-  const split = withTax(points * MOCK_MINOR_PER_POINT[currency], MOCK_TAX_RATE_BPS[currency]);
-  return {
-    points: toPoints(points),
-    subtotalMinor: toMinorUnits(split.subtotalMinor),
-    taxMinor: toMinorUnits(split.taxMinor),
-    totalMinor: toMinorUnits(split.totalMinor),
-    taxRateBps: MOCK_TAX_RATE_BPS[currency],
-    currency,
-  };
-}
-
 const mockDataSource: BillingDataSource = {
-  quotePoints: (_businessId, points, currency) => Promise.resolve(mockQuote(points, currency)),
+  listPackages: (_businessId, currency) => Promise.resolve(mockPackages(currency)),
+  getAlerts: () => Promise.resolve([]),
   getBalance: (businessId) => {
     const state = mockStateFor(businessId);
     return Promise.resolve({
@@ -193,9 +177,11 @@ const mockDataSource: BillingDataSource = {
       allocations: state.allocations,
     });
   },
-  purchasePoints: (businessId, points, currency) => {
+  purchasePoints: (businessId, tierKey, currency) => {
     const state = mockStateFor(businessId);
-    const quote = mockQuote(points, currency);
+    const quote = mockPackages(currency).find((candidate) => candidate.tierKey === tierKey);
+    if (!quote) return Promise.reject(new Error(`Unknown package: ${tierKey}`));
+    const points = quote.points;
     state.totalPoints += points;
     state.remainingPoints += points;
     const allocation: BillingAllocation = {
@@ -217,6 +203,7 @@ const mockDataSource: BillingDataSource = {
       purchase: {
         purchaseId,
         status: "paid" as const,
+        tierKey,
         points: quote.points,
         subtotalMinor: quote.subtotalMinor,
         taxMinor: quote.taxMinor,
@@ -246,12 +233,12 @@ const mockDataSource: BillingDataSource = {
 
 const billingDataSource = resolveStudioDataSource({ mock: mockDataSource, live: liveDataSource });
 
-export function quotePoints(
-  businessId: string,
-  points: number,
-  currency: Currency,
-): Promise<PurchaseQuote> {
-  return billingDataSource.quotePoints(businessId, points, currency);
+export function listPackages(businessId: string, currency: Currency): Promise<PointPackage[]> {
+  return billingDataSource.listPackages(businessId, currency);
+}
+
+export function getAlerts(businessId: string): Promise<BudgetAlert[]> {
+  return billingDataSource.getAlerts(businessId);
 }
 
 export function getBalance(businessId: string): Promise<BillingBalance> {
@@ -260,11 +247,11 @@ export function getBalance(businessId: string): Promise<BillingBalance> {
 
 export function purchasePoints(
   businessId: string,
-  points: number,
+  tierKey: string,
   currency: Currency,
   idempotencyKey: string,
 ): Promise<PurchaseResult> {
-  return billingDataSource.purchasePoints(businessId, points, currency, idempotencyKey);
+  return billingDataSource.purchasePoints(businessId, tierKey, currency, idempotencyKey);
 }
 
 export function getPurchase(businessId: string, purchaseId: string): Promise<CardPurchase | null> {

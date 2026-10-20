@@ -9,13 +9,13 @@ import { StudioNoBusiness } from "@/features/studio/studio-no-business";
 import { StudioChrome } from "@/features/studio/studio-chrome";
 import { canEditZone, canViewZone } from "@/features/studio/studio-zone-access";
 import {
-  PRESET_POINT_AMOUNTS,
+  getAlerts,
   getBalance,
   getCard,
   getPayouts,
   getPurchase,
   getStatements,
-  quotePoints,
+  listPackages,
 } from "@/features/studio/billing/billing-data";
 import { BillingCardPanel } from "@/features/studio/billing/billing-card-panel";
 import {
@@ -33,7 +33,7 @@ const param = (value: string | string[] | undefined) =>
   typeof value === "string" ? value : undefined;
 
 /**
- * `/studio/billing` (task 7.5 / 7.8.b / 5.1.a): real quotes, a purchase paid
+ * `/studio/billing` (task 7.5 / 7.8.b / 5.1.a): point packages, budget alerts, a purchase paid
  * on the processor's page, the card boosts are charged to, real balance. The
  * checkout and card pages come back here with `purchase=` or `card=`.
  */
@@ -69,9 +69,10 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
 
   const { id: businessId, currency } = current.business;
   const purchaseId = param(searchParams.purchase);
-  const [balance, quotes, card, purchase, payouts, statements] = await Promise.all([
+  const [balance, packages, alerts, card, purchase, payouts, statements] = await Promise.all([
     getBalance(businessId),
-    Promise.all(PRESET_POINT_AMOUNTS.map((points) => quotePoints(businessId, points, currency))),
+    listPackages(businessId, currency),
+    getAlerts(businessId),
     getCard(businessId),
     purchaseId === undefined ? Promise.resolve(null) : getPurchase(businessId, purchaseId),
     getPayouts(businessId),
@@ -109,7 +110,8 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
         <BillingScreen
           businessId={businessId}
           balance={balance}
-          quotes={quotes}
+          packages={packages}
+          alerts={alerts}
           canPurchase={canPurchase}
           idempotencyKey={idempotencyKey}
           locale={locale}

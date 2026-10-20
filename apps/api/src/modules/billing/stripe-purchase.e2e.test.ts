@@ -176,14 +176,18 @@ describe("Stripe card purchases through the simulation (5.1.a)", () => {
     expect((await status(who, purchase.purchaseId)).status).toBe("paid");
 
     // The ledger recorded the ex-GST price against the tier's points.
-    const { rows } = await db.execute<{ points: string; paid_minor: string; total_points: string }>(sql`
+    const { rows } = await db.execute<{
+      points: string;
+      paid_minor: string;
+      total_points: string;
+    }>(sql`
       SELECT p.points, p.paid_minor, a.total_points
         FROM platform.ledger_fake_point_purchase p
         JOIN platform.ledger_fake_allocation a ON a.id = p.allocation_id
        WHERE p.business_id = ${who.businessId}`);
-    expect(rows.map((r) => [Number(r.points), Number(r.paid_minor), Number(r.total_points)])).toEqual([
-      [10_000, 42_750, 10_000],
-    ]);
+    expect(
+      rows.map((r) => [Number(r.points), Number(r.paid_minor), Number(r.total_points)]),
+    ).toEqual([[10_000, 42_750, 10_000]]);
   });
 
   it("0002 is declined on the page and leaves the purchase pending", async () => {

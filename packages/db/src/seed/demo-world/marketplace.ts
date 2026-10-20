@@ -1,5 +1,6 @@
 import { DemoApi, field, loginAs, ok } from "./api-client";
 import { ensureDemoCard } from "./card";
+import { ensureDemoPayouts } from "./payouts";
 import type { DemoPasswords } from "./api-client";
 import { DEMO_BRANDS } from "./catalogue";
 import type { Region } from "./catalogue";
@@ -120,6 +121,31 @@ async function ensureCharities(
   return ids;
 }
 
+/**
+ * 5.2: AU charities set up the account their auctions capture to, and AU
+ * brands the one their statements are paid to, before any auction is listed.
+ * Only where payouts run on Stripe; otherwise each call does nothing.
+ */
+async function ensurePayouts(
+  base: DemoApi,
+  region: Region,
+  charityIds: readonly string[],
+  passwords: DemoPasswords,
+): Promise<void> {
+  if (region !== "AU") return;
+  for (const [index, charity] of CHARITIES[region].entries()) {
+    const charityId = charityIds[index];
+    if (charityId === undefined) continue;
+    const member = await login(base, email(charity.local, region), passwords);
+    await ensureDemoPayouts(member, `/api/charities/${charityId}/payouts`, charity.name);
+  }
+  const owner = await login(base, email("owner", region), passwords);
+  for (const brand of DEMO_BRANDS.filter((b) => b.region === region)) {
+    const businessId = businessIdFor(brand.slug);
+    await ensureDemoPayouts(owner, `/api/${businessId}/studio/billing/payouts`, brand.name);
+  }
+}
+
 interface WalletVoucher {
   readonly voucherId: string;
   readonly status?: string;
@@ -184,6 +210,7 @@ export async function runDemoMarketplace(
   for (const region of ["AU", "ID"] as const) {
     const charities = await ensureCharities(base, admin, region, config);
     log(`[demo:marketplace] ${region}: ${String(charities.length)} approved charities`);
+    await ensurePayouts(base, region, charities, config);
 
     const [adult, guardian, viewer, member] = await Promise.all(
       ["adult", "guardian", "viewer", "member"].map((who) =>

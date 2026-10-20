@@ -194,9 +194,10 @@ describe("settlement-disburse job", () => {
     );
 
     await runSettlementDisburse(pool, stripe.driver);
-    await pool.query(`UPDATE payment.connected_account SET updated_at = now() WHERE owner_id = $1`, [
-      businessId,
-    ]);
+    await pool.query(
+      `UPDATE payment.connected_account SET updated_at = now() WHERE owner_id = $1`,
+      [businessId],
+    );
     await runSettlementDisburse(pool, stripe.driver);
 
     expect(stripe.mine(stripe.transfers, statementId)).toHaveLength(1);

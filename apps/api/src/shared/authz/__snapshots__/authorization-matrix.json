@@ -497,6 +497,7 @@
       "view_profile"
     ],
     "billing-AU": [
+      "manage_payouts",
       "purchase_points",
       "raise_dispute",
       "update_payment_method",
@@ -702,6 +703,7 @@
     ],
     "billing-AU": [],
     "billing-ID": [
+      "manage_payouts",
       "purchase_points",
       "raise_dispute",
       "update_payment_method",

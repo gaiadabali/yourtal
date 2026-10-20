@@ -260,8 +260,6 @@ const MAPPINGS: readonly Mapping[] = [
     table: "campaign.campaigns",
     fieldsAwaitingStorage: {},
     fieldsWithNoColumn: {
-      posterVariants:
-        "DERIVED (14.6.b). The other sizes of the poster sit beside it in the object store under names fixed by @yourtal/media's posterVariantsFor, so they follow from poster_url and aspect. Storing them would be a second copy of what the key already says.",
       chapters:
         "A relation, not a column. campaign.chapter, keyed (campaign_id, ordinal), with no end_seconds because a chapter's end IS the next one's start (YT-0101/YT-0548).",
       videoSource:
@@ -382,6 +380,8 @@ const MAPPINGS: readonly Mapping[] = [
         "The object-store key the multipart upload targets. Storage bookkeeping the worker reads to find the source file; Studio never displays or needs it back.",
       upload_id:
         "The object store's own multipart-upload id, needed only to complete or abort it. Write-side bookkeeping, same convention as voucher.saga_id above.",
+      poster_variants:
+        "14.6.b: the poster sizes the worker uploaded, held here until the ready callback copies them to campaign.campaigns.poster_variants (which the campaign contract's posterVariants reads). Studio's asset view has no use for them.",
     },
   },
   {

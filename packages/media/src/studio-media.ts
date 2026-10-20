@@ -27,7 +27,14 @@ import {
   resolveOriginEndpoint,
   resolvePresignEndpoint,
 } from "./hls-origin";
-import { POSTER_LONG_SIDE, posterVariantKey, type PosterLongSide } from "./poster-variants";
+import {
+  POSTER_LONG_SIDE,
+  posterVariantKey,
+  posterVariantsFor,
+  type PosterAspect,
+  type PosterLongSide,
+  type PosterVariant,
+} from "./poster-variants";
 
 /**
  * The studio media pipeline's object layout (TASKS.md 7.2), on the SAME
@@ -444,22 +451,28 @@ export async function putMediaOutput(
 
 /**
  * 14.6.b: writes every poster size for one asset, the 640 under the original
- * `posters/<id>.jpg` key (that is `posterUrl`) and the others beside it. An id
- * that is not a uuid has no variant keys, so only the base poster is written.
+ * `posters/<id>.jpg` key (that is `posterUrl`) and the others beside it, and
+ * returns the sizes now stored, in the form `poster_variants` records. An id
+ * that is not a uuid has no variant keys, so only the base poster is written and
+ * the list is empty. A failed upload throws before anything is returned.
  */
 export async function putPosterLadder(
   client: S3Client,
   assetId: string,
   posters: readonly { readonly longSide: PosterLongSide; readonly path: string }[],
-): Promise<void> {
+  aspect: PosterAspect,
+): Promise<PosterVariant[]> {
   const base = posterObjectKey(assetId);
+  const written: PosterLongSide[] = [];
   for (const poster of posters) {
     const key =
       posterVariantKey(base, poster.longSide) ??
       (poster.longSide === POSTER_LONG_SIDE ? base : null);
     if (key === null) continue;
     await putMediaOutput(client, { kind: "poster", key, body: readFileSync(poster.path) });
+    written.push(poster.longSide);
   }
+  return posterVariantsFor(publicObjectUrl(base), aspect, written);
 }
 
 export { HLS_PREFIX };

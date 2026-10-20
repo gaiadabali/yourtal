@@ -154,6 +154,18 @@ describe("runDemoMedia", () => {
       expect(() => new URL(url ?? "")).not.toThrow();
     }
 
+    // 14.6.b: every poster size was uploaded, so all three are recorded with the campaign.
+    const sizes = await pool.query<{ poster_variants: { url: string; width: number }[] }>(
+      "SELECT poster_variants FROM campaign.campaigns WHERE id = $1",
+      [campaign?.id],
+    );
+    const variants = sizes.rows[0]?.poster_variants ?? [];
+    expect(variants.map((v) => v.width)).toEqual([320, 640, 960]);
+    expect(variants[1]?.url).toBe(campaign?.poster_url);
+    for (const variant of variants) {
+      expect(variant.url).toMatch(/^https?:\/\/.+\/posters\/[0-9a-f-]{36}(-\d+)?\.jpg$/);
+    }
+
     // F66: campaignSchema refines "long_form" to require at least one
     // campaign.chapter row (first at second 0). A freshly seeded campaign
     // must carry one from the start, not just after a later repair.

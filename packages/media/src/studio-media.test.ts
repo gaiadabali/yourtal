@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
+import { publicMediaUrl } from "./hls-origin";
 import {
   abortRawUpload,
   completeRawUpload,
@@ -91,7 +92,9 @@ describe("studio media object store", () => {
     const keys = [`posters/${assetId}-320.jpg`, base, `posters/${assetId}-960.jpg`];
     cleanupKeys.push(...keys);
     try {
-      await putPosterLadder(client, assetId, posters);
+      const variants = await putPosterLadder(client, assetId, posters, "16:9");
+      expect(variants.map((v) => v.width)).toEqual([320, 640, 960]);
+      expect(variants[1]?.url).toBe(publicMediaUrl(base));
       for (const [i, key] of keys.entries()) {
         const expected = `jpeg-${String(posters[i]?.longSide)}`;
         expect(Buffer.from(await getRawObject(client, key)).toString()).toBe(expected);

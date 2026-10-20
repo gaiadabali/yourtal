@@ -378,17 +378,18 @@ describe("buildFeed", () => {
     });
   });
 
-  it("14.6.b: lists every poster size for a pipeline poster, and none for any other", () => {
-    const id = randomUUID();
-    const posterUrl = `https://yourtal.gaiada.com/media/posters/${id}.jpg`;
-    const [made] = buildFeed([candidate({ campaign: campaign({ posterUrl }) })], baseContext());
+  it("14.6.b: carries the recorded poster sizes, and none when none were recorded", () => {
+    const posterUrl = "https://yourtal.gaiada.com/media/posters/a.jpg";
+    const posterVariants = [
+      { url: "https://yourtal.gaiada.com/media/posters/a-320.jpg", width: 320 },
+      { url: posterUrl, width: 640 },
+    ];
+    const [made] = buildFeed(
+      [candidate({ campaign: campaign({ posterUrl, posterVariants }) })],
+      baseContext(),
+    );
     expect(made?.posterUrl).toBe(posterUrl);
-    // aspect is 9:16 in this fixture, so the width is the long side's 9/16.
-    expect(made?.posterVariants).toEqual([
-      { url: `https://yourtal.gaiada.com/media/posters/${id}-320.jpg`, width: 180 },
-      { url: posterUrl, width: 360 },
-      { url: `https://yourtal.gaiada.com/media/posters/${id}-960.jpg`, width: 540 },
-    ]);
+    expect(made?.posterVariants).toEqual(posterVariants);
     const [other] = buildFeed([candidate()], baseContext());
     expect(other?.posterVariants).toEqual([]);
   });

@@ -97,7 +97,7 @@ async function transcode(
 
   // Uploads: HLS ladder (master + every rendition file), then poster/teaser.
   await uploadHlsTree(client, data.assetId, hlsDir);
-  await putPosterLadder(client, data.assetId, posters);
+  const posterVariants = await putPosterLadder(client, data.assetId, posters, probe.aspect);
   await putMediaOutput(client, {
     kind: "teaser",
     key: teaserObjectKey(data.assetId),
@@ -121,6 +121,7 @@ async function transcode(
     // mint-manifest-url.ts's `new URL(hlsUrl)`, so every campaign served by
     // this job was previously unreachable through the public read path.
     posterUrl: publicMediaUrl(posterObjectKey(data.assetId)),
+    posterVariants,
     teaserUrl: publicMediaUrl(teaserObjectKey(data.assetId)),
     hlsUrl: publicMediaUrl(hlsAssetObjectKey(data.assetId, "index.m3u8")),
     // Null when the upload carries no subtitle stream (7.2.b: "optional").

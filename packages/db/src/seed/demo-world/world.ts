@@ -5,6 +5,7 @@ import { questionsAskedFor } from "@yourtal/contracts/question/bank";
 import { ensureDemoCaptions, renderDemoVideo, stableId } from "@yourtal/media/demo-media";
 import type { DemoVideo } from "@yourtal/media/demo-media";
 import { publicMediaUrl } from "@yourtal/media/hls-origin";
+import type { PosterVariant } from "@yourtal/media/poster-variants";
 import { hlsAssetObjectKey, posterObjectKey, teaserObjectKey } from "@yourtal/media/studio-media";
 import { existingListingFacts, insertListing, priceListing } from "../staging";
 import type { StagingLedgerConfig, StagingVoucherConfig } from "../staging";
@@ -75,8 +76,12 @@ async function ensureVideo(
 ): Promise<DemoVideo & { readonly captionsUrl: string }> {
   const assetId = stableId(`demo-world:video:${region}:${String(seconds)}`);
   const hlsUrl = publicMediaUrl(hlsAssetObjectKey(assetId, "index.m3u8"));
-  const known = await pool.query<{ aspect: string; estimated_bytes: string }>(
-    "SELECT aspect, estimated_bytes::text FROM campaign.campaigns WHERE hls_url = $1 LIMIT 1",
+  const known = await pool.query<{
+    aspect: string;
+    estimated_bytes: string;
+    poster_variants: PosterVariant[];
+  }>(
+    "SELECT aspect, estimated_bytes::text, poster_variants FROM campaign.campaigns WHERE hls_url = $1 LIMIT 1",
     [hlsUrl],
   );
   const row = known.rows[0];
@@ -87,6 +92,7 @@ async function ensureVideo(
     return {
       hlsUrl,
       posterUrl: publicMediaUrl(posterObjectKey(assetId)),
+      posterVariants: row.poster_variants,
       teaserUrl: publicMediaUrl(teaserObjectKey(assetId)),
       aspect: row.aspect,
       estimatedBytes: Number(row.estimated_bytes),
@@ -121,9 +127,9 @@ async function ensureCampaign(
        (id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds, estimated_data_mb,
         reward_points, question_count, scoring_rule, lifecycle_state, published_at, business_id,
         region, audience, content_category, poster_url, teaser_url, hls_url, aspect,
-        estimated_bytes, starts_at, ends_at, open_viewing, teaser_start_seconds)
+        estimated_bytes, starts_at, ends_at, open_viewing, teaser_start_seconds, poster_variants)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,10,$9,'base_only','live',$10,$4,$11,$12,$13,$14,$15,$16,$17,
-             $18,$10,$19,$20,0)
+             $18,$10,$19,$20,0,$21::jsonb)
      ON CONFLICT (id) DO NOTHING`,
     [
       id,
@@ -147,6 +153,7 @@ async function ensureCampaign(
       endsAt,
       // Open Viewing needs all_ages (F8); every other audience needs a sign-in.
       spec.audience === "all_ages",
+      JSON.stringify(video.posterVariants),
     ],
   );
   // Captions arrived after some campaigns were made; fill them in either way.

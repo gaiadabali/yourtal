@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { posterVariantsSchema } from "../campaign/poster-variant";
 
 /**
  * The self-hosted media pipeline (TASKS.md 7.2, replaces Cloudflare Stream).
@@ -100,6 +101,8 @@ export const mediaReadyCallbackRequestSchema = z.discriminatedUnion("status", [
     durationSeconds: z.number().int().positive(),
     aspect: z.string().min(1),
     posterUrl: z.string().min(1),
+    /** 14.6.b: the poster sizes the worker uploaded, recorded as `poster_variants`. */
+    posterVariants: posterVariantsSchema,
     teaserUrl: z.string().min(1),
     hlsUrl: z.string().min(1),
     captionsUrl: z.string().min(1).nullable(),

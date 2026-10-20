@@ -1,3 +1,4 @@
+import type { PosterVariant } from "@yourtal/contracts/campaign/poster-variant";
 import type { MediaAsset, MediaRenditionBytes } from "@yourtal/contracts/studio/media";
 
 /** The repository's own view: everything `MediaAsset` has, plus write-side bookkeeping. */
@@ -22,6 +23,8 @@ export interface MarkReadyInput {
   readonly durationSeconds: number;
   readonly aspect: string;
   readonly posterUrl: string;
+  /** 14.6.b: the poster sizes the worker uploaded; empty means only `posterUrl`. */
+  readonly posterVariants: readonly PosterVariant[];
   readonly teaserUrl: string;
   readonly hlsUrl: string;
   readonly captionsUrl: string | null;
@@ -54,6 +57,7 @@ export interface MediaAssetRepository {
     campaignId: string,
     media: {
       posterUrl: string;
+      posterVariants: readonly PosterVariant[];
       teaserUrl: string;
       hlsUrl: string;
       captionsUrl: string | null;

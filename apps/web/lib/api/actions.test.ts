@@ -266,6 +266,90 @@ describe("identity Server Actions (1.7.b)", () => {
     });
   });
 
+  describe("loginAction second step and passkey offer (3.9c)", () => {
+    const ME = {
+      profile: {
+        userId: "user-1",
+        region: "AU",
+        displayLocale: "en-AU",
+        displayName: "Ada",
+        ageBand: "adult",
+        timezone: "Australia/Sydney",
+      },
+      businessMemberships: [],
+      staffRoles: [],
+    };
+
+    function mockApi(login: unknown, passkeys: unknown[] | "down") {
+      global.fetch = vi.fn((input: RequestInfo | URL) => {
+        const url = requestUrl(input);
+        const reply = (body: unknown, status = 200) =>
+          Promise.resolve(new Response(JSON.stringify(body), { status }));
+        if (url.endsWith("/api/auth/login")) return reply(login);
+        if (url.endsWith("/api/me")) return reply(ME);
+        if (url.endsWith("/api/auth/sign-in-methods")) {
+          return passkeys === "down"
+            ? reply({ code: "internal", message: "boom" }, 500)
+            : reply({ password: true, passkeys, authenticatorApp: { enabled: false } });
+        }
+        return reply({ code: "not_found", message: url }, 404);
+      });
+    }
+
+    const SIGNED_IN = { token: "tok-1", userId: "user-1" };
+    const PASSKEY = {
+      id: "p1",
+      name: "Passkey",
+      createdAt: "2026-10-01T01:00:00.000Z",
+      lastUsedAt: null,
+      synced: false,
+    };
+    const credentials = formData({ email: "a@example.com", password: "x", returnTo: "/wallet" });
+
+    it("holds the pending token in a cookie, not the URL, and sets no session", async () => {
+      mockApi({ secondFactor: "totp", pendingToken: "pending-1", expiresInSeconds: 300 }, []);
+      const { jar, api } = createCookieJar();
+      const { loginAction } = await loadActions(api);
+
+      const url = await expectRedirectTo(loginAction(credentials));
+
+      expect(url).toBe("/login/code?returnTo=%2Fwallet");
+      expect(url).not.toContain("pending-1");
+      expect(jar.get("yt_mfa_pending")).toBe("pending-1");
+      expect(jar.has("yt_session")).toBe(false);
+    });
+
+    it("offers a passkey once to an account with none, then remembers it was asked", async () => {
+      mockApi(SIGNED_IN, []);
+      const { jar, api } = createCookieJar();
+      const { loginAction } = await loadActions(api);
+
+      expect(await expectRedirectTo(loginAction(credentials))).toBe("/passkey?returnTo=%2Fwallet");
+      expect(jar.get("yt_passkey_prompt")).toBe("seen");
+      expect(jar.get("yt_session")).toBe("tok-1");
+
+      expect(await expectRedirectTo(loginAction(credentials))).toBe("/wallet");
+    });
+
+    it("does not offer one to an account that already has a passkey", async () => {
+      mockApi(SIGNED_IN, [PASSKEY]);
+      const { jar, api } = createCookieJar();
+      const { loginAction } = await loadActions(api);
+
+      expect(await expectRedirectTo(loginAction(credentials))).toBe("/wallet");
+      expect(jar.has("yt_passkey_prompt")).toBe(false);
+    });
+
+    it("skips the offer, and still signs in, when the methods read fails", async () => {
+      mockApi(SIGNED_IN, "down");
+      const { jar, api } = createCookieJar();
+      const { loginAction } = await loadActions(api);
+
+      expect(await expectRedirectTo(loginAction(credentials))).toBe("/wallet");
+      expect(jar.get("yt_session")).toBe("tok-1");
+    });
+  });
+
   describe("logoutAction", () => {
     it("clears yt_session and redirects to /login even if the API call fails", async () => {
       global.fetch = vi.fn(() => Promise.resolve(new Response("", { status: 500 })));

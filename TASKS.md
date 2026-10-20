@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 4/13 | 21/42 | `█████░░░░░`  50% |
-| **All** | | | **109/119** | **567/589** | `██████████`  96% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 5/13 | 23/42 | `██████░░░░`  55% |
+| **All** | | | **110/119** | **569/589** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1673,9 +1673,9 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
 
 - [x] **14.11 Record the payment simulation** (group 0.7.g) · lead · needs: — — ✅ 2026-10-20 fbcd08d5
   - [x] 14.11.a F106 in `docs/16-decisions.md`: every payment is simulated until real Stripe (group 6.8), and going live is keys and an address, not new code
-- [ ] **14.12 Account deletion erases every me.* table** (group 1.20) · A · needs: — — 🔄 2026-10-20
-  - [ ] 14.12.a DSAR handlers and domains for interests, follows, saves, streaks and every other me.* table; nothing personal left after DELETE /api/me
-  - [ ] 14.12.b Check: an e2e test deletes an account with rows in every me.* table and finds none left
+- [x] **14.12 Account deletion erases every me.* table** (group 1.20) · A · needs: — — ✅ 2026-10-21 933efa29
+  - [x] 14.12.a DSAR handlers and domains for interests, follows, saves, streaks and every other me.* table; nothing personal left after DELETE /api/me → 933efa29
+  - [x] 14.12.b Check: an e2e test deletes an account with rows in every me.* table and finds none left → 933efa29
 
 - [ ] **14.13 Point packages and budget alerts for every business** (group 5.10, F119–F121) · C · needs: 14.7 (the Checkout purchase flow)
   - [ ] 14.13.a Point packages in tiers, bought in Studio: Starter 1,000 pts, Grow 10,000 at 5% off, Scale 50,000 at 10% off (F122), with the ledger pricing each tier and refusing anything under it; SnapApp's receipt programme buys from the same tiers (its at-cost price is group 2.10's)

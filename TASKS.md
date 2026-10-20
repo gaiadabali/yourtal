@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 2/11 | 6/30 | `██░░░░░░░░`  20% |
-| **All** | | | **107/117** | **552/577** | `██████████`  96% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 3/11 | 7/30 | `██░░░░░░░░`  23% |
+| **All** | | | **108/117** | **553/577** | `██████████`  96% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1649,8 +1649,8 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [ ] 14.10.a Before the first real points go to a real person (docs/16 N-5), an account needs a verified email and a passkey
   - [ ] 14.10.b The fraud checks rest on that, plus the holdback by trust tier and the earn caps; record it in docs/16
 
-- [ ] **14.11 Record the payment simulation** (group 0.7.g) · lead · needs: —
-  - [ ] 14.11.a F106 in `docs/16-decisions.md`: every payment is simulated until real Stripe (group 6.8), and going live is keys and an address, not new code
+- [x] **14.11 Record the payment simulation** (group 0.7.g) · lead · needs: — — ✅ 2026-10-20 fbcd08d5
+  - [x] 14.11.a F106 in `docs/16-decisions.md`: every payment is simulated until real Stripe (group 6.8), and going live is keys and an address, not new code
 
 Group 5.7, the founder's walkthrough, is 13.6 here.
 
@@ -1743,6 +1743,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-10-20 · g5 · **14.11** (group 0.7.g): docs/16 records F106, every payment simulated until real Stripe, and F107, no brand refunds · fbcd08d5
 - 2026-10-08 · lead · **13.3 closed**: business journeys pass on staging in AU and ID (F98; registration limit raised to 30 for the run and restored to 5); 13.3.k, m, v, x, y done; a stored-HTML hole in picture uploads found on staging and fixed (13.3.y) · 45ec04a9
 - 2026-10-08 · lead · **13.3.d, h, i, j, q, r, s, t, u, w and 13.15** done; slot 3's 13.3.b/13.3.m work merged (315a02b6); demo brands made suppliers so Inventory shows for demo logins. Worktrees now live in `.claude/worktrees/`, tests run in CI and on staging (no local Docker) · f623b908
 - 2026-10-02 · lead · **13.4 closed** (F97: finish the app first; 13.4.a's first frame moves to the optimisation pass during the client review) · 470429d0

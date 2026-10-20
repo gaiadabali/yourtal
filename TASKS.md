@@ -1664,7 +1664,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
 - [ ] **14.8 Stripe Connect payouts in AU** (group 5.2, F103) · A + C · needs: 14.7
   - [ ] 14.8.a Stripe Connect payouts to AU brands: on the simulation, a brand and a charity onboard a connected account through the simulated onboarding page, and payouts land in it. ID has no real payouts (F104)
   - [ ] 14.8.b Settlement statements trigger real payouts, after approval
-- [ ] **14.9 GST tax invoices** (group 5.3) · C · needs: — (real invoices need the AU company, group 6.1.a)
+- [ ] **14.9 GST tax invoices** (group 5.3) · C · needs: — (real invoices need the AU company, group 6.1.a) — 🔄 g5 (helper `g-phase5-inv`)
   - [ ] 14.9.a GST tax invoices (AU) for points and boosts; PPN waits until ID takes real money (F104)
   - [ ] 14.9.b Invoice numbering, the company's details read from the settings store, and a PDF downloadable in Studio
 - [ ] **14.10 Identity check before real points** (group 5.9, F102) · A · needs: group 3.9.c (passkeys)

@@ -18,10 +18,10 @@ import (
 // checks if the PurchasePointsRequest type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &PurchasePointsRequest{}
 
-// PurchasePointsRequest Buy a pack of points. currency is required and never defaulted (7.5.a) -- the caller states what it expects to be charged, and a mismatch against the business's own currency is refused rather than coerced.
+// PurchasePointsRequest Buy a point package (F121: always a package). currency is required and never defaulted (7.5.a) -- the caller states what it expects to be charged, and a mismatch against the business's own currency is refused rather than coerced.
 type PurchasePointsRequest struct {
-	// Platform points. Always a whole number; there is no fractional point.
-	Points int64 `json:"points"`
+	// 14.13 (F122): a point package's key in its region's catalogue, e.g. starter, grow, scale.
+	TierKey string `json:"tierKey" validate:"regexp=^[a-z][a-z0-9_]{0\\,31}$"`
 	Currency Currency `json:"currency"`
 	AdditionalProperties map[string]interface{}
 }
@@ -32,9 +32,9 @@ type _PurchasePointsRequest PurchasePointsRequest
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewPurchasePointsRequest(points int64, currency Currency) *PurchasePointsRequest {
+func NewPurchasePointsRequest(tierKey string, currency Currency) *PurchasePointsRequest {
 	this := PurchasePointsRequest{}
-	this.Points = points
+	this.TierKey = tierKey
 	this.Currency = currency
 	return &this
 }
@@ -47,28 +47,28 @@ func NewPurchasePointsRequestWithDefaults() *PurchasePointsRequest {
 	return &this
 }
 
-// GetPoints returns the Points field value
-func (o *PurchasePointsRequest) GetPoints() int64 {
+// GetTierKey returns the TierKey field value
+func (o *PurchasePointsRequest) GetTierKey() string {
 	if o == nil {
-		var ret int64
+		var ret string
 		return ret
 	}
 
-	return o.Points
+	return o.TierKey
 }
 
-// GetPointsOk returns a tuple with the Points field value
+// GetTierKeyOk returns a tuple with the TierKey field value
 // and a boolean to check if the value has been set.
-func (o *PurchasePointsRequest) GetPointsOk() (*int64, bool) {
+func (o *PurchasePointsRequest) GetTierKeyOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Points, true
+	return &o.TierKey, true
 }
 
-// SetPoints sets field value
-func (o *PurchasePointsRequest) SetPoints(v int64) {
-	o.Points = v
+// SetTierKey sets field value
+func (o *PurchasePointsRequest) SetTierKey(v string) {
+	o.TierKey = v
 }
 
 // GetCurrency returns the Currency field value
@@ -105,7 +105,7 @@ func (o PurchasePointsRequest) MarshalJSON() ([]byte, error) {
 
 func (o PurchasePointsRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["points"] = o.Points
+	toSerialize["tierKey"] = o.TierKey
 	toSerialize["currency"] = o.Currency
 
 	for key, value := range o.AdditionalProperties {
@@ -120,7 +120,7 @@ func (o *PurchasePointsRequest) UnmarshalJSON(data []byte) (err error) {
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"points",
+		"tierKey",
 		"currency",
 	}
 
@@ -151,7 +151,7 @@ func (o *PurchasePointsRequest) UnmarshalJSON(data []byte) (err error) {
 	additionalProperties := make(map[string]interface{})
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
-		delete(additionalProperties, "points")
+		delete(additionalProperties, "tierKey")
 		delete(additionalProperties, "currency")
 		o.AdditionalProperties = additionalProperties
 	}

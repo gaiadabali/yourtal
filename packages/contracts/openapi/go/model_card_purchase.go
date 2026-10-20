@@ -24,6 +24,8 @@ var _ MappedNullable = &CardPurchase{}
 type CardPurchase struct {
 	PurchaseId string `json:"purchaseId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Status CardPurchaseStatus `json:"status"`
+	// 14.13 (F122): a point package's key in its region's catalogue, e.g. starter, grow, scale.
+	TierKey NullableString `json:"tierKey" validate:"regexp=^[a-z][a-z0-9_]{0\\,31}$"`
 	// Platform points. Always a whole number; there is no fractional point.
 	Points int64 `json:"points"`
 	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
@@ -45,10 +47,11 @@ type _CardPurchase CardPurchase
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCardPurchase(purchaseId string, status CardPurchaseStatus, points int64, subtotalMinor int64, taxMinor int64, totalMinor int64, taxRateBps int32, currency Currency, allocationId NullableString, createdAt time.Time, paidAt NullableTime) *CardPurchase {
+func NewCardPurchase(purchaseId string, status CardPurchaseStatus, tierKey NullableString, points int64, subtotalMinor int64, taxMinor int64, totalMinor int64, taxRateBps int32, currency Currency, allocationId NullableString, createdAt time.Time, paidAt NullableTime) *CardPurchase {
 	this := CardPurchase{}
 	this.PurchaseId = purchaseId
 	this.Status = status
+	this.TierKey = tierKey
 	this.Points = points
 	this.SubtotalMinor = subtotalMinor
 	this.TaxMinor = taxMinor
@@ -115,6 +118,32 @@ func (o *CardPurchase) GetStatusOk() (*CardPurchaseStatus, bool) {
 // SetStatus sets field value
 func (o *CardPurchase) SetStatus(v CardPurchaseStatus) {
 	o.Status = v
+}
+
+// GetTierKey returns the TierKey field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *CardPurchase) GetTierKey() string {
+	if o == nil || o.TierKey.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.TierKey.Get()
+}
+
+// GetTierKeyOk returns a tuple with the TierKey field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *CardPurchase) GetTierKeyOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.TierKey.Get(), o.TierKey.IsSet()
+}
+
+// SetTierKey sets field value
+func (o *CardPurchase) SetTierKey(v string) {
+	o.TierKey.Set(&v)
 }
 
 // GetPoints returns the Points field value
@@ -349,6 +378,7 @@ func (o CardPurchase) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["purchaseId"] = o.PurchaseId
 	toSerialize["status"] = o.Status
+	toSerialize["tierKey"] = o.TierKey.Get()
 	toSerialize["points"] = o.Points
 	toSerialize["subtotalMinor"] = o.SubtotalMinor
 	toSerialize["taxMinor"] = o.TaxMinor
@@ -368,6 +398,7 @@ func (o *CardPurchase) UnmarshalJSON(data []byte) (err error) {
 	requiredProperties := []string{
 		"purchaseId",
 		"status",
+		"tierKey",
 		"points",
 		"subtotalMinor",
 		"taxMinor",

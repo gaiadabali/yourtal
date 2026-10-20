@@ -4,9 +4,13 @@ import {
   billingCampaignSpendSchema,
   billingCardSchema,
   billingStatementSchema,
+  budgetAlertSchema,
+  budgetAlertsSchema,
   cardPurchaseSchema,
   cardPurchaseStatusSchema,
   funderTypeSchema,
+  pointPackageSchema,
+  pointPackagesSchema,
   purchasePointsRequestSchema,
   purchaseQuoteSchema,
   purchaseResultSchema,
@@ -14,6 +18,7 @@ import {
   savedCardSchema,
   startCardSetupResultSchema,
 } from "../billing/billing";
+import { packageTierKeySchema } from "../billing/package-tiers";
 import type { ContractComponent } from "./schema-registry";
 
 /**
@@ -40,17 +45,48 @@ export const BILLING_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     crossFieldRules: [],
   },
   {
+    id: "PackageTierKey",
+    schema: packageTierKeySchema,
+    description: "14.13 (F122): a point package's key in its region's catalogue, e.g. starter, grow, scale.",
+    crossFieldRules: [],
+  },
+  {
+    id: "PointPackage",
+    schema: pointPackageSchema,
+    description:
+      "14.13 (F122): one point package, priced by the ledger at P_issue less the tier's discount -- never the backing rate B. subtotalMinor is ex-GST; totalMinor adds GST at taxRateBps (F118: AU 10%, ID none). pricePer1000Minor and savingMinor are ex-GST, for display.",
+    crossFieldRules: [],
+  },
+  {
+    id: "PointPackages",
+    schema: pointPackagesSchema,
+    description: "14.13: every point package on sale in the business's region, smallest first.",
+    crossFieldRules: [],
+  },
+  {
     id: "PurchaseQuote",
     schema: purchaseQuoteSchema,
-    description:
-      "A points pack's price at F12's fixed rate (P_issue) -- never the backing rate B, which no Studio surface ever carries. subtotalMinor is ex-GST; totalMinor adds GST at taxRateBps (F118: AU 10%, ID none).",
+    description: "14.13: one point package priced now; the same shape as PointPackage.",
     crossFieldRules: [],
   },
   {
     id: "PurchasePointsRequest",
     schema: purchasePointsRequestSchema,
     description:
-      "Buy a pack of points. currency is required and never defaulted (7.5.a) -- the caller states what it expects to be charged, and a mismatch against the business's own currency is refused rather than coerced.",
+      "Buy a point package (F121: always a package). currency is required and never defaulted (7.5.a) -- the caller states what it expects to be charged, and a mismatch against the business's own currency is refused rather than coerced.",
+    crossFieldRules: [],
+  },
+  {
+    id: "BudgetAlert",
+    schema: budgetAlertSchema,
+    description:
+      "14.13.b (F121): a package or a campaign budget reached 50%, 80% or 100% used. Raised once each, and emailed to the owner and finance members. At 100% rewards stop.",
+    crossFieldRules: [],
+  },
+  {
+    id: "BudgetAlerts",
+    schema: budgetAlertsSchema,
+    description: "14.13.b: the business's budget alerts, newest first.",
     crossFieldRules: [],
   },
   {

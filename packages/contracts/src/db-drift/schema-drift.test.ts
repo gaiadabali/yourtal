@@ -784,7 +784,9 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
   "payment.card_setup":
     "5.1.a: one card-saving checkout, matched to its webhook; the client sees only startCardSetupResultSchema's checkoutUrl or card.",
   "payment.card_purchase":
-    "5.1.a: mirrored by cardPurchaseSchema (billing/billing.ts) for the return page; provider refs, the idempotency key and review_reason stay server-side.",
+    "5.1.a: mirrored by cardPurchaseSchema (billing/billing.ts) for the return page; provider refs, the idempotency key and review_reason stay server-side. 14.13 added tier_key, cardPurchaseSchema.tierKey.",
+  "payment.budget_alert":
+    "14.13.b (F121): one row per 50/80/100% alert on a package or a campaign budget, unique per subject and threshold. Composed into budgetAlertSchema (billing/billing.ts) with the campaign's title; business_id, region and notified_at stay server-side.",
   "payment.provider_event":
     "5.1.a: the webhook inbox (claimed event ids), infrastructure for exactly-once handling; no client reads it.",
   "invoice.issue_skip":

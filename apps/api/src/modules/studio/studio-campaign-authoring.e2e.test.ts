@@ -74,7 +74,7 @@ async function fundedAllocationId(cookie: string, businessId: string): Promise<s
     method: "POST",
     url: `/api/${businessId}/studio/billing/purchases`,
     headers: { cookie, "idempotency-key": `test-${randomUUID()}` },
-    payload: { points: 10_000, currency: "AUD" },
+    payload: { tierKey: "grow", currency: "AUD" },
   });
   expect(response.statusCode).toBe(201);
   // purchase-points.use-case.ts's PurchaseResult carries `allocation`, whose

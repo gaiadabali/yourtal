@@ -18,6 +18,28 @@ const PURCHASE_ID_PARAM: RoutePathParam = {
 export const BILLING_CARD_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   {
     method: "get",
+    path: "/api/{tenantId}/studio/billing/packages",
+    summary: "The point packages on sale, priced with GST",
+    tags: ["studio", "billing"],
+    pathParams: [TENANT_ID_PARAM],
+    successStatus: 200,
+    successDescription: "Every package in the business's region, smallest first (14.13, F122).",
+    successSchema: ref("PointPackages"),
+    errors: [FORBIDDEN, nestDefaultError(404, "No such business.")],
+  },
+  {
+    method: "get",
+    path: "/api/{tenantId}/studio/billing/alerts",
+    summary: "Budget alerts: packages and campaign budgets at 50%, 80% and 100% used",
+    tags: ["studio", "billing"],
+    pathParams: [TENANT_ID_PARAM],
+    successStatus: 200,
+    successDescription: "The business's alerts, newest first (14.13.b, F121).",
+    successSchema: ref("BudgetAlerts"),
+    errors: [FORBIDDEN],
+  },
+  {
+    method: "get",
     path: "/api/{tenantId}/studio/billing/purchases/{purchaseId}",
     summary: "A card purchase's status, for the page the checkout returns to",
     tags: ["studio", "billing"],

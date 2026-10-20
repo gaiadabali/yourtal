@@ -40,7 +40,11 @@ type BackingRateRow = {
   readonly backing_rate_micros_per_pt: string;
 };
 
-async function currentBackingRate(db: AppDb, region: string, at: Date): Promise<BackingRateRow> {
+export async function currentBackingRate(
+  db: AppDb,
+  region: string,
+  at: Date,
+): Promise<BackingRateRow> {
   const result = await db.execute<BackingRateRow>(sql`
     SELECT id, region, currency, backing_rate_micros_per_pt
       FROM platform.ledger_fake_backing_rate
@@ -175,13 +179,19 @@ export function priceListing(
   );
 }
 
+/** P_issue in micros per point, the real ledger's `IssuePriceMicrosPerPoint`; undefined outside AU and ID. */
+export function issueMicrosPerPoint(region: string): bigint | undefined {
+  const packPriceMinor = PACK_PRICE_MINOR_PER_1000_POINTS[region];
+  return packPriceMinor === undefined ? undefined : BigInt(packPriceMinor) * 1_000n;
+}
+
 /**
  * ceil(points × P_issue ÷ 1,000), from the same fixed F12 pack price both
  * `quotePurchase` (packs only) and `valuePoints` (any positive count) price
  * against — the fake's stand-in for the real ledger's `IssuePriceMicrosPerPoint`,
  * since `platform.ledger_fake_backing_rate` only carries B, not P_issue.
  */
-function priceAtIssueRate(
+export function priceAtIssueRate(
   region: string,
   points: number,
 ): Result<{ readonly totalMinor: MinorUnits; readonly currency: "AUD" | "IDR" }, LedgerError> {

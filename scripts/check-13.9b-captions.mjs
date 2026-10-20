@@ -130,7 +130,8 @@ for (const [index, fact] of facts.entries()) {
 const bought = await call(
   "POST",
   `${studio}/billing/purchases`,
-  { points: 20_000, currency: "AUD" },
+  // 14.13: Studio sells packages; Grow is 10,000 points.
+  { tierKey: "grow", currency: "AUD" },
   owner,
 );
 await call(
@@ -140,7 +141,7 @@ await call(
     allocationId: bought.allocation.allocationId,
     rewardPointsPerCompletion: 20,
     accuracyBonusPoints: 0,
-    maxPointsForCampaign: 20_000,
+    maxPointsForCampaign: 10_000,
   },
   owner,
 );

@@ -49,6 +49,7 @@
     "./invoice/abn": "./src/invoice/abn.ts",
     "./invoice/rules": "./src/invoice/rules.ts",
     "./billing/payouts": "./src/billing/payouts.ts",
+    "./billing/package-tiers": "./src/billing/package-tiers.ts",
     "./report": "./src/report/campaign-report.ts",
     "./feed": "./src/feed/feed.ts",
     "./business": "./src/business/business.ts",

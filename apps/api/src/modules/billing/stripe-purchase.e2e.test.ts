@@ -77,12 +77,12 @@ async function owner() {
   return { cookie: session.cookie, businessId };
 }
 
-async function buy(who: { cookie: string; businessId: string }) {
+async function buy(who: { cookie: string; businessId: string }, tierKey = "starter") {
   const response = await app.inject({
     method: "POST",
     url: `/api/${who.businessId}/studio/billing/purchases`,
     headers: { cookie: who.cookie, "idempotency-key": `e2e-${randomUUID()}` },
-    payload: { points: 1_000, currency: "AUD" },
+    payload: { tierKey, currency: "AUD" },
   });
   expect(response.statusCode).toBe(201);
   const body = response.json<{
@@ -147,6 +147,43 @@ describe("Stripe card purchases through the simulation (5.1.a)", () => {
     const replay = await post(completed?.body ?? "", signed(completed?.body ?? ""));
     expect(replay.status).toBe(200);
     expect(await allocations(who.businessId)).toBe(1);
+  });
+
+  it("14.13: Grow from the package list to its allocation at Grow's price", async () => {
+    const who = await owner();
+    const listed = await app.inject({
+      method: "GET",
+      url: `/api/${who.businessId}/studio/billing/packages`,
+      headers: { cookie: who.cookie },
+    });
+    expect(listed.statusCode).toBe(200);
+    const grow = listed
+      .json<{ packages: { tierKey: string; totalMinor: number; points: number }[] }>()
+      .packages.find((p) => p.tierKey === "grow");
+    // F122: 10,000 points 5% off A$450 is A$427.50, plus A$42.75 GST (F118).
+    expect(grow).toMatchObject({ points: 10_000, totalMinor: 47_025 });
+
+    const purchase = await buy(who, "grow");
+    expect(purchase.purchase.totalMinor).toBe(47_025);
+    const checkout = await fetch(`${paysim.baseUrl}/v1/checkout/sessions/${purchase.sessionId}`, {
+      headers: { authorization: `Bearer ${paysim.secretKey}` },
+    });
+    expect((await checkout.json()) as { amount_total: number }).toMatchObject({
+      amount_total: 47_025,
+    });
+    expect((await browser.submitCheckout(purchase.sessionId, OK)).status).toBe(303);
+    await paysim.tick();
+    expect((await status(who, purchase.purchaseId)).status).toBe("paid");
+
+    // The ledger recorded the ex-GST price against the tier's points.
+    const { rows } = await db.execute<{ points: string; paid_minor: string; total_points: string }>(sql`
+      SELECT p.points, p.paid_minor, a.total_points
+        FROM platform.ledger_fake_point_purchase p
+        JOIN platform.ledger_fake_allocation a ON a.id = p.allocation_id
+       WHERE p.business_id = ${who.businessId}`);
+    expect(rows.map((r) => [Number(r.points), Number(r.paid_minor), Number(r.total_points)])).toEqual([
+      [10_000, 42_750, 10_000],
+    ]);
   });
 
   it("0002 is declined on the page and leaves the purchase pending", async () => {

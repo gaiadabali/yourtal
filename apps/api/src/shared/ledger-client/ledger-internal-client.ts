@@ -6,12 +6,16 @@ import type {
   PriceListingRequest,
   PriceListingResult,
   Quote,
+  CheckPackageTiersRequest,
+  PackageTierQuote,
+  QuotePackageRequest,
   QuotePurchaseRequest,
   QuotePurchaseResult,
   QuoteRequest,
   ValuePointsRequest,
   ValuePointsResult,
 } from "@yourtal/contracts/ledger-internal/pricing";
+import type { Region } from "@yourtal/contracts/region";
 import type {
   Allocation,
   CampaignBudget,
@@ -95,6 +99,12 @@ export interface LedgerInternalClient extends LedgerSettingsOperations {
   quotePurchase(request: QuotePurchaseRequest): ResultAsync<QuotePurchaseResult, LedgerError>;
   /** F61/TASKS.md 7.3.h: prices any positive point count at P_issue — no pack-multiple requirement. See the contract's own doc comment for why this is not `quotePurchase`. */
   valuePoints(request: ValuePointsRequest): ResultAsync<ValuePointsResult, LedgerError>;
+  /** 14.13 (F122): every package tier on sale in a region, priced by the ledger; never B. */
+  packageTiers(region: Region): ResultAsync<readonly PackageTierQuote[], LedgerError>;
+  /** 14.13: one tier, priced now. An unknown tier, or one under B, is `refused`. */
+  quotePackage(request: QuotePackageRequest): ResultAsync<PackageTierQuote, LedgerError>;
+  /** 14.13: whether a proposed tier catalogue may be stored or approved (its shape, and every tier above B). */
+  checkPackageTiers(request: CheckPackageTiersRequest): ResultAsync<void, LedgerError>;
 
   // --- funding and allocations ---
   purchasePoints(request: PurchasePointsRequest): ResultAsync<Allocation, LedgerError>;

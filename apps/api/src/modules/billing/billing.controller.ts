@@ -36,8 +36,10 @@ import { getBalance } from "./use-cases/get-balance.use-case";
 import { getCampaignSpend } from "./use-cases/get-campaign-spend.use-case";
 import { listStatements, toBillingStatement } from "./use-cases/list-statements.use-case";
 import { startPurchase } from "./use-cases/start-purchase.use-case";
-import { quotePurchase } from "./use-cases/quote-purchase.use-case";
+import { listPackages, quotePurchase } from "./use-cases/quote-purchase.use-case";
 import { statementsToCsv } from "./statements-csv";
+import { BUDGET_ALERTS } from "./alerts/budget-alert.repository";
+import type { BudgetAlertRepository } from "./alerts/budget-alert.repository";
 
 /**
  * 7.5 / 5.1.a: Studio billing -- buying points by card (granted when the
@@ -59,7 +61,26 @@ export class BillingController {
     @Inject(CARD_PURCHASES) private readonly purchases: CardPurchaseRepository,
     @Inject(PAYMENT_ACCOUNTS_SERVICE) private readonly accounts: PaymentAccountsService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
+    @Inject(BUDGET_ALERTS) private readonly alerts: BudgetAlertRepository,
   ) {}
+
+  /** 14.13.b: the business's package and campaign budget alerts, newest first. */
+  @Authorize({ kind: "billing", action: "view" })
+  @NotValueMoving("A read.")
+  @Get("alerts")
+  async budgetAlerts(@Param("tenantId") tenantId: string) {
+    return { alerts: await this.alerts.listForBusiness(tenantId) };
+  }
+
+  /** 14.13 (F122): the packages on sale, each priced by the ledger with GST on top. */
+  @Authorize({ kind: "billing", action: "view" })
+  @NotValueMoving("A price list. Nothing moves until POST /purchases.")
+  @Get("packages")
+  async packages(@Param("tenantId") tenantId: string) {
+    const result = await listPackages(this.pricingDeps(), tenantId);
+    if (result.isErr()) throw mapBillingErrorToHttpException(result.error);
+    return result.value;
+  }
 
   @Authorize({ kind: "billing", action: "view" })
   @NotValueMoving("A quote. Nothing moves until POST /purchases.")
@@ -69,15 +90,13 @@ export class BillingController {
     @Query() query: Record<string, string | string[] | undefined>,
   ) {
     const parsed = quotePurchaseQuerySchema.parse(query);
-    const result = await quotePurchase(
-      this.ledger,
-      this.businessRegionLookup,
-      this.settings,
-      tenantId,
-      parsed.points,
-    );
+    const result = await quotePurchase(this.pricingDeps(), tenantId, parsed.tier);
     if (result.isErr()) throw mapBillingErrorToHttpException(result.error);
     return result.value;
+  }
+
+  private pricingDeps() {
+    return { ledger: this.ledger, businesses: this.businessRegionLookup, settings: this.settings };
   }
 
   @Authorize({ kind: "billing", action: "purchase_points" })
@@ -106,7 +125,7 @@ export class BillingController {
         webOrigin: this.config.webOrigin,
         now: () => new Date(),
       },
-      { merchantId: tenantId, points: body.points, currency: body.currency, idempotencyKey },
+      { merchantId: tenantId, tierKey: body.tierKey, currency: body.currency, idempotencyKey },
     );
     if (result.isErr()) throw mapBillingErrorToHttpException(result.error);
     return result.value;

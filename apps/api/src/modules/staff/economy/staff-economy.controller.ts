@@ -49,6 +49,7 @@ import type {
   EconomyProposalRepository,
   EconomyProposalRow,
 } from "./persistence/economy-proposal.repository";
+import { assertSettingValue } from "./setting-validation";
 import { mapLedgerErrorToHttpException } from "./to-http-exception";
 
 const ECONOMY_RETENTION_MS = 24 * 60 * 60 * 1000;
@@ -510,6 +511,7 @@ export class StaffEconomyController {
     const region = parseRegion(regionParam);
     const principal = await this.principals.resolve(request);
 
+    await assertSettingValue(this.ledger, region, body.key, body.value);
     const setting = await this.ledger.proposeSetting({
       region,
       key: body.key,
@@ -549,7 +551,7 @@ export class StaffEconomyController {
     const principal = await this.principals.resolve(request);
     const row = await this.requireProposal(id, region, "setting_change");
 
-    const payload = row.payload as { ledgerRef: string; key: string };
+    const payload = row.payload as { ledgerRef: string; key: string; value: unknown };
     const authz = await this.pdp.requireAction(
       principal,
       {
@@ -561,6 +563,7 @@ export class StaffEconomyController {
     );
     if (authz.isErr()) throw mapAuthzErrorToHttpException(authz.error);
 
+    await assertSettingValue(this.ledger, region, payload.key, payload.value);
     const setting = await this.ledger.approveSetting({
       id: payload.ledgerRef,
       approvedBy: principal.id,

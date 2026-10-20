@@ -86,7 +86,7 @@ describe("red line 4: the user role never buys points", () => {
       method: "POST",
       url: `/api/${target.businessId}/studio/billing/purchases`,
       headers: { cookie: viewer.cookie, "idempotency-key": `test-${randomUUID()}` },
-      payload: { points: 1_000, currency: "AUD" },
+      payload: { tierKey: "starter", currency: "AUD" },
     });
     expect(response.statusCode).toBe(403);
   });

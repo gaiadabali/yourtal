@@ -6,12 +6,16 @@ import type {
   PriceListingRequest,
   PriceListingResult,
   Quote,
+  CheckPackageTiersRequest,
+  PackageTierQuote,
+  QuotePackageRequest,
   QuotePurchaseRequest,
   QuotePurchaseResult,
   QuoteRequest,
   ValuePointsRequest,
   ValuePointsResult,
 } from "@yourtal/contracts/ledger-internal/pricing";
+import type { Region } from "@yourtal/contracts/region";
 import type {
   Allocation,
   CampaignBudget,
@@ -68,7 +72,6 @@ import type {
   RecoverCaptureRequest,
 } from "@yourtal/contracts/ledger-internal/capture";
 import type { ProvedDay } from "@yourtal/contracts/ledger-internal/proof";
-import type { Region } from "@yourtal/contracts/region";
 import type {
   ApproveSettingInput,
   ProposeSettingInput,
@@ -78,6 +81,7 @@ import type { AppDb } from "../persistence/drizzle-client";
 import type { LedgerInternalClient } from "./ledger-internal-client";
 import * as pricing from "./fake/fake-ledger-pricing";
 import * as funding from "./fake/fake-ledger-funding";
+import * as packages from "./fake/fake-ledger-packages";
 import * as campaignBudget from "./fake/fake-ledger-campaign-budget";
 import * as rewards from "./fake/fake-ledger-rewards";
 import * as wallet from "./fake/fake-ledger-wallet";
@@ -115,6 +119,18 @@ export class FakeLedgerClient implements LedgerInternalClient {
 
   valuePoints(request: ValuePointsRequest): ResultAsync<ValuePointsResult, LedgerError> {
     return pricing.valuePoints(request);
+  }
+
+  packageTiers(region: Region): ResultAsync<readonly PackageTierQuote[], LedgerError> {
+    return packages.packageTiers(this.db, region);
+  }
+
+  quotePackage(request: QuotePackageRequest): ResultAsync<PackageTierQuote, LedgerError> {
+    return packages.quotePackage(this.db, request);
+  }
+
+  checkPackageTiers(request: CheckPackageTiersRequest): ResultAsync<void, LedgerError> {
+    return packages.checkPackageTiers(this.db, request);
   }
 
   purchasePoints(request: PurchasePointsRequest): ResultAsync<Allocation, LedgerError> {

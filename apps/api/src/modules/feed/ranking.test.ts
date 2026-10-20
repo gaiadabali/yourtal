@@ -97,6 +97,16 @@ describe("passesFilter", () => {
     expect(passesFilter(c, baseContext())).toBe(false);
   });
 
+  // 14.13.b: rewards stop at 100% of the package, and the campaign leaves the
+  // feed once the package cannot pay one more session (base 100 + bonus 20).
+  it("excludes a campaign whose package cannot fund one more session", () => {
+    const config = { rewardPointsPerCompletion: 100, accuracyBonusPoints: 20 };
+    const short = candidate({ allocationRemainingPoints: 119, rewardConfig: rewardConfig(config) });
+    const enough = candidate({ allocationRemainingPoints: 120, rewardConfig: rewardConfig(config) });
+    expect(passesFilter(short, baseContext())).toBe(false);
+    expect(passesFilter(enough, baseContext())).toBe(true);
+  });
+
   it("excludes a campaign outside the viewer's region", () => {
     const c = candidate({ campaign: campaign({ region: "ID" }) });
     expect(passesFilter(c, baseContext({ viewerRegion: "AU" }))).toBe(false);

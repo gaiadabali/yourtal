@@ -64,12 +64,12 @@ async function businessOwner() {
 }
 
 /** Buys points through the real route; the simulated driver settles at once. */
-async function buyPoints(cookie: string, businessId: string, points = 1_000): Promise<string> {
+async function buyPoints(cookie: string, businessId: string, tierKey = "starter"): Promise<string> {
   const response = await app.inject({
     method: "POST",
     url: `/api/${businessId}/studio/billing/purchases`,
     headers: { cookie, "idempotency-key": `test-${randomUUID()}` },
-    payload: { points, currency: "AUD" },
+    payload: { tierKey, currency: "AUD" },
   });
   expect(response.statusCode).toBe(201);
   return response.json<{ purchaseId: string }>().purchaseId;
@@ -92,7 +92,7 @@ describe("Studio: GET /api/:tenantId/studio/invoices", () => {
     const { cookie, businessId } = await businessOwner();
     expect((await listFor(cookie, businessId)).body?.invoices).toEqual([]);
 
-    const purchaseId = await buyPoints(cookie, businessId, 1_000);
+    const purchaseId = await buyPoints(cookie, businessId, "starter");
     const purchase = await app.inject({
       method: "GET",
       url: `/api/${businessId}/studio/billing/purchases/${purchaseId}`,

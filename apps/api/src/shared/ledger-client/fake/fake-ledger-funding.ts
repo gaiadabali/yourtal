@@ -15,6 +15,8 @@ import type {
 } from "@yourtal/contracts/ledger-internal/funding";
 import type { AppDb } from "../../persistence/drizzle-client";
 import { campaignBudgetRefusal, campaignRegion } from "./fake-ledger-campaign-budget";
+import { priceTier } from "./fake-ledger-packages";
+import { priceAtIssueRate } from "./fake-ledger-pricing";
 
 /**
  * TASKS.md 1.2.a's funding group, against `platform.ledger_fake_allocation`
@@ -92,6 +94,17 @@ export function purchasePoints(
         return ok(toAllocation(row));
       }
 
+      const price = await purchasePrice(db, request);
+      if (price.isErr()) return err(price.error);
+      if (request.paidMinor < price.value) {
+        return err(
+          ledgerError(
+            "refused",
+            `${String(request.paidMinor)} paid for ${String(request.points)} points, the price is ${String(price.value)}`,
+          ),
+        );
+      }
+
       const allocationId = randomUUID();
       await db.execute(sql`
         INSERT INTO platform.ledger_fake_allocation
@@ -116,6 +129,34 @@ export function purchasePoints(
       });
     })(),
   );
+}
+
+/**
+ * K6, as services/ledger's RecordPurchase: the least a purchase may pay is
+ * the tier's price (which also checks B and the tier's size) or, untiered,
+ * whole 1,000-point packs at P_issue.
+ */
+async function purchasePrice(
+  db: AppDb,
+  request: PurchasePointsRequest,
+): Promise<Result<number, LedgerError>> {
+  if (request.tierKey === undefined) {
+    if (request.points <= 0 || request.points % 1_000 !== 0) {
+      return err(ledgerError("refused", `points are sold in packs of 1,000, not ${String(request.points)}`));
+    }
+    return priceAtIssueRate(request.region, request.points).map((quote) => quote.totalMinor);
+  }
+  const quote = await priceTier(db, request.region, request.tierKey);
+  if (quote.isErr()) return err(quote.error);
+  if (quote.value.points !== request.points) {
+    return err(
+      ledgerError(
+        "refused",
+        `${request.tierKey} is ${String(quote.value.points)} points, not ${String(request.points)}`,
+      ),
+    );
+  }
+  return ok(quote.value.totalMinor);
 }
 
 export function listAllocations(

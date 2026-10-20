@@ -6,6 +6,7 @@ import type { LedgerInternalClient } from "../../shared/ledger-client/ledger-int
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { SettingsModule } from "../../shared/settings/settings.module";
+import { EmailDriverModule } from "../../shared/drivers/email-driver.module";
 import { PAYMENT_EVENT_HANDLERS } from "../payments/payment-event-handlers";
 import type { PaymentEventHandlers } from "../payments/payment-event-handlers";
 import { PaymentsModule } from "../payments/payments.module";
@@ -19,6 +20,8 @@ import {
   CardPurchaseRepository,
 } from "./persistence/card-purchase.repository";
 import { registerPurchaseEvents } from "./use-cases/purchase-events";
+import { BUDGET_ALERTS, BudgetAlertRepository } from "./alerts/budget-alert.repository";
+import { BudgetAlertsService } from "./alerts/budget-alerts.service";
 
 const PURCHASE_EVENTS = Symbol("PURCHASE_EVENTS");
 
@@ -27,9 +30,11 @@ const PURCHASE_EVENTS = Symbol("PURCHASE_EVENTS");
  * (`WalletModule`); card purchases live in `payment.card_purchase` and are
  * paid through `PaymentsModule`'s drivers, customers and webhook. The
  * region lookup comes from `StoreModule`, as for `PdpGuard`.
+ * `BudgetAlertsService` sweeps packages and campaign budgets for 14.13.b's
+ * alerts and emails them through `EmailDriverModule`.
  */
 @Module({
-  imports: [WalletModule, StoreModule, SettingsModule, PaymentsModule],
+  imports: [WalletModule, StoreModule, SettingsModule, PaymentsModule, EmailDriverModule],
   controllers: [BillingController, BillingCardController],
   providers: [
     {
@@ -42,6 +47,13 @@ const PURCHASE_EVENTS = Symbol("PURCHASE_EVENTS");
       useFactory: (db: AppDb) => new CardPurchaseRepository(db),
       inject: [BILLING_DB],
     },
+    {
+      provide: BUDGET_ALERTS,
+      useFactory: (db: AppDb) => new BudgetAlertRepository(db),
+      inject: [BILLING_DB],
+    },
+    // 14.13.b: the 50/80/100% package and campaign budget alerts.
+    BudgetAlertsService,
     {
       // Subscribes billing to verified payment events once, at boot.
       provide: PURCHASE_EVENTS,
@@ -56,6 +68,7 @@ const PURCHASE_EVENTS = Symbol("PURCHASE_EVENTS");
       inject: [PAYMENT_EVENT_HANDLERS, LEDGER_INTERNAL_CLIENT, CARD_PURCHASES],
     },
   ],
+  exports: [BudgetAlertsService],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata, YT-0100
 export class BillingModule {}

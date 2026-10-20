@@ -1,7 +1,6 @@
 import { err, ok } from "neverthrow";
 import type { Result } from "neverthrow";
 import type { BillingAllocation, PurchaseResult } from "@yourtal/contracts/billing";
-import { toPoints } from "@yourtal/contracts/money";
 import { withTax } from "@yourtal/contracts/money/tax";
 import type { BoundaryFailure } from "@yourtal/drivers/fault-engine";
 import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-internal-client";
@@ -23,7 +22,7 @@ export const PURCHASE_PREFIX = "card-purchase";
 const CHECKOUT_LIFETIME_MS = 31 * 60 * 1000;
 
 export interface StartPurchaseDeps {
-  readonly ledger: Pick<LedgerInternalClient, "quotePurchase" | "purchasePoints" | "getAllocation">;
+  readonly ledger: Pick<LedgerInternalClient, "quotePackage" | "purchasePoints" | "getAllocation">;
   readonly businesses: BusinessRegionLookup;
   readonly settings: RegionSettingsReader;
   readonly purchases: Pick<
@@ -37,7 +36,8 @@ export interface StartPurchaseDeps {
 
 export interface StartPurchaseCommand {
   readonly merchantId: string;
-  readonly points: number;
+  /** 14.13 (F121): the package bought; its points and price come from the ledger. */
+  readonly tierKey: string;
   /** Stated by the caller, never defaulted (7.5.a). Must equal the business's own currency. */
   readonly currency: string;
   /** The route's `Idempotency-Key`, scoped to this business. Also the ledger's key for the grant. */
@@ -45,7 +45,7 @@ export interface StartPurchaseCommand {
 }
 
 /**
- * 5.1.a: quote (ex-GST, plus GST) -> a pending purchase row -> the
+ * 5.1.a / 14.13: the package's quote (ex-GST, plus GST) -> a pending purchase row -> the
  * processor's checkout. Points are granted only when the payment is
  * confirmed: by the verified webhook for Stripe, or at once when the
  * simulated driver answers `paid`. Every call is keyed on the row, so a
@@ -67,9 +67,9 @@ export async function startPurchase(
   const owner = { kind: "business" as const, id: command.merchantId, region: business.region };
   const driver = deps.accounts.driverFor(owner);
 
-  const quote = await deps.ledger.quotePurchase({
-    points: toPoints(command.points),
+  const quote = await deps.ledger.quotePackage({
     region: business.region,
+    tierKey: command.tierKey,
   });
   if (quote.isErr()) return err({ type: "ledger_refused", ...quote.error });
   const taxRateBps = await gstRateBpsFor(deps.settings, business.region);
@@ -79,14 +79,15 @@ export async function startPurchase(
     businessId: command.merchantId,
     region: business.region,
     currency: business.currency,
-    points: command.points,
+    tierKey: command.tierKey,
+    points: quote.value.points,
     ...split,
     taxRateBps,
     idempotencyKey: command.idempotencyKey,
     provider: driver.provider,
     checkoutExpiresAt: new Date(deps.now().getTime() + CHECKOUT_LIFETIME_MS),
   });
-  if (row.businessId !== command.merchantId || row.points !== command.points) {
+  if (row.businessId !== command.merchantId || row.tierKey !== command.tierKey) {
     return err({ type: "purchase_conflict" });
   }
   if (row.status !== "pending" || row.checkoutExpiresAt <= deps.now()) {

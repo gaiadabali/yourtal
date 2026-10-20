@@ -51,7 +51,7 @@ async function draftWithAllocation() {
     method: "POST",
     url: `/api/${businessId}/studio/billing/purchases`,
     headers: { cookie, "idempotency-key": `test-${randomUUID()}` },
-    payload: { points: 10_000, currency: "AUD" },
+    payload: { tierKey: "grow", currency: "AUD" },
   });
   expect(purchase.statusCode).toBe(201);
   const allocationId = purchase.json<{ allocation: { allocationId: string } }>().allocation

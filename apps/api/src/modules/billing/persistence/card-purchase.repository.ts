@@ -13,6 +13,8 @@ export interface CardPurchaseRow {
   readonly businessId: string;
   readonly region: Region;
   readonly currency: Currency;
+  /** 14.13: the package bought; null for a purchase made before packages. */
+  readonly tierKey: string | null;
   readonly points: number;
   readonly subtotalMinor: number;
   readonly taxMinor: number;
@@ -33,6 +35,7 @@ export type NewCardPurchase = Pick<
   | "businessId"
   | "region"
   | "currency"
+  | "tierKey"
   | "points"
   | "subtotalMinor"
   | "taxMinor"
@@ -54,9 +57,10 @@ export class CardPurchaseRepository {
   async insertOnce(purchase: NewCardPurchase): Promise<CardPurchaseRow> {
     await this.db.execute(sql`
       INSERT INTO payment.card_purchase
-        (business_id, region, currency, points, subtotal_minor, tax_minor, total_minor, tax_rate_bps,
-         idempotency_key, provider, checkout_expires_at)
-      VALUES (${purchase.businessId}, ${purchase.region}, ${purchase.currency}, ${purchase.points},
+        (business_id, region, currency, tier_key, points, subtotal_minor, tax_minor, total_minor,
+         tax_rate_bps, idempotency_key, provider, checkout_expires_at)
+      VALUES (${purchase.businessId}, ${purchase.region}, ${purchase.currency}, ${purchase.tierKey},
+              ${purchase.points},
               ${purchase.subtotalMinor}, ${purchase.taxMinor}, ${purchase.totalMinor},
               ${purchase.taxRateBps}, ${purchase.idempotencyKey}, ${purchase.provider},
               ${purchase.checkoutExpiresAt.toISOString()})
@@ -116,6 +120,7 @@ function toRow(row: Record<string, unknown>): CardPurchaseRow {
     businessId: String(row["business_id"]),
     region: row["region"] as Region,
     currency: row["currency"] as Currency,
+    tierKey: text(row["tier_key"]),
     points: Number(row["points"]),
     subtotalMinor: Number(row["subtotal_minor"]),
     taxMinor: Number(row["tax_minor"]),
@@ -137,6 +142,7 @@ export function toCardPurchase(row: CardPurchaseRow): CardPurchase {
   return {
     purchaseId: row.id,
     status: row.status,
+    tierKey: row.tierKey,
     points: toPoints(row.points),
     subtotalMinor: toMinorUnits(row.subtotalMinor),
     taxMinor: toMinorUnits(row.taxMinor),

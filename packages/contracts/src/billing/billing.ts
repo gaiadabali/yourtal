@@ -2,6 +2,7 @@ import * as z from "zod";
 import { minorUnitsSchema, pointsSchema } from "../money/money";
 import { currencySchema } from "../money/money-value";
 import { regionSchema } from "../region/region";
+import { packageTierKeySchema } from "./package-tiers";
 
 /**
  * 7.5: Studio billing — buying points. `P_issue` (the pack price) appears
@@ -16,25 +17,44 @@ import { regionSchema } from "../region/region";
 /** Basis points (1000 = 10%). F118: AU adds GST on top of an ex-GST price; Indonesia adds none. */
 const taxRateBpsSchema = z.number().int().min(0).max(10_000);
 
-/** F118: the price is ex-GST (`subtotalMinor`); `totalMinor` = subtotal + GST is what the card is charged. */
-export const purchaseQuoteSchema = z.object({
+/**
+ * 14.13 (F121/F122): one point package as Studio sells it. F118: the price is
+ * ex-GST (`subtotalMinor`); `totalMinor` = subtotal + GST is what the card is
+ * charged. `pricePer1000Minor` (ex-GST, rounded up) and `savingMinor` (ex-GST,
+ * against the same points at the undiscounted rate) are for display; the
+ * ledger prices the package again when the payment lands.
+ */
+export const pointPackageSchema = z.object({
+  tierKey: packageTierKeySchema,
   points: pointsSchema,
+  discountBps: z.number().int().min(0).max(10_000),
   subtotalMinor: minorUnitsSchema,
   taxMinor: minorUnitsSchema,
   totalMinor: minorUnitsSchema,
   taxRateBps: taxRateBpsSchema,
   currency: currencySchema,
+  pricePer1000Minor: minorUnitsSchema,
+  savingMinor: minorUnitsSchema,
 });
-export type PurchaseQuote = z.infer<typeof purchaseQuoteSchema>;
+export type PointPackage = z.infer<typeof pointPackageSchema>;
+
+/** `GET .../billing/packages`: every package on sale in the business's region, smallest first. */
+export const pointPackagesSchema = z.object({ packages: z.array(pointPackageSchema) });
+export type PointPackages = z.infer<typeof pointPackagesSchema>;
+
+/** `GET .../billing/purchases/quote?tier=`: one package, priced now. */
+export const purchaseQuoteSchema = pointPackageSchema;
+export type PurchaseQuote = PointPackage;
 
 /**
+ * F121: a business buys a package, never an arbitrary number of points.
  * `currency` is REQUIRED, never defaulted (TASKS.md 7.5.a: "no IDR
  * default") -- the caller states what it expects to be charged in, and the
  * use-case refuses a mismatch against the business's own currency rather
  * than silently charging in the wrong one.
  */
 export const purchasePointsRequestSchema = z.object({
-  points: pointsSchema,
+  tierKey: packageTierKeySchema,
   currency: currencySchema,
 });
 export type PurchasePointsRequest = z.infer<typeof purchasePointsRequestSchema>;
@@ -62,6 +82,8 @@ export type CardPurchaseStatus = z.infer<typeof cardPurchaseStatusSchema>;
 export const cardPurchaseSchema = z.object({
   purchaseId: z.uuid(),
   status: cardPurchaseStatusSchema,
+  /** The package bought; null for a purchase made before packages. */
+  tierKey: packageTierKeySchema.nullable(),
   points: pointsSchema,
   subtotalMinor: minorUnitsSchema,
   taxMinor: minorUnitsSchema,
@@ -165,3 +187,27 @@ export const raiseStatementDisputeRequestSchema = z.object({
   reason: z.string().min(1),
 });
 export type RaiseStatementDisputeRequest = z.infer<typeof raiseStatementDisputeRequestSchema>;
+
+/**
+ * 14.13.b (F121): an alert that a package (an allocation the business bought)
+ * or a campaign's total budget has reached 50%, 80% or 100% used. Each is
+ * raised once and also emailed to the business's owner and finance members.
+ * At 100% rewards stop: the ledger refuses to hold points it does not have.
+ */
+export const budgetAlertSchema = z.object({
+  id: z.uuid(),
+  kind: z.enum(["package", "campaign"]),
+  /** The allocation id for a package, the campaign id for a campaign. */
+  subjectId: z.string().min(1),
+  /** The campaign's title; null for a package. */
+  campaignTitle: z.string().nullable(),
+  thresholdPct: z.union([z.literal(50), z.literal(80), z.literal(100)]),
+  usedPoints: pointsSchema,
+  totalPoints: pointsSchema,
+  createdAt: z.iso.datetime(),
+});
+export type BudgetAlert = z.infer<typeof budgetAlertSchema>;
+
+/** `GET .../billing/alerts`: the business's alerts, newest first. */
+export const budgetAlertsSchema = z.object({ alerts: z.array(budgetAlertSchema) });
+export type BudgetAlerts = z.infer<typeof budgetAlertsSchema>;

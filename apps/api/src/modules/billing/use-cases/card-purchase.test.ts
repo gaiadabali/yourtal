@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { errAsync, okAsync, ok } from "neverthrow";
 import { describe, expect, it } from "vitest";
 import type { PurchasePointsRequest } from "@yourtal/contracts/ledger-internal/funding";
+import type { QuotePackageRequest } from "@yourtal/contracts/ledger-internal/pricing";
 import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
 import { createSimulatedPayments, simulatedProcessorUnits } from "@yourtal/drivers/payments";
 import type { PaymentsDriver } from "@yourtal/drivers/payments";
@@ -11,7 +12,7 @@ import { stripeRouteFetch } from "../../payments/testing/stripe-route-fetch";
 import type { CardPurchaseRow, NewCardPurchase } from "../persistence/card-purchase.repository";
 import { fulfilPurchase } from "./fulfil-purchase.use-case";
 import { registerPurchaseEvents } from "./purchase-events";
-import { quotePurchase } from "./quote-purchase.use-case";
+import { listPackages, quotePurchase } from "./quote-purchase.use-case";
 import { startPurchase } from "./start-purchase.use-case";
 
 const BUSINESS = "0c4f0e8e-6a8f-4a39-9b67-2f4b4d1a0b11";
@@ -50,6 +51,24 @@ function memoryPurchases() {
   };
 }
 
+/** F122's AU tiers as the ledger prices them (P_issue 4.5c a point). */
+const TIERS = {
+  starter: { points: 1_000, discountBps: 0, totalMinor: 4_500, undiscountedMinor: 4_500 },
+  grow: { points: 10_000, discountBps: 500, totalMinor: 42_750, undiscountedMinor: 45_000 },
+} as const;
+
+function tierQuote(tierKey: keyof typeof TIERS) {
+  const tier = TIERS[tierKey];
+  return {
+    tierKey,
+    points: toPoints(tier.points),
+    discountBps: tier.discountBps,
+    totalMinor: toMinorUnits(tier.totalMinor),
+    undiscountedMinor: toMinorUnits(tier.undiscountedMinor),
+    currency: "AUD" as const,
+  };
+}
+
 function fakeLedger(refuse?: {
   code: "refused" | "kill_switch" | "already_granted";
   message: string;
@@ -57,7 +76,11 @@ function fakeLedger(refuse?: {
   const grants: PurchasePointsRequest[] = [];
   return {
     grants,
-    quotePurchase: () => okAsync({ totalMinor: toMinorUnits(4_500), currency: "AUD" as const }),
+    packageTiers: () => okAsync([tierQuote("starter"), tierQuote("grow")]),
+    quotePackage: (request: QuotePackageRequest) =>
+      request.tierKey in TIERS
+        ? okAsync(tierQuote(request.tierKey as keyof typeof TIERS))
+        : errAsync({ code: "refused" as const, message: "no such package tier" }),
     purchasePoints: (request: PurchasePointsRequest) => {
       grants.push(request);
       if (refuse !== undefined) return errAsync(refuse);
@@ -92,7 +115,7 @@ function deps(driver: PaymentsDriver, ledger = fakeLedger(), purchases = memoryP
 
 const command = (key = "biz:key-1") => ({
   merchantId: BUSINESS,
-  points: 1_000,
+  tierKey: "starter",
   currency: "AUD",
   idempotencyKey: key,
 });
@@ -114,19 +137,43 @@ function stripe() {
   return { driver, calls: double.calls };
 }
 
-describe("quotePurchase (F118)", () => {
-  it("adds GST on top of the ex-GST pack price", async () => {
+describe("point packages (F118, F122)", () => {
+  it("adds GST on top of the ex-GST package price", async () => {
     const d = deps(createSimulatedPayments());
-    const quote = (
-      await quotePurchase(d.ledger, d.businesses, d.settings, BUSINESS, 1_000)
-    )._unsafeUnwrap();
+    const quote = (await quotePurchase(d, BUSINESS, "starter"))._unsafeUnwrap();
     expect(quote).toEqual({
+      tierKey: "starter",
       points: 1_000,
+      discountBps: 0,
       subtotalMinor: 4_500,
       taxMinor: 450,
       totalMinor: 4_950,
       taxRateBps: 1_000,
       currency: "AUD",
+      pricePer1000Minor: 4_500,
+      savingMinor: 0,
+    });
+  });
+
+  it("lists every package with its price per 1,000 and its saving", async () => {
+    const d = deps(createSimulatedPayments());
+    const { packages } = (await listPackages(d, BUSINESS))._unsafeUnwrap();
+    expect(packages.map((p) => p.tierKey)).toEqual(["starter", "grow"]);
+    // Grow: A$427.50 ex-GST, A$42.75 GST, A$470.25 total; A$42.75 per 1,000; A$22.50 saved.
+    expect(packages[1]).toMatchObject({
+      subtotalMinor: 42_750,
+      taxMinor: 4_275,
+      totalMinor: 47_025,
+      pricePer1000Minor: 4_275,
+      savingMinor: 2_250,
+    });
+  });
+
+  it("passes an unknown package's refusal through", async () => {
+    const d = deps(createSimulatedPayments());
+    expect((await quotePurchase(d, BUSINESS, "platinum"))._unsafeUnwrapErr()).toMatchObject({
+      type: "ledger_refused",
+      code: "refused",
     });
   });
 });
@@ -177,7 +224,7 @@ describe("startPurchase on Stripe", () => {
   it("refuses a key reused for a different purchase, and a currency the business is not billed in", async () => {
     const d = deps(stripe().driver);
     expect((await startPurchase(d, command())).isOk()).toBe(true);
-    expect((await startPurchase(d, { ...command(), points: 2_000 }))._unsafeUnwrapErr()).toEqual({
+    expect((await startPurchase(d, { ...command(), tierKey: "grow" }))._unsafeUnwrapErr()).toEqual({
       type: "purchase_conflict",
     });
     expect(
@@ -197,7 +244,28 @@ describe("startPurchase on the simulated driver (Indonesia, tests)", () => {
     expect(result.status).toBe("paid");
     expect(result.allocation?.totalPoints).toBe(1_000);
     expect(d.ledger.grants).toEqual([
-      expect.objectContaining({ paidMinor: 4_500, points: 1_000, idempotencyKey: "biz:key-1" }),
+      expect.objectContaining({
+        paidMinor: 4_500,
+        points: 1_000,
+        idempotencyKey: "biz:key-1",
+        tierKey: "starter",
+      }),
+    ]);
+  });
+
+  it("buys Grow's 10,000 points at its discount, the tier recorded on the purchase", async () => {
+    const d = deps(
+      createSimulatedPayments(undefined, { declaredMinorUnitExponent: simulatedProcessorUnits() }),
+    );
+    const result = (await startPurchase(d, { ...command(), tierKey: "grow" }))._unsafeUnwrap();
+    expect(result.purchase).toMatchObject({
+      tierKey: "grow",
+      points: 10_000,
+      subtotalMinor: 42_750,
+      totalMinor: 47_025,
+    });
+    expect(d.ledger.grants).toEqual([
+      expect.objectContaining({ paidMinor: 42_750, points: 10_000, tierKey: "grow" }),
     ]);
   });
 });

@@ -53,7 +53,7 @@ describe("POST /api/:tenantId/studio/billing/purchases", () => {
       method: "POST",
       url: `/api/${businessId}/studio/billing/purchases`,
       headers: { cookie, "idempotency-key": idempotencyKey },
-      payload: { points: 1_000, currency: "AUD" },
+      payload: { tierKey: "starter", currency: "AUD" },
     });
     expect(first.statusCode).toBe(201);
     const firstBody = first.json<{
@@ -73,7 +73,7 @@ describe("POST /api/:tenantId/studio/billing/purchases", () => {
       method: "POST",
       url: `/api/${businessId}/studio/billing/purchases`,
       headers: { cookie, "idempotency-key": idempotencyKey },
-      payload: { points: 1_000, currency: "AUD" },
+      payload: { tierKey: "starter", currency: "AUD" },
     });
     expect(replay.statusCode).toBe(201);
 
@@ -94,7 +94,7 @@ describe("POST /api/:tenantId/studio/billing/purchases", () => {
       method: "POST",
       url: `/api/${businessId}/studio/billing/purchases`,
       headers: { cookie, "idempotency-key": `test-${randomUUID()}` },
-      payload: { points: 1_000, currency: "IDR" },
+      payload: { tierKey: "starter", currency: "IDR" },
     });
     expect(response.statusCode).toBe(201);
     const body = response.json<{
@@ -115,7 +115,7 @@ describe("POST /api/:tenantId/studio/billing/purchases", () => {
       method: "POST",
       url: `/api/${businessId}/studio/billing/purchases`,
       headers: { cookie, "idempotency-key": `test-${randomUUID()}` },
-      payload: { points: 1_000, currency: "AUD" },
+      payload: { tierKey: "starter", currency: "AUD" },
     });
     expect(response.statusCode).toBe(201);
     const { purchaseId, purchase } = response.json<{
@@ -151,7 +151,7 @@ describe("POST /api/:tenantId/studio/billing/purchases", () => {
       url: `/api/${businessId}/studio/billing/purchases`,
       headers: { cookie, "idempotency-key": `test-${randomUUID()}` },
       // This business is AU/AUD -- IDR is refused, never silently charged in AUD instead (7.5.a).
-      payload: { points: 1_000, currency: "IDR" },
+      payload: { tierKey: "starter", currency: "IDR" },
     });
     expect(response.statusCode).toBe(400);
   });
@@ -163,7 +163,7 @@ describe("GET /api/:tenantId/studio/billing/purchases/quote", () => {
 
     const response = await app.inject({
       method: "GET",
-      url: `/api/${businessId}/studio/billing/purchases/quote?points=1000`,
+      url: `/api/${businessId}/studio/billing/purchases/quote?tier=starter`,
       headers: { cookie },
     });
     expect(response.statusCode).toBe(200);

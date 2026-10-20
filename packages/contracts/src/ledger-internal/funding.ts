@@ -2,6 +2,7 @@ import * as z from "zod";
 import { minorUnitsSchema, pointsSchema } from "../money/money";
 import { currencySchema } from "../money/money-value";
 import { regionSchema } from "../region/region";
+import { packageTierKeySchema } from "../billing/package-tiers";
 
 /** TASKS.md 1.2.a's funding-and-allocations group. */
 
@@ -15,6 +16,8 @@ export const purchasePointsRequestSchema = z.object({
   points: pointsSchema,
   paidMinor: minorUnitsSchema,
   idempotencyKey: z.string().min(1),
+  /** 14.13 (F122): a package tier; the ledger prices it and requires its size. Omitted: untiered, at P_issue. */
+  tierKey: packageTierKeySchema.optional(),
 });
 export type PurchasePointsRequest = z.infer<typeof purchasePointsRequestSchema>;
 

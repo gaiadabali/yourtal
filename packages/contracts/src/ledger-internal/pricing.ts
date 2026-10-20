@@ -2,6 +2,7 @@ import * as z from "zod";
 import { minorUnitsSchema, pointsSchema } from "../money/money";
 import { currencySchema } from "../money/money-value";
 import { regionSchema } from "../region/region";
+import { packageTierKeySchema } from "../billing/package-tiers";
 
 /**
  * TASKS.md 1.2.a's pricing group. `quote` never carries the backing rate
@@ -89,3 +90,35 @@ export const valuePointsResultSchema = z.object({
   currency: currencySchema,
 });
 export type ValuePointsResult = z.infer<typeof valuePointsResultSchema>;
+
+/**
+ * 14.13 (F122): the region's point packages, each priced by the ledger at
+ * P_issue less the tier's discount, rounded up. `undiscountedMinor` is the
+ * same points at P_issue, for the saving. Never B: a tier priced below it is
+ * left out of the list and refused by quote and purchase.
+ */
+export const packageTiersRequestSchema = z.object({ region: regionSchema });
+export type PackageTiersRequest = z.infer<typeof packageTiersRequestSchema>;
+
+export const packageTierQuoteSchema = z.object({
+  tierKey: packageTierKeySchema,
+  points: pointsSchema,
+  discountBps: z.number().int().min(0).max(10_000),
+  totalMinor: minorUnitsSchema,
+  undiscountedMinor: minorUnitsSchema,
+  currency: currencySchema,
+});
+export type PackageTierQuote = z.infer<typeof packageTierQuoteSchema>;
+
+export const quotePackageRequestSchema = z.object({
+  region: regionSchema,
+  tierKey: packageTierKeySchema,
+});
+export type QuotePackageRequest = z.infer<typeof quotePackageRequestSchema>;
+
+/** Staff's propose and approve ask this before a catalogue is stored or put in force. */
+export const checkPackageTiersRequestSchema = z.object({
+  region: regionSchema,
+  tiers: z.unknown(),
+});
+export type CheckPackageTiersRequest = z.infer<typeof checkPackageTiersRequestSchema>;

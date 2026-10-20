@@ -74,7 +74,7 @@ async function fundedAllocationId(cookie: string, businessId: string): Promise<s
     method: "POST",
     url: `/api/${businessId}/studio/billing/purchases`,
     headers: { cookie, "idempotency-key": `test-${randomUUID()}` },
-    payload: { points: 10_000, currency: "AUD" },
+    payload: { tierKey: "grow", currency: "AUD" },
   });
   expect(response.statusCode, response.body).toBe(201);
   return response.json<{ allocation: { allocationId: string } }>().allocation.allocationId;

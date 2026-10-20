@@ -61,6 +61,9 @@ export async function fulfilPurchase(
     points: toPoints(row.points),
     paidMinor: toMinorUnits(row.subtotalMinor),
     idempotencyKey: row.idempotencyKey,
+    // 14.13: the ledger prices the package again now; a rate or tier change
+    // since the checkout opened parks the money for review below.
+    ...(row.tierKey === null ? {} : { tierKey: row.tierKey }),
   });
   if (granted.isErr()) {
     if (TRANSIENT_REFUSALS.has(granted.error.code)) {

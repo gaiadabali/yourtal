@@ -75,7 +75,6 @@ export function passesFilter(candidate: CandidateCampaign, ctx: RankingContext):
   if (!ctx.audiences.includes(campaign.audience)) return false;
   if (ctx.anonymous && !campaign.openViewing) return false;
   if (!ctx.anonymous && ctx.alreadyEarnedCampaignIds.has(campaign.id)) return false;
-  if (candidate.allocationRemainingPoints <= 0) return false;
   if (!canFundOneSession(candidate)) return false;
   if (!districtTargetMatches(candidate.targetDistricts, ctx.viewerDistrict)) return false;
   if (!ctx.canServe(campaign.id)) return false;
@@ -84,14 +83,18 @@ export function passesFilter(candidate: CandidateCampaign, ctx: RankingContext):
 
 /**
  * 14.2: a session holds base plus the maximum bonus at its start, so a
- * campaign whose budget or today's cap has less left than that would start
+ * campaign whose package, budget or today's cap has less left than that would start
  * every session non-earning. It leaves the feed until it can pay again. The
  * ledger's hold stays the hard stop; this only stops offering it.
  */
 function canFundOneSession(candidate: CandidateCampaign): boolean {
   const { budget, rewardConfig } = candidate;
-  if (budget === null) return true;
   const session = rewardConfig.rewardPointsPerCompletion + rewardConfig.accuracyBonusPoints;
+  // 14.13.b: the package behind it too. Rewards stop when it is used up, so a
+  // campaign it can no longer fund leaves the feed instead of starting
+  // sessions that cannot earn.
+  if (candidate.allocationRemainingPoints < Math.max(1, session)) return false;
+  if (budget === null) return true;
   if (budget.remainingPoints < session) return false;
   return budget.remainingTodayPoints === null || budget.remainingTodayPoints >= session;
 }

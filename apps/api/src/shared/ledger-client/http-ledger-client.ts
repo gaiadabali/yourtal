@@ -6,12 +6,16 @@ import type {
   PriceListingRequest,
   PriceListingResult,
   Quote,
+  CheckPackageTiersRequest,
+  PackageTierQuote,
+  QuotePackageRequest,
   QuotePurchaseRequest,
   QuotePurchaseResult,
   QuoteRequest,
   ValuePointsRequest,
   ValuePointsResult,
 } from "@yourtal/contracts/ledger-internal/pricing";
+import type { Region } from "@yourtal/contracts/region";
 import type {
   Allocation,
   CampaignBudget,
@@ -68,7 +72,6 @@ import type {
   RecoverCaptureRequest,
 } from "@yourtal/contracts/ledger-internal/capture";
 import type { ProvedDay } from "@yourtal/contracts/ledger-internal/proof";
-import type { Region } from "@yourtal/contracts/region";
 import type {
   ApproveSettingInput,
   ProposeSettingInput,
@@ -170,6 +173,18 @@ export class HttpLedgerClient implements LedgerInternalClient {
 
   valuePoints(request: ValuePointsRequest): ResultAsync<ValuePointsResult, LedgerError> {
     return this.post("/v1/pricing/points-value", request);
+  }
+
+  packageTiers(region: Region): ResultAsync<readonly PackageTierQuote[], LedgerError> {
+    return this.post("/v1/pricing/package-tiers", { region });
+  }
+
+  quotePackage(request: QuotePackageRequest): ResultAsync<PackageTierQuote, LedgerError> {
+    return this.post("/v1/pricing/package-quote", request);
+  }
+
+  checkPackageTiers(request: CheckPackageTiersRequest): ResultAsync<void, LedgerError> {
+    return this.post<unknown>("/v1/pricing/package-tiers/check", request).map(() => undefined);
   }
 
   purchasePoints(request: PurchasePointsRequest): ResultAsync<Allocation, LedgerError> {

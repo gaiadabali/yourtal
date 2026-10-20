@@ -10967,6 +10967,120 @@
         }
       }
     },
+    "/api/{tenantId}/studio/billing/packages": {
+      "get": {
+        "summary": "The point packages on sale, priced with GST",
+        "tags": [
+          "studio",
+          "billing"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Every package in the business's region, smallest first (14.13, F122).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PointPackages"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such business.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/{tenantId}/studio/billing/alerts": {
+      "get": {
+        "summary": "Budget alerts: packages and campaign budgets at 50%, 80% and 100% used",
+        "tags": [
+          "studio",
+          "billing"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The business's alerts, newest first (14.13.b, F121).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetAlerts"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/{tenantId}/studio/billing/purchases/{purchaseId}": {
       "get": {
         "summary": "A card purchase's status, for the page the checkout returns to",
@@ -23657,6 +23771,88 @@
         ],
         "additionalProperties": false
       },
+      "BudgetAlert": {
+        "description": "14.13.b (F121): a package or a campaign budget reached 50%, 80% or 100% used. Raised once each, and emailed to the owner and finance members. At 100% rewards stop.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "package",
+              "campaign"
+            ]
+          },
+          "subjectId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "campaignTitle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "thresholdPct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "const": 50
+              },
+              {
+                "type": "number",
+                "const": 80
+              },
+              {
+                "type": "number",
+                "const": 100
+              }
+            ]
+          },
+          "usedPoints": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "totalPoints": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "subjectId",
+          "campaignTitle",
+          "thresholdPct",
+          "usedPoints",
+          "totalPoints",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      },
+      "BudgetAlerts": {
+        "description": "14.13.b: the business's budget alerts, newest first.",
+        "type": "object",
+        "properties": {
+          "alerts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BudgetAlert"
+            }
+          }
+        },
+        "required": [
+          "alerts"
+        ],
+        "additionalProperties": false
+      },
       "Business": {
         "description": "An advertiser, supplier and/or redeemer.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - roles must not contain duplicates.\n  - currency must match the business's own region (F2: regions never cross).\n  - taxIdKind must match the business's region (ABN for AU; NIB or NPWP for ID).\n  - taxIdValue must match the expected shape for its taxIdKind.\n  - address must match the business's region (AU: state + postcode; ID: city).",
         "type": "object",
@@ -24420,6 +24616,16 @@
           "status": {
             "$ref": "#/components/schemas/CardPurchaseStatus"
           },
+          "tierKey": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PackageTierKey"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "points": {
             "$ref": "#/components/schemas/Points"
           },
@@ -24472,6 +24678,7 @@
         "required": [
           "purchaseId",
           "status",
+          "tierKey",
           "points",
           "subtotalMinor",
           "taxMinor",
@@ -26769,6 +26976,11 @@
         ],
         "additionalProperties": false
       },
+      "PackageTierKey": {
+        "description": "14.13 (F122): a point package's key in its region's catalogue, e.g. starter, grow, scale.",
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]{0,31}$"
+      },
       "PartialRedemption": {
         "description": "The counter-facing, two-value framing of partial redemption (TASKS.md 1.1.a) — see listing.ts's own comment for why this sits alongside PartialRedemptionPolicy rather than replacing it.",
         "type": "string",
@@ -26861,6 +27073,75 @@
         },
         "required": [
           "amountMinor"
+        ],
+        "additionalProperties": false
+      },
+      "PointPackage": {
+        "description": "14.13 (F122): one point package, priced by the ledger at P_issue less the tier's discount -- never the backing rate B. subtotalMinor is ex-GST; totalMinor adds GST at taxRateBps (F118: AU 10%, ID none). pricePer1000Minor and savingMinor are ex-GST, for display.",
+        "type": "object",
+        "properties": {
+          "tierKey": {
+            "$ref": "#/components/schemas/PackageTierKey"
+          },
+          "points": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "discountBps": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "subtotalMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "taxMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "totalMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "taxRateBps": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "pricePer1000Minor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "savingMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          }
+        },
+        "required": [
+          "tierKey",
+          "points",
+          "discountBps",
+          "subtotalMinor",
+          "taxMinor",
+          "totalMinor",
+          "taxRateBps",
+          "currency",
+          "pricePer1000Minor",
+          "savingMinor"
+        ],
+        "additionalProperties": false
+      },
+      "PointPackages": {
+        "description": "14.13: every point package on sale in the business's region, smallest first.",
+        "type": "object",
+        "properties": {
+          "packages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PurchaseQuote"
+            }
+          }
+        },
+        "required": [
+          "packages"
         ],
         "additionalProperties": false
       },
@@ -27395,28 +27676,36 @@
         "additionalProperties": false
       },
       "PurchasePointsRequest": {
-        "description": "Buy a pack of points. currency is required and never defaulted (7.5.a) -- the caller states what it expects to be charged, and a mismatch against the business's own currency is refused rather than coerced.",
+        "description": "Buy a point package (F121: always a package). currency is required and never defaulted (7.5.a) -- the caller states what it expects to be charged, and a mismatch against the business's own currency is refused rather than coerced.",
         "type": "object",
         "properties": {
-          "points": {
-            "$ref": "#/components/schemas/Points"
+          "tierKey": {
+            "$ref": "#/components/schemas/PackageTierKey"
           },
           "currency": {
             "$ref": "#/components/schemas/Currency"
           }
         },
         "required": [
-          "points",
+          "tierKey",
           "currency"
         ],
         "additionalProperties": false
       },
       "PurchaseQuote": {
-        "description": "A points pack's price at F12's fixed rate (P_issue) -- never the backing rate B, which no Studio surface ever carries. subtotalMinor is ex-GST; totalMinor adds GST at taxRateBps (F118: AU 10%, ID none).",
+        "description": "14.13: one point package priced now; the same shape as PointPackage.",
         "type": "object",
         "properties": {
+          "tierKey": {
+            "$ref": "#/components/schemas/PackageTierKey"
+          },
           "points": {
             "$ref": "#/components/schemas/Points"
+          },
+          "discountBps": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
           },
           "subtotalMinor": {
             "$ref": "#/components/schemas/MinorUnits"
@@ -27434,15 +27723,25 @@
           },
           "currency": {
             "$ref": "#/components/schemas/Currency"
+          },
+          "pricePer1000Minor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "savingMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
           }
         },
         "required": [
+          "tierKey",
           "points",
+          "discountBps",
           "subtotalMinor",
           "taxMinor",
           "totalMinor",
           "taxRateBps",
-          "currency"
+          "currency",
+          "pricePer1000Minor",
+          "savingMinor"
         ],
         "additionalProperties": false
       },

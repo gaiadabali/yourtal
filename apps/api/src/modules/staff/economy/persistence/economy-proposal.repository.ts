@@ -37,6 +37,8 @@ export interface EconomyProposalRow {
 export interface EconomyProposalRepository {
   create(input: NewEconomyProposal): Promise<EconomyProposalRow>;
   findById(id: string): Promise<EconomyProposalRow | null>;
+  /** 14.13: the value a still-pending `platform.region_setting` row will put in force; null once decided or missing. */
+  pendingSettingValue(settingId: string): Promise<{ readonly value: unknown } | null>;
   listPending(region: Region, kind?: EconomyProposalKind): Promise<readonly EconomyProposalRow[]>;
   listAll(region: Region, kind: EconomyProposalKind): Promise<readonly EconomyProposalRow[]>;
   /** Approves and stamps the ledger's own result, in one row -- same "decided once" shape as `region_setting`. */
@@ -125,6 +127,15 @@ export class PostgresEconomyProposalRepository implements EconomyProposalReposit
     );
     const row = result.rows[0];
     return row === undefined ? null : toRow(row);
+  }
+
+  async pendingSettingValue(settingId: string): Promise<{ readonly value: unknown } | null> {
+    const result = await this.pool.query<{ value: unknown }>(
+      `SELECT value FROM platform.region_setting WHERE id = $1 AND approved_by IS NULL`,
+      [settingId],
+    );
+    const row = result.rows[0];
+    return row === undefined ? null : { value: row.value };
   }
 
   async listPending(

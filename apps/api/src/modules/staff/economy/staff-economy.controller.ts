@@ -551,7 +551,7 @@ export class StaffEconomyController {
     const principal = await this.principals.resolve(request);
     const row = await this.requireProposal(id, region, "setting_change");
 
-    const payload = row.payload as { ledgerRef: string; key: string; value: unknown };
+    const payload = row.payload as { ledgerRef: string; key: string };
     const authz = await this.pdp.requireAction(
       principal,
       {
@@ -563,7 +563,9 @@ export class StaffEconomyController {
     );
     if (authz.isErr()) throw mapAuthzErrorToHttpException(authz.error);
 
-    await assertSettingValue(this.ledger, region, payload.key, payload.value);
+    // Checked against the row that will take effect, not this queue's copy of it.
+    const pending = await this.proposals.pendingSettingValue(payload.ledgerRef);
+    await assertSettingValue(this.ledger, region, payload.key, pending?.value);
     const setting = await this.ledger.approveSetting({
       id: payload.ledgerRef,
       approvedBy: principal.id,

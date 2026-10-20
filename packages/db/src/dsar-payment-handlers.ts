@@ -5,7 +5,7 @@ import type { DomainHandler, HandlerRegistry } from "@yourtal/consent/dsar-orche
  * The `payment_cards` DSAR domain (5.1.d): a bidder's customer, saved card and card-setup history.
  *
  * `yourtal_app` holds no DELETE on the `payment` tables, so this calls a SECURITY DEFINER
- * function (migration 20261020161342) that deletes rows for the one subject it is given, where the
+ * function (migration 20261020171646) that deletes rows for the one subject it is given, where the
  * owner is a user. A second run finds nothing and returns 0.
  */
 export function erasePaymentCards(pool: pg.Pool): DomainHandler {

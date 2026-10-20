@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 3/11 | 10/34 | `███░░░░░░░`  29% |
-| **All** | | | **108/117** | **556/581** | `██████████`  96% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 4/11 | 14/34 | `████░░░░░░`  41% |
+| **All** | | | **109/117** | **560/581** | `██████████`  96% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1633,11 +1633,11 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [ ] 14.2.e The district list: every Australian postcode with suburbs and state, from an openly licensed list (group 1.6.f, F116)
   - [ ] 14.2.f Me → “My area”: optional, a visible state → suburb picker, postcode stored, not for teens (group 1.6.g)
   - [ ] 14.2.g Studio picks districts from the list; the feed uses the viewer’s area (group 1.6.h)
-- [ ] **14.3 A lasting partner link for SnapApp** (group 2.1) · A · needs: — — 🔄 2026-10-20
-  - [ ] 14.3.a Add-only migration: a partner link table (partner, user, region, created, revoked)
-  - [ ] 14.3.b The first partner call with a valid code creates the link and returns its ID; later calls use the link ID
-  - [ ] 14.3.c Me → Linked apps shows “SnapApp linked”, with unlink; teens are still refused
-  - [ ] 14.3.d Tests: a call 11 minutes after linking still earns; an unlinked user earns nothing
+- [x] **14.3 A lasting partner link for SnapApp** (group 2.1) · A · needs: — — ✅ 2026-10-20 bff9833c
+  - [x] 14.3.a Add-only migration: a partner link table (partner, user, region, created, revoked) → bff9833c
+  - [x] 14.3.b The first partner call with a valid code creates the link and returns its ID; later calls use the link ID → bff9833c
+  - [x] 14.3.c Me → Linked apps shows “SnapApp linked”, with unlink; teens are still refused → bff9833c
+  - [x] 14.3.d Tests: a call 11 minutes after linking still earns; an unlinked user earns nothing → bff9833c
 - [x] **14.4 The “Sign in with YourTal” contract** (group 3.2, F99) · A · needs: — — ✅ 2026-10-20 72e404bf
   - [x] 14.4.a The claims, clients and token rules each app may rely on → docs/26 §1
   - [x] 14.4.b How every app hears that an account was deleted → docs/26 §2

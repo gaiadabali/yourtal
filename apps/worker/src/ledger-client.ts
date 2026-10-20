@@ -19,6 +19,13 @@ import {
   signServiceRequest,
 } from "@yourtal/contracts/ledger-internal/service-signature";
 import { grantSchema } from "@yourtal/contracts/ledger-internal/rewards";
+import { dueStatementsSchema, statementSchema } from "@yourtal/contracts/ledger-internal/economy";
+import type {
+  DueStatements,
+  DueStatementsRequest,
+  GenerateStatementRequest,
+  Statement,
+} from "@yourtal/contracts/ledger-internal/economy";
 import type { Grant, GrantActionRequest } from "@yourtal/contracts/ledger-internal/rewards";
 import type { WorkerConfig } from "./config";
 
@@ -41,6 +48,10 @@ export interface WorkerLedgerClient {
    * `caller` already makes on the api side).
    */
   grantAction(request: GrantActionRequest): Promise<Grant>;
+  /** TASKS.md 5.2.d: the weekly statement job's two calls, both worker-only on the ledger. */
+  dueStatements(request: DueStatementsRequest): Promise<DueStatements>;
+  /** Idempotent per business, region and period: a second call returns the first's statement. */
+  generateStatement(request: GenerateStatementRequest): Promise<Statement>;
 }
 
 export function createWorkerLedgerClient(
@@ -89,6 +100,12 @@ export function createWorkerLedgerClient(
     },
     async grantAction(request) {
       return grantSchema.parse(await post("/v1/actions/grants", request));
+    },
+    async dueStatements(request) {
+      return dueStatementsSchema.parse(await post("/v1/economy/statements/due", request));
+    },
+    async generateStatement(request) {
+      return statementSchema.parse(await post("/v1/economy/statements/generate", request));
     },
   };
 }

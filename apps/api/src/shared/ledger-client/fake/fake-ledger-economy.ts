@@ -313,9 +313,16 @@ export async function generateStatementFake(
   `);
   if (existing.rows[0] !== undefined) return toStatement(existing.rows[0]);
 
+  // Less what earlier statements already claim: the fake posts no payouts, so every
+  // earlier statement's positive closing is still inside those capture sums, and
+  // weekly statements would otherwise each carry the ones before them (as the real
+  // ledger's `StatementCarryNotYetPaid` leaves out, and the worker's fake copy does).
   const openingRows = await db.execute<{ opening: string }>(sql`
-    SELECT COALESCE(SUM(amount_minor), 0) AS opening FROM platform.ledger_fake_capture
-     WHERE merchant_id = ${request.businessId} AND region = ${request.region} AND posted_at < ${request.from}::timestamptz
+    SELECT (SELECT COALESCE(SUM(amount_minor), 0) FROM platform.ledger_fake_capture
+             WHERE merchant_id = ${request.businessId} AND region = ${request.region} AND posted_at < ${request.from}::timestamptz)
+         - (SELECT COALESCE(SUM(closing_payable_minor), 0) FROM platform.ledger_fake_statement
+             WHERE business_id = ${request.businessId} AND region = ${request.region}
+               AND period_to <= ${request.from}::timestamptz AND closing_payable_minor > 0) AS opening
   `);
   const capturesRows = await db.execute<{ total: string }>(sql`
     SELECT COALESCE(SUM(amount_minor), 0) AS total FROM platform.ledger_fake_capture

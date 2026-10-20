@@ -111,14 +111,37 @@ export const statementSchema = z.object({
 });
 export type Statement = z.infer<typeof statementSchema>;
 
+/**
+ * A period edge: a bare date reads as that day's UTC midnight, a timestamp with an
+ * offset as that instant. The weekly job sends the latter, a week's own
+ * midnight on its region's clock (F16).
+ */
+const periodEdgeSchema = z.union([z.iso.date(), z.iso.datetime({ offset: true })]);
+
 /** apps/worker-only (10.1.b): the one caller that knows a business's region without inferring it. */
 export const generateStatementRequestSchema = z.object({
   businessId: z.uuid(),
   region: regionSchema,
-  from: z.iso.date(),
-  to: z.iso.date(),
+  from: periodEdgeSchema,
+  to: periodEdgeSchema,
 });
 export type GenerateStatementRequest = z.infer<typeof generateStatementRequestSchema>;
+
+/**
+ * apps/worker-only (5.2.d): the businesses in a region whose statement for
+ * [from, to) is still to be generated: their payable moved in the period, or
+ * holds a balance no statement ever covered. The worker's database role cannot
+ * read `ledger.*`, so the ledger is asked.
+ */
+export const dueStatementsRequestSchema = z.object({
+  region: regionSchema,
+  from: periodEdgeSchema,
+  to: periodEdgeSchema,
+});
+export type DueStatementsRequest = z.infer<typeof dueStatementsRequestSchema>;
+
+export const dueStatementsSchema = z.object({ businessIds: z.array(z.string().min(1)) });
+export type DueStatements = z.infer<typeof dueStatementsSchema>;
 
 /** 10.6.b: the studio's own dispute — holds the payout until staff resolve it (10.6.a). */
 export const disputeStatementRequestSchema = z.object({

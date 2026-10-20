@@ -87,7 +87,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 9c | `yourtal-p9-c` | free | 2026-10-01 | A2 done: 13.10 ✅, 13.20 and 13.22 backends (closed ✅ 2026-10-01), 13.9.a/b. Db `yourtal_s9c` and ports 26480–26487 free for reuse. |
 | 4 | `yourtal-4` | **13** — viewer side (agent V), paused | 2026-10-02 | Branch `phase/13` (merged), db `yourtal_s4`, ports 26360–26369. Next for V: 13.15.d (store date without its year), 13.3.d (data export), the B half of 13.3.i. (13.4.a moved to the optimisation pass, F97.) |
 | 2b | `yourtal-p11` | free | 2026-09-29 | Phase 11 moved to slot 4. 11.3.a ✅ (d2ae6ab), 11.3.b merged except `VideoObject` (11fc23d). Worktree left detached |
-| g5 | `.claude/worktrees/g-phase5` | **14** — group Phase 5, all on the payment simulation (F106): 14.7.a, 14.7.b + d, 14.8, 14.6, 14.9, then the 14.7.e staging check; 14.11 ✅. 14.6 runs now in its own agent (founder, 2026-10-20) | 2026-10-20 | Branch `group/5-payments` (helper `g-phase5-video` on `group/5-video` for 14.6). 14.10 waits for group 3.9.c; 13.6 is the founder's. Beside g-budget, g-link and g-contract: migration names are checked against theirs before each merge. No Stripe keys are used |
+| g5 | `.claude/worktrees/g-phase5` | **14** — group Phase 5 on the payment simulation (F106) | 2026-10-21 | Branch `group/5-payments`. On main: 14.7.a, 14.7.c (simulation, driver, parity). In CI: `group/5-billing` (Checkout purchases, webhook, saved cards, boost charges, GST). Agents: auctions 14.7.d (`g-phase5-drv`, `group/5-auctions`), payouts 14.8 (`g-phase5-pay`), invoices 14.9 (`g-phase5-inv`), video 14.6 (`g-phase5-video`). Next: 14.13 packages, then the 14.7.e staging check (lead applies the env). 14.10 waits for group 3.9.c; 13.6 is the founder's |
 | 8 | free | **8** Voucher engine for clients — ✅ done | 2026-09-29 | Phase 8 done (all 4 tasks ✅). Helper worktrees `yourtal-p8`, `-p8-b`, `-p8-c` removed; databases `yourtal_s8`, `_s8b`, `_s8c` and ports 26371–26387, 26471–26477 kept for reuse |
 
 **Ready to start, no slot yet:** none.
@@ -1661,7 +1661,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.7.c The payment parity tests pass for both drivers, Stripe and simulated (group 5.1.c) → 29 end-to-end tests of the Stripe drivers against the simulation, beside the simulated driver's suite (b9bc4d04); Integration green
   - [ ] 14.7.d Charity auction escrow on the Stripe driver: a bid is held, the winning bid captured and the losing ones released (group 5.1.d)
   - [ ] 14.7.e Check on staging (group 5.1.f): a brand buys points (`billing/purchases`), pays for a boost, has a purchase approved by staff (`staff/economy/…/purchases`) and has a card declined; a charity auction holds, captures and releases bids. No refund step (F107); the driver's refunds are checked against the simulation
-- [ ] **14.8 Stripe Connect payouts in AU** (group 5.2, F103) · A + C · needs: 14.7
+- [ ] **14.8 Stripe Connect payouts in AU** (group 5.2, F103) · A + C · needs: 14.7 — 🔄 g5 (helper `g-phase5-pay`)
   - [ ] 14.8.a Stripe Connect payouts to AU brands: on the simulation, a brand and a charity onboard a connected account through the simulated onboarding page, and payouts land in it. ID has no real payouts (F104)
   - [ ] 14.8.b Settlement statements trigger real payouts, after approval
 - [ ] **14.9 GST tax invoices** (group 5.3) · C · needs: — (real invoices need the AU company, group 6.1.a) — 🔄 g5 (helper `g-phase5-inv`)

@@ -56,6 +56,11 @@ export interface DeliveryResult {
 export interface PaySimTx {
   get(id: string, opts?: { forUpdate?: boolean }): Promise<StoredObject | undefined>;
   put(obj: StoredObject): Promise<void>;
+  /**
+   * Objects of a type, oldest first (insertion order). `account` narrows to that scope, `null` meaning the
+   * platform; leave it out for every scope.
+   */
+  list(type: string, account?: string | null): Promise<StoredObject[]>;
   /** Serialises requests sharing an idempotency key. */
   getIdempotency(
     scope: string,

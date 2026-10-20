@@ -472,3 +472,131 @@ describe("events", () => {
     expect((await k.get("/v1/events/evt_ghost")).status).toBe(404);
   });
 });
+
+describe("list payouts and transfers", () => {
+  async function account(): Promise<string> {
+    return onboardedAccount(k, "000123456", manual);
+  }
+  const ids = (res: { json: Record<string, any> }): string[] =>
+    (res.json["data"] as { id: string }[]).map((o) => o.id);
+
+  it("lists a connected account's payouts only, newest first, as GET /:id returns them", async () => {
+    const a = await account();
+    const b = await account();
+    await k.post("/v1/transfers", { amount: 9000, currency: "aud", destination: a });
+    await k.post("/v1/transfers", { amount: 9000, currency: "aud", destination: b });
+    // Same second: the later-inserted payout must come first.
+    const p1 = await k.post("/v1/payouts", { amount: 100, currency: "aud" }, asAccount(a));
+    const p2 = await k.post("/v1/payouts", { amount: 200, currency: "aud" }, asAccount(a));
+    k.advance(5_000);
+    const p3 = await k.post(
+      "/v1/payouts",
+      { amount: 300, currency: "aud", metadata: { reference: "r3" } },
+      asAccount(a),
+    );
+    const other = await k.post("/v1/payouts", { amount: 400, currency: "aud" }, asAccount(b));
+
+    const res = await k.get("/v1/payouts", {}, asAccount(a));
+    expect(res.status).toBe(200);
+    expect(res.json).toMatchObject({ object: "list", url: "/v1/payouts", has_more: false });
+    expect(ids(res)).toStrictEqual([p3.json["id"], p2.json["id"], p1.json["id"]]);
+    expect(res.json["data"][0]).toStrictEqual(
+      (await k.get(`/v1/payouts/${p3.json["id"]}`, {}, asAccount(a))).json,
+    );
+    expect(ids(await k.get("/v1/payouts", {}, asAccount(b)))).toStrictEqual([other.json["id"]]);
+  });
+
+  it("filters payouts by created and pages with limit and starting_after", async () => {
+    const a = await account();
+    await k.post("/v1/transfers", { amount: 9000, currency: "aud", destination: a });
+    const made: string[] = [];
+    const times: number[] = [];
+    for (let i = 0; i < 3; i += 1) {
+      k.advance(10_000);
+      const po = await k.post("/v1/payouts", { amount: 100 + i, currency: "aud" }, asAccount(a));
+      made.push(po.json["id"]);
+      times.push(po.json["created"]);
+    }
+    const newest = [...made].reverse();
+    expect(
+      ids(await k.get("/v1/payouts", { created: { gte: times[1] } }, asAccount(a))),
+    ).toStrictEqual([made[2], made[1]]);
+    expect(
+      ids(await k.get("/v1/payouts", { created: { gt: times[1] } }, asAccount(a))),
+    ).toStrictEqual([made[2]]);
+    expect(
+      ids(await k.get("/v1/payouts", { created: { lt: times[1] } }, asAccount(a))),
+    ).toStrictEqual([made[0]]);
+    expect(
+      ids(await k.get("/v1/payouts", { created: { lte: times[1] } }, asAccount(a))),
+    ).toStrictEqual([made[1], made[0]]);
+
+    const first = await k.get("/v1/payouts", { limit: 2 }, asAccount(a));
+    expect(ids(first)).toStrictEqual(newest.slice(0, 2));
+    expect(first.json["has_more"]).toBe(true);
+    const second = await k.get(
+      "/v1/payouts",
+      { limit: 2, starting_after: newest[1] },
+      asAccount(a),
+    );
+    expect(ids(second)).toStrictEqual(newest.slice(2));
+    expect(second.json["has_more"]).toBe(false);
+  });
+
+  it("refuses a bad limit, an unknown cursor, and a payout list without Stripe-Account", async () => {
+    const a = await account();
+    for (const limit of [0, 101, "x"]) {
+      const bad = await k.get("/v1/payouts", { limit }, asAccount(a));
+      expect(bad.status).toBe(400);
+      expect(bad.json["error"].param).toBe("limit");
+    }
+    const ghost = await k.get("/v1/payouts", { starting_after: "po_ghost" }, asAccount(a));
+    expect(ghost.status).toBe(404);
+    expect(ghost.json["error"].code).toBe("resource_missing");
+    const bare = await k.get("/v1/payouts");
+    expect(bare.status).toBe(400);
+    expect(bare.json["error"].type).toBe("invalid_request_error");
+    expect((await k.get("/v1/transfers", { limit: 0 })).status).toBe(400);
+  });
+
+  it("lists platform transfers, filtered by destination, created and transfer_group", async () => {
+    const a = await account();
+    const b = await account();
+    const t1 = await k.post("/v1/transfers", {
+      amount: 100,
+      currency: "aud",
+      destination: a,
+      transfer_group: "g1",
+    });
+    const t2 = await k.post("/v1/transfers", { amount: 200, currency: "aud", destination: b });
+    k.advance(10_000);
+    const t3 = await k.post("/v1/transfers", {
+      amount: 300,
+      currency: "aud",
+      destination: a,
+      metadata: { reference: "disbursement:1" },
+    });
+
+    const all = await k.get("/v1/transfers", { destination: a });
+    expect(all.json).toMatchObject({ object: "list", url: "/v1/transfers", has_more: false });
+    expect(ids(all)).toStrictEqual([t3.json["id"], t1.json["id"]]);
+    expect(all.json["data"][0]).toStrictEqual(t3.json);
+    expect(ids(await k.get("/v1/transfers", { destination: b }))).toStrictEqual([t2.json["id"]]);
+    expect(ids(await k.get("/v1/transfers", { transfer_group: "g1" }))).toStrictEqual([
+      t1.json["id"],
+    ]);
+    expect(
+      ids(await k.get("/v1/transfers", { destination: a, created: { gte: t3.json["created"] } })),
+    ).toStrictEqual([t3.json["id"]]);
+    expect(
+      ids(await k.get("/v1/transfers", { destination: a, created: { lt: t3.json["created"] } })),
+    ).toStrictEqual([t1.json["id"]]);
+    const page = await k.get("/v1/transfers", { destination: a, limit: 1 });
+    expect(page.json["has_more"]).toBe(true);
+    expect(
+      ids(
+        await k.get("/v1/transfers", { destination: a, limit: 1, starting_after: t3.json["id"] }),
+      ),
+    ).toStrictEqual([t1.json["id"]]);
+  });
+});

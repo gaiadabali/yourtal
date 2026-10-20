@@ -1,4 +1,5 @@
 import { DemoApi, field, loginAs, ok } from "./api-client";
+import { ensureDemoCard } from "./card";
 import type { DemoPasswords } from "./api-client";
 import { DEMO_BRANDS } from "./catalogue";
 import type { Region } from "./catalogue";
@@ -264,6 +265,8 @@ export async function runDemoMarketplace(
     const campaign = brand?.campaigns.find((c) => c.seconds > 60);
     if (brand !== undefined && campaign !== undefined) {
       const owner = await login(base, email("owner", region), config);
+      // AU on Stripe charges boosts to a saved card; simulated payments need none.
+      await ensureDemoCard(owner, businessIdFor(brand.slug));
       const now = Date.now();
       ok(
         await owner.put(

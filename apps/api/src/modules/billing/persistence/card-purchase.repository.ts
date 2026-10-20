@@ -107,6 +107,8 @@ export class CardPurchaseRepository {
   }
 }
 
+const text = (value: unknown): string | null => (typeof value === "string" ? value : null);
+
 function toRow(row: Record<string, unknown>): CardPurchaseRow {
   const date = (value: unknown) => new Date(String(value));
   return {
@@ -121,10 +123,10 @@ function toRow(row: Record<string, unknown>): CardPurchaseRow {
     taxRateBps: Number(row["tax_rate_bps"]),
     idempotencyKey: String(row["idempotency_key"]),
     provider: row["provider"] as CardPurchaseRow["provider"],
-    checkoutRef: row["checkout_ref"] === null ? null : String(row["checkout_ref"]),
+    checkoutRef: text(row["checkout_ref"]),
     checkoutExpiresAt: date(row["checkout_expires_at"]),
     status: row["status"] as CardPurchaseStatus,
-    allocationId: row["allocation_id"] === null ? null : String(row["allocation_id"]),
+    allocationId: text(row["allocation_id"]),
     createdAt: date(row["created_at"]),
     paidAt: row["paid_at"] === null ? null : date(row["paid_at"]),
   };

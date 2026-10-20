@@ -159,7 +159,7 @@ describe("PaymentAccountsService", () => {
     const service = new PaymentAccountsService(regions(driver), store, "https://web.test");
     const handlers = new PaymentEventHandlers();
     service.registerHandlers(handlers);
-    await service.startCardSetup(AU, "/studio/billing");
+    expect((await service.startCardSetup(AU, "/studio/billing")).isOk()).toBe(true);
     await expect(
       handlers.dispatch({
         type: "checkout.completed",
@@ -186,7 +186,7 @@ describe("PaymentAccountsService", () => {
     const service = new PaymentAccountsService(regions(driver), store, "https://web.test");
     const handlers = new PaymentEventHandlers();
     service.registerHandlers(handlers);
-    await service.startCardSetup(AU, "/studio/billing");
+    expect((await service.startCardSetup(AU, "/studio/billing")).isOk()).toBe(true);
     await handlers.dispatch({
       type: "checkout.expired",
       eventId: "evt_3",

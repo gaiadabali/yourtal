@@ -1,4 +1,5 @@
-import { errAsync, ResultAsync } from "neverthrow";
+import { errAsync } from "neverthrow";
+import type { ResultAsync } from "neverthrow";
 import type { PurchaseQuote } from "@yourtal/contracts/billing";
 import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
 import { withTax } from "@yourtal/contracts/money/tax";

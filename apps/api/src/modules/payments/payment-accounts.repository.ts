@@ -122,7 +122,7 @@ export class PaymentAccountsRepository {
         region: row["region"] as Region,
       },
       provider: row["provider"] as Provider,
-      checkoutRef: row["checkout_ref"] === null ? null : String(row["checkout_ref"]),
+      checkoutRef: typeof row["checkout_ref"] === "string" ? row["checkout_ref"] : null,
       status: row["status"] as CardSetupRow["status"],
     };
   }

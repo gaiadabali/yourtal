@@ -173,7 +173,7 @@ describe("startPurchase on Stripe", () => {
 
   it("refuses a key reused for a different purchase, and a currency the business is not billed in", async () => {
     const d = deps(stripe().driver);
-    await startPurchase(d, command());
+    expect((await startPurchase(d, command())).isOk()).toBe(true);
     expect((await startPurchase(d, { ...command(), points: 2_000 }))._unsafeUnwrapErr()).toEqual({
       type: "purchase_conflict",
     });

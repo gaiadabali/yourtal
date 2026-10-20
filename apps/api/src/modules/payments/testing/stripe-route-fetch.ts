@@ -6,7 +6,7 @@ export interface StripeCall {
   readonly idempotencyKey: string | undefined;
 }
 
-export function stripeRouteFetch(routes: Record<string, unknown | (() => unknown)>): {
+export function stripeRouteFetch(routes: Record<string, unknown>): {
   readonly fetch: typeof fetch;
   readonly calls: StripeCall[];
 } {

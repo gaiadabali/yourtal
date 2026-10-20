@@ -18,13 +18,13 @@ import (
 // checks if the PurchaseResult type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &PurchaseResult{}
 
-// PurchaseResult What buying a pack produced: the funded allocation, what was actually charged, and the simulated payments driver's own reference.
+// PurchaseResult 5.1.a: a started card purchase. awaiting_payment carries the checkout page to send the browser to (checkoutUrl is set exactly then); paid carries the allocation already funded.
 type PurchaseResult struct {
-	Allocation BillingAllocation `json:"allocation"`
-	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
-	PaidMinor int64 `json:"paidMinor"`
-	Currency Currency `json:"currency"`
-	ProviderReference string `json:"providerReference"`
+	Status string `json:"status"`
+	PurchaseId NullableString `json:"purchaseId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	CheckoutUrl NullableString `json:"checkoutUrl"`
+	Purchase CardPurchase `json:"purchase"`
+	Allocation NullableBillingAllocation `json:"allocation"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -34,12 +34,13 @@ type _PurchaseResult PurchaseResult
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewPurchaseResult(allocation BillingAllocation, paidMinor int64, currency Currency, providerReference string) *PurchaseResult {
+func NewPurchaseResult(status string, purchaseId NullableString, checkoutUrl NullableString, purchase CardPurchase, allocation NullableBillingAllocation) *PurchaseResult {
 	this := PurchaseResult{}
+	this.Status = status
+	this.PurchaseId = purchaseId
+	this.CheckoutUrl = checkoutUrl
+	this.Purchase = purchase
 	this.Allocation = allocation
-	this.PaidMinor = paidMinor
-	this.Currency = currency
-	this.ProviderReference = providerReference
 	return &this
 }
 
@@ -51,100 +52,130 @@ func NewPurchaseResultWithDefaults() *PurchaseResult {
 	return &this
 }
 
-// GetAllocation returns the Allocation field value
-func (o *PurchaseResult) GetAllocation() BillingAllocation {
-	if o == nil {
-		var ret BillingAllocation
-		return ret
-	}
-
-	return o.Allocation
-}
-
-// GetAllocationOk returns a tuple with the Allocation field value
-// and a boolean to check if the value has been set.
-func (o *PurchaseResult) GetAllocationOk() (*BillingAllocation, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Allocation, true
-}
-
-// SetAllocation sets field value
-func (o *PurchaseResult) SetAllocation(v BillingAllocation) {
-	o.Allocation = v
-}
-
-// GetPaidMinor returns the PaidMinor field value
-func (o *PurchaseResult) GetPaidMinor() int64 {
-	if o == nil {
-		var ret int64
-		return ret
-	}
-
-	return o.PaidMinor
-}
-
-// GetPaidMinorOk returns a tuple with the PaidMinor field value
-// and a boolean to check if the value has been set.
-func (o *PurchaseResult) GetPaidMinorOk() (*int64, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.PaidMinor, true
-}
-
-// SetPaidMinor sets field value
-func (o *PurchaseResult) SetPaidMinor(v int64) {
-	o.PaidMinor = v
-}
-
-// GetCurrency returns the Currency field value
-func (o *PurchaseResult) GetCurrency() Currency {
-	if o == nil {
-		var ret Currency
-		return ret
-	}
-
-	return o.Currency
-}
-
-// GetCurrencyOk returns a tuple with the Currency field value
-// and a boolean to check if the value has been set.
-func (o *PurchaseResult) GetCurrencyOk() (*Currency, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Currency, true
-}
-
-// SetCurrency sets field value
-func (o *PurchaseResult) SetCurrency(v Currency) {
-	o.Currency = v
-}
-
-// GetProviderReference returns the ProviderReference field value
-func (o *PurchaseResult) GetProviderReference() string {
+// GetStatus returns the Status field value
+func (o *PurchaseResult) GetStatus() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.ProviderReference
+	return o.Status
 }
 
-// GetProviderReferenceOk returns a tuple with the ProviderReference field value
+// GetStatusOk returns a tuple with the Status field value
 // and a boolean to check if the value has been set.
-func (o *PurchaseResult) GetProviderReferenceOk() (*string, bool) {
+func (o *PurchaseResult) GetStatusOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ProviderReference, true
+	return &o.Status, true
 }
 
-// SetProviderReference sets field value
-func (o *PurchaseResult) SetProviderReference(v string) {
-	o.ProviderReference = v
+// SetStatus sets field value
+func (o *PurchaseResult) SetStatus(v string) {
+	o.Status = v
+}
+
+// GetPurchaseId returns the PurchaseId field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *PurchaseResult) GetPurchaseId() string {
+	if o == nil || o.PurchaseId.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.PurchaseId.Get()
+}
+
+// GetPurchaseIdOk returns a tuple with the PurchaseId field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *PurchaseResult) GetPurchaseIdOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.PurchaseId.Get(), o.PurchaseId.IsSet()
+}
+
+// SetPurchaseId sets field value
+func (o *PurchaseResult) SetPurchaseId(v string) {
+	o.PurchaseId.Set(&v)
+}
+
+// GetCheckoutUrl returns the CheckoutUrl field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *PurchaseResult) GetCheckoutUrl() string {
+	if o == nil || o.CheckoutUrl.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.CheckoutUrl.Get()
+}
+
+// GetCheckoutUrlOk returns a tuple with the CheckoutUrl field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *PurchaseResult) GetCheckoutUrlOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.CheckoutUrl.Get(), o.CheckoutUrl.IsSet()
+}
+
+// SetCheckoutUrl sets field value
+func (o *PurchaseResult) SetCheckoutUrl(v string) {
+	o.CheckoutUrl.Set(&v)
+}
+
+// GetPurchase returns the Purchase field value
+func (o *PurchaseResult) GetPurchase() CardPurchase {
+	if o == nil {
+		var ret CardPurchase
+		return ret
+	}
+
+	return o.Purchase
+}
+
+// GetPurchaseOk returns a tuple with the Purchase field value
+// and a boolean to check if the value has been set.
+func (o *PurchaseResult) GetPurchaseOk() (*CardPurchase, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Purchase, true
+}
+
+// SetPurchase sets field value
+func (o *PurchaseResult) SetPurchase(v CardPurchase) {
+	o.Purchase = v
+}
+
+// GetAllocation returns the Allocation field value
+// If the value is explicit nil, the zero value for BillingAllocation will be returned
+func (o *PurchaseResult) GetAllocation() BillingAllocation {
+	if o == nil || o.Allocation.Get() == nil {
+		var ret BillingAllocation
+		return ret
+	}
+
+	return *o.Allocation.Get()
+}
+
+// GetAllocationOk returns a tuple with the Allocation field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *PurchaseResult) GetAllocationOk() (*BillingAllocation, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.Allocation.Get(), o.Allocation.IsSet()
+}
+
+// SetAllocation sets field value
+func (o *PurchaseResult) SetAllocation(v BillingAllocation) {
+	o.Allocation.Set(&v)
 }
 
 func (o PurchaseResult) MarshalJSON() ([]byte, error) {
@@ -157,10 +188,11 @@ func (o PurchaseResult) MarshalJSON() ([]byte, error) {
 
 func (o PurchaseResult) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["allocation"] = o.Allocation
-	toSerialize["paidMinor"] = o.PaidMinor
-	toSerialize["currency"] = o.Currency
-	toSerialize["providerReference"] = o.ProviderReference
+	toSerialize["status"] = o.Status
+	toSerialize["purchaseId"] = o.PurchaseId.Get()
+	toSerialize["checkoutUrl"] = o.CheckoutUrl.Get()
+	toSerialize["purchase"] = o.Purchase
+	toSerialize["allocation"] = o.Allocation.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -174,10 +206,11 @@ func (o *PurchaseResult) UnmarshalJSON(data []byte) (err error) {
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
+		"status",
+		"purchaseId",
+		"checkoutUrl",
+		"purchase",
 		"allocation",
-		"paidMinor",
-		"currency",
-		"providerReference",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -207,10 +240,11 @@ func (o *PurchaseResult) UnmarshalJSON(data []byte) (err error) {
 	additionalProperties := make(map[string]interface{})
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
+		delete(additionalProperties, "status")
+		delete(additionalProperties, "purchaseId")
+		delete(additionalProperties, "checkoutUrl")
+		delete(additionalProperties, "purchase")
 		delete(additionalProperties, "allocation")
-		delete(additionalProperties, "paidMinor")
-		delete(additionalProperties, "currency")
-		delete(additionalProperties, "providerReference")
 		o.AdditionalProperties = additionalProperties
 	}
 

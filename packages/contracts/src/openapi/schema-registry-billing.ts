@@ -64,11 +64,8 @@ export const BILLING_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     id: "PurchaseResult",
     schema: purchaseResultSchema,
     description:
-      "5.1.a: a started card purchase. awaiting_payment carries the checkout page to send the browser to; paid carries the allocation already funded.",
-    crossFieldRules: [
-      "checkoutUrl is set exactly when status is awaiting_payment.",
-      "allocation is set exactly when status is paid.",
-    ],
+      "5.1.a: a started card purchase. awaiting_payment carries the checkout page to send the browser to (checkoutUrl is set exactly then); paid carries the allocation already funded.",
+    crossFieldRules: [],
   },
   {
     id: "CardPurchaseStatus",
@@ -80,8 +77,9 @@ export const BILLING_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
   {
     id: "CardPurchase",
     schema: cardPurchaseSchema,
-    description: "5.1.a: one card purchase of points, with its GST split, for the return page.",
-    crossFieldRules: ["totalMinor = subtotalMinor + taxMinor."],
+    description:
+      "5.1.a: one card purchase of points, with its GST split (totalMinor = subtotalMinor + taxMinor), for the return page.",
+    crossFieldRules: [],
   },
   {
     id: "SavedCard",
@@ -100,8 +98,8 @@ export const BILLING_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     id: "StartCardSetupResult",
     schema: startCardSetupResultSchema,
     description:
-      "Either a page to save the card on (checkoutUrl) or, when the processor saves it at once, the card.",
-    crossFieldRules: ["Exactly one of checkoutUrl and card is set."],
+      "Either a page to save the card on (checkoutUrl) or, when the processor saves it at once, the card; exactly one is set.",
+    crossFieldRules: [],
   },
   {
     id: "BillingBalance",

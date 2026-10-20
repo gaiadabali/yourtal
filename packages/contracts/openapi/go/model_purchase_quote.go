@@ -18,12 +18,17 @@ import (
 // checks if the PurchaseQuote type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &PurchaseQuote{}
 
-// PurchaseQuote A points pack's price at F12's fixed rate (P_issue) -- never the backing rate B, which no Studio surface ever carries.
+// PurchaseQuote A points pack's price at F12's fixed rate (P_issue) -- never the backing rate B, which no Studio surface ever carries. subtotalMinor is ex-GST; totalMinor adds GST at taxRateBps (F118: AU 10%, ID none).
 type PurchaseQuote struct {
 	// Platform points. Always a whole number; there is no fractional point.
 	Points int64 `json:"points"`
 	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
+	SubtotalMinor int64 `json:"subtotalMinor"`
+	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
+	TaxMinor int64 `json:"taxMinor"`
+	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
 	TotalMinor int64 `json:"totalMinor"`
+	TaxRateBps int32 `json:"taxRateBps"`
 	Currency Currency `json:"currency"`
 	AdditionalProperties map[string]interface{}
 }
@@ -34,10 +39,13 @@ type _PurchaseQuote PurchaseQuote
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewPurchaseQuote(points int64, totalMinor int64, currency Currency) *PurchaseQuote {
+func NewPurchaseQuote(points int64, subtotalMinor int64, taxMinor int64, totalMinor int64, taxRateBps int32, currency Currency) *PurchaseQuote {
 	this := PurchaseQuote{}
 	this.Points = points
+	this.SubtotalMinor = subtotalMinor
+	this.TaxMinor = taxMinor
 	this.TotalMinor = totalMinor
+	this.TaxRateBps = taxRateBps
 	this.Currency = currency
 	return &this
 }
@@ -74,6 +82,54 @@ func (o *PurchaseQuote) SetPoints(v int64) {
 	o.Points = v
 }
 
+// GetSubtotalMinor returns the SubtotalMinor field value
+func (o *PurchaseQuote) GetSubtotalMinor() int64 {
+	if o == nil {
+		var ret int64
+		return ret
+	}
+
+	return o.SubtotalMinor
+}
+
+// GetSubtotalMinorOk returns a tuple with the SubtotalMinor field value
+// and a boolean to check if the value has been set.
+func (o *PurchaseQuote) GetSubtotalMinorOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.SubtotalMinor, true
+}
+
+// SetSubtotalMinor sets field value
+func (o *PurchaseQuote) SetSubtotalMinor(v int64) {
+	o.SubtotalMinor = v
+}
+
+// GetTaxMinor returns the TaxMinor field value
+func (o *PurchaseQuote) GetTaxMinor() int64 {
+	if o == nil {
+		var ret int64
+		return ret
+	}
+
+	return o.TaxMinor
+}
+
+// GetTaxMinorOk returns a tuple with the TaxMinor field value
+// and a boolean to check if the value has been set.
+func (o *PurchaseQuote) GetTaxMinorOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.TaxMinor, true
+}
+
+// SetTaxMinor sets field value
+func (o *PurchaseQuote) SetTaxMinor(v int64) {
+	o.TaxMinor = v
+}
+
 // GetTotalMinor returns the TotalMinor field value
 func (o *PurchaseQuote) GetTotalMinor() int64 {
 	if o == nil {
@@ -96,6 +152,30 @@ func (o *PurchaseQuote) GetTotalMinorOk() (*int64, bool) {
 // SetTotalMinor sets field value
 func (o *PurchaseQuote) SetTotalMinor(v int64) {
 	o.TotalMinor = v
+}
+
+// GetTaxRateBps returns the TaxRateBps field value
+func (o *PurchaseQuote) GetTaxRateBps() int32 {
+	if o == nil {
+		var ret int32
+		return ret
+	}
+
+	return o.TaxRateBps
+}
+
+// GetTaxRateBpsOk returns a tuple with the TaxRateBps field value
+// and a boolean to check if the value has been set.
+func (o *PurchaseQuote) GetTaxRateBpsOk() (*int32, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.TaxRateBps, true
+}
+
+// SetTaxRateBps sets field value
+func (o *PurchaseQuote) SetTaxRateBps(v int32) {
+	o.TaxRateBps = v
 }
 
 // GetCurrency returns the Currency field value
@@ -133,7 +213,10 @@ func (o PurchaseQuote) MarshalJSON() ([]byte, error) {
 func (o PurchaseQuote) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["points"] = o.Points
+	toSerialize["subtotalMinor"] = o.SubtotalMinor
+	toSerialize["taxMinor"] = o.TaxMinor
 	toSerialize["totalMinor"] = o.TotalMinor
+	toSerialize["taxRateBps"] = o.TaxRateBps
 	toSerialize["currency"] = o.Currency
 
 	for key, value := range o.AdditionalProperties {
@@ -149,7 +232,10 @@ func (o *PurchaseQuote) UnmarshalJSON(data []byte) (err error) {
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"points",
+		"subtotalMinor",
+		"taxMinor",
 		"totalMinor",
+		"taxRateBps",
 		"currency",
 	}
 
@@ -181,7 +267,10 @@ func (o *PurchaseQuote) UnmarshalJSON(data []byte) (err error) {
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
 		delete(additionalProperties, "points")
+		delete(additionalProperties, "subtotalMinor")
+		delete(additionalProperties, "taxMinor")
 		delete(additionalProperties, "totalMinor")
+		delete(additionalProperties, "taxRateBps")
 		delete(additionalProperties, "currency")
 		o.AdditionalProperties = additionalProperties
 	}

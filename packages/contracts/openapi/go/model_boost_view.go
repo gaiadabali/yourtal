@@ -28,6 +28,7 @@ type BoostView struct {
 	SpendMinor int64 `json:"spendMinor"`
 	AverageCpmMinor NullableInt64 `json:"averageCpmMinor"`
 	Days []BoostDay `json:"days"`
+	CardRequired bool `json:"cardRequired"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -37,7 +38,7 @@ type _BoostView BoostView
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBoostView(campaignId NullableString, currency Currency, setting NullableBoostViewSetting, reserveCpmMinor int64, impressions int64, spendMinor int64, averageCpmMinor NullableInt64, days []BoostDay) *BoostView {
+func NewBoostView(campaignId NullableString, currency Currency, setting NullableBoostViewSetting, reserveCpmMinor int64, impressions int64, spendMinor int64, averageCpmMinor NullableInt64, days []BoostDay, cardRequired bool) *BoostView {
 	this := BoostView{}
 	this.CampaignId = campaignId
 	this.Currency = currency
@@ -47,6 +48,7 @@ func NewBoostView(campaignId NullableString, currency Currency, setting Nullable
 	this.SpendMinor = spendMinor
 	this.AverageCpmMinor = averageCpmMinor
 	this.Days = days
+	this.CardRequired = cardRequired
 	return &this
 }
 
@@ -256,6 +258,30 @@ func (o *BoostView) SetDays(v []BoostDay) {
 	o.Days = v
 }
 
+// GetCardRequired returns the CardRequired field value
+func (o *BoostView) GetCardRequired() bool {
+	if o == nil {
+		var ret bool
+		return ret
+	}
+
+	return o.CardRequired
+}
+
+// GetCardRequiredOk returns a tuple with the CardRequired field value
+// and a boolean to check if the value has been set.
+func (o *BoostView) GetCardRequiredOk() (*bool, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.CardRequired, true
+}
+
+// SetCardRequired sets field value
+func (o *BoostView) SetCardRequired(v bool) {
+	o.CardRequired = v
+}
+
 func (o BoostView) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -274,6 +300,7 @@ func (o BoostView) ToMap() (map[string]interface{}, error) {
 	toSerialize["spendMinor"] = o.SpendMinor
 	toSerialize["averageCpmMinor"] = o.AverageCpmMinor.Get()
 	toSerialize["days"] = o.Days
+	toSerialize["cardRequired"] = o.CardRequired
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -295,6 +322,7 @@ func (o *BoostView) UnmarshalJSON(data []byte) (err error) {
 		"spendMinor",
 		"averageCpmMinor",
 		"days",
+		"cardRequired",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -332,6 +360,7 @@ func (o *BoostView) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "spendMinor")
 		delete(additionalProperties, "averageCpmMinor")
 		delete(additionalProperties, "days")
+		delete(additionalProperties, "cardRequired")
 		o.AdditionalProperties = additionalProperties
 	}
 

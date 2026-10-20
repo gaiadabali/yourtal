@@ -14,7 +14,7 @@ import { regionSchema } from "../region/region";
  */
 
 /** Basis points (1000 = 10%). F118: AU adds GST on top of an ex-GST price; Indonesia adds none. */
-export const taxRateBpsSchema = z.number().int().min(0).max(10_000);
+const taxRateBpsSchema = z.number().int().min(0).max(10_000);
 
 /** F118: the price is ex-GST (`subtotalMinor`); `totalMinor` = subtotal + GST is what the card is charged. */
 export const purchaseQuoteSchema = z.object({

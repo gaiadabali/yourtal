@@ -29,6 +29,10 @@ type BoostCharge struct {
 	Impressions int64 `json:"impressions"`
 	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
 	AmountMinor int64 `json:"amountMinor"`
+	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
+	SubtotalMinor NullableInt64 `json:"subtotalMinor"`
+	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
+	TaxMinor NullableInt64 `json:"taxMinor"`
 	Currency Currency `json:"currency"`
 	ProviderReference string `json:"providerReference"`
 	ChargedAt time.Time `json:"chargedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
@@ -40,7 +44,7 @@ type _BoostCharge BoostCharge
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBoostCharge(id string, campaignId string, campaignTitle string, day string, impressions int64, amountMinor int64, currency Currency, providerReference string, chargedAt time.Time) *BoostCharge {
+func NewBoostCharge(id string, campaignId string, campaignTitle string, day string, impressions int64, amountMinor int64, subtotalMinor NullableInt64, taxMinor NullableInt64, currency Currency, providerReference string, chargedAt time.Time) *BoostCharge {
 	this := BoostCharge{}
 	this.Id = id
 	this.CampaignId = campaignId
@@ -48,6 +52,8 @@ func NewBoostCharge(id string, campaignId string, campaignTitle string, day stri
 	this.Day = day
 	this.Impressions = impressions
 	this.AmountMinor = amountMinor
+	this.SubtotalMinor = subtotalMinor
+	this.TaxMinor = taxMinor
 	this.Currency = currency
 	this.ProviderReference = providerReference
 	this.ChargedAt = chargedAt
@@ -206,6 +212,58 @@ func (o *BoostCharge) SetAmountMinor(v int64) {
 	o.AmountMinor = v
 }
 
+// GetSubtotalMinor returns the SubtotalMinor field value
+// If the value is explicit nil, the zero value for int64 will be returned
+func (o *BoostCharge) GetSubtotalMinor() int64 {
+	if o == nil || o.SubtotalMinor.Get() == nil {
+		var ret int64
+		return ret
+	}
+
+	return *o.SubtotalMinor.Get()
+}
+
+// GetSubtotalMinorOk returns a tuple with the SubtotalMinor field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *BoostCharge) GetSubtotalMinorOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.SubtotalMinor.Get(), o.SubtotalMinor.IsSet()
+}
+
+// SetSubtotalMinor sets field value
+func (o *BoostCharge) SetSubtotalMinor(v int64) {
+	o.SubtotalMinor.Set(&v)
+}
+
+// GetTaxMinor returns the TaxMinor field value
+// If the value is explicit nil, the zero value for int64 will be returned
+func (o *BoostCharge) GetTaxMinor() int64 {
+	if o == nil || o.TaxMinor.Get() == nil {
+		var ret int64
+		return ret
+	}
+
+	return *o.TaxMinor.Get()
+}
+
+// GetTaxMinorOk returns a tuple with the TaxMinor field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *BoostCharge) GetTaxMinorOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.TaxMinor.Get(), o.TaxMinor.IsSet()
+}
+
+// SetTaxMinor sets field value
+func (o *BoostCharge) SetTaxMinor(v int64) {
+	o.TaxMinor.Set(&v)
+}
+
 // GetCurrency returns the Currency field value
 func (o *BoostCharge) GetCurrency() Currency {
 	if o == nil {
@@ -294,6 +352,8 @@ func (o BoostCharge) ToMap() (map[string]interface{}, error) {
 	toSerialize["day"] = o.Day
 	toSerialize["impressions"] = o.Impressions
 	toSerialize["amountMinor"] = o.AmountMinor
+	toSerialize["subtotalMinor"] = o.SubtotalMinor.Get()
+	toSerialize["taxMinor"] = o.TaxMinor.Get()
 	toSerialize["currency"] = o.Currency
 	toSerialize["providerReference"] = o.ProviderReference
 	toSerialize["chargedAt"] = o.ChargedAt
@@ -311,6 +371,8 @@ func (o *BoostCharge) UnmarshalJSON(data []byte) (err error) {
 		"day",
 		"impressions",
 		"amountMinor",
+		"subtotalMinor",
+		"taxMinor",
 		"currency",
 		"providerReference",
 		"chargedAt",

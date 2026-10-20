@@ -10967,6 +10967,281 @@
         }
       }
     },
+    "/api/{tenantId}/studio/billing/purchases/{purchaseId}": {
+      "get": {
+        "summary": "A card purchase's status, for the page the checkout returns to",
+        "tags": [
+          "studio",
+          "billing"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "purchaseId",
+            "in": "path",
+            "required": true,
+            "description": "A card purchase this business started.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "pending until the processor's webhook confirms the payment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardPurchase"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No purchase with this id belongs to this business.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/{tenantId}/studio/billing/card": {
+      "get": {
+        "summary": "The card boosts are charged to",
+        "tags": [
+          "studio",
+          "billing",
+          "boost"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The saved card (brand, last four, expiry) or null, and whether one is required.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingCard"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Add or replace the card boosts are charged to",
+        "tags": [
+          "studio",
+          "billing",
+          "boost"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "A page to save the card on (the card arrives with the webhook), or the card when saved at once.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartCardSetupResult"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/webhooks/stripe": {
+      "post": {
+        "summary": "Stripe's signed event delivery (public; the signature is the authentication)",
+        "tags": [
+          "billing",
+          "webhooks"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "A Stripe event exactly as Stripe sends it, verified against the Stripe-Signature header on the raw body.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Handled, already handled, or a type the app does not act on.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "received": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "received"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The signature does not verify, or the body is not an event. Not retried usefully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "A handler failed; the sender retries the delivery.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/charities/applications": {
       "post": {
         "summary": "A foundation applies to the registry (simulated KYB check)",
@@ -22103,6 +22378,30 @@
         ],
         "additionalProperties": false
       },
+      "BillingCard": {
+        "description": "The business's card for boosts. required is true where boosts charge a saved card (AU on Stripe).",
+        "type": "object",
+        "properties": {
+          "card": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SavedCard"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "card",
+          "required"
+        ],
+        "additionalProperties": false
+      },
       "BillingContact": {
         "description": "The person a business's invoices and settlement statements are sent to (docs/17 section 2, Billing zone).",
         "type": "object",
@@ -22271,6 +22570,26 @@
           "amountMinor": {
             "$ref": "#/components/schemas/MinorUnits"
           },
+          "subtotalMinor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MinorUnits"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "taxMinor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MinorUnits"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "currency": {
             "$ref": "#/components/schemas/Currency"
           },
@@ -22291,6 +22610,8 @@
           "day",
           "impressions",
           "amountMinor",
+          "subtotalMinor",
+          "taxMinor",
           "currency",
           "providerReference",
           "chargedAt"
@@ -22437,6 +22758,9 @@
             "items": {
               "$ref": "#/components/schemas/BoostDay"
             }
+          },
+          "cardRequired": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -22447,7 +22771,8 @@
           "impressions",
           "spendMinor",
           "averageCpmMinor",
-          "days"
+          "days",
+          "cardRequired"
         ],
         "additionalProperties": false
       },
@@ -23217,6 +23542,92 @@
             ],
             "additionalProperties": false
           }
+        ]
+      },
+      "CardPurchase": {
+        "description": "5.1.a: one card purchase of points, with its GST split (totalMinor = subtotalMinor + taxMinor), for the return page.",
+        "type": "object",
+        "properties": {
+          "purchaseId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CardPurchaseStatus"
+          },
+          "points": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "subtotalMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "taxMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "totalMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "taxRateBps": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "allocationId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "paidAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "purchaseId",
+          "status",
+          "points",
+          "subtotalMinor",
+          "taxMinor",
+          "totalMinor",
+          "taxRateBps",
+          "currency",
+          "allocationId",
+          "createdAt",
+          "paidAt"
+        ],
+        "additionalProperties": false
+      },
+      "CardPurchaseStatus": {
+        "description": "pending until the processor's verified webhook confirms payment; needs_review is money received that staff must settle; there are no refunds (F107).",
+        "type": "string",
+        "enum": [
+          "pending",
+          "paid",
+          "expired",
+          "needs_review"
         ]
       },
       "ChannelReadResponse": {
@@ -25816,14 +26227,25 @@
         "additionalProperties": false
       },
       "PurchaseQuote": {
-        "description": "A points pack's price at F12's fixed rate (P_issue) -- never the backing rate B, which no Studio surface ever carries.",
+        "description": "A points pack's price at F12's fixed rate (P_issue) -- never the backing rate B, which no Studio surface ever carries. subtotalMinor is ex-GST; totalMinor adds GST at taxRateBps (F118: AU 10%, ID none).",
         "type": "object",
         "properties": {
           "points": {
             "$ref": "#/components/schemas/Points"
           },
+          "subtotalMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "taxMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
           "totalMinor": {
             "$ref": "#/components/schemas/MinorUnits"
+          },
+          "taxRateBps": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
           },
           "currency": {
             "$ref": "#/components/schemas/Currency"
@@ -25831,34 +26253,63 @@
         },
         "required": [
           "points",
+          "subtotalMinor",
+          "taxMinor",
           "totalMinor",
+          "taxRateBps",
           "currency"
         ],
         "additionalProperties": false
       },
       "PurchaseResult": {
-        "description": "What buying a pack produced: the funded allocation, what was actually charged, and the simulated payments driver's own reference.",
+        "description": "5.1.a: a started card purchase. awaiting_payment carries the checkout page to send the browser to (checkoutUrl is set exactly then); paid carries the allocation already funded.",
         "type": "object",
         "properties": {
-          "allocation": {
-            "$ref": "#/components/schemas/BillingAllocation"
-          },
-          "paidMinor": {
-            "$ref": "#/components/schemas/MinorUnits"
-          },
-          "currency": {
-            "$ref": "#/components/schemas/Currency"
-          },
-          "providerReference": {
+          "status": {
             "type": "string",
-            "minLength": 1
+            "enum": [
+              "awaiting_payment",
+              "paid",
+              "needs_review",
+              "expired"
+            ]
+          },
+          "purchaseId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "checkoutUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "purchase": {
+            "$ref": "#/components/schemas/CardPurchase"
+          },
+          "allocation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BillingAllocation"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
-          "allocation",
-          "paidMinor",
-          "currency",
-          "providerReference"
+          "status",
+          "purchaseId",
+          "checkoutUrl",
+          "purchase",
+          "allocation"
         ],
         "additionalProperties": false
       },
@@ -26199,6 +26650,37 @@
           "ID"
         ]
       },
+      "SavedCard": {
+        "description": "A saved card as Studio shows it: brand, last four digits and expiry only.",
+        "type": "object",
+        "properties": {
+          "brand": {
+            "type": "string",
+            "minLength": 1
+          },
+          "last4": {
+            "type": "string",
+            "pattern": "^[0-9]{4}$"
+          },
+          "expMonth": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12
+          },
+          "expYear": {
+            "type": "integer",
+            "minimum": 2000,
+            "maximum": 2100
+          }
+        },
+        "required": [
+          "brand",
+          "last4",
+          "expMonth",
+          "expYear"
+        ],
+        "additionalProperties": false
+      },
       "SearchResponse": {
         "description": "GET /api/search's response: campaigns, channels and listings, region- and audience-walled.",
         "type": "object",
@@ -26352,6 +26834,38 @@
           "pending",
           "approved"
         ]
+      },
+      "StartCardSetupResult": {
+        "description": "Either a page to save the card on (checkoutUrl) or, when the processor saves it at once, the card; exactly one is set.",
+        "type": "object",
+        "properties": {
+          "checkoutUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "card": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SavedCard"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "checkoutUrl",
+          "card"
+        ],
+        "additionalProperties": false
       },
       "StudioRedemptionEntry": {
         "description": "One row of GET /api/:tenantId/studio/redemptions (8.2.g) — recent captures per location and device.",

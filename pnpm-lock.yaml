@@ -655,6 +655,9 @@ importers:
         specifier: 8.2.0
         version: 8.2.0
     devDependencies:
+      '@yourtal/paysim':
+        specifier: workspace:*
+        version: link:../paysim
       '@yourtal/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig

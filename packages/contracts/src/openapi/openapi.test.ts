@@ -118,6 +118,38 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "12.4.b (#6): POST /api/guardian/:token/delete-account's body, documented inline in route-registry.a.ts.",
   deleteGuardianAccountResultSchema:
     "12.4.b (#6): POST /api/guardian/:token/delete-account's response, documented inline in route-registry.a.ts.",
+  authMethodSchema:
+    "Passkeys and codes: an OIDC amr value; a leaf the provider's ID tokens use, not yet on any HTTP route.",
+  passkeyRegistrationResponseSchema:
+    "Passkeys and codes: the browser's registration response, documented inline in route-registry.a-auth.ts inside POST /api/auth/passkeys/register's body.",
+  passkeyAuthenticationResponseSchema:
+    "Passkeys and codes: the browser's assertion, documented inline in route-registry.a-auth.ts inside the passkey sign-in and TOTP disable bodies.",
+  webAuthnOptionsSchema:
+    "Passkeys and codes: WebAuthn options passed to the browser as they are, documented inline in route-registry.a-auth.ts.",
+  passkeyCeremonySchema:
+    "Passkeys and codes: the passkey sign-in and step-up options responses, documented inline in route-registry.a-auth.ts.",
+  passkeySignInRequestSchema:
+    "Passkeys and codes: POST /api/auth/passkeys/sign-in's body, documented inline in route-registry.a-auth.ts.",
+  passkeyRegisterRequestSchema:
+    "Passkeys and codes: POST /api/auth/passkeys/register's body, documented inline in route-registry.a-auth.ts.",
+  passkeySummarySchema:
+    "Passkeys and codes: a passkey as listed, documented inline in route-registry.a-auth.ts.",
+  signInMethodsSchema:
+    "Passkeys and codes: GET /api/auth/sign-in-methods's response, documented inline in route-registry.a-auth.ts.",
+  totpEnrolmentSchema:
+    "Passkeys and codes: POST /api/auth/totp/enrol's response, documented inline in route-registry.a-auth.ts.",
+  totpCodeRequestSchema:
+    "Passkeys and codes: POST /api/auth/totp/confirm's body, documented inline in route-registry.a-auth.ts.",
+  totpDisableRequestSchema:
+    "Passkeys and codes: POST /api/auth/totp/disable's body, documented inline in route-registry.a-auth.ts.",
+  totpSignInRequestSchema:
+    "Passkeys and codes: POST /api/auth/totp/sign-in's body, documented inline in route-registry.a-auth.ts.",
+  signedInSchema:
+    "Passkeys and codes: the session the sign-in routes return, documented inline in route-registry.a-auth.ts.",
+  secondFactorRequiredSchema:
+    "Passkeys and codes: the code-step branch of POST /api/auth/login, a route not yet in this registry (route-drift.test.ts's out-of-scope list).",
+  passwordSignInResultSchema:
+    "Passkeys and codes: POST /api/auth/login's and /password/reset/confirm's response, routes not yet in this registry (route-drift.test.ts's out-of-scope list).",
   staffBusinessDetailSchema:
     "9.3.a's staff Businesses zone: GET /api/staff/businesses/{businessId} and every review action's response, documented inline in route-registry.c-staff-businesses.ts.",
   listStaffBusinessesResponseSchema:

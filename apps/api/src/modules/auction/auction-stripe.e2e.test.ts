@@ -6,6 +6,8 @@ import { Test } from "@nestjs/testing";
 import { ZodValidationPipe } from "nestjs-zod";
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { DemoApi } from "@yourtal/db/demo-world/api-client";
+import { ensureBidderCard } from "@yourtal/db/demo-world/card";
 import { createPaymentProviders } from "@yourtal/drivers/payment-providers";
 import { signStripePayload } from "@yourtal/drivers/stripe/signature";
 import { createBrowser } from "@yourtal/paysim/browser";
@@ -39,6 +41,7 @@ let browser: PaySimBrowser;
 let pool: pg.Pool;
 /** Moves the simulation's clock on, for Stripe's 7-day sweep of an uncaptured hold. */
 let skewMs = 0;
+let apiBase = "";
 /** Every webhook body the simulation sent, so one can be replayed with a fresh signature. */
 const deliveries: string[] = [];
 const savedEnv = new Map<string, string | undefined>();
@@ -72,7 +75,8 @@ beforeAll(async () => {
   app.useGlobalPipes(new ZodValidationPipe());
   await app.listen(0, "127.0.0.1");
   const { port } = app.getHttpServer().address() as AddressInfo;
-  paysim.config.webhookUrl = `http://127.0.0.1:${String(port)}/api/webhooks/stripe`;
+  apiBase = `http://127.0.0.1:${String(port)}`;
+  paysim.config.webhookUrl = `${apiBase}/api/webhooks/stripe`;
   pool = new pg.Pool({ connectionString: DATABASE_URL, max: 2 });
 });
 
@@ -277,6 +281,24 @@ describe("the bidder's card (5.1.d)", () => {
     });
     expect(bad.statusCode).toBe(400);
   });
+});
+
+describe("the demo world's bidders (5.1.d)", () => {
+  it("save a card through the real route and the simulation's checkout page", async () => {
+    const bidder = await adult();
+    const api = new DemoApi(apiBase).withSession(bidder.token);
+    // The simulation delivers its webhooks on a timer when it runs for real; here, a fast one.
+    const ticking = setInterval(() => void paysim.tick(), 300);
+    try {
+      expect(await ensureBidderCard(api, "a demo bidder")).toBe(true);
+    } finally {
+      clearInterval(ticking);
+    }
+    const card = await call("GET", "/api/me/payment-card", bidder);
+    expect(card.json()).toMatchObject({ card: { brand: "visa", last4: "4242" }, required: true });
+    // A second run finds the card and does nothing more.
+    expect(await ensureBidderCard(api, "a demo bidder")).toBe(true);
+  }, 60_000);
 });
 
 describe("account deletion (5.1.d)", () => {

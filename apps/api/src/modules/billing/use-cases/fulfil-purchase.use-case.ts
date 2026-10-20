@@ -22,8 +22,11 @@ export interface FulfilDeps {
   readonly purchases: Pick<CardPurchaseRepository, "find" | "markPaid" | "markNeedsReview">;
 }
 
-/** Refusals that pass on their own; the sender's retry tries again instead of parking the money. */
-const TRANSIENT_REFUSALS = new Set(["kill_switch"]);
+/**
+ * Refusals that pass on their own; the sender's retry tries again instead of parking the money.
+ * `already_granted`: a concurrent delivery recorded this purchase first, and the retry reads it back.
+ */
+const TRANSIENT_REFUSALS = new Set(["kill_switch", "already_granted"]);
 
 /**
  * Turns money received into points, once. The paid amount and currency must

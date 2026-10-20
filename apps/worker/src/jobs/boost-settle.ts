@@ -107,7 +107,9 @@ async function openBatch(
   if (first === undefined || last === undefined) return null;
   const subtotalMinor = days.reduce((sum, day) => sum + daySubtotal(day), 0);
   const taxMinor = taxMinorOf(subtotalMinor, taxRateBps);
-  const key = `boost:${first.campaign_id}:${first.day}:${last.day}`;
+  // The card is in the key: after a decline, a replaced card is a new attempt, while the
+  // same card replays Stripe's stored answer instead of being refused as a mismatch.
+  const key = `boost:${first.campaign_id}:${first.day}:${last.day}:${card.paymentMethodRef}`;
   const { rows } = await db.query<{ id: string }>(
     `INSERT INTO feed.boost_charge_batch
        (charge_key, campaign_id, business_id, region, currency, first_day, last_day,

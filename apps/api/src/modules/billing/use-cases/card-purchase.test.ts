@@ -50,7 +50,10 @@ function memoryPurchases() {
   };
 }
 
-function fakeLedger(refuse?: { code: "refused" | "kill_switch"; message: string }) {
+function fakeLedger(refuse?: {
+  code: "refused" | "kill_switch" | "already_granted";
+  message: string;
+}) {
   const grants: PurchasePointsRequest[] = [];
   return {
     grants,
@@ -258,6 +261,14 @@ describe("fulfilPurchase and the webhook handlers", () => {
       fakeLedger({ code: "kill_switch", message: "paused" }),
     );
     await expect(paid(4_950)).rejects.toThrow(/kill_switch/);
+    expect(d.purchases.rows.get(id)?.status).toBe("pending");
+  });
+
+  it("retries, never parks, when a concurrent delivery recorded the purchase first", async () => {
+    const { d, id, paid } = await pendingOnStripe(
+      fakeLedger({ code: "already_granted", message: "purchase recorded" }),
+    );
+    await expect(paid(4_950)).rejects.toThrow(/already_granted/);
     expect(d.purchases.rows.get(id)?.status).toBe("pending");
   });
 

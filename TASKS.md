@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 5/14 | 24/47 | `█████░░░░░`  51% |
-| **All** | | | **110/120** | **570/594** | `██████████`  96% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 5/14 | 24/48 | `█████░░░░░`  50% |
+| **All** | | | **110/120** | **570/595** | `██████████`  96% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1662,6 +1662,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [ ] 14.7.d Charity auction escrow on the Stripe driver: a bid is held, the winning bid captured and the losing ones released (group 5.1.d)
   - [ ] 14.7.e Check on staging (group 5.1.f): a brand buys points (`billing/purchases`), pays for a boost, has a purchase approved by staff (`staff/economy/…/purchases`) and has a card declined; a charity auction holds, captures and releases bids. No refund step (F107); the driver's refunds are checked against the simulation
   - [ ] 14.7.f A staff queue for card purchases parked as `needs_review`, with a way to settle each (group 5.1.g)
+  - [ ] 14.7.g Account deletion also deletes the Stripe customer, and the data export lists a bidder's saved card (group 5.1.h)
 - [ ] **14.8 Stripe Connect payouts in AU** (group 5.2, F103) · A + C · needs: 14.7 — 🔄 g5 (helper `g-phase5-pay`)
   - [ ] 14.8.a Stripe Connect payouts to AU brands: on the simulation, a brand and a charity onboard a connected account through the simulated onboarding page, and payouts land in it. ID has no real payouts (F104)
   - [ ] 14.8.b Settlement statements trigger real payouts, after approval

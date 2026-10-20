@@ -47,6 +47,7 @@
     "./billing": "./src/billing/billing.ts",
     "./invoice": "./src/invoice/invoice.ts",
     "./invoice/abn": "./src/invoice/abn.ts",
+    "./invoice/issuer-setting": "./src/invoice/issuer-setting.ts",
     "./invoice/rules": "./src/invoice/rules.ts",
     "./billing/payouts": "./src/billing/payouts.ts",
     "./billing/package-tiers": "./src/billing/package-tiers.ts",

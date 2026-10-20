@@ -35,7 +35,7 @@ describe("the registry", () => {
     // All-or-nothing on purpose. A half-built driver set that discovers the
     // eighth boundary is broken leaves the process running with some real
     // adapters and some absent ones.
-    expect(() => createDrivers({ PAYMENTS_DRIVER: "live" })).toThrow(/PAYMENTS_API_KEY/);
+    expect(() => createDrivers({ PAYMENTS_DRIVER: "live" })).toThrow(/STRIPE_SECRET_KEY/);
 
     // And nothing else was reachable either — the check runs before any
     // driver is built, so a working boundary cannot be used past the error.
@@ -52,8 +52,8 @@ describe("the registry", () => {
     try {
       createDrivers({
         PAYMENTS_DRIVER: "live",
-        PAYMENTS_API_KEY: "k",
-        PAYMENTS_WEBHOOK_SECRET: "s",
+        STRIPE_SECRET_KEY: "sk_test_k",
+        STRIPE_WEBHOOK_SECRET: "s",
       });
     } catch (error) {
       thrown = error;
@@ -65,7 +65,7 @@ describe("the registry", () => {
     // It names the ticket that will build it, so the error is a next step
     // rather than a dead end.
     expect(failure?.message).toContain(BOUNDARIES.payments.liveTicket);
-    expect(failure?.message).toContain("Xendit");
+    expect(failure?.message).toContain("Stripe");
   });
 
   it("throws at construction, not at the first call", () => {

@@ -62,21 +62,22 @@ export const BOUNDARIES: Record<BoundaryName, BoundaryDefinition> = {
     name: "payments",
     purpose: "Taking money from a user to buy points (docs/09 §4).",
     modeEnvVar: "PAYMENTS_DRIVER",
-    liveCredentialEnvVars: ["PAYMENTS_API_KEY", "PAYMENTS_WEBHOOK_SECRET"],
+    liveCredentialEnvVars: ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"],
     liveVendor:
-      "Xendit in Indonesia, Stripe in Australia. Processors may disagree about the IDR amount unit: " +
+      "Stripe in Australia (STRIPE_API_BASE; on staging, the payment simulation, F106). Indonesia stays on the " +
+      "Xendit-shaped simulated driver (F104). Processors may disagree about the IDR amount unit: " +
       "FOUNDER DECISION T-1 settled what we STORE (whole Rupiah), not what every processor accepts, " +
-      "and Adyen publicly flags IDR as diverging from ISO. The unit is therefore a declared property " +
-      "of the driver, with no platform-wide default (YT-0537).",
-    liveTicket: "YT-0537",
+      "so the unit is a declared property of the driver, with no platform-wide default (YT-0537).",
+    liveTicket: "14.7",
   },
   disbursement: {
     name: "disbursement",
     purpose: "Paying a merchant what their redeemed vouchers settled at.",
     modeEnvVar: "DISBURSEMENT_DRIVER",
-    liveCredentialEnvVars: ["DISBURSEMENT_API_KEY", "DISBURSEMENT_WEBHOOK_SECRET"],
-    liveVendor: "Xendit Disbursements.",
-    liveTicket: "YT-0537",
+    liveCredentialEnvVars: ["STRIPE_SECRET_KEY"],
+    liveVendor:
+      "Stripe Connect in Australia (Express accounts, transfers, payouts). Indonesia stays simulated (F104).",
+    liveTicket: "14.7",
   },
   bot_check: {
     name: "bot_check",

@@ -59,15 +59,15 @@ describe("choosing a driver", () => {
   it("refuses live when a credential is missing, and names which", () => {
     const resolved = resolveDriverMode("payments", {
       PAYMENTS_DRIVER: "live",
-      PAYMENTS_API_KEY: "present",
-      // PAYMENTS_WEBHOOK_SECRET deliberately absent
+      STRIPE_SECRET_KEY: "present",
+      // STRIPE_WEBHOOK_SECRET deliberately absent
     });
 
     expect(resolved.isErr()).toBe(true);
     const problem = resolved._unsafeUnwrapErr();
     expect(problem.kind).toBe("missing_credentials");
     expect(problem.kind === "missing_credentials" ? problem.missing : []).toStrictEqual([
-      "PAYMENTS_WEBHOOK_SECRET",
+      "STRIPE_WEBHOOK_SECRET",
     ]);
   });
 
@@ -76,8 +76,8 @@ describe("choosing a driver", () => {
     // it is not the same as unset to anything that reads the environment.
     const resolved = resolveDriverMode("payments", {
       PAYMENTS_DRIVER: "live",
-      PAYMENTS_API_KEY: "",
-      PAYMENTS_WEBHOOK_SECRET: "  ",
+      STRIPE_SECRET_KEY: "",
+      STRIPE_WEBHOOK_SECRET: "  ",
     });
     expect(resolved._unsafeUnwrapErr().kind).toBe("missing_credentials");
   });
@@ -85,8 +85,8 @@ describe("choosing a driver", () => {
   it("allows live once every credential is present", () => {
     const resolved = resolveDriverMode("payments", {
       PAYMENTS_DRIVER: "live",
-      PAYMENTS_API_KEY: "k",
-      PAYMENTS_WEBHOOK_SECRET: "s",
+      STRIPE_SECRET_KEY: "k",
+      STRIPE_WEBHOOK_SECRET: "s",
     });
     expect(resolved._unsafeUnwrap()).toBe("live");
   });
@@ -129,8 +129,9 @@ describe("the boot check", () => {
     expect(thrown).toBeInstanceOf(DriverConfigurationError);
     const failure = thrown instanceof DriverConfigurationError ? thrown : undefined;
     expect(failure?.problems).toHaveLength(3);
-    expect(failure?.message).toContain("PAYMENTS_API_KEY");
-    expect(failure?.message).toContain("DISBURSEMENT_API_KEY");
+    expect(failure?.message).toContain("STRIPE_SECRET_KEY");
+    expect(failure?.message).toContain("STRIPE_WEBHOOK_SECRET");
+    expect(failure?.message).toContain("DISBURSEMENT_DRIVER");
     expect(failure?.message).toContain("OTP_DRIVER");
   });
 
@@ -197,8 +198,8 @@ describe("staging posture (2.3.b)", () => {
     const oneLive = {
       ...allSimulated,
       PAYMENTS_DRIVER: "live",
-      PAYMENTS_API_KEY: "k",
-      PAYMENTS_WEBHOOK_SECRET: "s",
+      STRIPE_SECRET_KEY: "k",
+      STRIPE_WEBHOOK_SECRET: "s",
     };
     expect(() =>
       assertStagingDriversSimulated("staging", assertDriversConfigured(oneLive)),

@@ -115,7 +115,7 @@ describe("POST /api/partners/actions (8.4.a, 14.3.b)", () => {
     expect(first.json()).toEqual({ granted: true, points: 1, linkId, duplicate: false });
 
     // The real DB row: the wallet's own available balance moved by exactly
-    // AU's receipt_points (20260925193000_platform_region_setting.sql, then F119 in 20261020161608_receipt_points_one.sql), via
+    // AU's receipt_points (20260925193000_platform_region_setting.sql, then F119 in 20261020164315_receipt_points_one.sql), via
     // trust tier 3 -- landed available, never held back.
     const wallet = await app.inject({
       method: "GET",

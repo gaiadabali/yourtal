@@ -25,6 +25,19 @@ export interface HoldRequest {
   readonly amountMinor: number;
   readonly currency: Currency;
   readonly reference: string;
+  /** Stripe: the bidder's saved card. Required when the driver needsSavedCard. */
+  readonly customerRef?: string;
+  readonly paymentMethodRef?: string;
+  /**
+   * The charity's connected account; Stripe sets it on the hold (transfer_data.destination + on_behalf_of).
+   * Optional only until the app migrates; the Stripe driver refuses a hold without it.
+   */
+  readonly destinationReference?: string;
+}
+
+export interface ReleaseRequest {
+  readonly idempotencyKey: string;
+  readonly holdReference: string;
 }
 
 export interface Hold {
@@ -49,9 +62,20 @@ export interface Capture {
 
 export interface MarketplacePaymentsDriver {
   readonly mode: DriverMode;
+  readonly provider: "stripe" | "simulated";
+  readonly declaredMinorUnitExponent: Partial<Record<Currency, number>>;
+  /** Stripe: a hold charges the bidder's saved card, so customerRef and paymentMethodRef are required. */
+  readonly needsSavedCard: boolean;
   hold(request: HoldRequest): Promise<Result<Hold, BoundaryFailure>>;
   capture(request: CaptureRequest): Promise<Result<Capture, BoundaryFailure>>;
-  release(holdReference: string): Promise<Result<void, BoundaryFailure>>;
+  /** A bare hold reference is the pre-14.7 form the app still uses; the key is then derived from it. */
+  release(request: ReleaseRequest | string): Promise<Result<void, BoundaryFailure>>;
+}
+
+export function releaseRequestOf(request: ReleaseRequest | string): ReleaseRequest {
+  return typeof request === "string"
+    ? { idempotencyKey: `release:${request}`, holdReference: request }
+    : request;
 }
 
 const EXPONENTS: Record<Currency, number> = { AUD: 2, IDR: 0 };
@@ -85,6 +109,9 @@ export function createSimulatedMarketplacePayments(
 
   return {
     mode: "simulated",
+    provider: "simulated",
+    declaredMinorUnitExponent: EXPONENTS,
+    needsSavedCard: false,
     hold(request) {
       const amount = convert(request.amountMinor, request.currency);
       if (amount.isErr()) return Promise.resolve(err(amount.error));

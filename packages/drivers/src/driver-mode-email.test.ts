@@ -24,8 +24,9 @@ const emailLive: Environment = {
 };
 const paymentsLive: Environment = {
   PAYMENTS_DRIVER: "live",
-  PAYMENTS_API_KEY: "k",
-  PAYMENTS_WEBHOOK_SECRET: "s",
+  // A live-mode key: staging's Stripe exception (F106) takes only sk_test_ keys.
+  STRIPE_SECRET_KEY: "sk_live_x",
+  STRIPE_WEBHOOK_SECRET: "s",
 };
 
 function thrownBy(run: () => void): unknown {
@@ -67,6 +68,23 @@ describe("staging email allow-list exception (F115)", () => {
     expect(failure.boundaries).toStrictEqual(["payments"]);
     expect(failure.message).toContain("PAYMENTS_DRIVER=live");
     expect(failure.message).not.toContain("EMAIL_DRIVER=live");
+  });
+
+  it("boots with both staging exceptions at once: email behind its allow-list, Stripe on a test key", () => {
+    const env = {
+      ...emailLive,
+      EMAIL_LIVE_ALLOWLIST: "ops@example.org",
+      PAYMENTS_DRIVER: "live",
+      DISBURSEMENT_DRIVER: "live",
+      STRIPE_SECRET_KEY: "sk_test_both_exceptions",
+      STRIPE_WEBHOOK_SECRET: "s",
+    };
+    const modes = assertDriversConfiguredForBoot(env, "staging");
+    expect([modes.email, modes.payments, modes.disbursement]).toStrictEqual([
+      "live",
+      "live",
+      "live",
+    ]);
   });
 
   it("does not exempt email when no env is passed to the guard", () => {

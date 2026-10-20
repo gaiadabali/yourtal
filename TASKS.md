@@ -27,7 +27,7 @@ Written 2026-09-25 from a full audit of the code, then checked by five independe
 
 ## Progress
 
-Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/yourtal/scripts/progress.mjs`.
+Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/god/yourtal/scripts/progress.mjs`.
 
 <!-- progress:start -->
 | Phase | Area | Status | Tasks | Subtasks | Progress |
@@ -46,7 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/y
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **All** | | | **105/106** | **546/547** | `██████████` 100% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 1/5 | 2/16 | `█░░░░░░░░░`  13% |
+| **All** | | | **106/111** | **548/563** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -211,7 +212,7 @@ The founder's answers to Phase 0 of the cross-app plan, `god/TASKS.md` (its IDs 
 This file is how the founder sees progress without asking. **It is updated as work happens, not afterwards.** The same rule is in `CLAUDE.md`, so every session loads it.
 
 1. **Starting a task:** append `— 🔄 slot 2` (your slot) to the task line, and update your slot's row in **Now**.
-2. **Finishing a subtask:** tick it `[x]` **straight away** in the **main checkout's** `TASKS.md`, then run `node C:/Users/Hansel/Documents/Hansel/Projects/yourtal/scripts/progress.mjs`. Do not save ticks up for later. Re-read the file just before each edit, because other sessions are ticking too.
+2. **Finishing a subtask:** tick it `[x]` **straight away** in the **main checkout's** `TASKS.md`, then run `node C:/Users/Hansel/Documents/Hansel/Projects/god/yourtal/scripts/progress.mjs`. Do not save ticks up for later. Re-read the file just before each edit, because other sessions are ticking too.
 3. **Finishing a task:** only when every subtask is ticked **and** its **Check** passed on merged `main`. Tick the task line, replace `🔄` with `✅ YYYY-MM-DD <short sha>`, add one line to the top of **Log**, update **Now**, then commit `TASKS.md` (command below).
 4. **Blocked:** append `— ⛔ <reason>` to the task line, note it in **Now**, and move to your next unblocked task.
 5. **New work you discover:** add it as a subtask, or as a new task at the end of the right phase, with the next free ID. **Never delete a task.** If one is dropped, append `— ✂️ cut: <reason>`; the progress script then stops counting it.
@@ -252,7 +253,7 @@ Every phase belongs to one area (A, B or C, shown in its heading). A phase sessi
 
 **Starting or resuming a phase.** Pick the phase from **Running order**. Open a free slot's worktree folder, for example `C:/Users/Hansel/Documents/Hansel/Projects/yourtal-2`, in VS Code or with `claude` in a terminal. Paste this, changing the phase number and name:
 
-> You are the session for **Phase 4 — The bank is correct** on YourTal. The main checkout (the control room) is `C:/Users/Hansel/Documents/Hansel/Projects/yourtal`. Read `CLAUDE.md`, then `TASKS.md` there.
+> You are the session for **Phase 4 — The bank is correct** on YourTal. The main checkout (the control room) is `C:/Users/Hansel/Documents/Hansel/Projects/god/yourtal`. Read `CLAUDE.md`, then `TASKS.md` there.
 >
 > 1. Claim this worktree's slot: write your phase into its row in **Now**.
 > 2. Work here on the branch `phase/4`. For a new phase: `git switch -c phase/4 main`. When resuming: `git switch phase/4 && git rebase main`. Then run `pnpm install --frozen-lockfile && pnpm db:migrate`.
@@ -266,12 +267,12 @@ Every phase belongs to one area (A, B or C, shown in its heading). A phase sessi
 **Slot setup.** Once, in task 0.2. Run it in Git Bash with literal paths, because shell variables do not persist between tool calls.
 
 ```bash
-cd C:/Users/Hansel/Documents/Hansel/Projects/yourtal
+cd C:/Users/Hansel/Documents/Hansel/Projects/god/yourtal
 git worktree add --detach ../yourtal-2 main
 MSYS_NO_PATHCONV=1 git -C ../yourtal-2 sparse-checkout set --no-cone '/*' '!/TASKS.md'   # F81: the only TASKS.md on disk is the live one
 cp .env.example ../yourtal-2/.env   # not .env: the main .env lacks CHECKPOINT_TOKEN_SECRET and the ledger/voucher URLs
 # edit ../yourtal-2/.env now (0.2.b), before any pnpm db:* command
-mkdir -p ../yourtal-2/.claude && printf '{"permissions":{"additionalDirectories":["C:/Users/Hansel/Documents/Hansel/Projects/yourtal"]}}\n' > ../yourtal-2/.claude/settings.local.json
+mkdir -p ../yourtal-2/.claude && printf '{"permissions":{"additionalDirectories":["C:/Users/Hansel/Documents/Hansel/Projects/god/yourtal"]}}\n' > ../yourtal-2/.claude/settings.local.json
 cd ../yourtal-2 && pnpm install --frozen-lockfile
 # once 0.3.c is on main (0.2.e): node packages/db/scripts/test-db.mjs create yourtal_s2
 ```
@@ -283,13 +284,13 @@ The settings file lets the session edit the main checkout's `TASKS.md` from its 
 **Each merge.** One line, repeated whole if the fast-forward fails:
 
 ```bash
-cd C:/Users/Hansel/Documents/Hansel/Projects/yourtal-2 && git rebase main && pnpm install --frozen-lockfile && pnpm db:migrate && pnpm check && git -C C:/Users/Hansel/Documents/Hansel/Projects/yourtal merge --ff-only phase/4 && git -C C:/Users/Hansel/Documents/Hansel/Projects/yourtal push origin main
+cd C:/Users/Hansel/Documents/Hansel/Projects/yourtal-2 && git rebase main && pnpm install --frozen-lockfile && pnpm db:migrate && pnpm check && git -C C:/Users/Hansel/Documents/Hansel/Projects/god/yourtal merge --ff-only phase/4 && git -C C:/Users/Hansel/Documents/Hansel/Projects/god/yourtal push origin main
 ```
 
 **`TASKS.md`:** always edit the main checkout's copy by absolute path, never your worktree's. Commit it on its own:
 
 ```bash
-node C:/Users/Hansel/Documents/Hansel/Projects/yourtal/scripts/progress.mjs && git -C C:/Users/Hansel/Documents/Hansel/Projects/yourtal commit -m "tasks: 4.2 done" -- TASKS.md && git -C C:/Users/Hansel/Documents/Hansel/Projects/yourtal push origin main
+node C:/Users/Hansel/Documents/Hansel/Projects/god/yourtal/scripts/progress.mjs && git -C C:/Users/Hansel/Documents/Hansel/Projects/god/yourtal commit -m "tasks: 4.2 done" -- TASKS.md && git -C C:/Users/Hansel/Documents/Hansel/Projects/god/yourtal push origin main
 ```
 
 **Rules that prevent the collisions the last week had:**
@@ -310,7 +311,7 @@ node C:/Users/Hansel/Documents/Hansel/Projects/yourtal/scripts/progress.mjs && g
   - Generated OpenAPI (`packages/contracts/openapi/**`): take `main`'s copy, regenerate, add.
   - Everything else: keep both sides.
 - **`.git/index.lock` in the main checkout:** wait 10 s and retry. Never delete it.
-- **One git writer at a time in the main checkout** (2026-09-30: two sessions fast-forwarding at once left its index at the wrong tree). Wrap every merge line and every `TASKS.md` commit in `until mkdir C:/Users/Hansel/Documents/Hansel/Projects/yourtal/.git/yt-merge.lock 2>/dev/null; do sleep 5; done; … ; rmdir …/yt-merge.lock`, and always remove it.
+- **One git writer at a time in the main checkout** (2026-09-30: two sessions fast-forwarding at once left its index at the wrong tree). Wrap every merge line and every `TASKS.md` commit in `until mkdir C:/Users/Hansel/Documents/Hansel/Projects/god/yourtal/.git/yt-merge.lock 2>/dev/null; do sleep 5; done; … ; rmdir …/yt-merge.lock`, and always remove it.
 - **Environment variables:** every new one gets a dev default in `apps/api/src/config` and a line in `.env.example`. After a rebase, add any keys from `.env.example` missing from your `.env`.
 - **Ports:**
 
@@ -1601,13 +1602,39 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 
 ---
 
+## Phase 14 — Group plan · from god/TASKS.md
+
+YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of record is `god/TASKS.md`; each task here names its ID there, and both are ticked together.
+
+- [ ] **14.1 Live email through Resend** (group 1.3) · A · needs: — — 🔄 2026-10-20
+  - [ ] 14.1.a A live driver for Resend in `packages/drivers/src/boundaries/email.ts`
+  - [ ] 14.1.b Staging: `EMAIL_DRIVER=live` with Free Tax Returns' Resend account (a proof of concept, F103), sending from its verified domain
+  - [ ] 14.1.c Check: sign-up verification, password reset, team invite and guardian approval emails arrive
+- [ ] **14.2 Campaign budget, daily cap and districts are saved and enforced** (group 1.6) · A + C · needs: — — 🔄 2026-10-20
+  - [ ] 14.2.a Add-only migration, and the campaign API takes the three fields
+  - [ ] 14.2.b Rewards stop when the budget is spent, and the feed targets by district
+  - [ ] 14.2.c Studio sends them
+  - [ ] 14.2.d Check on staging
+- [ ] **14.3 A lasting partner link for SnapApp** (group 2.1) · A · needs: — — 🔄 2026-10-20
+  - [ ] 14.3.a Add-only migration: a partner link table (partner, user, region, created, revoked)
+  - [ ] 14.3.b The first partner call with a valid code creates the link and returns its ID; later calls use the link ID
+  - [ ] 14.3.c Me → Linked apps shows “SnapApp linked”, with unlink; teens are still refused
+  - [ ] 14.3.d Tests: a call 11 minutes after linking still earns; an unlinked user earns nothing
+- [ ] **14.4 The “Sign in with YourTal” contract** (group 3.2, F99) · A · needs: — — 🔄 2026-10-20
+  - [ ] 14.4.a The claims, clients and token rules each app may rely on
+  - [ ] 14.4.b How every app hears that an account was deleted
+  - [ ] 14.4.c The consent wording; a teen reaches SnapApp only through a parent's invite (F105)
+- [x] **14.5 Tidy this plan** (group 5.8) · lead · needs: — — ✅ 2026-10-20 c2a38d04
+  - [x] 14.5.a Take gifting and charity off the deferred list (built in 13.20–13.22)
+  - [x] 14.5.b Fix the main checkout's path in `CLAUDE.md` and `scripts/progress.mjs` (now `god/yourtal`)
+
 ## Not in this plan (deferred)
 
 These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` §7:
 
 - **Advertising and payments:** self-serve advertiser acquisition and an LLM copilot; prepaid card billing and post-paid credit; clearing automation; Open-View billing; a paid recall tier; OM SDK / MRC.
 - **ML:** interest inference, completion prediction, fraud scoring, live LLM moderation.
-- **Commerce:** physical merchandise and shipping; NIB automation; Shopify / Woo plugins and a hosted widget; voucher gifting and transfer, resale, charity, cash-out and prize draws.
+- **Commerce:** physical merchandise and shipping; NIB automation; Shopify / Woo plugins and a hosted widget; voucher resale, cash-out and prize draws. (Gifting and charity were built in 13.20–13.22, F86.)
 - **Economy tools:** the dynamic price multiplier; a full economy dashboard beyond 9.5.
 - **Platform:** OIDC for sister apps; phone OTP, passkeys and a Capacitor wrap; cross-app points beyond snap-app; two-region cloud; ClickHouse and Kafka. (2026-10-20: OIDC for sister apps and passkeys are now in the group plan, `god/TASKS.md` Phase 3, per F99 and F102. Phone OTP is dropped.)
 - **Growth:** telco zero-rating and WhatsApp; the referral programme; programmatic backfill.

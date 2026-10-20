@@ -79,7 +79,8 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   voucherEscrowHoldRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   voucherEscrowSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   voucherEscrowReleaseRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
-  posterVariantsSchema: "14.6.b: the list of PosterVariant on Campaign and FeedItem, inlined there.",
+  posterVariantsSchema:
+    "14.6.b: the list of PosterVariant on Campaign and FeedItem, inlined there.",
   auctionStateSchema: "13.22: a leaf enum of Auction, inlined there.",
   auctionOutcomeSchema: "13.22: a leaf enum of Auction, inlined there.",
   auctionViewerSchema: "13.22: part of Auction, inlined there.",

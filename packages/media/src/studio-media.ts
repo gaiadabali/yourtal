@@ -27,11 +27,7 @@ import {
   resolveOriginEndpoint,
   resolvePresignEndpoint,
 } from "./hls-origin";
-import {
-  POSTER_LONG_SIDE,
-  posterVariantKey,
-  type PosterLongSide,
-} from "./poster-variants";
+import { POSTER_LONG_SIDE, posterVariantKey, type PosterLongSide } from "./poster-variants";
 
 /**
  * The studio media pipeline's object layout (TASKS.md 7.2), on the SAME
@@ -458,7 +454,9 @@ export async function putPosterLadder(
 ): Promise<void> {
   const base = posterObjectKey(assetId);
   for (const poster of posters) {
-    const key = posterVariantKey(base, poster.longSide) ?? (poster.longSide === POSTER_LONG_SIDE ? base : null);
+    const key =
+      posterVariantKey(base, poster.longSide) ??
+      (poster.longSide === POSTER_LONG_SIDE ? base : null);
     if (key === null) continue;
     await putMediaOutput(client, { kind: "poster", key, body: readFileSync(poster.path) });
   }

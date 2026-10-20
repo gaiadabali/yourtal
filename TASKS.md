@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 4/11 | 15/34 | `████░░░░░░`  44% |
-| **All** | | | **109/117** | **561/581** | `██████████`  97% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 4/11 | 16/34 | `█████░░░░░`  47% |
+| **All** | | | **109/117** | **562/581** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1622,7 +1622,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
 
 - [ ] **14.1 Live email through Resend** (group 1.3) · A · needs: — — 🔄 2026-10-20
   - [x] 14.1.a A live driver for Resend in `packages/drivers/src/boundaries/email.ts`
-  - [ ] 14.1.b Staging: `EMAIL_DRIVER=live` with Free Tax Returns' Resend account (a proof of concept, F103), sending from its verified domain
+  - [x] 14.1.b Staging: `EMAIL_DRIVER=live` with Free Tax Returns' Resend account (a proof of concept, F103), sending from its verified domain → eaf59c62, allow-list @gaiada.com
   - [ ] 14.1.c Check: sign-up verification, password reset, team invite and guardian approval emails arrive
   - [x] 14.1.d Staging sends live email only to an allow-list (`EMAIL_LIVE_ALLOWLIST`); others go to the dev inbox (group 1.3.d, F115) → de7b5efb
 - [ ] **14.2 Campaign budget, daily cap and districts are saved and enforced** (group 1.6) · A + C · needs: — — 🔄 2026-10-20

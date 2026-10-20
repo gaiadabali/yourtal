@@ -68,6 +68,7 @@ beforeAll(async () => {
   const address = app.getHttpServer().address() as AddressInfo;
   paysim.config.webhookUrl = `http://127.0.0.1:${String(address.port)}/api/webhooks/stripe`;
   owner = ownerPool();
+  [A, B, OPS] = [await staff("finance"), await staff("finance"), await staff("ops")];
 });
 
 afterAll(async () => {
@@ -90,7 +91,13 @@ async function runWorker(): Promise<Record<string, number>> {
   return JSON.parse(stdout.trim().split("\n").at(-1) ?? "{}") as Record<string, number>;
 }
 
-async function staff(role: "finance" | "ops" = "finance") {
+// Sessions are made once: registering is rate limited route-wide, and the whole suite shares that budget.
+type Session = Awaited<ReturnType<typeof sessionFor>>;
+let A: Session;
+let B: Session;
+let OPS: Session;
+
+async function staff(role: "finance" | "ops") {
   const session = await sessionFor(app, { jurisdiction: "AU" });
   await grantStaffRole(owner, session.userId, role);
   return session;
@@ -272,7 +279,7 @@ describe("check again (5.2.c)", () => {
       `UPDATE payment.disbursement SET transfer_ref = NULL, transferred_at = NULL WHERE id = $1`,
       [sent.id],
     );
-    const finance = await staff();
+    const finance = A;
     const response = await check(finance.cookie, sent.id);
     expect(response.statusCode).toBe(201);
     const body = response.json<CheckDisbursementResult>();
@@ -297,7 +304,7 @@ describe("check again (5.2.c)", () => {
 
   it("settles a payout the processor shows paid, though the webhook found the row failed and ignored it", async () => {
     const sent = await stuck({ code: "payout_unconfirmed", transfer: true, payout: true });
-    const finance = await staff();
+    const finance = A;
     await settle(31_000); // payout.paid reaches the API, which leaves a failed row alone
     expect(await row(sent.id)).toMatchObject({ status: "failed" });
     const result = await check(finance.cookie, sent.id);
@@ -311,7 +318,7 @@ describe("check again (5.2.c)", () => {
 
   it("records a payout still on its way as in flight, for the webhook or the job's read-back to settle", async () => {
     const sent = await stuck({ code: "payout_unconfirmed", transfer: true, payout: true });
-    const finance = await staff();
+    const finance = A;
     const result = (await check(finance.cookie, sent.id)).json<CheckDisbursementResult>();
     expect(result.outcome).toBe("pending");
     expect(await row(sent.id)).toMatchObject({ status: "transferred", failure_code: null });
@@ -327,7 +334,7 @@ describe("check again (5.2.c)", () => {
       payout: true,
       bank: "111111116",
     });
-    const finance = await staff();
+    const finance = A;
     await settle(31_000);
     const result = (await check(finance.cookie, sent.id)).json<CheckDisbursementResult>();
     expect(result.outcome).toBe("failed");
@@ -337,7 +344,7 @@ describe("check again (5.2.c)", () => {
 
   it("says nothing was found when the processor shows nothing, and stamps when it was asked", async () => {
     const sent = await stuck({ code: "payout_unconfirmed", transfer: true });
-    const finance = await staff();
+    const finance = A;
     const result = (await check(finance.cookie, sent.id)).json<CheckDisbursementResult>();
     expect(result.outcome).toBe("nothing_found");
     expect(result.disbursement).toMatchObject({ status: "failed", needsStaff: true });
@@ -346,7 +353,7 @@ describe("check again (5.2.c)", () => {
 
   it("is refused for a row that is not stuck, in another region, or for the wrong role", async () => {
     const sent = await stuck({ code: "payout_unconfirmed", transfer: true });
-    const finance = await staff();
+    const finance = A;
     await owner.query(`UPDATE payment.disbursement SET failure_code = 'no_account' WHERE id = $1`, [
       sent.id,
     ]);
@@ -363,7 +370,7 @@ describe("check again (5.2.c)", () => {
         })
       ).statusCode,
     ).toBe(404);
-    const ops = await staff("ops");
+    const ops = OPS;
     expect((await check(ops.cookie, sent.id)).statusCode).toBe(403);
   });
 
@@ -373,7 +380,7 @@ describe("check again (5.2.c)", () => {
       `UPDATE payment.disbursement SET amount_minor = amount_minor + 1 WHERE id = $1`,
       [sent.id],
     );
-    const finance = await staff();
+    const finance = A;
     const refused = await check(finance.cookie, sent.id);
     expect(refused.statusCode).toBe(409);
     expect(refused.json<{ code: string }>().code).toBe("amount_mismatch");
@@ -384,7 +391,7 @@ describe("check again (5.2.c)", () => {
 describe("retry (5.2.c): a new payout attempt, never a second transfer, two-person", () => {
   it("retries a payout the processor shows nothing of, once a second person approves", async () => {
     const sent = await stuck({ code: "payout_unconfirmed", transfer: true });
-    const [a, b] = [await staff(), await staff()];
+    const [a, b] = [A, B];
 
     const proposed = await proposeRetry(a.cookie, sent.id);
     expect(proposed.statusCode).toBe(201);
@@ -438,7 +445,7 @@ describe("retry (5.2.c): a new payout attempt, never a second transfer, two-pers
 
   it("queues a refused transfer again under the same transfer key, never a second transfer", async () => {
     const sent = await stuck({ code: "transfer_declined" });
-    const [a, b] = [await staff(), await staff()];
+    const [a, b] = [A, B];
     const proposal = (await proposeRetry(a.cookie, sent.id)).json<{ id: string }>();
     expect((await decide(b.cookie, proposal.id, "approve")).statusCode).toBe(201);
     expect(await row(sent.id)).toMatchObject({
@@ -452,7 +459,7 @@ describe("retry (5.2.c): a new payout attempt, never a second transfer, two-pers
 
   it("refuses to propose or approve once the processor shows the money moved", async () => {
     const sent = await stuck({ code: "payout_unconfirmed", transfer: true, payout: true });
-    const [a, b] = [await staff(), await staff()];
+    const [a, b] = [A, B];
     const refused = await proposeRetry(a.cookie, sent.id);
     expect(refused.statusCode).toBe(409);
     expect(refused.json<{ code: string }>().code).toBe("processor_shows_money");
@@ -481,7 +488,7 @@ describe("retry (5.2.c): a new payout attempt, never a second transfer, two-pers
 
   it("refuses an approval for a row that changed since it was proposed, and a decline frees it", async () => {
     const sent = await stuck({ code: "payout_unconfirmed", transfer: true });
-    const [a, b] = [await staff(), await staff()];
+    const [a, b] = [A, B];
     const proposal = (await proposeRetry(a.cookie, sent.id)).json<{ id: string }>();
     await owner.query(`UPDATE payment.disbursement SET attempt = 2 WHERE id = $1`, [sent.id]);
     const changed = await decide(b.cookie, proposal.id, "approve");
@@ -496,7 +503,7 @@ describe("retry (5.2.c): a new payout attempt, never a second transfer, two-pers
 
   it("needs a reason and finance, and nothing else may retry", async () => {
     const sent = await stuck({ code: "payout_unconfirmed", transfer: true });
-    const [a, ops] = [await staff(), await staff("ops")];
+    const [a, ops] = [A, OPS];
     const noReason = await app.inject({
       method: "POST",
       url: url(sent.id, "retry-proposals"),

@@ -98,7 +98,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 
 | # | Question | Options (recommended first) | Needed by |
 | --- | --- | --- | --- |
-| **F9** | Who owns the economy numbers? | **The founder, for now** · Name a person | First real user; not needed for staging |
+| — | None open. F9 was answered on 2026-10-20 (see _Answered 2026-10-20_). | | |
 
 ### Founder actions (not questions)
 
@@ -190,6 +190,21 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | Open Viewing | 60 min per IP per day, one concurrent anonymous session. |
 | Sessions | Consumer: 30 days sliding, 90 days absolute. Staff: 12 h. |
 | Teen quiet hours | 21:00–07:00 local time: no notifications and no new reward sessions. |
+
+### Answered 2026-10-20 (group plan)
+
+The founder's answers to Phase 0 of the cross-app plan, `god/TASKS.md` (its IDs in brackets). `docs/16` § V records the same.
+
+| # | Decision | Answer |
+| --- | --- | --- |
+| **F9** | Who owns the economy numbers? (0.6) | **The founder, for now.** The founder confirmed the F12 defaults above for the AU launch. |
+| **F99** | Sign-in across the company’s apps (0.1) | **YourTal is the sign-in provider.** “Sign in with YourTal” works like “Sign in with Google”: SnapApp and Free Tax Returns sign people in with their YourTal account over OpenID Connect. There is no separate group account and no Zitadel. This puts “OIDC for sister apps” back in the plan, as `god/TASKS.md` Phase 3. |
+| **F100** | Which points have money value (0.3) | **YourTal points are the one global economy, and the only points with money value.** Each app may keep its own in-app credits (such as SnapApp’s scan credits), which stay inside that app. SnapApp reports each receipt to YourTal, which pays the points. |
+| **F101** | Receipt points (0.4) | **YourTal’s AU company funds them** from the F12 marketing budget, once the Pty Ltd exists. The rate stays **10 pts AU / 100 pts ID, once per receipt**. **Adults only**: teens cannot link. |
+| **F102** | Phone verification (0.7.b) | **No SMS**, to move away from paid services. People prove who they are with a verified email and **passkeys**, with authenticator-app codes as backup. N-5’s trigger stands, but what it brings back is passkeys plus the holdback and caps, not phone OTP. |
+| **F103** | Real vendors (0.7) | **Email: Resend. Payments: Stripe. Brand payouts in AU: Stripe Connect. Business checks (KYB): staff review only for now**, no vendor (H7 stands). |
+| **F104** | Indonesia (0.8) | **Australia is the market; Indonesia is a proof of concept** and stays a demo: no real money moves in ID. ID keeps the simulated payments driver and demo data. Xendit, the ID company (PT) and PSE registration are parked until ID takes real money. F2’s hard walls are unchanged. |
+| **F105** | Teens and SnapApp (0.9) | A teen can use their YourTal account in **SnapApp only, and only when a parent invites them**. The teen gets their own space; the inviting parent can view it, and the teen is told so. No teen uses Free Tax Returns, and teens earn no receipt points (F101). |
 
 ## How to update this file — the rule
 
@@ -1594,21 +1609,21 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 - **ML:** interest inference, completion prediction, fraud scoring, live LLM moderation.
 - **Commerce:** physical merchandise and shipping; NIB automation; Shopify / Woo plugins and a hosted widget; voucher gifting and transfer, resale, charity, cash-out and prize draws.
 - **Economy tools:** the dynamic price multiplier; a full economy dashboard beyond 9.5.
-- **Platform:** OIDC for sister apps; phone OTP, passkeys and a Capacitor wrap; cross-app points beyond snap-app; two-region cloud; ClickHouse and Kafka.
+- **Platform:** OIDC for sister apps; phone OTP, passkeys and a Capacitor wrap; cross-app points beyond snap-app; two-region cloud; ClickHouse and Kafka. (2026-10-20: OIDC for sister apps and passkeys are now in the group plan, `god/TASKS.md` Phase 3, per F99 and F102. Phone OTP is dropped.)
 - **Growth:** telco zero-rating and WhatsApp; the referral programme; programmatic backfill.
-- **Real vendors** (payments, email, SMS, KYB), each a driver swap.
+- **Real vendors** (payments, email, SMS, KYB), each a driver swap. (Chosen 2026-10-20, F103: Resend and Stripe; no SMS; KYB by staff.)
 - **Other:** offline counter redemption; question leak detection; the coverage map; surveys, offerwalls and mini-games; anchoring the daily root on a public blockchain.
 - **Optimisation, during the client review (F97):** 13.4.a's time to first frame on Shorts ≤ 1.0 s on the mid-tier Android profile (median 1,044 ms at 0ee372e4; ~400 ms between the parsed document and first paint at 4× CPU), and responsive poster sizes (`srcset`, 13.4.f).
 
 ## Before the first real user (outside "finished")
 
-- **F9:** someone owns the economy numbers, and confirms the F12 defaults.
+- ✅ **F9:** someone owns the economy numbers, and confirms the F12 defaults. (2026-10-20: the founder, who confirmed them.)
 - Helios for production is acceptable (F2), but check the APP 8 position for Australian personal data with counsel.
 - Minimum ages cited in `docs/24` (AU-9, ID-12), and the teen-mode review (12.4).
 - Counsel reviews `docs/24` ID-1 with expiry off (F18): points are then loyalty, not e-money, on three legs rather than four.
 - The founder re-signs the risk acceptance.
-- Entities: an AU Pty Ltd and an ID PT.
-- PSE registration (ID).
+- Entities: an AU Pty Ltd and an ID PT. (The ID PT is parked while Indonesia stays a demo, F104.)
+- PSE registration (ID). (Parked, F104.)
 - Counsel review before the AU launch, including whether AU gift-voucher minimum-expiry rules apply.
 - A rehearsed 72 h breach runbook (docs/24 ID-8 / AU-6).
 - AU reaction sessions (`docs/23` §2.6).

@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 4/12 | 16/39 | `████░░░░░░`  41% |
-| **All** | | | **109/118** | **562/586** | `██████████`  96% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 4/12 | 18/39 | `█████░░░░░`  46% |
+| **All** | | | **109/118** | **564/586** | `██████████`  96% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1652,9 +1652,9 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [ ] 14.6.a First frame on Shorts in 1.0 s or less on the mid-tier Android profile (median 1,044 ms at 0ee372e4)
   - [ ] 14.6.b Responsive poster sizes (`srcset`; the contract carries one `posterUrl` today, 13.4.f)
 - [ ] **14.7 Stripe payments in AU, on the payment simulation** (group 5.1, F103, F106) · A + C · needs: — — 🔄 g5
-  - [ ] 14.7.a The payment simulation (group 5.1.e): it speaks Stripe's API, has a checkout page that takes only Stripe's test cards (4242… pays, 4000…0002 is declined, 4000 0025 0000 3155 asks for 3-D Secure) and never stores or logs a card number, sends signed webhooks and retries them, and does refunds and Connect. Every page says "Simulated payment, no real money"; a production host refuses to start it
+  - [x] 14.7.a The payment simulation (group 5.1.e): it speaks Stripe's API, has a checkout page that takes only Stripe's test cards (4242… pays, 4000…0002 is declined, 4000 0025 0000 3155 asks for 3-D Secure) and never stores or logs a card number, sends signed webhooks and retries them, and does refunds and Connect. Every page says "Simulated payment, no real money"; a production host refuses to start it → `packages/paysim`, mounted at `/api/paysim` behind `PAYSIM_ENABLED` (abd99d89)
   - [ ] 14.7.b A Stripe driver (AU) for `PAYMENTS_DRIVER=live` (group 5.1.a), written against Stripe's real API: points purchases, boosts, refunds and webhooks; staging points it at the simulation. The Xendit-shaped simulated driver stays for ID (F104)
-  - [ ] 14.7.c The payment parity tests pass for both drivers, Stripe and simulated (group 5.1.c)
+  - [x] 14.7.c The payment parity tests pass for both drivers, Stripe and simulated (group 5.1.c) → 29 end-to-end tests of the Stripe drivers against the simulation, beside the simulated driver's suite (b9bc4d04); Integration green
   - [ ] 14.7.d Charity auction escrow on the Stripe driver: a bid is held, the winning bid captured and the losing ones released (group 5.1.d)
   - [ ] 14.7.e Check on staging (group 5.1.f): a brand buys points (`billing/purchases`), pays for a boost, has a purchase approved by staff (`staff/economy/…/purchases`) and has a card declined; a charity auction holds, captures and releases bids. No refund step (F107); the driver's refunds are checked against the simulation
 - [ ] **14.8 Stripe Connect payouts in AU** (group 5.2, F103) · A + C · needs: 14.7

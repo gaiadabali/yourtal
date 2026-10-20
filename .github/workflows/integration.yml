@@ -30,6 +30,7 @@ on:
     paths:
       - "packages/db/**"
       - "packages/idempotency/**"
+      - "packages/paysim/**"
       - "services/**"
       - "infra/postgres/**"
       - "infra/cerbos/**"
@@ -311,6 +312,12 @@ jobs:
 
       - name: packages/idempotency
         run: pnpm --filter @yourtal/idempotency test
+
+      # 5.1.e: the payment simulation's Postgres store, as the app role. Its
+      # unit suite (no database) runs in quality.yml and in the sweep below;
+      # the *.pg.test.ts files run only here, through their own test database.
+      - name: packages/paysim (Postgres store)
+        run: pnpm --filter @yourtal/paysim test:pg
 
       # YT-0527. app.boot.test.ts boots the real AppModule and calls it over
       # a real HTTP round trip against the cerbos service above — the first

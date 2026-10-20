@@ -5,7 +5,6 @@ import type {
   PublicKeyCredentialRequestOptionsJSON,
 } from "@simplewebauthn/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { sessionFor } from "../../../shared/testing/session-for";
 import type { TestSession } from "../../../shared/testing/session-for";
 import { createAppDb } from "../../../shared/persistence/drizzle-client";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
@@ -15,6 +14,7 @@ import { SoftAuthenticator } from "./testing/soft-authenticator";
 import {
   E2E_ORIGIN,
   E2E_RP_ID,
+  accountFor,
   ageSessions,
   amrOf,
   bearer,
@@ -77,7 +77,7 @@ async function login(email: string) {
 
 describe("authenticator codes", () => {
   it("stores the seed sealed, and asks for a code after the password (amr pwd otp mfa)", async () => {
-    const session = await sessionFor(app, { password: PASSWORD });
+    const session = await accountFor(app, PASSWORD);
     const seed = await switchOn(session);
 
     const { rows } = await owner.execute<{ secret_hash: string; verified_at: Date | null }>(
@@ -130,7 +130,7 @@ describe("authenticator codes", () => {
   });
 
   it("asks for a code after a password reset too", async () => {
-    const session = await sessionFor(app, { password: PASSWORD });
+    const session = await accountFor(app, PASSWORD);
     await switchOn(session);
     const auth = app.get(AuthService);
     const requested = await auth.requestPasswordReset(session.email, new Date());
@@ -151,7 +151,7 @@ describe("authenticator codes", () => {
   });
 
   it("turns off only with a fresh code or a passkey, and then a password is enough again", async () => {
-    const session = await sessionFor(app, { password: PASSWORD });
+    const session = await accountFor(app, PASSWORD);
     const seed = await switchOn(session);
 
     const noProof = await app.inject({
@@ -176,7 +176,7 @@ describe("authenticator codes", () => {
   });
 
   it("turns off with a passkey instead of a code", async () => {
-    const session = await sessionFor(app, { password: PASSWORD });
+    const session = await accountFor(app, PASSWORD);
     await switchOn(session);
     const registerOptions = await app.inject({
       method: "POST",
@@ -216,7 +216,7 @@ describe("authenticator codes", () => {
   });
 
   it("needs a recent sign-in to set up, and will not replace an app that is on", async () => {
-    const session = await sessionFor(app, { password: PASSWORD });
+    const session = await accountFor(app, PASSWORD);
     await switchOn(session);
     const again = await app.inject({
       method: "POST",
@@ -226,7 +226,7 @@ describe("authenticator codes", () => {
     expect(again.statusCode).toBe(409);
     expect(errorCode(again)).toBe("totp_already_enabled");
 
-    const stale = await sessionFor(app, { password: PASSWORD });
+    const stale = await accountFor(app, PASSWORD);
     await ageSessions(owner, stale.userId);
     const refused = await app.inject({
       method: "POST",
@@ -238,7 +238,7 @@ describe("authenticator codes", () => {
   });
 
   it("throttles guessing: after five wrong codes even the right one is refused", async () => {
-    const session = await sessionFor(app, { password: PASSWORD });
+    const session = await accountFor(app, PASSWORD);
     const seed = await switchOn(session);
     const step = await login(session.email);
     const { pendingToken } = step.json<{ pendingToken: string }>();

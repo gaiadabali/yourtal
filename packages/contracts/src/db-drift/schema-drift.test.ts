@@ -260,6 +260,8 @@ const MAPPINGS: readonly Mapping[] = [
     table: "campaign.campaigns",
     fieldsAwaitingStorage: {},
     fieldsWithNoColumn: {
+      posterVariants:
+        "DERIVED (14.6.b). The other sizes of the poster sit beside it in the object store under names fixed by @yourtal/media's posterVariantsFor, so they follow from poster_url and aspect. Storing them would be a second copy of what the key already says.",
       chapters:
         "A relation, not a column. campaign.chapter, keyed (campaign_id, ordinal), with no end_seconds because a chapter's end IS the next one's start (YT-0101/YT-0548).",
       videoSource:

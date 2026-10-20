@@ -48,6 +48,23 @@ describe("campaignSchema", () => {
     expect(parsed).toMatchObject({ title: validCampaign.title, rewardPoints: 2_400 });
   });
 
+  it("defaults posterVariants to none for an older server, and keeps the ones it is sent", () => {
+    expect(campaignSchema.parse(validCampaign).posterVariants).toEqual([]);
+    const variants = [
+      { url: "https://cdn.example.com/posters/a-320.jpg", width: 320 },
+      { url: "https://cdn.example.com/poster.jpg", width: 640 },
+    ];
+    expect(
+      campaignSchema.parse({ ...validCampaign, posterVariants: variants }).posterVariants,
+    ).toEqual(variants);
+    expect(() =>
+      campaignSchema.parse({
+        ...validCampaign,
+        posterVariants: [{ url: "https://cdn.example.com/p.jpg", width: 0 }],
+      }),
+    ).toThrow();
+  });
+
   const rejectionTable: Array<{ name: string; overrides: Record<string, unknown> }> = [
     { name: "negative reward points", overrides: { rewardPoints: -100 } },
     { name: "non-integer reward points", overrides: { rewardPoints: 12.5 } },

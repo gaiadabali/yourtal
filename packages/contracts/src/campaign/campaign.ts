@@ -7,6 +7,7 @@ import { campaignChapterSchema } from "./campaign-chapter";
 import { campaignVideoSourceSchema } from "./campaign-video-source";
 import { interestTagsSchema } from "../interest/interest-tags";
 import { CAMPAIGN_KINDS } from "./campaign-kind";
+import { posterVariantsSchema } from "./poster-variant";
 
 // Re-exported here (rather than added to packages/contracts/package.json's
 // exports map, which 1.3.a is about to restructure into a wildcard) so B and
@@ -74,6 +75,8 @@ export const campaignSchema = z
     tags: interestTagsSchema.default([]),
     /** Feed and card image, shown before any video loads. */
     posterUrl: z.url(),
+    /** 14.6.b: the same poster at other sizes, for `srcset`. `posterUrl` is the fallback. */
+    posterVariants: posterVariantsSchema,
     /** A progressive MP4, autoplayed muted in the vertical feed (docs/17, 3.5.a). */
     teaserUrl: z.url(),
     /**

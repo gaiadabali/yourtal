@@ -13,6 +13,7 @@ function item(overrides: Partial<FeedItem>): FeedItem {
     title: `T${String(n)}`,
     synopsis: "",
     posterUrl: "https://cdn.example.com/p.jpg",
+    posterVariants: [],
     teaserUrl: "https://cdn.example.com/t.mp4",
     durationSeconds: 120,
     rewardPoints: toPoints(5),

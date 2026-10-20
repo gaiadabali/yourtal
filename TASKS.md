@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 4/11 | 16/34 | `█████░░░░░`  47% |
-| **All** | | | **109/117** | **562/581** | `██████████`  97% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 4/12 | 16/39 | `████░░░░░░`  41% |
+| **All** | | | **109/118** | **562/586** | `██████████`  96% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1633,6 +1633,9 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [ ] 14.2.e The district list: every Australian postcode with suburbs and state, from an openly licensed list (group 1.6.f, F116)
   - [ ] 14.2.f Me → “My area”: optional, a visible state → suburb picker, postcode stored, not for teens (group 1.6.g)
   - [ ] 14.2.g Studio picks districts from the list; the feed uses the viewer’s area (group 1.6.h)
+  - [ ] 14.2.h Search uses the viewer’s area too (group 1.6.i)
+  - [ ] 14.2.i Staging screenshots of Me → My area, the Studio picker and the privacy page, AU and ID (group 1.6.j)
+  - [ ] 14.2.j Replace the ID demo area list with the BPS or Pos Indonesia list before ID takes real users (group 1.6.k)
 - [x] **14.3 A lasting partner link for SnapApp** (group 2.1) · A · needs: — — ✅ 2026-10-20 bff9833c
   - [x] 14.3.a Add-only migration: a partner link table (partner, user, region, created, revoked) → bff9833c
   - [x] 14.3.b The first partner call with a valid code creates the link and returns its ID; later calls use the link ID → bff9833c
@@ -1666,6 +1669,9 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
 
 - [x] **14.11 Record the payment simulation** (group 0.7.g) · lead · needs: — — ✅ 2026-10-20 fbcd08d5
   - [x] 14.11.a F106 in `docs/16-decisions.md`: every payment is simulated until real Stripe (group 6.8), and going live is keys and an address, not new code
+- [ ] **14.12 Account deletion erases every me.* table** (group 1.20) · A · needs: — — 🔄 2026-10-20
+  - [ ] 14.12.a DSAR handlers and domains for interests, follows, saves, streaks and every other me.* table; nothing personal left after DELETE /api/me
+  - [ ] 14.12.b Check: an e2e test deletes an account with rows in every me.* table and finds none left
 
 Group 5.7, the founder's walkthrough, is 13.6 here.
 

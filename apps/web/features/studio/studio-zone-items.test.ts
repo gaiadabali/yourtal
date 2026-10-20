@@ -32,3 +32,29 @@ describe("isActiveZone", () => {
     expect(isActiveZone("/studio/team/anything", "/studio/team")).toBe(false);
   });
 });
+
+describe("Invoices in the nav", () => {
+  it("follows Billing, with its own route, and appears only when Billing does", () => {
+    const items = buildStudioNavItems(["campaigns", "billing", "team"], t);
+    expect(items.map(({ zone, href }) => ({ zone, href }))).toEqual([
+      { zone: "campaigns", href: "/studio/campaigns" },
+      { zone: "billing", href: "/studio/billing" },
+      { zone: "invoices", href: "/studio/billing/invoices" },
+      { zone: "team", href: "/studio/team" },
+    ]);
+    expect(items[2]?.label).toBe("Invoices");
+    expect(
+      buildStudioNavItems(["campaigns", "team"], t).some((item) => item.zone === "invoices"),
+    ).toBe(false);
+  });
+
+  it("lights up only the page you are on", () => {
+    expect(isActiveZone("/studio/billing/invoices", "/studio/billing/invoices")).toBe(true);
+    expect(isActiveZone("/studio/billing/invoices", "/studio/billing")).toBe(false);
+  });
+
+  it("is named in Indonesian for an id-ID viewer", () => {
+    const items = buildStudioNavItems(["billing"], tId);
+    expect(items.map((item) => item.label)).toEqual(["Tagihan", "Faktur"]);
+  });
+});

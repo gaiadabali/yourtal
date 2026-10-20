@@ -918,6 +918,24 @@
     "amountHeader": "Jumlah",
     "capturedAtHeader": "Waktu"
   },
+  "invoices": {
+    "title": "Faktur",
+    "intro": "Satu faktur untuk setiap pembelian poin atau boost, terbaru di atas. Unduh sebagai PDF untuk arsip Anda.",
+    "emptyTitle": "Belum ada faktur",
+    "emptyDescription": "Faktur diterbitkan untuk setiap pembelian beberapa menit setelah dibayar.",
+    "caption": "Faktur untuk pembelian Anda",
+    "numberHeader": "Nomor",
+    "dateHeader": "Diterbitkan",
+    "descriptionHeader": "Untuk",
+    "documentHeader": "Dokumen",
+    "totalHeader": "Total (termasuk GST)",
+    "downloadHeader": "PDF",
+    "taxInvoice": "Faktur pajak",
+    "invoice": "Faktur",
+    "download": "Unduh PDF",
+    "downloadLabel": "Unduh PDF faktur {number}",
+    "loadFailed": "Faktur Anda tidak dapat dimuat. Coba lagi sebentar lagi."
+  },
   "developers": {
     "credentials": {
       "title": "Kredensial API",
@@ -1006,6 +1024,7 @@
     "inventory": "Inventaris",
     "reports": "Laporan",
     "billing": "Tagihan",
+    "invoices": "Faktur",
     "team": "Tim",
     "redemptions": "Penukaran",
     "developers": "Pengembang",
@@ -1016,6 +1035,7 @@
     "inventory": "Daftar produk, nilai penyelesaian, stok, dan kebijakan penukaran.",
     "reports": "Penyelesaian, akurasi, daya ingat, dan atribusi penukaran.",
     "billing": "Beli poin, saldo, dan riwayat pembelian.",
+    "invoices": "Satu faktur untuk setiap pembelian, untuk diunduh sebagai PDF.",
     "team": "Anggota, peran, undangan, dan jejak audit.",
     "redemptions": "Voucher yang diterima hari ini dan baru-baru ini, per lokasi dan perangkat.",
     "developers": "Kredensial API, webhook, dan dokumentasi integrasi.",

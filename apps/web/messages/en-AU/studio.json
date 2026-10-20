@@ -918,6 +918,24 @@
     "amountHeader": "Amount",
     "capturedAtHeader": "Captured"
   },
+  "invoices": {
+    "title": "Invoices",
+    "intro": "An invoice for each purchase of points or boosts, newest first. Download one as a PDF for your records.",
+    "emptyTitle": "No invoices yet",
+    "emptyDescription": "An invoice is issued for each purchase a few minutes after it is paid.",
+    "caption": "Invoices for your purchases",
+    "numberHeader": "Number",
+    "dateHeader": "Issued",
+    "descriptionHeader": "For",
+    "documentHeader": "Document",
+    "totalHeader": "Total (incl. GST)",
+    "downloadHeader": "PDF",
+    "taxInvoice": "Tax invoice",
+    "invoice": "Invoice",
+    "download": "Download PDF",
+    "downloadLabel": "Download the PDF for invoice {number}",
+    "loadFailed": "We couldn't load your invoices. Try again in a moment."
+  },
   "developers": {
     "credentials": {
       "title": "API credentials",
@@ -1006,6 +1024,7 @@
     "inventory": "Inventory",
     "reports": "Reports",
     "billing": "Billing",
+    "invoices": "Invoices",
     "team": "Team",
     "redemptions": "Redemptions",
     "developers": "Developers",
@@ -1016,6 +1035,7 @@
     "inventory": "Listings, settlement value, stock and redemption policy.",
     "reports": "Completion, accuracy, recall and redemption attribution.",
     "billing": "Buy points, balance and purchase history.",
+    "invoices": "An invoice for each purchase, to download as a PDF.",
     "team": "Members, roles, invitations and the audit trail.",
     "redemptions": "Today's and recent voucher captures, per location and device.",
     "developers": "API credentials, webhooks and the integration docs.",

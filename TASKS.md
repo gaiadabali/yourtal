@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 7/17 | 39/63 | `██████░░░░`  62% |
-| **All** | | | **112/123** | **585/610** | `██████████`  96% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 7/17 | 41/63 | `███████░░░`  65% |
+| **All** | | | **112/123** | **587/610** | `██████████`  96% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1689,8 +1689,8 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.12.b Check: an e2e test deletes an account with rows in every me.* table and finds none left → 933efa29
 
 - [ ] **14.13 Point packages and budget alerts for every business** (group 5.10, F119–F121) · C · needs: 14.7 (the Checkout purchase flow) — 🔄 g5 (helper `g-phase5-pkg`)
-  - [ ] 14.13.a Point packages in tiers, bought in Studio: Starter 1,000 pts, Grow 10,000 at 5% off, Scale 50,000 at 10% off (F122), with the ledger pricing each tier and refusing anything under it; SnapApp's receipt programme buys from the same tiers (its at-cost price is group 2.10's)
-  - [ ] 14.13.b Alerts at 50%, 80% and 100% of a package or campaign budget, by email and in Studio; rewards stop at 100% (the campaign half builds on 14.2's spend tracking, merged at 4c4d8281)
+  - [x] 14.13.a Point packages in tiers, bought in Studio: Starter 1,000 pts, Grow 10,000 at 5% off, Scale 50,000 at 10% off (F122), with the ledger pricing each tier and refusing anything under it; SnapApp's receipt programme buys from the same tiers (its at-cost price is group 2.10's) → ee8c91e2
+  - [x] 14.13.b Alerts at 50%, 80% and 100% of a package or campaign budget, by email and in Studio; rewards stop at 100% (the campaign half builds on 14.2's spend tracking, merged at 4c4d8281) → ee8c91e2
   - [ ] 14.13.c Check on staging: a small package reaches each alert and then stops
 - [ ] **14.14 Receipt points: 1 a receipt, bought by SnapApp at cost** (group 2.10, F119, F120) · A · needs: — — 🔄 2026-10-21
   - [x] 14.14.a receipt_points is 1 (AU) and 10 (ID demo), by an add-only settings migration → yourtal@880aaebb; staging reads AU 1, ID 10 (2026-10-21)

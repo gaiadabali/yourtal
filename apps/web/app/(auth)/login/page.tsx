@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { AuthCard } from "@/features/auth/auth-card";
 import { LoginForm } from "@/features/auth/login-form";
+import { PasskeySignInButton } from "@/features/auth/passkey-sign-in-button";
 import { parseReturnTo } from "@/features/onboarding/onboarding-return-to";
 
 export interface LoginPageProps {
@@ -44,6 +45,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       }
     >
       <LoginForm returnTo={returnTo ?? undefined} errorCode={errorCode} />
+      <PasskeySignInButton returnTo={returnTo ?? undefined} />
     </AuthCard>
   );
 }

@@ -12,11 +12,6 @@ export const requestPasswordResetResponseSchema = z.object({
   requested: z.boolean(),
 });
 
-/** `POST /api/auth/password/reset/confirm` mints a fresh session token, same shape as `changePassword`'s. */
-export const passwordResetConfirmedSchema = z.object({
-  token: z.string().min(1),
-});
-
 /** `POST /api/auth/email/verify/confirm`'s response. */
 export const emailVerificationConfirmedSchema = z.object({
   verified: z.boolean(),

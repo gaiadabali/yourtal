@@ -4,16 +4,11 @@ import { redirect } from "next/navigation";
 import type { Route } from "next";
 import { apiFetch } from "./api-fetch";
 import type { ApiError } from "./api-fetch";
-import { loginResponseSchema, logoutResponseSchema } from "./auth-schema";
+import { logoutResponseSchema, passwordSignInResponseSchema } from "./auth-schema";
+import { codeStepPath, finishSignIn } from "./finish-sign-in";
 import { meResponseSchema } from "./me-schema";
 import { parseReturnTo } from "@/features/onboarding/onboarding-return-to";
-import { themeResponseSchema } from "@yourtal/contracts/me/theme-setting";
-import {
-  clearSessionCookie,
-  setLocaleCookie,
-  setSessionCookies,
-  setThemeCookie,
-} from "./session-cookies";
+import { clearSessionCookie, setLocaleCookie, setMfaPendingCookie } from "./session-cookies";
 
 /**
  * Server Actions for identity plumbing (1.7.b), living in Area A's
@@ -74,7 +69,7 @@ export async function loginAction(formData: FormData): Promise<void> {
     redirectWithError("/login", returnTo, "missing_credentials");
   }
 
-  const loginResult = await apiFetch("/api/auth/login", loginResponseSchema, {
+  const loginResult = await apiFetch("/api/auth/login", passwordSignInResponseSchema, {
     method: "POST",
     body: { email, password },
   });
@@ -82,28 +77,22 @@ export async function loginAction(formData: FormData): Promise<void> {
     redirectWithError("/login", returnTo, errorCode(loginResult.error));
   }
 
-  // The session cookie is not set yet (that happens below), so the fresh
-  // token has to be forwarded explicitly for this one call.
-  const meResult = await apiFetch("/api/me", meResponseSchema, {
-    headers: { authorization: `Bearer ${loginResult.data.token}` },
-  });
-  if (!meResult.ok) {
-    redirectWithError("/login", returnTo, "profile_unavailable");
+  // An authenticator app is on: no session yet, only a pending token, which
+  // stays in a cookie and never in the URL.
+  if ("secondFactor" in loginResult.data) {
+    await setMfaPendingCookie(loginResult.data.pendingToken, loginResult.data.expiresInSeconds);
+    redirect(codeStepPath(returnTo) as Route);
   }
 
-  await setSessionCookies({
+  const finished = await finishSignIn({
     token: loginResult.data.token,
-    region: meResult.data.profile.region,
-    displayLocale: meResult.data.profile.displayLocale,
+    returnTo,
+    offerPasskey: true,
   });
-  // 13.16.a: the account's saved theme follows it to a new device. A failed
-  // read keeps whatever this browser already had.
-  const theme = await apiFetch("/api/me/settings/theme", themeResponseSchema, {
-    headers: { authorization: `Bearer ${loginResult.data.token}` },
-  });
-  if (theme.ok) await setThemeCookie(theme.data.theme);
-
-  redirect(returnTo as Route);
+  if (!finished.ok) {
+    redirectWithError("/login", returnTo, finished.code);
+  }
+  redirect(finished.next as Route);
 }
 
 /** Idempotent: clears the local cookie even if the API call itself fails (already-expired session, network blip). */

@@ -658,7 +658,17 @@ ALTER TABLE identity.consent_record ADD COLUMN audience text;
 
 ## 6. Open questions for the founder
 
-Each has a recommended option, which the build uses until the founder answers.
+**Answered by the founder, 2026-10-20** (docs/16 § V, F108–F114):
+
+- **Q1: A.** Staging now; real users wait for the hosting document and the APP 8 position (F108). FTR is pre-launch with no real users yet.
+- **Q2: C.** `yourtal.gaiada.com/oidc` stays the issuer in production (F109).
+- **Q3: A.** Australia only (F110, defaulted).
+- **Q4: B.** A teen's space is kept 30 days after access ends, then erased (F111).
+- **Q5: neither A nor B.** A teen is part of the parent's account: no free scans of their own and no purchases; the teen's scans spend the parent's credits (F112).
+- **Q6: A.** An optional, unticked consent line; link codes retire (F113).
+- **Q7: A.** Legal entity names, to come (F114).
+
+The questions as they were asked:
 
 **Q1. When may real people sign in with YourTal?** FTR is live, so switching it would put real Australians' accounts into YourTal, which runs on Helios. Red line 11 forbids real personal data on Helios until a document establishes where it is held, and [`24`](24-legal-positions.md) lets only counsel lift a red line.
 

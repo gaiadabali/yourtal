@@ -6,6 +6,7 @@ import { audienceSchema } from "../audience/audience";
 import { publicListingSchema } from "../listing/listing";
 import { campaignKindSchema, campaignSchema } from "../campaign/campaign";
 import { interestTagsSchema } from "../interest/interest-tags";
+import { posterVariantsSchema } from "../campaign/poster-variant";
 import { EMPTY_FEED_FACETS, feedFacetsSchema, feedSurfaceSchema } from "./feed-browse";
 
 /**
@@ -54,6 +55,8 @@ export const feedItemSchema = z.object({
   title: z.string().min(1),
   synopsis: z.string(),
   posterUrl: z.url(),
+  /** 14.6.b: the same poster at other sizes, for `srcset`. `posterUrl` is the fallback. */
+  posterVariants: posterVariantsSchema,
   teaserUrl: z.url(),
   durationSeconds: z.number().int().positive(),
   rewardPoints: pointsSchema,

@@ -26,6 +26,7 @@ type FeedItem struct {
 	Title string `json:"title"`
 	Synopsis NullableString `json:"synopsis"`
 	PosterUrl string `json:"posterUrl"`
+	PosterVariants []PosterVariant `json:"posterVariants"`
 	TeaserUrl string `json:"teaserUrl"`
 	DurationSeconds int64 `json:"durationSeconds"`
 	// Platform points. Always a whole number; there is no fractional point.
@@ -56,7 +57,7 @@ type _FeedItem FeedItem
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewFeedItem(campaignId NullableString, businessId NullableString, merchantName string, title string, synopsis NullableString, posterUrl string, teaserUrl string, durationSeconds int64, rewardPoints int64, kind CampaignKind, questionCount int64, maxRewardPoints int64, estimatedDataMb float32, contentCategory string, tags []string, audience Audience, region Region, openViewing bool, endingSoon bool, why string, whyReason FeedWhyReason, channelHandle string, channelLogoUrl NullableString, boosted bool) *FeedItem {
+func NewFeedItem(campaignId NullableString, businessId NullableString, merchantName string, title string, synopsis NullableString, posterUrl string, posterVariants []PosterVariant, teaserUrl string, durationSeconds int64, rewardPoints int64, kind CampaignKind, questionCount int64, maxRewardPoints int64, estimatedDataMb float32, contentCategory string, tags []string, audience Audience, region Region, openViewing bool, endingSoon bool, why string, whyReason FeedWhyReason, channelHandle string, channelLogoUrl NullableString, boosted bool) *FeedItem {
 	this := FeedItem{}
 	this.CampaignId = campaignId
 	this.BusinessId = businessId
@@ -64,6 +65,7 @@ func NewFeedItem(campaignId NullableString, businessId NullableString, merchantN
 	this.Title = title
 	this.Synopsis = synopsis
 	this.PosterUrl = posterUrl
+	this.PosterVariants = posterVariants
 	this.TeaserUrl = teaserUrl
 	this.DurationSeconds = durationSeconds
 	this.RewardPoints = rewardPoints
@@ -243,6 +245,30 @@ func (o *FeedItem) GetPosterUrlOk() (*string, bool) {
 // SetPosterUrl sets field value
 func (o *FeedItem) SetPosterUrl(v string) {
 	o.PosterUrl = v
+}
+
+// GetPosterVariants returns the PosterVariants field value
+func (o *FeedItem) GetPosterVariants() []PosterVariant {
+	if o == nil {
+		var ret []PosterVariant
+		return ret
+	}
+
+	return o.PosterVariants
+}
+
+// GetPosterVariantsOk returns a tuple with the PosterVariants field value
+// and a boolean to check if the value has been set.
+func (o *FeedItem) GetPosterVariantsOk() ([]PosterVariant, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.PosterVariants, true
+}
+
+// SetPosterVariants sets field value
+func (o *FeedItem) SetPosterVariants(v []PosterVariant) {
+	o.PosterVariants = v
 }
 
 // GetTeaserUrl returns the TeaserUrl field value
@@ -695,6 +721,7 @@ func (o FeedItem) ToMap() (map[string]interface{}, error) {
 	toSerialize["title"] = o.Title
 	toSerialize["synopsis"] = o.Synopsis.Get()
 	toSerialize["posterUrl"] = o.PosterUrl
+	toSerialize["posterVariants"] = o.PosterVariants
 	toSerialize["teaserUrl"] = o.TeaserUrl
 	toSerialize["durationSeconds"] = o.DurationSeconds
 	toSerialize["rewardPoints"] = o.RewardPoints
@@ -732,6 +759,7 @@ func (o *FeedItem) UnmarshalJSON(data []byte) (err error) {
 		"title",
 		"synopsis",
 		"posterUrl",
+		"posterVariants",
 		"teaserUrl",
 		"durationSeconds",
 		"rewardPoints",
@@ -785,6 +813,7 @@ func (o *FeedItem) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "title")
 		delete(additionalProperties, "synopsis")
 		delete(additionalProperties, "posterUrl")
+		delete(additionalProperties, "posterVariants")
 		delete(additionalProperties, "teaserUrl")
 		delete(additionalProperties, "durationSeconds")
 		delete(additionalProperties, "rewardPoints")

@@ -30,6 +30,7 @@ function campaign(overrides: Partial<Campaign> = {}): Campaign {
     contentCategory: "food-and-drink",
     tags: [],
     posterUrl: "https://cdn.example.com/poster.jpg",
+    posterVariants: [],
     teaserUrl: "https://cdn.example.com/teaser.mp4",
     hlsUrl: "https://cdn.example.com/manifest.m3u8",
     captionsUrl: null,
@@ -375,5 +376,20 @@ describe("buildFeed", () => {
       maxRewardPoints: 112,
       whyReason: "popular",
     });
+  });
+
+  it("14.6.b: lists every poster size for a pipeline poster, and none for any other", () => {
+    const id = randomUUID();
+    const posterUrl = `https://yourtal.gaiada.com/media/posters/${id}.jpg`;
+    const [made] = buildFeed([candidate({ campaign: campaign({ posterUrl }) })], baseContext());
+    expect(made?.posterUrl).toBe(posterUrl);
+    // aspect is 9:16 in this fixture, so the width is the long side's 9/16.
+    expect(made?.posterVariants).toEqual([
+      { url: `https://yourtal.gaiada.com/media/posters/${id}-320.jpg`, width: 180 },
+      { url: posterUrl, width: 360 },
+      { url: `https://yourtal.gaiada.com/media/posters/${id}-960.jpg`, width: 540 },
+    ]);
+    const [other] = buildFeed([candidate()], baseContext());
+    expect(other?.posterVariants).toEqual([]);
   });
 });

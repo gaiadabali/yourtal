@@ -45,6 +45,7 @@ type Campaign struct {
 	// Up to 8 unique interest tags on a campaign or listing (13.11).
 	Tags []string `json:"tags"`
 	PosterUrl string `json:"posterUrl"`
+	PosterVariants []PosterVariant `json:"posterVariants"`
 	TeaserUrl string `json:"teaserUrl"`
 	HlsUrl string `json:"hlsUrl"`
 	CaptionsUrl NullableString `json:"captionsUrl"`
@@ -62,7 +63,7 @@ type _Campaign Campaign
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCampaign(id string, kind CampaignKind, title string, merchantId string, merchantName string, synopsis string, durationSeconds int32, estimatedDataMb float32, rewardPoints int64, questionCount int32, scoringRule CampaignScoringRule, status CampaignStatus, publishedAt time.Time, chapters []CampaignChapter, videoSource CampaignVideoSource, businessId string, region Region, audience Audience, contentCategory string, tags []string, posterUrl string, teaserUrl string, hlsUrl string, captionsUrl NullableString, aspect string, estimatedBytes int64, startsAt time.Time, endsAt time.Time, openViewing bool, teaserStartSeconds int64) *Campaign {
+func NewCampaign(id string, kind CampaignKind, title string, merchantId string, merchantName string, synopsis string, durationSeconds int32, estimatedDataMb float32, rewardPoints int64, questionCount int32, scoringRule CampaignScoringRule, status CampaignStatus, publishedAt time.Time, chapters []CampaignChapter, videoSource CampaignVideoSource, businessId string, region Region, audience Audience, contentCategory string, tags []string, posterUrl string, posterVariants []PosterVariant, teaserUrl string, hlsUrl string, captionsUrl NullableString, aspect string, estimatedBytes int64, startsAt time.Time, endsAt time.Time, openViewing bool, teaserStartSeconds int64) *Campaign {
 	this := Campaign{}
 	this.Id = id
 	this.Kind = kind
@@ -85,6 +86,7 @@ func NewCampaign(id string, kind CampaignKind, title string, merchantId string, 
 	this.ContentCategory = contentCategory
 	this.Tags = tags
 	this.PosterUrl = posterUrl
+	this.PosterVariants = posterVariants
 	this.TeaserUrl = teaserUrl
 	this.HlsUrl = hlsUrl
 	this.CaptionsUrl = captionsUrl
@@ -613,6 +615,30 @@ func (o *Campaign) SetPosterUrl(v string) {
 	o.PosterUrl = v
 }
 
+// GetPosterVariants returns the PosterVariants field value
+func (o *Campaign) GetPosterVariants() []PosterVariant {
+	if o == nil {
+		var ret []PosterVariant
+		return ret
+	}
+
+	return o.PosterVariants
+}
+
+// GetPosterVariantsOk returns a tuple with the PosterVariants field value
+// and a boolean to check if the value has been set.
+func (o *Campaign) GetPosterVariantsOk() ([]PosterVariant, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.PosterVariants, true
+}
+
+// SetPosterVariants sets field value
+func (o *Campaign) SetPosterVariants(v []PosterVariant) {
+	o.PosterVariants = v
+}
+
 // GetTeaserUrl returns the TeaserUrl field value
 func (o *Campaign) GetTeaserUrl() string {
 	if o == nil {
@@ -862,6 +888,7 @@ func (o Campaign) ToMap() (map[string]interface{}, error) {
 	toSerialize["contentCategory"] = o.ContentCategory
 	toSerialize["tags"] = o.Tags
 	toSerialize["posterUrl"] = o.PosterUrl
+	toSerialize["posterVariants"] = o.PosterVariants
 	toSerialize["teaserUrl"] = o.TeaserUrl
 	toSerialize["hlsUrl"] = o.HlsUrl
 	toSerialize["captionsUrl"] = o.CaptionsUrl.Get()
@@ -900,6 +927,7 @@ func (o *Campaign) UnmarshalJSON(data []byte) (err error) {
 		"contentCategory",
 		"tags",
 		"posterUrl",
+		"posterVariants",
 		"teaserUrl",
 		"hlsUrl",
 		"captionsUrl",

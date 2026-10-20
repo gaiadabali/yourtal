@@ -7,6 +7,7 @@
     "./campaign": "./src/campaign/campaign.ts",
     "./campaign/mock": "./src/campaign/campaign.mock.ts",
     "./campaign/chapter": "./src/campaign/campaign-chapter.ts",
+    "./campaign/poster-variant": "./src/campaign/poster-variant.ts",
     "./campaign/video-source": "./src/campaign/campaign-video-source.ts",
     "./campaign/lifecycle": "./src/campaign/campaign-lifecycle.ts",
     "./campaign/terms": "./src/campaign/campaign-terms.ts",

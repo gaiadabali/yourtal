@@ -7,6 +7,7 @@ import {
   feedWhyReasonSchema,
   searchResponseSchema,
 } from "../feed/feed";
+import { posterVariantSchema } from "../campaign/poster-variant";
 import type { ContractComponent } from "./schema-registry";
 
 /** The feed-domain half of `CONTRACT_COMPONENTS` (7.7), split out for the same 300-line-ceiling reason. */
@@ -23,6 +24,13 @@ export const FEED_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     schema: feedWhyReasonSchema,
     description:
       "Why a feed item is shown, as a code a client renders in the viewer's own language.",
+    crossFieldRules: [],
+  },
+  {
+    id: "PosterVariant",
+    schema: posterVariantSchema,
+    description:
+      "14.6.b: one size of a poster (its url and pixel width), for srcset. Campaign and FeedItem carry a list; posterUrl stays the fallback.",
     crossFieldRules: [],
   },
   {

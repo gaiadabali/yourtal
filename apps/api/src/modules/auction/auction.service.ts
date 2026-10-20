@@ -2,13 +2,22 @@ import { Inject, Injectable, Logger } from "@nestjs/common";
 import type { OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { sql } from "drizzle-orm";
 import type { Auction } from "@yourtal/contracts/auction/auction";
+import type { Region } from "@yourtal/contracts/region";
 import type { EmailDriver } from "@yourtal/drivers/email";
 import type { MarketplacePaymentsDriver } from "@yourtal/drivers/marketplace-payments";
 import { EMAIL_DRIVER } from "../../shared/drivers/email-driver.module";
 import {
+  PAYMENT_PROVIDERS,
+  type RegionPaymentProviders,
+} from "../../shared/drivers/payment-providers.module";
+import {
   VOUCHER_INTERNAL_CLIENT,
   type VoucherInternalClient,
 } from "../../shared/voucher-client/voucher-internal-client";
+import {
+  PAYMENT_ACCOUNTS_SERVICE,
+  type PaymentAccountsService,
+} from "../payments/payment-accounts.service";
 import { GIFT_PARTY_READER, type GiftPartyReader } from "../wallet/gift-party-reader";
 import { AUCTION_STORE, type AuctionRow, type AuctionStore } from "./persistence/auction-store";
 import { notFound } from "./use-cases/auction-errors";
@@ -17,11 +26,13 @@ import { presentAuction } from "./use-cases/present-auction";
 import { sendReceipts } from "./use-cases/send-receipts";
 import { settleAuction } from "./use-cases/settle-auction";
 
-export const MARKETPLACE_PAYMENTS = Symbol("MARKETPLACE_PAYMENTS");
-
 const SWEEP_MS = 30_000;
 
-/** 13.22: charity auctions, and the sweep that closes them when they end. */
+/**
+ * 13.22: charity auctions, and the sweep that closes them when they end. Bids hold the bidder's
+ * saved card where the region's processor needs one, and the winner is captured into the charity's
+ * own account (5.1.d, F86).
+ */
 @Injectable()
 export class AuctionService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AuctionService.name);
@@ -30,10 +41,16 @@ export class AuctionService implements OnModuleInit, OnModuleDestroy {
   constructor(
     @Inject(AUCTION_STORE) readonly store: AuctionStore,
     @Inject(VOUCHER_INTERNAL_CLIENT) readonly vouchers: VoucherInternalClient,
-    @Inject(MARKETPLACE_PAYMENTS) readonly payments: MarketplacePaymentsDriver,
+    @Inject(PAYMENT_PROVIDERS) private readonly providers: RegionPaymentProviders,
+    @Inject(PAYMENT_ACCOUNTS_SERVICE) readonly accounts: PaymentAccountsService,
     @Inject(GIFT_PARTY_READER) private readonly parties: GiftPartyReader,
     @Inject(EMAIL_DRIVER) private readonly email: EmailDriver,
   ) {}
+
+  /** The region's marketplace driver (5.1.d): AU Stripe when payments are live, Indonesia simulated. */
+  marketplace(region: Region): MarketplacePaymentsDriver {
+    return this.providers[region].marketplace;
+  }
 
   onModuleInit(): void {
     // Tests drive settlement themselves.

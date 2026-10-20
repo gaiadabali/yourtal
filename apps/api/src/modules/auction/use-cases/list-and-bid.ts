@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { BadGatewayException } from "@nestjs/common";
+import { BadGatewayException, Logger } from "@nestjs/common";
 import { sql } from "drizzle-orm";
 import {
   AUCTION_DURATION_HOURS,
@@ -7,12 +7,20 @@ import {
   auctionReserve,
   minimumNextBid,
 } from "@yourtal/contracts/auction/auction";
-import type { MarketplacePaymentsDriver } from "@yourtal/drivers/marketplace-payments";
+import type { Hold, MarketplacePaymentsDriver } from "@yourtal/drivers/marketplace-payments";
+import type { Region } from "@yourtal/contracts/region";
 import { ageBandFrom, ageYearsFrom } from "@yourtal/jurisdiction/age";
 import type { VoucherInternalClient } from "../../../shared/voucher-client/voucher-internal-client";
+import type { PaymentAccountsService } from "../../payments/payment-accounts.service";
 import type { GiftParty } from "../../wallet/gift-party-reader";
-import type { AuctionStore } from "../persistence/auction-store";
+import type { AuctionRow, AuctionStore, Executor } from "../persistence/auction-store";
 import { notFound, refusal } from "./auction-errors";
+import { charityReady, holdTargetFor } from "./bid-payment";
+
+/** The region's marketplace driver: AU runs Stripe when payments are live, Indonesia stays simulated. */
+export type MarketplaceFor = (region: Region) => MarketplacePaymentsDriver;
+
+const logger = new Logger("Auction");
 
 /** A bid inside the last 2 minutes extends the close; at most this many times (an hour). */
 const MAX_EXTENSIONS = 30;
@@ -29,7 +37,7 @@ export function isEligible(party: GiftParty | null): party is GiftParty {
 
 /** 13.22.a: void the seller's voucher into escrow and open a 3-day auction. */
 export async function listVoucher(
-  deps: { store: AuctionStore; vouchers: VoucherInternalClient },
+  deps: { store: AuctionStore; vouchers: VoucherInternalClient; marketplace: MarketplaceFor },
   seller: GiftParty | null,
   voucherId: string,
   charityId: string,
@@ -37,6 +45,13 @@ export async function listVoucher(
   if (!isEligible(seller)) throw refusal("seller_ineligible", "This account cannot list vouchers.");
   const charity = await deps.store.charity(charityId, seller.region);
   if (charity === null) throw refusal("charity_unavailable", "No such charity in your region.");
+  // Better refused now than after the voucher is in escrow and nobody can be charged.
+  if (!charityReady(deps.marketplace(seller.region), charity.payoutReference)) {
+    throw refusal(
+      "charity_not_ready",
+      "This charity has not finished setting up to take payments.",
+    );
+  }
 
   const held = await deps.vouchers.get({ voucherId, ownerId: seller.userId });
   if (held.isErr()) throw notFound();
@@ -90,7 +105,11 @@ export async function listVoucher(
  * the bid is recorded, and a bidder's own earlier hold is released.
  */
 export async function placeBid(
-  deps: { store: AuctionStore; payments: MarketplacePaymentsDriver },
+  deps: {
+    store: AuctionStore;
+    marketplace: MarketplaceFor;
+    accounts: Pick<PaymentAccountsService, "liveCard">;
+  },
   bidder: GiftParty | null,
   auctionId: string,
   amountMinor: number,
@@ -115,34 +134,75 @@ export async function placeBid(
     if (amountMinor < minimum)
       throw refusal("bid_too_low", `The minimum bid is ${String(minimum)}.`);
 
+    const payments = deps.marketplace(auction.region);
+    const target = await holdTargetFor(deps, payments, bidder, auction.charityPayoutReference);
     const bidId = randomUUID();
-    const hold = await deps.payments.hold({
+    const hold = await payments.hold({
       idempotencyKey: `auction-bid:${bidId}`,
       amountMinor,
       currency: auction.currency,
       reference: `auction:${auctionId}`,
+      ...target,
     });
     if (hold.isErr()) throw refusal("payment_declined", "The payment hold was declined.");
 
-    for (const earlier of await deps.store.heldBids(tx, auctionId, bidder.userId)) {
-      const released = await deps.payments.release(earlier.holdReference);
-      if (released.isOk()) await deps.store.setBidState(tx, earlier.id, "released");
+    try {
+      await recordBid(
+        tx,
+        { store: deps.store, payments },
+        { auction, bidder, bidId, amountMinor, now },
+        hold.value,
+      );
+    } catch (error) {
+      // The bid is not recorded, so nothing would ever release this hold; if that fails too, the
+      // provider's own expiry lets it go. The bidder is told the bid failed either way.
+      const undone = await payments.release({
+        idempotencyKey: `auction-bid-undo:${bidId}`,
+        holdReference: hold.value.holdReference,
+      });
+      if (undone.isErr()) {
+        logger.warn(`hold ${hold.value.holdReference} of an unrecorded bid was not released`);
+      }
+      throw error;
     }
-    await tx.execute(sql`
-      INSERT INTO auction.bid (id, auction_id, region, currency, bidder_id, amount_minor, hold_reference)
-      VALUES (${bidId}, ${auctionId}, ${auction.region}, ${auction.currency}, ${bidder.userId},
-              ${amountMinor}, ${hold.value.holdReference})
-    `);
-    const extend =
-      auction.endsAt.getTime() - now < AUCTION_EXTENSION_SECONDS * 1000 &&
-      auction.extensions < MAX_EXTENSIONS;
-    await tx.execute(sql`
-      UPDATE auction.auction
-         SET current_amount_minor = ${amountMinor}, bid_count = bid_count + 1, leader_bid_id = ${bidId},
-             ends_at = CASE WHEN ${extend} THEN now() + make_interval(secs => ${AUCTION_EXTENSION_SECONDS})
-                            ELSE ends_at END,
-             extensions = extensions + CASE WHEN ${extend} THEN 1 ELSE 0 END
-       WHERE id = ${auctionId}
-    `);
   });
+}
+
+/** The writes of one accepted bid: the bidder's earlier hold goes, the bid and the auction's standing are stored. */
+async function recordBid(
+  tx: Executor,
+  deps: { store: AuctionStore; payments: MarketplacePaymentsDriver },
+  bid: {
+    auction: AuctionRow;
+    bidder: GiftParty;
+    bidId: string;
+    amountMinor: number;
+    now: number;
+  },
+  hold: Hold,
+): Promise<void> {
+  const { auction, bidder, bidId, amountMinor, now } = bid;
+  for (const earlier of await deps.store.heldBids(tx, auction.id, bidder.userId)) {
+    const released = await deps.payments.release({
+      idempotencyKey: `auction-bid-release:${earlier.id}`,
+      holdReference: earlier.holdReference,
+    });
+    if (released.isOk()) await deps.store.setBidState(tx, earlier.id, "released");
+  }
+  await tx.execute(sql`
+    INSERT INTO auction.bid (id, auction_id, region, currency, bidder_id, amount_minor, hold_reference)
+    VALUES (${bidId}, ${auction.id}, ${auction.region}, ${auction.currency}, ${bidder.userId},
+            ${amountMinor}, ${hold.holdReference})
+  `);
+  const extend =
+    auction.endsAt.getTime() - now < AUCTION_EXTENSION_SECONDS * 1000 &&
+    auction.extensions < MAX_EXTENSIONS;
+  await tx.execute(sql`
+    UPDATE auction.auction
+       SET current_amount_minor = ${amountMinor}, bid_count = bid_count + 1, leader_bid_id = ${bidId},
+           ends_at = CASE WHEN ${extend} THEN now() + make_interval(secs => ${AUCTION_EXTENSION_SECONDS})
+                          ELSE ends_at END,
+           extensions = extensions + CASE WHEN ${extend} THEN 1 ELSE 0 END
+     WHERE id = ${auction.id}
+  `);
 }

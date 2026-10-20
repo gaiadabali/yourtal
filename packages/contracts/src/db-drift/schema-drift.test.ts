@@ -599,6 +599,20 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "5.1.e (F106, 20261020134318_paysim.sql): the payment simulation's Stripe objects as jsonb. They are Stripe's API shapes, read only by packages/paysim; the app sees them through the Stripe driver, never as a contract.",
   "paysim.idempotency": "Same as paysim.object: the simulation's Idempotency-Key records.",
   "paysim.delivery": "Same as paysim.object: the simulation's webhook delivery queue.",
+  // Group 3.9 (20261020210014_oidc_provider.sql): YourTal as an OpenID Connect
+  // provider. Apps see these only through the protocol (ID tokens, events).
+  "oidc.model":
+    "Group 3.9: oidc-provider's adapter storage (codes, grants, sessions, interactions) as the library's jsonb. The library's shapes, never a contract; apps see tokens, not rows.",
+  "oidc.subject":
+    "Group 3.9: the pairwise sub per (sector, user). Reaches an app only as the ID token's sub claim, never as a row.",
+  "oidc.app_consent":
+    "Group 3.9: what a person shares with each app now; the interaction API returns a derived screen and claim list (oidc/interaction.ts), not the row.",
+  "oidc.teen_invite":
+    "Group 3.9: parent invites for teens into SnapApp (docs/26 §3.3). Its API, and any contract, come with the teen invite ticket (3.9.e).",
+  "oidc.event_outbox":
+    "Group 3.9: signed events waiting for an app. Leaves YourTal only as a Security Event Token (docs/26 §2.3), never as a row.",
+  "oidc.sign_in_log":
+    "Group 3.9: one row per completed sign-in and per refusal, for staff and rate limits. Server-internal.",
   "platform.idempotency":
     "The @yourtal/idempotency package's own dedupe store (packages/idempotency/src/postgres-store.ts) — infrastructure, not a domain contract.",
   "platform.region_setting":

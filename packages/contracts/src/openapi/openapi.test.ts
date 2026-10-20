@@ -499,6 +499,22 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   partnerLinkRevokeResultSchema:
     "device/partner-action.ts's response for POST /api/partners/links/{linkId}/revoke — documented inline (route-registry.c-partners.ts).",
 
+  // --- oidc: the sign-in screens' interaction API (group 3.9) ---
+  interactionDetailsSchema:
+    "oidc/interaction.ts's response for GET /api/connect/{uid} — documented inline (route-registry.a-oidc.ts).",
+  interactionContinueRequestSchema:
+    "oidc/interaction.ts's body for POST /api/connect/{uid}/continue — documented inline (route-registry.a-oidc.ts).",
+  interactionCancelRequestSchema:
+    "oidc/interaction.ts's body for POST /api/connect/{uid}/cancel — documented inline (route-registry.a-oidc.ts).",
+  interactionRedirectSchema:
+    "oidc/interaction.ts's response for both interaction POSTs — documented inline (route-registry.a-oidc.ts).",
+  signInRefusalSchema: "oidc/interaction.ts's nested enum on InteractionDetails.refusal.",
+  interactionScreenSchema: "oidc/interaction.ts's nested enum on InteractionDetails.screen.",
+  interactionClientSchema: "oidc/interaction.ts's nested object InteractionDetails.client.",
+  interactionSharingSchema: "oidc/interaction.ts's nested object InteractionDetails.sharing.",
+  accessDeniedReasonSchema:
+    "oidc/interaction.ts's error_description values on the redirect to the app, not an HTTP body.",
+
   // --- merchant: Studio Developers (TASKS.md 8.3.a/c) ---
   merchantCredentialStateSchema:
     "merchant/merchant-developer-credential.ts's nested enum on the published MerchantDeveloperCredential.state — not a standalone component.",

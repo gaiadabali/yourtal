@@ -66,6 +66,13 @@ export interface AppConfig {
     readonly webhookSecret: string;
     readonly apiBase: string;
   };
+  /** Group 3.9 — the OpenID Connect provider. Optional so hand-built test configs need not name it. */
+  readonly oidc?: {
+    readonly enabled: boolean;
+    readonly issuer: string;
+    readonly jwksPath: string;
+    readonly clientKeysDir: string;
+  };
 }
 
 /**
@@ -131,6 +138,17 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
       secretKey: env.STRIPE_SECRET_KEY,
       webhookSecret: env.STRIPE_WEBHOOK_SECRET,
       apiBase: env.STRIPE_API_BASE,
+    },
+    oidc: {
+      enabled: env.OIDC_ENABLED === "true",
+      // F109: yourtal.gaiada.com/oidc stays the issuer in production too.
+      issuer:
+        env.OIDC_ISSUER ??
+        (env.APP_ENV === "dev"
+          ? `http://localhost:${String(env.PORT)}/oidc`
+          : "https://yourtal.gaiada.com/oidc"),
+      jwksPath: env.OIDC_JWKS_PATH,
+      clientKeysDir: env.OIDC_CLIENT_KEYS_DIR,
     },
   };
 }

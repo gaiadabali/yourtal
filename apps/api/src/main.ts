@@ -8,6 +8,9 @@ import { AppModule } from "./app.module";
 import { loadAppConfig } from "./config/app-config";
 import { assertPaySimAllowed } from "@yourtal/paysim/gate";
 import { mountPaySim } from "./paysim/mount-paysim";
+import { mountOidc } from "./modules/oidc/mount-oidc";
+import { OIDC_RUNTIME } from "./modules/oidc/oidc-runtime";
+import type { OidcRuntime } from "./modules/oidc/oidc-runtime";
 import { TRUSTED_PROXIES } from "./shared/http/trusted-proxies";
 
 /**
@@ -61,6 +64,10 @@ async function bootstrap(): Promise<void> {
   // On the raw Fastify instance, before listen: Nest's global guards, pipes and
   // interceptors never run on /api/paysim/*, which speaks Stripe's own API.
   if (await mountPaySim(app.getHttpAdapter().getInstance(), config)) app.enableShutdownHooks();
+  // Group 3.9: the OpenID Connect provider, the same way, at /oidc.
+  if (await mountOidc(app.getHttpAdapter().getInstance(), app.get<OidcRuntime>(OIDC_RUNTIME))) {
+    app.enableShutdownHooks();
+  }
   await app.listen(config.port, config.host ?? "127.0.0.1");
 }
 

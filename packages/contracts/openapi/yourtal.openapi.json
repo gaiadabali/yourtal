@@ -13241,6 +13241,415 @@
         }
       }
     },
+    "/api/connect/{uid}": {
+      "get": {
+        "summary": "What the sign-in screen for this app shows now",
+        "tags": [
+          "oidc"
+        ],
+        "parameters": [
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "description": "The sign-in's interaction id, from the /connect/{uid} page address.",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The app, the screen to show, and the signed-in account if there is one.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "uid": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "screen": {
+                      "type": "string",
+                      "enum": [
+                        "login",
+                        "create",
+                        "verify_email",
+                        "consent",
+                        "continue",
+                        "refused"
+                      ]
+                    },
+                    "client": {
+                      "type": "object",
+                      "properties": {
+                        "clientId": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "name": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "operator": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "externalOperator": {
+                          "type": "boolean"
+                        },
+                        "privacyUrl": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "termsUrl": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "returnHost": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "clientId",
+                        "name",
+                        "operator",
+                        "externalOperator",
+                        "privacyUrl",
+                        "termsUrl",
+                        "returnHost"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "account": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "email": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "email"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "sharing": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "claims": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "name",
+                                  "email",
+                                  "age_band",
+                                  "region"
+                                ]
+                              }
+                            },
+                            "ageBand": {
+                              "type": "string",
+                              "enum": [
+                                "adult",
+                                "teen"
+                              ]
+                            },
+                            "region": {
+                              "type": "string",
+                              "enum": [
+                                "AU",
+                                "ID"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "claims",
+                            "ageBand",
+                            "region"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "refusal": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "account_on_hold",
+                            "region_not_supported",
+                            "teen_not_allowed",
+                            "teen_invite_required"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "uiLocales": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "uid",
+                    "screen",
+                    "client",
+                    "account",
+                    "sharing",
+                    "refusal",
+                    "uiLocales"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No sign-in in progress for this browser: the interaction cookie is missing, does not match the uid, or has expired (interaction_not_found). Also when sign-in with YourTal is switched off.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/connect/{uid}/continue": {
+      "post": {
+        "summary": "Finish signing in to the app as the current YourTal account",
+        "tags": [
+          "oidc"
+        ],
+        "parameters": [
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "description": "The sign-in's interaction id, from the /connect/{uid} page address.",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The screen the person tapped Continue on.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "screen": {
+                    "type": "string",
+                    "enum": [
+                      "consent",
+                      "continue"
+                    ]
+                  }
+                },
+                "required": [
+                  "screen"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Where the browser goes next. The provider then returns to the app with a code.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "redirectTo": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  },
+                  "required": [
+                    "redirectTo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "401": {
+            "description": "Continue needs a signed-in YourTal session (session_required).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "A POST that did not come from YourTal's own web server (cross-site Origin or Sec-Fetch-Site) (origin_refused), or a sign-in YourTal refuses (sign_in_refused, with the refusal code).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No sign-in in progress for this browser: the interaction cookie is missing, does not match the uid, or has expired (interaction_not_found). Also when sign-in with YourTal is switched off.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "What the person must see has changed since the page loaded, e.g. consent is now needed or the email is not verified (screen_changed). Reload the details.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "The body must be application/json (unsupported_media_type).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/connect/{uid}/cancel": {
+      "post": {
+        "summary": "Go back to the app without signing in",
+        "tags": [
+          "oidc"
+        ],
+        "parameters": [
+          {
+            "name": "uid",
+            "in": "path",
+            "required": true,
+            "description": "The sign-in's interaction id, from the /connect/{uid} page address.",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "An empty object.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Where the browser goes next. The app gets error=access_denied with the refusal code, or user_cancelled, as error_description.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "redirectTo": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  },
+                  "required": [
+                    "redirectTo"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "A POST that did not come from YourTal's own web server (cross-site Origin or Sec-Fetch-Site) (origin_refused), or a sign-in YourTal refuses (sign_in_refused, with the refusal code).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No sign-in in progress for this browser: the interaction cookie is missing, does not match the uid, or has expired (interaction_not_found). Also when sign-in with YourTal is switched off.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "The body must be application/json (unsupported_media_type).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/counter/lookup": {
       "post": {
         "summary": "Preview a scanned or typed voucher code, before authorizing it",

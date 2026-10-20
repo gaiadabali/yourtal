@@ -259,6 +259,18 @@ export const envSchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().min(8).default("whsec_paysim_dev"),
   /** The Stripe API origin the driver calls; staging points it at `/api/paysim`. */
   STRIPE_API_BASE: z.url().default("https://api.stripe.com"),
+
+  /**
+   * Group 3.9 (docs/26): the OpenID Connect provider at `/oidc`. Off by
+   * default so the code can reach staging before the keys are on Helios.
+   */
+  OIDC_ENABLED: z.enum(["true", "false"]).default("false"),
+  /** Unset: per `APP_ENV`, see `loadAppConfig`. */
+  OIDC_ISSUER: z.url().optional(),
+  /** The signing JWKS; `cookie-keys.json` sits beside it (docs/26 §1.8). Dev makes throwaway keys when absent. */
+  OIDC_JWKS_PATH: z.string().min(1).default("/opt/yourtal/secrets/oidc/jwks.json"),
+  /** Each client's public JWKS or secret, one file per client id (docs/26 §1.9). */
+  OIDC_CLIENT_KEYS_DIR: z.string().min(1).default("/opt/yourtal/secrets/oidc/clients"),
 });
 
 export type Env = z.infer<typeof envSchema>;

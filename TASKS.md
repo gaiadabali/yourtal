@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 3/11 | 7/30 | `██░░░░░░░░`  23% |
-| **All** | | | **108/117** | **553/577** | `██████████`  96% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 3/11 | 10/30 | `███░░░░░░░`  33% |
+| **All** | | | **108/117** | **556/577** | `██████████`  96% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -217,6 +217,7 @@ The founder's answers to Phase 0 of the cross-app plan, `god/TASKS.md` (its IDs 
 | **F115** | Staging email through FTR's Resend account (group 1.3.b) | **An allow-list**: staging sends real email only to listed addresses; everything else lands in the simulated dev inbox, so demo `.test` addresses never touch FTR's sender reputation. |
 | **F116** | Where a viewer's district comes from (14.2, group 1.6) | **The viewer declares "my area" in Me** (optional; teens left out), and the feed uses it. **Districts are a fixed list of every Australian postcode**, taken from an openly licensed list (licence checked; ABS data as the fallback). Viewers never type or search a postcode: the app shows places visibly, by state and suburb, and supplies the postcode. Studio picks from the same list. Needs the privacy page and the docs/24 register updated. |
 | **F117** | Partner link defaults (14.3, group 2.1) | Agent defaults, recommended and taken: **deleting an account revokes its partner links**; **a partner can revoke its own link** (`POST /api/partners/links/{linkId}/revoke`); a receipt refused by the ledger (e.g. a cap) can be paid once on a later resend, never twice. |
+| **F118** | GST in AU (group 5.3) | **AU prices are ex-GST, and GST is added on top**: a brand pays A$49.50 for 1,000 points (A$45.00 + A$4.50 GST) and claims the GST back; boost spend is charged the same way. The spread and the reserve stay as F12 set them: the ledger records the ex-GST amount, and the GST is recorded on the tax invoice. The rate and the issuer's details are settings. ID adds no tax while it stays a demo (F104). Offered: prices include GST; ask the accountant first. |
 | **F106** | Stripe for now (group 0.7.f) | **Every payment is simulated; no Stripe account for now.** The real Stripe driver runs on staging against YourTal's own payment simulation, which speaks Stripe's API: a checkout page that takes only Stripe's test cards, signed and retried webhooks, refunds, and Connect onboarding, transfers and payouts. A production host refuses to start the simulation. Going live (group 6.8) is keys and an address, not new code. |
 | **F107** | Brand refunds (group 5.1) | **None: a brand's points purchase is final.** The Stripe driver and the simulation keep refunds for later; the staging check has no refund step. Offered: a full refund while unused (recommended), refunds of unused packs. |
 
@@ -1624,9 +1625,9 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [ ] 14.1.b Staging: `EMAIL_DRIVER=live` with Free Tax Returns' Resend account (a proof of concept, F103), sending from its verified domain
   - [ ] 14.1.c Check: sign-up verification, password reset, team invite and guardian approval emails arrive
 - [ ] **14.2 Campaign budget, daily cap and districts are saved and enforced** (group 1.6) · A + C · needs: — — 🔄 2026-10-20
-  - [ ] 14.2.a Add-only migration, and the campaign API takes the three fields
-  - [ ] 14.2.b Rewards stop when the budget is spent, and the feed targets by district
-  - [ ] 14.2.c Studio sends them
+  - [x] 14.2.a Add-only migration, and the campaign API takes the three fields → 4c4d8281
+  - [x] 14.2.b Rewards stop when the budget is spent, and the feed targets by district → 4c4d8281; districts need F116’s list and “my area” to reach viewers
+  - [x] 14.2.c Studio sends them → 4c4d8281
   - [ ] 14.2.d Check on staging
 - [ ] **14.3 A lasting partner link for SnapApp** (group 2.1) · A · needs: — — 🔄 2026-10-20
   - [ ] 14.3.a Add-only migration: a partner link table (partner, user, region, created, revoked)

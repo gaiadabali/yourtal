@@ -632,7 +632,31 @@
     "cardAdded": "Kartu tersimpan. Boost akan ditagihkan ke kartu ini.",
     "cardSaving": "Kartu Anda sedang disimpan. Biasanya hanya beberapa detik.",
     "cardCancelled": "Tidak ada kartu yang disimpan.",
-    "cardFailed": "Halaman kartu tidak dapat dibuka. Coba lagi."
+    "cardFailed": "Halaman kartu tidak dapat dibuka. Coba lagi.",
+    "payoutsTitle": "Pembayaran",
+    "payoutsIntro": "Laporan yang sudah disetujui dibayarkan ke rekening bank yang Anda atur di sini.",
+    "payoutsReady": "Pembayaran dikirim ke rekening berakhiran ••{last4}",
+    "payoutsSetUp": "Atur pembayaran",
+    "payoutsFinish": "Selesaikan pengaturan",
+    "payoutsUpdate": "Perbarui detail bank",
+    "payoutsFailed": "Pembayaran ke rekening bank Anda gagal. Perbarui detail bank Anda dan kami akan membayarnya lagi.",
+    "payoutsWaiting": "Pembayaran yang sudah disetujui menunggu detail pembayaran Anda.",
+    "payoutsReturnedChecking": "Terima kasih — kami sedang memeriksa detail pembayaran Anda.",
+    "payoutsReturnedReady": "Pembayaran sudah diatur.",
+    "payoutsError": "Halaman detail pembayaran tidak dapat dibuka. Coba lagi.",
+    "statementsTitle": "Laporan",
+    "statementsEmptyTitle": "Belum ada laporan",
+    "statementsEmptyDescription": "Laporan muncul di sini setelah periode penyelesaian ditutup.",
+    "statementPeriod": "{from} sampai {to}",
+    "statementStatus": {
+      "open": "Terbuka",
+      "disputed": "Disengketakan",
+      "paid": "Dibayar"
+    },
+    "statementPaid": "Dibayar ke rekening ••{last4} pada {date}",
+    "statementAwaiting": "Menunggu detail pembayaran",
+    "statementFailed": "Pembayaran gagal",
+    "statementOnItsWay": "Pembayaran sedang diproses"
   },
   "channel": {
     "saved": "Tersimpan.",

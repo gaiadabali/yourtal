@@ -61,7 +61,19 @@
     "paidAt": "Paid",
     "month": "Month",
     "auctions": "Auctions",
-    "total": "Total"
+    "total": "Total",
+    "payouts": {
+      "title": "Payouts",
+      "intro": "Auction proceeds are paid to the bank account you set up here.",
+      "auctionsNeed": "Auctions in Australia need payouts set up first.",
+      "ready": "Auction proceeds are paid to the account ending ••{last4}",
+      "setUp": "Set up payouts",
+      "finish": "Finish setting up",
+      "update": "Update bank details",
+      "returnedChecking": "Thanks — we're checking your payout details.",
+      "returnedReady": "Payouts are set up.",
+      "error": "The payout details page could not be opened. Try again."
+    }
   },
   "browse": {
     "intro": {

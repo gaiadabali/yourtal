@@ -401,6 +401,18 @@
       "approved": "Pencairan telah disetujui.",
       "error": "Tindakan tersebut tidak dapat diselesaikan.",
       "invalid": "Periksa formulir -- ada yang kosong atau tidak valid."
+    },
+    "approvedTitle": "Pembayaran yang disetujui",
+    "approvedEmptyTitle": "Belum ada pembayaran yang disetujui",
+    "columnPayout": "Pembayaran",
+    "columnDisbursement": "Transfer bank",
+    "disbursement": {
+      "queued": "Dalam antrean",
+      "awaitingAccount": "Menunggu detail pembayaran brand",
+      "transferred": "Dikirim ke rekening brand",
+      "paid": "Dibayar ke bank ••{last4} pada {date}",
+      "failed": "Gagal ({code})",
+      "attempt": "(percobaan ke-{attempt})"
     }
   },
   "charities": {

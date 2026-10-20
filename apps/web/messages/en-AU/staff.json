@@ -401,6 +401,18 @@
       "approved": "The payout was approved.",
       "error": "That action could not be completed.",
       "invalid": "Check the form -- something was missing or not valid."
+    },
+    "approvedTitle": "Approved payouts",
+    "approvedEmptyTitle": "No approved payouts yet",
+    "columnPayout": "Payout",
+    "columnDisbursement": "Bank transfer",
+    "disbursement": {
+      "queued": "Queued",
+      "awaitingAccount": "Waiting for the brand's payout details",
+      "transferred": "Sent to the brand's account",
+      "paid": "Paid to bank ••{last4} on {date}",
+      "failed": "Failed ({code})",
+      "attempt": "(attempt {attempt})"
     }
   },
   "charities": {

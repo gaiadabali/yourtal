@@ -5,6 +5,7 @@ import type { Audience } from "@yourtal/contracts/audience/audience";
 import type { FeedItem, FeedWhyReason } from "@yourtal/contracts/feed";
 import { toPoints } from "@yourtal/contracts/money";
 import type { Region } from "@yourtal/contracts/region";
+import { districtTargetMatches } from "@yourtal/contracts/campaign/target-districts";
 import type { CampaignRewardConfigRow } from "../campaign/persistence/campaign.repository";
 
 /** "Ending soon" (EW-16): `endsAt` within 72h, or allocation remaining below 10%. */
@@ -24,6 +25,13 @@ export interface CandidateCampaign {
   readonly rewardConfig: CampaignRewardConfigRow;
   readonly allocationRemainingPoints: number;
   readonly allocationTotalPoints: number;
+  /** 14.2: empty targets every district. */
+  readonly targetDistricts: readonly string[];
+  /** 14.2: what the ledger says the campaign can still pay; null when it did not answer. */
+  readonly budget: {
+    readonly remainingPoints: number;
+    readonly remainingTodayPoints: number | null;
+  } | null;
 }
 
 export interface RankingContext {
@@ -44,6 +52,8 @@ export interface RankingContext {
   readonly canServe: (campaignId: string) => boolean;
   /** Anonymous (Open Viewing): only openViewing + all_ages, unpersonalised -- every boost above is skipped. */
   readonly anonymous: boolean;
+  /** 14.2: the district the viewer is browsing in, or null when unknown. */
+  readonly viewerDistrict: string | null;
   /**
    * 11.5.d: `channelHandle`/`channelLogoUrl` for a business, backed by a
    * pre-fetched batch lookup -- kept a plain sync function so `buildFeed`
@@ -66,8 +76,24 @@ export function passesFilter(candidate: CandidateCampaign, ctx: RankingContext):
   if (ctx.anonymous && !campaign.openViewing) return false;
   if (!ctx.anonymous && ctx.alreadyEarnedCampaignIds.has(campaign.id)) return false;
   if (candidate.allocationRemainingPoints <= 0) return false;
+  if (!canFundOneSession(candidate)) return false;
+  if (!districtTargetMatches(candidate.targetDistricts, ctx.viewerDistrict)) return false;
   if (!ctx.canServe(campaign.id)) return false;
   return true;
+}
+
+/**
+ * 14.2: a session holds base plus the maximum bonus at its start, so a
+ * campaign whose budget or today's cap has less left than that would start
+ * every session non-earning. It leaves the feed until it can pay again. The
+ * ledger's hold stays the hard stop; this only stops offering it.
+ */
+function canFundOneSession(candidate: CandidateCampaign): boolean {
+  const { budget, rewardConfig } = candidate;
+  if (budget === null) return true;
+  const session = rewardConfig.rewardPointsPerCompletion + rewardConfig.accuracyBonusPoints;
+  if (budget.remainingPoints < session) return false;
+  return budget.remainingTodayPoints === null || budget.remainingTodayPoints >= session;
 }
 
 function isEndingSoon(candidate: CandidateCampaign, now: Date): boolean {

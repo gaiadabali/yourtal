@@ -93,6 +93,7 @@ describe("the reward config", () => {
     maxPointsForCampaign: toPoints(100_000),
     rewardPointsPerCompletion: toPoints(2_000),
     accuracyBonusPoints: toPoints(500),
+    dailyCapPoints: null,
   });
 
   it("sums one viewer's maximum from the base and the bonus only", () => {

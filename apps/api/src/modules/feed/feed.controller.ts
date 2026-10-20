@@ -91,7 +91,13 @@ export class FeedController {
       principal,
       parsed.surface,
       parsed.region,
-      { kind: parsed.kind, category: parsed.category, tags: parsed.tags, sort: parsed.sort },
+      {
+        kind: parsed.kind,
+        category: parsed.category,
+        tags: parsed.tags,
+        sort: parsed.sort,
+        district: parsed.district,
+      },
       this.boosts,
     );
     if (result.kind === "region_required") {

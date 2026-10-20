@@ -172,6 +172,17 @@ export class DrizzleCampaignRepository implements CampaignRepository {
     };
   }
 
+  async targetDistrictsFor(
+    campaignIds: readonly string[],
+  ): Promise<ReadonlyMap<string, readonly string[]>> {
+    if (campaignIds.length === 0) return new Map();
+    const rows = await this.db
+      .select({ id: campaigns.id, targetDistricts: campaigns.targetDistricts })
+      .from(campaigns)
+      .where(inArray(campaigns.id, [...campaignIds]));
+    return new Map(rows.map((row) => [row.id, (row.targetDistricts as string[] | null) ?? []]));
+  }
+
   /**
    * Builds the viewer-facing `Campaign` from its rows, and parses it.
    *

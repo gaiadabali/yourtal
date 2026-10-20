@@ -39,6 +39,7 @@ export class RewardConfigController {
         rewardPointsPerCompletion: body.rewardPointsPerCompletion,
         accuracyBonusPoints: body.accuracyBonusPoints,
         maxPointsForCampaign: body.maxPointsForCampaign,
+        dailyCapPoints: body.dailyCapPoints,
       },
     );
     if (result.isErr()) throw mapStudioErrorToHttpException(result.error);

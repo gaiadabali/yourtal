@@ -62,6 +62,8 @@ function candidate(overrides: Partial<CandidateCampaign> = {}): CandidateCampaig
     rewardConfig: rewardConfig({ campaignId: base.id, ...overrides.rewardConfig }),
     allocationRemainingPoints: 10_000,
     allocationTotalPoints: 10_000,
+    targetDistricts: [],
+    budget: null,
     ...overrides,
   };
 }
@@ -82,6 +84,7 @@ function baseContext(overrides: Partial<RankingContext> = {}): RankingContext {
     demotedCampaignIds: new Set(),
     canServe: () => true,
     anonymous: false,
+    viewerDistrict: null,
     channelOf: () => ({ handle: "test-channel", logoUrl: null }),
     ...overrides,
   };
@@ -129,6 +132,49 @@ describe("passesFilter", () => {
   it("excludes a campaign pacing has capped for today", () => {
     const c = candidate();
     expect(passesFilter(c, baseContext({ canServe: () => false }))).toBe(false);
+  });
+});
+
+describe("passesFilter: 14.2 budget and districts", () => {
+  // base 100 + bonus 20: one session holds 120.
+  const funded = {
+    rewardConfig: rewardConfig({ rewardPointsPerCompletion: 100, accuracyBonusPoints: 20 }),
+  };
+
+  it("keeps a campaign whose budget and today's cap can still fund one session", () => {
+    const c = candidate({ ...funded, budget: { remainingPoints: 120, remainingTodayPoints: 120 } });
+    expect(passesFilter(c, baseContext())).toBe(true);
+  });
+
+  it("drops a campaign whose total budget cannot fund one more session", () => {
+    const c = candidate({
+      ...funded,
+      budget: { remainingPoints: 119, remainingTodayPoints: null },
+    });
+    expect(passesFilter(c, baseContext())).toBe(false);
+  });
+
+  it("drops a campaign that has given out today's cap", () => {
+    const c = candidate({
+      ...funded,
+      budget: { remainingPoints: 10_000, remainingTodayPoints: 119 },
+    });
+    expect(passesFilter(c, baseContext())).toBe(false);
+  });
+
+  it("keeps a campaign whose budget the ledger did not report (the hold still stops it)", () => {
+    expect(passesFilter(candidate({ ...funded, budget: null }), baseContext())).toBe(true);
+  });
+
+  it("shows a district-targeted campaign only in its districts", () => {
+    const c = candidate({ targetDistricts: ["Kemang"] });
+    expect(passesFilter(c, baseContext({ viewerDistrict: "kemang" }))).toBe(true);
+    expect(passesFilter(c, baseContext({ viewerDistrict: "Menteng" }))).toBe(false);
+    expect(passesFilter(c, baseContext({ viewerDistrict: null }))).toBe(false);
+  });
+
+  it("shows an untargeted campaign in every district", () => {
+    expect(passesFilter(candidate(), baseContext({ viewerDistrict: "Menteng" }))).toBe(true);
   });
 });
 

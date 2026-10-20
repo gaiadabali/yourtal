@@ -28,7 +28,7 @@ const UNKNOWN_CHANNEL = { handle: "unknown", logoUrl: null } as const;
  */
 export async function search(
   campaigns: CampaignRepository,
-  ledger: Pick<LedgerInternalClient, "getAllocation">,
+  ledger: Pick<LedgerInternalClient, "getAllocation" | "campaignBudgets">,
   channels: ChannelSearchRepository,
   listings: Pick<ListingRepository, "browsePublic">,
   suspendedBusinesses: SuspendedBusinessLookup,
@@ -74,6 +74,8 @@ export async function search(
     demotedCampaignIds: new Set(),
     canServe: () => true,
     anonymous,
+    // 14.2: search takes no district, so it finds untargeted campaigns only.
+    viewerDistrict: null,
     channelOf,
   };
   const matchingCampaigns = candidates

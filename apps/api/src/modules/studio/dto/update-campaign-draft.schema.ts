@@ -4,6 +4,12 @@ import { createZodDto } from "nestjs-zod";
 import { audienceSchema } from "@yourtal/contracts/campaign";
 import { campaignChapterSchema } from "@yourtal/contracts/campaign/chapter";
 import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";
+import {
+  MAX_DISTRICT_LENGTH,
+  MAX_TARGET_DISTRICTS,
+  cleanTargetDistricts,
+  normaliseDistrict,
+} from "@yourtal/contracts/campaign/target-districts";
 
 /** TASKS.md 7.3.a: a patch. Every field optional; `chapters`/`declaredInterests` replace the whole set when present. */
 export const updateCampaignDraftSchema = z.object({
@@ -25,6 +31,12 @@ export const updateCampaignDraftSchema = z.object({
   declaredInterests: interestTagsSchema.optional(),
   chapters: z.array(campaignChapterSchema).optional(),
   captionsUrl: z.url().nullable().optional(),
+  /** 14.2: replaces the whole set; normalised and de-duplicated. Empty is every district. */
+  targetDistricts: z
+    .array(z.string().transform(normaliseDistrict).pipe(z.string().min(1).max(MAX_DISTRICT_LENGTH)))
+    .max(MAX_TARGET_DISTRICTS)
+    .transform(cleanTargetDistricts)
+    .optional(),
 });
 
 export type UpdateCampaignDraftRequest = z.infer<typeof updateCampaignDraftSchema>;

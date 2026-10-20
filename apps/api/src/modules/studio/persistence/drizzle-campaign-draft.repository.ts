@@ -2,12 +2,17 @@ import { randomUUID } from "node:crypto";
 import { and, asc, eq } from "drizzle-orm";
 import type { CampaignChapter } from "@yourtal/contracts/campaign/chapter";
 import type { CampaignLifecycleState } from "@yourtal/contracts/campaign/lifecycle";
-import { campaignChapters, campaigns } from "../../campaign/persistence/schema/campaign.table";
+import {
+  campaignChapters,
+  campaignRewardConfigs,
+  campaigns,
+} from "../../campaign/persistence/schema/campaign.table";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import type {
   CampaignDraft,
   CampaignDraftRepository,
   CreateCampaignDraftInput,
+  SavedRewardConfig,
   UpdateCampaignDraftInput,
 } from "./campaign-draft.repository";
 
@@ -49,7 +54,7 @@ export class DrizzleCampaignDraftRepository implements CampaignDraftRepository {
     if (row === undefined) {
       throw new Error("insert into campaign.campaigns returned no row");
     }
-    return toDomain(row, []);
+    return toDomain(row, [], null);
   }
 
   async findById(businessId: string, campaignId: string): Promise<CampaignDraft | null> {
@@ -59,13 +64,12 @@ export class DrizzleCampaignDraftRepository implements CampaignDraftRepository {
       .where(and(eq(campaigns.id, campaignId), eq(campaigns.businessId, businessId)))
       .limit(1);
     if (row === undefined) return null;
-    const chapters = await this.chaptersFor(campaignId);
-    return toDomain(row, chapters);
+    return this.assemble(row);
   }
 
   async listByBusiness(businessId: string): Promise<readonly CampaignDraft[]> {
     const rows = await this.db.select().from(campaigns).where(eq(campaigns.businessId, businessId));
-    return Promise.all(rows.map(async (row) => toDomain(row, await this.chaptersFor(row.id))));
+    return Promise.all(rows.map((row) => this.assemble(row)));
   }
 
   async findByIdAnyBusiness(campaignId: string): Promise<CampaignDraft | null> {
@@ -75,7 +79,7 @@ export class DrizzleCampaignDraftRepository implements CampaignDraftRepository {
       .where(eq(campaigns.id, campaignId))
       .limit(1);
     if (row === undefined) return null;
-    return toDomain(row, await this.chaptersFor(campaignId));
+    return this.assemble(row);
   }
 
   async listInReview(): Promise<readonly CampaignDraft[]> {
@@ -83,7 +87,7 @@ export class DrizzleCampaignDraftRepository implements CampaignDraftRepository {
       .select()
       .from(campaigns)
       .where(eq(campaigns.lifecycleState, "in_review"));
-    return Promise.all(rows.map(async (row) => toDomain(row, await this.chaptersFor(row.id))));
+    return Promise.all(rows.map((row) => this.assemble(row)));
   }
 
   async update(
@@ -115,6 +119,9 @@ export class DrizzleCampaignDraftRepository implements CampaignDraftRepository {
       values["declaredInterests"] = columnPatch.declaredInterests;
     }
     if (columnPatch.captionsUrl !== undefined) values["captionsUrl"] = columnPatch.captionsUrl;
+    if (columnPatch.targetDistricts !== undefined) {
+      values["targetDistricts"] = columnPatch.targetDistricts;
+    }
 
     if (Object.keys(values).length > 0) {
       const updated = await this.db
@@ -151,8 +158,7 @@ export class DrizzleCampaignDraftRepository implements CampaignDraftRepository {
       .where(and(eq(campaigns.id, campaignId), eq(campaigns.businessId, businessId)))
       .returning();
     if (row === undefined) return null;
-    const chapters = await this.chaptersFor(campaignId);
-    return toDomain(row, chapters);
+    return this.assemble(row);
   }
 
   async transitionLifecycle(
@@ -170,8 +176,7 @@ export class DrizzleCampaignDraftRepository implements CampaignDraftRepository {
         .where(and(eq(campaigns.id, campaignId), eq(campaigns.businessId, businessId)))
         .returning();
       if (row === undefined) return { ok: false };
-      const chapters = await this.chaptersFor(campaignId);
-      return { ok: true, draft: toDomain(row, chapters) };
+      return { ok: true, draft: await this.assemble(row) };
     } catch {
       // The database refused (campaigns_lifecycle_transition, or one of the
       // "required past draft" CHECKs) -- both read as the same refusal to
@@ -180,6 +185,31 @@ export class DrizzleCampaignDraftRepository implements CampaignDraftRepository {
       // perform a move it already believes is legal.
       return { ok: false };
     }
+  }
+
+  private async assemble(row: typeof campaigns.$inferSelect): Promise<CampaignDraft> {
+    const [chapters, rewardConfig] = await Promise.all([
+      this.chaptersFor(row.id),
+      this.rewardConfigFor(row.id),
+    ]);
+    return toDomain(row, chapters, rewardConfig);
+  }
+
+  /** 14.2: the saved reward and budget, read back so a reopened campaign shows them. */
+  private async rewardConfigFor(campaignId: string): Promise<SavedRewardConfig | null> {
+    const [config] = await this.db
+      .select()
+      .from(campaignRewardConfigs)
+      .where(eq(campaignRewardConfigs.campaignId, campaignId))
+      .limit(1);
+    if (config === undefined) return null;
+    return {
+      allocationId: config.allocationId,
+      rewardPointsPerCompletion: config.rewardPointsPerCompletion,
+      accuracyBonusPoints: config.accuracyBonusPoints,
+      maxPointsForCampaign: config.maxPointsForCampaign,
+      dailyCapPoints: config.dailyCapPoints,
+    };
   }
 
   private async chaptersFor(campaignId: string): Promise<CampaignChapter[]> {
@@ -216,6 +246,7 @@ export class DrizzleCampaignDraftRepository implements CampaignDraftRepository {
 function toDomain(
   row: typeof campaigns.$inferSelect,
   chapters: readonly CampaignChapter[],
+  rewardConfig: SavedRewardConfig | null,
 ): CampaignDraft {
   return {
     id: row.id,
@@ -244,5 +275,7 @@ function toDomain(
     questionCount: row.questionCount,
     scoringRule: row.scoringRule as CampaignDraft["scoringRule"],
     publishedAt: row.publishedAt === null ? null : row.publishedAt.toISOString(),
+    targetDistricts: (row.targetDistricts as string[] | null) ?? [],
+    rewardConfig,
   };
 }

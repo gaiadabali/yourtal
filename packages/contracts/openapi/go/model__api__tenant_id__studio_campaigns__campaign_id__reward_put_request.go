@@ -24,6 +24,8 @@ type ApiTenantIdStudioCampaignsCampaignIdRewardPutRequest struct {
 	RewardPointsPerCompletion NullableInt32 `json:"rewardPointsPerCompletion"`
 	AccuracyBonusPoints NullableInt32 `json:"accuracyBonusPoints"`
 	MaxPointsForCampaign NullableInt32 `json:"maxPointsForCampaign"`
+	// The most the campaign pays out in one day on its region's clock, in points.
+	DailyCapPoints NullableInt32 `json:"dailyCapPoints,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -152,6 +154,48 @@ func (o *ApiTenantIdStudioCampaignsCampaignIdRewardPutRequest) SetMaxPointsForCa
 	o.MaxPointsForCampaign.Set(&v)
 }
 
+// GetDailyCapPoints returns the DailyCapPoints field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *ApiTenantIdStudioCampaignsCampaignIdRewardPutRequest) GetDailyCapPoints() int32 {
+	if o == nil || IsNil(o.DailyCapPoints.Get()) {
+		var ret int32
+		return ret
+	}
+	return *o.DailyCapPoints.Get()
+}
+
+// GetDailyCapPointsOk returns a tuple with the DailyCapPoints field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiTenantIdStudioCampaignsCampaignIdRewardPutRequest) GetDailyCapPointsOk() (*int32, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.DailyCapPoints.Get(), o.DailyCapPoints.IsSet()
+}
+
+// HasDailyCapPoints returns a boolean if a field has been set.
+func (o *ApiTenantIdStudioCampaignsCampaignIdRewardPutRequest) HasDailyCapPoints() bool {
+	if o != nil && o.DailyCapPoints.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetDailyCapPoints gets a reference to the given NullableInt32 and assigns it to the DailyCapPoints field.
+func (o *ApiTenantIdStudioCampaignsCampaignIdRewardPutRequest) SetDailyCapPoints(v int32) {
+	o.DailyCapPoints.Set(&v)
+}
+// SetDailyCapPointsNil sets the value for DailyCapPoints to be an explicit nil
+func (o *ApiTenantIdStudioCampaignsCampaignIdRewardPutRequest) SetDailyCapPointsNil() {
+	o.DailyCapPoints.Set(nil)
+}
+
+// UnsetDailyCapPoints ensures that no value is present for DailyCapPoints, not even an explicit nil
+func (o *ApiTenantIdStudioCampaignsCampaignIdRewardPutRequest) UnsetDailyCapPoints() {
+	o.DailyCapPoints.Unset()
+}
+
 func (o ApiTenantIdStudioCampaignsCampaignIdRewardPutRequest) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -166,6 +210,9 @@ func (o ApiTenantIdStudioCampaignsCampaignIdRewardPutRequest) ToMap() (map[strin
 	toSerialize["rewardPointsPerCompletion"] = o.RewardPointsPerCompletion.Get()
 	toSerialize["accuracyBonusPoints"] = o.AccuracyBonusPoints.Get()
 	toSerialize["maxPointsForCampaign"] = o.MaxPointsForCampaign.Get()
+	if o.DailyCapPoints.IsSet() {
+		toSerialize["dailyCapPoints"] = o.DailyCapPoints.Get()
+	}
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -216,6 +263,7 @@ func (o *ApiTenantIdStudioCampaignsCampaignIdRewardPutRequest) UnmarshalJSON(dat
 		delete(additionalProperties, "rewardPointsPerCompletion")
 		delete(additionalProperties, "accuracyBonusPoints")
 		delete(additionalProperties, "maxPointsForCampaign")
+		delete(additionalProperties, "dailyCapPoints")
 		o.AdditionalProperties = additionalProperties
 	}
 

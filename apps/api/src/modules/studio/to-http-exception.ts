@@ -9,6 +9,7 @@ import type { HttpException } from "@nestjs/common";
 import type {
   AccuracyBonusTooHighError,
   AllocationNotOwnedError,
+  CampaignBudgetInvalidError,
   AllocationNotPartnerFundedError,
   AudienceMustBeAdultError,
   BusinessNotFoundError,
@@ -50,6 +51,7 @@ export type StudioDomainError =
   | AllocationNotPartnerFundedError
   | RewardExceedsCeilingError
   | AccuracyBonusTooHighError
+  | CampaignBudgetInvalidError
   | LedgerRefusedError
   | NotKybVerifiedError
   | CreativeBlockedError
@@ -129,6 +131,21 @@ export function mapStudioErrorToHttpException(error: StudioDomainError): HttpExc
       return new BadRequestException({
         code: "accuracy_bonus_too_high",
         message: "the accuracy bonus cannot exceed 40% of the base reward",
+      });
+    case "budget_below_one_completion":
+      return new BadRequestException({
+        code: error.type,
+        message: "the total budget must cover at least one completion (reward plus bonus)",
+      });
+    case "daily_cap_below_one_completion":
+      return new BadRequestException({
+        code: error.type,
+        message: "the daily cap must cover at least one completion (reward plus bonus)",
+      });
+    case "daily_cap_above_budget":
+      return new BadRequestException({
+        code: error.type,
+        message: "the daily cap cannot be more than the total budget",
       });
     case "open_viewing_requires_all_ages":
       return new BadRequestException({

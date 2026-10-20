@@ -14,6 +14,8 @@ export interface FeedBrowseFilter {
   readonly category?: ContentCategory | undefined;
   readonly tags?: readonly string[] | undefined;
   readonly sort: FeedSort;
+  /** 14.2: applied in `ranking.ts`'s wall (a targeted campaign's districts), not here. */
+  readonly district?: string | undefined;
 }
 
 /** What a sort needs beyond the card itself. */

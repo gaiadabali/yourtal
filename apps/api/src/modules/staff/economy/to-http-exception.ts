@@ -27,6 +27,7 @@ export function mapLedgerErrorToHttpException(error: LedgerError): HttpException
     case "quote_expired":
     case "allocation_exhausted":
     case "campaign_cap_reached":
+    case "campaign_daily_cap_reached":
     case "velocity_capped":
     case "audience_blocked":
     case "kill_switch":

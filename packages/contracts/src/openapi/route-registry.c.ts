@@ -14,6 +14,7 @@ import { campaignKindSchema, campaignScoringRuleSchema } from "../campaign/campa
 import { audienceSchema } from "../audience/audience";
 import { campaignLifecycleStateSchema } from "../campaign/campaign-lifecycle";
 import { campaignChapterSchema } from "../campaign/campaign-chapter";
+import { MAX_DISTRICT_LENGTH, MAX_TARGET_DISTRICTS } from "../campaign/target-districts";
 import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";
 import { regionSchema } from "../region/region";
 import { questionSchema } from "../question/question";
@@ -740,7 +741,9 @@ const REWARD_CONFIG_400: RouteErrorResponse = {
     "allocation_not_partner_funded (only a partner-funded allocation may fund a reward), " +
     "reward_exceeds_ceiling (F14: base plus the maximum accuracy bonus exceeds the region's " +
     "reward_ceiling_points_per_minute, scaled to this campaign's duration), or " +
-    "accuracy_bonus_too_high (the bonus exceeds 40% of the base reward) -- studio.errors.ts.",
+    "accuracy_bonus_too_high (the bonus exceeds 40% of the base reward), or 14.2's " +
+    "budget_below_one_completion / daily_cap_below_one_completion / daily_cap_above_budget " +
+    "(a total budget or daily cap that could never pay out as set) -- studio.errors.ts.",
   documented: true,
 };
 
@@ -759,6 +762,48 @@ const ILLEGAL_TRANSITION: RouteErrorResponse = {
     "(studio.errors.ts's illegal_transition; enforced twice over, by the use-case and by " +
     "campaign.assert_lifecycle_transition()'s own database trigger).",
   documented: true,
+};
+
+/** 14.2: the districts a campaign is shown in; empty is every district. */
+const TARGET_DISTRICTS_SCHEMA: Record<string, unknown> = {
+  type: "array",
+  maxItems: MAX_TARGET_DISTRICTS,
+  items: { type: "string", minLength: 1, maxLength: MAX_DISTRICT_LENGTH },
+};
+
+const DAILY_CAP_POINTS_SCHEMA: Record<string, unknown> = {
+  anyOf: [
+    {
+      type: "integer",
+      minimum: 1,
+      description: "The most the campaign pays out in one day on its region's clock, in points.",
+    },
+    { type: "null" },
+  ],
+};
+
+/**
+ * 14.2: the saved reward and budget, exactly as `PUT .../reward` took them,
+ * so a reopened campaign shows them. `maxPointsForCampaign` is the total
+ * budget and `dailyCapPoints` the daily cap (null: none), both in points.
+ */
+const savedRewardConfigSchema: Record<string, unknown> = {
+  type: "object",
+  properties: {
+    allocationId: { type: "string", minLength: 1 },
+    rewardPointsPerCompletion: { type: "integer", minimum: 0 },
+    accuracyBonusPoints: { type: "integer", minimum: 0 },
+    maxPointsForCampaign: { type: "integer", minimum: 0 },
+    dailyCapPoints: DAILY_CAP_POINTS_SCHEMA,
+  },
+  required: [
+    "allocationId",
+    "rewardPointsPerCompletion",
+    "accuracyBonusPoints",
+    "maxPointsForCampaign",
+    "dailyCapPoints",
+  ],
+  additionalProperties: false,
 };
 
 /** The `CampaignDraft` studio's own authoring view returns -- deliberately NOT `campaignSchema` (B's viewer-facing shape); see campaign-draft.repository.ts's own header comment for why. */
@@ -791,6 +836,8 @@ const campaignDraftResponseSchema: Record<string, unknown> = {
     questionCount: { anyOf: [{ type: "integer" }, { type: "null" }] },
     scoringRule: { anyOf: [inlineSchema(campaignScoringRuleSchema), { type: "null" }] },
     publishedAt: { anyOf: [{ type: "string", format: "date-time" }, { type: "null" }] },
+    targetDistricts: TARGET_DISTRICTS_SCHEMA,
+    rewardConfig: { anyOf: [savedRewardConfigSchema, { type: "null" }] },
   },
   required: [
     "id",
@@ -819,6 +866,8 @@ const campaignDraftResponseSchema: Record<string, unknown> = {
     "questionCount",
     "scoringRule",
     "publishedAt",
+    "targetDistricts",
+    "rewardConfig",
   ],
   additionalProperties: false,
 };
@@ -905,6 +954,7 @@ const updateCampaignDraftRequestBodySchema: Record<string, unknown> = {
     declaredInterests: { type: "array", items: { type: "string" } },
     chapters: { type: "array", items: inlineSchema(campaignChapterSchema) },
     captionsUrl: { anyOf: [{ type: "string", format: "uri" }, { type: "null" }] },
+    targetDistricts: TARGET_DISTRICTS_SCHEMA,
   },
   additionalProperties: false,
 };
@@ -916,6 +966,7 @@ const setRewardConfigRequestBodySchema: Record<string, unknown> = {
     rewardPointsPerCompletion: { type: "integer", minimum: 0 },
     accuracyBonusPoints: { type: "integer", minimum: 0 },
     maxPointsForCampaign: { type: "integer", minimum: 0 },
+    dailyCapPoints: { ...DAILY_CAP_POINTS_SCHEMA, default: null },
   },
   required: [
     "allocationId",

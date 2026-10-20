@@ -197,11 +197,14 @@ export class WatchController {
       return { nonEarning: true, nonEarningReason: "no_funding_configured", holdId: null };
     }
 
+    // 14.2: the hold also reserves room in the campaign's budget and today's
+    // cap, so a viewer told they can earn is paid at the end.
     const held = await this.ledger.hold({
       allocationId: rewardConfig.allocationId,
       points: toPoints(rewardConfig.rewardPointsPerCompletion + rewardConfig.accuracyBonusPoints),
       sagaId: `watch-hold:${sessionId}`,
       ttlSeconds: holdTtlSeconds(durationSeconds),
+      campaignId,
     });
     if (held.isErr()) {
       return {

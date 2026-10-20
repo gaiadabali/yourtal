@@ -33,6 +33,7 @@ type ApiTenantIdStudioCampaignsCampaignIdPatchRequest struct {
 	DeclaredInterests []string `json:"declaredInterests,omitempty"`
 	Chapters []ApiTenantIdStudioCampaignsPost201ResponseChaptersInner `json:"chapters,omitempty"`
 	CaptionsUrl NullableString `json:"captionsUrl,omitempty"`
+	TargetDistricts []string `json:"targetDistricts,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -521,6 +522,38 @@ func (o *ApiTenantIdStudioCampaignsCampaignIdPatchRequest) UnsetCaptionsUrl() {
 	o.CaptionsUrl.Unset()
 }
 
+// GetTargetDistricts returns the TargetDistricts field value if set, zero value otherwise.
+func (o *ApiTenantIdStudioCampaignsCampaignIdPatchRequest) GetTargetDistricts() []string {
+	if o == nil || IsNil(o.TargetDistricts) {
+		var ret []string
+		return ret
+	}
+	return o.TargetDistricts
+}
+
+// GetTargetDistrictsOk returns a tuple with the TargetDistricts field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ApiTenantIdStudioCampaignsCampaignIdPatchRequest) GetTargetDistrictsOk() ([]string, bool) {
+	if o == nil || IsNil(o.TargetDistricts) {
+		return nil, false
+	}
+	return o.TargetDistricts, true
+}
+
+// HasTargetDistricts returns a boolean if a field has been set.
+func (o *ApiTenantIdStudioCampaignsCampaignIdPatchRequest) HasTargetDistricts() bool {
+	if o != nil && !IsNil(o.TargetDistricts) {
+		return true
+	}
+
+	return false
+}
+
+// SetTargetDistricts gets a reference to the given []string and assigns it to the TargetDistricts field.
+func (o *ApiTenantIdStudioCampaignsCampaignIdPatchRequest) SetTargetDistricts(v []string) {
+	o.TargetDistricts = v
+}
+
 func (o ApiTenantIdStudioCampaignsCampaignIdPatchRequest) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -570,6 +603,9 @@ func (o ApiTenantIdStudioCampaignsCampaignIdPatchRequest) ToMap() (map[string]in
 	if o.CaptionsUrl.IsSet() {
 		toSerialize["captionsUrl"] = o.CaptionsUrl.Get()
 	}
+	if !IsNil(o.TargetDistricts) {
+		toSerialize["targetDistricts"] = o.TargetDistricts
+	}
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -605,6 +641,7 @@ func (o *ApiTenantIdStudioCampaignsCampaignIdPatchRequest) UnmarshalJSON(data []
 		delete(additionalProperties, "declaredInterests")
 		delete(additionalProperties, "chapters")
 		delete(additionalProperties, "captionsUrl")
+		delete(additionalProperties, "targetDistricts")
 		o.AdditionalProperties = additionalProperties
 	}
 

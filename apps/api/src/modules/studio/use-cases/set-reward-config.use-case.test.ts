@@ -51,6 +51,8 @@ const DRAFT: CampaignDraft = {
   questionCount: null,
   scoringRule: null,
   publishedAt: null,
+  targetDistricts: [],
+  rewardConfig: null,
 };
 
 const ALLOCATION: Allocation = {
@@ -80,6 +82,7 @@ const INPUT: SetRewardConfigInput = {
   rewardPointsPerCompletion: toPoints(115),
   accuracyBonusPoints: toPoints(45),
   maxPointsForCampaign: toPoints(160),
+  dailyCapPoints: null,
 };
 
 /** A drafts stub whose `patchRewardMirror` is the save's second half — its own call is asserted via the CampaignDraft it returns. */
@@ -156,6 +159,47 @@ describe("setRewardConfig (7.3.c/7.3.h)", () => {
     expect(rewardConfigs.upsertCalls[0]).toMatchObject({
       campaignId: "campaign-1",
       allocationId: "alloc-1",
+    });
+  });
+
+  // 14.2: refused before any ledger call, never clamped.
+  it.each([
+    [{ maxPointsForCampaign: toPoints(159) }, "budget_below_one_completion"],
+    [{ dailyCapPoints: toPoints(159) }, "daily_cap_below_one_completion"],
+    [
+      { maxPointsForCampaign: toPoints(1_000), dailyCapPoints: toPoints(1_001) },
+      "daily_cap_above_budget",
+    ],
+  ] as const)("refuses a budget that could never pay out as set (%o)", async (patch, type) => {
+    const rewardConfigs = rewardConfigsStub();
+    const ledger: Pick<LedgerInternalClient, "listAllocations" | "getSettings" | "valuePoints"> = {
+      listAllocations: () => errAsync({ code: "refused", message: "must not be called" }),
+      getSettings: () => Promise.reject(new Error("must not be called")),
+      valuePoints: () => errAsync({ code: "refused", message: "must not be called" }),
+    };
+    const result = await setRewardConfig(
+      { drafts: draftsStub(), rewardConfigs, ledger },
+      { ...INPUT, ...patch },
+    );
+    expect(result._unsafeUnwrapErr()).toEqual({ type });
+    expect(rewardConfigs.upsertCalls).toHaveLength(0);
+  });
+
+  it("saves a daily cap within the budget", async () => {
+    const rewardConfigs = rewardConfigsStub();
+    const ledger: Pick<LedgerInternalClient, "listAllocations" | "getSettings" | "valuePoints"> = {
+      listAllocations: () => okAsync([ALLOCATION]),
+      getSettings: () => Promise.resolve([CEILING_SETTING]),
+      valuePoints: () => okAsync({ totalMinor: toMinorUnits(36), currency: "AUD" }),
+    };
+    const result = await setRewardConfig(
+      { drafts: draftsStub(), rewardConfigs, ledger },
+      { ...INPUT, maxPointsForCampaign: toPoints(1_000), dailyCapPoints: toPoints(320) },
+    );
+    expect(result.isOk()).toBe(true);
+    expect(rewardConfigs.upsertCalls[0]).toMatchObject({
+      maxPointsForCampaign: 1_000,
+      dailyCapPoints: 320,
     });
   });
 });

@@ -5449,6 +5449,63 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "targetDistricts": {
+                      "type": "array",
+                      "maxItems": 20,
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 60
+                      }
+                    },
+                    "rewardConfig": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "allocationId": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "rewardPointsPerCompletion": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "accuracyBonusPoints": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "maxPointsForCampaign": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "dailyCapPoints": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "description": "The most the campaign pays out in one day on its region's clock, in points."
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "allocationId",
+                            "rewardPointsPerCompletion",
+                            "accuracyBonusPoints",
+                            "maxPointsForCampaign",
+                            "dailyCapPoints"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   },
                   "required": [
@@ -5477,7 +5534,9 @@
                     "rewardPoints",
                     "questionCount",
                     "scoringRule",
-                    "publishedAt"
+                    "publishedAt",
+                    "targetDistricts",
+                    "rewardConfig"
                   ],
                   "additionalProperties": false
                 }
@@ -5780,6 +5839,63 @@
                             "type": "null"
                           }
                         ]
+                      },
+                      "targetDistricts": {
+                        "type": "array",
+                        "maxItems": 20,
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 60
+                        }
+                      },
+                      "rewardConfig": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "allocationId": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "rewardPointsPerCompletion": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "accuracyBonusPoints": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "maxPointsForCampaign": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "dailyCapPoints": {
+                                "anyOf": [
+                                  {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "description": "The most the campaign pays out in one day on its region's clock, in points."
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "allocationId",
+                              "rewardPointsPerCompletion",
+                              "accuracyBonusPoints",
+                              "maxPointsForCampaign",
+                              "dailyCapPoints"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
                       }
                     },
                     "required": [
@@ -5808,7 +5924,9 @@
                       "rewardPoints",
                       "questionCount",
                       "scoringRule",
-                      "publishedAt"
+                      "publishedAt",
+                      "targetDistricts",
+                      "rewardConfig"
                     ],
                     "additionalProperties": false
                   }
@@ -6112,6 +6230,63 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "targetDistricts": {
+                      "type": "array",
+                      "maxItems": 20,
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 60
+                      }
+                    },
+                    "rewardConfig": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "allocationId": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "rewardPointsPerCompletion": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "accuracyBonusPoints": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "maxPointsForCampaign": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "dailyCapPoints": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "description": "The most the campaign pays out in one day on its region's clock, in points."
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "allocationId",
+                            "rewardPointsPerCompletion",
+                            "accuracyBonusPoints",
+                            "maxPointsForCampaign",
+                            "dailyCapPoints"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   },
                   "required": [
@@ -6140,7 +6315,9 @@
                     "rewardPoints",
                     "questionCount",
                     "scoringRule",
-                    "publishedAt"
+                    "publishedAt",
+                    "targetDistricts",
+                    "rewardConfig"
                   ],
                   "additionalProperties": false
                 }
@@ -6341,6 +6518,15 @@
                         "type": "null"
                       }
                     ]
+                  },
+                  "targetDistricts": {
+                    "type": "array",
+                    "maxItems": 20,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 60
+                    }
                   }
                 },
                 "additionalProperties": false
@@ -6592,6 +6778,63 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "targetDistricts": {
+                      "type": "array",
+                      "maxItems": 20,
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 60
+                      }
+                    },
+                    "rewardConfig": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "allocationId": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "rewardPointsPerCompletion": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "accuracyBonusPoints": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "maxPointsForCampaign": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "dailyCapPoints": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "description": "The most the campaign pays out in one day on its region's clock, in points."
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "allocationId",
+                            "rewardPointsPerCompletion",
+                            "accuracyBonusPoints",
+                            "maxPointsForCampaign",
+                            "dailyCapPoints"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   },
                   "required": [
@@ -6620,7 +6863,9 @@
                     "rewardPoints",
                     "questionCount",
                     "scoringRule",
-                    "publishedAt"
+                    "publishedAt",
+                    "targetDistricts",
+                    "rewardConfig"
                   ],
                   "additionalProperties": false
                 }
@@ -6943,6 +7188,63 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "targetDistricts": {
+                      "type": "array",
+                      "maxItems": 20,
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 60
+                      }
+                    },
+                    "rewardConfig": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "allocationId": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "rewardPointsPerCompletion": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "accuracyBonusPoints": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "maxPointsForCampaign": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "dailyCapPoints": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 1,
+                                  "description": "The most the campaign pays out in one day on its region's clock, in points."
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "allocationId",
+                            "rewardPointsPerCompletion",
+                            "accuracyBonusPoints",
+                            "maxPointsForCampaign",
+                            "dailyCapPoints"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   },
                   "required": [
@@ -6971,7 +7273,9 @@
                     "rewardPoints",
                     "questionCount",
                     "scoringRule",
-                    "publishedAt"
+                    "publishedAt",
+                    "targetDistricts",
+                    "rewardConfig"
                   ],
                   "additionalProperties": false
                 }
@@ -9526,6 +9830,19 @@
                   "maxPointsForCampaign": {
                     "type": "integer",
                     "minimum": 0
+                  },
+                  "dailyCapPoints": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "The most the campaign pays out in one day on its region's clock, in points."
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null
                   }
                 },
                 "required": [
@@ -9785,6 +10102,63 @@
                               "type": "null"
                             }
                           ]
+                        },
+                        "targetDistricts": {
+                          "type": "array",
+                          "maxItems": 20,
+                          "items": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 60
+                          }
+                        },
+                        "rewardConfig": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "allocationId": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "rewardPointsPerCompletion": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "accuracyBonusPoints": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "maxPointsForCampaign": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "dailyCapPoints": {
+                                  "anyOf": [
+                                    {
+                                      "type": "integer",
+                                      "minimum": 1,
+                                      "description": "The most the campaign pays out in one day on its region's clock, in points."
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "allocationId",
+                                "rewardPointsPerCompletion",
+                                "accuracyBonusPoints",
+                                "maxPointsForCampaign",
+                                "dailyCapPoints"
+                              ],
+                              "additionalProperties": false
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
                         }
                       },
                       "required": [
@@ -9813,7 +10187,9 @@
                         "rewardPoints",
                         "questionCount",
                         "scoringRule",
-                        "publishedAt"
+                        "publishedAt",
+                        "targetDistricts",
+                        "rewardConfig"
                       ],
                       "additionalProperties": false
                     },
@@ -9857,7 +10233,7 @@
             }
           },
           "400": {
-            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here. OR: This campaign has left draft; an advertiser edits freely only until submission (studio.errors.ts's campaign_not_draft). OR: One of: allocation_not_owned (allocationId is not one of this business's own), allocation_not_partner_funded (only a partner-funded allocation may fund a reward), reward_exceeds_ceiling (F14: base plus the maximum accuracy bonus exceeds the region's reward_ceiling_points_per_minute, scaled to this campaign's duration), or accuracy_bonus_too_high (the bonus exceeds 40% of the base reward) -- studio.errors.ts.",
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here. OR: This campaign has left draft; an advertiser edits freely only until submission (studio.errors.ts's campaign_not_draft). OR: One of: allocation_not_owned (allocationId is not one of this business's own), allocation_not_partner_funded (only a partner-funded allocation may fund a reward), reward_exceeds_ceiling (F14: base plus the maximum accuracy bonus exceeds the region's reward_ceiling_points_per_minute, scaled to this campaign's duration), or accuracy_bonus_too_high (the bonus exceeds 40% of the base reward), or 14.2's budget_below_one_completion / daily_cap_below_one_completion / daily_cap_above_budget (a total budget or daily cap that could never pay out as set) -- studio.errors.ts.",
             "content": {
               "application/json": {
                 "schema": {
@@ -22501,7 +22877,7 @@
         "additionalProperties": false
       },
       "CampaignRewardConfig": {
-        "description": "Which ledger allocation funds a campaign and how much of it this campaign may use (YT-0101). Deliberately carries NO remaining balance: that number is owned by ledger.allocation, whose CHECK (remaining_points >= 0) and conditional drawdown are the real hard stop. A copy here would be a second total that disagrees the first time a grant lands between reads.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - rewardPointsPerCompletion must be greater than zero.\n  - One completion (reward plus accuracy bonus) must fit within maxPointsForCampaign.",
+        "description": "Which ledger allocation funds a campaign and how much of it this campaign may use (YT-0101). Deliberately carries NO remaining balance: that number is owned by ledger.allocation, whose CHECK (remaining_points >= 0) and conditional drawdown are the real hard stop. A copy here would be a second total that disagrees the first time a grant lands between reads.\n\nRules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are\nenforced only by the Zod schema in @yourtal/contracts):\n  - rewardPointsPerCompletion must be greater than zero.\n  - One completion (reward plus accuracy bonus) must fit within maxPointsForCampaign.\n  - dailyCapPoints, when set, must fit one completion and be no more than maxPointsForCampaign, the total budget (14.2).",
         "type": "object",
         "properties": {
           "campaignId": {
@@ -22524,6 +22900,16 @@
           },
           "accuracyBonusPoints": {
             "$ref": "#/components/schemas/Points"
+          },
+          "dailyCapPoints": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Points"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -22532,7 +22918,8 @@
           "funderType",
           "maxPointsForCampaign",
           "rewardPointsPerCompletion",
-          "accuracyBonusPoints"
+          "accuracyBonusPoints",
+          "dailyCapPoints"
         ],
         "additionalProperties": false
       },

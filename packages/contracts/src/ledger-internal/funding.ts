@@ -35,6 +35,12 @@ export const holdRequestSchema = z.object({
   sagaId: z.string().min(1),
   /** How long the session may run: 2 x the video's duration + 1 h (4.4.e). Default 3 h. */
   ttlSeconds: z.number().int().positive().optional(),
+  /**
+   * 14.2: a reward session's campaign. The hold then also reserves room in
+   * the campaign's total budget and today's cap, or is refused with
+   * `campaign_cap_reached` / `campaign_daily_cap_reached`.
+   */
+  campaignId: z.uuid().optional(),
 });
 export type HoldRequest = z.infer<typeof holdRequestSchema>;
 
@@ -57,3 +63,22 @@ export const campaignSpendSchema = z.object({
   completions: z.number().int().min(0),
 });
 export type CampaignSpend = z.infer<typeof campaignSpendSchema>;
+
+/** 14.2: what each of a region's campaigns can still pay, for the feed. */
+export const campaignBudgetsRequestSchema = z.object({
+  region: regionSchema,
+  campaignIds: z.array(z.uuid()).max(500),
+});
+export type CampaignBudgetsRequest = z.infer<typeof campaignBudgetsRequestSchema>;
+
+/**
+ * Remaining points after grants and live session holds. A campaign with no
+ * reward config, or in the other region, is absent from the answer.
+ */
+export const campaignBudgetSchema = z.object({
+  campaignId: z.uuid(),
+  remainingPoints: pointsSchema,
+  /** Null when the campaign has no daily cap. */
+  remainingTodayPoints: pointsSchema.nullable(),
+});
+export type CampaignBudget = z.infer<typeof campaignBudgetSchema>;

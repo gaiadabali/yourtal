@@ -241,6 +241,8 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   holdSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   returnGrantRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   campaignSpendSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  campaignBudgetsRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  campaignBudgetSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
 
   // --- ledger-internal: earning and spending ---
   trustTierSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,

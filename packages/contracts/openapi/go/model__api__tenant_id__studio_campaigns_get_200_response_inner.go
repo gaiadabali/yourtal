@@ -47,6 +47,8 @@ type ApiTenantIdStudioCampaignsGet200ResponseInner struct {
 	QuestionCount NullableInt32 `json:"questionCount"`
 	ScoringRule NullableString `json:"scoringRule"`
 	PublishedAt NullableTime `json:"publishedAt"`
+	TargetDistricts []string `json:"targetDistricts"`
+	RewardConfig NullableApiTenantIdStudioCampaignsGet200ResponseInnerRewardConfig `json:"rewardConfig"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -56,7 +58,7 @@ type _ApiTenantIdStudioCampaignsGet200ResponseInner ApiTenantIdStudioCampaignsGe
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiTenantIdStudioCampaignsGet200ResponseInner(id string, businessId string, region NullableString, kind string, title NullableString, synopsis NullableString, durationSeconds NullableInt32, contentCategory string, audience string, lifecycleState string, rejectionReason NullableString, startsAt NullableTime, endsAt NullableTime, openViewing bool, teaserStartSeconds NullableInt32, posterFrameSeconds NullableInt32, declaredInterests []string, chapters []ApiTenantIdStudioCampaignsGet200ResponseInnerChaptersInner, captionsUrl NullableString, posterUrl NullableString, teaserUrl NullableString, hlsUrl NullableString, rewardPoints NullableInt32, questionCount NullableInt32, scoringRule NullableString, publishedAt NullableTime) *ApiTenantIdStudioCampaignsGet200ResponseInner {
+func NewApiTenantIdStudioCampaignsGet200ResponseInner(id string, businessId string, region NullableString, kind string, title NullableString, synopsis NullableString, durationSeconds NullableInt32, contentCategory string, audience string, lifecycleState string, rejectionReason NullableString, startsAt NullableTime, endsAt NullableTime, openViewing bool, teaserStartSeconds NullableInt32, posterFrameSeconds NullableInt32, declaredInterests []string, chapters []ApiTenantIdStudioCampaignsGet200ResponseInnerChaptersInner, captionsUrl NullableString, posterUrl NullableString, teaserUrl NullableString, hlsUrl NullableString, rewardPoints NullableInt32, questionCount NullableInt32, scoringRule NullableString, publishedAt NullableTime, targetDistricts []string, rewardConfig NullableApiTenantIdStudioCampaignsGet200ResponseInnerRewardConfig) *ApiTenantIdStudioCampaignsGet200ResponseInner {
 	this := ApiTenantIdStudioCampaignsGet200ResponseInner{}
 	this.Id = id
 	this.BusinessId = businessId
@@ -84,6 +86,8 @@ func NewApiTenantIdStudioCampaignsGet200ResponseInner(id string, businessId stri
 	this.QuestionCount = questionCount
 	this.ScoringRule = scoringRule
 	this.PublishedAt = publishedAt
+	this.TargetDistricts = targetDistricts
+	this.RewardConfig = rewardConfig
 	return &this
 }
 
@@ -753,6 +757,56 @@ func (o *ApiTenantIdStudioCampaignsGet200ResponseInner) SetPublishedAt(v time.Ti
 	o.PublishedAt.Set(&v)
 }
 
+// GetTargetDistricts returns the TargetDistricts field value
+func (o *ApiTenantIdStudioCampaignsGet200ResponseInner) GetTargetDistricts() []string {
+	if o == nil {
+		var ret []string
+		return ret
+	}
+
+	return o.TargetDistricts
+}
+
+// GetTargetDistrictsOk returns a tuple with the TargetDistricts field value
+// and a boolean to check if the value has been set.
+func (o *ApiTenantIdStudioCampaignsGet200ResponseInner) GetTargetDistrictsOk() ([]string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.TargetDistricts, true
+}
+
+// SetTargetDistricts sets field value
+func (o *ApiTenantIdStudioCampaignsGet200ResponseInner) SetTargetDistricts(v []string) {
+	o.TargetDistricts = v
+}
+
+// GetRewardConfig returns the RewardConfig field value
+// If the value is explicit nil, the zero value for ApiTenantIdStudioCampaignsGet200ResponseInnerRewardConfig will be returned
+func (o *ApiTenantIdStudioCampaignsGet200ResponseInner) GetRewardConfig() ApiTenantIdStudioCampaignsGet200ResponseInnerRewardConfig {
+	if o == nil || o.RewardConfig.Get() == nil {
+		var ret ApiTenantIdStudioCampaignsGet200ResponseInnerRewardConfig
+		return ret
+	}
+
+	return *o.RewardConfig.Get()
+}
+
+// GetRewardConfigOk returns a tuple with the RewardConfig field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiTenantIdStudioCampaignsGet200ResponseInner) GetRewardConfigOk() (*ApiTenantIdStudioCampaignsGet200ResponseInnerRewardConfig, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.RewardConfig.Get(), o.RewardConfig.IsSet()
+}
+
+// SetRewardConfig sets field value
+func (o *ApiTenantIdStudioCampaignsGet200ResponseInner) SetRewardConfig(v ApiTenantIdStudioCampaignsGet200ResponseInnerRewardConfig) {
+	o.RewardConfig.Set(&v)
+}
+
 func (o ApiTenantIdStudioCampaignsGet200ResponseInner) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -789,6 +843,8 @@ func (o ApiTenantIdStudioCampaignsGet200ResponseInner) ToMap() (map[string]inter
 	toSerialize["questionCount"] = o.QuestionCount.Get()
 	toSerialize["scoringRule"] = o.ScoringRule.Get()
 	toSerialize["publishedAt"] = o.PublishedAt.Get()
+	toSerialize["targetDistricts"] = o.TargetDistricts
+	toSerialize["rewardConfig"] = o.RewardConfig.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -828,6 +884,8 @@ func (o *ApiTenantIdStudioCampaignsGet200ResponseInner) UnmarshalJSON(data []byt
 		"questionCount",
 		"scoringRule",
 		"publishedAt",
+		"targetDistricts",
+		"rewardConfig",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -883,6 +941,8 @@ func (o *ApiTenantIdStudioCampaignsGet200ResponseInner) UnmarshalJSON(data []byt
 		delete(additionalProperties, "questionCount")
 		delete(additionalProperties, "scoringRule")
 		delete(additionalProperties, "publishedAt")
+		delete(additionalProperties, "targetDistricts")
+		delete(additionalProperties, "rewardConfig")
 		o.AdditionalProperties = additionalProperties
 	}
 

@@ -48,6 +48,8 @@ type ApiTenantIdStudioCampaignsPost201Response struct {
 	QuestionCount NullableInt32 `json:"questionCount"`
 	ScoringRule NullableString `json:"scoringRule"`
 	PublishedAt NullableTime `json:"publishedAt"`
+	TargetDistricts []string `json:"targetDistricts"`
+	RewardConfig NullableApiTenantIdStudioCampaignsPost201ResponseRewardConfig `json:"rewardConfig"`
 }
 
 type _ApiTenantIdStudioCampaignsPost201Response ApiTenantIdStudioCampaignsPost201Response
@@ -56,7 +58,7 @@ type _ApiTenantIdStudioCampaignsPost201Response ApiTenantIdStudioCampaignsPost20
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiTenantIdStudioCampaignsPost201Response(id string, businessId string, region string, kind string, title string, synopsis string, durationSeconds int32, contentCategory string, audience string, lifecycleState string, rejectionReason NullableString, startsAt time.Time, endsAt time.Time, openViewing bool, teaserStartSeconds int32, posterFrameSeconds NullableInt32, declaredInterests []string, chapters []ApiTenantIdStudioCampaignsPost201ResponseChaptersInner, captionsUrl NullableString, posterUrl NullableString, teaserUrl NullableString, hlsUrl NullableString, rewardPoints NullableInt32, questionCount NullableInt32, scoringRule NullableString, publishedAt NullableTime) *ApiTenantIdStudioCampaignsPost201Response {
+func NewApiTenantIdStudioCampaignsPost201Response(id string, businessId string, region string, kind string, title string, synopsis string, durationSeconds int32, contentCategory string, audience string, lifecycleState string, rejectionReason NullableString, startsAt time.Time, endsAt time.Time, openViewing bool, teaserStartSeconds int32, posterFrameSeconds NullableInt32, declaredInterests []string, chapters []ApiTenantIdStudioCampaignsPost201ResponseChaptersInner, captionsUrl NullableString, posterUrl NullableString, teaserUrl NullableString, hlsUrl NullableString, rewardPoints NullableInt32, questionCount NullableInt32, scoringRule NullableString, publishedAt NullableTime, targetDistricts []string, rewardConfig NullableApiTenantIdStudioCampaignsPost201ResponseRewardConfig) *ApiTenantIdStudioCampaignsPost201Response {
 	this := ApiTenantIdStudioCampaignsPost201Response{}
 	this.Id = id
 	this.BusinessId = businessId
@@ -84,6 +86,8 @@ func NewApiTenantIdStudioCampaignsPost201Response(id string, businessId string, 
 	this.QuestionCount = questionCount
 	this.ScoringRule = scoringRule
 	this.PublishedAt = publishedAt
+	this.TargetDistricts = targetDistricts
+	this.RewardConfig = rewardConfig
 	return &this
 }
 
@@ -739,6 +743,56 @@ func (o *ApiTenantIdStudioCampaignsPost201Response) SetPublishedAt(v time.Time) 
 	o.PublishedAt.Set(&v)
 }
 
+// GetTargetDistricts returns the TargetDistricts field value
+func (o *ApiTenantIdStudioCampaignsPost201Response) GetTargetDistricts() []string {
+	if o == nil {
+		var ret []string
+		return ret
+	}
+
+	return o.TargetDistricts
+}
+
+// GetTargetDistrictsOk returns a tuple with the TargetDistricts field value
+// and a boolean to check if the value has been set.
+func (o *ApiTenantIdStudioCampaignsPost201Response) GetTargetDistrictsOk() ([]string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.TargetDistricts, true
+}
+
+// SetTargetDistricts sets field value
+func (o *ApiTenantIdStudioCampaignsPost201Response) SetTargetDistricts(v []string) {
+	o.TargetDistricts = v
+}
+
+// GetRewardConfig returns the RewardConfig field value
+// If the value is explicit nil, the zero value for ApiTenantIdStudioCampaignsPost201ResponseRewardConfig will be returned
+func (o *ApiTenantIdStudioCampaignsPost201Response) GetRewardConfig() ApiTenantIdStudioCampaignsPost201ResponseRewardConfig {
+	if o == nil || o.RewardConfig.Get() == nil {
+		var ret ApiTenantIdStudioCampaignsPost201ResponseRewardConfig
+		return ret
+	}
+
+	return *o.RewardConfig.Get()
+}
+
+// GetRewardConfigOk returns a tuple with the RewardConfig field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiTenantIdStudioCampaignsPost201Response) GetRewardConfigOk() (*ApiTenantIdStudioCampaignsPost201ResponseRewardConfig, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.RewardConfig.Get(), o.RewardConfig.IsSet()
+}
+
+// SetRewardConfig sets field value
+func (o *ApiTenantIdStudioCampaignsPost201Response) SetRewardConfig(v ApiTenantIdStudioCampaignsPost201ResponseRewardConfig) {
+	o.RewardConfig.Set(&v)
+}
+
 func (o ApiTenantIdStudioCampaignsPost201Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -775,6 +829,8 @@ func (o ApiTenantIdStudioCampaignsPost201Response) ToMap() (map[string]interface
 	toSerialize["questionCount"] = o.QuestionCount.Get()
 	toSerialize["scoringRule"] = o.ScoringRule.Get()
 	toSerialize["publishedAt"] = o.PublishedAt.Get()
+	toSerialize["targetDistricts"] = o.TargetDistricts
+	toSerialize["rewardConfig"] = o.RewardConfig.Get()
 	return toSerialize, nil
 }
 
@@ -809,6 +865,8 @@ func (o *ApiTenantIdStudioCampaignsPost201Response) UnmarshalJSON(data []byte) (
 		"questionCount",
 		"scoringRule",
 		"publishedAt",
+		"targetDistricts",
+		"rewardConfig",
 	}
 
 	allProperties := make(map[string]interface{})

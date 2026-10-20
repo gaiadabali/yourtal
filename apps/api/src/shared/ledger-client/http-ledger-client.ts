@@ -14,6 +14,8 @@ import type {
 } from "@yourtal/contracts/ledger-internal/pricing";
 import type {
   Allocation,
+  CampaignBudget,
+  CampaignBudgetsRequest,
   CampaignSpend,
   Hold,
   HoldRequest,
@@ -200,6 +202,12 @@ export class HttpLedgerClient implements LedgerInternalClient {
 
   campaignSpend(campaignId: string): ResultAsync<CampaignSpend, LedgerError> {
     return this.post("/v1/campaigns/spend", { campaignId });
+  }
+
+  campaignBudgets(
+    request: CampaignBudgetsRequest,
+  ): ResultAsync<readonly CampaignBudget[], LedgerError> {
+    return this.post("/v1/campaigns/budgets", request);
   }
 
   grantReward(request: GrantRewardRequest): ResultAsync<Grant, LedgerError> {

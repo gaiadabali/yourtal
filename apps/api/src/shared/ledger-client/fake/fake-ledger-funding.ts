@@ -14,6 +14,7 @@ import type {
   ReturnGrantRequest,
 } from "@yourtal/contracts/ledger-internal/funding";
 import type { AppDb } from "../../persistence/drizzle-client";
+import { campaignBudgetRefusal, campaignRegion } from "./fake-ledger-campaign-budget";
 
 /**
  * TASKS.md 1.2.a's funding group, against `platform.ledger_fake_allocation`
@@ -169,56 +170,83 @@ function toHold(row: HoldRow): Hold {
 }
 
 export function hold(db: AppDb, request: HoldRequest): ResultAsync<Hold, LedgerError> {
+  const { campaignId } = request;
+  if (campaignId === undefined) return new ResultAsync(holdIn(db, request));
+  // 14.2: a reward session's hold also reserves room in its campaign's budget
+  // and today's cap, in one transaction under the campaign's lock.
   return new ResultAsync(
-    (async (): Promise<Result<Hold, LedgerError>> => {
-      const existing = await db.execute<HoldRow>(sql`
-        SELECT id, allocation_id, points, saga_id, state
-          FROM platform.ledger_fake_hold WHERE saga_id = ${request.sagaId}
-      `);
-      const priorHold = existing.rows[0];
-      if (priorHold !== undefined) {
-        if (
-          priorHold.allocation_id !== request.allocationId ||
-          Number(priorHold.points) !== request.points
-        ) {
-          return err(
-            ledgerError(
-              "idempotency_conflict",
-              `saga ${request.sagaId} was already used for a different hold`,
-            ),
-          );
-        }
-        return ok(toHold(priorHold));
-      }
-
-      const id = randomUUID();
-      const claimed = await db.execute<{ id: string }>(sql`
-        UPDATE platform.ledger_fake_allocation
-           SET remaining_points = remaining_points - ${request.points}
-         WHERE id = ${request.allocationId} AND remaining_points >= ${request.points}
-        RETURNING id
-      `);
-      if (claimed.rows[0] === undefined) {
-        return err(
-          ledgerError(
-            "allocation_exhausted",
-            `allocation ${request.allocationId} has fewer than ${String(request.points)} points remaining`,
-          ),
-        );
-      }
-      await db.execute(sql`
-        INSERT INTO platform.ledger_fake_hold (id, allocation_id, points, saga_id, state)
-        VALUES (${id}, ${request.allocationId}, ${request.points}, ${request.sagaId}, 'held')
-      `);
-      return ok({
-        holdId: id,
-        allocationId: request.allocationId,
-        points: request.points,
-        sagaId: request.sagaId,
-        state: "held",
-      });
-    })(),
+    db.transaction(async (tx): Promise<Result<Hold, LedgerError>> => {
+      const region = await campaignRegion(tx, campaignId);
+      if (region === null) return err(ledgerError("refused", `no campaign ${campaignId}`));
+      const prior = await tx.execute<{ id: string }>(
+        sql`SELECT id FROM platform.ledger_fake_hold WHERE saga_id = ${request.sagaId}`,
+      );
+      const refusal = await campaignBudgetRefusal(
+        tx,
+        campaignId,
+        region,
+        prior.rows[0]?.id ?? "",
+        request.points,
+      );
+      if (refusal !== null) return err(refusal);
+      return holdIn(tx, request);
+    }),
   );
+}
+
+async function holdIn(
+  db: Pick<AppDb, "execute">,
+  request: HoldRequest,
+): Promise<Result<Hold, LedgerError>> {
+  const existing = await db.execute<HoldRow>(sql`
+    SELECT id, allocation_id, points, saga_id, state
+      FROM platform.ledger_fake_hold WHERE saga_id = ${request.sagaId}
+  `);
+  const priorHold = existing.rows[0];
+  if (priorHold !== undefined) {
+    if (
+      priorHold.allocation_id !== request.allocationId ||
+      Number(priorHold.points) !== request.points
+    ) {
+      return err(
+        ledgerError(
+          "idempotency_conflict",
+          `saga ${request.sagaId} was already used for a different hold`,
+        ),
+      );
+    }
+    return ok(toHold(priorHold));
+  }
+
+  const id = randomUUID();
+  const claimed = await db.execute<{ id: string }>(sql`
+    UPDATE platform.ledger_fake_allocation
+       SET remaining_points = remaining_points - ${request.points}
+     WHERE id = ${request.allocationId} AND remaining_points >= ${request.points}
+    RETURNING id
+  `);
+  if (claimed.rows[0] === undefined) {
+    return err(
+      ledgerError(
+        "allocation_exhausted",
+        `allocation ${request.allocationId} has fewer than ${String(request.points)} points remaining`,
+      ),
+    );
+  }
+  await db.execute(sql`
+    INSERT INTO platform.ledger_fake_hold
+      (id, allocation_id, points, saga_id, state, campaign_id, expires_at)
+    VALUES (${id}, ${request.allocationId}, ${request.points}, ${request.sagaId}, 'held',
+            ${request.campaignId ?? null},
+            ${request.ttlSeconds === undefined ? null : sql`now() + make_interval(secs => ${request.ttlSeconds})`})
+  `);
+  return ok({
+    holdId: id,
+    allocationId: request.allocationId,
+    points: request.points,
+    sagaId: request.sagaId,
+    state: "held",
+  });
 }
 
 async function loadHold(db: AppDb, holdId: string): Promise<HoldRow> {

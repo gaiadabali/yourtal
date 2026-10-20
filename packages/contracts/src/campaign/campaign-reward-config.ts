@@ -62,6 +62,13 @@ export const campaignRewardConfigSchema = z
     rewardPointsPerCompletion: pointsSchema,
     /** Added once, at the end, when the scoring rule allows it (YT-0124). */
     accuracyBonusPoints: pointsSchema,
+    /**
+     * 14.2: the most this campaign pays out in one day on its region's clock
+     * (F16), in points. Null is no daily cap. `maxPointsForCampaign` is the
+     * campaign's total budget; the ledger enforces both, counting live
+     * session holds as spent.
+     */
+    dailyCapPoints: pointsSchema.nullable(),
   })
   .refine((config) => config.rewardPointsPerCompletion > 0, {
     message: "A campaign that pays nothing on completion is not an earn campaign",
@@ -78,9 +85,32 @@ export const campaignRewardConfigSchema = z
         "One completion (reward plus bonus) must fit within maxPointsForCampaign, or the campaign can never pay out",
       path: ["maxPointsForCampaign"],
     },
-  );
+  )
+  .refine((config) => campaignBudgetRefusal(config) === null, {
+    message:
+      "The daily cap must fit one completion and stay within the total budget (maxPointsForCampaign)",
+    path: ["dailyCapPoints"],
+  });
 
 export type CampaignRewardConfig = z.infer<typeof campaignRewardConfigSchema>;
+
+/** 14.2: why a budget and daily cap could never pay out as set, or null. */
+export type CampaignBudgetRefusal =
+  "budget_below_one_completion" | "daily_cap_below_one_completion" | "daily_cap_above_budget";
+
+export function campaignBudgetRefusal(config: {
+  readonly rewardPointsPerCompletion: number;
+  readonly accuracyBonusPoints: number;
+  readonly maxPointsForCampaign: number;
+  readonly dailyCapPoints: number | null;
+}): CampaignBudgetRefusal | null {
+  const oneCompletion = config.rewardPointsPerCompletion + config.accuracyBonusPoints;
+  if (config.maxPointsForCampaign < oneCompletion) return "budget_below_one_completion";
+  if (config.dailyCapPoints === null) return null;
+  if (config.dailyCapPoints < oneCompletion) return "daily_cap_below_one_completion";
+  if (config.dailyCapPoints > config.maxPointsForCampaign) return "daily_cap_above_budget";
+  return null;
+}
 
 /**
  * The most a single viewer can earn from this campaign.

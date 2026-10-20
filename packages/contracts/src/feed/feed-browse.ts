@@ -3,6 +3,7 @@ import { contentCategorySchema } from "@yourtal/jurisdiction/content-category";
 import { regionSchema } from "../region/region";
 import { FEED_SORTS } from "./feed-browse-values";
 import { campaignKindSchema } from "../campaign/campaign";
+import { MAX_DISTRICT_LENGTH } from "../campaign/target-districts";
 import {
   MAX_TAGS,
   csvListParam,
@@ -32,6 +33,12 @@ export const feedBrowseQuerySchema = z.object({
   /** Matches a campaign carrying ANY of these tags. */
   tags: csvListParam(interestTagSchema, MAX_TAGS),
   sort: feedSortSchema.default("for_you"),
+  /**
+   * 14.2: the district the viewer is browsing in. A campaign that targets
+   * districts is shown only in them, so without this only untargeted
+   * campaigns appear (`districtTargetMatches`).
+   */
+  district: z.string().trim().min(1).max(MAX_DISTRICT_LENGTH).optional(),
 });
 export type FeedBrowseQuery = z.infer<typeof feedBrowseQuerySchema>;
 

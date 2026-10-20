@@ -14,6 +14,8 @@ import type {
 } from "@yourtal/contracts/ledger-internal/pricing";
 import type {
   Allocation,
+  CampaignBudget,
+  CampaignBudgetsRequest,
   CampaignSpend,
   Hold,
   HoldRequest,
@@ -103,6 +105,10 @@ export interface LedgerInternalClient extends LedgerSettingsOperations {
   release(holdId: string): ResultAsync<Hold, LedgerError>;
   returnGrant(request: ReturnGrantRequest): ResultAsync<void, LedgerError>;
   campaignSpend(campaignId: string): ResultAsync<CampaignSpend, LedgerError>;
+  /** 14.2: what each of a region's campaigns can still pay, after grants and live session holds. */
+  campaignBudgets(
+    request: CampaignBudgetsRequest,
+  ): ResultAsync<readonly CampaignBudget[], LedgerError>;
 
   // --- earning and spending ---
   grantReward(request: GrantRewardRequest): ResultAsync<Grant, LedgerError>;

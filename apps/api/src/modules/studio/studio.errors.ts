@@ -134,9 +134,16 @@ export interface AccuracyBonusTooHighError {
   readonly type: "accuracy_bonus_too_high";
 }
 
+/** 14.2: a total budget or daily cap that could never pay out as set (`campaignBudgetRefusal`). */
+export interface CampaignBudgetInvalidError {
+  readonly type:
+    "budget_below_one_completion" | "daily_cap_below_one_completion" | "daily_cap_above_budget";
+}
+
 export type SetRewardConfigError =
   | CampaignNotFoundError
   | CampaignNotDraftError
+  | CampaignBudgetInvalidError
   | AllocationNotOwnedError
   | AllocationNotPartnerFundedError
   | RewardExceedsCeilingError

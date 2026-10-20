@@ -13,6 +13,8 @@ export const ledgerErrorCodeSchema = z.enum([
   "quote_expired",
   "allocation_exhausted",
   "campaign_cap_reached",
+  /** 14.2: the campaign has given out its daily cap for today (the region's day, F16). */
+  "campaign_daily_cap_reached",
   "velocity_capped",
   "solvency_blocked",
   "region_mismatch",

@@ -116,7 +116,7 @@ async function fillBoostSlots(
 
 export async function getFeed(
   campaigns: CampaignRepository,
-  ledger: Pick<LedgerInternalClient, "getAllocation">,
+  ledger: Pick<LedgerInternalClient, "getAllocation" | "campaignBudgets">,
   pacing: PacingStateRepository,
   signals: FeedSignalsRepository,
   settings: RegionSettingsReader,
@@ -175,6 +175,7 @@ export async function getFeed(
       demotedCampaignIds: new Set(),
       canServe: (id) => canServeMap.get(id) ?? true,
       anonymous: true,
+      viewerDistrict: browse.district ?? null,
       channelOf,
     });
     return {
@@ -267,6 +268,7 @@ export async function getFeed(
     demotedCampaignIds: demoted,
     canServe: (id) => canServeMap.get(id) ?? true,
     anonymous: false,
+    viewerDistrict: browse.district ?? null,
     channelOf,
   });
   return {

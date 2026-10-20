@@ -14,6 +14,8 @@ import type {
 } from "@yourtal/contracts/ledger-internal/pricing";
 import type {
   Allocation,
+  CampaignBudget,
+  CampaignBudgetsRequest,
   CampaignSpend,
   Hold,
   HoldRequest,
@@ -76,6 +78,7 @@ import type { AppDb } from "../persistence/drizzle-client";
 import type { LedgerInternalClient } from "./ledger-internal-client";
 import * as pricing from "./fake/fake-ledger-pricing";
 import * as funding from "./fake/fake-ledger-funding";
+import * as campaignBudget from "./fake/fake-ledger-campaign-budget";
 import * as rewards from "./fake/fake-ledger-rewards";
 import * as wallet from "./fake/fake-ledger-wallet";
 import * as risk from "./fake/fake-ledger-risk";
@@ -144,6 +147,12 @@ export class FakeLedgerClient implements LedgerInternalClient {
 
   campaignSpend(campaignId: string): ResultAsync<CampaignSpend, LedgerError> {
     return funding.campaignSpend(this.db, campaignId);
+  }
+
+  campaignBudgets(
+    request: CampaignBudgetsRequest,
+  ): ResultAsync<readonly CampaignBudget[], LedgerError> {
+    return campaignBudget.campaignBudgets(this.db, request);
   }
 
   grantReward(request: GrantRewardRequest): ResultAsync<Grant, LedgerError> {

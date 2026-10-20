@@ -19,6 +19,7 @@ import { REGION_TIMEZONE } from "@yourtal/contracts/me/streak";
 import type { AppDb } from "../../persistence/drizzle-client";
 import { LedgerNotFoundError } from "../ledger-not-found";
 import { availablePoints } from "./fake-ledger-balance";
+import { campaignBudgetRefusal } from "./fake-ledger-campaign-budget";
 
 /**
  * 12.1.c: the teen half of F12's earn cap, so fake-mode e2e refuses a
@@ -94,7 +95,7 @@ function toGrant(row: GrantRow): Grant {
 }
 
 async function insertGrant(
-  db: AppDb,
+  db: Pick<AppDb, "execute">,
   kind: Grant["kind"],
   campaignId: string | null,
   request: {
@@ -105,6 +106,7 @@ async function insertGrant(
     idempotencyKey: string;
     ageBand?: AgeBand | undefined;
   },
+  admit?: (executor: Pick<AppDb, "execute">) => Promise<LedgerError | null>,
 ): Promise<Result<Grant, LedgerError>> {
   const existing = await db.execute<GrantRow>(sql`
     SELECT id, kind, user_id, region, points, unlock_at, granted_at, idempotency_key
@@ -134,6 +136,8 @@ async function insertGrant(
     ageBand: request.ageBand,
   });
   if (refusal !== null) return err(refusal);
+  const admitted = admit === undefined ? null : await admit(db);
+  if (admitted !== null) return err(admitted);
 
   const id = randomUUID();
   const holdbackHours = DEFAULT_HOLDBACK_HOURS_BY_TIER[request.trustTier];
@@ -165,7 +169,38 @@ export function grantReward(
   db: AppDb,
   request: GrantRewardRequest,
 ): ResultAsync<Grant, LedgerError> {
-  return new ResultAsync(insertGrant(db, "campaign", request.campaignId, request));
+  return new ResultAsync(
+    db.transaction((tx) =>
+      insertGrant(tx, "campaign", request.campaignId, request, (executor) =>
+        admitCampaignGrant(executor, request),
+      ),
+    ),
+  );
+}
+
+/**
+ * 14.2: a campaign grant fits its campaign's budget and today's cap, counted
+ * with the other live session holds, and consumes its own session's hold.
+ */
+async function admitCampaignGrant(
+  executor: Pick<AppDb, "execute">,
+  request: GrantRewardRequest,
+): Promise<LedgerError | null> {
+  const refusal = await campaignBudgetRefusal(
+    executor,
+    request.campaignId,
+    request.region,
+    request.holdId ?? "",
+    request.points,
+  );
+  if (refusal !== null) return refusal;
+  if (request.holdId !== undefined) {
+    await executor.execute(sql`
+      UPDATE platform.ledger_fake_hold SET state = 'consumed'
+       WHERE id = ${request.holdId} AND state = 'held'
+    `);
+  }
+  return null;
 }
 
 /**

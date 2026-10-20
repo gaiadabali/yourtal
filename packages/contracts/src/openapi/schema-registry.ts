@@ -255,6 +255,7 @@ export const CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     crossFieldRules: [
       "rewardPointsPerCompletion must be greater than zero.",
       "One completion (reward plus accuracy bonus) must fit within maxPointsForCampaign.",
+      "dailyCapPoints, when set, must fit one completion and be no more than maxPointsForCampaign, the total budget (14.2).",
     ],
   },
 

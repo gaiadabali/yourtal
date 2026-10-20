@@ -276,6 +276,8 @@ const MAPPINGS: readonly Mapping[] = [
         "Console-only, and null unless the campaign is rejected. A viewer is never shown why a campaign they cannot see was refused.",
       declared_interests:
         "TASKS.md 7.3/7.7 (20260927140000): the campaign's interest tags, published as `tags` since 13.11 (F84).",
+      target_districts:
+        "14.2 (20261020120826): the districts a campaign targets, an authoring input. The feed filters on it; a viewer never sees it, the same reasoning as declared_interests above.",
       poster_frame_seconds:
         "TASKS.md 7.3 (20260927140000, requested by C): an authoring input (which video second the poster is grabbed from), superseded for a viewer by the rendered posterUrl. Same reasoning as declared_interests above.",
     },
@@ -501,6 +503,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
   "ledger.allocation_hold":
     "EM-08 (4.4.e, 20260925195500_allocation_holds.sql): a reward session's in-flight reservation against its allocation, moved only through the four SECURITY DEFINER verbs. Same ledger-internals note as ledger.account above.",
   "ledger.allocation_return": "Same ledger-internals note as ledger.account above.",
+  "ledger.campaign_hold":
+    "14.2 (20261020120826): which campaign a session's hold reserves room in, so its budget and daily cap count live holds. Same ledger-internals note as ledger.account above.",
   "ledger.burn":
     "4.3.e (20260925196000_ledger_burns.sql): the exactly-once-per-saga record behind burnForVoucher/getBurn. Same ledger-internals note as ledger.account above.",
   "ledger.burn_reinstatement":

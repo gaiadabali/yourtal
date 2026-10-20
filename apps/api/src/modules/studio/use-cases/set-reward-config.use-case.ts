@@ -1,6 +1,7 @@
 import { Logger } from "@nestjs/common";
 import { errAsync, okAsync, ResultAsync } from "neverthrow";
 import {
+  campaignBudgetRefusal,
   exceedsAccuracyBonusRatio,
   exceedsRewardCeiling,
 } from "@yourtal/contracts/campaign/reward-config";
@@ -27,7 +28,10 @@ export interface SetRewardConfigInput {
   readonly allocationId: string;
   readonly rewardPointsPerCompletion: Points;
   readonly accuracyBonusPoints: Points;
+  /** 14.2: the campaign's total budget. */
   readonly maxPointsForCampaign: Points;
+  /** 14.2: null is no daily cap. */
+  readonly dailyCapPoints: Points | null;
 }
 
 /**
@@ -88,6 +92,11 @@ export function setRewardConfig(
         type: "accuracy_bonus_too_high",
       });
     }
+    // 14.2: refused, never clamped, like every other check here.
+    const budgetRefusal = campaignBudgetRefusal(input);
+    if (budgetRefusal !== null) {
+      return errAsync<SetRewardConfigResult, SetRewardConfigError>({ type: budgetRefusal });
+    }
 
     return deps.ledger
       .listAllocations(input.businessId)
@@ -135,6 +144,7 @@ export function setRewardConfig(
             maxPointsForCampaign: input.maxPointsForCampaign,
             rewardPointsPerCompletion: input.rewardPointsPerCompletion,
             accuracyBonusPoints: input.accuracyBonusPoints,
+            dailyCapPoints: input.dailyCapPoints,
           };
 
           return wrap(deps.rewardConfigs.upsert(record)).andThen(() =>

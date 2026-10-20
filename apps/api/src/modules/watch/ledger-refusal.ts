@@ -10,7 +10,10 @@ const NOT_CONFIRMED = "Your points could not be confirmed right now.";
  */
 const REASON: Record<LedgerErrorCode, string> = {
   allocation_exhausted: "This campaign has run out of funding right now.",
-  campaign_cap_reached: "This campaign has run out of funding right now.",
+  // 14.2: the business's total budget, and its daily cap on the region's day.
+  campaign_cap_reached: "This campaign has given out all its rewards.",
+  campaign_daily_cap_reached:
+    "This campaign has given out today's rewards. You can earn from it again tomorrow.",
   kill_switch: "Rewards are paused right now.",
   region_mismatch: "This campaign is not available to your account.",
   audience_blocked: "This campaign is not available to your account.",

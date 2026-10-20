@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { toPoints } from "../money/money";
 import {
   affordableCompletions,
+  campaignBudgetRefusal,
   campaignRewardConfigSchema,
   exceedsAccuracyBonusRatio,
   exceedsRewardCeiling,
@@ -15,6 +16,7 @@ const baseConfig = {
   maxPointsForCampaign: toPoints(10_000),
   rewardPointsPerCompletion: toPoints(100),
   accuracyBonusPoints: toPoints(20),
+  dailyCapPoints: null,
 };
 
 describe("campaignRewardConfigSchema", () => {
@@ -25,6 +27,33 @@ describe("campaignRewardConfigSchema", () => {
   it("rejects a completion that cannot fit within the campaign ceiling", () => {
     expect(
       campaignRewardConfigSchema.safeParse({ ...baseConfig, maxPointsForCampaign: toPoints(50) })
+        .success,
+    ).toBe(false);
+  });
+});
+
+describe("campaignBudgetRefusal (14.2)", () => {
+  it("accepts no daily cap, and a cap between one completion and the budget", () => {
+    expect(campaignBudgetRefusal(baseConfig)).toBeNull();
+    expect(campaignBudgetRefusal({ ...baseConfig, dailyCapPoints: toPoints(120) })).toBeNull();
+    expect(campaignBudgetRefusal({ ...baseConfig, dailyCapPoints: toPoints(10_000) })).toBeNull();
+  });
+
+  it("refuses a budget or a cap that could never pay one completion", () => {
+    expect(campaignBudgetRefusal({ ...baseConfig, maxPointsForCampaign: toPoints(119) })).toBe(
+      "budget_below_one_completion",
+    );
+    expect(campaignBudgetRefusal({ ...baseConfig, dailyCapPoints: toPoints(119) })).toBe(
+      "daily_cap_below_one_completion",
+    );
+  });
+
+  it("refuses a daily cap above the total budget", () => {
+    expect(campaignBudgetRefusal({ ...baseConfig, dailyCapPoints: toPoints(10_001) })).toBe(
+      "daily_cap_above_budget",
+    );
+    expect(
+      campaignRewardConfigSchema.safeParse({ ...baseConfig, dailyCapPoints: toPoints(10_001) })
         .success,
     ).toBe(false);
   });

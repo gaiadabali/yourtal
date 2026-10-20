@@ -18,7 +18,7 @@ import (
 // checks if the CampaignRewardConfig type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &CampaignRewardConfig{}
 
-// CampaignRewardConfig Which ledger allocation funds a campaign and how much of it this campaign may use (YT-0101). Deliberately carries NO remaining balance: that number is owned by ledger.allocation, whose CHECK (remaining_points >= 0) and conditional drawdown are the real hard stop. A copy here would be a second total that disagrees the first time a grant lands between reads.  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - rewardPointsPerCompletion must be greater than zero.   - One completion (reward plus accuracy bonus) must fit within maxPointsForCampaign.
+// CampaignRewardConfig Which ledger allocation funds a campaign and how much of it this campaign may use (YT-0101). Deliberately carries NO remaining balance: that number is owned by ledger.allocation, whose CHECK (remaining_points >= 0) and conditional drawdown are the real hard stop. A copy here would be a second total that disagrees the first time a grant lands between reads.  Rules NOT enforced by this schema (they cannot be expressed in JSON Schema, and are enforced only by the Zod schema in @yourtal/contracts):   - rewardPointsPerCompletion must be greater than zero.   - One completion (reward plus accuracy bonus) must fit within maxPointsForCampaign.   - dailyCapPoints, when set, must fit one completion and be no more than maxPointsForCampaign, the total budget (14.2).
 type CampaignRewardConfig struct {
 	CampaignId NullableString `json:"campaignId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	AllocationId string `json:"allocationId"`
@@ -29,6 +29,8 @@ type CampaignRewardConfig struct {
 	RewardPointsPerCompletion int64 `json:"rewardPointsPerCompletion"`
 	// Platform points. Always a whole number; there is no fractional point.
 	AccuracyBonusPoints int64 `json:"accuracyBonusPoints"`
+	// Platform points. Always a whole number; there is no fractional point.
+	DailyCapPoints NullableInt64 `json:"dailyCapPoints"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -38,7 +40,7 @@ type _CampaignRewardConfig CampaignRewardConfig
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCampaignRewardConfig(campaignId NullableString, allocationId string, funderType CampaignFunderType, maxPointsForCampaign int64, rewardPointsPerCompletion int64, accuracyBonusPoints int64) *CampaignRewardConfig {
+func NewCampaignRewardConfig(campaignId NullableString, allocationId string, funderType CampaignFunderType, maxPointsForCampaign int64, rewardPointsPerCompletion int64, accuracyBonusPoints int64, dailyCapPoints NullableInt64) *CampaignRewardConfig {
 	this := CampaignRewardConfig{}
 	this.CampaignId = campaignId
 	this.AllocationId = allocationId
@@ -46,6 +48,7 @@ func NewCampaignRewardConfig(campaignId NullableString, allocationId string, fun
 	this.MaxPointsForCampaign = maxPointsForCampaign
 	this.RewardPointsPerCompletion = rewardPointsPerCompletion
 	this.AccuracyBonusPoints = accuracyBonusPoints
+	this.DailyCapPoints = dailyCapPoints
 	return &this
 }
 
@@ -203,6 +206,32 @@ func (o *CampaignRewardConfig) SetAccuracyBonusPoints(v int64) {
 	o.AccuracyBonusPoints = v
 }
 
+// GetDailyCapPoints returns the DailyCapPoints field value
+// If the value is explicit nil, the zero value for int64 will be returned
+func (o *CampaignRewardConfig) GetDailyCapPoints() int64 {
+	if o == nil || o.DailyCapPoints.Get() == nil {
+		var ret int64
+		return ret
+	}
+
+	return *o.DailyCapPoints.Get()
+}
+
+// GetDailyCapPointsOk returns a tuple with the DailyCapPoints field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *CampaignRewardConfig) GetDailyCapPointsOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.DailyCapPoints.Get(), o.DailyCapPoints.IsSet()
+}
+
+// SetDailyCapPoints sets field value
+func (o *CampaignRewardConfig) SetDailyCapPoints(v int64) {
+	o.DailyCapPoints.Set(&v)
+}
+
 func (o CampaignRewardConfig) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -219,6 +248,7 @@ func (o CampaignRewardConfig) ToMap() (map[string]interface{}, error) {
 	toSerialize["maxPointsForCampaign"] = o.MaxPointsForCampaign
 	toSerialize["rewardPointsPerCompletion"] = o.RewardPointsPerCompletion
 	toSerialize["accuracyBonusPoints"] = o.AccuracyBonusPoints
+	toSerialize["dailyCapPoints"] = o.DailyCapPoints.Get()
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -238,6 +268,7 @@ func (o *CampaignRewardConfig) UnmarshalJSON(data []byte) (err error) {
 		"maxPointsForCampaign",
 		"rewardPointsPerCompletion",
 		"accuracyBonusPoints",
+		"dailyCapPoints",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -273,6 +304,7 @@ func (o *CampaignRewardConfig) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "maxPointsForCampaign")
 		delete(additionalProperties, "rewardPointsPerCompletion")
 		delete(additionalProperties, "accuracyBonusPoints")
+		delete(additionalProperties, "dailyCapPoints")
 		o.AdditionalProperties = additionalProperties
 	}
 

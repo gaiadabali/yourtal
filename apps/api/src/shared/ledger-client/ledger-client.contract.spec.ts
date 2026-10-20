@@ -458,6 +458,41 @@ describe("funding and allocations", () => {
     const returned = await client.returnGrant({ grantId: grant.grantId });
     expect(returned.isOk()).toBe(true);
   });
+
+  it("14.2: a campaign hold reserves its budget and today's cap; its own grant is still paid", async () => {
+    const campaign = await rewardedCampaign();
+    const configs = await db.execute<{ allocation_id: string }>(sql`
+      UPDATE campaign.reward_config SET max_points_for_campaign = 1000, daily_cap_points = 500
+       WHERE campaign_id = ${campaign.campaignId}::uuid RETURNING allocation_id
+    `);
+    const allocationId = configs.rows[0]?.allocation_id ?? "";
+    const hold = (points: number) =>
+      client.hold({
+        allocationId,
+        points: toPoints(points),
+        sagaId: randomUUID(),
+        ttlSeconds: 3_600,
+        campaignId: campaign.campaignId,
+      });
+
+    const first = (await hold(500))._unsafeUnwrap();
+    expect((await hold(500))._unsafeUnwrapErr().code).toBe("campaign_daily_cap_reached");
+    const budgets = await client.campaignBudgets({
+      region: "ID",
+      campaignIds: [campaign.campaignId],
+    });
+    expect(budgets._unsafeUnwrap()).toEqual([
+      { campaignId: campaign.campaignId, remainingPoints: 500, remainingTodayPoints: 0 },
+    ]);
+
+    const paid = await client.grantReward({
+      ...reward(campaign, randomUUID(), 3),
+      holdId: first.holdId,
+    });
+    expect(paid.isOk()).toBe(true);
+    const unheld = await client.grantReward(reward(campaign, randomUUID(), 3));
+    expect(unheld._unsafeUnwrapErr().code).toBe("campaign_daily_cap_reached");
+  });
 });
 
 describe("earning and spending", () => {

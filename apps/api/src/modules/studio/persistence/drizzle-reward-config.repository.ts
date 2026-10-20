@@ -18,6 +18,7 @@ export class DrizzleRewardConfigRepository implements RewardConfigRepository {
           maxPointsForCampaign: input.maxPointsForCampaign,
           rewardPointsPerCompletion: input.rewardPointsPerCompletion,
           accuracyBonusPoints: input.accuracyBonusPoints,
+          dailyCapPoints: input.dailyCapPoints,
         },
       })
       .returning();
@@ -45,5 +46,6 @@ function toDomain(row: typeof campaignRewardConfigs.$inferSelect): RewardConfigR
     maxPointsForCampaign: row.maxPointsForCampaign,
     rewardPointsPerCompletion: row.rewardPointsPerCompletion,
     accuracyBonusPoints: row.accuracyBonusPoints,
+    dailyCapPoints: row.dailyCapPoints,
   };
 }

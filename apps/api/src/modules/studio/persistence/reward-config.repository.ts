@@ -7,6 +7,8 @@ export interface RewardConfigRecord {
   readonly maxPointsForCampaign: number;
   readonly rewardPointsPerCompletion: number;
   readonly accuracyBonusPoints: number;
+  /** 14.2: null is no daily cap. */
+  readonly dailyCapPoints: number | null;
 }
 
 export interface RewardConfigRepository {

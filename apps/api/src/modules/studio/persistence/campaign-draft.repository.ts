@@ -42,6 +42,19 @@ export interface CampaignDraft {
   readonly questionCount: number | null;
   readonly scoringRule: CampaignScoringRule | null;
   readonly publishedAt: string | null;
+  /** 14.2: the districts this campaign is shown in; empty is every district. */
+  readonly targetDistricts: readonly string[];
+  /** 14.2: the saved reward and budget (`campaign.reward_config`); null until `PUT .../reward`. */
+  readonly rewardConfig: SavedRewardConfig | null;
+}
+
+/** What `PUT .../reward` saved, as it took it: `maxPointsForCampaign` is the total budget. */
+export interface SavedRewardConfig {
+  readonly allocationId: string;
+  readonly rewardPointsPerCompletion: number;
+  readonly accuracyBonusPoints: number;
+  readonly maxPointsForCampaign: number;
+  readonly dailyCapPoints: number | null;
 }
 
 export interface CreateCampaignDraftInput {
@@ -85,6 +98,7 @@ export interface UpdateCampaignDraftInput {
   readonly declaredInterests?: readonly string[] | undefined;
   readonly chapters?: readonly CampaignChapter[] | undefined;
   readonly captionsUrl?: string | null | undefined;
+  readonly targetDistricts?: readonly string[] | undefined;
 }
 
 export interface CampaignDraftRepository {

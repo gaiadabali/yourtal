@@ -71,6 +71,8 @@ export const campaigns = campaignPgSchema.table("campaigns", {
   // from. Distinct from posterUrl, the rendered image the media pipeline
   // produces once that second is known. Null until a video exists.
   posterFrameSeconds: integer("poster_frame_seconds"),
+  // 14.2: the districts this campaign is shown in; empty is every district.
+  targetDistricts: jsonb("target_districts").notNull().default([]),
 });
 
 export const campaignChapters = campaignPgSchema.table("chapter", {
@@ -113,4 +115,6 @@ export const campaignRewardConfigs = campaignPgSchema.table("reward_config", {
   maxPointsForCampaign: bigint("max_points_for_campaign", { mode: "number" }).notNull(),
   rewardPointsPerCompletion: bigint("reward_points_per_completion", { mode: "number" }).notNull(),
   accuracyBonusPoints: bigint("accuracy_bonus_points", { mode: "number" }).notNull(),
+  // 14.2: the daily cap beside maxPointsForCampaign, the total budget; null is none.
+  dailyCapPoints: bigint("daily_cap_points", { mode: "number" }),
 });

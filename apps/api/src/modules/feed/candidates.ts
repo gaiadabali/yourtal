@@ -23,7 +23,7 @@ const CANDIDATE_FETCH_LIMIT = 300;
  */
 export async function fetchFundedCampaigns(
   campaigns: CampaignRepository,
-  ledger: Pick<LedgerInternalClient, "getAllocation">,
+  ledger: Pick<LedgerInternalClient, "getAllocation" | "campaignBudgets">,
   suspendedBusinesses: SuspendedBusinessLookup,
   region: Region,
 ): Promise<CandidateCampaign[]> {
@@ -49,9 +49,19 @@ export async function fetchFundedCampaigns(
       } => entry.rewardConfig !== null,
     );
 
-  const allocations = await Promise.allSettled(
-    withConfig.map((entry) => ledger.getAllocation(entry.rewardConfig.allocationId)),
-  );
+  const ids = withConfig.map((entry) => entry.campaign.id);
+  const [allocations, districts, budgets] = await Promise.all([
+    Promise.allSettled(
+      withConfig.map((entry) => ledger.getAllocation(entry.rewardConfig.allocationId)),
+    ),
+    campaigns.targetDistrictsFor(ids),
+    // 14.2: unread budgets leave the allocation as the feed's only funding
+    // check; the session's hold still refuses a spent budget.
+    ledger.campaignBudgets({ region, campaignIds: ids }).match(
+      (rows) => new Map(rows.map((row) => [row.campaignId, row])),
+      () => new Map<string, never>(),
+    ),
+  ]);
 
   return withConfig
     .map((entry, index) => {
@@ -59,11 +69,21 @@ export async function fetchFundedCampaigns(
       if (settled === undefined || settled.status === "rejected" || settled.value.isErr())
         return null;
       const allocation = settled.value.value;
+      const budget = budgets.get(entry.campaign.id);
       return {
         campaign: entry.campaign,
         rewardConfig: entry.rewardConfig,
         allocationRemainingPoints: Number(allocation.remainingPoints),
         allocationTotalPoints: Number(allocation.totalPoints),
+        targetDistricts: districts.get(entry.campaign.id) ?? [],
+        budget:
+          budget === undefined
+            ? null
+            : {
+                remainingPoints: Number(budget.remainingPoints),
+                remainingTodayPoints:
+                  budget.remainingTodayPoints === null ? null : Number(budget.remainingTodayPoints),
+              },
       };
     })
     .filter((candidate): candidate is CandidateCampaign => candidate !== null);

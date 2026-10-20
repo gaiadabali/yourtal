@@ -7,7 +7,10 @@ export const setRewardConfigSchema = z.object({
   allocationId: z.string().min(1),
   rewardPointsPerCompletion: pointsSchema,
   accuracyBonusPoints: pointsSchema,
+  /** 14.2: the campaign's total budget, in points. */
   maxPointsForCampaign: pointsSchema,
+  /** 14.2: the most it pays out in one day on its region's clock; null (the default) is none. */
+  dailyCapPoints: pointsSchema.nullable().default(null),
 });
 
 export type SetRewardConfigRequest = z.infer<typeof setRewardConfigSchema>;

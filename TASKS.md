@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 4/12 | 18/39 | `█████░░░░░`  46% |
-| **All** | | | **109/118** | **564/586** | `██████████`  96% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 4/13 | 18/42 | `████░░░░░░`  43% |
+| **All** | | | **109/119** | **564/589** | `██████████`  96% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1676,6 +1676,10 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [ ] 14.12.a DSAR handlers and domains for interests, follows, saves, streaks and every other me.* table; nothing personal left after DELETE /api/me
   - [ ] 14.12.b Check: an e2e test deletes an account with rows in every me.* table and finds none left
 
+- [ ] **14.12 Point packages and budget alerts for every business** (group 5.10, F119–F121) · C · needs: 14.7 (the Checkout purchase flow)
+  - [ ] 14.12.a Point packages in tiers (e.g. Starter, Grow, Scale), bought in Studio; SnapApp's receipt programme buys from the same tiers (its at-cost price is group 2.10's)
+  - [ ] 14.12.b Alerts at 50%, 80% and 100% of a package or campaign budget, by email and in Studio; rewards stop at 100% (the campaign half builds on 14.2's spend tracking)
+  - [ ] 14.12.c Check on staging: a small package reaches each alert and then stops
 Group 5.7, the founder's walkthrough, is 13.6 here.
 
 ## Not in this plan (deferred)

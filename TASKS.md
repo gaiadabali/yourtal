@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 5/14 | 29/51 | `██████░░░░`  57% |
-| **All** | | | **110/120** | **575/598** | `██████████`  96% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 5/14 | 32/51 | `██████░░░░`  63% |
+| **All** | | | **110/120** | **578/598** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1660,15 +1660,15 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [ ] 14.6.b Responsive poster sizes (`srcset`; the contract carries one `posterUrl` today, 13.4.f)
 - [ ] **14.7 Stripe payments in AU, on the payment simulation** (group 5.1, F103, F106) · A + C · needs: — — 🔄 g5
   - [x] 14.7.a The payment simulation (group 5.1.e): it speaks Stripe's API, has a checkout page that takes only Stripe's test cards (4242… pays, 4000…0002 is declined, 4000 0025 0000 3155 asks for 3-D Secure) and never stores or logs a card number, sends signed webhooks and retries them, and does refunds and Connect. Every page says "Simulated payment, no real money"; a production host refuses to start it → `packages/paysim`, mounted at `/api/paysim` behind `PAYSIM_ENABLED` (abd99d89)
-  - [ ] 14.7.b A Stripe driver (AU) for `PAYMENTS_DRIVER=live` (group 5.1.a), written against Stripe's real API: points purchases, boosts, refunds and webhooks; staging points it at the simulation. The Xendit-shaped simulated driver stays for ID (F104) → driver f873e760; the app on it 8b5bddc0 (Checkout purchases, webhook, saved cards, boost charges, GST). Left: auctions (14.7.d), then staging
+  - [ ] 14.7.b A Stripe driver (AU) for `PAYMENTS_DRIVER=live` (group 5.1.a), written against Stripe's real API: points purchases, boosts, refunds and webhooks; staging points it at the simulation. The Xendit-shaped simulated driver stays for ID (F104) → driver f873e760; the app on it 8b5bddc0 (Checkout purchases, webhook, saved cards, boost charges, GST). Auctions on it at cef84dd8, so live payments boot. Left: staging
   - [x] 14.7.c The payment parity tests pass for both drivers, Stripe and simulated (group 5.1.c) → 29 end-to-end tests of the Stripe drivers against the simulation, beside the simulated driver's suite (b9bc4d04); Integration green
-  - [ ] 14.7.d Charity auction escrow on the Stripe driver: a bid is held, the winning bid captured and the losing ones released (group 5.1.d)
+  - [x] 14.7.d Charity auction escrow on the Stripe driver: a bid is held, the winning bid captured and the losing ones released (group 5.1.d) → cef84dd8
   - [ ] 14.7.e Check on staging (group 5.1.f): a brand buys points (`billing/purchases`), pays for a boost, has a purchase approved by staff (`staff/economy/…/purchases`) and has a card declined; a charity auction holds, captures and releases bids. No refund step (F107); the driver's refunds are checked against the simulation
   - [ ] 14.7.f A staff queue for card purchases parked as `needs_review`, with a way to settle each (group 5.1.g)
   - [ ] 14.7.g Account deletion also deletes the Stripe customer, and the data export lists a bidder's saved card (group 5.1.h)
 - [ ] **14.8 Stripe Connect payouts in AU** (group 5.2, F103) · A + C · needs: 14.7 — 🔄 g5 (helper `g-phase5-pay`)
-  - [ ] 14.8.a Stripe Connect payouts to AU brands: on the simulation, a brand and a charity onboard a connected account through the simulated onboarding page, and payouts land in it. ID has no real payouts (F104)
-  - [ ] 14.8.b Settlement statements trigger real payouts, after approval
+  - [x] 14.8.a Stripe Connect payouts to AU brands: on the simulation, a brand and a charity onboard a connected account through the simulated onboarding page, and payouts land in it. ID has no real payouts (F104) → cef84dd8
+  - [x] 14.8.b Settlement statements trigger real payouts, after approval → cef84dd8
   - [ ] 14.8.c Read a payout back when its webhook never arrives (`getPayout`), and a staff action for disbursements left unconfirmed or refused (group 5.2.c)
 - [ ] **14.9 GST tax invoices** (group 5.3) · C · needs: — (real invoices need the AU company, group 6.1.a) — 🔄 g5 (helper `g-phase5-inv`)
   - [x] 14.9.a GST tax invoices (AU) for points and boosts; PPN waits until ID takes real money (F104) → 216cc736

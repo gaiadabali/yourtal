@@ -17,7 +17,8 @@ import { toMinorUnits } from "@yourtal/contracts/money";
  * twice. Real Cerbos (`billing.yaml` already existed before 7.5 -- this
  * suite is not the thing that first introduces that policy file), real
  * Postgres, `LEDGER_MODE=fake` (this suite's default) plus the simulated
- * payments driver (also the default -- `PAYMENTS_DRIVER` is unset).
+ * payments driver (also the default -- `PAYMENTS_DRIVER` is unset), which
+ * settles a checkout at once. The Stripe path is stripe-purchase.e2e.test.ts.
  */
 let app: NestFastifyApplication;
 const db = createAppDb(process.env["TEST_DATABASE_URL"] ?? process.env["DATABASE_URL"]!);
@@ -96,9 +97,50 @@ describe("POST /api/:tenantId/studio/billing/purchases", () => {
       payload: { points: 1_000, currency: "IDR" },
     });
     expect(response.statusCode).toBe(201);
-    const body = response.json<{ currency: string; paidMinor: number }>();
-    expect(body.currency).toBe("IDR");
-    expect(body.paidMinor).toBeGreaterThan(0);
+    const body = response.json<{
+      status: string;
+      purchase: { currency: string; totalMinor: number; taxMinor: number; status: string };
+      allocation: { totalPoints: number } | null;
+    }>();
+    // Indonesia stays on the simulated driver (F104): settled at once, no GST (F118).
+    expect(body.status).toBe("paid");
+    expect(body.purchase).toMatchObject({ currency: "IDR", taxMinor: 0, status: "paid" });
+    expect(body.purchase.totalMinor).toBeGreaterThan(0);
+    expect(body.allocation?.totalPoints).toBe(1_000);
+  });
+
+  it("records the GST split, and GET .../purchases/:id reads it back to its own business only", async () => {
+    const { cookie, businessId } = await ownerAt();
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/${businessId}/studio/billing/purchases`,
+      headers: { cookie, "idempotency-key": `test-${randomUUID()}` },
+      payload: { points: 1_000, currency: "AUD" },
+    });
+    expect(response.statusCode).toBe(201);
+    const { purchaseId, purchase } = response.json<{
+      purchaseId: string;
+      purchase: { subtotalMinor: number; taxMinor: number; totalMinor: number; taxRateBps: number };
+    }>();
+    expect(purchase.taxRateBps).toBe(1_000);
+    expect(purchase.taxMinor).toBe(Math.floor((purchase.subtotalMinor * 1_000 + 5_000) / 10_000));
+    expect(purchase.totalMinor).toBe(purchase.subtotalMinor + purchase.taxMinor);
+
+    const read = await app.inject({
+      method: "GET",
+      url: `/api/${businessId}/studio/billing/purchases/${purchaseId}`,
+      headers: { cookie },
+    });
+    expect(read.statusCode).toBe(200);
+    expect(read.json<{ status: string }>().status).toBe("paid");
+
+    const stranger = await ownerAt();
+    const stolen = await app.inject({
+      method: "GET",
+      url: `/api/${stranger.businessId}/studio/billing/purchases/${purchaseId}`,
+      headers: { cookie: stranger.cookie },
+    });
+    expect(stolen.statusCode).toBe(404);
   });
 
   it("refuses a currency that does not match the business's own", async () => {
@@ -125,9 +167,18 @@ describe("GET /api/:tenantId/studio/billing/purchases/quote", () => {
       headers: { cookie },
     });
     expect(response.statusCode).toBe(200);
-    const body = response.json<{ totalMinor: number; currency: string }>();
+    const body = response.json<{
+      subtotalMinor: number;
+      taxMinor: number;
+      totalMinor: number;
+      taxRateBps: number;
+      currency: string;
+    }>();
     expect(body.currency).toBe("AUD");
-    expect(body.totalMinor).toBeGreaterThan(0);
+    expect(body.subtotalMinor).toBeGreaterThan(0);
+    // F118: AU prices are ex-GST; 10% GST goes on top.
+    expect(body.taxRateBps).toBe(1_000);
+    expect(body.totalMinor).toBe(body.subtotalMinor + body.taxMinor);
     expect(JSON.stringify(body)).not.toMatch(/micros|backingRate/i);
   });
 });

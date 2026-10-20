@@ -13,6 +13,11 @@ import type {
 
 export const PAYMENT_ACCOUNTS_SERVICE = Symbol("PAYMENT_ACCOUNTS_SERVICE");
 
+/** The repository's public surface, so tests can hand in an in-memory one. */
+export type PaymentAccountsStore = {
+  [K in keyof PaymentAccountsRepository]: PaymentAccountsRepository[K];
+};
+
 export type CardSetupAnswer =
   | { readonly kind: "redirect"; readonly checkoutUrl: string }
   | { readonly kind: "saved"; readonly card: SavedCard };
@@ -33,7 +38,7 @@ export function checkoutLocale(region: PaymentOwner["region"]): "en" | "id" {
 export class PaymentAccountsService {
   constructor(
     private readonly providers: RegionPaymentProviders,
-    private readonly accounts: PaymentAccountsRepository,
+    private readonly accounts: PaymentAccountsStore,
     private readonly webOrigin: string,
   ) {}
 

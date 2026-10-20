@@ -43,7 +43,7 @@ describe("the consumer sliding window (F12: 30 days)", () => {
   it("extends on touch: a session touched every 20 days survives well past the 30-day window measured from issuance", async () => {
     const userId = freshUserId();
     const issuedAt = new Date();
-    const token = await sessions.issue(userId, issuedAt);
+    const token = await sessions.issue(userId, issuedAt, "consumer", ["pwd"]);
 
     // First touch at +20 days: comfortably inside the 30-day idle window
     // measured from issuance.
@@ -67,7 +67,7 @@ describe("the consumer sliding window (F12: 30 days)", () => {
   it("refuses a session that really has gone idle: no touch for over 30 days", async () => {
     const userId = freshUserId();
     const issuedAt = new Date();
-    const token = await sessions.issue(userId, issuedAt);
+    const token = await sessions.issue(userId, issuedAt, "consumer", ["pwd"]);
 
     const goneIdle = await sessions.validateAndTouch(
       token,
@@ -81,7 +81,7 @@ describe("the consumer absolute ceiling (F12: 90 days)", () => {
   it("refuses even an actively-touched session once 90 days have passed since issuance", async () => {
     const userId = freshUserId();
     const issuedAt = new Date();
-    const token = await sessions.issue(userId, issuedAt);
+    const token = await sessions.issue(userId, issuedAt, "consumer", ["pwd"]);
 
     // Touched every 20 days — always well inside the 30-day idle window,
     // so nothing about idle timeout ever refuses this session.
@@ -112,7 +112,7 @@ describe("a staff session (F12: 12h)", () => {
   it("gets the 12h absolute ceiling, not the consumer's 90 days", async () => {
     const userId = freshUserId();
     const issuedAt = new Date();
-    const token = await sessions.issue(userId, issuedAt, "staff");
+    const token = await sessions.issue(userId, issuedAt, "staff", ["pwd"]);
 
     // Comfortably valid an hour in.
     const earlyCheck = await sessions.validateAndTouch(
@@ -133,7 +133,7 @@ describe("a staff session (F12: 12h)", () => {
   it("a consumer session issued at the same instant is still valid at 13h — proving the two kinds really differ", async () => {
     const userId = freshUserId();
     const issuedAt = new Date();
-    const token = await sessions.issue(userId, issuedAt, "consumer");
+    const token = await sessions.issue(userId, issuedAt, "consumer", ["pwd"]);
 
     const stillValid = await sessions.validateAndTouch(
       token,

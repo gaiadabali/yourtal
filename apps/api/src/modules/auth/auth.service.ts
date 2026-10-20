@@ -16,8 +16,6 @@ import { EMAIL_DRIVER } from "../../shared/drivers/email-driver.module";
 import { AUTH_DB } from "./persistence/auth-db.token";
 import { USER_PROFILE_REPOSITORY } from "../identity/persistence/user-profile.repository";
 import type { UserProfileRepository } from "../identity/persistence/user-profile.repository";
-import { STAFF_ROLE_READER } from "../identity/persistence/staff-role-reader";
-import type { StaffRoleReader } from "../identity/persistence/staff-role-reader";
 import { GUARDIAN_CONSENT_REPOSITORY } from "../identity/persistence/guardian-consent.repository";
 import type { GuardianConsentRepository } from "../identity/persistence/guardian-consent.repository";
 import { accountEmailContent, describeTtl } from "./account-email";
@@ -34,6 +32,10 @@ import type { CredentialRepository } from "./persistence/credential.repository";
 import { VERIFICATION_TOKEN_REPOSITORY } from "./persistence/verification-token.repository";
 import type { VerificationTokenRepository } from "./persistence/verification-token.repository";
 import { SessionService } from "./session/session.service";
+import { SessionIssuer } from "./session/session-issuer";
+import { PASSWORD_AMR } from "./session/amr";
+import { SecondFactorGate } from "./factors/second-factor-gate";
+import type { PasswordSignIn } from "./factors/second-factor-gate";
 import {
   ACCOUNT_THROTTLE_LIMITS,
   SOURCE_THROTTLE_LIMITS,
@@ -95,13 +97,14 @@ export class AuthService {
     @Inject(VERIFICATION_TOKEN_REPOSITORY)
     private readonly verificationTokens: VerificationTokenRepository,
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
-    @Inject(STAFF_ROLE_READER) private readonly staffRoles: StaffRoleReader,
+    private readonly sessionIssuer: SessionIssuer,
     @Inject(GUARDIAN_CONSENT_REPOSITORY)
     private readonly guardianConsents: GuardianConsentRepository,
     private readonly sessions: SessionService,
     private readonly throttle: ThrottleService,
     private readonly devTokenAccess: DevTokenAccess,
     @Inject(EMAIL_DRIVER) private readonly email: EmailDriver,
+    private readonly secondFactor: SecondFactorGate,
   ) {}
 
   /**
@@ -233,7 +236,7 @@ export class AuthService {
         return err(conflict);
       }
 
-      const token = await this.issueSession(userId, now);
+      const token = await this.sessionIssuer.issue(userId, now, PASSWORD_AMR);
 
       // Best-effort, same reasoning `deliver()`'s own comment gives: the
       // account and its consent row already committed above, so a delivery
@@ -273,7 +276,7 @@ export class AuthService {
     password: string,
     sourceIp: string,
     now: Date,
-  ): Promise<Result<{ token: string; userId: string }, LoginError>> {
+  ): Promise<Result<PasswordSignIn, LoginError>> {
     const identifier = normalizeEmail(email);
     // Throttled on the ATTEMPTED identifier, not on `user_id` — a login
     // attempt for an email with no credential row still has to be rate
@@ -313,8 +316,9 @@ export class AuthService {
       // A genuine success clears the ACCOUNT counter only — never the
       // source counter. See `ThrottleService.reset`'s own doc comment.
       await this.throttle.reset("account", accountKey);
-      const token = await this.issueSession(credential.userId, now);
-      return ok({ token, userId: credential.userId });
+      // With an authenticator app switched on, the password alone mints no
+      // session: the caller gets a short-lived pending token to answer with a code.
+      return ok(await this.secondFactor.afterPassword(credential.userId, now));
     });
   }
 
@@ -340,11 +344,11 @@ export class AuthService {
     newPassword: string,
     now: Date,
   ): Promise<Result<{ token: string }, ChangePasswordError>> {
-    const validation = await this.sessions.validateAndTouch(sessionToken, now);
+    const validation = await this.sessions.validateWithSignIn(sessionToken, now);
     if (!validation.valid) {
       return err({ type: "session_invalid" });
     }
-    const { userId } = validation;
+    const { userId, amr } = validation;
 
     return this.guarded(async () => {
       const credential = await this.credentials.findByUserAndKind(userId, PASSWORD_CREDENTIAL_KIND);
@@ -362,7 +366,9 @@ export class AuthService {
       const newHash = await hashPassword(newPassword);
       await this.credentials.updateSecret(userId, PASSWORD_CREDENTIAL_KIND, newHash);
       await this.sessions.revokeAllForUser(userId, now);
-      const token = await this.issueSession(userId, now);
+      // The replacement keeps how the caller signed in: a password change
+      // proves the password again, not a second factor.
+      const token = await this.sessionIssuer.issue(userId, now, amr);
       return ok({ token });
     });
   }
@@ -404,7 +410,7 @@ export class AuthService {
     rawToken: string,
     newPassword: string,
     now: Date,
-  ): Promise<Result<{ token: string }, ConfirmPasswordResetError>> {
+  ): Promise<Result<PasswordSignIn, ConfirmPasswordResetError>> {
     const consumed = await this.verificationTokens.consume(
       hashOpaqueToken(rawToken),
       "password_reset",
@@ -420,8 +426,9 @@ export class AuthService {
       const newHash = await hashPassword(newPassword);
       await this.credentials.updateSecret(userId, PASSWORD_CREDENTIAL_KIND, newHash);
       await this.sessions.revokeAllForUser(userId, now);
-      const token = await this.issueSession(userId, now);
-      return ok({ token });
+      // An emailed link plus a new password is still one factor: an account
+      // with an authenticator app still has to give a code.
+      return ok(await this.secondFactor.afterPassword(userId, now));
     });
   }
 
@@ -616,23 +623,6 @@ export class AuthService {
       metadata: { token },
     });
     this.logSend("guardian_consent", sent);
-  }
-
-  /**
-   * 1.5.e, F12: every session-minting call site goes through this rather
-   * than `this.sessions.issue` directly, so a staff account never gets a
-   * 90-day session by accident. A staff account signs in through this same
-   * `AuthService` (`pnpm staff:add` only adds a role row to an existing
-   * account, 1.5.b), so the two kinds cannot be told apart by which
-   * endpoint was called — only by whether `identity.staff_role` names this
-   * user, checked fresh here every time rather than cached on the
-   * credential or the profile, since a role grant or revocation must take
-   * effect on this person's very next login, not their next password
-   * change.
-   */
-  private async issueSession(userId: string, now: Date): Promise<string> {
-    const roles = await this.staffRoles.listForUser(userId);
-    return this.sessions.issue(userId, now, roles.length > 0 ? "staff" : "consumer");
   }
 
   /** One place every method wraps an unexpected store failure. */

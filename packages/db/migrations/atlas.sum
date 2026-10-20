@@ -1,4 +1,4 @@
-h1:vi8XsNpXkSbfAjFRKa6O/Gcn9d/6rAmAFR/WDjqqgWY=
+h1:beMiAwbSsfTRHq426+lYhMG9v2Hcttsyc1Tgn/Dzd0Y=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -139,3 +139,4 @@ h1:vi8XsNpXkSbfAjFRKa6O/Gcn9d/6rAmAFR/WDjqqgWY=
 20261020210032_card_purchase_refund.sql h1:c1IItRGZOld14ZBh3q/cN8Nnm+BY+oXCKde6R+xfhAY=
 20261020210034_disbursement_staff_retry.sql h1:7jWoamEk0M/2sdYnV+ibQNhVlDkfC+QS3XB0QgnOB/0=
 20261021025420_oidc_provider.sql h1:Qysi9IdrOYlzXt7CPGj+ft4nWuLoL7rDSrFMYAjJCk8=
+20261021042347_identity_passkey_totp_amr.sql h1:k6t5wKwloYbSn47qbaVRQYBOCiyqJ8KWbNiJh64RRp4=

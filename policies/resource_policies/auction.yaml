@@ -17,7 +17,7 @@ resourcePolicy:
       ref: cerbos:///resource/auction.json
   rules:
     - name: teens-take-no-part
-      actions: ["view", "bid"]
+      actions: ["view", "bid", "view_card", "update_card"]
       effect: EFFECT_DENY
       roles: ["*"]
       condition:
@@ -25,7 +25,7 @@ resourcePolicy:
           expr: has(P.attr.ageBand) && P.attr.ageBand == "teen"
 
     - name: f2-region-wall
-      actions: ["view", "bid"]
+      actions: ["view", "bid", "view_card", "update_card"]
       effect: EFFECT_DENY
       roles: ["*"]
       condition:
@@ -49,6 +49,19 @@ resourcePolicy:
               - expr: has(P.attr.ageBand) && P.attr.ageBand == "adult"
               - expr: "!has(P.attr.valueFrozenUntil) || now() > timestamp(P.attr.valueFrozenUntil)"
               - expr: "!has(R.attr.sellerId) || R.attr.sellerId != P.id"
+
+    # The card a bid holds is the bidder's own: only a verified adult in good standing keeps one.
+    # Frozen value does not stop saving a card, only bidding.
+    - name: adults-keep-a-bidding-card
+      actions: ["view_card", "update_card"]
+      effect: EFFECT_ALLOW
+      roles: ["user"]
+      condition:
+        match:
+          all:
+            of:
+              - expr: P.attr.isSuspended == false
+              - expr: has(P.attr.ageBand) && P.attr.ageBand == "adult"
 
     # 13.22.g: ops see every region's open auctions and cancel one only with a
     # reason (every hold released, the voucher back to the seller, audited).

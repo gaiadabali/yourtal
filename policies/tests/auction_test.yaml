@@ -33,3 +33,25 @@ tests:
       - principal: anon
         resource: auction_id
         actions: { view: EFFECT_DENY, bid: EFFECT_DENY }
+
+  - name: only a verified adult in good standing keeps a bidding card, in their own region
+    input:
+      principals: [adi_adult, adi_suspended, adi_adult_au, teo_granted, anon]
+      resources: [auction_id]
+      actions: [view_card, update_card]
+    expected:
+      - principal: adi_adult
+        resource: auction_id
+        actions: { view_card: EFFECT_ALLOW, update_card: EFFECT_ALLOW }
+      - principal: adi_suspended
+        resource: auction_id
+        actions: { view_card: EFFECT_DENY, update_card: EFFECT_DENY }
+      - principal: adi_adult_au
+        resource: auction_id
+        actions: { view_card: EFFECT_DENY, update_card: EFFECT_DENY }
+      - principal: teo_granted
+        resource: auction_id
+        actions: { view_card: EFFECT_DENY, update_card: EFFECT_DENY }
+      - principal: anon
+        resource: auction_id
+        actions: { view_card: EFFECT_DENY, update_card: EFFECT_DENY }

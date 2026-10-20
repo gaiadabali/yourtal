@@ -30,6 +30,8 @@ const (
 	AUCTIONREFUSAL_AUCTION_CLOSED AuctionRefusal = "auction_closed"
 	AUCTIONREFUSAL_BID_TOO_LOW AuctionRefusal = "bid_too_low"
 	AUCTIONREFUSAL_PAYMENT_DECLINED AuctionRefusal = "payment_declined"
+	AUCTIONREFUSAL_CARD_REQUIRED AuctionRefusal = "card_required"
+	AUCTIONREFUSAL_CHARITY_NOT_READY AuctionRefusal = "charity_not_ready"
 )
 
 // All allowed values of AuctionRefusal enum
@@ -44,6 +46,8 @@ var AllowedAuctionRefusalEnumValues = []AuctionRefusal{
 	"auction_closed",
 	"bid_too_low",
 	"payment_declined",
+	"card_required",
+	"charity_not_ready",
 }
 
 func (v *AuctionRefusal) UnmarshalJSON(src []byte) error {

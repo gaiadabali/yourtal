@@ -10,4 +10,7 @@ export const AUCTION_REFUSALS = [
   "auction_closed",
   "bid_too_low",
   "payment_declined",
+  // A saved card is needed to bid (AU on Stripe); the charity has not finished onboarding with the processor.
+  "card_required",
+  "charity_not_ready",
 ] as const;

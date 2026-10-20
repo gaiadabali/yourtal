@@ -4,6 +4,7 @@ import {
   auctionSchema,
   listVoucherForAuctionBodySchema,
   placeBidBodySchema,
+  startBidderCardBodySchema,
 } from "../auction/auction";
 import type { ContractComponent } from "./schema-registry";
 
@@ -19,6 +20,13 @@ export const AUCTION_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     id: "PlaceBidBody",
     schema: placeBidBodySchema,
     description: "A cash bid in the auction's currency, integer minor units.",
+    crossFieldRules: [],
+  },
+  {
+    id: "StartBidderCardBody",
+    schema: startBidderCardBodySchema,
+    description:
+      "Optionally the auction the bidder came from, so the card page returns there. Never a URL.",
     crossFieldRules: [],
   },
   {

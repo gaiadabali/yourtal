@@ -1,6 +1,7 @@
 import {
   FORBIDDEN,
   PDP_UNAVAILABLE,
+  SERVICE_UNAVAILABLE,
   VALIDATION_400,
   nestDefaultError,
   ref,
@@ -105,5 +106,33 @@ export const AUCTION_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     successDescription: "The auction after the bid.",
     successSchema: ref("Auction"),
     errors: [VALIDATION_400, ...ERRORS, NOT_FOUND, REFUSED],
+  },
+  {
+    method: "get",
+    path: "/api/me/payment-card",
+    summary: "The card a bid holds: brand, last four and expiry, and whether one is required",
+    tags: ["auction"],
+    pathParams: [],
+    successStatus: 200,
+    successDescription:
+      "The saved card or null. required is true where a bid charges a saved card (AU on Stripe).",
+    successSchema: ref("BillingCard"),
+    errors: ERRORS,
+  },
+  {
+    method: "post",
+    path: "/api/me/payment-card",
+    summary: "Add or replace the card a bid holds",
+    tags: ["auction"],
+    pathParams: [],
+    requestBody: {
+      description: "Optionally the auction page the card page returns to.",
+      schema: ref("StartBidderCardBody"),
+    },
+    successStatus: 201,
+    successDescription:
+      "A page to save the card on (the card arrives with the processor's webhook), or the card when saved at once.",
+    successSchema: ref("StartCardSetupResult"),
+    errors: [VALIDATION_400, ...ERRORS, SERVICE_UNAVAILABLE],
   },
 ];

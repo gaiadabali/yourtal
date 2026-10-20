@@ -13,6 +13,7 @@ export type ZonePath =
   | "/studio/inventory"
   | "/studio/reports"
   | "/studio/billing"
+  | "/studio/billing/invoices"
   | "/studio/team"
   | "/studio/redemptions"
   | "/studio/developers"
@@ -29,8 +30,11 @@ const ZONE_PATHS: Record<StudioZone, ZonePath> = {
   channel: "/studio/channel",
 };
 
+/** A nav entry: a zone, or the Invoices page that sits under Billing. */
+export type StudioNavZone = StudioZone | "invoices";
+
 export interface StudioNavItem {
-  zone: StudioZone;
+  zone: StudioNavZone;
   href: ZonePath;
   label: string;
   /** One-line description for the overview grid. */
@@ -42,12 +46,26 @@ export function buildStudioNavItems(
   visibleZones: readonly StudioZone[],
   t: (key: string) => string,
 ): StudioNavItem[] {
-  return visibleZones.map((zone) => ({
-    zone,
-    href: ZONE_PATHS[zone],
-    label: zoneLabel(t, zone),
-    blurb: t(`zoneBlurbs.${zone}`),
-  }));
+  return visibleZones.flatMap((zone): StudioNavItem[] => {
+    const item = {
+      zone,
+      href: ZONE_PATHS[zone],
+      label: zoneLabel(t, zone),
+      blurb: t(`zoneBlurbs.${zone}`),
+    };
+    // Invoices need the same access as Billing (the API's `billing` view), so they follow it.
+    return zone === "billing"
+      ? [
+          item,
+          {
+            zone: "invoices",
+            href: "/studio/billing/invoices",
+            label: t("zones.invoices"),
+            blurb: t("zoneBlurbs.invoices"),
+          },
+        ]
+      : [item];
+  });
 }
 
 /**

@@ -1,6 +1,7 @@
 import { DemoApi, field, loginAs, ok } from "./api-client";
 import { ensureDemoCard } from "./card";
 import { ensureDemoPayouts } from "./payouts";
+import { ensureBidderCard, ensureDemoCard } from "./card";
 import type { DemoPasswords } from "./api-client";
 import { DEMO_BRANDS } from "./catalogue";
 import type { Region } from "./catalogue";
@@ -11,6 +12,10 @@ import { businessIdFor, campaignIdFor, listingIdFor } from "./world";
  * the real routes: approved charities (apply, then a staff decision), demo
  * vouchers bought with goodwill points, pending and accepted gifts, open
  * charity auctions with bids, and one boosted campaign. Teens take no part.
+ *
+ * 5.1.d: where AU runs on Stripe, each bidder saves a card through the real route and the
+ * simulation's checkout page before bidding, and a charity that has no connected `acct_` yet
+ * (its onboarding is not finished) is skipped with a log line rather than failing the reset.
  */
 export interface MarketplaceConfig extends DemoPasswords {
   readonly apiBaseUrl: string;
@@ -264,16 +269,29 @@ export async function runDemoMarketplace(
       },
     ];
     let auctions = 0;
+    const withCard = new Set<DemoApi>();
     for (const listing of listings) {
       if (listing.voucherId === undefined || listing.charityId === undefined) continue;
-      const auction = ok(
-        await listing.seller.post(`/api/wallet/vouchers/${listing.voucherId}/auction`, {
+      const listed = await listing.seller.post(
+        `/api/wallet/vouchers/${listing.voucherId}/auction`,
+        {
           charityId: listing.charityId,
-        }),
-        "list auction",
+        },
       );
+      if (field(listed.body, "code") === "charity_not_ready") {
+        log(
+          `[demo:marketplace] ${region}: skipped an auction for a charity that has not finished payment onboarding`,
+        );
+        continue;
+      }
+      const auction = ok(listed, "list auction");
       const auctionId = String(field(auction, "auctionId"));
       for (const bidder of listing.bidders) {
+        // Where a bid charges a saved card, save one first, as a person would.
+        if (!withCard.has(bidder)) {
+          await ensureBidderCard(bidder, `${region} bidder ${userIdOf(bidder)}`);
+          withCard.add(bidder);
+        }
         const view = ok(await bidder.get(`/api/auctions/${auctionId}`), "auction");
         ok(
           await bidder.post(`/api/auctions/${auctionId}/bids`, {

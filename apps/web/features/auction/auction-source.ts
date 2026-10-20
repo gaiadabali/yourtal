@@ -1,6 +1,12 @@
 import "server-only";
 
 import { auctionListSchema, auctionSchema, type Auction } from "@yourtal/contracts/auction/auction";
+import {
+  billingCardSchema,
+  startCardSetupResultSchema,
+  type BillingCard,
+  type StartCardSetupResult,
+} from "@yourtal/contracts/billing";
 import type { PublicCharity } from "@yourtal/contracts/charity/charity";
 import { listCharitiesOrNull } from "@/features/charity/charity-data";
 import { apiFetch } from "@/lib/api/api-fetch";
@@ -20,6 +26,10 @@ export interface AuctionSource {
   myBids(): Promise<Auction[] | null>;
   myListings(): Promise<Auction[] | null>;
   charities(): Promise<PublicCharity[] | null>;
+  /** 5.1.d: the bidder's saved card, and whether a bid in this region needs one. Null when unreadable. */
+  card(): Promise<BillingCard | null>;
+  /** The processor's page to save a card on, which comes back to this auction. */
+  startCardSetup(auctionId: string | null): Promise<StartCardSetupResult | null>;
   bid(auctionId: string, amountMinor: number): Promise<AuctionWrite>;
   listVoucher(voucherId: string, charityId: string): Promise<AuctionWrite>;
 }
@@ -51,6 +61,17 @@ export const auctionSource: AuctionSource = {
   },
   charities() {
     return listCharitiesOrNull();
+  },
+  async card() {
+    const result = await apiFetch("/api/me/payment-card", billingCardSchema);
+    return result.ok ? result.data : null;
+  },
+  async startCardSetup(auctionId) {
+    const result = await apiFetch("/api/me/payment-card", startCardSetupResultSchema, {
+      method: "POST",
+      body: auctionId === null ? {} : { auctionId },
+    });
+    return result.ok ? result.data : null;
   },
   async bid(auctionId, amountMinor) {
     const result = await apiFetch(

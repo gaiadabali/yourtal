@@ -71,6 +71,18 @@
     "invalidAud": "Masukkan jumlah dalam dolar, misalnya 21.50.",
     "invalidIdr": "Masukkan jumlah rupiah bulat, misalnya 25000.",
     "fineprint": "Tawaran dalam uang tunai dan mengikat. Pembayaran di situs ini disimulasikan.",
+    "card": {
+      "title": "Tambahkan kartu untuk menawar",
+      "why": "Tawaran Anda menahan dana sebesar jumlahnya di kartu ini. Hanya ditagih jika Anda menang; jika tidak, dana dilepas saat lelang selesai.",
+      "add": "Tambahkan kartu untuk menawar",
+      "replace": "Ganti kartu",
+      "saved": "Tawaran memakai {brand} berakhiran {last4}, berlaku hingga {month}/{year}.",
+      "added": "Kartu tersimpan. Anda bisa menawar sekarang.",
+      "saving": "Menyimpan kartu Anda. Biasanya hanya beberapa detik.",
+      "stillSaving": "Kartu Anda belum terkonfirmasi. Muat ulang halaman ini semenit lagi untuk memeriksa.",
+      "cancelled": "Tidak ada kartu yang disimpan.",
+      "failed": "Halaman kartu belum bisa dibuka. Coba lagi."
+    },
     "refusal": {
       "charity_unavailable": "Yayasan itu belum bisa menerima lelang.",
       "voucher_not_unused": "Hanya voucher yang belum dipakai yang bisa dilelang.",
@@ -82,7 +94,9 @@
       "auction_closed": "Lelang ini sudah selesai.",
       "bid_too_low": "Tawaran di bawah minimum. Tawar minimal sebesar jumlah yang tertera.",
       "payment_declined": "Kartu Anda menolak penahanan dana. Coba kartu lain.",
-      "failed": "Belum berhasil. Coba lagi."
+      "failed": "Belum berhasil. Coba lagi.",
+      "card_required": "Tambahkan kartu sebelum menawar.",
+      "charity_not_ready": "Yayasan ini masih menyiapkan penerimaan pembayaran. Coba lagi nanti."
     }
   },
   "list": {
@@ -108,7 +122,8 @@
       "auction_closed": "Lelang ini sudah selesai.",
       "bid_too_low": "Sudah ada yang menawar lebih dulu. Tawar minimal jumlah terbaru.",
       "payment_declined": "Kartu Anda menolak penahanan dana. Coba kartu lain.",
-      "failed": "Belum berhasil. Coba lagi."
+      "failed": "Belum berhasil. Coba lagi.",
+      "charity_not_ready": "Yayasan ini masih menyiapkan penerimaan pembayaran. Pilih yayasan lain atau coba lagi nanti."
     }
   },
   "charitiesLink": "Lihat yayasan"

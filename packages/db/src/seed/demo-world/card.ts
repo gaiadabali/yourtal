@@ -11,21 +11,33 @@ const TEST_CARD = { number: "4242 4242 4242 4242", expiry: "12 / 34", cvc: "123"
  * payments no card is required and this does nothing.
  */
 export async function ensureDemoCard(owner: DemoApi, businessId: string): Promise<void> {
-  const cardPath = `/api/${businessId}/studio/billing/card`;
-  const current = ok(await owner.get(cardPath), "billing card");
-  if (field(current, "required") !== true || field(current, "card") !== null) return;
+  await ensureCardAt(owner, `/api/${businessId}/studio/billing/card`, `business ${businessId}`);
+}
 
-  const started = ok(await owner.post(cardPath), "start card setup");
+/**
+ * 5.1.d: the same for a demo bidder, through `/api/me/payment-card`. Resolves to whether a card is
+ * saved: false (and nothing done) where the region's processor needs none.
+ */
+export async function ensureBidderCard(bidder: DemoApi, who: string): Promise<boolean> {
+  return ensureCardAt(bidder, "/api/me/payment-card", who);
+}
+
+async function ensureCardAt(person: DemoApi, cardPath: string, who: string): Promise<boolean> {
+  const current = ok(await person.get(cardPath), "card");
+  if (field(current, "required") !== true) return false;
+  if (field(current, "card") !== null) return true;
+
+  const started = ok(await person.post(cardPath), "start card setup");
   const checkoutUrl = field(started, "checkoutUrl");
-  if (typeof checkoutUrl !== "string") return; // saved at once
+  if (typeof checkoutUrl !== "string") return true; // saved at once
   await submitTestCard(checkoutUrl);
 
   // The card arrives with the simulation's webhook, delivered every few seconds.
   for (let attempt = 0; attempt < 30; attempt += 1) {
-    if (field(ok(await owner.get(cardPath), "billing card"), "card") !== null) return;
+    if (field(ok(await person.get(cardPath), "card"), "card") !== null) return true;
     await sleep(2_000);
   }
-  throw new Error(`demo card for ${businessId}: the card was not saved within a minute`);
+  throw new Error(`demo card for ${who}: the card was not saved within a minute`);
 }
 
 /** Loads the checkout page, reads its CSRF token as a form would, and posts the test card. */

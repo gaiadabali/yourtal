@@ -5,6 +5,7 @@ import { formatMoney } from "@yourtal/contracts/money/format";
 import { MoneyAmount } from "@yourtal/ui/money-amount";
 import { Notice } from "@yourtal/ui/notice";
 import { AuctionBidForm } from "@/features/auction/auction-bid-form";
+import { BidCard, needsCardToBid } from "@/features/auction/bid-card";
 import { AuctionPageShell } from "@/features/auction/auction-page-shell";
 import { auctionSource } from "@/features/auction/auction-source";
 import { timeLeftParts } from "@/features/auction/auction-time";
@@ -13,12 +14,14 @@ import { getDisplayLocale } from "@/i18n/get-locale";
 
 /** 13.22.d: one auction. Only the amount and bid count are public; your own standing is yours. */
 export default async function AuctionPage(props: PageProps<"/auctions/[auctionId]">) {
-  const { auctionId } = await props.params;
-  const [auction, t, locale] = await Promise.all([
+  const [{ auctionId }, search] = await Promise.all([props.params, props.searchParams]);
+  const [auction, card, t, locale] = await Promise.all([
     auctionSource.get(auctionId),
+    auctionSource.card(),
     getTranslations("auction"),
     getDisplayLocale(),
   ]);
+  const cardOutcome = typeof search["card"] === "string" ? search["card"] : undefined;
   if (!auction) notFound();
   const nowMs = Date.now();
   const left = timeLeftParts(auction.endsAt, nowMs);
@@ -99,12 +102,17 @@ export default async function AuctionPage(props: PageProps<"/auctions/[auctionId
           {viewer.role === "seller" ? (
             <Notice tone="info">{t("yourListing")}</Notice>
           ) : open ? (
-            <AuctionBidForm
-              auctionId={auction.auctionId}
-              currency={auction.currency}
-              minimumNextBidMinor={auction.minimumNextBidMinor}
-              minimumLabel={formatMoney(auction.minimumNextBidMinor, auction.currency)}
-            />
+            <>
+              <BidCard auctionId={auction.auctionId} card={card} outcome={cardOutcome} />
+              {needsCardToBid(card) ? null : (
+                <AuctionBidForm
+                  auctionId={auction.auctionId}
+                  currency={auction.currency}
+                  minimumNextBidMinor={auction.minimumNextBidMinor}
+                  minimumLabel={formatMoney(auction.minimumNextBidMinor, auction.currency)}
+                />
+              )}
+            </>
           ) : null}
         </aside>
       </div>

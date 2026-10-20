@@ -1,6 +1,8 @@
+import * as z from "zod";
 import {
   billingBalanceSchema,
   billingCardSchema,
+  billingStatementSchema,
   cardPurchaseSchema,
   purchaseQuoteSchema,
   purchaseResultSchema,
@@ -9,11 +11,14 @@ import {
 import type {
   BillingAllocation,
   BillingCard,
+  BillingStatement,
   CardPurchase,
   PurchaseQuote,
   PurchaseResult,
   StartCardSetupResult,
 } from "@yourtal/contracts/billing";
+import { payoutLinkSchema, studioPayoutsSchema } from "@yourtal/contracts/billing/payouts";
+import type { PayoutLink, StudioPayouts } from "@yourtal/contracts/billing/payouts";
 import type { Currency } from "@yourtal/contracts/money/currency";
 import { withTax } from "@yourtal/contracts/money/tax";
 import { resolveStudioDataSource } from "../studio-data-source";
@@ -48,7 +53,18 @@ interface BillingDataSource {
   getPurchase: (businessId: string, purchaseId: string) => Promise<CardPurchase | null>;
   getCard: (businessId: string) => Promise<BillingCard>;
   startCardSetup: (businessId: string) => Promise<StartCardSetupResult>;
+  /** 5.2: where approved statements are paid, and how each one is going. */
+  getPayouts: (businessId: string) => Promise<StudioPayouts>;
+  startPayoutLink: (businessId: string) => Promise<PayoutLink>;
+  getStatements: (businessId: string) => Promise<BillingStatement[]>;
 }
+
+const NO_PAYOUTS: StudioPayouts = {
+  account: { available: false, state: "not_started", bankLast4: null, hostedOnboarding: false },
+  payoutFailed: false,
+  waitingForAccount: false,
+  payouts: [],
+};
 
 /**
  * `businessId` doubles as `:tenantId`, same rule every other Studio data
@@ -108,6 +124,27 @@ const liveDataSource: BillingDataSource = {
     );
     if (!result.ok) throw new Error(`Could not start saving a card: ${result.error.message}`);
     return result.data;
+  },
+  getPayouts: async (businessId) => {
+    const result = await apiFetch(`/api/${businessId}/studio/billing/payouts`, studioPayoutsSchema);
+    // A failed read hides the panel rather than breaking the whole Billing page.
+    return result.ok ? result.data : NO_PAYOUTS;
+  },
+  startPayoutLink: async (businessId) => {
+    const result = await apiFetch(
+      `/api/${businessId}/studio/billing/payouts/link`,
+      payoutLinkSchema,
+      { method: "POST", body: {} },
+    );
+    if (!result.ok) throw new Error(`Could not open payout details: ${result.error.message}`);
+    return result.data;
+  },
+  getStatements: async (businessId) => {
+    const result = await apiFetch(
+      `/api/${businessId}/studio/billing/statements`,
+      z.array(billingStatementSchema),
+    );
+    return result.ok ? result.data : [];
   },
 };
 
@@ -199,6 +236,12 @@ const mockDataSource: BillingDataSource = {
       checkoutUrl: null,
       card: { brand: "visa", last4: "4242", expMonth: 12, expYear: 2034 },
     }),
+  getPayouts: () => Promise.resolve(NO_PAYOUTS),
+  startPayoutLink: (businessId) =>
+    Promise.resolve({
+      url: `http://localhost/studio/billing?business=${encodeURIComponent(businessId)}&payouts=returned`,
+    }),
+  getStatements: () => Promise.resolve([]),
 };
 
 const billingDataSource = resolveStudioDataSource({ mock: mockDataSource, live: liveDataSource });
@@ -234,4 +277,16 @@ export function getCard(businessId: string): Promise<BillingCard> {
 
 export function startCardSetup(businessId: string): Promise<StartCardSetupResult> {
   return billingDataSource.startCardSetup(businessId);
+}
+
+export function getPayouts(businessId: string): Promise<StudioPayouts> {
+  return billingDataSource.getPayouts(businessId);
+}
+
+export function startPayoutLink(businessId: string): Promise<PayoutLink> {
+  return billingDataSource.startPayoutLink(businessId);
+}
+
+export function getStatements(businessId: string): Promise<BillingStatement[]> {
+  return billingDataSource.getStatements(businessId);
 }

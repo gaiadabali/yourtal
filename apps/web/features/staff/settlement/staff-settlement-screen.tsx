@@ -6,8 +6,10 @@ import { Notice } from "@yourtal/ui/notice";
 import { StatusBadge } from "@yourtal/ui/status-badge";
 import { Text } from "@yourtal/ui/text";
 import { Textarea } from "@yourtal/ui/textarea";
+import type { StaffDisbursement } from "@yourtal/contracts/billing/payouts";
 import type { EconomyProposal } from "@yourtal/contracts/staff/economy";
 import type { SettlementQueue } from "@yourtal/contracts/staff/settlement";
+import { StaffApprovedPayouts } from "./staff-approved-payouts";
 import {
   approvePayoutAction,
   proposePayoutAction,
@@ -19,6 +21,7 @@ export interface StaffSettlementScreenProps {
   readonly region: "AU" | "ID";
   readonly queue: SettlementQueue;
   readonly payoutProposals: readonly EconomyProposal[];
+  readonly disbursements: readonly StaffDisbursement[];
   readonly canResolveDispute: boolean;
   readonly canProposePayout: boolean;
   readonly currentStaffId: string;
@@ -54,6 +57,7 @@ export function StaffSettlementScreen({
   region,
   queue,
   payoutProposals,
+  disbursements,
   canResolveDispute,
   canProposePayout,
   currentStaffId,
@@ -192,6 +196,8 @@ export function StaffSettlementScreen({
           )}
         </CardContent>
       </Card>
+
+      <StaffApprovedPayouts t={t} proposals={payoutProposals} disbursements={disbursements} />
     </div>
   );
 }

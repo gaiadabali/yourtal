@@ -4,7 +4,11 @@ import { DataTable } from "@yourtal/ui/data-table";
 import { EmptyState } from "@yourtal/ui/empty-state";
 import { MoneyAmount } from "@yourtal/ui/money-amount";
 import { PageHeader } from "@yourtal/ui/page-header";
-import { loadCharityConsole } from "@/features/charity/charity-data";
+import { getCharityPayouts, loadCharityConsole } from "@/features/charity/charity-data";
+import {
+  CharityPayoutsNotice,
+  CharityPayoutsPanel,
+} from "@/features/charity/charity-payouts-panel";
 
 /**
  * `/charity/[charityId]` (13.21.c): a charity member's console. It lists
@@ -13,12 +17,17 @@ import { loadCharityConsole } from "@/features/charity/charity-data";
  */
 export default async function CharityConsolePage(props: {
   params: Promise<{ charityId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { charityId } = await props.params;
-  const [t, locale, data] = await Promise.all([
+  const searchParams = await props.searchParams;
+  const payoutsOutcome =
+    typeof searchParams.payouts === "string" ? searchParams.payouts : undefined;
+  const [t, locale, data, payouts] = await Promise.all([
     getTranslations("charity"),
     getLocale(),
     loadCharityConsole(charityId),
+    getCharityPayouts(charityId),
   ]);
   const displayLocale = locale === "id-ID" ? "id-ID" : "en-AU";
   if (data === null) {
@@ -33,9 +42,11 @@ export default async function CharityConsolePage(props: {
   return (
     <>
       <PageHeader title={charity.name} description={t("console.note")} />
+      <CharityPayoutsNotice outcome={payoutsOutcome} payouts={payouts} t={t} />
       <p className="font-sans text-body-sm text-fg-muted">
         {t("console.account", { last4: charity.payoutAccountLast4 })}
       </p>
+      <CharityPayoutsPanel charityId={charityId} payouts={payouts} t={t} />
       <Card>
         <CardHeader>
           <CardTitle as="h2">{t("console.proceedsTitle")}</CardTitle>

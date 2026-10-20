@@ -61,7 +61,19 @@
     "paidAt": "Dibayar",
     "month": "Bulan",
     "auctions": "Lelang",
-    "total": "Total"
+    "total": "Total",
+    "payouts": {
+      "title": "Pembayaran",
+      "intro": "Hasil lelang dibayarkan ke rekening bank yang Anda atur di sini.",
+      "auctionsNeed": "Lelang di Australia memerlukan pengaturan pembayaran terlebih dahulu.",
+      "ready": "Hasil lelang dibayarkan ke rekening berakhiran ••{last4}",
+      "setUp": "Atur pembayaran",
+      "finish": "Selesaikan pengaturan",
+      "update": "Perbarui detail bank",
+      "returnedChecking": "Terima kasih — kami sedang memeriksa detail pembayaran Anda.",
+      "returnedReady": "Pembayaran sudah diatur.",
+      "error": "Halaman detail pembayaran tidak dapat dibuka. Coba lagi."
+    }
   },
   "browse": {
     "intro": {

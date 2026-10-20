@@ -4,6 +4,7 @@ import { requireStaffSession } from "@/features/staff/staff-session";
 import { flashFrom } from "@/features/staff/economy/staff-economy-flash";
 import { StaffRegionSwitch } from "@/features/staff/economy/staff-region-switch";
 import {
+  getDisbursements,
   getPayoutProposals,
   getSettlementQueue,
 } from "@/features/staff/settlement/staff-settlement-data";
@@ -21,9 +22,10 @@ export default async function StaffSettlementPage(props: PageProps<"/staff/settl
   const region = regionParam === "ID" ? "ID" : "AU";
   const t = await getTranslations("staff");
 
-  const [queue, payoutProposals] = await Promise.all([
+  const [queue, payoutProposals, disbursements] = await Promise.all([
     getSettlementQueue(region),
     getPayoutProposals(region),
+    getDisbursements(region),
   ]);
   const idempotencyKey = crypto.randomUUID();
 
@@ -46,6 +48,7 @@ export default async function StaffSettlementPage(props: PageProps<"/staff/settl
         region={region}
         queue={queue}
         payoutProposals={payoutProposals}
+        disbursements={disbursements}
         canResolveDispute={session.roles.includes("finance") || session.roles.includes("ops")}
         canProposePayout={session.roles.includes("finance")}
         currentStaffId={session.userId}

@@ -12,7 +12,9 @@ import {
   PRESET_POINT_AMOUNTS,
   getBalance,
   getCard,
+  getPayouts,
   getPurchase,
+  getStatements,
   quotePoints,
 } from "@/features/studio/billing/billing-data";
 import { BillingCardPanel } from "@/features/studio/billing/billing-card-panel";
@@ -20,6 +22,11 @@ import {
   CardReturnNotice,
   PurchaseReturnNotice,
 } from "@/features/studio/billing/billing-return-notices";
+import {
+  BillingPayoutsPanel,
+  PayoutsReturnNotice,
+} from "@/features/studio/billing/billing-payouts-panel";
+import { BillingStatementsPanel } from "@/features/studio/billing/billing-statements-panel";
 import { BillingScreen } from "@/features/studio/billing/billing-screen";
 
 const param = (value: string | string[] | undefined) =>
@@ -62,11 +69,13 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
 
   const { id: businessId, currency } = current.business;
   const purchaseId = param(searchParams.purchase);
-  const [balance, quotes, card, purchase] = await Promise.all([
+  const [balance, quotes, card, purchase, payouts, statements] = await Promise.all([
     getBalance(businessId),
     Promise.all(PRESET_POINT_AMOUNTS.map((points) => quotePoints(businessId, points, currency))),
     getCard(businessId),
     purchaseId === undefined ? Promise.resolve(null) : getPurchase(businessId, purchaseId),
+    getPayouts(businessId),
+    getStatements(businessId),
   ]);
   // Minted once per render, not per submit — see `billing-screen.tsx`'s doc comment.
   const idempotencyKey = crypto.randomUUID();
@@ -89,6 +98,11 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
           locale={locale}
         />
         <CardReturnNotice outcome={param(searchParams.card)} card={card} locale={locale} />
+        <PayoutsReturnNotice
+          outcome={param(searchParams.payouts)}
+          payouts={payouts}
+          locale={locale}
+        />
         {typeof searchParams.error === "string" ? (
           <Notice tone="danger">{t("billing.purchaseFailed")}</Notice>
         ) : null}
@@ -106,6 +120,13 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
           canEdit={canPurchase}
           locale={locale}
         />
+        <BillingPayoutsPanel
+          businessId={businessId}
+          payouts={payouts}
+          canEdit={canPurchase}
+          locale={locale}
+        />
+        <BillingStatementsPanel statements={statements} payouts={payouts.payouts} locale={locale} />
         <BoostChargesCard businessId={businessId} locale={locale} />
       </div>
     </StudioChrome>

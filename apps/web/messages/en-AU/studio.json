@@ -632,7 +632,31 @@
     "cardAdded": "Card saved. Boosts will be charged to it.",
     "cardSaving": "Saving your card. This usually takes a few seconds.",
     "cardCancelled": "No card was saved.",
-    "cardFailed": "We couldn't open the card page. Try again."
+    "cardFailed": "We couldn't open the card page. Try again.",
+    "payoutsTitle": "Payouts",
+    "payoutsIntro": "Approved statements are paid to the bank account you set up here.",
+    "payoutsReady": "Payouts go to the account ending ••{last4}",
+    "payoutsSetUp": "Set up payouts",
+    "payoutsFinish": "Finish setting up",
+    "payoutsUpdate": "Update bank details",
+    "payoutsFailed": "A payout to your bank account failed. Update your bank details and we'll pay it again.",
+    "payoutsWaiting": "Approved payouts are waiting for your payout details.",
+    "payoutsReturnedChecking": "Thanks — we're checking your payout details.",
+    "payoutsReturnedReady": "Payouts are set up.",
+    "payoutsError": "The payout details page could not be opened. Try again.",
+    "statementsTitle": "Statements",
+    "statementsEmptyTitle": "No statements yet",
+    "statementsEmptyDescription": "Statements appear here once a settlement period closes.",
+    "statementPeriod": "{from} to {to}",
+    "statementStatus": {
+      "open": "Open",
+      "disputed": "Disputed",
+      "paid": "Paid"
+    },
+    "statementPaid": "Paid to account ••{last4} on {date}",
+    "statementAwaiting": "Waiting for payout details",
+    "statementFailed": "Payout failed",
+    "statementOnItsWay": "Payout on its way"
   },
   "channel": {
     "saved": "Saved.",

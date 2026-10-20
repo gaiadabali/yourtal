@@ -2,6 +2,10 @@ import "server-only";
 import { forbidden } from "next/navigation";
 import { economyProposalSchema, type EconomyProposal } from "@yourtal/contracts/staff/economy";
 import { settlementQueueSchema, type SettlementQueue } from "@yourtal/contracts/staff/settlement";
+import {
+  staffDisbursementsSchema,
+  type StaffDisbursement,
+} from "@yourtal/contracts/billing/payouts";
 import * as z from "zod";
 import type { ApiError } from "@/lib/api/api-fetch";
 import { apiFetch } from "@/lib/api/api-fetch";
@@ -35,4 +39,15 @@ export async function getPayoutProposals(region: "AU" | "ID"): Promise<readonly 
   if (result.ok) return result.data;
   if (result.error.kind === "http" && result.error.status === 403) return [];
   throw new Error(`Could not load payout proposals: ${result.error.message}`);
+}
+
+/** 5.2: how each approved payout is reaching the brand's bank. `[]` on a 403, like the proposals beside it. */
+export async function getDisbursements(region: "AU" | "ID"): Promise<readonly StaffDisbursement[]> {
+  const result = await apiFetch(
+    `/api/staff/settlement/${region}/disbursements`,
+    staffDisbursementsSchema,
+  );
+  if (result.ok) return result.data.disbursements;
+  if (result.error.kind === "http" && result.error.status === 403) return [];
+  throw new Error(`Could not load payout disbursements: ${result.error.message}`);
 }

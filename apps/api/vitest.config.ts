@@ -31,7 +31,10 @@ export default defineConfig({
     // worker, post `test.env`), so it sees the same DATABASE_URL the tests
     // themselves get — including the literal fallback right below, which is
     // exactly what it exists to catch when nothing set the real one.
-    setupFiles: ["../../packages/db/scripts/assert-test-database.mjs"],
+    setupFiles: [
+      "../../packages/db/scripts/assert-test-database.mjs",
+      "./src/shared/testing/rate-limit-namespace.setup.ts",
+    ],
 
     /**
      * The app role, not the owner — so a missing grant fails here rather

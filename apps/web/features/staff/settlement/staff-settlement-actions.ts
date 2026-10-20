@@ -4,6 +4,10 @@ import type { Route } from "next";
 import { redirect } from "next/navigation";
 import type { ZodType } from "zod";
 import { economyProposalSchema } from "@yourtal/contracts/staff/economy";
+import {
+  checkDisbursementResultSchema,
+  type CheckDisbursementOutcome,
+} from "@yourtal/contracts/staff/settlement";
 import { statementSchema } from "@yourtal/contracts/ledger-internal/economy";
 import { apiFetch } from "@/lib/api/api-fetch";
 
@@ -85,4 +89,62 @@ export async function approvePayoutAction(formData: FormData): Promise<void> {
     economyProposalSchema,
   );
   redirect(settlementRoute(region, result.ok ? "approved" : "error"));
+}
+
+// -- 5.2.c: a payout never in flight unseen. Called from a client button, so they answer with a result, not a redirect. --
+
+export type DisbursementActionResult =
+  { ok: true; outcome?: CheckDisbursementOutcome } | { ok: false; message: string };
+
+function regionOrThrow(region: string): "AU" | "ID" {
+  if (region !== "AU" && region !== "ID") throw new Error("invalid region");
+  return region;
+}
+
+/** "Check again": reads the payout back from the processor. Single-person; moves no money. */
+export async function checkDisbursementAction(
+  region: string,
+  disbursementId: string,
+): Promise<DisbursementActionResult> {
+  const result = await post(
+    `/api/staff/settlement/${regionOrThrow(region)}/disbursements/${encodeURIComponent(disbursementId)}/check`,
+    crypto.randomUUID(),
+    {},
+    checkDisbursementResultSchema,
+  );
+  return result.ok
+    ? { ok: true, outcome: result.data.outcome }
+    : { ok: false, message: result.error.message };
+}
+
+/** Proposes a new payout attempt (two-person). `""` message means the reason was unusable. */
+export async function proposeRetryAction(
+  region: string,
+  disbursementId: string,
+  reason: string,
+): Promise<DisbursementActionResult> {
+  const trimmed = reason.trim();
+  if (trimmed === "" || trimmed.length > 500) return { ok: false, message: "" };
+  const result = await post(
+    `/api/staff/settlement/${regionOrThrow(region)}/disbursements/${encodeURIComponent(disbursementId)}/retry-proposals`,
+    crypto.randomUUID(),
+    { reason: trimmed },
+    economyProposalSchema,
+  );
+  return result.ok ? { ok: true } : { ok: false, message: result.error.message };
+}
+
+/** A second staff member approves (the payout is attempted once) or rejects the pending retry. */
+export async function decideRetryAction(
+  region: string,
+  proposalId: string,
+  decision: "approve" | "reject",
+): Promise<DisbursementActionResult> {
+  const result = await post(
+    `/api/staff/settlement/${regionOrThrow(region)}/retry-proposals/${encodeURIComponent(proposalId)}/${decision}`,
+    crypto.randomUUID(),
+    {},
+    economyProposalSchema,
+  );
+  return result.ok ? { ok: true } : { ok: false, message: result.error.message };
 }

@@ -16,6 +16,8 @@ import { Textarea } from "@yourtal/ui/textarea";
 
 export interface StaffReasonDialogButtonProps {
   readonly triggerLabel: string;
+  /** Names the row the button acts on (must start with the visible label); the visible text stays short. */
+  readonly triggerAriaLabel?: string;
   readonly triggerVariant?: "primary" | "secondary" | "danger" | "ghost";
   readonly dialogTitle: string;
   readonly dialogBody: string;
@@ -32,6 +34,7 @@ export interface StaffReasonDialogButtonProps {
  */
 export function StaffReasonDialogButton({
   triggerLabel,
+  triggerAriaLabel,
   triggerVariant = "secondary",
   dialogTitle,
   dialogBody,
@@ -66,7 +69,9 @@ export function StaffReasonDialogButton({
       }}
     >
       <DialogTrigger asChild>
-        <Button variant={triggerVariant}>{triggerLabel}</Button>
+        <Button variant={triggerVariant} aria-label={triggerAriaLabel}>
+          {triggerLabel}
+        </Button>
       </DialogTrigger>
       <DialogContent closeLabel={t("dialog.close")}>
         <DialogHeader>

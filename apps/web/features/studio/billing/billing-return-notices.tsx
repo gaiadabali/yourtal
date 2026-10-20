@@ -24,6 +24,8 @@ export function PurchaseReturnNotice({
       return <Notice tone="success">{t("billing.purchased")}</Notice>;
     case "needs_review":
       return <Notice tone="info">{t("billing.returnReview")}</Notice>;
+    case "refunded":
+      return <Notice tone="info">{t("billing.returnRefunded")}</Notice>;
     case "expired":
       return <Notice tone="warning">{t("billing.returnExpired")}</Notice>;
     case "pending":

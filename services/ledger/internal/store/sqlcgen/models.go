@@ -31,6 +31,7 @@ type CampaignRewardConfig struct {
 	MaxPointsForCampaign      int64
 	RewardPointsPerCompletion int64
 	AccuracyBonusPoints       int64
+	DailyCapPoints            *int64
 }
 
 type LedgerAccount struct {
@@ -109,6 +110,12 @@ type LedgerBurnReinstatement struct {
 	LiabilityTransferID string
 	Reason              string
 	CreatedAt           pgtype.Timestamptz
+}
+
+type LedgerCampaignHold struct {
+	HoldID     string
+	CampaignID pgtype.UUID
+	CreatedAt  pgtype.Timestamptz
 }
 
 type LedgerCapture struct {

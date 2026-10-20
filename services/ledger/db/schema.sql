@@ -154,6 +154,13 @@ CREATE TABLE ledger.allocation_hold (
   resolved_at     timestamptz
 );
 
+-- 20261020120826 (14.2): the campaign a session's hold reserves room in.
+CREATE TABLE ledger.campaign_hold (
+  hold_id     text        PRIMARY KEY REFERENCES ledger.allocation_hold (id),
+  campaign_id uuid        NOT NULL,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE TABLE ledger.allocation_return (
   grant_id    text        PRIMARY KEY REFERENCES ledger.grant (id),
   points      bigint      NOT NULL,
@@ -281,7 +288,9 @@ CREATE TABLE campaign.reward_config (
   funder_type                  text   NOT NULL,
   max_points_for_campaign      bigint NOT NULL,
   reward_points_per_completion bigint NOT NULL,
-  accuracy_bonus_points        bigint NOT NULL
+  accuracy_bonus_points        bigint NOT NULL,
+  -- 20261020120826 (14.2): the campaign's daily cap, in points; NULL is uncapped.
+  daily_cap_points             bigint
 );
 
 -- Views over the campaign tables (20260925210000), read-only to the ledger.

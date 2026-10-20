@@ -147,10 +147,8 @@ type GrantRequest struct {
 	// def replaces the taxonomy entry, for the contract's grants whose
 	// points are set per request (GrantReward, GrantAction).
 	def *ActionDefinition
-	// completion is the attestation a campaign grant is paid on, and
-	// campaignMax the campaign's total ceiling (4.4.a-c).
-	completion  *attest.Completion
-	campaignMax int64
+	// completion is the attestation a campaign grant is paid on (4.4.c).
+	completion *attest.Completion
 }
 
 // GrantResult is what was paid, and from where.
@@ -195,7 +193,8 @@ func New(pool *pgxpool.Pool, book *ledger.Ledger, risk RiskGate, region ledger.R
 //  2. evidence — was the thing it requires presented?
 //  3. risk gate — is this principal allowed to earn?
 //  4. caps — per-action, device, IP, daily and monthly, counted from the
-//     grant log under a per-user lock on the database's clock
+//     grant log under a per-user lock on the database's clock; then the
+//     campaign's budget and daily cap under its lock (14.2)
 //  5. drawdown — atomically take the points out of a funded allocation
 //  6. ledger — post the transfer
 //  7. grant log — record it, which is what step 4 counts next time
@@ -270,6 +269,15 @@ func (e *Engine) issue(
 		return GrantResult{}, fmt.Errorf("locking the user's grants: %w", err)
 	}
 	defer func() { _ = session.UnlockUserGrantsSession(context.WithoutCancel(ctx), req.UserID) }()
+	// 14.2: a campaign grant also takes its campaign's lock, after the
+	// user's (the only order any path takes the two in), for the same reason.
+	if req.CampaignID != "" {
+		unlock, err := lockCampaignSession(ctx, session, req.CampaignID)
+		if err != nil {
+			return GrantResult{}, err
+		}
+		defer unlock()
+	}
 
 	err = ledger.WithSerializableRetry(ctx, conn,
 		func(tx pgx.Tx) error {
@@ -286,8 +294,10 @@ func (e *Engine) issue(
 			if err := e.checkCaps(ctx, queries, req, def, caps); err != nil {
 				return err
 			}
-			if err := checkCampaignMax(ctx, queries, req, def.Points); err != nil {
-				return err
+			if req.CampaignID != "" {
+				if err := e.checkCampaignBudget(ctx, queries, req.CampaignID, req.HoldID, def.Points); err != nil {
+					return err
+				}
 			}
 
 			// K6, structurally: the allocation verbs are the only way points

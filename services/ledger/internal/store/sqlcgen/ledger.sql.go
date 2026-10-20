@@ -11,6 +11,79 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const campaignBudgetUse = `-- name: CampaignBudgetUse :many
+SELECT r.campaign_id, r.max_points_for_campaign, r.daily_cap_points,
+       COALESCE(g.total, 0)::bigint AS granted_points,
+       COALESCE(g.today, 0)::bigint AS granted_today_points,
+       COALESCE(h.held, 0)::bigint  AS held_points
+FROM campaign.reward_config r
+JOIN campaign.campaign_owner o ON o.id = r.campaign_id
+LEFT JOIN LATERAL (
+  SELECT SUM(gr.points) AS total,
+         SUM(gr.points) FILTER (WHERE gr.created_at >= (date_trunc('day', now() AT TIME ZONE $1::text)
+                                                        AT TIME ZONE $1::text)) AS today
+  FROM ledger.grant gr WHERE gr.campaign_id = r.campaign_id
+) g ON true
+LEFT JOIN LATERAL (
+  SELECT SUM(ah.points) AS held
+  FROM ledger.campaign_hold ch JOIN ledger.allocation_hold ah ON ah.id = ch.hold_id
+  WHERE ch.campaign_id = r.campaign_id AND ah.state = 'held' AND ah.expires_at > now()
+    AND ah.id <> $2::text
+) h ON true
+WHERE r.campaign_id = ANY($3::uuid[]) AND o.region = $4::text
+`
+
+type CampaignBudgetUseParams struct {
+	Tz            string
+	ExcludeHoldID string
+	CampaignIds   []pgtype.UUID
+	Region        string
+}
+
+type CampaignBudgetUseRow struct {
+	CampaignID           pgtype.UUID
+	MaxPointsForCampaign int64
+	DailyCapPoints       *int64
+	GrantedPoints        int64
+	GrantedTodayPoints   int64
+	HeldPoints           int64
+}
+
+// 14.2: each campaign's budget and daily cap, what it has granted in all and
+// since the start of today on the region's clock (F16), and the points its
+// live session holds reserve, leaving out one hold (the caller's own).
+func (q *Queries) CampaignBudgetUse(ctx context.Context, arg CampaignBudgetUseParams) ([]CampaignBudgetUseRow, error) {
+	rows, err := q.db.Query(ctx, campaignBudgetUse,
+		arg.Tz,
+		arg.ExcludeHoldID,
+		arg.CampaignIds,
+		arg.Region,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CampaignBudgetUseRow
+	for rows.Next() {
+		var i CampaignBudgetUseRow
+		if err := rows.Scan(
+			&i.CampaignID,
+			&i.MaxPointsForCampaign,
+			&i.DailyCapPoints,
+			&i.GrantedPoints,
+			&i.GrantedTodayPoints,
+			&i.HeldPoints,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const campaignSpend = `-- name: CampaignSpend :one
 SELECT COUNT(*)::bigint AS completions, COALESCE(SUM(points), 0)::bigint AS granted_points
 FROM ledger.grant WHERE campaign_id = $1
@@ -632,7 +705,7 @@ func (q *Queries) GetRateProposal(ctx context.Context, id string) (GetRatePropos
 
 const getRewardConfig = `-- name: GetRewardConfig :one
 SELECT campaign_id, allocation_id, funder_type, max_points_for_campaign,
-       reward_points_per_completion, accuracy_bonus_points
+       reward_points_per_completion, accuracy_bonus_points, daily_cap_points
 FROM campaign.reward_config WHERE campaign_id = $1
 `
 
@@ -647,6 +720,7 @@ func (q *Queries) GetRewardConfig(ctx context.Context, campaignID pgtype.UUID) (
 		&i.MaxPointsForCampaign,
 		&i.RewardPointsPerCompletion,
 		&i.AccuracyBonusPoints,
+		&i.DailyCapPoints,
 	)
 	return i, err
 }
@@ -826,6 +900,22 @@ func (q *Queries) InsertBurnReinstatement(ctx context.Context, arg InsertBurnRei
 		arg.LiabilityTransferID,
 		arg.Reason,
 	)
+	return err
+}
+
+const insertCampaignHold = `-- name: InsertCampaignHold :exec
+INSERT INTO ledger.campaign_hold (hold_id, campaign_id) VALUES ($1, $2)
+ON CONFLICT (hold_id) DO NOTHING
+`
+
+type InsertCampaignHoldParams struct {
+	HoldID     string
+	CampaignID pgtype.UUID
+}
+
+// 14.2: the campaign a session's hold reserves room in. Idempotent with the hold.
+func (q *Queries) InsertCampaignHold(ctx context.Context, arg InsertCampaignHoldParams) error {
+	_, err := q.db.Exec(ctx, insertCampaignHold, arg.HoldID, arg.CampaignID)
 	return err
 }
 
@@ -1570,6 +1660,17 @@ func (q *Queries) LockCampaignGrants(ctx context.Context, campaignID string) err
 	return err
 }
 
+const lockCampaignGrantsSession = `-- name: LockCampaignGrantsSession :exec
+SELECT pg_advisory_lock(hashtextextended('ledger.campaign:' || $1::text, 0))
+`
+
+// The session-level twin of LockCampaignGrants, taken before a hold's or
+// grant's transaction begins so its snapshot already holds the previous one.
+func (q *Queries) LockCampaignGrantsSession(ctx context.Context, campaignID string) error {
+	_, err := q.db.Exec(ctx, lockCampaignGrantsSession, campaignID)
+	return err
+}
+
 const lockQuote = `-- name: LockQuote :exec
 INSERT INTO ledger.quote_lock (quote_id) VALUES ($1) ON CONFLICT DO NOTHING
 `
@@ -1762,6 +1863,15 @@ func (q *Queries) TrialBalance(ctx context.Context, country string) ([]TrialBala
 		return nil, err
 	}
 	return items, nil
+}
+
+const unlockCampaignGrantsSession = `-- name: UnlockCampaignGrantsSession :exec
+SELECT pg_advisory_unlock(hashtextextended('ledger.campaign:' || $1::text, 0))
+`
+
+func (q *Queries) UnlockCampaignGrantsSession(ctx context.Context, campaignID string) error {
+	_, err := q.db.Exec(ctx, unlockCampaignGrantsSession, campaignID)
+	return err
 }
 
 const unlockUserGrantsSession = `-- name: UnlockUserGrantsSession :exec

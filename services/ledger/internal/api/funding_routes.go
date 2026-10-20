@@ -134,6 +134,9 @@ func (a *API) hold(w http.ResponseWriter, r *http.Request) {
 		Points       int64  `json:"points"`
 		SagaID       string `json:"sagaId"`
 		TTLSeconds   int64  `json:"ttlSeconds,omitempty"`
+		// CampaignID (14.2): a reward session's hold also reserves room in
+		// its campaign's budget and today's cap.
+		CampaignID string `json:"campaignId,omitempty"`
 	}
 	if !a.decode(w, r, &body) {
 		return
@@ -142,13 +145,76 @@ func (a *API) hold(w http.ResponseWriter, r *http.Request) {
 	if body.TTLSeconds > 0 {
 		ttl = time.Duration(body.TTLSeconds) * time.Second
 	}
-	if err := a.rewards["AU"].Hold(r.Context(), reward.HoldRequest{
-		ID: holdID(body.SagaID), AllocationID: body.AllocationID, Points: body.Points, TTL: ttl,
-	}); err != nil {
+	req := reward.HoldRequest{ID: holdID(body.SagaID), AllocationID: body.AllocationID, Points: body.Points, TTL: ttl}
+	var err error
+	if body.CampaignID == "" {
+		err = a.rewards["AU"].Hold(r.Context(), req)
+	} else {
+		err = a.holdForCampaign(w, r, req, body.CampaignID)
+		if errors.Is(err, errAnswered) {
+			return
+		}
+	}
+	if err != nil {
 		a.fail(w, err)
 		return
 	}
 	a.holdView(w, r, holdID(body.SagaID))
+}
+
+// errAnswered: the helper already wrote the response.
+var errAnswered = errors.New("api: response already written")
+
+// holdForCampaign holds on the engine of the campaign's own region, whose
+// clock decides the campaign's day (F16).
+func (a *API) holdForCampaign(w http.ResponseWriter, r *http.Request, req reward.HoldRequest, campaignID string) error {
+	var campaign pgtype.UUID
+	if campaign.Scan(campaignID) != nil {
+		a.fail(w, fmt.Errorf("%w: campaignId is not a uuid", errBadRequest))
+		return errAnswered
+	}
+	owner, err := sqlcgen.New(a.pool).GetCampaignOwner(r.Context(), campaign)
+	if errors.Is(err, pgx.ErrNoRows) {
+		a.fail(w, fmt.Errorf("%w: campaign %s", errNotFound, campaignID))
+		return errAnswered
+	}
+	if err != nil {
+		return err
+	}
+	engine, _, ok := a.engineFor(w, owner.Region)
+	if !ok {
+		return errAnswered
+	}
+	return engine.HoldForCampaign(r.Context(), req, campaignID)
+}
+
+// campaignBudgets is what each campaign in a region can still pay (14.2),
+// for the feed to stop offering one that could not pay a session.
+func (a *API) campaignBudgets(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Region      string   `json:"region"`
+		CampaignIDs []string `json:"campaignIds"`
+	}
+	if !a.decode(w, r, &body) {
+		return
+	}
+	engine, _, ok := a.engineFor(w, body.Region)
+	if !ok {
+		return
+	}
+	budgets, err := engine.CampaignBudgets(r.Context(), body.CampaignIDs)
+	if err != nil {
+		a.fail(w, err)
+		return
+	}
+	views := make([]map[string]any, 0, len(budgets))
+	for _, budget := range budgets {
+		views = append(views, map[string]any{
+			"campaignId": budget.CampaignID, "remainingPoints": budget.RemainingPoints,
+			"remainingTodayPoints": budget.RemainingTodayPoints,
+		})
+	}
+	httpx.WriteJSON(w, a.logger, http.StatusOK, views)
 }
 
 // consume spends a live hold in full; a grant that uses a hold consumes it

@@ -115,6 +115,7 @@ func (a *API) platformRoutes(r chi.Router) {
 	r.Post("/allocations/hold/release", a.release)
 	r.Post("/grants/return", a.returnGrant)
 	r.Post("/campaigns/spend", a.campaignSpend)
+	r.Post("/campaigns/budgets", a.campaignBudgets)
 
 	r.Post("/rewards/grants", a.grantReward)
 	r.Post("/actions/grants", a.grantAction)
@@ -237,6 +238,7 @@ var contractCodes = []struct {
 	{pricing.ErrQuoteExpired, "quote_expired"},
 	{reward.ErrAllocationExhausted, "allocation_exhausted"},
 	{reward.ErrOverCampaignMax, "campaign_cap_reached"},
+	{reward.ErrCampaignDailyCap, "campaign_daily_cap_reached"},
 	{reward.ErrUserCapReached, "velocity_capped"},
 	{reward.ErrDeviceCapReached, "velocity_capped"},
 	{reward.ErrIPCapReached, "velocity_capped"},

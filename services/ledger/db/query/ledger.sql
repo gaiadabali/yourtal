@@ -345,7 +345,7 @@ FROM ledger.listing_price WHERE listing_id = $1;
 -- name: GetRewardConfig :one
 -- Which allocation pays a campaign, and the most one completion may earn.
 SELECT campaign_id, allocation_id, funder_type, max_points_for_campaign,
-       reward_points_per_completion, accuracy_bonus_points
+       reward_points_per_completion, accuracy_bonus_points, daily_cap_points
 FROM campaign.reward_config WHERE campaign_id = $1;
 
 -- name: GetRateProposal :one
@@ -382,6 +382,43 @@ FROM campaign.campaign_terms WHERE campaign_id = $1 AND version = $2;
 -- Serialises grants on one campaign, so its maximum is checked and spent
 -- by one grant at a time.
 SELECT pg_advisory_xact_lock(hashtextextended('ledger.campaign:' || sqlc.arg(campaign_id)::text, 0));
+
+-- name: LockCampaignGrantsSession :exec
+-- The session-level twin of LockCampaignGrants, taken before a hold's or
+-- grant's transaction begins so its snapshot already holds the previous one.
+SELECT pg_advisory_lock(hashtextextended('ledger.campaign:' || sqlc.arg(campaign_id)::text, 0));
+
+-- name: UnlockCampaignGrantsSession :exec
+SELECT pg_advisory_unlock(hashtextextended('ledger.campaign:' || sqlc.arg(campaign_id)::text, 0));
+
+-- name: InsertCampaignHold :exec
+-- 14.2: the campaign a session's hold reserves room in. Idempotent with the hold.
+INSERT INTO ledger.campaign_hold (hold_id, campaign_id) VALUES ($1, $2)
+ON CONFLICT (hold_id) DO NOTHING;
+
+-- name: CampaignBudgetUse :many
+-- 14.2: each campaign's budget and daily cap, what it has granted in all and
+-- since the start of today on the region's clock (F16), and the points its
+-- live session holds reserve, leaving out one hold (the caller's own).
+SELECT r.campaign_id, r.max_points_for_campaign, r.daily_cap_points,
+       COALESCE(g.total, 0)::bigint AS granted_points,
+       COALESCE(g.today, 0)::bigint AS granted_today_points,
+       COALESCE(h.held, 0)::bigint  AS held_points
+FROM campaign.reward_config r
+JOIN campaign.campaign_owner o ON o.id = r.campaign_id
+LEFT JOIN LATERAL (
+  SELECT SUM(gr.points) AS total,
+         SUM(gr.points) FILTER (WHERE gr.created_at >= (date_trunc('day', now() AT TIME ZONE sqlc.arg(tz)::text)
+                                                        AT TIME ZONE sqlc.arg(tz)::text)) AS today
+  FROM ledger.grant gr WHERE gr.campaign_id = r.campaign_id
+) g ON true
+LEFT JOIN LATERAL (
+  SELECT SUM(ah.points) AS held
+  FROM ledger.campaign_hold ch JOIN ledger.allocation_hold ah ON ah.id = ch.hold_id
+  WHERE ch.campaign_id = r.campaign_id AND ah.state = 'held' AND ah.expires_at > now()
+    AND ah.id <> sqlc.arg(exclude_hold_id)::text
+) h ON true
+WHERE r.campaign_id = ANY(sqlc.arg(campaign_ids)::uuid[]) AND o.region = sqlc.arg(region)::text;
 
 -- name: ListStaleListingPrices :many
 -- 4.9.a: listings priced at a rate that is no longer the one in force now.

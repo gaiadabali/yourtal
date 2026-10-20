@@ -111,29 +111,9 @@ func (e *Engine) campaignGrant(ctx context.Context, req RewardRequest) (GrantReq
 		UserID: req.UserID, Action: ActionWatchCompleted, ExternalRef: req.CampaignID,
 		AllocationID: config.AllocationID, HoldID: req.HoldID, CampaignID: req.CampaignID,
 		IdempotencyKey: req.IdempotencyKey, def: &def, completion: &c,
-		campaignMax:      config.MaxPointsForCampaign,
 		TimingSuspicious: req.TimingSuspicious,
 		AgeBand:          req.AgeBand,
 	}, nil
-}
-
-// checkCampaignMax keeps a campaign's total grants within its maximum,
-// bonus included, under a per-campaign lock inside the grant's transaction.
-func checkCampaignMax(ctx context.Context, q *sqlcgen.Queries, req GrantRequest, points int64) error {
-	if req.CampaignID == "" || req.campaignMax <= 0 {
-		return nil
-	}
-	if err := q.LockCampaignGrants(ctx, req.CampaignID); err != nil {
-		return fmt.Errorf("locking the campaign's grants: %w", err)
-	}
-	spent, err := q.CampaignSpend(ctx, optionalUUID(req.CampaignID))
-	if err != nil {
-		return fmt.Errorf("reading the campaign's spend: %w", err)
-	}
-	if spent.GrantedPoints+points > req.campaignMax {
-		return fmt.Errorf("%w: %d spent, %d more would pass %d", ErrOverCampaignMax, spent.GrantedPoints, points, req.campaignMax)
-	}
-	return nil
 }
 
 func uuidText(id pgtype.UUID) string {

@@ -17,9 +17,9 @@ import (
 // The ledger-internal contract's earning operations (grantReward,
 // grantAction, purchasePoints), on top of Grant and RecordPurchase.
 
-// ErrOverCampaignMax — more points than one completion of the campaign may
-// earn (reward_config: per completion plus the accuracy bonus).
-var ErrOverCampaignMax = errors.New("reward: more than one completion of this campaign may earn")
+// ErrOverCampaignMax — the campaign's total budget (reward_config's
+// max_points_for_campaign) is spent, counting live session holds (14.2).
+var ErrOverCampaignMax = errors.New("reward: the campaign's budget is spent")
 
 // RewardRequest is grantReward: one completed campaign.
 type RewardRequest struct {

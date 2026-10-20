@@ -127,7 +127,7 @@ describe("grantPartnerAction (14.3.b)", () => {
       externalRef: "r1",
     });
     const { linkId } = first._unsafeUnwrap();
-    expect(first._unsafeUnwrap()).toEqual({ granted: true, points: 10, linkId, duplicate: false });
+    expect(first._unsafeUnwrap()).toEqual({ granted: true, points: 1, linkId, duplicate: false });
 
     const reused = await grantPartnerAction(world.deps(), {
       partnerId: PARTNER,
@@ -141,7 +141,7 @@ describe("grantPartnerAction (14.3.b)", () => {
       linkId,
       externalRef: "r2",
     });
-    expect(later._unsafeUnwrap()).toEqual({ granted: true, points: 10, linkId, duplicate: false });
+    expect(later._unsafeUnwrap()).toEqual({ granted: true, points: 1, linkId, duplicate: false });
   });
 
   it("refuses a teen's code without creating a link", async () => {
@@ -205,7 +205,7 @@ describe("grantPartnerAction (14.3.b)", () => {
     });
     expect(again._unsafeUnwrap()).toEqual({
       granted: true,
-      points: 100,
+      points: 10,
       linkId: linkA,
       duplicate: true,
     });

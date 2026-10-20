@@ -243,7 +243,7 @@ describe("POST /api/partners/actions (8.4.a, 14.3.b)", () => {
       payload: bodyA,
     });
     expect(grantedA.statusCode, grantedA.body).toBe(200);
-    expect(grantedA.json()).toMatchObject({ granted: true, points: 10, duplicate: false });
+    expect(grantedA.json()).toMatchObject({ granted: true, points: 1, duplicate: false });
 
     const grantedB = await app.inject({
       method: "POST",
@@ -252,7 +252,7 @@ describe("POST /api/partners/actions (8.4.a, 14.3.b)", () => {
       payload: bodyB,
     });
     expect(grantedB.statusCode, grantedB.body).toBe(200);
-    expect(grantedB.json()).toMatchObject({ granted: true, points: 10, duplicate: false });
+    expect(grantedB.json()).toMatchObject({ granted: true, points: 1, duplicate: false });
 
     // Both wallets moved -- two real, independent grants, not one shared
     // (or stolen) response.
@@ -278,7 +278,7 @@ describe("POST /api/partners/actions (8.4.a, 14.3.b)", () => {
       payload: bodyA,
     });
     expect(replayA.statusCode, replayA.body).toBe(200);
-    expect(replayA.json()).toMatchObject({ granted: true, points: 10, duplicate: false });
+    expect(replayA.json()).toMatchObject({ granted: true, points: 1, duplicate: false });
     const walletAAfterReplay = await app.inject({
       method: "GET",
       url: "/api/wallet",
@@ -324,7 +324,7 @@ describe("POST /api/partners/actions (8.4.a, 14.3.b)", () => {
       payload: rawBody,
     });
     expect(correctlySigned.statusCode, correctlySigned.body).toBe(200);
-    expect(correctlySigned.json()).toMatchObject({ granted: true, points: 10, duplicate: false });
+    expect(correctlySigned.json()).toMatchObject({ granted: true, points: 1, duplicate: false });
   });
 
   it("refuses an unknown or expired link code", async () => {

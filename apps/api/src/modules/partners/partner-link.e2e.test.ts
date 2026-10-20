@@ -49,8 +49,8 @@ describe("a lasting partner link (14.3)", () => {
 
     const earned = await kit.partnerPost(partner, "actions", receipt(linkId));
     expect(earned.statusCode, earned.body).toBe(200);
-    expect(earned.json()).toEqual({ granted: true, points: 10, linkId, duplicate: false });
-    expect(await kit.availablePoints(session.cookie)).toBe(10);
+    expect(earned.json()).toEqual({ granted: true, points: 1, linkId, duplicate: false });
+    expect(await kit.availablePoints(session.cookie)).toBe(1);
 
     // The code was spent by the link and cannot link a second time.
     const again = await kit.partnerPost(partner, "links", { code });
@@ -58,7 +58,7 @@ describe("a lasting partner link (14.3)", () => {
     expect(again.json<{ code: string }>().code).toBe("invalid_link_code");
   });
 
-  it("pays ID's rate (100) and keeps one active link per partner", async () => {
+  it("pays ID's rate (10) and keeps one active link per partner", async () => {
     const partner = await kit.seedPartner();
     const { session, linkId } = await kit.linkedAdult(partner, "ID");
 
@@ -70,7 +70,7 @@ describe("a lasting partner link (14.3)", () => {
     });
 
     const earned = await kit.partnerPost(partner, "actions", receipt(linkId));
-    expect(earned.json()).toMatchObject({ granted: true, points: 100 });
+    expect(earned.json()).toMatchObject({ granted: true, points: 10 });
 
     const listed = await app.inject({
       method: "GET",
@@ -90,10 +90,10 @@ describe("a lasting partner link (14.3)", () => {
 
     const first = await kit.partnerPost(partner, "actions", body);
     const second = await kit.partnerPost(partner, "actions", body);
-    expect(first.json()).toMatchObject({ granted: true, points: 10, duplicate: false });
+    expect(first.json()).toMatchObject({ granted: true, points: 1, duplicate: false });
     expect(second.statusCode).toBe(200);
-    expect(second.json()).toMatchObject({ granted: true, points: 10, duplicate: true });
-    expect(await kit.availablePoints(session.cookie)).toBe(10);
+    expect(second.json()).toMatchObject({ granted: true, points: 1, duplicate: true });
+    expect(await kit.availablePoints(session.cookie)).toBe(1);
 
     // The same receipt reported for another account pays that account nothing.
     const other = await kit.linkedAdult(partner);
@@ -150,7 +150,7 @@ describe("a lasting partner link (14.3)", () => {
     const { linkId: fresh } = relinked.json<{ linkId: string }>();
     expect(fresh).not.toBe(linkId);
     expect((await kit.partnerPost(partner, "actions", receipt(fresh))).statusCode).toBe(200);
-    expect(await kit.availablePoints(session.cookie)).toBe(10);
+    expect(await kit.availablePoints(session.cookie)).toBe(1);
   });
 
   it("refuses a bad signature on the link route too", async () => {

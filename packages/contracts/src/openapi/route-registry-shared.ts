@@ -197,6 +197,8 @@ export interface RouteDefinition {
   readonly successStatus: number;
   readonly successDescription: string;
   readonly successSchema: Record<string, unknown>;
+  /** Defaults to `application/json`; a file download names its own (an invoice PDF). */
+  readonly successContentType?: string;
   readonly errors: readonly RouteErrorResponse[];
 }
 
@@ -204,14 +206,19 @@ export interface RouteDefinition {
 function responseObject(
   description: string,
   schema?: Record<string, unknown>,
+  contentType = "application/json",
 ): Record<string, unknown> {
   if (schema === undefined) return { description };
-  return { description, content: { "application/json": { schema } } };
+  return { description, content: { [contentType]: { schema } } };
 }
 
 function operationObject(route: RouteDefinition): Record<string, unknown> {
   const responses: Record<string, unknown> = {
-    [String(route.successStatus)]: responseObject(route.successDescription, route.successSchema),
+    [String(route.successStatus)]: responseObject(
+      route.successDescription,
+      route.successSchema,
+      route.successContentType,
+    ),
   };
   for (const error of route.errors) {
     // Two errors sharing one status (e.g. two different 404s) fold into one

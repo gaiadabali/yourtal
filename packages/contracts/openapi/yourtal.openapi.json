@@ -11242,6 +11242,300 @@
         }
       }
     },
+    "/api/{tenantId}/studio/invoices": {
+      "get": {
+        "summary": "This business's invoices, newest first",
+        "tags": [
+          "studio",
+          "billing",
+          "invoices"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Every invoice issued to this business.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceList"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/{tenantId}/studio/invoices/{invoiceId}/pdf": {
+      "get": {
+        "summary": "Download one of this business's invoices as a PDF",
+        "tags": [
+          "studio",
+          "billing",
+          "invoices"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "invoiceId",
+            "in": "path",
+            "required": true,
+            "description": "An invoice id (from the list).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The PDF, rendered from the stored snapshot, sent with Content-Disposition: attachment.",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such invoice, or it belongs to another business (the two look the same).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/invoices": {
+      "get": {
+        "summary": "Staff: invoices in any region or business",
+        "tags": [
+          "staff",
+          "invoices"
+        ],
+        "parameters": [
+          {
+            "name": "region",
+            "in": "query",
+            "required": false,
+            "description": "Only this region's invoices (AU or ID).",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "AU",
+                "ID"
+              ]
+            }
+          },
+          {
+            "name": "businessId",
+            "in": "query",
+            "required": false,
+            "description": "Only this business's invoices.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "At most this many (1 to 500, default 100).",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching invoices, newest first. The call is audited.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvoiceList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A query value is not valid (region, businessId or limit).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/invoices/{invoiceId}/pdf": {
+      "get": {
+        "summary": "Staff: download any invoice as a PDF",
+        "tags": [
+          "staff",
+          "invoices"
+        ],
+        "parameters": [
+          {
+            "name": "invoiceId",
+            "in": "path",
+            "required": true,
+            "description": "An invoice id (from the list).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The PDF, sent with Content-Disposition: attachment. The call is audited.",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such invoice.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/charities/applications": {
       "post": {
         "summary": "A foundation applies to the registry (simulated KYB check)",
@@ -24956,6 +25250,217 @@
         "items": {
           "$ref": "#/components/schemas/InterestTag"
         }
+      },
+      "Invoice": {
+        "description": "5.3 (F118): a GST invoice, a snapshot that never changes after issue. totalMinor = subtotalMinor (ex-GST) + taxMinor (GST at taxRateBps). isTaxInvoice is true only while the issuer's ABN is set and valid; otherwise the document is a plain invoice and says it is not a tax invoice.",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "number": {
+            "type": "string",
+            "pattern": "^YT-(AU|ID)-\\d{6,}$"
+          },
+          "region": {
+            "$ref": "#/components/schemas/Region"
+          },
+          "businessId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "sourceKind": {
+            "$ref": "#/components/schemas/InvoiceSourceKind"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "subtotalMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "taxMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "totalMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "taxRateBps": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "isTaxInvoice": {
+            "type": "boolean"
+          },
+          "issuer": {
+            "$ref": "#/components/schemas/InvoiceIssuer"
+          },
+          "buyer": {
+            "$ref": "#/components/schemas/InvoiceBuyer"
+          },
+          "paymentRef": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lines": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceLine"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "region",
+          "businessId",
+          "sourceKind",
+          "issuedAt",
+          "currency",
+          "subtotalMinor",
+          "taxMinor",
+          "totalMinor",
+          "taxRateBps",
+          "isTaxInvoice",
+          "issuer",
+          "buyer",
+          "paymentRef",
+          "lines"
+        ],
+        "additionalProperties": false
+      },
+      "InvoiceBuyer": {
+        "description": "The business as it was when the invoice was issued: its legal name, and its ABN only if it holds a valid one.",
+        "type": "object",
+        "properties": {
+          "legalName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "abn": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "legalName",
+          "abn"
+        ],
+        "additionalProperties": false
+      },
+      "InvoiceIssuer": {
+        "description": "The issuing company as it was when the invoice was issued (from the invoice_issuer region setting). abn is null while the company has none.",
+        "type": "object",
+        "properties": {
+          "legalName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "abn": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{11}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "address": {
+            "type": "string",
+            "minLength": 1
+          },
+          "email": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "legalName",
+          "abn",
+          "address",
+          "email"
+        ],
+        "additionalProperties": false
+      },
+      "InvoiceLine": {
+        "description": "One line of an invoice: quantity x unitMinor = subtotalMinor (ex-GST), with its GST in taxMinor.",
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "quantity": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "format": "int64"
+          },
+          "unitMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "subtotalMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          },
+          "taxMinor": {
+            "$ref": "#/components/schemas/MinorUnits"
+          }
+        },
+        "required": [
+          "position",
+          "description",
+          "quantity",
+          "unitMinor",
+          "subtotalMinor",
+          "taxMinor"
+        ],
+        "additionalProperties": false
+      },
+      "InvoiceList": {
+        "description": "Invoices, newest first.",
+        "type": "object",
+        "properties": {
+          "invoices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Invoice"
+            }
+          }
+        },
+        "required": [
+          "invoices"
+        ],
+        "additionalProperties": false
+      },
+      "InvoiceSourceKind": {
+        "description": "What an invoice is for: a card purchase of points, a charged boost batch, or a purchase staff approved by hand. A source is invoiced once.",
+        "type": "string",
+        "enum": [
+          "card_purchase",
+          "boost_batch",
+          "manual_purchase"
+        ]
       },
       "KybDocument": {
         "description": "A business's submitted KYB document and its review state (docs/17 section 5). `storageRef` is an opaque pointer to encrypted bytes; this schema does not cover the upload path itself.",

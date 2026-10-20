@@ -12,6 +12,7 @@ import { runDemoCampaignFunding } from "./demo-campaign-funding";
 import { alignDemoCampaignTerms } from "./demo-campaign-terms";
 import { repairDemoListingCopy, repairDemoListingImages } from "./demo-listing-images";
 import { retireLeakedFixtures } from "./retire-leaked-fixtures";
+import { ensureDemoInvoiceIssuer } from "./demo-invoice-issuer";
 import { SNAP_APP_ASSET_ID, captionSnapAppMedia, repairSnapAppMedia } from "./snap-app-media";
 import type { DemoCampaignFundingResult } from "./demo-campaign-funding";
 import { runDemoMediaVouchers } from "./demo-media-vouchers";
@@ -307,6 +308,8 @@ async function main(): Promise<void> {
       console.error(`[seed:staging] poster shrink failed: ${String(error)}`);
     }
     await retireLeakedFixtures(pool, console.log);
+    // Demo company details for invoices; production gets none, so issuing waits there.
+    await ensureDemoInvoiceIssuer(pool, console.log);
     const demoMediaVouchersSeeded = demoMediaVoucherResults.filter(
       (r: DemoMediaVoucherResult) => r.status === "seeded",
     ).length;

@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { CharityApplicationRequest } from "@yourtal/contracts/charity";
+import { isValidAbn } from "@yourtal/contracts/invoice/abn";
 
 /**
  * 13.21.a: the charity registration and payout-account check. There is no
@@ -13,16 +14,6 @@ import type { CharityApplicationRequest } from "@yourtal/contracts/charity";
 export type KybOutcome =
   | { readonly ok: true; readonly kybReference: string; readonly payoutReference: string }
   | { readonly ok: false; readonly reason: "abn_invalid" | "account_refused" };
-
-const ABN_WEIGHTS = [10, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19];
-
-export function isValidAbn(abn: string): boolean {
-  if (!/^\d{11}$/.test(abn)) return false;
-  const digits = abn.split("").map(Number); // digits only, checked above
-  digits[0] = (digits[0] ?? 0) - 1;
-  const sum = digits.reduce((total, digit, i) => total + digit * (ABN_WEIGHTS[i] ?? 0), 0);
-  return sum % 89 === 0;
-}
 
 export function simulatedCharityKyb(application: CharityApplicationRequest): KybOutcome {
   const { registration, payoutAccount } = application;

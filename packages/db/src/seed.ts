@@ -9,6 +9,7 @@ import { seedStudio } from "./seed/studio";
 import { seedStore } from "./seed/store";
 import { seedWatch } from "./seed/watch";
 import { backfillDemoTags } from "./seed/demo-tags";
+import { ensureDemoInvoiceIssuer } from "./seed/demo-invoice-issuer";
 
 /**
  * Seeds the local database from the same mock generators Phase U renders.
@@ -142,6 +143,7 @@ async function main(): Promise<void> {
   const pool = new Pool({ connectionString });
   try {
     const counts = await seed(pool);
+    await ensureDemoInvoiceIssuer(pool, console.log);
     console.log(
       `Seeded ${String(counts.businesses)} businesses, ${String(counts.campaigns)} campaigns, ` +
         `${String(counts.listings)} listings, ${String(counts.vouchers)} vouchers, ` +

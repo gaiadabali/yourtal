@@ -12,7 +12,7 @@ import type {
 import { wrapPersistence } from "../wrap-persistence";
 
 /** TASKS.md 7.1.c: a week to accept, the same order of magnitude as most product invite links. */
-const TEAM_INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export const TEAM_INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export interface InviteMemberInput {
   readonly businessId: string;

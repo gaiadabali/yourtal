@@ -20,6 +20,7 @@ import { STAFF_ROLE_READER } from "../identity/persistence/staff-role-reader";
 import type { StaffRoleReader } from "../identity/persistence/staff-role-reader";
 import { GUARDIAN_CONSENT_REPOSITORY } from "../identity/persistence/guardian-consent.repository";
 import type { GuardianConsentRepository } from "../identity/persistence/guardian-consent.repository";
+import { accountEmailContent, describeTtl } from "./account-email";
 import { guardianConsentEmailContent } from "./guardian-consent-email";
 import { hashPassword, verifyPassword } from "./crypto/password-hash";
 import { hashOpaqueToken, issueOpaqueToken } from "./crypto/opaque-token";
@@ -518,11 +519,14 @@ export class AuthService {
     // via `devTokenAccess` regardless.
     if (credential === null || profile === null) return;
 
-    const subject = purpose === "email_verification" ? "Verify your email" : "Reset your password";
-    const body =
-      purpose === "email_verification"
-        ? `Use this token in the app to verify your YourTal account: ${token}`
-        : `Use this token in the app to reset your YourTal password: ${token}`;
+    const { subject, body } = accountEmailContent(purpose, {
+      displayName: profile.displayName,
+      webOrigin: this.config.webOrigin,
+      token,
+      expiresIn: describeTtl(
+        purpose === "email_verification" ? EMAIL_VERIFICATION_TTL_MS : PASSWORD_RESET_TTL_MS,
+      ),
+    });
 
     const sent = await this.email.send({
       // The token hash, not the token — a resend of the SAME token (there
@@ -592,22 +596,11 @@ export class AuthService {
     region: "AU" | "ID",
     token: string,
   ): Promise<void> {
-    const approveUrl = `${this.config.webOrigin}/guardian/${token}`;
-    const revokeUrl = `${this.config.webOrigin}/guardian/${token}?action=revoke`;
-    // 12.4.b (#3, guardian half): the public site's locale segment is the
-    // REGION ("au"/"id" — `apps/web/features/public/public-locale.ts`'s own
-    // `PublicLocale`), never the display locale ("en-AU"/"id-ID") this
-    // function's own `locale` parameter already is — the two happen to
-    // correspond one-to-one today, but spelling it out from `region` (not
-    // lower-casing `locale`) keeps this correct if that ever changes.
-    const privacyUrl = `${this.config.webOrigin}/${region.toLowerCase()}/privacy`;
-    const { subject, body } = guardianConsentEmailContent(
-      locale,
-      displayName,
-      approveUrl,
-      revokeUrl,
-      privacyUrl,
-    );
+    const { subject, body } = guardianConsentEmailContent(locale, displayName, {
+      webOrigin: this.config.webOrigin,
+      token,
+      region,
+    });
 
     const sent = await this.email.send({
       // The token hash, not the token — same convention `deliver()`'s own

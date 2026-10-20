@@ -1,8 +1,12 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import type { EmailDriver } from "@yourtal/drivers/email";
 import { EMAIL_DRIVER } from "../../shared/drivers/email-driver.module";
+import { APP_CONFIG } from "../../config/app-config.module";
+import type { AppConfig } from "../../config/app-config";
+import { describeTtl } from "../auth/account-email";
 import { hashOpaqueToken } from "./crypto/opaque-token";
 import type { InvitationMailer, SendInvitationInput } from "./invitation-mailer";
+import { TEAM_INVITATION_TTL_MS } from "./use-cases/invite-member.use-case";
 
 /**
  * The (simulated) send path for a team invitation. Best-effort, same
@@ -14,7 +18,10 @@ import type { InvitationMailer, SendInvitationInput } from "./invitation-mailer"
 export class EmailInvitationMailer implements InvitationMailer {
   private readonly logger = new Logger(EmailInvitationMailer.name);
 
-  constructor(@Inject(EMAIL_DRIVER) private readonly email: EmailDriver) {}
+  constructor(
+    @Inject(EMAIL_DRIVER) private readonly email: EmailDriver,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+  ) {}
 
   async send(input: SendInvitationInput): Promise<void> {
     const sent = await this.email.send({
@@ -24,10 +31,18 @@ export class EmailInvitationMailer implements InvitationMailer {
       to: input.to,
       region: input.region,
       category: "team_invitation",
-      subject: `You're invited to join ${input.businessDisplayName} on YourTal Studio`,
-      body:
-        `You've been invited to join ${input.businessDisplayName} as ${input.role}. ` +
-        `Sign in to YourTal Studio, open "Join a business" (/studio/join) and enter this code: ${input.token}`,
+      subject: `Join ${input.businessDisplayName} on YourTal Studio`,
+      body: [
+        `${input.businessDisplayName} has added you to their team on YourTal Studio as ${input.role}. To accept, sign in to YourTal and open:`,
+        "",
+        `${this.config.webOrigin}/studio/join?token=${encodeURIComponent(input.token)}`,
+        "",
+        `The invitation expires in ${describeTtl(TEAM_INVITATION_TTL_MS)}.`,
+        "",
+        "If you weren't expecting this, you can ignore this email.",
+        "",
+        "YourTal · yourtal.gaiada.com",
+      ].join("\n"),
       metadata: { token: input.token, role: input.role },
     });
     if (sent.isErr()) {

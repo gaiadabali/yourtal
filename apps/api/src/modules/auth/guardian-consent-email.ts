@@ -1,54 +1,68 @@
 /**
- * 12.1.a: the guardian consent email's subject and body, localised en-AU /
- * id-ID by the teen's own chosen display locale (`RegisterProfile.locale`)
- * — there is no guardian account or locale preference of its own to read,
- * so the teen's is what this uses, same as every other field on this row.
- * Kept short and plain per this ticket's own instruction: an invitation to
- * approve, never a contract — no legal language, no promises.
+ * 12.1.a / 1.3.c: the guardian consent email's subject and body, localised
+ * en-AU / id-ID by the teen's own chosen display locale
+ * (`RegisterProfile.locale`) — there is no guardian account or locale
+ * preference of its own to read.
  *
- * 12.4.b (#3, guardian half): one short, plain paragraph on what is kept —
- * name, date of birth, email, and what they watch and earn — and what
- * never happens to it (never sold, never used to profile them, never
- * shared with a business except as an anonymous total), linking to the
- * full privacy page. This is a summary for a guardian who has no account
- * and no other way to find that page; it is not itself the privacy notice.
+ * Plain, short and calm, because Gmail sent the longer version (two links,
+ * a paragraph of privacy promises, "not a contract") to Spam. One link only:
+ * `/guardian/<token>` approves while the request is pending and withdraws
+ * once it is granted, so no separate revoke link is needed. The subject
+ * carries no user-entered text; the teen's display name is body-only. What
+ * is kept, and why, lives behind `privacyUrl` (12.4.b), not in this email.
  */
 export function guardianConsentEmailContent(
   locale: "en-AU" | "id-ID",
   displayName: string,
-  approveUrl: string,
-  revokeUrl: string,
-  privacyUrl: string,
+  link: {
+    /** `AppConfig.webOrigin`. */
+    readonly webOrigin: string;
+    readonly token: string;
+    readonly region: "AU" | "ID";
+  },
 ): { readonly subject: string; readonly body: string } {
+  const reviewUrl = `${link.webOrigin}/guardian/${encodeURIComponent(link.token)}`;
+  // 12.4.b (#3, guardian half): the public site's locale segment is the
+  // REGION ("au"/"id" — `apps/web/features/public/public-locale.ts`'s own
+  // `PublicLocale`), never the display locale this function's own `locale`
+  // parameter is; spelling it from `region` keeps this right if they diverge.
+  const privacyUrl = `${link.webOrigin}/${link.region.toLowerCase()}/privacy`;
   if (locale === "id-ID") {
     return {
-      subject: "Persetujuan orang tua/wali untuk YourTal",
+      subject: "Akun YourTal menunggu persetujuan Anda",
       body: [
-        `${displayName} ingin membuat akun YourTal untuk usia 13-17 tahun.`,
-        "Ini adalah undangan untuk menyetujui, bukan sebuah kontrak.",
+        "Halo,",
         "",
-        `Setujui: ${approveUrl}`,
-        `Batalkan persetujuan kapan saja, dengan tautan yang sama: ${revokeUrl}`,
+        `${displayName} sedang mendaftar di YourTal dan memberikan alamat email ini sebagai alamat orang tua atau walinya. Karena usianya di bawah 18 tahun, akunnya perlu persetujuan Anda sebelum bisa dipakai.`,
         "",
-        "Yang kami simpan: nama, tanggal lahir, dan email mereka, serta apa yang " +
-          "mereka tonton dan hasilkan. Data ini tidak pernah dijual, tidak pernah " +
-          "digunakan untuk membuat profil mereka, dan tidak dibagikan ke bisnis " +
-          `kecuali sebagai total anonim. Selengkapnya: ${privacyUrl}`,
+        "Tinjau permintaannya:",
+        "",
+        reviewUrl,
+        "",
+        `Jika Anda tidak mengenal ${displayName}, atau tidak menduga email ini, abaikan saja email ini; akunnya tetap nonaktif.`,
+        "",
+        `Anda bisa mengubah keputusan nanti lewat halaman yang sama. Apa yang YourTal simpan tentang mereka, dan alasannya: ${privacyUrl}`,
+        "",
+        "YourTal · yourtal.gaiada.com",
       ].join("\n"),
     };
   }
   return {
-    subject: "Guardian approval for YourTal",
+    subject: "A YourTal account is waiting for your OK",
     body: [
-      `${displayName} wants to create a YourTal account for ages 13-17.`,
-      "This is an invitation to approve, not a contract.",
+      "Hi,",
       "",
-      `Approve: ${approveUrl}`,
-      `Withdraw approval at any time, with the same link: ${revokeUrl}`,
+      `${displayName} is signing up to YourTal and gave this address as their parent or guardian's. Because they're under 18, their account needs your OK before they can use it.`,
       "",
-      "What we keep: their name, date of birth and email, and what they watch " +
-        "and earn. It's never sold, never used to build a profile of them, and " +
-        `never shared with a business except as an anonymous total. More: ${privacyUrl}`,
+      "Review the request:",
+      "",
+      reviewUrl,
+      "",
+      `If you don't know ${displayName}, or didn't expect this, you can ignore this email; the account stays switched off.`,
+      "",
+      `You can change your mind later from the same page. What YourTal keeps about them, and why: ${privacyUrl}`,
+      "",
+      "YourTal · yourtal.gaiada.com",
     ].join("\n"),
   };
 }

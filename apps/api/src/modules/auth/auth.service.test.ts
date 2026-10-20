@@ -894,6 +894,44 @@ describe("1.3.c: the emails registration sends, and what is logged when one fail
     expect(sent.map((message) => [message.category, message.to])).toEqual([
       ["email_verification", email],
     ]);
+    const message = sent[0];
+    const token = String(message?.metadata?.["token"]);
+    expect(message?.subject).toBe("Confirm your email for YourTal");
+    expect(message?.body).toContain(
+      `https://staging.example.test/verify?token=${encodeURIComponent(token)}`,
+    );
+    expect(message?.body.startsWith(`Hi ${ADULT_PROFILE.displayName},`)).toBe(true);
+    expect(message?.body).toContain("expires in 24 hours");
+  });
+
+  it("a password reset request sends the reset link, with the account's name in the body only", async () => {
+    const { driver, sent } = recordingDriver(() =>
+      Promise.resolve(ok({ id: "m1", route: "live" })),
+    );
+    const email = freshEmail();
+    const service = authWith(driver);
+    const registered = await service.register(
+      email,
+      "the-original-password",
+      ADULT_PROFILE,
+      new Date(),
+    );
+    expect(registered.isOk()).toBe(true);
+    sent.length = 0;
+
+    const requested = await service.requestPasswordReset(email, new Date());
+    expect(requested.isOk()).toBe(true);
+    expect(sent.map((message) => [message.category, message.to])).toEqual([
+      ["password_reset", email],
+    ]);
+    const message = sent[0];
+    const token = String(message?.metadata?.["token"]);
+    expect(message?.subject).toBe("Reset your YourTal password");
+    expect(message?.body).toContain(
+      `https://staging.example.test/reset?token=${encodeURIComponent(token)}`,
+    );
+    expect(message?.body.startsWith(`Hi ${ADULT_PROFILE.displayName},`)).toBe(true);
+    expect(message?.body).toContain("expires in 1 hour");
   });
 
   it("a teen registration sends the guardian approval email to the guardian and the verification email to the teen", async () => {
@@ -914,7 +952,13 @@ describe("1.3.c: the emails registration sends, and what is logged when one fail
       ["email_verification", email],
     ]);
     const guardianMessage = sent[0];
-    expect(guardianMessage?.body).toContain("https://staging.example.test/guardian/");
+    const guardianToken = String(guardianMessage?.metadata?.["token"]);
+    expect(guardianMessage?.body).toContain(
+      `https://staging.example.test/guardian/${encodeURIComponent(guardianToken)}`,
+    );
+    expect(guardianMessage?.body).toContain("Teen Test");
+    expect(guardianMessage?.subject).toBe("A YourTal account is waiting for your OK");
+    expect(guardianMessage?.subject).not.toContain("Teen");
   });
 
   it("a refused guardian send is logged with its failure kind and the provider's reason, never the address", async () => {

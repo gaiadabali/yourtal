@@ -175,6 +175,17 @@ func (e *Engine) compute(
 		return statementFigures{}, fmt.Errorf("reading opening payable: %w", err)
 	}
 
+	// What an earlier statement of this business already claims is not this
+	// one's opening: paying that statement moves it, and it would be paid
+	// twice (the second payout would also be refused, the payable being short).
+	carried, err := queries.StatementCarryNotYetPaid(ctx, sqlcgen.StatementCarryNotYetPaidParams{
+		BusinessID: businessID, Region: string(region), FromTs: fromTs, ToTs: toTs,
+	})
+	if err != nil {
+		return statementFigures{}, fmt.Errorf("reading the payable earlier statements already claim: %w", err)
+	}
+	opening -= carried
+
 	activity, err := queries.MerchantPayableActivityByReason(ctx, sqlcgen.MerchantPayableActivityByReasonParams{
 		AccountID: accountID, FromTs: fromTs, ToTs: toTs,
 	})
@@ -207,6 +218,26 @@ func (e *Engine) compute(
 		opening: opening, captures: captures, refunds: refunds, recoveries: recoveries,
 		closing: opening + net, pointPurchasePoints: points,
 	}, nil
+}
+
+// DueBusinesses is the weekly job's own question (apps/worker's
+// settlement-statements): which merchants in a region still need a statement
+// for [from, to). The worker cannot read ledger.* itself, and the ledger is
+// the one that knows which payable accounts exist and have moved.
+func (e *Engine) DueBusinesses(ctx context.Context, region ledger.Region, from, to time.Time) ([]string, error) {
+	if !to.After(from) {
+		return nil, ErrInvalidPeriod
+	}
+	ids, err := sqlcgen.New(e.pool).ListBusinessesDueStatement(ctx, sqlcgen.ListBusinessesDueStatementParams{
+		Region: string(region), FromTs: pgtype.Timestamptz{Time: from, Valid: true}, ToTs: pgtype.Timestamptz{Time: to, Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("listing businesses due a %s statement: %w", region, err)
+	}
+	if ids == nil {
+		ids = []string{}
+	}
+	return ids, nil
 }
 
 // Recompute re-derives a stored statement's figures fresh from ledger.entry

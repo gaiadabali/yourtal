@@ -287,3 +287,132 @@ func TestReleaseVoucherLiabilityUnwindsWithNoMerchantLegAndReplaysIdempotently(t
 		t.Errorf("a replay changed the balance: %d vs %d", afterReplay, after)
 	}
 }
+
+// Weekly statements chain: each week's payable is the account's balance, and
+// an earlier statement's unpaid closing is still on it. The later statement
+// must not claim it again — paying both would take the money twice, and the
+// guarded payable account refuses the second payout.
+func TestConsecutiveStatementsEachClaimOnlyTheirOwnMoney(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	merchantID := unique("mer")
+
+	post := func(amount int64) {
+		t.Helper()
+		if _, err := f.captures.Post(ctx, capture.Request{
+			CaptureID: unique("cap"), Region: ledger.RegionAU, MerchantID: merchantID, AmountMinor: amount, Currency: "AUD",
+		}); err != nil {
+			t.Fatalf("Post: %v", err)
+		}
+	}
+	post(5_000)
+	boundary := time.Now().UTC()
+	time.Sleep(50 * time.Millisecond)
+	post(3_000)
+	end := time.Now().UTC()
+	time.Sleep(50 * time.Millisecond)
+
+	first, err := f.settlement.GenerateOrGet(ctx, merchantID, ledger.RegionAU, boundary.Add(-time.Hour), boundary)
+	if err != nil {
+		t.Fatalf("first statement: %v", err)
+	}
+	second, err := f.settlement.GenerateOrGet(ctx, merchantID, ledger.RegionAU, boundary, end)
+	if err != nil {
+		t.Fatalf("second statement: %v", err)
+	}
+	if first.OpeningPayableMinor != 0 || first.ClosingPayableMinor != 5_000 {
+		t.Errorf("first = opening %d closing %d, want 0 and 5000", first.OpeningPayableMinor, first.ClosingPayableMinor)
+	}
+	if second.OpeningPayableMinor != 0 || second.CapturesMinor != 3_000 || second.ClosingPayableMinor != 3_000 {
+		t.Errorf("second = opening %d captures %d closing %d, want 0, 3000 and 3000 (the 5000 is the first statement's)",
+			second.OpeningPayableMinor, second.CapturesMinor, second.ClosingPayableMinor)
+	}
+
+	// Both pay out, in order, and the account ends at exactly zero.
+	if _, err := f.settlement.ApprovePayout(ctx, first.ID, "staff-1", first.DisputeWindowEndsAt.Add(time.Minute)); err != nil {
+		t.Fatalf("paying the first: %v", err)
+	}
+	if _, err := f.settlement.ApprovePayout(ctx, second.ID, "staff-1", second.DisputeWindowEndsAt.Add(time.Minute)); err != nil {
+		t.Fatalf("paying the second: %v", err)
+	}
+	balance, _ := ledger.New(f.pool).Balance(ctx, ledger.MerchantPayableID(merchantID, ledger.RegionAU))
+	if balance != 0 {
+		t.Errorf("payable after both payouts = %d, want 0", balance)
+	}
+
+	// Paying them later does not change what they said (10.1.d's recomputation).
+	for _, stmt := range []settlement.Statement{first, second} {
+		match, fresh, err := f.settlement.Recompute(ctx, stmt.ID)
+		if err != nil || !match {
+			t.Errorf("recompute of %s after payout: match=%v err=%v fresh=%+v, stored=%+v", stmt.ID, match, err, fresh, stmt)
+		}
+	}
+}
+
+func TestDueBusinessesAreThoseWhosePayableMovedOrWasNeverStated(t *testing.T) {
+	f := newFixture(t)
+	ctx := context.Background()
+	active, old, later, otherRegion := unique("mer"), unique("mer"), unique("mer"), unique("mer")
+
+	post := func(merchant string, region ledger.Region, currency string) {
+		t.Helper()
+		if _, err := f.captures.Post(ctx, capture.Request{
+			CaptureID: unique("cap"), Region: region, MerchantID: merchant, AmountMinor: 1_000, Currency: currency,
+		}); err != nil {
+			t.Fatalf("Post: %v", err)
+		}
+	}
+	post(old, ledger.RegionAU, "AUD") // before the window, never stated
+	time.Sleep(50 * time.Millisecond)
+	from := time.Now().UTC()
+	time.Sleep(50 * time.Millisecond)
+	post(active, ledger.RegionAU, "AUD")
+	post(later, ledger.RegionAU, "AUD")
+	post(otherRegion, ledger.RegionID, "IDR")
+	time.Sleep(50 * time.Millisecond)
+	to := time.Now().UTC()
+
+	due := func(region ledger.Region, from, to time.Time) map[string]bool {
+		t.Helper()
+		ids, err := f.settlement.DueBusinesses(ctx, region, from, to)
+		if err != nil {
+			t.Fatalf("DueBusinesses: %v", err)
+		}
+		set := map[string]bool{}
+		for _, id := range ids {
+			set[id] = true
+		}
+		return set
+	}
+
+	au := due(ledger.RegionAU, from, to)
+	if !au[active] || !au[old] || au[otherRegion] {
+		t.Errorf("AU due = active %v, old %v, other-region %v; want true, true, false", au[active], au[old], au[otherRegion])
+	}
+	if id := due(ledger.RegionID, from, to); !id[otherRegion] || id[active] {
+		t.Errorf("ID due = other-region %v, active %v; want true, false", id[otherRegion], id[active])
+	}
+
+	// A generated period is no longer due, and neither is an inactive week after it.
+	if _, err := f.settlement.GenerateOrGet(ctx, active, ledger.RegionAU, from, to); err != nil {
+		t.Fatal(err)
+	}
+	if au := due(ledger.RegionAU, from, to); au[active] {
+		t.Error("a business whose statement for the period exists is still due")
+	}
+	if au := due(ledger.RegionAU, to, to.Add(7*24*time.Hour)); au[active] {
+		t.Error("a business with nothing new after its statement is due")
+	}
+
+	// An older period is never opened behind a statement that already exists.
+	if _, err := f.settlement.GenerateOrGet(ctx, later, ledger.RegionAU, from, to); err != nil {
+		t.Fatal(err)
+	}
+	if au := due(ledger.RegionAU, from.Add(-7*24*time.Hour), from); au[later] {
+		t.Error("an earlier period is due behind a later statement")
+	}
+
+	if _, err := f.settlement.DueBusinesses(ctx, ledger.RegionAU, to, from); !errors.Is(err, settlement.ErrInvalidPeriod) {
+		t.Errorf("a backwards period: %v, want ErrInvalidPeriod", err)
+	}
+}

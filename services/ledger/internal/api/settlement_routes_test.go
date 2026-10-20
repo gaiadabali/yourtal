@@ -156,3 +156,62 @@ func TestStatementQueueListsOnlyOpenAndDisputed(t *testing.T) {
 		t.Errorf("queue = %+v, want the statement just generated for %s", queue, merchant)
 	}
 }
+
+// The weekly job asks the ledger which businesses are due, then generates.
+// Both calls are worker-only, and generating makes a business not due again.
+func TestDueStatementsIsWorkerOnlyAndShrinksAsStatementsAreGenerated(t *testing.T) {
+	s := newServer(t)
+	ensureChart(t)
+	merchant := uuid()
+	s.mustCallAs("voucher", "/captures", map[string]any{
+		"captureId": uuid(), "region": "AU", "merchantId": merchant, "amountMinor": 2_500, "currency": "AUD",
+	})
+	period := map[string]any{
+		"region": "AU",
+		"from":   time.Now().Add(-time.Hour).Format(time.RFC3339), "to": time.Now().Add(time.Hour).Format(time.RFC3339),
+	}
+
+	if code := s.call("/economy/statements/due", period, nil); code != http.StatusForbidden {
+		t.Fatalf("the api caller asked what is due: %d, want 403", code)
+	}
+	if code := s.callAs("worker", "/economy/statements/due", map[string]any{"region": "NZ", "from": "2026-01-01", "to": "2026-01-08"}, nil); code != http.StatusBadRequest {
+		t.Fatalf("unknown region: %d, want 400", code)
+	}
+
+	var due struct {
+		BusinessIDs []string `json:"businessIds"`
+	}
+	mustCallAsInto(s, "worker", "/economy/statements/due", period, &due)
+	if !contains(due.BusinessIDs, merchant) {
+		t.Fatalf("due = %v, want it to hold %s", due.BusinessIDs, merchant)
+	}
+
+	generate := map[string]any{"businessId": merchant, "region": "AU", "from": period["from"], "to": period["to"]}
+	var stmt statementJSON
+	mustCallAsInto(s, "worker", "/economy/statements/generate", generate, &stmt)
+	if stmt.ClosingPayableMinor != 2_500 {
+		t.Fatalf("statement = %+v, want closing 2500", stmt)
+	}
+
+	due.BusinessIDs = nil
+	mustCallAsInto(s, "worker", "/economy/statements/due", period, &due)
+	if contains(due.BusinessIDs, merchant) {
+		t.Errorf("due after generating = %v, still holds %s", due.BusinessIDs, merchant)
+	}
+}
+
+func mustCallAsInto(s *server, caller, path string, body, out any) {
+	s.t.Helper()
+	if code := s.callAs(caller, path, body, out); code != http.StatusOK {
+		s.t.Fatalf("%s: %d", path, code)
+	}
+}
+
+func contains(list []string, want string) bool {
+	for _, item := range list {
+		if item == want {
+			return true
+		}
+	}
+	return false
+}

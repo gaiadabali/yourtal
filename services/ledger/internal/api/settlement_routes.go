@@ -47,6 +47,34 @@ func (a *API) generateStatement(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, a.logger, http.StatusOK, statementJSON(stmt))
 }
 
+// dueStatements is worker-only too: the businesses whose statement for a
+// period is still to be generated, so the weekly job asks the ledger instead
+// of reading ledger.* itself.
+func (a *API) dueStatements(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Region string `json:"region"`
+		From   string `json:"from"`
+		To     string `json:"to"`
+	}
+	if !a.decode(w, r, &body) {
+		return
+	}
+	_, region, ok := a.engineFor(w, body.Region)
+	if !ok {
+		return
+	}
+	from, to, ok := a.parsePeriod(w, body.From, body.To)
+	if !ok {
+		return
+	}
+	ids, err := a.settlement.DueBusinesses(r.Context(), region, from, to)
+	if err != nil {
+		a.fail(w, err)
+		return
+	}
+	httpx.WriteJSON(w, a.logger, http.StatusOK, map[string]any{"businessIds": ids})
+}
+
 // statements is the contract's list op (packages/contracts/src/ledger-internal/economy.ts):
 // every statement already generated for a business whose period falls
 // inside [from, to). Never generates — see generateStatement.

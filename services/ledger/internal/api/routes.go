@@ -150,6 +150,7 @@ func (a *API) platformRoutes(r chi.Router) {
 	// everyone else only lists, disputes, resolves or approves what already
 	// exists.
 	r.With(a.onlyCaller("worker")).Post("/economy/statements/generate", a.generateStatement)
+	r.With(a.onlyCaller("worker")).Post("/economy/statements/due", a.dueStatements)
 	r.Post("/economy/statements", a.statements)
 	r.Post("/economy/statements/queue", a.statementQueue)
 	r.Post("/economy/statements/dispute", a.disputeStatement)

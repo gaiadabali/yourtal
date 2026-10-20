@@ -9,7 +9,7 @@ module github.com/yourtal/services/voucher
 
 go 1.27.0
 
-toolchain go1.27.1
+toolchain go1.27.3
 
 require (
 	github.com/go-chi/chi/v5 v5.3.2

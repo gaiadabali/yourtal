@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 6/14 | 36/53 | `███████░░░`  68% |
-| **All** | | | **111/120** | **582/600** | `██████████`  97% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 6/15 | 36/55 | `███████░░░`  65% |
+| **All** | | | **111/121** | **582/602** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1694,6 +1694,9 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.14.a receipt_points is 1 (AU) and 10 (ID demo), by an add-only settings migration → yourtal@880aaebb; staging reads AU 1, ID 10 (2026-10-21)
   - [ ] 14.14.b SnapApp’s receipt grants draw from a partner allocation bought at B = 3c (an at-cost purchase kind; RecordPurchase refuses anything under P_issue today)
   - [ ] 14.14.c When that package is spent, receipts stop earning and the partner API says so
+- [ ] **14.15 Account deletion: the last gaps** (group 1.24) · A · needs: — — 🔄 2026-10-21 (group plan, god-ff)
+  - [ ] 14.15.a Pending team invitations to an erased email are removed inside the identity domain, before the address goes (group 1.24.a)
+  - [ ] 14.15.b `DELETE /api/me` reports `complete: true`: research_answers and support_cases get a table and handler, or their declarations go (group 1.24.b)
 Group 5.7, the founder's walkthrough, is 13.6 here.
 
 ## Not in this plan (deferred)

@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 4/13 | 18/42 | `████░░░░░░`  43% |
-| **All** | | | **109/119** | **564/589** | `██████████`  96% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 4/13 | 21/42 | `█████░░░░░`  50% |
+| **All** | | | **109/119** | **567/589** | `██████████`  96% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1634,9 +1634,9 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.2.b Rewards stop when the budget is spent, and the feed targets by district → 4c4d8281; districts need F116’s list and “my area” to reach viewers
   - [x] 14.2.c Studio sends them → 4c4d8281
   - [ ] 14.2.d Check on staging
-  - [ ] 14.2.e The district list: every Australian postcode with suburbs and state, from an openly licensed list (group 1.6.f, F116)
-  - [ ] 14.2.f Me → “My area”: optional, a visible state → suburb picker, postcode stored, not for teens (group 1.6.g)
-  - [ ] 14.2.g Studio picks districts from the list; the feed uses the viewer’s area (group 1.6.h)
+  - [x] 14.2.e The district list: every Australian postcode with suburbs and state, from an openly licensed list (group 1.6.f, F116) → f767e846
+  - [x] 14.2.f Me → “My area”: optional, a visible state → suburb picker, postcode stored, not for teens (group 1.6.g) → f767e846
+  - [x] 14.2.g Studio picks districts from the list; the feed uses the viewer’s area (group 1.6.h) → f767e846
   - [ ] 14.2.h Search uses the viewer’s area too (group 1.6.i)
   - [ ] 14.2.i Staging screenshots of Me → My area, the Studio picker and the privacy page, AU and ID (group 1.6.j)
   - [ ] 14.2.j Replace the ID demo area list with the BPS or Pos Indonesia list before ID takes real users (group 1.6.k)

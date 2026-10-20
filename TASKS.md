@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 7/17 | 43/63 | `███████░░░`  68% |
-| **All** | | | **112/123** | **589/610** | `██████████`  97% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 8/17 | 45/63 | `███████░░░`  71% |
+| **All** | | | **113/123** | **591/610** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1707,9 +1707,9 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [ ] 14.16.e Deletion and ended access reach every app as signed events, with the `connected_apps` data domain (group 3.9.f)
   - [ ] 14.16.f Rate limits, a sign-in log per client, an uptime check and one restore test (group 3.9.h)
 Group 5.7, the founder's walkthrough, is 13.6 here.
-- [ ] **14.17 The Security workflow is green again** (group 1.25) · A · needs: — — 🔄 2026-10-21 (group plan, god-ff)
-  - [ ] 14.17.a vitest's vite lifted to 8.3.4 for GHSA-698v-4r3x-3vcv (a workspace override); pnpm audit passes (group 1.25.a)
-  - [ ] 14.17.b Every workflow green on main (group 1.25.b)
+- [x] **14.17 The Security workflow is green again** (group 1.25) · A · needs: — — ✅ 2026-10-21 14c0259b
+  - [x] 14.17.a vitest's vite lifted to 8.3.4 for GHSA-698v-4r3x-3vcv (a workspace override); pnpm audit passes (group 1.25.a) → 14c0259b
+  - [x] 14.17.b Every workflow green on main (group 1.25.b) → Security green from 14c0259b; the order-dependent 14.15 test fixed at 1cdd75ba; the Go ledger concurrency failure at 2e92adcd is 14.13’s (god-d1)
 
 ## Not in this plan (deferred)
 
@@ -1800,6 +1800,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-10-21 · 14.17 (group 1.25) done: Security green again (vite 8.3.4 override for GHSA-698v-4r3x-3vcv), 14.15 test order fixed (14c0259b, 1cdd75ba).
 - 2026-10-21 · 14.15 (group 1.24) done: erasure removes pending invitations to the subject’s email, and DELETE /api/me reports complete (0551286a).
 - 2026-10-21 · 14.2 (group 1.6) done: budget, daily cap and postcode districts saved and enforced, search and feed use the viewer’s area, staging checked in AU and ID, and the player tells a refused viewer before playing (00b21ed5).
 - 2026-10-20 · g5 · **14.11** (group 0.7.g): docs/16 records F106, every payment simulated until real Stripe, and F107, no brand refunds · fbcd08d5

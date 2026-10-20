@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 5/14 | 33/52 | `██████░░░░`  63% |
-| **All** | | | **110/120** | **579/599** | `██████████`  97% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 6/14 | 36/52 | `███████░░░`  69% |
+| **All** | | | **111/120** | **582/599** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1627,9 +1627,9 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
 - [ ] **14.1 Live email through Resend** (group 1.3) · A · needs: — — 🔄 2026-10-20
   - [x] 14.1.a A live driver for Resend in `packages/drivers/src/boundaries/email.ts`
   - [x] 14.1.b Staging: `EMAIL_DRIVER=live` with Free Tax Returns' Resend account (a proof of concept, F103), sending from its verified domain → eaf59c62, allow-list @gaiada.com
-  - [ ] 14.1.c Check: sign-up verification, password reset, team invite and guardian approval emails arrive
+  - [ ] 14.1.c Check: sign-up verification, password reset, team invite and guardian approval emails arrive → group 1.3.c, 2026-10-21: the founder found the guardian, invite and verification emails in Gmail's Spam. Rewording them with links instead of raw tokens, on group/1.3c-email-copy (.claude/worktrees/g-email)
   - [x] 14.1.d Staging sends live email only to an allow-list (`EMAIL_LIVE_ALLOWLIST`); others go to the dev inbox (group 1.3.d, F115) → de7b5efb
-- [ ] **14.2 Campaign budget, daily cap and districts are saved and enforced** (group 1.6) · A + C · needs: — — 🔄 2026-10-20
+- [x] **14.2 Campaign budget, daily cap and districts are saved and enforced** (group 1.6) · A + C · needs: — — ✅ 2026-10-21 00b21ed5
   - [x] 14.2.a Add-only migration, and the campaign API takes the three fields → 4c4d8281
   - [x] 14.2.b Rewards stop when the budget is spent, and the feed targets by district → 4c4d8281; districts need F116’s list and “my area” to reach viewers
   - [x] 14.2.c Studio sends them → 4c4d8281
@@ -1640,9 +1640,9 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.2.h Search uses the viewer’s area too (group 1.6.i) → 1db8f6ca (search and feed share resolveViewerDistrict)
   - [x] 14.2.i Staging screenshots of Me → My area, the Studio picker and the privacy page, AU and ID (group 1.6.j) → 24 shots, 0 serious/critical axe findings (group 1.6.j, 2026-10-21)
   - [ ] 14.2.j Replace the ID demo area list with the BPS or Pos Indonesia list before ID takes real users (group 1.6.k) — ✂️ cut: Indonesia stays a demo (F104); re-add before ID takes real users
-  - [ ] 14.2.k The web player tells a viewer refused for budget or cap before the video plays (group 1.6.l): `nonEarningReason` is parsed but never shown
-  - [ ] 14.2.l Studio shows the real video duration in the list and preview (group 1.6.m)
-  - [ ] 14.2.m `DELETE /api/me/settings/area` accepts an empty JSON body (group 1.6.n)
+  - [x] 14.2.k The web player tells a viewer refused for budget or cap before the video plays (group 1.6.l): `nonEarningReason` is parsed but never shown → 00b21ed5
+  - [x] 14.2.l Studio shows the real video duration in the list and preview (group 1.6.m) → 00b21ed5
+  - [x] 14.2.m `DELETE /api/me/settings/area` accepts an empty JSON body (group 1.6.n) → 00b21ed5
 - [x] **14.3 A lasting partner link for SnapApp** (group 2.1) · A · needs: — — ✅ 2026-10-20 bff9833c
   - [x] 14.3.a Add-only migration: a partner link table (partner, user, region, created, revoked) → bff9833c
   - [x] 14.3.b The first partner call with a valid code creates the link and returns its ID; later calls use the link ID → bff9833c
@@ -1784,6 +1784,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-10-21 · 14.2 (group 1.6) done: budget, daily cap and postcode districts saved and enforced, search and feed use the viewer’s area, staging checked in AU and ID, and the player tells a refused viewer before playing (00b21ed5).
 - 2026-10-20 · g5 · **14.11** (group 0.7.g): docs/16 records F106, every payment simulated until real Stripe, and F107, no brand refunds · fbcd08d5
 - 2026-10-08 · lead · **13.3 closed**: business journeys pass on staging in AU and ID (F98; registration limit raised to 30 for the run and restored to 5); 13.3.k, m, v, x, y done; a stored-HTML hole in picture uploads found on staging and fixed (13.3.y) · 45ec04a9
 - 2026-10-08 · lead · **13.3.d, h, i, j, q, r, s, t, u, w and 13.15** done; slot 3's 13.3.b/13.3.m work merged (315a02b6); demo brands made suppliers so Inventory shows for demo logins. Worktrees now live in `.claude/worktrees/`, tests run in CI and on staging (no local Docker) · f623b908

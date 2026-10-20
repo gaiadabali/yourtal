@@ -784,7 +784,7 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
   "payment.card_setup":
     "5.1.a: one card-saving checkout, matched to its webhook; the client sees only startCardSetupResultSchema's checkoutUrl or card.",
   "payment.card_purchase":
-    "5.1.a: mirrored by cardPurchaseSchema (billing/billing.ts) for the return page; provider refs, the idempotency key and review_reason stay server-side. 14.13 added tier_key, cardPurchaseSchema.tierKey.",
+    "5.1.a: mirrored by cardPurchaseSchema (billing/billing.ts) for the return page; provider refs, the idempotency key and review_reason stay server-side. 14.13 added tier_key, cardPurchaseSchema.tierKey. 5.1.g (F123) added the refund columns (refund_proposal_id, refund_requested_by, refund_ref, refunded_at) and status refunded; staff see them through parkedPurchaseSchema (staff/staff-parked-purchases.ts), Studio sees only the status.",
   "payment.budget_alert":
     "14.13.b (F121): one row per 50/80/100% alert on a package or a campaign budget, unique per subject and threshold. Composed into budgetAlertSchema (billing/billing.ts) with the campaign's title; business_id, region and notified_at stay server-side.",
   "payment.provider_event":
@@ -800,7 +800,7 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
   "payment.connected_account":
     "5.2 (F103): a brand's or charity's connected account. Composed into payoutAccountSchema (billing/payouts.ts) as a state and the bank's last4; the provider ref and flags stay server-side.",
   "payment.disbursement":
-    "5.2.b: one approved statement's transfer and payout, written by apps/worker's settlement-disburse. Mirrored by staffDisbursementSchema and summarised by statementPayoutSchema (billing/payouts.ts); provider refs and request times stay server-side.",
+    "5.2.b: one approved statement's transfer and payout, written by apps/worker's settlement-disburse. Mirrored by staffDisbursementSchema and summarised by statementPayoutSchema (billing/payouts.ts); provider refs and request times stay server-side. 5.2.c added payout_checked_at (staffDisbursementSchema.checkedAt), when the processor was last asked about the payout.",
   "feed.demotion":
     "TASKS.md 7.7.a, this pass's own ticket. POST /api/feed/:campaignId/not-interested writes a row here but returns only `{ok: true}` (feed.controller.ts) -- the row itself (which campaigns a viewer demoted) is a ranking input read back through FeedItem.why, never returned as a list.",
 };

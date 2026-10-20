@@ -13,7 +13,7 @@ describe("transport and auth", () => {
   it("rejects a wrong key with Stripe's 401 and a masked key", async () => {
     const res = await fetch(`${k.sim.baseUrl}/v1/customers`, {
       method: "POST",
-      headers: { authorization: "Bearer sk_test_wrongwrong1234" },
+      headers: { authorization: "Bearer sk_test_wrong_key_1234" },
     });
     expect(res.status).toBe(401);
     const body = (await res.json()) as { error: { type: string; message: string } };

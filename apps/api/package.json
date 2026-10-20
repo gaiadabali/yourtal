@@ -34,6 +34,7 @@
     "ioredis": "6.0.0",
     "nestjs-zod": "5.5.0",
     "neverthrow": "8.2.0",
+    "oidc-provider": "9.12.2",
     "pdfkit": "0.20.2",
     "pg": "8.23.0",
     "pg-boss": "12.34.0",
@@ -45,9 +46,11 @@
     "@nestjs/testing": "12.1.0",
     "@swc-node/register": "^1.12.1",
     "@swc/core": "^1.16.2",
+    "@types/oidc-provider": "9.12.1",
     "@types/pdfkit": "0.17.6",
     "@types/pg": "8.23.1",
     "@yourtal/tsconfig": "workspace:*",
+    "openid-client": "6.8.8",
     "typescript": "6.0.3",
     "vitest": "5.0.1"
   }

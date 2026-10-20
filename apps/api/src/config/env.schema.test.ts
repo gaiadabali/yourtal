@@ -89,6 +89,7 @@ describe("TEEN_ACCOUNTS (12.1.d)", () => {
     WEBHOOK_SECRET_ENCRYPTION_KEY: "test-only-webhook-secret-encryption-key-not-a-real-secret",
     SNAP_APP_PARTNER_SECRET: "test-only-snap-app-partner-secret-not-a-real-secret",
     HLS_SIGNING_SECRET: "test-only-hls-signing-secret-not-a-real-one",
+    TOTP_SECRET_ENCRYPTION_KEY: "test-only-totp-secret-encryption-key-not-a-real-one",
   };
 
   it("is on by default on staging and off by default in dev", () => {
@@ -120,6 +121,7 @@ describe("the payment simulation's variables (5.1.e, F106)", () => {
     WEBHOOK_SECRET_ENCRYPTION_KEY: "test-only-webhook-secret-encryption-key-not-a-real-secret",
     SNAP_APP_PARTNER_SECRET: "test-only-snap-app-partner-secret-not-a-real-secret",
     HLS_SIGNING_SECRET: "test-only-hls-signing-secret-not-a-real-one",
+    TOTP_SECRET_ENCRYPTION_KEY: "test-only-totp-secret-encryption-key-not-a-real-one",
   };
 
   it("is off by default and every variable has a dev default", () => {
@@ -163,5 +165,49 @@ describe("the payment simulation's variables (5.1.e, F106)", () => {
     expect(value("PAYSIM_ACCOUNT_NAME")).toBe("YourTal");
     expect(value("STRIPE_SECRET_KEY")).toBe("sk_test_paysim_dev");
     expect(value("STRIPE_WEBHOOK_SECRET")).toBe("whsec_paysim_dev");
+  });
+});
+
+describe("passkeys and authenticator codes", () => {
+  const base = {
+    DATABASE_URL: "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal",
+    CHECKPOINT_TOKEN_SECRET: "test-only-checkpoint-signing-key-not-a-real-secret",
+    WEBHOOK_SECRET_ENCRYPTION_KEY: "test-only-webhook-secret-encryption-key-not-a-real-secret",
+    SNAP_APP_PARTNER_SECRET: "test-only-snap-app-partner-secret-not-a-real-secret",
+    HLS_SIGNING_SECRET: "test-only-hls-signing-secret-not-a-real-one",
+  };
+
+  it("follows the web origin by default: localhost in dev, yourtal.gaiada.com on staging", () => {
+    expect(loadAppConfig(base).authFactors).toMatchObject({
+      rpId: "localhost",
+      origins: ["http://localhost:3000"],
+    });
+    const staging = loadAppConfig({
+      ...base,
+      APP_ENV: "staging",
+      TOTP_SECRET_ENCRYPTION_KEY: "staging-totp-secret-encryption-key-for-this-test",
+    });
+    expect(staging.authFactors).toMatchObject({
+      rpId: "yourtal.gaiada.com",
+      origins: ["https://yourtal.gaiada.com"],
+    });
+  });
+
+  it("takes an explicit relying party and a list of origins", () => {
+    const config = loadAppConfig({
+      ...base,
+      WEBAUTHN_RP_ID: "yourtal.test",
+      WEBAUTHN_ORIGIN: "https://yourtal.test, https://app.yourtal.test",
+    });
+    expect(config.authFactors).toMatchObject({
+      rpId: "yourtal.test",
+      origins: ["https://yourtal.test", "https://app.yourtal.test"],
+    });
+  });
+
+  it("refuses the local-only seed key outside dev", () => {
+    expect(loadAppConfig(base).authFactors?.totpSecretKey.startsWith("local-only")).toBe(true);
+    expect(() => loadAppConfig({ ...base, APP_ENV: "staging" })).toThrow(/TOTP_SECRET/);
+    expect(() => loadAppConfig({ ...base, APP_ENV: "production" })).toThrow(/TOTP_SECRET/);
   });
 });

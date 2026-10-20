@@ -10,7 +10,10 @@ const config: NextConfig = {
   typedRoutes: true,
   // Several root layouts, so unmatched URLs need app/global-not-found.tsx.
   // authInterrupts: `forbidden()` for a true 403 on /staff/* (F53, added by Phase 9).
-  experimental: { globalNotFound: true, authInterrupts: true },
+  // 14.6.a: inlineCss puts the stylesheet in the HTML, so first paint no longer waits for a
+  // second round trip to fetch it (Shorts first frame, 4x CPU / 170 ms RTT: ~1.2 s to ~0.8 s).
+  // The cost is ~15 KB gz more per document, and no cached CSS across full page loads.
+  experimental: { globalNotFound: true, authInterrupts: true, inlineCss: true },
   // `(lab)` prototypes and the primitive gallery use `.lab.tsx`, so they are routes
   // only in a YOURTAL_LAB=1 build and never in the one that ships.
   pageExtensions: process.env["YOURTAL_LAB"] === "1" ? ["tsx", "ts", "lab.tsx"] : ["tsx", "ts"],

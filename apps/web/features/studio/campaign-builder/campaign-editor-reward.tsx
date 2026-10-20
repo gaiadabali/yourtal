@@ -14,6 +14,7 @@ import type { CampaignScoringRule } from "@yourtal/contracts/campaign";
 import { useRegion } from "@/features/region/use-region";
 import { setRewardConfigLive } from "./campaign-builder-actions";
 import { assessRewardToDataCost, describeRewardDataCostRatio } from "./campaign-reward-risk";
+import { rewardConfigPatchFor } from "./campaign-reward-patch";
 import type { CampaignDraft, CampaignDraftFormValues } from "./campaign-draft";
 import { campaignFormErrorText, draftEstimatedDataMb } from "./campaign-draft";
 
@@ -74,7 +75,8 @@ export function CampaignEditorReward({
   const assessment = assessRewardToDataCost(draft.rewardValueMinorUnits, estimatedDataMb, currency);
 
   async function saveReward() {
-    if (!draft.allocationId) {
+    const patch = rewardConfigPatchFor(draft);
+    if (patch === null) {
       setSaveState({
         status: "error",
         message: t(
@@ -86,19 +88,8 @@ export function CampaignEditorReward({
       return;
     }
     setSaveState({ status: "saving" });
-    // maxPointsForCampaign (campaignRewardConfigSchema's own ceiling field,
-    // distinct from the Budget tab's totalBudgetPoints) reuses that budget
-    // number, auto-expanded to at least cover one completion so a business
-    // that has not visited Budget yet is never blocked by a stale zero —
-    // this feature's own next slice can give it a dedicated field instead.
-    const oneCompletion = draft.rewardPoints + draft.accuracyBonusPoints;
-    const maxPointsForCampaign = Math.max(draft.budget.totalBudgetPoints, oneCompletion);
-    const result = await setRewardConfigLive(draft.businessId, draft.id, merchantName, {
-      allocationId: draft.allocationId,
-      rewardPointsPerCompletion: draft.rewardPoints,
-      accuracyBonusPoints: draft.accuracyBonusPoints,
-      maxPointsForCampaign,
-    });
+    // The budget saves with the reward (14.2); see rewardConfigPatchFor.
+    const result = await setRewardConfigLive(draft.businessId, draft.id, merchantName, patch);
     if (!result.ok) {
       setSaveState({ status: "error", message: result.message });
       return;
@@ -114,6 +105,7 @@ export function CampaignEditorReward({
       accuracyBonusPoints: saved.accuracyBonusPoints,
       rewardValueMinorUnits: saved.rewardValueMinorUnits,
       rewardCurrency: saved.rewardCurrency,
+      budget: saved.budget,
     });
     setSaveState({ status: "idle" });
   }

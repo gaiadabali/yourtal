@@ -6,6 +6,13 @@ import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
 import { Input } from "@yourtal/ui/input";
 import type { CampaignTargeting } from "./campaign-draft";
+import {
+  MAX_DISTRICT_LENGTH,
+  MAX_TARGET_DISTRICTS,
+  cleanTargetDistricts,
+  districtKey,
+  normaliseDistrict,
+} from "@yourtal/contracts/campaign/target-districts";
 import { TagPicker } from "../tag-picker";
 
 export interface CampaignEditorTargetingProps {
@@ -14,7 +21,12 @@ export interface CampaignEditorTargetingProps {
   disabled?: boolean;
 }
 
-/** Targeting: interest tags from the taxonomy (13.11.a) and free-form districts (docs/17 §2's Campaigns zone: "targeting"). Untargeted (empty) is a valid, honest choice — shown as "targets everyone", not left ambiguous. */
+/**
+ * Targeting: interest tags from the taxonomy (13.11.a) and free-form districts (docs/17 §2's
+ * Campaigns zone: "targeting"). Untargeted (empty) is a valid, honest choice — shown as "targets
+ * everyone", not left ambiguous. 14.2: districts save with the details and the feed shows a
+ * targeted campaign only in them; spelling and case are normalised the way the server does.
+ */
 export function CampaignEditorTargeting({
   targeting,
   onChange,
@@ -29,12 +41,23 @@ export function CampaignEditorTargeting({
         disabled={disabled}
         onChange={(interests) => onChange({ ...targeting, interests })}
       />
+      <p className="text-xs font-sans text-fg-muted">
+        {t("campaignBuilder.targeting.districtsHint", { max: MAX_TARGET_DISTRICTS })}
+      </p>
       <TagList
         label={t("campaignBuilder.targeting.districtsLabel")}
         emptyMessage={t("campaignBuilder.targeting.noDistricts")}
         values={targeting.districts}
-        disabled={disabled}
-        onAdd={(value) => onChange({ ...targeting, districts: [...targeting.districts, value] })}
+        disabled={disabled === true || targeting.districts.length >= MAX_TARGET_DISTRICTS}
+        onAdd={(value) =>
+          onChange({
+            ...targeting,
+            districts: cleanTargetDistricts([...targeting.districts, value]).slice(
+              0,
+              MAX_TARGET_DISTRICTS,
+            ),
+          })
+        }
         onRemove={(value) =>
           onChange({
             ...targeting,
@@ -61,9 +84,9 @@ function TagList({ label, emptyMessage, values, onAdd, onRemove, disabled }: Tag
   const [draft, setDraft] = useState("");
 
   function commit() {
-    const trimmed = draft.trim();
-    if (trimmed.length > 0 && !values.includes(trimmed)) {
-      onAdd(trimmed);
+    const name = normaliseDistrict(draft);
+    if (name.length > 0 && !values.some((value) => districtKey(value) === districtKey(name))) {
+      onAdd(name);
     }
     setDraft("");
   }
@@ -75,6 +98,7 @@ function TagList({ label, emptyMessage, values, onAdd, onRemove, disabled }: Tag
           <Input
             label={label}
             value={draft}
+            maxLength={MAX_DISTRICT_LENGTH}
             disabled={disabled}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={(event) => {

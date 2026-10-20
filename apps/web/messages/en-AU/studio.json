@@ -13,7 +13,14 @@
     "budget": {
       "totalLabel": "Total budget (points)",
       "dailyCapLabel": "Daily cap (points, optional)",
-      "dailyCapPlaceholder": "No daily cap"
+      "dailyCapPlaceholder": "No daily cap",
+      "hint": "Rewards stop when the total budget is spent. A daily cap stops them for the rest of the day; they start again the next day.",
+      "save": "Save budget",
+      "saved": "Budget saved.",
+      "needsReward": "Choose which funded points pay for the reward on the Reward tab, then save the budget.",
+      "budgetBelowOneCompletion": "The total budget must cover at least one viewer's full reward ({points} points).",
+      "dailyCapBelowOneCompletion": "The daily cap must cover at least one viewer's full reward ({points} points).",
+      "dailyCapAboveBudget": "The daily cap cannot be more than the total budget."
     },
     "chapters": {
       "titleLabel": "Chapter {number} title",
@@ -131,7 +138,8 @@
       "noDistricts": "No districts added — this campaign targets everyone.",
       "tagPlaceholder": "Type and press Enter",
       "add": "Add",
-      "removeTag": "Remove {value}"
+      "removeTag": "Remove {value}",
+      "districtsHint": "Shown only to viewers in these districts, up to {max}. Leave it empty to show the campaign everywhere."
     },
     "upload": {
       "statusIdle": "No video uploaded yet",

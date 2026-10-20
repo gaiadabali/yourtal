@@ -54,9 +54,11 @@ export interface CampaignDraftDetailsPatch {
   captionsUrl: string | null;
   /** 13.11.a: the campaign's tags, taxonomy node ids only. */
   declaredInterests: string[];
+  /** 14.2: the districts the campaign is shown in; empty is every district. */
+  targetDistricts: string[];
 }
 
-/** `PATCH /api/:tenantId/studio/campaigns/:campaignId` (7.3.a) — every field the real DTO accepts that this editor has a control for (see TASKS.md 7.8.b's note for `targeting.districts`/`budget`, which the DTO has no field for at all). */
+/** `PATCH /api/:tenantId/studio/campaigns/:campaignId` (7.3.a) — every field the real DTO accepts that this editor has a control for. The budget saves with the reward (`setRewardConfigLive`). */
 export async function updateCampaignDraftDetailsLive(
   businessId: string,
   campaignId: string,
@@ -88,7 +90,10 @@ export interface RewardConfigPatch {
   allocationId: string;
   rewardPointsPerCompletion: number;
   accuracyBonusPoints: number;
+  /** 14.2: the total budget, in points. */
   maxPointsForCampaign: number;
+  /** 14.2: null is no daily cap. */
+  dailyCapPoints: number | null;
 }
 
 /**

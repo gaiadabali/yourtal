@@ -47,6 +47,18 @@ export const apiCampaignDraftSchema = z.object({
   questionCount: z.number().nullable(),
   scoringRule: z.enum(["base_only", "base_plus_accuracy_bonus"]).nullable(),
   publishedAt: z.string().nullable(),
+  /** 14.2: the districts the campaign is shown in; empty is every district. */
+  targetDistricts: z.array(z.string()),
+  /** 14.2: the saved reward and budget; `maxPointsForCampaign` is the total budget. */
+  rewardConfig: z
+    .object({
+      allocationId: z.string(),
+      rewardPointsPerCompletion: z.number(),
+      accuracyBonusPoints: z.number(),
+      maxPointsForCampaign: z.number(),
+      dailyCapPoints: z.number().nullable(),
+    })
+    .nullable(),
 });
 
 export type ApiCampaignDraft = z.infer<typeof apiCampaignDraftSchema>;

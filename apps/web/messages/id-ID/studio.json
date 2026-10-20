@@ -13,7 +13,14 @@
     "budget": {
       "totalLabel": "Total anggaran (poin)",
       "dailyCapLabel": "Batas harian (poin, opsional)",
-      "dailyCapPlaceholder": "Tidak ada batas harian"
+      "dailyCapPlaceholder": "Tidak ada batas harian",
+      "hint": "Reward berhenti saat total anggaran habis. Batas harian menghentikannya untuk sisa hari itu; reward dimulai lagi keesokan harinya.",
+      "save": "Simpan anggaran",
+      "saved": "Anggaran tersimpan.",
+      "needsReward": "Pilih poin berdana yang membayar reward di tab Reward, lalu simpan anggaran.",
+      "budgetBelowOneCompletion": "Total anggaran harus mencukupi setidaknya reward penuh satu penonton ({points} poin).",
+      "dailyCapBelowOneCompletion": "Batas harian harus mencukupi setidaknya reward penuh satu penonton ({points} poin).",
+      "dailyCapAboveBudget": "Batas harian tidak boleh melebihi total anggaran."
     },
     "chapters": {
       "titleLabel": "Judul bab {number}",
@@ -131,7 +138,8 @@
       "noDistricts": "Belum ada wilayah ditambahkan — kampanye ini menargetkan semua orang.",
       "tagPlaceholder": "Ketik lalu tekan Enter",
       "add": "Tambah",
-      "removeTag": "Hapus {value}"
+      "removeTag": "Hapus {value}",
+      "districtsHint": "Hanya ditampilkan kepada penonton di wilayah ini, maksimal {max}. Kosongkan agar kampanye tampil di mana saja."
     },
     "upload": {
       "statusIdle": "Belum ada video diunggah",

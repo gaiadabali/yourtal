@@ -89,6 +89,7 @@ describe("burnErrorFromApiError", () => {
       "region_mismatch",
       "audience_blocked",
       "campaign_cap_reached",
+      "campaign_daily_cap_reached",
       "velocity_capped",
       "solvency_blocked",
       "already_granted",

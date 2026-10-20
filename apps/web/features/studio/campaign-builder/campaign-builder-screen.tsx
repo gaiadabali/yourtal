@@ -110,9 +110,8 @@ export function CampaignBuilderScreen({
    * Reward and questions save immediately from their own tabs instead (the
    * author needs to see the server's refusal/priced value, or the PII
    * guard's refusal, right there — see `campaign-editor-reward.tsx` and
-   * `question-bank-screen.tsx`). `targeting.districts`/`budget` have no
-   * live field in the real DTO at all (TASKS.md 7.8.b's note) and stay
-   * local-only.
+   * `question-bank-screen.tsx`). Districts save here; the budget saves
+   * with the reward (14.2).
    */
   /** Saves the details tab; the error message, or null once saved (or in mock mode). */
   async function saveDetails(): Promise<string | null> {
@@ -136,6 +135,7 @@ export function CampaignBuilderScreen({
       teaserStartSeconds: current.teaserStartSeconds,
       captionsUrl: current.captionsUrl,
       declaredInterests: knownTags(current.targeting.interests),
+      targetDistricts: current.targeting.districts,
     });
     if (result.ok) {
       // The PATCH response has no question bank of its own (see

@@ -18,9 +18,10 @@ import type { CampaignDraftStatus } from "./campaign-draft-status";
  * The two shapes genuinely diverge in a few places that this pass does NOT
  * reconcile — each is called out at its own field below rather than
  * silently dropped:
- *   - `targeting.districts` and `budget` have no live equivalent yet (no
- *     endpoint stores them) — they stay locally-held, mock-only fields
- *     until a real one exists.
+ *   - `targeting.districts` and `budget` round-trip since 14.2: districts
+ *     through the draft's own `targetDistricts`, the total budget and daily
+ *     cap through the saved reward config (`maxPointsForCampaign`,
+ *     `dailyCapPoints`), which `GET` now returns as `rewardConfig`.
  *   - `chapters`: the real contract's `CampaignChapter` is
  *     `{title, startSeconds, rewardWeight}` (a back-loaded reward CURVE);
  *     this feature's own `{id, title, startSeconds}` predates that and has
@@ -30,14 +31,11 @@ import type { CampaignDraftStatus } from "./campaign-draft-status";
  *     the server ever returns one. Reconciling the two shapes for real is
  *     this ticket's own next slice, not invented here.
  *   - `rewardPoints`/`scoringRule` ARE round-tripped (the draft row's own
- *     "mirror" fields, kept in sync by `PUT .../reward`'s use-case), but
- *     `allocationId`/`accuracyBonusPoints`/the server's priced
- *     `rewardValueMinorUnits` are NOT — `GET`/list never returns them (only
- *     a successful `PUT .../reward` response does, per
- *     `SetRewardConfigResult`). So they read back `null`/`0` on every fresh
- *     load (mock or a live page reload) — the honest "not set THIS
- *     session" state, not a fabricated zero. See
- *     `campaign-builder-actions.ts`'s `setRewardConfigLive`.
+ *     "mirror" fields, kept in sync by `PUT .../reward`'s use-case), and so
+ *     are `allocationId`/`accuracyBonusPoints` through `rewardConfig`
+ *     (14.2). Only the server's priced `rewardValueMinorUnits` is not: a
+ *     successful `PUT .../reward` returns it, so it reads back `null` on a
+ *     fresh load, the honest "not priced this session" state.
  *   - `questionBank`: the real question bank lives at its own endpoint
  *     (`GET .../questions`), not embedded in the draft response — left `[]`
  *     here; `campaign-builder-screen.tsx`'s `openDraft` fetches it
@@ -87,8 +85,11 @@ export function apiDraftToWebDraft(api: ApiCampaignDraft, merchantName: string):
     })),
     rewardPoints: api.rewardPoints ?? 0,
     scoringRule: api.scoringRule ?? "base_only",
-    targeting: { interests: [...api.declaredInterests], districts: [] },
-    budget: { totalBudgetPoints: 0, dailyCapPoints: null },
+    targeting: { interests: [...api.declaredInterests], districts: [...api.targetDistricts] },
+    budget: {
+      totalBudgetPoints: api.rewardConfig?.maxPointsForCampaign ?? 0,
+      dailyCapPoints: api.rewardConfig?.dailyCapPoints ?? null,
+    },
     questionBank: [],
     status: toDraftStatus(api.lifecycleState),
     rejectionReason: api.rejectionReason,
@@ -100,8 +101,8 @@ export function apiDraftToWebDraft(api: ApiCampaignDraft, merchantName: string):
     openViewing: api.openViewing,
     teaserStartSeconds: api.teaserStartSeconds,
     captionsUrl: api.captionsUrl,
-    allocationId: null,
-    accuracyBonusPoints: 0,
+    allocationId: api.rewardConfig?.allocationId ?? null,
+    accuracyBonusPoints: api.rewardConfig?.accuracyBonusPoints ?? 0,
     rewardValueMinorUnits: null,
     rewardCurrency: null,
   };

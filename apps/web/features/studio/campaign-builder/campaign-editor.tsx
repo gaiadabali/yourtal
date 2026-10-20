@@ -137,10 +137,12 @@ export function CampaignEditor({
             ) : null}
             {section === "budget" ? (
               <CampaignEditorBudget
-                budget={draft.budget}
+                draft={draft}
                 form={form}
-                onChange={(budget) => onChange({ ...draft, budget })}
+                onChange={onChange}
                 disabled={!editable}
+                isLiveMode={isLiveMode}
+                merchantName={draft.merchantName}
               />
             ) : null}
             {section === "boost" ? (

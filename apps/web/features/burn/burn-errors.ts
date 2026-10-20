@@ -89,6 +89,7 @@ const CODE_BUCKET = {
   region_mismatch: "blocked",
   audience_blocked: "blocked",
   campaign_cap_reached: "blocked",
+  campaign_daily_cap_reached: "blocked",
   velocity_capped: "blocked",
   solvency_blocked: "blocked",
   already_granted: "blocked",

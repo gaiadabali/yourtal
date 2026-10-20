@@ -590,6 +590,13 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "Same pg-boss vendor-schema note as pgboss.job above (YT-0040). Holds the single row '40' -- the schema version the migration installs and the pinned pg-boss 12.30.0 client expects. A drift between the two is a real defect, which is why the dependency is pinned exact rather than caret-ranged.",
   "pgboss.warning": "Same pg-boss vendor-schema note as pgboss.job above (YT-0040).",
   "pgboss.bam": "Same pg-boss vendor-schema note as pgboss.job above (YT-0040).",
+  // 5.1.e (F106): the payment simulation's own storage. It stands in for Stripe,
+  // so its rows are Stripe's objects as Stripe's API returns them, not ours: no
+  // contract here mirrors them, the same call as pg-boss's vendor tables above.
+  "paysim.object":
+    "5.1.e (F106, 20261020134318_paysim.sql): the payment simulation's Stripe objects as jsonb. They are Stripe's API shapes, read only by packages/paysim; the app sees them through the Stripe driver, never as a contract.",
+  "paysim.idempotency": "Same as paysim.object: the simulation's Idempotency-Key records.",
+  "paysim.delivery": "Same as paysim.object: the simulation's webhook delivery queue.",
   "platform.idempotency":
     "The @yourtal/idempotency package's own dedupe store (packages/idempotency/src/postgres-store.ts) — infrastructure, not a domain contract.",
   "platform.region_setting":

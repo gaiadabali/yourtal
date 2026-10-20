@@ -1,4 +1,5 @@
 import { bigint, integer, jsonb, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import type { PosterVariant } from "@yourtal/contracts/campaign/poster-variant";
 import type { MediaAssetStatus, MediaRenditionBytes } from "@yourtal/contracts/studio/media";
 import { studioPgSchema } from "./studio-schema";
 
@@ -27,6 +28,8 @@ export const mediaAssets = studioPgSchema.table("media_assets", {
   durationSeconds: integer("duration_seconds"),
   aspect: text("aspect"),
   posterUrl: text("poster_url"),
+  // 14.6.b: the poster sizes actually uploaded; [] means only posterUrl.
+  posterVariants: jsonb("poster_variants").notNull().$type<PosterVariant[]>().default([]),
   teaserUrl: text("teaser_url"),
   hlsUrl: text("hls_url"),
   captionsUrl: text("captions_url"),

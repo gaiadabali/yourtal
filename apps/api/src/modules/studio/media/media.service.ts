@@ -204,6 +204,7 @@ export class MediaService {
       durationSeconds: input.durationSeconds,
       aspect: input.aspect,
       posterUrl: input.posterUrl,
+      posterVariants: input.posterVariants,
       teaserUrl: input.teaserUrl,
       hlsUrl: input.hlsUrl,
       captionsUrl,
@@ -213,6 +214,7 @@ export class MediaService {
     // columns" -- never the worker, which only reports what it produced.
     await this.assets.writeCampaignMedia(updated.campaignId, {
       posterUrl: input.posterUrl,
+      posterVariants: input.posterVariants,
       teaserUrl: input.teaserUrl,
       hlsUrl: input.hlsUrl,
       captionsUrl,

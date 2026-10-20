@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { DrizzleMediaAssetRepository } from "./drizzle-media-asset.repository";
 import {
@@ -54,11 +55,18 @@ describe("DrizzleMediaAssetRepository", () => {
       durationSeconds: 30,
       aspect: "16:9",
       posterUrl: `/media/posters/${created.id}.jpg`,
+      posterVariants: [{ url: `https://media.example/posters/${created.id}-320.jpg`, width: 320 }],
       teaserUrl: `/media/teasers/${created.id}.mp4`,
       hlsUrl: `/media/hls/${created.id}/index.m3u8`,
       captionsUrl: null,
       renditionBytes: { v360: 1_000, v540: 2_000, v720: 3_000 },
     });
+    const stored = await db.execute<{ poster_variants: unknown }>(
+      sql`SELECT poster_variants FROM studio.media_assets WHERE id = ${created.id}`,
+    );
+    expect(stored.rows[0]?.poster_variants).toEqual([
+      { url: `https://media.example/posters/${created.id}-320.jpg`, width: 320 },
+    ]);
     expect(ready.status).toBe("ready");
     expect(ready.renditionBytes).toEqual({ v360: 1_000, v540: 2_000, v720: 3_000 });
 

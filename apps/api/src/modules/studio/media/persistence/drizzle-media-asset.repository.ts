@@ -1,4 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
+import type { PosterVariant } from "@yourtal/contracts/campaign/poster-variant";
 import type { StudioMediaDb } from "./drizzle-client";
 import { mediaAssets } from "./schema/media-asset.table";
 import type {
@@ -82,6 +83,7 @@ export class DrizzleMediaAssetRepository implements MediaAssetRepository {
         durationSeconds: input.durationSeconds,
         aspect: input.aspect,
         posterUrl: input.posterUrl,
+        posterVariants: [...input.posterVariants],
         teaserUrl: input.teaserUrl,
         hlsUrl: input.hlsUrl,
         captionsUrl: input.captionsUrl,
@@ -108,6 +110,7 @@ export class DrizzleMediaAssetRepository implements MediaAssetRepository {
     campaignId: string,
     media: {
       posterUrl: string;
+      posterVariants: readonly PosterVariant[];
       teaserUrl: string;
       hlsUrl: string;
       captionsUrl: string | null;
@@ -121,6 +124,7 @@ export class DrizzleMediaAssetRepository implements MediaAssetRepository {
     await this.db.execute(sql`
       UPDATE campaign.campaigns
       SET poster_url = ${media.posterUrl},
+          poster_variants = ${JSON.stringify(media.posterVariants)}::jsonb,
           teaser_url = ${media.teaserUrl},
           hls_url = ${media.hlsUrl},
           captions_url = ${media.captionsUrl},

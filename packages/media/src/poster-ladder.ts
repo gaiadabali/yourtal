@@ -9,7 +9,12 @@ import {
   POSTER_JPEG_QUALITY,
   POSTER_LONG_SIDE,
   POSTER_LONG_SIDES,
+  posterKeyOf,
   posterVariantKey,
+  posterVariantsFor,
+  type PosterAspect,
+  type PosterLongSide,
+  type PosterVariant,
 } from "./poster-variants";
 import { createMediaClient, putMediaOutput } from "./studio-media";
 
@@ -36,58 +41,112 @@ export function s3PosterStore(client: S3Client): PosterStore {
   };
 }
 
+/** A campaign whose poster has no recorded sizes yet. */
+export interface PosterRow {
+  readonly id: string;
+  readonly posterUrl: string;
+  readonly aspect: PosterAspect;
+}
+
+/** Where recorded sizes live: `campaign.campaigns.poster_variants`. Injected for tests. */
+export interface PosterRecorder {
+  /** Rows with a poster and an empty `poster_variants`. */
+  pending(): Promise<PosterRow[]>;
+  record(id: string, variants: readonly PosterVariant[]): Promise<void>;
+}
+
+/** The minimal slice of `pg.Pool` this needs. */
+interface Queryable {
+  query(text: string, values?: unknown[]): Promise<{ rows: unknown[] }>;
+}
+
+export function pgPosterRecorder(pool: Queryable): PosterRecorder {
+  return {
+    pending: async () => {
+      const { rows } = await pool.query(
+        `SELECT id, poster_url, aspect FROM campaign.campaigns
+          WHERE poster_url IS NOT NULL AND poster_variants = '[]'::jsonb
+            AND aspect IN ('16:9', '9:16')`,
+      );
+      return (rows as { id: string; poster_url: string; aspect: PosterAspect }[]).map((row) => ({
+        id: row.id,
+        posterUrl: row.poster_url,
+        aspect: row.aspect,
+      }));
+    },
+    record: async (id, variants) => {
+      await pool.query("UPDATE campaign.campaigns SET poster_variants = $2::jsonb WHERE id = $1", [
+        id,
+        JSON.stringify(variants),
+      ]);
+    },
+  };
+}
+
 /**
- * 14.6.b: posters made before responsive sizes exist have only the 640. This
- * writes the missing sizes beside each one, from the stored image (a larger size
- * is an enlargement: no sharper, but the set is complete and the browser never
- * asks for a file that is not there). Skips a poster whose sizes all exist, so a
- * second run writes nothing. Returns how many posters it filled in.
+ * 14.6.b: posters made before responsive sizes exist have only the 640. For each
+ * campaign with no recorded sizes this writes the smaller sizes beside its poster
+ * (never a larger one: a 960 made from a 640 is no sharper, only heavier), then
+ * records the sizes that exist, so a `srcset` never names a file that is missing.
+ * A poster whose file cannot be read is left alone. Re-running does nothing for a
+ * campaign that already has its sizes recorded. Returns how many campaigns it
+ * recorded.
  */
 export async function ensurePosterLadder(
-  baseKeys: readonly string[],
+  recorder: PosterRecorder,
   log: (message: string) => void,
   store?: PosterStore,
 ): Promise<number> {
+  const rows = await recorder.pending();
+  if (rows.length === 0) return 0;
   const client = store === undefined ? createMediaClient() : null;
   const posters = store ?? s3PosterStore(client as S3Client);
   const work = mkdtempSync(path.join(tmpdir(), "poster-ladder-"));
-  let filled = 0;
+  const byUrl = new Map<string, PosterRow[]>();
+  for (const row of rows) byUrl.set(row.posterUrl, [...(byUrl.get(row.posterUrl) ?? []), row]);
+  let recorded = 0;
   try {
-    for (const baseKey of new Set(baseKeys)) {
-      const missing: { longSide: (typeof POSTER_LONG_SIDES)[number]; key: string }[] = [];
-      for (const longSide of POSTER_LONG_SIDES) {
-        if (longSide === POSTER_LONG_SIDE) continue;
-        const key = posterVariantKey(baseKey, longSide);
-        if (key !== null && !(await posters.has(key))) missing.push({ longSide, key });
-      }
-      if (missing.length === 0) continue;
+    for (const [posterUrl, group] of byUrl) {
+      const baseKey = posterKeyOf(posterUrl);
+      if (baseKey === null || posterVariantKey(baseKey, 320) === null) continue;
       const base = await posters.get(baseKey);
       if (base === null) continue;
       const input = path.join(work, "in.jpg");
       writeFileSync(input, base);
-      for (const { longSide, key } of missing) {
-        const output = path.join(work, `out-${String(longSide)}.jpg`);
-        execFileSync("ffmpeg", [
-          "-hide_banner",
-          "-loglevel",
-          "error",
-          "-y",
-          "-i",
-          input,
-          "-vf",
-          posterScaleFilter(longSide),
-          "-q:v",
-          String(POSTER_JPEG_QUALITY[longSide]),
-          output,
-        ]);
-        await posters.put(key, readFileSync(output));
+      const stored: PosterLongSide[] = [POSTER_LONG_SIDE];
+      for (const longSide of POSTER_LONG_SIDES) {
+        if (longSide === POSTER_LONG_SIDE) continue;
+        const key = posterVariantKey(baseKey, longSide);
+        if (key === null) continue;
+        if (!(await posters.has(key))) {
+          if (longSide > POSTER_LONG_SIDE) continue;
+          const output = path.join(work, `out-${String(longSide)}.jpg`);
+          execFileSync("ffmpeg", [
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-i",
+            input,
+            "-vf",
+            posterScaleFilter(longSide),
+            "-q:v",
+            String(POSTER_JPEG_QUALITY[longSide]),
+            output,
+          ]);
+          await posters.put(key, readFileSync(output));
+        }
+        stored.push(longSide);
       }
-      filled += 1;
+      for (const row of group) {
+        await recorder.record(row.id, posterVariantsFor(posterUrl, row.aspect, stored));
+      }
+      recorded += group.length;
     }
   } finally {
     client?.destroy();
     rmSync(work, { recursive: true, force: true });
   }
-  if (filled > 0) log(`[poster-ladder] ${String(filled)} posters given their other sizes`);
-  return filled;
+  if (recorded > 0) log(`[poster-ladder] ${String(recorded)} campaigns given their poster sizes`);
+  return recorded;
 }

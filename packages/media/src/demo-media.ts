@@ -15,6 +15,7 @@ import pg from "pg";
 import demoMediaManifestJson from "../demo-media.json" with { type: "json" };
 import { probeInput, renderHlsLadder, renderPosterLadder, renderTeaser } from "./ffmpeg-transcode";
 import { publicMediaUrl } from "./hls-origin";
+import type { PosterVariant } from "./poster-variants";
 import {
   captionsObjectKey,
   createMediaClient,
@@ -539,7 +540,7 @@ async function seedOneCampaign(
       body: readFileSync(path.join(hlsDir, ...file.split("/"))),
     });
   }
-  await putPosterLadder(client, campaignId, posters);
+  const posterVariants = await putPosterLadder(client, campaignId, posters, final.aspect);
   await putMediaOutput(client, {
     kind: "teaser",
     key: teaserObjectKey(campaignId),
@@ -561,6 +562,7 @@ async function seedOneCampaign(
     durationSeconds: TARGET_DURATION_SECONDS,
     estimatedBytes: renditionBytes.v540,
     posterUrl,
+    posterVariants,
     teaserUrl,
     hlsUrl,
   });
@@ -631,6 +633,8 @@ interface EnsureCampaignInput {
   readonly durationSeconds: number;
   readonly estimatedBytes: number;
   readonly posterUrl: string;
+  /** The sizes uploaded with it (14.6.b), as `poster_variants` records them. */
+  readonly posterVariants: readonly PosterVariant[];
   readonly teaserUrl: string;
   readonly hlsUrl: string;
 }
@@ -643,6 +647,7 @@ async function ensureCampaign(pool: pg.Pool, input: EnsureCampaignInput): Promis
     durationSeconds,
     estimatedBytes,
     posterUrl,
+    posterVariants,
     teaserUrl,
     hlsUrl,
   } = input;
@@ -656,11 +661,12 @@ async function ensureCampaign(pool: pg.Pool, input: EnsureCampaignInput): Promis
        (id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds, estimated_data_mb,
         reward_points, question_count, scoring_rule, lifecycle_state, published_at, business_id,
         region, audience, content_category, poster_url, teaser_url, hls_url, aspect,
-        estimated_bytes, starts_at, ends_at, open_viewing, teaser_start_seconds)
+        estimated_bytes, starts_at, ends_at, open_viewing, teaser_start_seconds, poster_variants)
      VALUES ($1,'long_form',$2,$3,$4,$5,$6,$7,$8,$9,'base_only','live',$10,$3,$11,'all_ages',
-             'entertainment',$12,$13,$14,'16:9',$15,$10,$16,true,$17)
+             'entertainment',$12,$13,$14,'16:9',$15,$10,$16,true,$17,$18::jsonb)
      ON CONFLICT (id) DO UPDATE SET
-       poster_url = EXCLUDED.poster_url, teaser_url = EXCLUDED.teaser_url,
+       poster_url = EXCLUDED.poster_url, poster_variants = EXCLUDED.poster_variants,
+       teaser_url = EXCLUDED.teaser_url,
        hls_url = EXCLUDED.hls_url, estimated_bytes = EXCLUDED.estimated_bytes`,
     [
       campaignId,
@@ -680,6 +686,7 @@ async function ensureCampaign(pool: pg.Pool, input: EnsureCampaignInput): Promis
       estimatedBytes,
       endsAt,
       entry.teaserStartSeconds,
+      JSON.stringify(posterVariants),
     ],
   );
 
@@ -823,6 +830,8 @@ export interface DemoVideoRequest {
 
 export interface DemoVideo {
   readonly posterUrl: string;
+  /** The sizes uploaded with it (14.6.b), as `poster_variants` records them. */
+  readonly posterVariants: readonly PosterVariant[];
   readonly teaserUrl: string;
   readonly hlsUrl: string;
   readonly aspect: string;
@@ -873,7 +882,7 @@ export async function renderDemoVideo(request: DemoVideoRequest): Promise<DemoVi
       body: readFileSync(path.join(hlsDir, ...file.split("/"))),
     });
   }
-  await putPosterLadder(client, request.assetId, posters);
+  const posterVariants = await putPosterLadder(client, request.assetId, posters, final.aspect);
   await putMediaOutput(client, {
     kind: "teaser",
     key: teaserObjectKey(request.assetId),
@@ -883,6 +892,7 @@ export async function renderDemoVideo(request: DemoVideoRequest): Promise<DemoVi
 
   return {
     posterUrl: publicMediaUrl(posterObjectKey(request.assetId)),
+    posterVariants,
     teaserUrl: publicMediaUrl(teaserObjectKey(request.assetId)),
     hlsUrl: publicMediaUrl(hlsAssetObjectKey(request.assetId, "index.m3u8")),
     aspect: final.aspect,

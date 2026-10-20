@@ -1,7 +1,7 @@
 import { backfillDemoTags } from "./demo-tags";
 import { ensureDemoSuppliers } from "./demo-suppliers";
 import { relabelCheckDevices } from "./demo-device-labels";
-import { ensurePosterLadder } from "@yourtal/media/poster-ladder";
+import { ensurePosterLadder, pgPosterRecorder } from "@yourtal/media/poster-ladder";
 import { shrinkPosters } from "@yourtal/media/poster-shrink";
 import { posterKeyOf } from "@yourtal/media/poster-variants";
 import { existsSync, readFileSync } from "node:fs";
@@ -296,8 +296,8 @@ async function main(): Promise<void> {
     // After the vouchers' listings exist: give any placeholder image a real poster.
     await repairDemoListingImages(pool, console.log);
     await repairDemoListingCopy(pool, console.log);
-    // 13.4.f: every poster a viewer can see, at card size; 14.6.b: and at every other
-    // `srcset` size. Never fails the deploy.
+    // 13.4.f: every poster a viewer can see, at card size; 14.6.b: and the smaller `srcset`
+    // size, recorded on the campaign once it exists. Never fails the deploy.
     try {
       const { rows } = await pool.query<{ url: string }>(
         `SELECT poster_url AS url FROM campaign.campaigns WHERE poster_url IS NOT NULL
@@ -307,7 +307,7 @@ async function main(): Promise<void> {
         .map((row) => posterKeyOf(row.url))
         .filter((key): key is string => key !== null);
       await shrinkPosters(keys, console.log);
-      await ensurePosterLadder(keys, console.log);
+      await ensurePosterLadder(pgPosterRecorder(pool), console.log);
     } catch (error) {
       console.error(`[seed:staging] poster shrink failed: ${String(error)}`);
     }

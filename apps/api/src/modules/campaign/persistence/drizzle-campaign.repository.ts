@@ -5,7 +5,6 @@ import { campaignSchema } from "@yourtal/contracts/campaign";
 import type { CampaignTerms } from "@yourtal/contracts/campaign/campaign-terms";
 import { publicStatusOf, type CampaignLifecycleState } from "@yourtal/contracts/campaign/lifecycle";
 import { toPoints } from "@yourtal/contracts/money";
-import { posterVariantsFor } from "@yourtal/media/poster-variants";
 import type { Region } from "@yourtal/contracts/region";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import type { CampaignRepository, CampaignRewardConfigRow } from "./campaign.repository";
@@ -236,10 +235,7 @@ export class DrizzleCampaignRepository implements CampaignRepository {
       contentCategory: row.contentCategory,
       tags: storedTagsOf(row.declaredInterests),
       posterUrl: row.posterUrl,
-      posterVariants:
-        row.posterUrl !== null && (row.aspect === "16:9" || row.aspect === "9:16")
-          ? posterVariantsFor(row.posterUrl, row.aspect)
-          : [],
+      posterVariants: row.posterVariants,
       teaserUrl: row.teaserUrl,
       hlsUrl: row.hlsUrl,
       captionsUrl: row.captionsUrl,

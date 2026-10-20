@@ -1,15 +1,14 @@
 /**
- * 14.6.b: responsive posters. Every poster is stored at three sizes, named by
- * the long side of the image, so the pipeline, the staging backfill and the API
- * all agree on the keys without a lookup. Pure (no node or S3 imports), so any
- * package may use it.
+ * 14.6.b: responsive posters. A poster is stored at up to three sizes, named by
+ * the long side of the image, so the pipeline and the staging backfill agree on
+ * the keys. Pure (no node or S3 imports), so any package may use it.
  *
  * - 640 is the card-size poster and keeps its original key: it IS `posterUrl`.
  * - 320 and 960 sit beside it as `posters/<id>-320.jpg` and `posters/<id>-960.jpg`.
  *
- * Only posters under the public `posters/<uuid>.jpg` shape have variants.
- * Anything else (the Snap App poster, listing pictures, external URLs) gets none
- * and callers fall back to the single `posterUrl`.
+ * Which sizes exist is recorded in `poster_variants` (campaign and media asset
+ * rows) once they are uploaded; nothing derives it from the URL at read time.
+ * Only posters under the public `posters/<uuid>.jpg` shape can have variants.
  */
 
 export const POSTER_LONG_SIDES = [320, 640, 960] as const;
@@ -60,14 +59,19 @@ export function posterWidth(longSide: PosterLongSide, aspect: PosterAspect): num
 }
 
 /**
- * Every size of the poster at `posterUrl`, smallest first, or an empty list when
- * the URL is not one of the pipeline's own.
+ * The given sizes of the poster at `posterUrl`, smallest first, in the form that
+ * is recorded: pass only sizes that were uploaded. An empty list when the URL is
+ * not one of the pipeline's own.
  */
-export function posterVariantsFor(posterUrl: string, aspect: PosterAspect): PosterVariant[] {
+export function posterVariantsFor(
+  posterUrl: string,
+  aspect: PosterAspect,
+  longSides: readonly PosterLongSide[],
+): PosterVariant[] {
   const match = BASE_KEY.exec(posterUrl);
   if (match === null) return [];
   const origin = posterUrl.slice(0, match.index);
-  return POSTER_LONG_SIDES.map((longSide) => ({
+  return POSTER_LONG_SIDES.filter((side) => longSides.includes(side)).map((longSide) => ({
     url:
       longSide === POSTER_LONG_SIDE
         ? posterUrl

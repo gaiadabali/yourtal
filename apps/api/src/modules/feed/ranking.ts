@@ -4,7 +4,6 @@ import type { Campaign } from "@yourtal/contracts/campaign";
 import type { Audience } from "@yourtal/contracts/audience/audience";
 import type { FeedItem, FeedWhyReason } from "@yourtal/contracts/feed";
 import { toPoints } from "@yourtal/contracts/money";
-import { posterVariantsFor } from "@yourtal/media/poster-variants";
 import type { Region } from "@yourtal/contracts/region";
 import { districtTargetMatches } from "@yourtal/contracts/campaign/target-districts";
 import type { CampaignRewardConfigRow } from "../campaign/persistence/campaign.repository";
@@ -209,7 +208,7 @@ export function toFeedItem(
     title: campaign.title,
     synopsis: campaign.synopsis,
     posterUrl: campaign.posterUrl,
-    posterVariants: posterVariantsFor(campaign.posterUrl, campaign.aspect),
+    posterVariants: campaign.posterVariants,
     teaserUrl: campaign.teaserUrl,
     durationSeconds: campaign.durationSeconds,
     // The funded base, not the campaign row's display number: the terms line must match the hold.

@@ -162,6 +162,10 @@ describe("studio media pipeline (7.2)", () => {
       durationSeconds: 42,
       aspect: "16:9" as const,
       posterUrl: `/media/posters/${initiated.assetId}.jpg`,
+      posterVariants: [
+        { url: `https://media.example/posters/${initiated.assetId}-320.jpg`, width: 320 },
+        { url: `https://media.example/posters/${initiated.assetId}.jpg`, width: 640 },
+      ],
       teaserUrl: `/media/teasers/${initiated.assetId}.mp4`,
       hlsUrl: `/media/hls/${initiated.assetId}/index.m3u8`,
       captionsUrl: null,
@@ -209,8 +213,9 @@ describe("studio media pipeline (7.2)", () => {
       aspect: string;
       estimated_bytes: string;
       manifest_url: string;
+      poster_variants: unknown;
     }>(
-      sql`SELECT c.poster_url, c.teaser_url, c.hls_url, c.aspect, c.estimated_bytes::text, v.manifest_url
+      sql`SELECT c.poster_url, c.poster_variants, c.teaser_url, c.hls_url, c.aspect, c.estimated_bytes::text, v.manifest_url
             FROM campaign.campaigns c JOIN campaign.video_source v ON v.campaign_id = c.id
            WHERE c.id = ${campaignId}`,
     );
@@ -219,6 +224,8 @@ describe("studio media pipeline (7.2)", () => {
       estimated_bytes: "2000000",
       manifest_url: body.hlsUrl,
       poster_url: body.posterUrl,
+      // 14.6.b: the sizes the worker uploaded, recorded with the campaign.
+      poster_variants: body.posterVariants,
       teaser_url: body.teaserUrl,
       hls_url: body.hlsUrl,
     });

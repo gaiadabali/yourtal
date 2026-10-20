@@ -8,6 +8,7 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { PosterVariant } from "@yourtal/contracts/campaign/poster-variant";
 import { campaignPgSchema } from "./campaign-schema";
 
 /**
@@ -52,6 +53,8 @@ export const campaigns = campaignPgSchema.table("campaigns", {
   audience: text("audience").notNull(),
   contentCategory: text("content_category").notNull(),
   posterUrl: text("poster_url"),
+  // 14.6.b: the poster sizes actually uploaded; [] means only posterUrl.
+  posterVariants: jsonb("poster_variants").notNull().$type<PosterVariant[]>().default([]),
   teaserUrl: text("teaser_url"),
   hlsUrl: text("hls_url"),
   captionsUrl: text("captions_url"),

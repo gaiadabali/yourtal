@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 2/5 | 6/16 | `████░░░░░░`  38% |
-| **All** | | | **107/111** | **552/563** | `██████████`  98% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 2/10 | 6/27 | `██░░░░░░░░`  22% |
+| **All** | | | **107/116** | **552/574** | `██████████`  96% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -87,6 +87,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 9c | `yourtal-p9-c` | free | 2026-10-01 | A2 done: 13.10 ✅, 13.20 and 13.22 backends (closed ✅ 2026-10-01), 13.9.a/b. Db `yourtal_s9c` and ports 26480–26487 free for reuse. |
 | 4 | `yourtal-4` | **13** — viewer side (agent V), paused | 2026-10-02 | Branch `phase/13` (merged), db `yourtal_s4`, ports 26360–26369. Next for V: 13.15.d (store date without its year), 13.3.d (data export), the B half of 13.3.i. (13.4.a moved to the optimisation pass, F97.) |
 | 2b | `yourtal-p11` | free | 2026-09-29 | Phase 11 moved to slot 4. 11.3.a ✅ (d2ae6ab), 11.3.b merged except `VideoObject` (11fc23d). Worktree left detached |
+| g5 | `.claude/worktrees/g-phase5` | **14** — group Phase 5: 14.6, then 14.7 and 14.8 (Stripe test mode), then 14.9 | 2026-10-20 | Branch `group/5-payments`. 14.10 waits for group 3.9.c; 13.6 is the founder's. Beside g-budget, g-link and g-contract: migration names are checked against theirs before each merge. Stripe keys on Helios go through the lead session only |
 | 8 | free | **8** Voucher engine for clients — ✅ done | 2026-09-29 | Phase 8 done (all 4 tasks ✅). Helper worktrees `yourtal-p8`, `-p8-b`, `-p8-c` removed; databases `yourtal_s8`, `_s8b`, `_s8c` and ports 26371–26387, 26471–26477 kept for reuse |
 
 **Ready to start, no slot yet:** none.
@@ -1627,6 +1628,24 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
 - [x] **14.5 Tidy this plan** (group 5.8) · lead · needs: — — ✅ 2026-10-20 c2a38d04
   - [x] 14.5.a Take gifting and charity off the deferred list (built in 13.20–13.22)
   - [x] 14.5.b Fix the main checkout's path in `CLAUDE.md` and `scripts/progress.mjs` (now `god/yourtal`)
+- [ ] **14.6 Faster video start** (group 5.6, moved from 13.4.a by F97) · B · needs: — — 🔄 g5
+  - [ ] 14.6.a First frame on Shorts in 1.0 s or less on the mid-tier Android profile (median 1,044 ms at 0ee372e4)
+  - [ ] 14.6.b Responsive poster sizes (`srcset`; the contract carries one `posterUrl` today, 13.4.f)
+- [ ] **14.7 Stripe payments in AU** (group 5.1, F103) · A + C · needs: —
+  - [ ] 14.7.a A Stripe driver for `PAYMENTS_DRIVER=live` (AU): points purchases, boosts, refunds and webhooks, checked on staging in Stripe test mode. ID stays on the simulated driver (F104)
+  - [ ] 14.7.b The payment parity tests pass for both drivers (Stripe and simulated)
+  - [ ] 14.7.c Charity auction escrow runs on the real driver
+- [ ] **14.8 Stripe Connect payouts in AU** (group 5.2, F103) · A + C · needs: 14.7
+  - [ ] 14.8.a Stripe Connect payouts to AU brands; ID has no real payouts (F104)
+  - [ ] 14.8.b Settlement statements trigger real payouts, after approval
+- [ ] **14.9 GST tax invoices** (group 5.3) · C · needs: — (real invoices need the AU company, group 6.1.a)
+  - [ ] 14.9.a GST tax invoices (AU) for points and boosts; PPN waits until ID takes real money (F104)
+  - [ ] 14.9.b Invoice numbering, the company's details read from the settings store, and a PDF downloadable in Studio
+- [ ] **14.10 Identity check before real points** (group 5.9, F102) · A · needs: group 3.9.c (passkeys)
+  - [ ] 14.10.a Before the first real points go to a real person (docs/16 N-5), an account needs a verified email and a passkey
+  - [ ] 14.10.b The fraud checks rest on that, plus the holdback by trust tier and the earn caps; record it in docs/16
+
+Group 5.7, the founder's walkthrough, is 13.6 here.
 
 ## Not in this plan (deferred)
 

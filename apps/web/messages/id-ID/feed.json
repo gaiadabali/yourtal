@@ -38,7 +38,8 @@
     "watchAndEarn": "Tonton & dapatkan poin",
     "progress": "{watched} dari {total} ditonton",
     "sponsored": "Bersponsor",
-    "brandVideo": "Video brand"
+    "brandVideo": "Video brand",
+    "signUpToEarn": "Daftar untuk dapat poin"
   },
   "earn": {
     "starting": "Memulai…",
@@ -75,7 +76,8 @@
   },
   "end": {
     "caughtUp": "Kamu sudah melihat semuanya",
-    "earnedToday": "{points} didapat hari ini"
+    "earnedToday": "{points} didapat hari ini",
+    "signUpBody": "Daftar untuk mendapatkan poin dari Shorts seperti ini."
   },
   "streak": {
     "label": "Streak kamu",
@@ -128,6 +130,7 @@
   "shortsTitle": "Shorts",
   "shortsEmpty": {
     "heading": "Belum ada Shorts",
-    "body": "Shorts baru muncul di sini saat brand mengunggahnya. Video panjang ada di Beranda."
+    "body": "Shorts baru muncul di sini saat brand mengunggahnya. Video panjang ada di Beranda.",
+    "visitorBody": "Shorts baru muncul di sini saat brand mengunggahnya. Daftar untuk mendapatkan poin saat kamu menonton."
   }
 }

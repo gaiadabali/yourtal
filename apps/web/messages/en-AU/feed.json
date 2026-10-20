@@ -38,7 +38,8 @@
     "watchAndEarn": "Watch & earn",
     "progress": "{watched} of {total} watched",
     "sponsored": "Sponsored",
-    "brandVideo": "Brand video"
+    "brandVideo": "Brand video",
+    "signUpToEarn": "Sign up to earn"
   },
   "earn": {
     "starting": "Starting…",
@@ -75,7 +76,8 @@
   },
   "end": {
     "caughtUp": "You're all caught up",
-    "earnedToday": "{points} earned today"
+    "earnedToday": "{points} earned today",
+    "signUpBody": "Sign up to earn points on Shorts like these."
   },
   "streak": {
     "label": "Your streak",
@@ -128,6 +130,7 @@
   "shortsTitle": "Shorts",
   "shortsEmpty": {
     "heading": "No Shorts right now",
-    "body": "New Shorts land here as brands post them. Long videos are on Home."
+    "body": "New Shorts land here as brands post them. Long videos are on Home.",
+    "visitorBody": "New Shorts land here as brands post them. Sign up to earn points when you watch."
   }
 }

@@ -11,6 +11,7 @@ import { POSTER_SIZES, posterCardProps } from "./poster-srcset";
 import { earnsInFeed, feedTermsLine, type FeedLocale } from "./feed-terms";
 import { FeedItemActions } from "./feed-item-actions";
 import { QuickEarnAction, QuickEarnVideo } from "./quick-earn";
+import { SHORTS_SIGN_UP_HREF } from "./shorts-signup-href";
 import { useQuickEarn } from "./use-quick-earn";
 
 export interface FeedItemProps {
@@ -23,6 +24,8 @@ export interface FeedItemProps {
   /** The first Short on the page: its poster is the first frame, so it loads first. */
   priority?: boolean;
   saved: boolean;
+  /** A visitor (F8, F79): plays, earns nothing, and sees "Sign up to earn" where the earn control would be. */
+  signedOut?: boolean;
   /** Absolute URL of the public campaign page, for Share. */
   shareUrl: string;
   onHidden: (campaignId: string) => void;
@@ -37,6 +40,7 @@ export function FeedItem({
   postersOnly,
   priority = false,
   saved,
+  signedOut = false,
   shareUrl,
   onHidden,
 }: FeedItemProps) {
@@ -64,7 +68,9 @@ export function FeedItem({
         muted
         loop
       />
-      {inFeed ? <QuickEarnVideo earn={earn} title={item.title} active={active} /> : null}
+      {inFeed && !signedOut ? (
+        <QuickEarnVideo earn={earn} title={item.title} active={active} />
+      ) : null}
 
       <div
         aria-hidden="true"
@@ -78,6 +84,7 @@ export function FeedItem({
           onSavedChange={setIsSaved}
           shareUrl={shareUrl}
           onHidden={onHidden}
+          signedOut={signedOut}
         />
       </div>
 
@@ -102,7 +109,13 @@ export function FeedItem({
           {item.title}
         </h2>
         <p className="text-caption font-sans">{feedTermsLine(t, locale, item)}</p>
-        {inFeed ? (
+        {signedOut ? (
+          <div>
+            <Button asChild size="lg">
+              <a href={SHORTS_SIGN_UP_HREF}>{t("item.signUpToEarn")}</a>
+            </Button>
+          </div>
+        ) : inFeed ? (
           <QuickEarnAction earn={earn} rewardPoints={item.rewardPoints} locale={locale} />
         ) : (
           <div>

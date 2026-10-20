@@ -361,7 +361,7 @@ The clock starts when YourTal first delivers the event.
 >
 > You'll go back to snap-apps.gaiada.com.
 
-For an Indonesian account the third line reads "that your YourTal account is for Indonesia". If §6 Q6 is answered A, adults also see an unticked line: "Earn YourTal points for receipts you scan in SnapApp (10 points a receipt)", or 100 points in Indonesia.
+For an Indonesian account the third line reads "that your YourTal account is for Indonesia". If §6 Q6 is answered A, adults also see an unticked line: "Earn YourTal points for receipts you scan in SnapApp (1 point a receipt)", or 10 points in Indonesia.
 
 **First sign-in to Free Tax Returns**
 

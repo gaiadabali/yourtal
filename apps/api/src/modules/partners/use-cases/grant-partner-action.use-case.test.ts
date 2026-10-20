@@ -101,7 +101,7 @@ class World implements LinkCodeLookup, AccountAgeLookup, PartnerLinkRepository {
       linkCodes: this,
       links: this,
       ages: this,
-      receiptPoints: (region) => Promise.resolve(region === "AU" ? 10 : 100),
+      receiptPoints: (region) => Promise.resolve(region === "AU" ? 1 : 10),
     };
   }
 }

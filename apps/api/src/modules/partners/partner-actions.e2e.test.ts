@@ -83,7 +83,7 @@ function signedHeaders(partnerId: string, secret: string, rawBody: string, idemp
 }
 
 describe("POST /api/partners/actions (8.4.a, 14.3.b)", () => {
-  it("grants AU's receipt_points (10) once, replays idempotently, and refuses a second receipt", async () => {
+  it("grants AU's receipt_points (1) once, replays idempotently, and refuses a second receipt", async () => {
     const { partnerId, secret } = await seedPartner();
     const session = await sessionFor(app, { jurisdiction: "AU" });
 
@@ -112,17 +112,17 @@ describe("POST /api/partners/actions (8.4.a, 14.3.b)", () => {
     });
     expect(first.statusCode, first.body).toBe(200);
     const { linkId } = first.json<{ linkId: string }>();
-    expect(first.json()).toEqual({ granted: true, points: 10, linkId, duplicate: false });
+    expect(first.json()).toEqual({ granted: true, points: 1, linkId, duplicate: false });
 
     // The real DB row: the wallet's own available balance moved by exactly
-    // AU's receipt_points (20260925193000_platform_region_setting.sql), via
+    // AU's receipt_points (20260925193000_platform_region_setting.sql, then F119 in 20261020161608_receipt_points_one.sql), via
     // trust tier 3 -- landed available, never held back.
     const wallet = await app.inject({
       method: "GET",
       url: "/api/wallet",
       headers: { cookie: session.cookie },
     });
-    expect(wallet.json<{ availablePoints: number }>().availablePoints).toBe(10);
+    expect(wallet.json<{ availablePoints: number }>().availablePoints).toBe(1);
 
     // A replay with the identical idempotency key + body hands back the
     // same grant rather than a second one (the idempotency interceptor,
@@ -134,14 +134,14 @@ describe("POST /api/partners/actions (8.4.a, 14.3.b)", () => {
       payload: rawBody,
     });
     expect(replay.statusCode).toBe(200);
-    expect(replay.json()).toEqual({ granted: true, points: 10, linkId, duplicate: false });
+    expect(replay.json()).toEqual({ granted: true, points: 1, linkId, duplicate: false });
 
     const walletAfterReplay = await app.inject({
       method: "GET",
       url: "/api/wallet",
       headers: { cookie: session.cookie },
     });
-    expect(walletAfterReplay.json<{ availablePoints: number }>().availablePoints).toBe(10);
+    expect(walletAfterReplay.json<{ availablePoints: number }>().availablePoints).toBe(1);
 
     // The SAME receipt under a fresh idempotency key (not a replay of the
     // first call), now through the lasting link (14.3.b): a success that
@@ -155,13 +155,13 @@ describe("POST /api/partners/actions (8.4.a, 14.3.b)", () => {
       payload: linkedBody,
     });
     expect(duplicate.statusCode, duplicate.body).toBe(200);
-    expect(duplicate.json()).toEqual({ granted: true, points: 10, linkId, duplicate: true });
+    expect(duplicate.json()).toEqual({ granted: true, points: 1, linkId, duplicate: true });
     const walletAfterDuplicate = await app.inject({
       method: "GET",
       url: "/api/wallet",
       headers: { cookie: session.cookie },
     });
-    expect(walletAfterDuplicate.json<{ availablePoints: number }>().availablePoints).toBe(10);
+    expect(walletAfterDuplicate.json<{ availablePoints: number }>().availablePoints).toBe(1);
 
     // The code itself was single-use: the link replaced it.
     const codeAgain = await app.inject({
@@ -266,8 +266,8 @@ describe("POST /api/partners/actions (8.4.a, 14.3.b)", () => {
       url: "/api/wallet",
       headers: { cookie: sessionB.cookie },
     });
-    expect(walletA.json<{ availablePoints: number }>().availablePoints).toBe(10);
-    expect(walletB.json<{ availablePoints: number }>().availablePoints).toBe(10);
+    expect(walletA.json<{ availablePoints: number }>().availablePoints).toBe(1);
+    expect(walletB.json<{ availablePoints: number }>().availablePoints).toBe(1);
 
     // A replays its OWN call (same key, same body, A's signature) -- gets
     // its own result back, not B's.
@@ -284,7 +284,7 @@ describe("POST /api/partners/actions (8.4.a, 14.3.b)", () => {
       url: "/api/wallet",
       headers: { cookie: sessionA.cookie },
     });
-    expect(walletAAfterReplay.json<{ availablePoints: number }>().availablePoints).toBe(10);
+    expect(walletAAfterReplay.json<{ availablePoints: number }>().availablePoints).toBe(1);
   });
 
   it("a bad signature never touches the idempotency table (8.4.c: guard runs before the interceptor)", async () => {

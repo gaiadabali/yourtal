@@ -65,7 +65,7 @@ describe("POST /api/partners/links/:linkId/revoke", () => {
 
     const still = await kit.partnerPost(owning, "actions", receipt(linkId));
     expect(still.statusCode, still.body).toBe(200);
-    expect(await kit.availablePoints(session.cookie)).toBe(10);
+    expect(await kit.availablePoints(session.cookie)).toBe(1);
   });
 
   it("refuses a bad signature without revoking", async () => {

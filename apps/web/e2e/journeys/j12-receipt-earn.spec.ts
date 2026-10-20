@@ -4,7 +4,7 @@ import { API, REGIONS, apiRegister, testIp, useSession } from "./demo";
 import { callerFor, closeDb, db, requireBusinessEnv } from "./business";
 
 /** F12: snap-app's receipt reward per region. */
-const RECEIPT_POINTS = { AU: 10, ID: 100 } as const;
+const RECEIPT_POINTS = { AU: 1, ID: 10 } as const;
 
 /**
  * Journey 12 (product-intent §2.2): the snap-app server calls the earn API

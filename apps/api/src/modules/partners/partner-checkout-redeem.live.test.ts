@@ -107,7 +107,7 @@ async function listing(region: "AU" | "ID"): Promise<{ listingId: string; mercha
   const merchantId = randomUUID();
   const locationId = randomUUID();
   const currency = region === "AU" ? "AUD" : "IDR";
-  // Cheap enough that ONE receipt scan (10 AU / 100 ID) covers it.
+  // Cheap enough that ONE receipt scan (1 AU / 10 ID) covers it.
   const settlement = region === "AU" ? 30 : 600;
   const face = settlement * 2;
   await owner.execute(sql`

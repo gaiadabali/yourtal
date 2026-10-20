@@ -99,6 +99,30 @@ const DOMAINS: readonly DataDomain[] = [
       "A receipt earns once (F101), so its record must outlive the account or the same receipt could be paid again to someone else; the subject is detached from it. Links are revoked rather than deleted so a partner calling with one is told it was revoked, keyed only by the opaque user id as the ledger's rows are (F88). Link codes are deleted.",
   },
   {
+    id: "me_data",
+    holds:
+      "What the viewer declared, saved or was told: interests, followed businesses, saved campaigns, 'show me less' choices, streak, notifications and their settings, autoplay and theme, voucher-expiry warnings",
+    service: "me",
+    owner: "ops",
+    onDeletion: "erase",
+  },
+  {
+    id: "account_security",
+    holds:
+      "Pending email-verification and password-reset tokens, and the account-recovery freeze state",
+    service: "identity",
+    owner: "ops",
+    onDeletion: "erase",
+  },
+  {
+    id: "org_memberships",
+    holds:
+      "The subject's seat on a charity's roster, and the team invitation they accepted (which carries the email it was sent to)",
+    service: "charity, business",
+    owner: "ops",
+    onDeletion: "erase",
+  },
+  {
     id: "consent_records",
     holds: "Which purposes were agreed to, when, at which policy version",
     service: "consent",

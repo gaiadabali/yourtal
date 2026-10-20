@@ -71,6 +71,7 @@ const sessions: ExportWatchSessionRow[] = [
     startedAt: new Date("2026-10-01T00:00:00Z"),
     completedAt: new Date("2026-10-01T00:01:00Z"),
     rewarded: true,
+    watchedSpans: [{ fromSecond: 0, toSecond: 30 }],
   },
 ];
 
@@ -117,6 +118,7 @@ describe("buildDataExportSections", () => {
       campaignTitle: "Spring launch",
       state: "completed",
       pointsEarned: 120,
+      watchedSpans: [{ fromSecond: 0, toSecond: 30 }],
     });
   });
 

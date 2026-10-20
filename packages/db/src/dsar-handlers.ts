@@ -1,5 +1,6 @@
 import type pg from "pg";
 import type { DomainHandler, HandlerRegistry } from "@yourtal/consent/dsar-orchestrator";
+import { meHandlers } from "./dsar-me-handlers";
 
 /**
  * The deletion handlers for domains this database actually holds. YT-0036.
@@ -249,5 +250,7 @@ export function postgresHandlers(pool: pg.Pool): HandlerRegistry {
     // and .session — see eraseIdentity's own doc comment.
     identity: eraseIdentity(pool),
     partner_links: forgetPartnerLinks(pool),
+    // 1.20: me.*, account-security tokens, org memberships and watch sessions.
+    ...meHandlers(pool),
   };
 }

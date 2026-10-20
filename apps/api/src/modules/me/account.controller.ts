@@ -55,8 +55,8 @@ async function settle<T>(result: ResultAsync<T, { code: string }>): Promise<T> {
  * (A's, 13.24: Postgres's plus the ledger's) — the `identity` handler erases
  * business membership, `user_profile`, `credential` and `session` in one
  * pass (1.4.f, done for exactly this ticket), which is what ends every
- * session and removes the profile. Domains with no handler yet (`watch_
- * sessions`, ...) come back `unhandled` in the report rather than
+ * session and removes the profile. Domains with no handler yet
+ * (`research_answers`, `support_cases`) come back `unhandled` in the report rather than
  * silently reported done — see `dsar-orchestrator.ts`'s own header for why.
  */
 @Controller("api/me")
@@ -153,6 +153,8 @@ export class AccountController {
     ]);
     const now = new Date();
     const held = buildDataExportSections({ now, account, history, vouchers, sessions });
+    // 1.20: the rest of what `DELETE /api/me` erases from `me` and the feed.
+    const personal = await this.exportReader.personal(userId);
 
     return {
       generatedAt: now.toISOString(),
@@ -164,6 +166,11 @@ export class AccountController {
       interests,
       follows: followed,
       saves: saved,
+      notifications: personal.notifications,
+      settings: personal.settings,
+      showLess: personal.showLess,
+      linkCodes: personal.linkCodes,
+      voucherExpiryWarnings: personal.voucherExpiryWarnings,
       streak,
       // F116: the postcode the viewer picked as "my area", or null. Declared by them, not located.
       declaredArea: declaredArea === null ? null : { postcode: declaredArea },

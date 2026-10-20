@@ -52,6 +52,7 @@ export interface DataExportSections {
     readonly startedAt: string;
     readonly completedAt: string | null;
     readonly pointsEarned: number;
+    readonly watchedSpans: readonly { readonly fromSecond: number; readonly toSecond: number }[];
   }[];
 }
 
@@ -132,6 +133,7 @@ export function buildDataExportSections(input: {
       startedAt: session.startedAt.toISOString(),
       completedAt: session.completedAt?.toISOString() ?? null,
       pointsEarned: earnedBySession.get(session.sessionId) ?? 0,
+      watchedSpans: session.watchedSpans,
     })),
   };
 }

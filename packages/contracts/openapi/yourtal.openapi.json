@@ -25063,6 +25063,1266 @@
           }
         }
       }
+    },
+    "/api/auth/passkeys/sign-in/options": {
+      "post": {
+        "summary": "Start signing in with a passkey — no email needed",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "A single-use challenge (5 minutes) and the options for navigator.credentials.get().",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "challengeId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "options": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "challengeId",
+                    "options"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts: the route's rate limit, or (codes) five wrong codes for this account in 15 minutes. The body carries retryAfterSeconds."
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/passkeys/sign-in": {
+      "post": {
+        "summary": "Finish signing in with a passkey; issues a session (amr hwk)",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The challenge id from the options call and the browser's response.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "challengeId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "response": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 16384,
+                        "pattern": "^[A-Za-z0-9_-]+$"
+                      },
+                      "rawId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 16384,
+                        "pattern": "^[A-Za-z0-9_-]+$"
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "public-key"
+                      },
+                      "response": {
+                        "type": "object",
+                        "properties": {
+                          "clientDataJSON": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 16384,
+                            "pattern": "^[A-Za-z0-9_-]+$"
+                          },
+                          "authenticatorData": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 16384,
+                            "pattern": "^[A-Za-z0-9_-]+$"
+                          },
+                          "signature": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 16384,
+                            "pattern": "^[A-Za-z0-9_-]+$"
+                          },
+                          "userHandle": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 16384,
+                            "pattern": "^[A-Za-z0-9_-]+$"
+                          }
+                        },
+                        "required": [
+                          "clientDataJSON",
+                          "authenticatorData",
+                          "signature"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "authenticatorAttachment": {
+                        "type": "string",
+                        "enum": [
+                          "platform",
+                          "cross-platform"
+                        ]
+                      },
+                      "clientExtensionResults": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {}
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "rawId",
+                      "type",
+                      "response",
+                      "clientExtensionResults"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "challengeId",
+                  "response"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "userId": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "token",
+                    "userId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "401": {
+            "description": "factor_invalid: a wrong or already-used code, an unknown passkey, a response that does not verify, or a challenge that expired or was already answered. One code for all of them.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts: the route's rate limit, or (codes) five wrong codes for this account in 15 minutes. The body carries retryAfterSeconds."
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/sign-in-methods": {
+      "get": {
+        "summary": "How the caller's account can sign in: password, passkeys, authenticator app",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Never a public key, a counter or a seed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "password": {
+                      "type": "boolean"
+                    },
+                    "passkeys": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 64
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          },
+                          "lastUsedAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "synced": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "createdAt",
+                          "lastUsedAt",
+                          "synced"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "authenticatorApp": {
+                      "type": "object",
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "enabled"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "password",
+                    "passkeys",
+                    "authenticatorApp"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "session_invalid: no live session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/passkeys/register/options": {
+      "post": {
+        "summary": "Start adding a passkey to the caller's account",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Options for navigator.credentials.create(); the challenge is single-use.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "options": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "options"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "session_invalid: no live session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "reauthentication_required: adding a sign-in method needs a sign-in from the last 15 minutes. Sign in again, then retry. OR: The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts: the route's rate limit, or (codes) five wrong codes for this account in 15 minutes. The body carries retryAfterSeconds."
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/passkeys/register": {
+      "post": {
+        "summary": "Finish adding a passkey",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The browser's registration response and an optional name (default Passkey).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "response": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 16384,
+                        "pattern": "^[A-Za-z0-9_-]+$"
+                      },
+                      "rawId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 16384,
+                        "pattern": "^[A-Za-z0-9_-]+$"
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "public-key"
+                      },
+                      "response": {
+                        "type": "object",
+                        "properties": {
+                          "clientDataJSON": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 16384,
+                            "pattern": "^[A-Za-z0-9_-]+$"
+                          },
+                          "attestationObject": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 16384,
+                            "pattern": "^[A-Za-z0-9_-]+$"
+                          },
+                          "authenticatorData": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 16384,
+                            "pattern": "^[A-Za-z0-9_-]+$"
+                          },
+                          "transports": {
+                            "maxItems": 8,
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "maxLength": 32
+                            }
+                          },
+                          "publicKeyAlgorithm": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991,
+                            "format": "int64"
+                          },
+                          "publicKey": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 16384,
+                            "pattern": "^[A-Za-z0-9_-]+$"
+                          }
+                        },
+                        "required": [
+                          "clientDataJSON",
+                          "attestationObject"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "authenticatorAttachment": {
+                        "type": "string",
+                        "enum": [
+                          "platform",
+                          "cross-platform"
+                        ]
+                      },
+                      "clientExtensionResults": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {}
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "rawId",
+                      "type",
+                      "response",
+                      "clientExtensionResults"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  }
+                },
+                "required": [
+                  "response"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The new passkey.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    "lastUsedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "synced": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "createdAt",
+                    "lastUsedAt",
+                    "synced"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "401": {
+            "description": "factor_invalid: a wrong or already-used code, an unknown passkey, a response that does not verify, or a challenge that expired or was already answered. One code for all of them. OR: session_invalid: no live session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "reauthentication_required: adding a sign-in method needs a sign-in from the last 15 minutes. Sign in again, then retry. OR: The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts: the route's rate limit, or (codes) five wrong codes for this account in 15 minutes. The body carries retryAfterSeconds."
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/passkeys/step-up/options": {
+      "post": {
+        "summary": "Prove one of the caller's own passkeys again, before a sensitive change",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "A single-use challenge limited to the caller's own passkeys.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "challengeId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 64
+                    },
+                    "options": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "challengeId",
+                    "options"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "session_invalid: no live session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "passkey_not_found: no such passkey on this account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts: the route's rate limit, or (codes) five wrong codes for this account in 15 minutes. The body carries retryAfterSeconds."
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/passkeys/{credentialId}": {
+      "delete": {
+        "summary": "Remove one of the caller's passkeys",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [
+          {
+            "name": "credentialId",
+            "in": "path",
+            "required": true,
+            "description": "The passkey's WebAuthn credential id (base64url), as listed.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Removed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "removed": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "removed"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "session_invalid: no live session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "passkey_not_found: no such passkey on this account.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "last_sign_in_method: nothing else could sign this account in (no password, no other passkey).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/totp/enrol": {
+      "post": {
+        "summary": "Start setting up an authenticator app",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "The otpauth URI for a QR code and the same seed for typing in. Off until confirmed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "otpauthUri": {
+                      "type": "string",
+                      "format": "starts_with",
+                      "pattern": "^otpauth:\\/\\/totp\\/.*"
+                    },
+                    "secret": {
+                      "type": "string",
+                      "minLength": 16
+                    }
+                  },
+                  "required": [
+                    "otpauthUri",
+                    "secret"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "session_invalid: no live session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "reauthentication_required: adding a sign-in method needs a sign-in from the last 15 minutes. Sign in again, then retry. OR: The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "totp_already_enabled: an authenticator app is already on.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts: the route's rate limit, or (codes) five wrong codes for this account in 15 minutes. The body carries retryAfterSeconds."
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/totp/confirm": {
+      "post": {
+        "summary": "Switch the authenticator app on with a first code from it",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "A 6-digit code.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "pattern": "^\\d{6}$"
+                  }
+                },
+                "required": [
+                  "code"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "On. Password sign-ins now ask for a code.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "enabled"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "401": {
+            "description": "factor_invalid: a wrong or already-used code, an unknown passkey, a response that does not verify, or a challenge that expired or was already answered. One code for all of them. OR: session_invalid: no live session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "totp_already_enabled: the app is already on.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts: the route's rate limit, or (codes) five wrong codes for this account in 15 minutes. The body carries retryAfterSeconds."
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/totp/disable": {
+      "post": {
+        "summary": "Turn the authenticator app off, proving a code or a passkey",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "code, or challengeId with response from /passkeys/step-up/options.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "pattern": "^\\d{6}$"
+                  },
+                  "challengeId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "response": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 16384,
+                        "pattern": "^[A-Za-z0-9_-]+$"
+                      },
+                      "rawId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 16384,
+                        "pattern": "^[A-Za-z0-9_-]+$"
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "public-key"
+                      },
+                      "response": {
+                        "type": "object",
+                        "properties": {
+                          "clientDataJSON": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 16384,
+                            "pattern": "^[A-Za-z0-9_-]+$"
+                          },
+                          "authenticatorData": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 16384,
+                            "pattern": "^[A-Za-z0-9_-]+$"
+                          },
+                          "signature": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 16384,
+                            "pattern": "^[A-Za-z0-9_-]+$"
+                          },
+                          "userHandle": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 16384,
+                            "pattern": "^[A-Za-z0-9_-]+$"
+                          }
+                        },
+                        "required": [
+                          "clientDataJSON",
+                          "authenticatorData",
+                          "signature"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "authenticatorAttachment": {
+                        "type": "string",
+                        "enum": [
+                          "platform",
+                          "cross-platform"
+                        ]
+                      },
+                      "clientExtensionResults": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {}
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "rawId",
+                      "type",
+                      "response",
+                      "clientExtensionResults"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Off.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": {
+                      "type": "boolean",
+                      "const": false
+                    }
+                  },
+                  "required": [
+                    "enabled"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "401": {
+            "description": "factor_invalid: a wrong or already-used code, an unknown passkey, a response that does not verify, or a challenge that expired or was already answered. One code for all of them. OR: session_invalid: no live session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "totp_not_enabled: no authenticator app is on.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts: the route's rate limit, or (codes) five wrong codes for this account in 15 minutes. The body carries retryAfterSeconds."
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/totp/sign-in": {
+      "post": {
+        "summary": "The code step after a password; issues a session (amr pwd, otp, mfa)",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The pendingToken from /api/auth/login and a 6-digit code.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pendingToken": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "code": {
+                    "type": "string",
+                    "pattern": "^\\d{6}$"
+                  }
+                },
+                "required": [
+                  "pendingToken",
+                  "code"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "userId": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "token",
+                    "userId"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "401": {
+            "description": "factor_invalid: a wrong or already-used code, an unknown passkey, a response that does not verify, or a challenge that expired or was already answered. One code for all of them.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts: the route's rate limit, or (codes) five wrong codes for this account in 15 minutes. The body carries retryAfterSeconds."
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

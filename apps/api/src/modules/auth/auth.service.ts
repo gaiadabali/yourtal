@@ -7,7 +7,8 @@ import {
   meetsMinimumAge,
   meetsMinimumAgeWithParentalConsent,
 } from "@yourtal/jurisdiction/policy-query";
-import type { EmailDriver } from "@yourtal/drivers/email";
+import type { EmailDriver, EmailSent } from "@yourtal/drivers/email";
+import type { BoundaryFailure } from "@yourtal/drivers/fault-engine";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
@@ -238,14 +239,21 @@ export class AuthService {
       // outage here should not retroactively fail a registration that
       // already succeeded.
       if (guardianConsentToken !== null) {
-        await this.sendGuardianConsentEmail(
-          profile.locale,
-          profile.displayName,
-          profile.guardianEmail as string,
-          profile.region,
-          guardianConsentToken.token,
+        await this.bestEffort("guardian_consent", () =>
+          this.sendGuardianConsentEmail(
+            profile.locale,
+            profile.displayName,
+            profile.guardianEmail as string,
+            profile.region,
+            guardianConsentToken.token,
+          ),
         );
       }
+
+      // 1.3.c: the sign-up verification email goes out with the account. Until
+      // now it only went out when a client called `email/verify/request`, and
+      // the web never does, so nobody who signed up on the site was sent one.
+      await this.bestEffort("email_verification", () => this.issueEmailVerification(userId, now));
 
       return ok({ userId, token });
     });
@@ -427,16 +435,21 @@ export class AuthService {
     const { userId } = validation;
 
     return this.guarded(async () => {
-      const { token, hash } = issueOpaqueToken();
-      await this.verificationTokens.create({
-        id: hash,
-        userId,
-        purpose: "email_verification",
-        expiresAt: new Date(now.getTime() + EMAIL_VERIFICATION_TTL_MS),
-      });
-      await this.deliver("email_verification", userId, token);
+      await this.issueEmailVerification(userId, now);
       return ok(undefined);
     });
+  }
+
+  /** Mints an email-verification token for `userId` and sends it. Shared by registration and `requestEmailVerification`. */
+  private async issueEmailVerification(userId: string, now: Date): Promise<void> {
+    const { token, hash } = issueOpaqueToken();
+    await this.verificationTokens.create({
+      id: hash,
+      userId,
+      purpose: "email_verification",
+      expiresAt: new Date(now.getTime() + EMAIL_VERIFICATION_TTL_MS),
+    });
+    await this.deliver("email_verification", userId, token);
   }
 
   /**
@@ -524,8 +537,44 @@ export class AuthService {
       body,
       metadata: { token },
     });
+    this.logSend(purpose, sent);
+  }
+
+  /**
+   * One log line per send, for every email this service sends. A failure is
+   * logged at `error` (stderr, so it also lands in pm2's error log) with the
+   * failure kind, whether the provider may have sent it anyway, and the
+   * driver's own `detail` (HTTP status and provider error name, never the
+   * address, subject, body or token: `email-resend.ts` guarantees that). A
+   * success logs the message id and whether it went `live` or to the
+   * `simulated` outbox, so "was it sent?" can be answered from the logs and
+   * matched against the provider's dashboard. Never the recipient.
+   */
+  private logSend(category: string, sent: Result<EmailSent, BoundaryFailure>): void {
     if (sent.isErr()) {
-      this.logger.warn(`${purpose} email not sent for ${userId}: ${sent.error.kind}`);
+      const { kind, mayHaveSucceeded, detail } = sent.error;
+      this.logger.error(
+        `${category} email not sent: kind=${kind} mayHaveSucceeded=${String(mayHaveSucceeded)} detail="${detail}"`,
+      );
+      return;
+    }
+    this.logger.log(
+      `${category} email accepted: route=${sent.value.route ?? "unknown"} id=${sent.value.id}`,
+    );
+  }
+
+  /**
+   * Runs a send that must never fail the request that triggered it (the
+   * account already committed). A rejection (a `pg` error from the simulated
+   * outbox, say) is logged by name only: the message of a driver error can
+   * carry an address.
+   */
+  private async bestEffort(category: string, send: () => Promise<void>): Promise<void> {
+    try {
+      await send();
+    } catch (cause) {
+      const name = cause instanceof Error ? cause.name : "unknown";
+      this.logger.error(`${category} email threw before it could be sent: ${name}`);
     }
   }
 
@@ -573,9 +622,7 @@ export class AuthService {
       body,
       metadata: { token },
     });
-    if (sent.isErr()) {
-      this.logger.warn(`guardian_consent email not sent: ${sent.error.kind}`);
-    }
+    this.logSend("guardian_consent", sent);
   }
 
   /**

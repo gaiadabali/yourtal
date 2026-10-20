@@ -106,7 +106,7 @@ export function createResendEmail(config: ResendEmailConfig): EmailDriver {
                 true,
               ),
             )
-          : ok({ id });
+          : ok({ id, route: "live" });
       }
 
       const name = (field(body, "name") ?? "unknown").slice(0, 64);

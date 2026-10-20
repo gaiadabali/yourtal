@@ -31,6 +31,13 @@ export interface EmailMessage {
 
 export interface EmailSent {
   readonly id: string;
+  /**
+   * Where the message actually went: `live` is the provider (the id is the
+   * provider's message id), `simulated` is `platform.sim_outbox` (the id is the
+   * row id). With `EMAIL_LIVE_ALLOWLIST` set the driver reports mode "live" for
+   * both, so this is the only way for a caller's log line to tell them apart.
+   */
+  readonly route?: "live" | "simulated";
 }
 
 export interface EmailDriver {
@@ -66,7 +73,7 @@ export function createSimulatedEmail(
         ...(message.metadata === undefined ? {} : { metadata: message.metadata }),
       });
 
-      return ok({ id: recorded.id });
+      return ok({ id: recorded.id, route: "simulated" });
     },
   };
 }

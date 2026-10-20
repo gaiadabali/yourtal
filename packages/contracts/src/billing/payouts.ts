@@ -2,6 +2,7 @@ import * as z from "zod";
 import { minorUnitsSchema } from "../money/money";
 import { currencySchema } from "../money/money-value";
 import { regionSchema } from "../region/region";
+import { economyProposalSchema } from "../staff/staff-economy";
 
 /**
  * 5.2 (F103, F104): payouts in Australia on Stripe Connect. A brand or a
@@ -67,6 +68,18 @@ export type CharityPayouts = z.infer<typeof charityPayoutsSchema>;
 export const payoutLinkSchema = z.object({ url: z.url() });
 export type PayoutLink = z.infer<typeof payoutLinkSchema>;
 
+/**
+ * 5.2.c: failure codes of a row the job will not move by itself: the processor
+ * never confirmed the transfer or the payout within a day, or refused it. Staff
+ * check these again and, once the processor shows nothing moved, retry them.
+ */
+export const STAFF_RETRY_FAILURE_CODES = [
+  "transfer_unconfirmed",
+  "payout_unconfirmed",
+  "transfer_declined",
+  "payout_declined",
+] as const;
+
 /** The staff settlement screen's view of one approved payout. */
 export const staffDisbursementSchema = z.object({
   id: z.uuid(),
@@ -84,6 +97,15 @@ export const staffDisbursementSchema = z.object({
   transferredAt: z.iso.datetime().nullable(),
   paidAt: z.iso.datetime().nullable(),
   failedAt: z.iso.datetime().nullable(),
+  /** 5.2.c: when the processor was last asked what became of the payout (the job's read-back or staff's check). */
+  checkedAt: z.iso.datetime().nullable(),
+  /**
+   * 5.2.c: true for a failed row the job will not retry by itself (an unconfirmed transfer or
+   * payout, or one the processor refused): staff may "check again", and propose a retry.
+   */
+  needsStaff: z.boolean(),
+  /** The pending retry proposal, if one is waiting for a second staff member. */
+  retryProposal: economyProposalSchema.nullable(),
 });
 export type StaffDisbursement = z.infer<typeof staffDisbursementSchema>;
 

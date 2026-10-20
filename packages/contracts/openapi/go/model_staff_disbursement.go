@@ -13,7 +13,6 @@ package contracts
 import (
 	"encoding/json"
 	"time"
-	"bytes"
 	"fmt"
 )
 
@@ -22,10 +21,10 @@ var _ MappedNullable = &StaffDisbursement{}
 
 // StaffDisbursement The staff settlement screen's view of one approved payout's transfer and payout.
 type StaffDisbursement struct {
-	Id string `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	Id NullableString `json:"id" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	StatementId string `json:"statementId"`
-	ProposalId string `json:"proposalId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
-	BusinessId string `json:"businessId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	ProposalId NullableString `json:"proposalId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
+	BusinessId NullableString `json:"businessId" validate:"regexp=^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"`
 	Region Region `json:"region"`
 	Currency Currency `json:"currency"`
 	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
@@ -38,6 +37,10 @@ type StaffDisbursement struct {
 	TransferredAt NullableTime `json:"transferredAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 	PaidAt NullableTime `json:"paidAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 	FailedAt NullableTime `json:"failedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
+	CheckedAt NullableTime `json:"checkedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
+	NeedsStaff bool `json:"needsStaff"`
+	RetryProposal NullableStaffDisbursementRetryProposal `json:"retryProposal"`
+	AdditionalProperties map[string]interface{}
 }
 
 type _StaffDisbursement StaffDisbursement
@@ -46,7 +49,7 @@ type _StaffDisbursement StaffDisbursement
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewStaffDisbursement(id string, statementId string, proposalId string, businessId string, region Region, currency Currency, amountMinor int64, status DisbursementStatus, failureCode NullableString, attempt int64, bankLast4 NullableString, createdAt time.Time, transferredAt NullableTime, paidAt NullableTime, failedAt NullableTime) *StaffDisbursement {
+func NewStaffDisbursement(id NullableString, statementId string, proposalId NullableString, businessId NullableString, region Region, currency Currency, amountMinor int64, status DisbursementStatus, failureCode NullableString, attempt int64, bankLast4 NullableString, createdAt time.Time, transferredAt NullableTime, paidAt NullableTime, failedAt NullableTime, checkedAt NullableTime, needsStaff bool, retryProposal NullableStaffDisbursementRetryProposal) *StaffDisbursement {
 	this := StaffDisbursement{}
 	this.Id = id
 	this.StatementId = statementId
@@ -63,6 +66,9 @@ func NewStaffDisbursement(id string, statementId string, proposalId string, busi
 	this.TransferredAt = transferredAt
 	this.PaidAt = paidAt
 	this.FailedAt = failedAt
+	this.CheckedAt = checkedAt
+	this.NeedsStaff = needsStaff
+	this.RetryProposal = retryProposal
 	return &this
 }
 
@@ -75,27 +81,29 @@ func NewStaffDisbursementWithDefaults() *StaffDisbursement {
 }
 
 // GetId returns the Id field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *StaffDisbursement) GetId() string {
-	if o == nil {
+	if o == nil || o.Id.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Id
+	return *o.Id.Get()
 }
 
 // GetIdOk returns a tuple with the Id field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *StaffDisbursement) GetIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Id, true
+	return o.Id.Get(), o.Id.IsSet()
 }
 
 // SetId sets field value
 func (o *StaffDisbursement) SetId(v string) {
-	o.Id = v
+	o.Id.Set(&v)
 }
 
 // GetStatementId returns the StatementId field value
@@ -123,51 +131,55 @@ func (o *StaffDisbursement) SetStatementId(v string) {
 }
 
 // GetProposalId returns the ProposalId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *StaffDisbursement) GetProposalId() string {
-	if o == nil {
+	if o == nil || o.ProposalId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.ProposalId
+	return *o.ProposalId.Get()
 }
 
 // GetProposalIdOk returns a tuple with the ProposalId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *StaffDisbursement) GetProposalIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.ProposalId, true
+	return o.ProposalId.Get(), o.ProposalId.IsSet()
 }
 
 // SetProposalId sets field value
 func (o *StaffDisbursement) SetProposalId(v string) {
-	o.ProposalId = v
+	o.ProposalId.Set(&v)
 }
 
 // GetBusinessId returns the BusinessId field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *StaffDisbursement) GetBusinessId() string {
-	if o == nil {
+	if o == nil || o.BusinessId.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.BusinessId
+	return *o.BusinessId.Get()
 }
 
 // GetBusinessIdOk returns a tuple with the BusinessId field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *StaffDisbursement) GetBusinessIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.BusinessId, true
+	return o.BusinessId.Get(), o.BusinessId.IsSet()
 }
 
 // SetBusinessId sets field value
 func (o *StaffDisbursement) SetBusinessId(v string) {
-	o.BusinessId = v
+	o.BusinessId.Set(&v)
 }
 
 // GetRegion returns the Region field value
@@ -444,6 +456,82 @@ func (o *StaffDisbursement) SetFailedAt(v time.Time) {
 	o.FailedAt.Set(&v)
 }
 
+// GetCheckedAt returns the CheckedAt field value
+// If the value is explicit nil, the zero value for time.Time will be returned
+func (o *StaffDisbursement) GetCheckedAt() time.Time {
+	if o == nil || o.CheckedAt.Get() == nil {
+		var ret time.Time
+		return ret
+	}
+
+	return *o.CheckedAt.Get()
+}
+
+// GetCheckedAtOk returns a tuple with the CheckedAt field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *StaffDisbursement) GetCheckedAtOk() (*time.Time, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.CheckedAt.Get(), o.CheckedAt.IsSet()
+}
+
+// SetCheckedAt sets field value
+func (o *StaffDisbursement) SetCheckedAt(v time.Time) {
+	o.CheckedAt.Set(&v)
+}
+
+// GetNeedsStaff returns the NeedsStaff field value
+func (o *StaffDisbursement) GetNeedsStaff() bool {
+	if o == nil {
+		var ret bool
+		return ret
+	}
+
+	return o.NeedsStaff
+}
+
+// GetNeedsStaffOk returns a tuple with the NeedsStaff field value
+// and a boolean to check if the value has been set.
+func (o *StaffDisbursement) GetNeedsStaffOk() (*bool, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.NeedsStaff, true
+}
+
+// SetNeedsStaff sets field value
+func (o *StaffDisbursement) SetNeedsStaff(v bool) {
+	o.NeedsStaff = v
+}
+
+// GetRetryProposal returns the RetryProposal field value
+// If the value is explicit nil, the zero value for StaffDisbursementRetryProposal will be returned
+func (o *StaffDisbursement) GetRetryProposal() StaffDisbursementRetryProposal {
+	if o == nil || o.RetryProposal.Get() == nil {
+		var ret StaffDisbursementRetryProposal
+		return ret
+	}
+
+	return *o.RetryProposal.Get()
+}
+
+// GetRetryProposalOk returns a tuple with the RetryProposal field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *StaffDisbursement) GetRetryProposalOk() (*StaffDisbursementRetryProposal, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.RetryProposal.Get(), o.RetryProposal.IsSet()
+}
+
+// SetRetryProposal sets field value
+func (o *StaffDisbursement) SetRetryProposal(v StaffDisbursementRetryProposal) {
+	o.RetryProposal.Set(&v)
+}
+
 func (o StaffDisbursement) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -454,10 +542,10 @@ func (o StaffDisbursement) MarshalJSON() ([]byte, error) {
 
 func (o StaffDisbursement) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["id"] = o.Id
+	toSerialize["id"] = o.Id.Get()
 	toSerialize["statementId"] = o.StatementId
-	toSerialize["proposalId"] = o.ProposalId
-	toSerialize["businessId"] = o.BusinessId
+	toSerialize["proposalId"] = o.ProposalId.Get()
+	toSerialize["businessId"] = o.BusinessId.Get()
 	toSerialize["region"] = o.Region
 	toSerialize["currency"] = o.Currency
 	toSerialize["amountMinor"] = o.AmountMinor
@@ -469,6 +557,14 @@ func (o StaffDisbursement) ToMap() (map[string]interface{}, error) {
 	toSerialize["transferredAt"] = o.TransferredAt.Get()
 	toSerialize["paidAt"] = o.PaidAt.Get()
 	toSerialize["failedAt"] = o.FailedAt.Get()
+	toSerialize["checkedAt"] = o.CheckedAt.Get()
+	toSerialize["needsStaff"] = o.NeedsStaff
+	toSerialize["retryProposal"] = o.RetryProposal.Get()
+
+	for key, value := range o.AdditionalProperties {
+		toSerialize[key] = value
+	}
+
 	return toSerialize, nil
 }
 
@@ -492,6 +588,9 @@ func (o *StaffDisbursement) UnmarshalJSON(data []byte) (err error) {
 		"transferredAt",
 		"paidAt",
 		"failedAt",
+		"checkedAt",
+		"needsStaff",
+		"retryProposal",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -510,15 +609,37 @@ func (o *StaffDisbursement) UnmarshalJSON(data []byte) (err error) {
 
 	varStaffDisbursement := _StaffDisbursement{}
 
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varStaffDisbursement)
+	err = json.Unmarshal(data, &varStaffDisbursement)
 
 	if err != nil {
 		return err
 	}
 
 	*o = StaffDisbursement(varStaffDisbursement)
+
+	additionalProperties := make(map[string]interface{})
+
+	if err = json.Unmarshal(data, &additionalProperties); err == nil {
+		delete(additionalProperties, "id")
+		delete(additionalProperties, "statementId")
+		delete(additionalProperties, "proposalId")
+		delete(additionalProperties, "businessId")
+		delete(additionalProperties, "region")
+		delete(additionalProperties, "currency")
+		delete(additionalProperties, "amountMinor")
+		delete(additionalProperties, "status")
+		delete(additionalProperties, "failureCode")
+		delete(additionalProperties, "attempt")
+		delete(additionalProperties, "bankLast4")
+		delete(additionalProperties, "createdAt")
+		delete(additionalProperties, "transferredAt")
+		delete(additionalProperties, "paidAt")
+		delete(additionalProperties, "failedAt")
+		delete(additionalProperties, "checkedAt")
+		delete(additionalProperties, "needsStaff")
+		delete(additionalProperties, "retryProposal")
+		o.AdditionalProperties = additionalProperties
+	}
 
 	return err
 }

@@ -74,9 +74,16 @@ export type BillingAllocation = z.infer<typeof billingAllocationSchema>;
 /**
  * 5.1.a: a card purchase of points. `pending` until the processor's verified
  * webhook says it was paid; `needs_review` is money received that staff must
- * settle (the rate rose while the checkout was open). F107: no refunds here.
+ * settle (the rate rose while the checkout was open); `refunded` is that money
+ * returned to the card in full (F123). F107: points delivered are never refunded.
  */
-export const cardPurchaseStatusSchema = z.enum(["pending", "paid", "expired", "needs_review"]);
+export const cardPurchaseStatusSchema = z.enum([
+  "pending",
+  "paid",
+  "expired",
+  "needs_review",
+  "refunded",
+]);
 export type CardPurchaseStatus = z.infer<typeof cardPurchaseStatusSchema>;
 
 export const cardPurchaseSchema = z.object({
@@ -101,10 +108,10 @@ export type CardPurchase = z.infer<typeof cardPurchaseSchema>;
  * `POST .../billing/purchases`. `awaiting_payment`: send the browser to
  * `checkoutUrl`; the points arrive with the webhook. `paid` (a processor that
  * settles at once): `allocation` holds the points already. A replay of an
- * older key can answer `needs_review` or `expired`.
+ * older key can answer `needs_review`, `expired` or `refunded`.
  */
 export const purchaseResultSchema = z.object({
-  status: z.enum(["awaiting_payment", "paid", "needs_review", "expired"]),
+  status: z.enum(["awaiting_payment", "paid", "needs_review", "expired", "refunded"]),
   purchaseId: z.uuid(),
   checkoutUrl: z.url().nullable(),
   purchase: cardPurchaseSchema,

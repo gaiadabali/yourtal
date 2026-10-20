@@ -24,6 +24,7 @@ const (
 	CARDPURCHASESTATUS_PAID CardPurchaseStatus = "paid"
 	CARDPURCHASESTATUS_EXPIRED CardPurchaseStatus = "expired"
 	CARDPURCHASESTATUS_NEEDS_REVIEW CardPurchaseStatus = "needs_review"
+	CARDPURCHASESTATUS_REFUNDED CardPurchaseStatus = "refunded"
 )
 
 // All allowed values of CardPurchaseStatus enum
@@ -32,6 +33,7 @@ var AllowedCardPurchaseStatusEnumValues = []CardPurchaseStatus{
 	"paid",
 	"expired",
 	"needs_review",
+	"refunded",
 }
 
 func (v *CardPurchaseStatus) UnmarshalJSON(src []byte) error {

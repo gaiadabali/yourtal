@@ -27,6 +27,10 @@ export const economyProposalKindSchema = z.enum([
   "setting_change",
   /** 10.6.a: a statement payout, proposed here and approved through `ledger.approvePayout` -- see `staff/staff-settlement.ts`. */
   "approve_payout",
+  /** 5.1.g: a paid card purchase the ledger would not turn into points, refunded in full. */
+  "refund_purchase",
+  /** 5.2.c: a new payout attempt for a disbursement the processor shows moved nothing. */
+  "retry_disbursement",
 ]);
 export type EconomyProposalKind = z.infer<typeof economyProposalKindSchema>;
 

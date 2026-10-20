@@ -221,6 +221,24 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   payoutProposalListSchema:
     "10.6.a's payout-proposals list response -- a plain array of economyProposalSchema, documented inline the same way STAFF_ECONOMY_ROUTE_DEFINITIONS' own list routes build their array schema by hand (route-registry.c-staff-settlement.ts GET .../payout-proposals).",
 
+  // --- 5.1.g / 5.2.c / 5.3.c: staff money follow-ups ---
+  invoiceIssuerSettingSchema:
+    "5.3.c: the shape staff may propose for the invoice_issuer region setting, checked server-side when proposed and approved. A value inside the proposeSettingBodySchema `value`, never its own request or response body.",
+  parkedPurchaseStatusSchema:
+    "staff-parked-purchases.ts's closed status union, nested inside parkedPurchaseSchema's inline schema -- not a standalone component.",
+  parkedPurchaseSchema:
+    "5.1.g's parked-purchase row, nested inside parkedPurchasesSchema -- documented inline (route-registry.c-staff-ops.ts GET .../parked-purchases), same staff-screen tier as the economy schemas above.",
+  parkedPurchasesSchema:
+    "5.1.g's queue response -- documented inline (route-registry.c-staff-ops.ts GET .../parked-purchases).",
+  proposeRefundBodySchema:
+    "5.1.g's request body -- documented inline (route-registry.c-staff-ops.ts POST .../refund-proposals).",
+  checkDisbursementOutcomeSchema:
+    "5.2.c's closed outcome union, nested inside checkDisbursementResultSchema's inline schema -- not a standalone component.",
+  checkDisbursementResultSchema:
+    "5.2.c's check-again response -- documented inline (route-registry.c-staff-ops.ts POST .../disbursements/{id}/check).",
+  proposeDisbursementRetryBodySchema:
+    "5.2.c's request body -- documented inline (route-registry.c-staff-ops.ts POST .../retry-proposals).",
+
   campaignPublishedEventSchema:
     "TASKS.md 7.3.f: a pg-boss job payload (campaign.published), consumed by apps/worker/src/jobs/campaign-published-notify.ts -- a queue message between two server processes, never an HTTP request/response body a client sends or receives.",
 

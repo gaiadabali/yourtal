@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 5/14 | 24/44 | `██████░░░░`  55% |
-| **All** | | | **110/120** | **570/591** | `██████████`  96% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 5/14 | 24/47 | `█████░░░░░`  51% |
+| **All** | | | **110/120** | **570/594** | `██████████`  96% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1661,12 +1661,15 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.7.c The payment parity tests pass for both drivers, Stripe and simulated (group 5.1.c) → 29 end-to-end tests of the Stripe drivers against the simulation, beside the simulated driver's suite (b9bc4d04); Integration green
   - [ ] 14.7.d Charity auction escrow on the Stripe driver: a bid is held, the winning bid captured and the losing ones released (group 5.1.d)
   - [ ] 14.7.e Check on staging (group 5.1.f): a brand buys points (`billing/purchases`), pays for a boost, has a purchase approved by staff (`staff/economy/…/purchases`) and has a card declined; a charity auction holds, captures and releases bids. No refund step (F107); the driver's refunds are checked against the simulation
+  - [ ] 14.7.f A staff queue for card purchases parked as `needs_review`, with a way to settle each (group 5.1.g)
 - [ ] **14.8 Stripe Connect payouts in AU** (group 5.2, F103) · A + C · needs: 14.7 — 🔄 g5 (helper `g-phase5-pay`)
   - [ ] 14.8.a Stripe Connect payouts to AU brands: on the simulation, a brand and a charity onboard a connected account through the simulated onboarding page, and payouts land in it. ID has no real payouts (F104)
   - [ ] 14.8.b Settlement statements trigger real payouts, after approval
+  - [ ] 14.8.c Read a payout back when its webhook never arrives (`getPayout`), and a staff action for disbursements left unconfirmed or refused (group 5.2.c)
 - [ ] **14.9 GST tax invoices** (group 5.3) · C · needs: — (real invoices need the AU company, group 6.1.a) — 🔄 g5 (helper `g-phase5-inv`)
   - [ ] 14.9.a GST tax invoices (AU) for points and boosts; PPN waits until ID takes real money (F104)
   - [ ] 14.9.b Invoice numbering, the company's details read from the settings store, and a PDF downloadable in Studio
+  - [ ] 14.9.c Validate the `invoice_issuer` setting when staff propose it (group 5.3.c)
 - [ ] **14.10 Identity check before real points** (group 5.9, F102) · A · needs: group 3.9.c (passkeys)
   - [ ] 14.10.a Before the first real points go to a real person (docs/16 N-5), an account needs a verified email and a passkey
   - [ ] 14.10.b The fraud checks rest on that, plus the holdback by trust tier and the earn caps; record it in docs/16

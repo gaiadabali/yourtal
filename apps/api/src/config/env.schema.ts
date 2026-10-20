@@ -233,6 +233,26 @@ export const envSchema = z.object({
   PUBLIC_WEB_ORIGIN: z.url().optional(),
 
   /**
+   * Passkeys (WebAuthn). The relying party id is the domain a passkey is
+   * bound to, and the origin is the page the browser runs the ceremony on.
+   * Unset, both follow the web origin (`PUBLIC_WEB_ORIGIN` or its per-
+   * `APP_ENV` default), so staging is `yourtal.gaiada.com` with no new line.
+   * `WEBAUTHN_ORIGIN` takes a comma-separated list for a dev box with
+   * several web ports.
+   */
+  WEBAUTHN_RP_ID: z.string().min(1).optional(),
+  WEBAUTHN_ORIGIN: z.string().min(1).optional(),
+  /**
+   * Seals each account's authenticator-app seed (AES-256-GCM, the same scheme
+   * as `WEBHOOK_SECRET_ENCRYPTION_KEY`): a seed has to be recoverable to check
+   * a code. The default is local-only; `loadAppConfig` refuses it outside dev.
+   */
+  TOTP_SECRET_ENCRYPTION_KEY: z
+    .string()
+    .min(32)
+    .default("local-only-totp-secret-encryption-key-not-real"),
+
+  /**
    * 5.1.e / F106: every payment is simulated. With this on, the API mounts its
    * own Stripe-speaking simulation at `/api/paysim` (packages/paysim) and the
    * real Stripe driver runs against it; going live later is a key and an

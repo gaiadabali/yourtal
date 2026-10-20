@@ -19,6 +19,15 @@ import { DrizzleSessionRepository } from "./persistence/drizzle-session.reposito
 import { VERIFICATION_TOKEN_REPOSITORY } from "./persistence/verification-token.repository";
 import { DrizzleVerificationTokenRepository } from "./persistence/drizzle-verification-token.repository";
 import { AUTH_DB } from "./persistence/auth-db.token";
+import { PASSKEY_REPOSITORY } from "./persistence/passkey.repository";
+import { DrizzlePasskeyRepository } from "./persistence/drizzle-passkey.repository";
+import { SessionIssuer } from "./session/session-issuer";
+import { FACTOR_STORE, RedisFactorStore } from "./factors/factor-store";
+import { PasskeyService } from "./factors/passkey.service";
+import { TotpService } from "./factors/totp.service";
+import { SecondFactorGate } from "./factors/second-factor-gate";
+import { PasskeyController } from "./factors/passkey.controller";
+import { TotpController } from "./factors/totp.controller";
 
 /**
  * Email and password authentication (YT-0540). Owns `identity.credential`,
@@ -49,10 +58,15 @@ import { AUTH_DB } from "./persistence/auth-db.token";
  */
 @Module({
   imports: [RedisClientModule, IdentityModule, EmailDriverModule],
-  controllers: [AuthController],
+  controllers: [AuthController, PasskeyController, TotpController],
   providers: [
     AuthService,
     SessionService,
+    SessionIssuer,
+    PasskeyService,
+    TotpService,
+    SecondFactorGate,
+    { provide: FACTOR_STORE, useClass: RedisFactorStore },
     { provide: SESSION_VALIDATOR, useExisting: SessionService },
     ThrottleService,
     DevTokenAccess,
@@ -69,6 +83,11 @@ import { AUTH_DB } from "./persistence/auth-db.token";
     {
       provide: SESSION_REPOSITORY,
       useFactory: (db: AppDb) => new DrizzleSessionRepository(db),
+      inject: [AUTH_DB],
+    },
+    {
+      provide: PASSKEY_REPOSITORY,
+      useFactory: (db: AppDb) => new DrizzlePasskeyRepository(db),
       inject: [AUTH_DB],
     },
     {

@@ -20,6 +20,11 @@ import type { RegisterProfile } from "./auth.service";
 import { AuthService } from "./auth.service";
 import { DevTokenAccess } from "./dev-token-access";
 import { SessionService } from "./session/session.service";
+import { SessionIssuer } from "./session/session-issuer";
+import { InMemoryFactorStore } from "./factors/factor-store";
+import { SecondFactorGate } from "./factors/second-factor-gate";
+import type { PasswordSignIn } from "./factors/second-factor-gate";
+import { TotpService } from "./factors/totp.service";
 import {
   ThrottleService,
   ACCOUNT_THROTTLE_LIMITS,
@@ -82,6 +87,12 @@ const guardianConsents = new DrizzleGuardianConsentRepository(db);
 const sessionService = new SessionService(sessionRepo, CONFIG);
 const throttle = new ThrottleService(redis);
 const devTokenAccess = new DevTokenAccess();
+const sessionIssuer = new SessionIssuer(staffRoles, sessionService);
+const secondFactor = new SecondFactorGate(
+  new TotpService(CONFIG, credentials, new InMemoryFactorStore(), throttle),
+  sessionIssuer,
+  new InMemoryFactorStore(),
+);
 // The real simulated driver (1.6.a) against its default in-memory store —
 // fine for every test below except the one that checks `platform.sim_outbox`
 // itself, which needs the Postgres-backed one (`pgPool`/`authWithRealEmail`,
@@ -93,12 +104,13 @@ const auth = new AuthService(
   credentials,
   verificationTokens,
   profiles,
-  staffRoles,
+  sessionIssuer,
   guardianConsents,
   sessionService,
   throttle,
   devTokenAccess,
   emailDriver,
+  secondFactor,
 );
 
 const pgPool = new pg.Pool({ connectionString: DATABASE_URL, max: 2 });
@@ -126,6 +138,12 @@ function freshEmail(): string {
  */
 function randomIp(): string {
   return `test-source-${randomUUID()}`;
+}
+
+/** No account here has an authenticator app, so a correct password is a session. */
+function sessionOf(signIn: PasswordSignIn): { token: string; userId: string } {
+  if (signIn.kind !== "session") throw new Error("expected a session, got a code step");
+  return signIn;
 }
 
 function sha256(value: string): string {
@@ -209,12 +227,13 @@ describe("register — 2.5/F31: credential and profile are one transaction", () 
       credentials,
       verificationTokens,
       failingProfiles,
-      staffRoles,
+      sessionIssuer,
       guardianConsents,
       sessionService,
       throttle,
       devTokenAccess,
       emailDriver,
+      secondFactor,
     );
 
     const failed = await authWithFailingProfile.register(
@@ -256,7 +275,7 @@ describe("login", () => {
     expect(result.isOk()).toBe(true);
     if (!result.isOk()) return;
 
-    const { token } = result.value;
+    const { token } = sessionOf(result.value);
     // Broken, not read: look up the row Postgres actually holds and prove
     // the raw token is not recoverable from it.
     const expectedHash = hashOpaqueToken(token);
@@ -378,7 +397,12 @@ describe("session lifecycle — validated by breaking it, not reading it", () =>
   it("an expired session is refused even though it was never revoked", async () => {
     const userId = `expired-${randomUUID()}`;
     const { token, hash } = issueOpaqueToken();
-    await sessionRepo.create({ id: hash, userId, absoluteExpiresAt: new Date(Date.now() - 1000) });
+    await sessionRepo.create({
+      id: hash,
+      userId,
+      absoluteExpiresAt: new Date(Date.now() - 1000),
+      amr: ["pwd"],
+    });
 
     const result = await sessionService.validateAndTouch(token, new Date());
     expect(result.valid).toBe(false);
@@ -387,7 +411,7 @@ describe("session lifecycle — validated by breaking it, not reading it", () =>
 
   it("a revoked session is refused, and stays refused", async () => {
     const userId = `revoked-${randomUUID()}`;
-    const token = await sessionService.issue(userId, new Date());
+    const token = await sessionService.issue(userId, new Date(), "consumer", ["pwd"]);
 
     const beforeRevoke = await sessionService.validateAndTouch(token, new Date());
     expect(beforeRevoke.valid).toBe(true);
@@ -406,7 +430,7 @@ describe("session lifecycle — validated by breaking it, not reading it", () =>
 
   it("a session id cannot be forged by editing the token", async () => {
     const userId = `forge-${randomUUID()}`;
-    const token = await sessionService.issue(userId, new Date());
+    const token = await sessionService.issue(userId, new Date(), "consumer", ["pwd"]);
     const tampered = token.slice(0, -1) + (token.endsWith("A") ? "B" : "A");
 
     const result = await sessionService.validateAndTouch(tampered, new Date());
@@ -428,7 +452,7 @@ describe("session lifecycle — validated by breaking it, not reading it", () =>
     }
 
     const changed = await auth.changePassword(
-      loginA.value.token,
+      sessionOf(loginA.value).token,
       password,
       "a-brand-new-password-entirely",
       new Date(),
@@ -437,13 +461,13 @@ describe("session lifecycle — validated by breaking it, not reading it", () =>
 
     // Session B, minted before the change and never itself presented to
     // `changePassword`, is now dead.
-    const stillB = await sessionService.validateAndTouch(loginB.value.token, new Date());
+    const stillB = await sessionService.validateAndTouch(sessionOf(loginB.value).token, new Date());
     expect(stillB.valid).toBe(false);
     expect(!stillB.valid && stillB.reason).toBe("revoked");
 
     // Session A's OWN original token is revoked too — the caller is handed
     // a FRESH one rather than keeping the old one alive.
-    const stillA = await sessionService.validateAndTouch(loginA.value.token, new Date());
+    const stillA = await sessionService.validateAndTouch(sessionOf(loginA.value).token, new Date());
     expect(stillA.valid).toBe(false);
 
     if (changed.isOk()) {
@@ -585,7 +609,7 @@ describe("email verification — 1.4.e stores verified_at, not just a consumed t
 
     const loggedIn = await auth.login(email, "the-original-password", randomIp(), new Date());
     expect(loggedIn.isOk()).toBe(true);
-    const sessionToken = loggedIn.isOk() ? loggedIn.value.token : "";
+    const sessionToken = loggedIn.isOk() ? sessionOf(loggedIn.value).token : "";
 
     const requested = await auth.requestEmailVerification(sessionToken, new Date());
     expect(requested.isOk()).toBe(true);
@@ -628,12 +652,13 @@ describe("1.6.a: deliver() actually sends, against the real platform.sim_outbox"
       credentials,
       verificationTokens,
       profiles,
-      staffRoles,
+      sessionIssuer,
       guardianConsents,
       sessionService,
       throttle,
       devTokenAccess,
       realEmailDriver,
+      secondFactor,
     );
 
     const emailAddress = freshEmail();
@@ -652,8 +677,8 @@ describe("1.6.a: deliver() actually sends, against the real platform.sim_outbox"
       new Date(),
     );
     expect(loggedIn.isOk()).toBe(true);
-    const sessionToken = loggedIn.isOk() ? loggedIn.value.token : "";
-    const userId = loggedIn.isOk() ? loggedIn.value.userId : "";
+    const sessionToken = loggedIn.isOk() ? sessionOf(loggedIn.value).token : "";
+    const userId = loggedIn.isOk() ? sessionOf(loggedIn.value).userId : "";
 
     const requested = await authWithRealEmail.requestEmailVerification(sessionToken, new Date());
     expect(requested.isOk()).toBe(true);
@@ -845,12 +870,13 @@ describe("1.3.c: the emails registration sends, and what is logged when one fail
       credentials,
       verificationTokens,
       profiles,
-      staffRoles,
+      sessionIssuer,
       guardianConsents,
       sessionService,
       throttle,
       devTokenAccess,
       driver,
+      secondFactor,
     );
   }
 

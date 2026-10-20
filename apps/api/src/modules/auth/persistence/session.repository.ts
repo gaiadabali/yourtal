@@ -7,10 +7,17 @@ export interface StoredSession {
   readonly lastSeenAt: Date;
   readonly absoluteExpiresAt: Date;
   readonly revokedAt: Date | null;
+  /** OIDC `amr` values, see `session/amr.ts`. */
+  readonly amr: readonly string[];
 }
 
 export interface SessionRepository {
-  create(input: { id: string; userId: string; absoluteExpiresAt: Date }): Promise<void>;
+  create(input: {
+    id: string;
+    userId: string;
+    absoluteExpiresAt: Date;
+    amr: readonly string[];
+  }): Promise<void>;
 
   /**
    * Looked up by the HASH of the presented token — `session.service.ts`

@@ -21,9 +21,7 @@ describe("MediaCard", () => {
 
   it("14.6.b: passes srcset and sizes to the poster, and loads the first card eagerly at high priority", () => {
     const srcSet = "https://example.com/poster-320.jpg 320w, https://example.com/poster.jpg 640w";
-    render(
-      <MediaCard {...baseProps} posterSrcSet={srcSet} posterSizes="256px" posterPriority />,
-    );
+    render(<MediaCard {...baseProps} posterSrcSet={srcSet} posterSizes="256px" posterPriority />);
     const img = screen.getByAltText("A barista pouring coffee");
     expect(img).toHaveAttribute("srcset", srcSet);
     expect(img).toHaveAttribute("sizes", "256px");

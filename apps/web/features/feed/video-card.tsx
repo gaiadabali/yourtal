@@ -60,7 +60,10 @@ export function VideoCard({
       >
         <img
           src={item.posterUrl}
-          {...posterImgProps(item.posterVariants, feature ? POSTER_SIZES.feature : POSTER_SIZES.grid)}
+          {...posterImgProps(
+            item.posterVariants,
+            feature ? POSTER_SIZES.feature : POSTER_SIZES.grid,
+          )}
           alt=""
           loading={priority ? "eager" : "lazy"}
           fetchPriority={priority ? "high" : "low"}

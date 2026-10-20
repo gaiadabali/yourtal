@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 7/16 | 38/61 | `██████░░░░`  62% |
-| **All** | | | **112/122** | **584/608** | `██████████`  96% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 7/17 | 38/63 | `██████░░░░`  60% |
+| **All** | | | **112/123** | **584/610** | `██████████`  96% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1707,6 +1707,9 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [ ] 14.16.e Deletion and ended access reach every app as signed events, with the `connected_apps` data domain (group 3.9.f)
   - [ ] 14.16.f Rate limits, a sign-in log per client, an uptime check and one restore test (group 3.9.h)
 Group 5.7, the founder's walkthrough, is 13.6 here.
+- [ ] **14.17 The Security workflow is green again** (group 1.25) · A · needs: — — 🔄 2026-10-21 (group plan, god-ff)
+  - [ ] 14.17.a vitest's vite lifted to 8.3.4 for GHSA-698v-4r3x-3vcv (a workspace override); pnpm audit passes (group 1.25.a)
+  - [ ] 14.17.b Every workflow green on main (group 1.25.b)
 
 ## Not in this plan (deferred)
 

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { viewerAreaResponseSchema } from "@yourtal/contracts/areas/schema";
+import type { ViewerAreaResponse } from "@yourtal/contracts/areas/schema";
 import { apiFetch } from "@/lib/api/api-fetch";
 import type { ApiResult } from "@/lib/api/api-fetch";
 import { meResponseSchema } from "@/lib/api/me-schema";
@@ -57,4 +59,9 @@ export function getAutoplaySetting(): Promise<ApiResult<AutoplayResponse>> {
 
 export function listLinkedApps(): Promise<ApiResult<LinkedAppsResponse>> {
   return apiFetch("/api/me/linked-apps", linkedAppsResponseSchema);
+}
+
+/** F116: the viewer's declared area. The API refuses a teen, so callers ask only for an adult. */
+export function getViewerArea(): Promise<ApiResult<ViewerAreaResponse>> {
+  return apiFetch("/api/me/settings/area", viewerAreaResponseSchema);
 }

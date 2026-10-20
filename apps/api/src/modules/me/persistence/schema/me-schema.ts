@@ -86,3 +86,11 @@ export const viewerSettings = mePgSchema.table("viewer_setting", {
   autoplay: text("autoplay").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** F116: the viewer's declared "my area", a postcode they picked by suburb. One row per viewer who set one. */
+export const viewerAreas = mePgSchema.table("viewer_area", {
+  userId: text("user_id").primaryKey(),
+  region: text("region").notNull(),
+  postcode: text("postcode").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});

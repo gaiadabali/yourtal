@@ -4,6 +4,7 @@ import { PageHeader } from "@yourtal/ui/page-header";
 import {
   getAutoplaySetting,
   getMeProfile,
+  getViewerArea,
   getNotificationPreferences,
   listConsents,
   listFollows,
@@ -15,6 +16,7 @@ import { LogoutButton } from "@/features/me/logout-button";
 import { MeProfileSection } from "@/features/me/me-profile-section";
 import { MeLanguageSection } from "@/features/me/me-language-section";
 import { MeAutoplaySection } from "@/features/me/me-autoplay-section";
+import { MeAreaSection } from "@/features/me/me-area-section";
 import { MeThemeSection } from "@/features/me/me-theme-section";
 import { readThemeCookie } from "@/lib/api/session-cookies";
 import { MeInterestsSection } from "@/features/me/me-interests-section";
@@ -58,6 +60,10 @@ export default async function MePage() {
   // 12.2.b: the teen daily-cap meter is its own, teen-only read -- most
   // viewers are adults and never pay for this round trip at all.
   const isTeen = profile.ok && profile.data.profile.ageBand === "teen";
+  // F116: "my area" is for adults. A teen never sees it (nor is it fetched: the API
+  // refuses one), and neither does anyone whose age band could not be read.
+  const isAdult = profile.ok && profile.data.profile.ageBand === "adult";
+  const area = isAdult ? await getViewerArea() : null;
   const [wallet, todayPoints] = isTeen
     ? await Promise.all([getWalletBalance(), earnedToday(profile.data.profile.region)])
     : [null, 0];
@@ -85,6 +91,12 @@ export default async function MePage() {
           <MeAutoplaySection initialAutoplay={autoplay.data.autoplay} />
         ) : (
           <MeSectionError title={t("autoplay.heading")} error={autoplay.error} />
+        )}
+
+        {area === null ? null : area.ok ? (
+          <MeAreaSection initialArea={area.data.area} />
+        ) : (
+          <MeSectionError title={t("area.heading")} error={area.error} />
         )}
 
         {isTeen && wallet?.ok === true && wallet.data.dailyCapPoints !== undefined ? (

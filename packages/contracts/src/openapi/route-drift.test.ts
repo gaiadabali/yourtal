@@ -296,6 +296,15 @@ const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   "PUT /api/me/settings/autoplay": "MeModule -- TASKS.md 6.7.a, this pass's own ticket.",
   "GET /api/me/settings/theme": "MeModule -- TASKS.md 13.16.a, same convention as autoplay.",
   "PUT /api/me/settings/theme": "MeModule -- TASKS.md 13.16.a, same convention as autoplay.",
+  "GET /api/me/settings/area": "MeModule -- F116 (group 1.6.g), same convention as autoplay.",
+  "PUT /api/me/settings/area": "MeModule -- F116 (group 1.6.g), same convention as autoplay.",
+  "DELETE /api/me/settings/area": "MeModule -- F116 (group 1.6.g), same convention as autoplay.",
+
+  // AreasModule -- F116 (group 1.6.f): the fixed area list. Public reference
+  // data read from a static file; areas.controller.ts's tests are the check.
+  "GET /api/areas": "AreasModule -- F116, same convention as every module above.",
+  "GET /api/areas/states/{code}": "AreasModule -- F116, same convention as every module above.",
+  "GET /api/areas/summaries": "AreasModule -- F116, same convention as every module above.",
 
   // FeedModule -- TASKS.md 7.7, this pass's own ticket. Same "stand the
   // module up first, transcribe the contract later" reasoning as every

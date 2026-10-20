@@ -72,6 +72,13 @@ export class DrizzleFeedSignalsRepository implements FeedSignalsRepository {
     return Number(result.rows[0]?.count ?? 0);
   }
 
+  async declaredAreaPostcode(userId: string): Promise<string | null> {
+    const result = await this.db.execute<{ postcode: string }>(sql`
+      SELECT postcode FROM me.viewer_area WHERE user_id = ${userId}
+    `);
+    return result.rows[0]?.postcode ?? null;
+  }
+
   async alreadyEarnedCampaignIds(userId: string): Promise<ReadonlySet<string>> {
     const result = await this.db.execute<{ campaign_id: string }>(sql`
       SELECT DISTINCT campaign_id FROM watch.session WHERE user_id = ${userId} AND granted = true

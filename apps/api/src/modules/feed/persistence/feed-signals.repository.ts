@@ -18,6 +18,8 @@ export interface FeedSignalsRepository {
   segmentSizeFor(nodeId: string): Promise<number>;
   /** Campaign ids this user has already earned a reward from (`watch.session.granted`). */
   alreadyEarnedCampaignIds(userId: string): Promise<ReadonlySet<string>>;
+  /** F116: the postcode the viewer declared as "my area" in Me, or null. Never set for a teen. */
+  declaredAreaPostcode(userId: string): Promise<string | null>;
   demotedCampaignIds(userId: string): Promise<ReadonlySet<string>>;
   demote(userId: string, campaignId: string): Promise<void>;
 }

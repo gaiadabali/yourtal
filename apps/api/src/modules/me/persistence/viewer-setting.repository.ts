@@ -4,7 +4,7 @@ import { defaultAutoplayFor } from "@yourtal/contracts/me/autoplay-setting";
 import type { Region } from "@yourtal/contracts/region";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import type { ThemeSetting } from "@yourtal/contracts/me/theme-setting";
-import { viewerSettings, viewerThemes } from "./schema/me-schema";
+import { viewerAreas, viewerSettings, viewerThemes } from "./schema/me-schema";
 
 /**
  * `me.viewer_setting` (6.7.a) — read/write for the settings controller.
@@ -19,6 +19,10 @@ export interface ViewerSettingRepository {
   /** 13.16.a: `system` when the viewer never picked one. */
   themeFor(userId: string): Promise<ThemeSetting>;
   setTheme(userId: string, theme: ThemeSetting): Promise<void>;
+  /** F116: the postcode the viewer declared as "my area", or null. */
+  areaFor(userId: string): Promise<string | null>;
+  setArea(userId: string, region: Region, postcode: string): Promise<void>;
+  clearArea(userId: string): Promise<void>;
 }
 
 export const VIEWER_SETTING_REPOSITORY = Symbol("VIEWER_SETTING_REPOSITORY");
@@ -56,6 +60,29 @@ export class DrizzleViewerSettingRepository implements ViewerSettingRepository {
       .insert(viewerThemes)
       .values({ userId, theme })
       .onConflictDoUpdate({ target: viewerThemes.userId, set: { theme, updatedAt: new Date() } });
+  }
+
+  async areaFor(userId: string): Promise<string | null> {
+    const rows = await this.db
+      .select({ postcode: viewerAreas.postcode })
+      .from(viewerAreas)
+      .where(eq(viewerAreas.userId, userId))
+      .limit(1);
+    return rows[0]?.postcode ?? null;
+  }
+
+  async setArea(userId: string, region: Region, postcode: string): Promise<void> {
+    await this.db
+      .insert(viewerAreas)
+      .values({ userId, region, postcode })
+      .onConflictDoUpdate({
+        target: viewerAreas.userId,
+        set: { region, postcode, updatedAt: new Date() },
+      });
+  }
+
+  async clearArea(userId: string): Promise<void> {
+    await this.db.delete(viewerAreas).where(eq(viewerAreas.userId, userId));
   }
 }
 

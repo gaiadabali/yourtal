@@ -32,6 +32,17 @@
     "wifiOnly": "Hanya Wi-Fi",
     "never": "Tidak pernah"
   },
+  "area": {
+    "heading": "Area saya",
+    "intro": "Opsional. Beri tahu kami areamu agar video yang hanya ditampilkan bisnis di sekitarmu bisa sampai ke kamu. Pilih lokasimu dari daftar; kami hanya menyimpan kode posnya, tidak pernah lokasi perangkatmu.",
+    "none": "Kamu belum mengatur area.",
+    "current": "Areamu:",
+    "choose": "Pilih area saya",
+    "change": "Ubah area",
+    "clear": "Hapus",
+    "cancel": "Batal",
+    "saved": "Tersimpan."
+  },
   "theme": {
     "heading": "Tema",
     "intro": "Terang, gelap, atau ikuti perangkat Anda.",

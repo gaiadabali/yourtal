@@ -405,6 +405,15 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "MeModule -- TASKS.md 14.3.c, same convention as autoplaySettingSchema.",
   unlinkAppResponseSchema: "MeModule -- TASKS.md 14.3.c, same convention as autoplaySettingSchema.",
 
+  // --- areas (F116, group 1.6.f/g) ---
+  areaStatesResponseSchema:
+    "AreasModule -- F116. GET /api/areas* and /api/me/settings/area are in route-drift.test.ts's KNOWN_OUT_OF_SCOPE ledger, same convention as every MeModule route.",
+  areaPlacesResponseSchema: "AreasModule -- F116, same as areaStatesResponseSchema.",
+  areaSummarySchema: "AreasModule -- F116, same as areaStatesResponseSchema.",
+  areaSummariesResponseSchema: "AreasModule -- F116, same as areaStatesResponseSchema.",
+  viewerAreaResponseSchema: "MeModule -- F116, same as areaStatesResponseSchema.",
+  setViewerAreaBodySchema: "MeModule -- F116, same as areaStatesResponseSchema.",
+
   // --- device (TASKS.md 8.1-8.4): request bodies, documented inline via
   // inlineSchema() in route-registry.c.ts rather than published as their
   // own component — same convention route-registry.c.ts's own header

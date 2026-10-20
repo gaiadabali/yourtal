@@ -28,6 +28,8 @@ import { SAVE_REPOSITORY } from "./persistence/save.repository";
 import type { SaveRepository } from "./persistence/save.repository";
 import { DATA_EXPORT_READER } from "./persistence/data-export.reader";
 import type { DataExportReader } from "./persistence/data-export.reader";
+import { VIEWER_SETTING_REPOSITORY } from "./persistence/viewer-setting.repository";
+import type { ViewerSettingRepository } from "./persistence/viewer-setting.repository";
 import { STREAK_STATE_REPOSITORY } from "./persistence/streak-state.repository";
 import type { StreakStateRepository } from "./persistence/streak-state.repository";
 
@@ -67,6 +69,7 @@ export class AccountController {
     @Inject(FOLLOW_REPOSITORY) private readonly follows: FollowRepository,
     @Inject(SAVE_REPOSITORY) private readonly saves: SaveRepository,
     @Inject(STREAK_STATE_REPOSITORY) private readonly streaks: StreakStateRepository,
+    @Inject(VIEWER_SETTING_REPOSITORY) private readonly settings: ViewerSettingRepository,
     @Inject(LEDGER_INTERNAL_CLIENT) private readonly ledger: LedgerInternalClient,
     @Inject(VOUCHER_INTERNAL_CLIENT) private readonly vouchers: VoucherInternalClient,
     @Inject(DATA_EXPORT_READER) private readonly exportReader: DataExportReader,
@@ -125,18 +128,29 @@ export class AccountController {
   @Get("data-export")
   async exportData(@Req() request: FastifyRequest) {
     const userId = (await this.principals.resolve(request)).id;
-    const [consents, interests, followed, saved, streak, account, history, vouchers, sessions] =
-      await Promise.all([
-        this.consents.listForUser(userId),
-        this.interests.listForUser(userId),
-        this.follows.listForUser(userId),
-        this.saves.listForUser(userId),
-        this.streaks.find(userId),
-        this.exportReader.account(userId),
-        this.allHistory(userId),
-        this.allVouchers(userId),
-        this.exportReader.watchSessions(userId, EXPORT_MAX_SESSIONS),
-      ]);
+    const [
+      consents,
+      interests,
+      followed,
+      saved,
+      streak,
+      account,
+      history,
+      vouchers,
+      sessions,
+      declaredArea,
+    ] = await Promise.all([
+      this.consents.listForUser(userId),
+      this.interests.listForUser(userId),
+      this.follows.listForUser(userId),
+      this.saves.listForUser(userId),
+      this.streaks.find(userId),
+      this.exportReader.account(userId),
+      this.allHistory(userId),
+      this.allVouchers(userId),
+      this.exportReader.watchSessions(userId, EXPORT_MAX_SESSIONS),
+      this.settings.areaFor(userId),
+    ]);
     const now = new Date();
     const held = buildDataExportSections({ now, account, history, vouchers, sessions });
 
@@ -151,6 +165,8 @@ export class AccountController {
       follows: followed,
       saves: saved,
       streak,
+      // F116: the postcode the viewer picked as "my area", or null. Declared by them, not located.
+      declaredArea: declaredArea === null ? null : { postcode: declaredArea },
       // Named honestly per @yourtal/consent/dsar's own design: this export
       // covers what this module holds, not the other 9 data domains a full
       // DSAR (delete-account) accounts for — that list stays visible here

@@ -7,6 +7,8 @@ import { apiFetch } from "@/lib/api/api-fetch";
 import type { ApiResult } from "@/lib/api/api-fetch";
 import { meResponseSchema } from "@/lib/api/me-schema";
 import { clearSessionCookie, setSessionCookies, setThemeCookie } from "@/lib/api/session-cookies";
+import { viewerAreaResponseSchema } from "@yourtal/contracts/areas/schema";
+import type { ViewerAreaResponse } from "@yourtal/contracts/areas/schema";
 import { themeResponseSchema } from "@yourtal/contracts/me/theme-setting";
 import type { ThemeResponse, ThemeSetting } from "@yourtal/contracts/me/theme-setting";
 import { unlinkAppResponseSchema } from "@yourtal/contracts/me/linked-app";
@@ -98,6 +100,18 @@ export async function setAutoplayAction(
     method: "PUT",
     body: { autoplay },
   });
+}
+
+/** F116: declares "my area" as a postcode the person picked by suburb. */
+export async function setAreaAction(postcode: string): Promise<ApiResult<ViewerAreaResponse>> {
+  return apiFetch("/api/me/settings/area", viewerAreaResponseSchema, {
+    method: "PUT",
+    body: { postcode },
+  });
+}
+
+export async function clearAreaAction(): Promise<ApiResult<ViewerAreaResponse>> {
+  return apiFetch("/api/me/settings/area", viewerAreaResponseSchema, { method: "DELETE" });
 }
 
 /** 13.16.a: saves the theme to the account, then the cookie the server renders from. */

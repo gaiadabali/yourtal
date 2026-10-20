@@ -353,6 +353,13 @@
           ]
         },
         {
+          "heading": "Your area (optional)",
+          "body": [
+            "If you choose, you can tell us your area in Me by picking your suburb from a list. We keep only its postcode. We never read your location from your phone, and we don't offer this to accounts aged 13 to 17.",
+            "We use it for one thing: some businesses show a video only in certain areas, and your area decides whether you see those. Businesses never see your area or who you are. You can change it or clear it at any time, and deleting your account deletes it."
+          ]
+        },
+        {
           "heading": "If you're 13 to 17, and for guardians",
           "body": [
             "For an account aged 13 to 17, we keep the same basic details as any account: name, date of birth, email address, the videos watched, and the points earned.",

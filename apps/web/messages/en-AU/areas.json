@@ -1,0 +1,14 @@
+{
+  "stateLabel": "State or territory",
+  "chooseState": "Choose a state or territory to see its suburbs.",
+  "filterLabel": "Find a suburb in {state}",
+  "lettersLabel": "Suburbs starting with",
+  "listLabel": "Suburbs in {state}",
+  "loading": "Loading the list of areas",
+  "error": "We couldn't load the list of areas.",
+  "retry": "Try again",
+  "empty": "No suburb matches “{query}”.",
+  "moreHint": "Showing the first {count} matches. Type more of the name to narrow the list.",
+  "added": "Added",
+  "andMore": "and {count} more"
+}

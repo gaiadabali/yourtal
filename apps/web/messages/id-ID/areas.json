@@ -1,0 +1,14 @@
+{
+  "stateLabel": "Provinsi",
+  "chooseState": "Pilih provinsi untuk melihat daftar lokasinya.",
+  "filterLabel": "Cari lokasi di {state}",
+  "lettersLabel": "Lokasi yang diawali huruf",
+  "listLabel": "Lokasi di {state}",
+  "loading": "Memuat daftar area",
+  "error": "Daftar area tidak bisa dimuat.",
+  "retry": "Coba lagi",
+  "empty": "Tidak ada lokasi yang cocok dengan “{query}”.",
+  "moreHint": "Menampilkan {count} hasil pertama. Ketik lebih banyak nama untuk mempersempit daftar.",
+  "added": "Ditambahkan",
+  "andMore": "dan {count} lainnya"
+}

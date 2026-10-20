@@ -755,6 +755,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "MeModule -- TASKS.md 6.7.a, this pass's own ticket. GET/PUT /api/me/settings/autoplay returns/accepts only `{autoplay}` (settings.controller.ts) -- the row's own user_id/updated_at stay internal. `autoplaySettingSchema` (me/autoplay-setting.ts) mirrors the VALUE, not the row.",
   "me.viewer_theme":
     "MeModule -- TASKS.md 13.16.a. GET/PUT /api/me/settings/theme returns only `{theme}`; `themeSettingSchema` (me/theme-setting.ts) mirrors the VALUE, not the row.",
+  "me.viewer_area":
+    "MeModule -- F116 (group 1.6.g). GET/PUT/DELETE /api/me/settings/area returns `{area}` as a summary of the postcode (`areaSummarySchema`, areas/area-schema.ts), not the row: user_id, region and updated_at stay internal.",
   "feed.pacing_state":
     "TASKS.md 7.7.b, this pass's own ticket. Advisory per-campaign daily serve counter (pacing-state.repository.ts) -- an internal ranking input, never read by any client; nothing in FeedResponse mirrors served_today.",
   "charity.charity":

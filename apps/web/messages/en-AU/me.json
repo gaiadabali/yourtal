@@ -32,6 +32,17 @@
     "wifiOnly": "Wi-Fi only",
     "never": "Never"
   },
+  "area": {
+    "heading": "My area",
+    "intro": "Optional. Tell us your area so videos that businesses show only near you can reach you. Pick your suburb from the list; we keep only its postcode and never your location.",
+    "none": "You haven't set an area.",
+    "current": "Your area:",
+    "choose": "Choose my area",
+    "change": "Change area",
+    "clear": "Clear",
+    "cancel": "Cancel",
+    "saved": "Saved."
+  },
   "theme": {
     "heading": "Theme",
     "intro": "Light, dark, or match your device.",

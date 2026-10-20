@@ -83,7 +83,7 @@ export type DataDomain = z.infer<typeof dataDomainSchema>;
 const DOMAINS: readonly DataDomain[] = [
   {
     id: "identity",
-    holds: "Email address, name, language, jurisdiction",
+    holds: "Email address, name, language, jurisdiction, declared area (a postcode)",
     service: "YourtalID (Zitadel)",
     owner: "ops",
     onDeletion: "erase",

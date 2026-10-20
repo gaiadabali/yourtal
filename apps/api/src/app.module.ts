@@ -22,6 +22,7 @@ import { StudioModule } from "./modules/studio/studio.module";
 import { StaffModule } from "./modules/staff/staff.module";
 import { UserAccountAttributeLoader } from "./modules/staff/user-account-attribute-loader";
 import { WalletAttributeLoader } from "./modules/wallet/wallet-attribute-loader";
+import { AreasModule } from "./modules/areas/areas.module";
 import { AuctionModule } from "./modules/auction/auction.module";
 import { AuctionAttributeLoader } from "./modules/auction/auction-attribute-loader";
 import { AuthzModule } from "./shared/authz/authz.module";
@@ -71,6 +72,7 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
     StaffModule,
     ProofModule,
     AuctionModule,
+    AreasModule,
   ],
   // Global rather than per-controller: a new module inherits idempotency
   // instead of having to remember it. It acts only on routes carrying

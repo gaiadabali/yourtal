@@ -162,6 +162,19 @@ export function eraseGuardianConsent(pool: pg.Pool): DomainHandler {
 }
 
 /**
+ * F116: the viewer's declared "my area" (`me.viewer_area`), a postcode they
+ * picked by suburb. `erase`: it is the subject's own declaration and records
+ * no obligation to anyone else. The table has no FK for the same reason the
+ * identity tables do, so it can go in any order with them.
+ */
+export function eraseViewerArea(pool: pg.Pool): DomainHandler {
+  return async (subjectId: string): Promise<number> => {
+    const result = await pool.query(`DELETE FROM me.viewer_area WHERE user_id = $1`, [subjectId]);
+    return result.rowCount ?? 0;
+  };
+}
+
+/**
  * The `identity` domain's full erasure, 1.4.f: business membership plus the
  * three tables above. All four are `erase`, not `anonymise`, for the same
  * reason membership already was: none of them records an obligation to
@@ -184,6 +197,9 @@ export function eraseIdentity(pool: pg.Pool): DomainHandler {
   // `DELETE ... WHERE user_id = $1` against a row that never existed is
   // just `rowCount: 0` — no branch needed for "this subject was an adult".
   const guardianConsent = eraseGuardianConsent(pool);
+  // F116: the declared area is account data the viewer entered themselves, so
+  // it goes with the account.
+  const viewerArea = eraseViewerArea(pool);
   return async (subjectId: string): Promise<number> => {
     const counts = await Promise.all([
       memberships(subjectId),
@@ -191,6 +207,7 @@ export function eraseIdentity(pool: pg.Pool): DomainHandler {
       credentials(subjectId),
       sessions(subjectId),
       guardianConsent(subjectId),
+      viewerArea(subjectId),
     ]);
     return counts.reduce((total, n) => total + n, 0);
   };

@@ -2,6 +2,8 @@ import type pg from "pg";
 import { toPoints } from "@yourtal/contracts/money";
 import type { DomainHandler, HandlerRegistry } from "@yourtal/consent/dsar-orchestrator";
 import { postgresHandlers } from "@yourtal/db/dsar-handlers";
+import { processorCustomerDeleter } from "@yourtal/drivers/payment-providers";
+import type { RegionPaymentProviders } from "../drivers/payment-providers.module";
 import type { LedgerInternalClient } from "../ledger-client/ledger-internal-client";
 
 /**
@@ -44,7 +46,14 @@ export function ledgerDeletionHandler(pool: pg.Pool, ledger: LedgerInternalClien
   };
 }
 
-/** Every deletion handler the api can run: Postgres's plus the ledger's. */
-export function deletionHandlers(pool: pg.Pool, ledger: LedgerInternalClient): HandlerRegistry {
-  return { ...postgresHandlers(pool), ledger: ledgerDeletionHandler(pool, ledger) };
+/** Every deletion handler the api can run: Postgres's, the processor's and the ledger's. */
+export function deletionHandlers(
+  pool: pg.Pool,
+  ledger: LedgerInternalClient,
+  providers: RegionPaymentProviders,
+): HandlerRegistry {
+  return {
+    ...postgresHandlers(pool, { deleteAtProcessor: processorCustomerDeleter(providers) }),
+    ledger: ledgerDeletionHandler(pool, ledger),
+  };
 }

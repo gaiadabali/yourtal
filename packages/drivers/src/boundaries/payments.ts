@@ -50,7 +50,7 @@ import {
  *
  * ## The 14.7 seam
  *
- * `startCheckout` / `startCardSetup` / `chargeSaved` / `refund` / `parseWebhook` are what the app moves to: Stripe
+ * `startCheckout` / `startCardSetup` / `chargeSaved` / `refund` / `deleteCustomer` / `parseWebhook` are what the app moves to: Stripe
  * in AU (`stripe/stripe-payments.ts`), this simulator in ID (F104) and in tests. `charge()` / `deliveries()` stay
  * until the app has migrated, then go.
  */
@@ -289,6 +289,11 @@ export interface PaymentsDriver {
   createCustomer(
     request: CustomerRequest,
   ): Promise<Result<{ readonly customerRef: string }, BoundaryFailure>>;
+  /**
+   * Deletes the customer at the processor, and with it every saved card (account deletion, 5.1.h). A customer that
+   * is already gone is a success, so a retry after a half-finished deletion ends cleanly. Never throws.
+   */
+  deleteCustomer(customerRef: string): Promise<Result<void, BoundaryFailure>>;
   startCheckout(request: CheckoutRequest): Promise<Result<CheckoutStart, BoundaryFailure>>;
   startCardSetup(request: CardSetupRequest): Promise<Result<CardSetupStart, BoundaryFailure>>;
   /**
@@ -488,6 +493,14 @@ export function createSimulatedPayments(
     createCustomer: idempotent<CustomerRequest, { readonly customerRef: string }>((request) =>
       ok({ customerRef: `simcus_${request.idempotencyKey}` }),
     ),
+
+    // Nothing is held for a simulated customer, so there is nothing to delete; faults still apply.
+    deleteCustomer() {
+      const directive = engine.nextCall();
+      return Promise.resolve(
+        directive === "proceed" ? ok(undefined) : err(failureFor("payments", directive)),
+      );
+    },
 
     // The Xendit-shaped simulator settles at once: no page, no webhook.
     startCheckout: idempotent<CheckoutRequest, CheckoutStart>((request) =>

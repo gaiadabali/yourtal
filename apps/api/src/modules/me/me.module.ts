@@ -4,6 +4,7 @@ import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
+import { PaymentProvidersModule } from "../../shared/drivers/payment-providers.module";
 import { IdentityModule } from "../identity/identity.module";
 import { WalletModule } from "../wallet/wallet.module";
 import { CampaignModule, CAMPAIGN_DB } from "../campaign/campaign.module";
@@ -73,7 +74,7 @@ export const ME_DB = Symbol("ME_DB");
  * for the ledger client (grantAction/coverage/settings).
  */
 @Module({
-  imports: [IdentityModule, WalletModule, CampaignModule],
+  imports: [IdentityModule, WalletModule, CampaignModule, PaymentProvidersModule],
   controllers: [
     ConsentController,
     InterestsController,

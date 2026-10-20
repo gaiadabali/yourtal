@@ -40,6 +40,36 @@ async function startPurchase(key: string, amountMinor = 4_500, expiresAt?: Date)
   return started;
 }
 
+describe("deleting a customer", () => {
+  it("removes the customer and its saved card at the simulation, and a second delete still succeeds", async () => {
+    const card = await savedCard(h, "d1");
+    expect((await h.payments.deleteCustomer(card.customerRef)).isOk()).toBe(true);
+    expect(h.apiCalls.at(-1)).toMatchObject({ method: "DELETE" });
+    expect(await h.recorded(card.customerRef)).toMatchObject({ deleted: true });
+    expect(
+      (await h.stripeGet(`/v1/payment_methods/${card.paymentMethodRef}`))["customer"],
+    ).toBeNull();
+
+    // The card can no longer be charged.
+    const charged = await h.payments.chargeSaved({
+      idempotencyKey: "boost:d1",
+      amountMinor: 100,
+      currency: "AUD",
+      customerRef: card.customerRef,
+      paymentMethodRef: card.paymentMethodRef,
+      reference: "boost:d1",
+    });
+    expect(charged._unsafeUnwrapErr().mayHaveSucceeded).toBe(false);
+
+    // Stripe answers 404 to the repeat; the driver reads it as already gone.
+    expect((await h.payments.deleteCustomer(card.customerRef)).isOk()).toBe(true);
+  });
+
+  it("succeeds for a customer the simulation never had", async () => {
+    expect((await h.payments.deleteCustomer("cus_never_existed")).isOk()).toBe(true);
+  });
+});
+
 describe("a points purchase through Checkout", () => {
   it("4242 pays: checkout.completed carries our reference and the amount in OUR units", async () => {
     const started = await startPurchase("p1");

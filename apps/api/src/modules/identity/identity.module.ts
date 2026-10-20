@@ -4,6 +4,7 @@ import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
+import { PaymentProvidersModule } from "../../shared/drivers/payment-providers.module";
 import { IDENTITY_PG_POOL } from "./persistence/identity-pg-pool.token";
 import { createLedgerClient } from "../../shared/ledger-client/create-ledger-client";
 import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
@@ -37,6 +38,7 @@ export { IDENTITY_DB };
  * surface — the first one it has.
  */
 @Module({
+  imports: [PaymentProvidersModule],
   providers: [
     {
       provide: IDENTITY_DB,

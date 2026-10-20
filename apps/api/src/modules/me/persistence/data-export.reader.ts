@@ -66,6 +66,18 @@ export interface ExportPersonalData {
     readonly expiresAt: string;
     readonly warnedAt: string;
   }[];
+  /**
+   * The card saved for auction bids, or null. Brand, last four and expiry only: the processor's customer
+   * and card references are ours to charge with, and are never exported.
+   */
+  readonly savedCard: {
+    readonly brand: string;
+    readonly last4: string;
+    readonly expMonth: number;
+    readonly expYear: number;
+    readonly savedAt: string;
+    readonly usedFor: "auction_bids";
+  } | null;
 }
 
 /**
@@ -159,33 +171,46 @@ export class DrizzleDataExportReader implements DataExportReader {
   }
 
   async personal(userId: string): Promise<ExportPersonalData> {
-    const [notes, preferences, autoplay, theme, showLess, codes, warnings] = await Promise.all([
-      this.db
-        .select()
-        .from(notifications)
-        .where(eq(notifications.userId, userId))
-        .orderBy(desc(notifications.createdAt))
-        .limit(EXPORT_MAX_NOTIFICATIONS),
-      this.db
-        .select()
-        .from(notificationPreferences)
-        .where(eq(notificationPreferences.userId, userId))
-        .orderBy(asc(notificationPreferences.category)),
-      this.db.select().from(viewerSettings).where(eq(viewerSettings.userId, userId)).limit(1),
-      this.db.select().from(viewerThemes).where(eq(viewerThemes.userId, userId)).limit(1),
-      this.db.execute<{ campaign_id: string }>(
-        sql`SELECT campaign_id FROM feed.demotion WHERE user_id = ${userId} ORDER BY created_at`,
-      ),
-      this.db
-        .select()
-        .from(linkCodes)
-        .where(eq(linkCodes.userId, userId))
-        .orderBy(asc(linkCodes.createdAt)),
-      this.db.execute<{ voucher_id: string; expires_at: Date; warned_at: Date }>(
-        sql`SELECT voucher_id, expires_at, warned_at FROM me.voucher_expiry_warning
+    const [notes, preferences, autoplay, theme, showLess, codes, warnings, cards] =
+      await Promise.all([
+        this.db
+          .select()
+          .from(notifications)
+          .where(eq(notifications.userId, userId))
+          .orderBy(desc(notifications.createdAt))
+          .limit(EXPORT_MAX_NOTIFICATIONS),
+        this.db
+          .select()
+          .from(notificationPreferences)
+          .where(eq(notificationPreferences.userId, userId))
+          .orderBy(asc(notificationPreferences.category)),
+        this.db.select().from(viewerSettings).where(eq(viewerSettings.userId, userId)).limit(1),
+        this.db.select().from(viewerThemes).where(eq(viewerThemes.userId, userId)).limit(1),
+        this.db.execute<{ campaign_id: string }>(
+          sql`SELECT campaign_id FROM feed.demotion WHERE user_id = ${userId} ORDER BY created_at`,
+        ),
+        this.db
+          .select()
+          .from(linkCodes)
+          .where(eq(linkCodes.userId, userId))
+          .orderBy(asc(linkCodes.createdAt)),
+        this.db.execute<{ voucher_id: string; expires_at: Date; warned_at: Date }>(
+          sql`SELECT voucher_id, expires_at, warned_at FROM me.voucher_expiry_warning
              WHERE user_id = ${userId} ORDER BY warned_at`,
-      ),
-    ]);
+        ),
+        this.db.execute<{
+          brand: string;
+          last4: string;
+          exp_month: number;
+          exp_year: number;
+          created_at: Date;
+        }>(
+          sql`SELECT brand, last4, exp_month, exp_year, created_at FROM payment.saved_card
+             WHERE owner_kind = 'user' AND owner_id::text = ${userId} AND replaced_at IS NULL
+             ORDER BY created_at DESC LIMIT 1`,
+        ),
+      ]);
+    const card = cards.rows[0];
     return {
       notifications: notes.map((row) => ({
         category: row.category,
@@ -214,6 +239,17 @@ export class DrizzleDataExportReader implements DataExportReader {
         expiresAt: new Date(row.expires_at).toISOString(),
         warnedAt: new Date(row.warned_at).toISOString(),
       })),
+      savedCard:
+        card === undefined
+          ? null
+          : {
+              brand: card.brand,
+              last4: card.last4,
+              expMonth: card.exp_month,
+              expYear: card.exp_year,
+              savedAt: new Date(card.created_at).toISOString(),
+              usedFor: "auction_bids",
+            },
     };
   }
 }

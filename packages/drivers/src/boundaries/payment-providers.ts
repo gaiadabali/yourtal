@@ -43,6 +43,35 @@ function simulated(options: PaymentProvidersOptions): PaymentProviders {
   };
 }
 
+/** A customer of a user as our rows record it (`payment.customer`). */
+export interface StoredPaymentCustomer {
+  readonly provider: "stripe" | "simulated";
+  readonly region: Region;
+  readonly customerRef: string;
+}
+
+/**
+ * Deletes a user's customer, and its saved cards, at the processor that holds it (account deletion, 5.1.h).
+ * Resolves when it is gone; throws when it could not be, so the caller keeps its own rows. A simulated customer
+ * holds nothing at Stripe, so a Stripe driver skips it; a Stripe customer with no Stripe driver running here
+ * cannot be reached, which is a failure rather than something to forget.
+ */
+export function processorCustomerDeleter(
+  providers: Readonly<Record<Region, PaymentProviders>>,
+): (customer: StoredPaymentCustomer) => Promise<void> {
+  return async (customer) => {
+    const driver = providers[customer.region].payments;
+    if (driver.provider !== customer.provider) {
+      if (customer.provider === "simulated") return;
+      throw new Error(
+        `No ${customer.provider} payments driver is running to delete this customer.`,
+      );
+    }
+    const deleted = await driver.deleteCustomer(customer.customerRef);
+    if (deleted.isErr()) throw new Error(deleted.error.detail);
+  };
+}
+
 /** AU: Stripe when PAYMENTS_DRIVER / DISBURSEMENT_DRIVER = live, else simulated. ID: always simulated. */
 export function createPaymentProviders(
   env: Environment,

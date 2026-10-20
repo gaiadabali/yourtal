@@ -399,7 +399,10 @@ describe("GET /api/me/data-export and DELETE /api/me", () => {
       wallet: unknown[];
       vouchers: unknown[];
       watchSessions: unknown[];
+      savedCard: unknown;
     }>();
+    // No card saved: the key is there and says so.
+    expect(exportBody.savedCard).toBeNull();
     expect(exportBody.consents.length).toBeGreaterThan(0);
     expect(exportBody.account).toMatchObject({ region: "AU", ageBand: "adult" });
     expect(Array.isArray(exportBody.wallet)).toBe(true);

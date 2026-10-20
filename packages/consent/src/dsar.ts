@@ -125,7 +125,7 @@ const DOMAINS: readonly DataDomain[] = [
   {
     id: "payment_cards",
     holds:
-      "A bidder's saved card as the app keeps it (brand, last four digits, expiry, the processor's customer and card references) and the history of card-setup pages",
+      "A bidder's saved card as the app keeps it (brand, last four digits, expiry, the processor's customer and card references), the customer and its cards at the processor, and the history of card-setup pages",
     service: "payments",
     owner: "finance",
     onDeletion: "erase",

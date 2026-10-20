@@ -12,6 +12,9 @@ export function mergeMetadata(current: JsonObject, change: Record<string, string
   return Object.fromEntries(Object.entries(merged).filter(([, v]) => v !== ""));
 }
 
+/** The type a deleted customer is stored under, so `load(..., "customer")` no longer finds it. */
+export const DELETED_CUSTOMER = "customer.deleted";
+
 export const customerRoutes: Route[] = [
   {
     method: "POST",
@@ -67,6 +70,18 @@ export const customerRoutes: Route[] = [
       }
       await ctx.tx.put(customer);
       return ok(ctx, customer, params);
+    },
+  },
+  {
+    // Stripe answers `{ id, object, deleted: true }`. What is left is a tombstone, so every later read, write or use of
+    // the customer is `resource_missing`, and its payment methods read as detached (see the payment_methods route).
+    method: "DELETE",
+    path: "/v1/customers/:id",
+    async run(ctx, { id }) {
+      const customer = await load(ctx, id, "customer", { lock: true });
+      const deleted = { id, object: "customer", deleted: true };
+      await ctx.tx.put({ ...customer, type: DELETED_CUSTOMER, data: deleted, internal: {} });
+      return { body: deleted };
     },
   },
 ];

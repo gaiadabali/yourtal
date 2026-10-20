@@ -421,7 +421,11 @@ describe("what the provider refuses", () => {
     expect(token.expires_in).toBeLessThanOrEqual(600);
     await expect(
       client.clientCredentialsGrant(await webApp(), { scope: "teen_invites" }),
-    ).rejects.toMatchObject({ error: "unauthorized_client" });
+    ).rejects.toMatchObject({
+      // The library's answer for a grant the client is not registered for.
+      error: "invalid_request",
+      error_description: "requested grant type is not allowed for this client",
+    });
     await expect(client.clientCredentialsGrant(server, { scope: "openid" })).rejects.toMatchObject({
       error: "invalid_scope",
     });

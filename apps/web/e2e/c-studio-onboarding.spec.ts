@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import type { APIRequestContext, Browser, BrowserContext, Page } from "@playwright/test";
+import { finishPurchase } from "./checkout-page";
 
 /**
  * 7.8.d's Check: a new business goes from sign-up through the real Studio
@@ -176,7 +177,7 @@ test.describe
     await page.screenshot({ path: "test-results/c-studio-billing.png", fullPage: true });
 
     await page.getByRole("button", { name: "Buy" }).first().click();
-    await expect(page).toHaveURL(/purchased=1/);
+    await finishPurchase(page, "Points bought. They are ready to fund your campaigns.");
     // The real balance updates from the real ledger.
     await expect(page.locator('[aria-label="50,000 points available"]')).toBeVisible();
     // The purchase shows in the history, all of it still left (journey 2).

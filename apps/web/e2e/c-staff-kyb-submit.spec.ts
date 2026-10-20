@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import type { APIRequestContext, Browser, BrowserContext, Page } from "@playwright/test";
+import { finishPurchase } from "./checkout-page";
 
 /**
  * TASKS.md 9.3.b's Check, the submit half (moved from 7.8.d, unblocked now
@@ -209,7 +210,7 @@ test.describe.serial("9.3.b: approving KYB unblocks submit, through the real Stu
     await page.goto(`/studio/billing?business=${businessId}`);
     await expect(page.getByRole("heading", { name: "Billing", level: 1 })).toBeVisible();
     await page.getByRole("button", { name: "Buy" }).first().click();
-    await expect(page).toHaveURL(/purchased=1/);
+    await finishPurchase(page, "Points bought. They are ready to fund your campaigns.");
 
     // --- Campaign: a real draft, renamed, then funded and given a
     // one-question bank.

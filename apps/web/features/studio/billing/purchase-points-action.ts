@@ -1,15 +1,21 @@
 "use server";
 
+import type { Route } from "next";
 import { redirect } from "next/navigation";
-import { purchasePoints } from "./billing-data";
+import type { PurchaseResult } from "@yourtal/contracts/billing";
+import { purchasePoints, startCardSetup } from "./billing-data";
 
 /**
- * Buys points at a preset amount (task 7.5.a / 7.8.b) — a plain
+ * Buys points at a preset amount (task 7.5.a / 5.1.a) — a plain
  * `<form action={purchasePointsAction}>`. `idempotencyKey` is a hidden field
  * BillingScreen embeds once per render (not minted here): the real
  * `POST .../purchases` requires an `Idempotency-Key` header, and the key
  * must stay stable across a double-click of the same rendered button —
  * minting a fresh one inside this action would defeat that on every retry.
+ *
+ * Stripe answers with a checkout page: the browser goes there, and comes back
+ * to `/studio/billing?purchase=<id>`, which waits for the webhook. A processor
+ * that settles at once (Indonesia) comes straight back to the same page.
  */
 export async function purchasePointsAction(formData: FormData): Promise<void> {
   const businessId = formData.get("businessId");
@@ -32,10 +38,37 @@ export async function purchasePointsAction(formData: FormData): Promise<void> {
     redirect(back("error=invalid_purchase"));
   }
 
+  let result: PurchaseResult;
   try {
-    await purchasePoints(businessId, pointsValue, currency, idempotencyKey);
+    result = await purchasePoints(businessId, pointsValue, currency, idempotencyKey);
   } catch {
     redirect(back("error=purchase_failed"));
   }
-  redirect(back("purchased=1"));
+  if (result.status === "awaiting_payment" && result.checkoutUrl !== null) {
+    // The processor's own page, outside this app.
+    redirect(result.checkoutUrl as Route);
+  }
+  redirect(
+    back(
+      result.status === "paid"
+        ? "purchased=1"
+        : `purchase=${encodeURIComponent(result.purchaseId)}`,
+    ),
+  );
+}
+
+/** 5.1.a: add or replace the card boosts are charged to, on the processor's own page. */
+export async function startCardSetupAction(formData: FormData): Promise<void> {
+  const businessId = formData.get("businessId");
+  if (typeof businessId !== "string") redirect("/studio/billing?error=card_failed");
+  const back = (outcome: string) =>
+    `/studio/billing?business=${encodeURIComponent(businessId)}&${outcome}` as const;
+
+  let checkoutUrl: string | null;
+  try {
+    checkoutUrl = (await startCardSetup(businessId)).checkoutUrl;
+  } catch {
+    redirect(back("card=failed"));
+  }
+  redirect((checkoutUrl ?? back("card=saved")) as Route);
 }

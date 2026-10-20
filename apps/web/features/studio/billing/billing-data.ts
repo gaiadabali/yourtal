@@ -1,10 +1,21 @@
 import {
   billingBalanceSchema,
+  billingCardSchema,
+  cardPurchaseSchema,
   purchaseQuoteSchema,
   purchaseResultSchema,
+  startCardSetupResultSchema,
 } from "@yourtal/contracts/billing";
-import type { BillingAllocation, PurchaseQuote, PurchaseResult } from "@yourtal/contracts/billing";
+import type {
+  BillingAllocation,
+  BillingCard,
+  CardPurchase,
+  PurchaseQuote,
+  PurchaseResult,
+  StartCardSetupResult,
+} from "@yourtal/contracts/billing";
 import type { Currency } from "@yourtal/contracts/money/currency";
+import { withTax } from "@yourtal/contracts/money/tax";
 import { resolveStudioDataSource } from "../studio-data-source";
 import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
 import { apiFetch } from "@/lib/api/api-fetch";
@@ -33,6 +44,10 @@ interface BillingDataSource {
     currency: Currency,
     idempotencyKey: string,
   ) => Promise<PurchaseResult>;
+  /** 5.1.a: a card purchase's status, for the page the checkout returns to. Null if not this business's. */
+  getPurchase: (businessId: string, purchaseId: string) => Promise<CardPurchase | null>;
+  getCard: (businessId: string) => Promise<BillingCard>;
+  startCardSetup: (businessId: string) => Promise<StartCardSetupResult>;
 }
 
 /**
@@ -73,6 +88,27 @@ const liveDataSource: BillingDataSource = {
     if (!result.ok) throw new Error(`Could not buy points: ${result.error.message}`);
     return result.data;
   },
+  getPurchase: async (businessId, purchaseId) => {
+    const result = await apiFetch(
+      `/api/${businessId}/studio/billing/purchases/${encodeURIComponent(purchaseId)}`,
+      cardPurchaseSchema,
+    );
+    return result.ok ? result.data : null;
+  },
+  getCard: async (businessId) => {
+    const result = await apiFetch(`/api/${businessId}/studio/billing/card`, billingCardSchema);
+    // A failed read shows no card rather than breaking the whole Billing page.
+    return result.ok ? result.data : { card: null, required: false };
+  },
+  startCardSetup: async (businessId) => {
+    const result = await apiFetch(
+      `/api/${businessId}/studio/billing/card`,
+      startCardSetupResultSchema,
+      { method: "POST", body: {} },
+    );
+    if (!result.ok) throw new Error(`Could not start saving a card: ${result.error.message}`);
+    return result.data;
+  },
 };
 
 interface MockState {
@@ -95,14 +131,23 @@ function mockStateFor(businessId: string): MockState {
 // rate), which never reaches a client (CLAUDE.md, task 7.8.c). The real
 // `quotePurchase` (7.5.a) is what this mock stands in for.
 const MOCK_MINOR_PER_POINT: Record<Currency, number> = { AUD: 3, IDR: 4 };
+/** F118: the same GST rates the region settings seed. */
+const MOCK_TAX_RATE_BPS: Record<Currency, number> = { AUD: 1_000, IDR: 0 };
+
+function mockQuote(points: number, currency: Currency): PurchaseQuote {
+  const split = withTax(points * MOCK_MINOR_PER_POINT[currency], MOCK_TAX_RATE_BPS[currency]);
+  return {
+    points: toPoints(points),
+    subtotalMinor: toMinorUnits(split.subtotalMinor),
+    taxMinor: toMinorUnits(split.taxMinor),
+    totalMinor: toMinorUnits(split.totalMinor),
+    taxRateBps: MOCK_TAX_RATE_BPS[currency],
+    currency,
+  };
+}
 
 const mockDataSource: BillingDataSource = {
-  quotePoints: (_businessId, points, currency) =>
-    Promise.resolve({
-      points: toPoints(points),
-      totalMinor: toMinorUnits(points * MOCK_MINOR_PER_POINT[currency]),
-      currency,
-    }),
+  quotePoints: (_businessId, points, currency) => Promise.resolve(mockQuote(points, currency)),
   getBalance: (businessId) => {
     const state = mockStateFor(businessId);
     return Promise.resolve({
@@ -113,7 +158,7 @@ const mockDataSource: BillingDataSource = {
   },
   purchasePoints: (businessId, points, currency) => {
     const state = mockStateFor(businessId);
-    const paidMinor = points * MOCK_MINOR_PER_POINT[currency];
+    const quote = mockQuote(points, currency);
     state.totalPoints += points;
     state.remainingPoints += points;
     const allocation: BillingAllocation = {
@@ -125,13 +170,35 @@ const mockDataSource: BillingDataSource = {
       createdAt: new Date().toISOString(),
     };
     state.allocations = [...state.allocations, allocation];
+    const purchaseId = crypto.randomUUID();
+    // The fixture settles at once, like the simulated payments driver.
     return Promise.resolve({
+      status: "paid" as const,
+      purchaseId,
+      checkoutUrl: null,
       allocation,
-      paidMinor: toMinorUnits(paidMinor),
-      currency,
-      providerReference: `mock_${crypto.randomUUID()}`,
+      purchase: {
+        purchaseId,
+        status: "paid" as const,
+        points: quote.points,
+        subtotalMinor: quote.subtotalMinor,
+        taxMinor: quote.taxMinor,
+        totalMinor: quote.totalMinor,
+        taxRateBps: quote.taxRateBps,
+        currency,
+        allocationId: allocation.allocationId,
+        createdAt: allocation.createdAt,
+        paidAt: allocation.createdAt,
+      },
     });
   },
+  getPurchase: () => Promise.resolve(null),
+  getCard: () => Promise.resolve({ card: null, required: false }),
+  startCardSetup: () =>
+    Promise.resolve({
+      checkoutUrl: null,
+      card: { brand: "visa", last4: "4242", expMonth: 12, expYear: 2034 },
+    }),
 };
 
 const billingDataSource = resolveStudioDataSource({ mock: mockDataSource, live: liveDataSource });
@@ -155,4 +222,16 @@ export function purchasePoints(
   idempotencyKey: string,
 ): Promise<PurchaseResult> {
   return billingDataSource.purchasePoints(businessId, points, currency, idempotencyKey);
+}
+
+export function getPurchase(businessId: string, purchaseId: string): Promise<CardPurchase | null> {
+  return billingDataSource.getPurchase(businessId, purchaseId);
+}
+
+export function getCard(businessId: string): Promise<BillingCard> {
+  return billingDataSource.getCard(businessId);
+}
+
+export function startCardSetup(businessId: string): Promise<StartCardSetupResult> {
+  return billingDataSource.startCardSetup(businessId);
 }

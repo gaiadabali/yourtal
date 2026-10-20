@@ -4,11 +4,14 @@ import { useEffect, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import type { BoostView, SetBoostRequest } from "@yourtal/contracts/studio/boost";
 import { Button } from "@yourtal/ui/button";
+import Link from "next/link";
 import { Input } from "@yourtal/ui/input";
+import { Notice } from "@yourtal/ui/notice";
 import { MoneyAmount } from "@yourtal/ui/money-amount";
 import { Switch } from "@yourtal/ui/switch";
 import { loadBoost, saveBoost } from "./boost-actions";
 import { minorFromInput, inputFromMinor } from "./money-input";
+import { cardPanelHref } from "../billing/billing-anchors";
 
 export interface CampaignEditorBoostProps {
   businessId: string;
@@ -87,7 +90,9 @@ export function CampaignEditorBoost(props: CampaignEditorBoostProps) {
         endsAt: isoOf(endsAt),
         state: active ? "active" : "paused",
       });
-      if (!result.ok) return setError(result.message);
+      if (!result.ok) {
+        return setError(result.code === "card_required" ? t("boost.cardRequired") : result.message);
+      }
       setView(result.view);
       setSaved(true);
     });
@@ -95,6 +100,21 @@ export function CampaignEditorBoost(props: CampaignEditorBoostProps) {
 
   return (
     <div className="flex flex-col gap-5">
+      {view.cardRequired ? (
+        <Notice
+          tone="warning"
+          action={
+            <Link
+              href={cardPanelHref(props.businessId)}
+              className="font-semibold text-accent underline-offset-4 hover:underline"
+            >
+              {t("boost.addCard")}
+            </Link>
+          }
+        >
+          {t("boost.cardRequired")}
+        </Notice>
+      ) : null}
       <p className="text-body-sm font-sans text-fg-muted">
         {t("boost.intro")}{" "}
         {t("boost.reserve", { amount: inputFromMinor(view.reserveCpmMinor, currency), currency })}

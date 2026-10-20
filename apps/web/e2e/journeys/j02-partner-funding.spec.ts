@@ -6,6 +6,7 @@ import {
 } from "@yourtal/contracts/ledger-internal/service-signature";
 import { REGIONS, useSession, type RegionCase } from "./demo";
 import { closeDb, db, demoBusinessId, demoCaller, msg, one, requireBusinessEnv } from "./business";
+import { finishPurchase } from "../checkout-page";
 
 const POINTS = 50_000;
 const DRAWN = 1_200;
@@ -64,7 +65,7 @@ for (const r of REGIONS) {
     const finance = await demoCaller(request, "finance", r);
     const businessId = await demoBusinessId(finance);
     const currency = r.region === "AU" ? "AUD" : "IDR";
-    const quote = await finance.get<{ totalMinor: number; currency: string }>(
+    const quote = await finance.get<{ subtotalMinor: number; currency: string }>(
       `/api/${businessId}/studio/billing/purchases/quote?points=${POINTS}`,
     );
     expect(quote.currency).toBe(currency);
@@ -80,14 +81,13 @@ for (const r of REGIONS) {
       .getByRole("button", { name: msg(r, "studio", "billing.buy") })
       .first()
       .click();
-    await page.waitForURL(/purchased=1|error=/);
-    // Either way the person stays on this business's Billing and is told what happened.
-    expect(new URL(page.url()).searchParams.get("business")).toBe(businessId);
+    await page.waitForURL(/purchased=1|error=|\/checkout\/cs_/);
     if (page.url().includes("error=")) {
       await expect(page.getByText(msg(r, "studio", "billing.purchaseFailed"))).toBeVisible();
     }
-    await expect(page).toHaveURL(/purchased=1/);
-    await expect(page.getByText(msg(r, "studio", "billing.purchased"))).toBeVisible();
+    // Paid at once (Indonesia) or on the checkout page (AU on Stripe), the points are added.
+    await finishPurchase(page, msg(r, "studio", "billing.purchased"));
+    expect(new URL(page.url()).searchParams.get("business")).toBe(businessId);
 
     // One new purchase: the points, the server's price, the cash in this region's reserve.
     const purchase = await one<{
@@ -103,7 +103,8 @@ for (const r of REGIONS) {
     );
     expect(purchase).toMatchObject({
       points: String(POINTS),
-      amount: String(quote.totalMinor),
+      // F118: the ledger records the ex-GST price; GST is on the card purchase.
+      amount: String(quote.subtotalMinor),
       currency,
     });
     const allocation = await one<{
@@ -128,8 +129,12 @@ for (const r of REGIONS) {
       [purchase.cash_transfer_id],
     );
     expect(legs).toEqual([
-      { account: `plat_${r.region}_partner_funding`, amount: String(quote.totalMinor), currency },
-      { account: `plat_${r.region}_reserve`, amount: String(-quote.totalMinor), currency },
+      {
+        account: `plat_${r.region}_partner_funding`,
+        amount: String(quote.subtotalMinor),
+        currency,
+      },
+      { account: `plat_${r.region}_reserve`, amount: String(-quote.subtotalMinor), currency },
     ]);
     const transfer = await one<{ reason_code: string }>(
       `SELECT reason_code FROM ledger.transfer WHERE id = $1`,

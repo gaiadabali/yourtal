@@ -613,7 +613,26 @@
     "historyUsed": "{formatted} used",
     "historyLeft": "{formatted} left",
     "purchased": "Points bought. They are ready to fund your campaigns.",
-    "purchaseFailed": "We couldn't complete that purchase. Try again."
+    "purchaseFailed": "We couldn't complete that purchase. Try again.",
+    "subtotal": "Price",
+    "gst": "GST ({rate}%)",
+    "total": "Total",
+    "returnWaitingTitle": "Waiting for the payment to confirm",
+    "returnWaitingBody": "This usually takes a few seconds. The page updates by itself.",
+    "returnStillWaiting": "The payment hasn't confirmed yet. Refresh this page in a minute to check again.",
+    "returnCancelled": "Payment cancelled. Nothing was charged.",
+    "returnExpired": "This payment expired before it was completed. Nothing was charged.",
+    "returnReview": "We received your payment and are checking it. Your points will be added shortly.",
+    "cardTitle": "Card for boosts",
+    "cardIntro": "Boosts are charged to this card once a day, apart from points.",
+    "cardNone": "No card saved yet.",
+    "cardSaved": "{brand} ending in {last4}, expires {month}/{year}",
+    "cardAdd": "Add a card",
+    "cardReplace": "Replace card",
+    "cardAdded": "Card saved. Boosts will be charged to it.",
+    "cardSaving": "Saving your card. This usually takes a few seconds.",
+    "cardCancelled": "No card was saved.",
+    "cardFailed": "We couldn't open the card page. Try again."
   },
   "channel": {
     "saved": "Saved.",
@@ -968,7 +987,9 @@
     "chargesImpressions": "Impressions",
     "chargesAmount": "Amount",
     "reportTitle": "Boost",
-    "reportEmpty": "No campaign is boosted yet."
+    "reportEmpty": "No campaign is boosted yet.",
+    "cardRequired": "Boosts are charged to a saved card. Add one before you set or raise a budget.",
+    "addCard": "Add a card"
   },
   "join": {
     "title": "Join a business",

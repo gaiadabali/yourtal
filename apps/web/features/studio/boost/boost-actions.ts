@@ -4,7 +4,14 @@ import { boostChargeListSchema, boostViewSchema } from "@yourtal/contracts/studi
 import type { BoostCharge, BoostView, SetBoostRequest } from "@yourtal/contracts/studio/boost";
 import { apiFetch } from "@/lib/api/api-fetch";
 
-export type BoostResult = { ok: true; view: BoostView } | { ok: false; message: string };
+export type BoostResult =
+  { ok: true; view: BoostView } | { ok: false; message: string; code: string | null };
+
+const failure = (error: { message: string; code?: string }): BoostResult => ({
+  ok: false,
+  message: error.message,
+  code: error.code ?? null,
+});
 
 /** 13.23.a: `GET .../studio/campaigns/:campaignId/boost`. */
 export async function loadBoost(businessId: string, campaignId: string): Promise<BoostResult> {
@@ -12,7 +19,7 @@ export async function loadBoost(businessId: string, campaignId: string): Promise
     `/api/${businessId}/studio/campaigns/${encodeURIComponent(campaignId)}/boost`,
     boostViewSchema,
   );
-  return result.ok ? { ok: true, view: result.data } : { ok: false, message: result.error.message };
+  return result.ok ? { ok: true, view: result.data } : failure(result.error);
 }
 
 /** 13.23.a: `PUT .../studio/campaigns/:campaignId/boost`; the server prices nothing here, it stores the bid. */
@@ -26,7 +33,7 @@ export async function saveBoost(
     boostViewSchema,
     { method: "PUT", body },
   );
-  return result.ok ? { ok: true, view: result.data } : { ok: false, message: result.error.message };
+  return result.ok ? { ok: true, view: result.data } : failure(result.error);
 }
 
 /** 13.23.c: the business's boost charges, for the Billing statement. */

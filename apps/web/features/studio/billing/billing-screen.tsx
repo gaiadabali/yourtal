@@ -20,8 +20,9 @@ export interface BillingScreenProps {
 }
 
 /**
- * The Billing zone (task 7.5 / 7.8.b): a real quote per preset amount, a
- * real purchase against the ledger, real balance. Unused points stay with
+ * The Billing zone (task 7.5 / 7.8.b / 5.1.a): a real quote per preset
+ * amount (ex-GST price, GST, total), paid on the processor's checkout page,
+ * real balance. Unused points stay with
  * the business — there are no cash refunds (TASKS.md 7.5.b), so this screen
  * never offers one. Purchase history is each purchase's allocation: bought,
  * used by campaigns, left (journey 2).
@@ -71,7 +72,7 @@ export function BillingScreen({
                   value={quote.points}
                   formatLabel={(formatted) => t("billing.points", { formatted })}
                 />
-                <MoneyAmount amountMinor={quote.totalMinor} currency={quote.currency} />
+                <PriceBreakdown quote={quote} locale={locale} />
               </div>
               {canPurchase ? (
                 <form action={purchasePointsAction}>
@@ -129,5 +130,27 @@ export function BillingScreen({
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+/** F118: the ex-GST price, the GST on top, and the total charged. No tax line where none applies. */
+function PriceBreakdown({ quote, locale }: { quote: PurchaseQuote; locale: SupportedLocale }) {
+  const t = getStudioTranslator(locale);
+  const money = (amountMinor: number) => (
+    <MoneyAmount amountMinor={amountMinor} currency={quote.currency} locale={locale} />
+  );
+  return (
+    <dl className="grid grid-cols-[auto_auto] gap-x-4 text-body-sm font-sans text-fg-muted">
+      {quote.taxMinor > 0 ? (
+        <>
+          <dt>{t("billing.subtotal")}</dt>
+          <dd className="text-end">{money(quote.subtotalMinor)}</dd>
+          <dt>{t("billing.gst", { rate: quote.taxRateBps / 100 })}</dt>
+          <dd className="text-end">{money(quote.taxMinor)}</dd>
+        </>
+      ) : null}
+      <dt className="font-semibold text-fg">{t("billing.total")}</dt>
+      <dd className="text-end font-semibold text-fg">{money(quote.totalMinor)}</dd>
+    </dl>
   );
 }

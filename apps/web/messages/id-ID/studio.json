@@ -613,7 +613,26 @@
     "historyUsed": "{formatted} terpakai",
     "historyLeft": "sisa {formatted}",
     "purchased": "Poin berhasil dibeli dan siap mendanai kampanye Anda.",
-    "purchaseFailed": "Pembelian tidak dapat diselesaikan. Coba lagi."
+    "purchaseFailed": "Pembelian tidak dapat diselesaikan. Coba lagi.",
+    "subtotal": "Harga",
+    "gst": "Pajak ({rate}%)",
+    "total": "Total",
+    "returnWaitingTitle": "Menunggu konfirmasi pembayaran",
+    "returnWaitingBody": "Biasanya hanya beberapa detik. Halaman ini diperbarui sendiri.",
+    "returnStillWaiting": "Pembayaran belum terkonfirmasi. Muat ulang halaman ini sebentar lagi untuk memeriksanya.",
+    "returnCancelled": "Pembayaran dibatalkan. Tidak ada yang ditagih.",
+    "returnExpired": "Pembayaran ini kedaluwarsa sebelum selesai. Tidak ada yang ditagih.",
+    "returnReview": "Pembayaran Anda sudah kami terima dan sedang diperiksa. Poin Anda akan segera ditambahkan.",
+    "cardTitle": "Kartu untuk boost",
+    "cardIntro": "Boost ditagihkan ke kartu ini sekali sehari, terpisah dari poin.",
+    "cardNone": "Belum ada kartu tersimpan.",
+    "cardSaved": "{brand} berakhiran {last4}, berlaku hingga {month}/{year}",
+    "cardAdd": "Tambah kartu",
+    "cardReplace": "Ganti kartu",
+    "cardAdded": "Kartu tersimpan. Boost akan ditagihkan ke kartu ini.",
+    "cardSaving": "Kartu Anda sedang disimpan. Biasanya hanya beberapa detik.",
+    "cardCancelled": "Tidak ada kartu yang disimpan.",
+    "cardFailed": "Halaman kartu tidak dapat dibuka. Coba lagi."
   },
   "channel": {
     "saved": "Tersimpan.",
@@ -968,7 +987,9 @@
     "chargesImpressions": "Tayangan",
     "chargesAmount": "Jumlah",
     "reportTitle": "Boost",
-    "reportEmpty": "Belum ada kampanye yang di-boost."
+    "reportEmpty": "Belum ada kampanye yang di-boost.",
+    "cardRequired": "Boost ditagihkan ke kartu tersimpan. Tambahkan kartu sebelum mengatur atau menaikkan anggaran.",
+    "addCard": "Tambah kartu"
   },
   "join": {
     "title": "Bergabung dengan bisnis",

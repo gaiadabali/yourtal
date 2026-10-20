@@ -1,4 +1,4 @@
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import type { EconomyProposal, EconomyProposalKind } from "@yourtal/contracts/staff/economy";
 import type { Region } from "@yourtal/contracts/region";
 
@@ -48,6 +48,17 @@ export interface EconomyProposalRepository {
     result: Record<string, unknown>,
     note?: string,
   ): Promise<EconomyProposalRow>;
+  /**
+   * Approves in the same transaction as `alsoDo` (a change the approval must not
+   * happen without). `alsoDo` answering false rolls both back and returns null.
+   */
+  approveWith(
+    id: string,
+    approvedBy: string,
+    result: Record<string, unknown>,
+    note: string | undefined,
+    alsoDo: (client: PoolClient) => Promise<boolean>,
+  ): Promise<EconomyProposalRow | null>;
   reject(id: string, decidedBy: string, note?: string): Promise<EconomyProposalRow>;
 }
 
@@ -186,6 +197,40 @@ export class PostgresEconomyProposalRepository implements EconomyProposalReposit
     const row = query.rows[0];
     if (row === undefined) throw new Error(`no pending economy_proposal ${id} exists`);
     return toRow(row);
+  }
+
+  async approveWith(
+    id: string,
+    approvedBy: string,
+    result: Record<string, unknown>,
+    note: string | undefined,
+    alsoDo: (client: PoolClient) => Promise<boolean>,
+  ): Promise<EconomyProposalRow | null> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      if (!(await alsoDo(client))) {
+        await client.query("ROLLBACK");
+        return null;
+      }
+      const query = await client.query<Row>(
+        `UPDATE staff.economy_proposal
+            SET approved_by = $2, status = 'approved', result = $3, decided_at = now(),
+                decision_note = COALESCE($4, decision_note)
+          WHERE id = $1 AND status = 'pending'
+          RETURNING *`,
+        [id, approvedBy, JSON.stringify(result), note ?? null],
+      );
+      const row = query.rows[0];
+      if (row === undefined) throw new Error(`no pending economy_proposal ${id} exists`);
+      await client.query("COMMIT");
+      return toRow(row);
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => undefined);
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   async reject(id: string, decidedBy: string, note?: string): Promise<EconomyProposalRow> {

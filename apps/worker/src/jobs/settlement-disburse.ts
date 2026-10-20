@@ -3,6 +3,7 @@ import { createPaymentProviders } from "@yourtal/drivers/payment-providers";
 import type { PayoutAccountsDriver } from "@yourtal/drivers/payout-accounts";
 import { createPool } from "../pool";
 import { defineJob } from "../job";
+import { readBackInFlight } from "./settlement-read-back";
 
 /**
  * 5.2.b (F103, F104): an approved AU statement's payable leaves the platform
@@ -20,7 +21,10 @@ import { defineJob } from "../job";
  * The transfer key never changes, so a statement is transferred once, ever.
  * An answer that may have succeeded (timeout, 5xx) is asked again next run
  * with the same key; one still unknown near the provider's 24 h idempotency
- * window is never sent again and waits for staff. Indonesia is never
+ * window is never sent again and waits for staff (5.2.c: they check it again,
+ * or retry it once the processor shows nothing moved). A payout sent a few
+ * hours ago with no webhook outcome is read back from the processor and
+ * settled paid or failed (settlement-read-back.ts). Indonesia is never
  * disbursed: the rows are AU only, in the query and in the table.
  */
 let pool: Pool | undefined;
@@ -29,7 +33,17 @@ let driver: PayoutAccountsDriver | undefined;
 const UNCONFIRMED_AFTER_MS = 23 * 60 * 60 * 1000;
 
 type Outcome =
-  "queued" | "awaiting_account" | "transferred" | "paid" | "failed" | "unsure" | "unconfirmed";
+  | "queued"
+  | "awaiting_account"
+  | "transferred"
+  | "paid"
+  | "failed"
+  | "unsure"
+  | "unconfirmed"
+  | "readPaid"
+  | "readFailed"
+  | "readPending"
+  | "readUnknown";
 export type DisburseResult = Readonly<Record<Outcome, number>>;
 
 interface Open {
@@ -248,11 +262,16 @@ export async function runSettlementDisburse(
     failed: 0,
     unsure: 0,
     unconfirmed: 0,
+    readPaid: 0,
+    readFailed: 0,
+    readPending: 0,
+    readUnknown: 0,
   };
   for (const row of await openRows(db, payouts.provider)) {
     counts[await disburse(db, payouts, row, nowMs())] += 1;
   }
-  return counts;
+  // 5.2.c: a payout whose webhook never came is read back from the processor.
+  return { ...counts, ...(await readBackInFlight(db, payouts)) };
 }
 
 export const job = defineJob({

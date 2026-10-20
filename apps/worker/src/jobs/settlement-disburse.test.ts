@@ -3,7 +3,11 @@ import { err, ok } from "neverthrow";
 import { Pool } from "pg";
 import { afterAll, describe, expect, it } from "vitest";
 import { createSimulatedPayoutAccounts } from "@yourtal/drivers/payout-accounts";
-import type { MoneyToAccountRequest, PayoutAccountsDriver } from "@yourtal/drivers/payout-accounts";
+import type {
+  MoneyToAccountRequest,
+  PayoutAccountsDriver,
+  PayoutDetails,
+} from "@yourtal/drivers/payout-accounts";
 import { runSettlementDisburse } from "./settlement-disburse";
 
 /** 5.2.b against real Postgres: approved statements leave once, after approval, AU only. */
@@ -298,6 +302,131 @@ describe("settlement-disburse job", () => {
       [businessId, accountRef],
     );
     await runSettlementDisburse(pool, sim);
+    expect((await row(statementId))?.status).toBe("paid");
+  });
+});
+
+/** 5.2.c: a payout with no webhook outcome is read back from the processor, never left in flight unseen. */
+describe("settlement-disburse read-back (5.2.c)", () => {
+  type Read = (
+    accountRef: string,
+    payoutRef: string,
+  ) => ReturnType<PayoutAccountsDriver["getPayout"]>;
+
+  /** A payout sent and still `transferred`, as if sent `hoursAgo` hours before. */
+  async function inFlight(hoursAgo: number, read: Read) {
+    const { statementId, businessId } = await approved({ payableMinor: 12_345 });
+    await connect(businessId);
+    const stripe = stripeShaped();
+    const driver: PayoutAccountsDriver = { ...stripe.driver, getPayout: read };
+    await runSettlementDisburse(pool, driver);
+    expect(await row(statementId)).toMatchObject({ status: "transferred" });
+    await pool.query(
+      `UPDATE payment.disbursement
+          SET payout_requested_at = now() - make_interval(hours => $2),
+              transferred_at = now() - make_interval(hours => $2)
+        WHERE statement_id = $1`,
+      [statementId, hoursAgo],
+    );
+    return { statementId, driver };
+  }
+
+  const details = (patch: Partial<PayoutDetails>): PayoutDetails => ({
+    payoutRef: "",
+    status: "paid",
+    amountMinor: 12_345,
+    currency: "AUD",
+    reference: null,
+    failureCode: null,
+    ...patch,
+  });
+  const answer =
+    (patch: Partial<PayoutDetails>): Read =>
+    (_account, payoutRef) =>
+      Promise.resolve(ok(details({ payoutRef, ...patch })));
+
+  it("settles a payout the processor says was paid, once", async () => {
+    let calls = 0;
+    const { statementId, driver } = await inFlight(4, (a, p) => {
+      calls += 1;
+      return answer({ status: "paid" })(a, p);
+    });
+    const result = await runSettlementDisburse(pool, driver);
+    expect(result.readPaid).toBeGreaterThanOrEqual(1);
+    expect(await row(statementId)).toMatchObject({ status: "paid", failure_code: null });
+    await runSettlementDisburse(pool, driver);
+    expect(calls).toBe(1);
+  });
+
+  it("settles a payout the processor says failed, with its failure code, to be retried after the account changes", async () => {
+    const { statementId, driver } = await inFlight(
+      4,
+      answer({ status: "failed", failureCode: "account_closed" }),
+    );
+    await runSettlementDisburse(pool, driver);
+    expect(await row(statementId)).toMatchObject({
+      status: "failed",
+      failure_code: "account_closed",
+    });
+  });
+
+  it("leaves a payout still on its way, and asks again no sooner than an hour later", async () => {
+    let calls = 0;
+    const { statementId, driver } = await inFlight(30, (a, p) => {
+      calls += 1;
+      return answer({ status: "pending" })(a, p);
+    });
+    await runSettlementDisburse(pool, driver);
+    await runSettlementDisburse(pool, driver);
+    expect(calls).toBe(1);
+    expect(await row(statementId)).toMatchObject({ status: "transferred" });
+    await pool.query(
+      `UPDATE payment.disbursement SET payout_checked_at = now() - interval '61 minutes'
+        WHERE statement_id = $1`,
+      [statementId],
+    );
+    await runSettlementDisburse(pool, driver);
+    expect(calls).toBe(2);
+  });
+
+  it("does not ask about a recent payout, and leaves one the processor cannot confirm or whose amount differs", async () => {
+    let recentCalls = 0;
+    const recent = await inFlight(1, (a, p) => {
+      recentCalls += 1;
+      return answer({ status: "paid" })(a, p);
+    });
+    await runSettlementDisburse(pool, recent.driver);
+    expect(recentCalls).toBe(0);
+
+    const down = await inFlight(5, () =>
+      Promise.resolve(
+        err({
+          kind: "timeout" as const,
+          boundary: "disbursement",
+          detail: "down",
+          mayHaveSucceeded: true,
+        }),
+      ),
+    );
+    const unknown = await runSettlementDisburse(pool, down.driver);
+    expect(unknown.readUnknown).toBeGreaterThanOrEqual(1);
+    expect((await row(down.statementId))?.status).toBe("transferred");
+
+    const wrong = await inFlight(5, answer({ status: "paid", amountMinor: 99 }));
+    await runSettlementDisburse(pool, wrong.driver);
+    expect((await row(wrong.statementId))?.status).toBe("transferred");
+  });
+
+  it("never undoes an outcome the webhook recorded first", async () => {
+    const { statementId, driver } = await inFlight(
+      4,
+      answer({ status: "failed", failureCode: "x" }),
+    );
+    await pool.query(
+      `UPDATE payment.disbursement SET status = 'paid', paid_at = now() WHERE statement_id = $1`,
+      [statementId],
+    );
+    await runSettlementDisburse(pool, driver);
     expect((await row(statementId))?.status).toBe("paid");
   });
 });

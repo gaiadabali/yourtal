@@ -20,6 +20,7 @@ export interface DisbursementRow {
   readonly transferredAt: string | null;
   readonly paidAt: string | null;
   readonly failedAt: string | null;
+  readonly checkedAt: string | null;
 }
 
 /** What the processor said became of one payout. */
@@ -47,6 +48,13 @@ export class DisbursementRepository {
       SELECT * FROM payment.disbursement WHERE business_id = ${businessId}
        ORDER BY created_at DESC LIMIT 200`);
     return rows.map(toRow);
+  }
+
+  async findOne(id: string): Promise<DisbursementRow | null> {
+    const { rows } = await this.db.execute(
+      sql`SELECT * FROM payment.disbursement WHERE id = ${id}::uuid`,
+    );
+    return rows[0] === undefined ? null : toRow(rows[0]);
   }
 
   async listForRegion(region: "AU" | "ID"): Promise<DisbursementRow[]> {
@@ -105,5 +113,6 @@ function toRow(row: Record<string, unknown>): DisbursementRow {
     transferredAt: iso(row["transferred_at"]),
     paidAt: iso(row["paid_at"]),
     failedAt: iso(row["failed_at"]),
+    checkedAt: iso(row["payout_checked_at"]),
   };
 }

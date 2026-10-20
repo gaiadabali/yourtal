@@ -152,5 +152,63 @@
     "heading": "Today's points",
     "intro": "A friendly cap keeps earning balanced -- it resets every day.",
     "progress": "{earned} of {cap} pts earned today"
+  },
+  "signInMethods": {
+    "heading": "Passkeys and authenticator app",
+    "reauthRequired": "For your security, sign in again before changing this.",
+    "signInAgainCta": "Sign in again",
+    "errors": {
+      "factor_invalid": "That code didn't work. Check your app and try again.",
+      "throttled": "Too many attempts. Try again in a few minutes.",
+      "passkey_cancelled": "The passkey prompt was closed. Try again when you are ready.",
+      "passkey_failed": "Your device couldn't complete that. Try again.",
+      "passkey_already_registered": "This device already has a passkey for YourTal.",
+      "passkey_not_found": "That passkey has already been removed.",
+      "last_sign_in_method": "Keep at least one way to sign in. Add another passkey first, then remove this one.",
+      "totp_already_enabled": "Your authenticator app is already on.",
+      "network": "YourTal couldn't be reached. Check your connection and try again.",
+      "unknown": "Something wasn't quite right. Try again."
+    }
+  },
+  "passkeys": {
+    "heading": "Passkeys",
+    "intro": "Sign in with your face, fingerprint or screen lock instead of a password.",
+    "empty": "No passkeys yet.",
+    "addedOn": "Added {date}",
+    "lastUsed": "Last used {date}",
+    "neverUsed": "Not used yet",
+    "syncedBadge": "Synced",
+    "removeCta": "Remove",
+    "removeAria": "Remove {name}",
+    "confirmRemove": "Remove this passkey? You won't be able to sign in with it again.",
+    "confirmRemoveCta": "Remove passkey",
+    "cancelCta": "Cancel",
+    "nameLabel": "Name (optional)",
+    "nameHelp": "Helps you tell your devices apart, like Work laptop.",
+    "addCta": "Add a passkey",
+    "added": "Passkey added.",
+    "removed": "Passkey removed.",
+    "unsupported": "This browser can't create passkeys. Try another browser or device."
+  },
+  "authenticatorApp": {
+    "heading": "Authenticator app",
+    "intro": "Add a 6-digit code from an app like Google Authenticator or 1Password after your password, for extra protection.",
+    "statusOn": "On",
+    "statusOff": "Off",
+    "setUpCta": "Set up",
+    "preparing": "Getting your code ready…",
+    "scanInstruction": "Scan this with your authenticator app, then enter the 6-digit code it shows.",
+    "qrAlt": "QR code to add YourTal to your authenticator app",
+    "manualKeyCaption": "Or type this key into your app",
+    "qrFallback": "Couldn't draw the QR code. Type the key into your app instead.",
+    "codeLabel": "6-digit code from your app",
+    "turnOnCta": "Turn on",
+    "cancelCta": "Cancel",
+    "turnedOn": "Authenticator app is on. You will enter a code each time you sign in.",
+    "turnOffCta": "Turn off",
+    "turnOffPrompt": "Enter a current code from your app to turn it off.",
+    "confirmTurnOffCta": "Turn off authenticator app",
+    "usePasskeyCta": "Use a passkey instead",
+    "turnedOff": "Authenticator app is off."
   }
 }

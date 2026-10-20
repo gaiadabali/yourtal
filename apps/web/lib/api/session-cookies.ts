@@ -10,6 +10,8 @@ import { themeSettingSchema } from "@yourtal/contracts/me/theme-setting";
 import type { ThemeSetting } from "@yourtal/contracts/me/theme-setting";
 import {
   LOCALE_COOKIE,
+  MFA_PENDING_COOKIE,
+  PASSKEY_PROMPT_COOKIE,
   PREFERENCE_COOKIE_MAX_AGE_SECONDS,
   REGION_COOKIE,
   SESSION_COOKIE,
@@ -83,4 +85,34 @@ export async function readThemeCookie(): Promise<ThemeSetting> {
   const store = await cookies();
   const parsed = themeSettingSchema.safeParse(store.get(THEME_COOKIE)?.value);
   return parsed.success ? parsed.data : "system";
+}
+
+/** Keeps the half-finished sign-in out of URLs: httpOnly, and gone when the API's own pending token expires. */
+export async function setMfaPendingCookie(
+  pendingToken: string,
+  expiresInSeconds: number,
+): Promise<void> {
+  const store = await cookies();
+  store.set(MFA_PENDING_COOKIE, pendingToken, cookieOptions(expiresInSeconds));
+}
+
+export async function readMfaPendingToken(): Promise<string | null> {
+  const store = await cookies();
+  return store.get(MFA_PENDING_COOKIE)?.value ?? null;
+}
+
+export async function clearMfaPendingCookie(): Promise<void> {
+  const store = await cookies();
+  store.delete(MFA_PENDING_COOKIE);
+}
+
+export async function hasSeenPasskeyPrompt(): Promise<boolean> {
+  const store = await cookies();
+  return store.get(PASSKEY_PROMPT_COOKIE)?.value === "seen";
+}
+
+/** A preference of this browser, like locale: it outlives sign-out. */
+export async function markPasskeyPromptSeen(): Promise<void> {
+  const store = await cookies();
+  store.set(PASSKEY_PROMPT_COOKIE, "seen", cookieOptions(PREFERENCE_COOKIE_MAX_AGE_SECONDS));
 }

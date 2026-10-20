@@ -6,6 +6,8 @@ import { apiFetch } from "@/lib/api/api-fetch";
 import type { ApiResult } from "@/lib/api/api-fetch";
 import { meResponseSchema } from "@/lib/api/me-schema";
 import type { MeResponse } from "@/lib/api/me-schema";
+import { signInMethodsSchema } from "@yourtal/contracts/identity/sign-in-methods";
+import type { SignInMethods } from "@yourtal/contracts/identity/sign-in-methods";
 import { linkedAppsResponseSchema } from "@yourtal/contracts/me/linked-app";
 import type { LinkedAppsResponse } from "@yourtal/contracts/me/linked-app";
 import {
@@ -64,4 +66,9 @@ export function listLinkedApps(): Promise<ApiResult<LinkedAppsResponse>> {
 /** F116: the viewer's declared area. The API refuses a teen, so callers ask only for an adult. */
 export function getViewerArea(): Promise<ApiResult<ViewerAreaResponse>> {
   return apiFetch("/api/me/settings/area", viewerAreaResponseSchema);
+}
+
+/** The account's passkeys and whether an authenticator app is on. */
+export function getSignInMethods(): Promise<ApiResult<SignInMethods>> {
+  return apiFetch("/api/auth/sign-in-methods", signInMethodsSchema);
 }

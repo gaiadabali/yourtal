@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { ChannelAvatar } from "@yourtal/ui/channel-avatar";
 import { CoinMark } from "@yourtal/ui/brand/coin-mark";
 import { cn } from "@yourtal/ui/cn";
+import { POSTER_SIZES, posterImgProps } from "./poster-srcset";
 import { formatFeedDuration, formatFeedPoints, type FeedLocale } from "./feed-terms";
 import type { BrowseItem } from "./home-data";
 import { useCategoryLabel } from "./use-category-label";
@@ -59,6 +60,7 @@ export function VideoCard({
       >
         <img
           src={item.posterUrl}
+          {...posterImgProps(item.posterVariants, feature ? POSTER_SIZES.feature : POSTER_SIZES.grid)}
           alt=""
           loading={priority ? "eager" : "lazy"}
           fetchPriority={priority ? "high" : "low"}

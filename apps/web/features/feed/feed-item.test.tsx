@@ -27,6 +27,7 @@ function baseItem(overrides: Partial<FeedItemData> = {}): FeedItemData {
     title: "Test Campaign",
     synopsis: "A campaign for feed-item.test.tsx.",
     posterUrl: "https://cdn.example.com/poster.jpg",
+    posterVariants: [],
     teaserUrl: "https://cdn.example.com/teaser.mp4",
     durationSeconds: 30,
     rewardPoints: toPoints(100),
@@ -49,14 +50,15 @@ function baseItem(overrides: Partial<FeedItemData> = {}): FeedItemData {
   };
 }
 
-function renderItem(item: FeedItemData) {
+function renderItem(item: FeedItemData, props: { mounted?: boolean; priority?: boolean } = {}) {
   return render(
     <NextIntlClientProvider locale="en-AU" messages={{ feed: feedMessages }}>
       <FeedItem
         item={item}
         locale="en-AU"
         active={false}
-        mounted={false}
+        mounted={props.mounted ?? false}
+        {...(props.priority ? { priority: true } : {})}
         postersOnly
         saved={false}
         shareUrl="https://yourtal.com/au/c/campaign-id"
@@ -78,5 +80,31 @@ describe("FeedItem — brand disclosure", () => {
   it("labels a boosted card Sponsored", () => {
     renderItem({ ...baseItem(), boosted: true });
     expect(screen.getByText("Sponsored")).toBeInTheDocument();
+  });
+});
+
+// 14.6.b: the poster is an <img> with srcset, so the browser picks a size for the screen.
+describe("FeedItem — responsive poster", () => {
+  const variants = [
+    { url: "https://cdn.example.com/posters/a-320.jpg", width: 320 },
+    { url: "https://cdn.example.com/poster.jpg", width: 640 },
+    { url: "https://cdn.example.com/posters/a-960.jpg", width: 960 },
+  ];
+
+  it("gives the poster every size, and the first Short's high priority", () => {
+    const { container } = renderItem(baseItem({ posterVariants: variants }), { priority: true });
+    const img = container.querySelector("img[src='https://cdn.example.com/poster.jpg']");
+    expect(img).toHaveAttribute(
+      "srcset",
+      "https://cdn.example.com/posters/a-320.jpg 320w, https://cdn.example.com/poster.jpg 640w, https://cdn.example.com/posters/a-960.jpg 960w",
+    );
+    expect(img).toHaveAttribute("sizes", "min(440px, calc(100vw - 2rem))");
+    expect(img).toHaveAttribute("fetchpriority", "high");
+  });
+
+  it("falls back to the single poster when the server sent no sizes", () => {
+    const { container } = renderItem(baseItem());
+    const img = container.querySelector("img[src='https://cdn.example.com/poster.jpg']");
+    expect(img).not.toHaveAttribute("srcset");
   });
 });

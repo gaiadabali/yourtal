@@ -2,6 +2,7 @@ import "server-only";
 
 import * as z from "zod";
 import { campaignSchema } from "@yourtal/contracts/campaign";
+import type { PosterVariant } from "@yourtal/contracts/campaign/poster-variant";
 import { feedResponseSchema, type FeedItem } from "@yourtal/contracts/feed";
 import type { FacetCount } from "@yourtal/contracts/interest/tags";
 import { continueWatchingResponseSchema } from "@yourtal/contracts/watch/continue-watching";
@@ -18,6 +19,7 @@ export interface ContinueItem {
   readonly title: string;
   readonly merchantName: string;
   readonly posterUrl: string;
+  readonly posterVariants: PosterVariant[];
   readonly durationSeconds: number;
   readonly coveredSeconds: number;
 }
@@ -74,6 +76,7 @@ async function continueRows(): Promise<ContinueItem[]> {
         title: read.data.title,
         merchantName: read.data.merchantName,
         posterUrl: read.data.posterUrl,
+        posterVariants: read.data.posterVariants,
         durationSeconds: read.data.durationSeconds,
         coveredSeconds: session.coveredSeconds,
       };

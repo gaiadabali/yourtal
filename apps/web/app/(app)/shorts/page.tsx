@@ -1,4 +1,3 @@
-import { preload } from "react-dom";
 import { getTranslations } from "next-intl/server";
 import { EmptyState } from "@yourtal/ui/empty-state";
 import { ErrorState } from "@yourtal/ui/error-state";
@@ -20,9 +19,6 @@ export default async function ShortsPage() {
     getTranslations("feed"),
   ]);
   const result = await getShortsFeed(region);
-  // 13.4.a: the first Short's poster is its first frame; this puts its preload in <head>.
-  const firstPoster = result.ok ? result.data.items[0]?.posterUrl : undefined;
-  if (firstPoster) preload(firstPoster, { as: "image", fetchPriority: "high" });
 
   return (
     <div className="flex flex-col gap-4 p-4">

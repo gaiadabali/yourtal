@@ -3,6 +3,7 @@ import { MediaCard } from "@yourtal/ui/media-card";
 import { BrowseControls } from "./browse-controls";
 import { browseHref, type BrowseQuery } from "./browse-query";
 import { formatFeedDuration, type FeedLocale } from "./feed-terms";
+import { POSTER_SIZES, posterCardProps } from "./poster-srcset";
 import type { BrowseItem, HomeBrowseData } from "./home-data";
 import { VideoCard } from "./video-card";
 
@@ -122,6 +123,7 @@ export async function HomeBrowse({ data, query, locale, publicBase }: HomeBrowse
                 <MediaCard
                   href={`/watch/${item.campaignId}`}
                   poster={item.posterUrl}
+                  {...posterCardProps(item.posterVariants, POSTER_SIZES.shelf)}
                   posterAlt=""
                   aspect="16:9"
                   title={item.title}

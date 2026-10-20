@@ -1,5 +1,6 @@
 import { MediaCard } from "@yourtal/ui/media-card";
 import type { FeedItem } from "@yourtal/contracts/feed";
+import { POSTER_SIZES, posterCardProps } from "@/features/feed/poster-srcset";
 import { feedTermsLine } from "@/features/feed/feed-terms";
 import { getFeedTermsTranslator, type FeedLocale } from "./search-feed-terms";
 
@@ -15,6 +16,7 @@ export function SearchCampaignCard({ item, locale }: SearchCampaignCardProps) {
     <MediaCard
       href={`/campaign/${item.campaignId}`}
       poster={item.posterUrl}
+      {...posterCardProps(item.posterVariants, POSTER_SIZES.results)}
       posterAlt=""
       aspect={item.kind === "quick" ? "9:16" : "16:9"}
       title={item.title}

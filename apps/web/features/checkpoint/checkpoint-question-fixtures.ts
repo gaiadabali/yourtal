@@ -116,6 +116,7 @@ export function makeCampaignFixture(overrides: Partial<Campaign> = {}): Campaign
     contentCategory: "food-and-drink",
     tags: [],
     posterUrl: "https://cdn.example.com/poster.jpg",
+    posterVariants: [],
     teaserUrl: "https://cdn.example.com/teaser.mp4",
     hlsUrl: MOCK_HLS_MANIFEST_URL,
     captionsUrl: null,

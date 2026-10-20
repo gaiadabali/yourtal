@@ -2,6 +2,7 @@ import type { Campaign } from "@yourtal/contracts/campaign";
 import { Card, CardContent } from "@yourtal/ui/card";
 import { Button } from "@yourtal/ui/button";
 import { formatDuration } from "@/features/campaign/campaign-format";
+import { POSTER_SIZES, posterImgProps } from "@/features/feed/poster-srcset";
 import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
 
 export interface UpNextCardProps {
@@ -28,6 +29,7 @@ export function UpNextCard({ campaign, locale }: UpNextCardProps) {
         <div className="flex items-center gap-3">
           <img
             src={campaign.posterUrl}
+            {...posterImgProps(campaign.posterVariants, POSTER_SIZES.thumbMedium)}
             alt=""
             className="h-16 w-28 shrink-0 rounded-md object-cover"
           />

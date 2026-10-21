@@ -76,19 +76,9 @@ const FUNDERS = {
     currency: "IDR",
   },
 };
-// docs/27 section 1: tier sizes at exactly B = 3c a point (AU, GST 10%) and IDR 6 a point (ID, no tax).
-const AT_COST = {
-  AU: {
-    starter: [3_000, 300],
-    grow: [30_000, 3_000],
-    scale: [150_000, 15_000],
-  },
-  ID: {
-    starter: [6_000, 0],
-    grow: [60_000, 0],
-    scale: [300_000, 0],
-  },
-};
+// docs/27 section 1: a tier is its size at exactly B, the backing rate in force (ceil(points x B)),
+// with no discount. B is read from the staff rate screen, never pinned: staging's AUD rate is not 3c.
+const TAX_BPS = { AU: 1_000, ID: 0 };
 const TIER_POINTS = { starter: 1_000, grow: 10_000, scale: 50_000 };
 const RECEIPT_WORDING = "YourTal points for receipt rewards";
 const PAUSED_MESSAGE = "receipt points are paused: the receipt package is used up";
@@ -275,6 +265,32 @@ async function submitCard(checkoutUrl, number) {
 
 // ----------------------------------------------------------- shared reads
 
+const halfUpTax = (subtotal, bps) => Math.floor((subtotal * bps + 5_000) / 10_000);
+const rates = new Map();
+/** B in force for a region, in micros per point, from the staff rate screen. */
+async function backingRate(region) {
+  if (!rates.has(region)) {
+    const finance = await login(staff("finance"));
+    const screen = await ok(
+      await call("GET", `/api/staff/economy/${region}/rate`, finance),
+      `${region} rate`,
+    );
+    if (!Number.isInteger(screen.currentBackingRateMicrosPerPoint))
+      throw new Error(`${region}: the staff rate screen shows no backing rate in force`);
+    rates.set(region, screen.currentBackingRateMicrosPerPoint);
+    note(
+      `${region} backing rate in force`,
+      `${screen.currentBackingRateMicrosPerPoint} micros a point`,
+    );
+  }
+  return rates.get(region);
+}
+/** What a tier costs at cost: [subtotal, tax] in minor units. */
+async function atCost(region, tier) {
+  const micros = await backingRate(region);
+  const subtotal = Math.ceil((TIER_POINTS[tier] * micros) / 1_000_000);
+  return [subtotal, halfUpTax(subtotal, TAX_BPS[region])];
+}
 const billing = (biz) => `/api/${biz}/studio/billing`;
 
 /** The funder's owner, checked to be a member of the funder business. */
@@ -386,7 +402,7 @@ async function checkInvoices() {
 async function buyReceiptStarter(region, { force }) {
   const { biz, currency } = FUNDERS[region];
   const owner = await funderOwner(region);
-  const [subtotal, tax] = AT_COST[region].starter;
+  const [subtotal, tax] = await atCost(region, "starter");
   const before = await balanceOf(owner, biz);
   const existing = receiptPackages(before);
   if (existing.length > 0 && !force) {
@@ -413,36 +429,41 @@ async function buyReceiptStarter(region, { force }) {
     `${region} start receipt purchase`,
   );
   const sessionId = /\/checkout\/([^/?#]+)/.exec(started.checkoutUrl ?? "")?.[1];
+  // AU pays through the simulated checkout page. ID is a demo with no real money (F104): the
+  // purchase comes back paid at once, with no checkout URL.
+  const paidAtOnce = started.status === "paid";
   if (
     !expect(
-      started.status === "awaiting_payment" &&
-        sessionId &&
+      (paidAtOnce || (started.status === "awaiting_payment" && sessionId)) &&
         started.purchase.programme === "receipts" &&
         started.purchase.currency === currency &&
         started.purchase.subtotalMinor === subtotal &&
         started.purchase.taxMinor === tax &&
         started.purchase.totalMinor === subtotal + tax,
-      `${region}: the receipt purchase returns a checkout for the at-cost total`,
-      `purchase ${started.purchaseId}, ${started.purchase?.subtotalMinor} + ${started.purchase?.taxMinor} = ${started.purchase?.totalMinor} ${started.purchase?.currency}, programme ${started.purchase?.programme}`,
+      `${region}: the receipt purchase is for the at-cost total`,
+      `purchase ${started.purchaseId}, ${started.status}, ${started.purchase?.subtotalMinor} + ${started.purchase?.taxMinor} = ${started.purchase?.totalMinor} ${started.purchase?.currency}, programme ${started.purchase?.programme}`,
     )
   )
     return null;
 
   const poll = async () =>
     ok(await call("GET", `${billing(biz)}/purchases/${started.purchaseId}`, owner), "purchase");
-  const submitted = await submitCard(started.checkoutUrl, CARD_OK);
-  const piId = (await sim(`/v1/checkout/sessions/${sessionId}`)).body?.payment_intent ?? null;
-  expect(
-    submitted.status === 303 && (submitted.location ?? "").includes(started.purchaseId),
-    `${region}: 4242 is accepted and returns to Studio`,
-    `HTTP ${submitted.status}`,
-  );
+  let piId = null;
+  if (!paidAtOnce) {
+    const submitted = await submitCard(started.checkoutUrl, CARD_OK);
+    piId = (await sim(`/v1/checkout/sessions/${sessionId}`)).body?.payment_intent ?? null;
+    expect(
+      submitted.status === 303 && (submitted.location ?? "").includes(started.purchaseId),
+      `${region}: 4242 is accepted and returns to Studio`,
+      `HTTP ${submitted.status}`,
+    );
+  }
   const paid = await until(
     async () => {
       const row = await poll();
       return row.status === "paid" ? row : null;
     },
-    120_000,
+    paidAtOnce ? 30_000 : 120_000,
     2_000,
   );
   if (
@@ -456,7 +477,7 @@ async function buyReceiptStarter(region, { force }) {
   expect(
     paid.programme === "receipts" && paid.subtotalMinor === subtotal && paid.points === 1_000,
     `${region}: the paid purchase carries programme receipts and the at-cost amount`,
-    `${paid.subtotalMinor} ex-tax for ${paid.points} points (the ledger's price, ${subtotal} expected)`,
+    `${paid.subtotalMinor} ex-tax for ${paid.points} points (ceil(1,000 x B) = ${subtotal})`,
   );
   const after = await balanceOf(owner, biz);
   const allocation = after.allocations.find((a) => a.allocationId === paid.allocationId);
@@ -473,14 +494,17 @@ async function buyReceiptStarter(region, { force }) {
     `${region}: receipt packages stay out of the balance totals`,
     `${before.totalPoints} -> ${after.totalPoints}`,
   );
-  const intent = piId ? (await sim(`/v1/payment_intents/${piId}`)).body : null;
-  expect(
-    intent?.status === "succeeded" &&
-      intent.amount === subtotal + tax &&
-      intent.currency === currency.toLowerCase(),
-    `${region}: the simulation's PaymentIntent succeeded for the at-cost total`,
-    `${piId} ${intent?.status} ${intent?.amount} ${intent?.currency}`,
-  );
+  if (piId) {
+    const intent = (await sim(`/v1/payment_intents/${piId}`)).body;
+    expect(
+      intent?.status === "succeeded" &&
+        intent.amount === subtotal + tax &&
+        intent.currency === currency.toLowerCase(),
+      `${region}: the simulation's PaymentIntent succeeded for the at-cost total`,
+      `${piId} ${intent?.status} ${intent?.amount} ${intent?.currency}`,
+    );
+  } else
+    note(`${region}: no simulated card payment`, "the purchase was paid at once (demo region)");
   const programme = await ok(await programmeOf(owner, biz), `${region} programme`);
   expect(
     programme.remainingPoints >= 1_000,
@@ -543,7 +567,8 @@ async function phaseA() {
       `${region}: the programme names the partner it funds`,
       short(view.partners),
     );
-    for (const [tier, [subtotal, tax]] of Object.entries(AT_COST[region])) {
+    for (const tier of Object.keys(TIER_POINTS)) {
+      const [subtotal, tax] = await atCost(region, tier);
       const p = view.packages.find((x) => x.tierKey === tier);
       expect(
         p?.pricing === "at_cost" &&
@@ -551,6 +576,7 @@ async function phaseA() {
           p.subtotalMinor === subtotal &&
           p.taxMinor === tax &&
           p.totalMinor === subtotal + tax &&
+          p.taxRateBps === TAX_BPS[region] &&
           p.currency === currency &&
           p.discountBps === 0,
         `${region}: ${tier} is ${subtotal} + tax ${tax} = ${subtotal + tax} ${currency}, at cost`,

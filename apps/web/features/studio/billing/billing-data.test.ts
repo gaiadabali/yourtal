@@ -25,6 +25,33 @@ describe("billing data, live (14.13)", () => {
     });
   });
 
+  it("buys a receipt package with programme receipts", async () => {
+    apiFetch.mockResolvedValue({ ok: false, error: { message: "stop" } });
+    const { purchasePoints } = await liveData();
+    await expect(purchasePoints("b1", "grow", "AUD", "k1", "receipts")).rejects.toThrow();
+    expect(apiFetch).toHaveBeenCalledWith("/api/b1/studio/billing/purchases", expect.anything(), {
+      method: "POST",
+      headers: { "idempotency-key": "k1" },
+      body: { tierKey: "grow", currency: "AUD", programme: "receipts" },
+    });
+  });
+
+  it("reads the receipt programme, and a 404 not_a_receipt_funder is simply no panel", async () => {
+    const view = { partners: [], packages: [] };
+    apiFetch.mockResolvedValueOnce({ ok: true, data: view });
+    const { getReceiptProgramme } = await liveData();
+    await expect(getReceiptProgramme("b1")).resolves.toBe(view);
+    expect(apiFetch).toHaveBeenCalledWith(
+      "/api/b1/studio/billing/receipt-programme",
+      expect.anything(),
+    );
+    apiFetch.mockResolvedValueOnce({
+      ok: false,
+      error: { kind: "http", status: 404, code: "not_a_receipt_funder", message: "no" },
+    });
+    await expect(getReceiptProgramme("b1")).resolves.toBeNull();
+  });
+
   it("reads the packages and the alerts from their own endpoints", async () => {
     apiFetch
       .mockResolvedValueOnce({ ok: true, data: { packages: [{ tierKey: "grow" }] } })

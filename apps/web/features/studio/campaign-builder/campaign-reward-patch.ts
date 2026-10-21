@@ -36,3 +36,18 @@ export function rewardConfigPatchFor(draft: CampaignDraft): RewardConfigPatch | 
     dailyCapPoints: draft.budget.dailyCapPoints,
   };
 }
+
+/**
+ * 2.10.b (F127): the text for a refused reward save. A receipt package pays
+ * receipt rewards only (`allocation_not_campaign_funding`), which the server
+ * words with an allocation id; the author gets the catalogue copy instead.
+ * Every other refusal keeps the server's own message.
+ */
+export function rewardErrorText(
+  failure: { message: string; code?: string },
+  t: (key: "campaignBuilder.reward.allocationReceiptPackage") => string,
+): string {
+  return failure.code === "allocation_not_campaign_funding"
+    ? t("campaignBuilder.reward.allocationReceiptPackage")
+    : failure.message;
+}

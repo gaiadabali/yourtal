@@ -13,6 +13,7 @@ import {
   draftBudgetIssue,
   oneCompletionPoints,
   rewardConfigPatchFor,
+  rewardErrorText,
 } from "./campaign-reward-patch";
 
 export interface CampaignEditorBudgetProps {
@@ -75,7 +76,7 @@ export function CampaignEditorBudget({
     setSaveState({ status: "saving" });
     const result = await setRewardConfigLive(draft.businessId, draft.id, merchantName, patch);
     if (!result.ok) {
-      setSaveState({ status: "error", message: result.message });
+      setSaveState({ status: "error", message: rewardErrorText(result, t) });
       return;
     }
     // Keep the author's unsaved edits on other tabs; take the saved budget back.

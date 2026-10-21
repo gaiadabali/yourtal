@@ -22,7 +22,7 @@ import {
  * which fields do not round-trip yet).
  */
 export type CampaignBuilderActionResult<T> =
-  { ok: true; value: T } | { ok: false; message: string };
+  { ok: true; value: T } | { ok: false; message: string; code?: string };
 
 /** `POST /api/:tenantId/studio/campaigns` (7.3.a) with a safe, always-valid starting point — see `newCampaignDraftDefaults`'s own doc comment for why. */
 export async function createCampaignDraftLive(
@@ -100,7 +100,7 @@ export interface RewardConfigPatch {
  * `PUT /api/:tenantId/studio/campaigns/:campaignId/reward` (7.3.c) — a full
  * replacement, safe to repeat. Every refusal (`reward_exceeds_ceiling`, the
  * 40% bonus ratio, `allocation_not_owned`, `allocation_not_partner_funded`)
- * comes back as this same `ok:false` shape with the server's own message —
+ * comes back as this same `ok:false` shape with the server's own message and `code` —
  * shown inline in `campaign-editor-reward.tsx`, never silently swallowed.
  * On success, the server's own priced `rewardValueMinor`/`currency`
  * replaces the "ratio pending" state (7.3.h).
@@ -116,7 +116,12 @@ export async function setRewardConfigLive(
     apiRewardConfigResultSchema,
     { method: "PUT", body: patch },
   );
-  if (!result.ok) return { ok: false, message: result.error.message };
+  if (!result.ok) {
+    const code = result.error.kind === "http" ? result.error.code : undefined;
+    return code === undefined
+      ? { ok: false, message: result.error.message }
+      : { ok: false, message: result.error.message, code };
+  }
   return {
     ok: true,
     value: apiRewardResultToWebDraft(

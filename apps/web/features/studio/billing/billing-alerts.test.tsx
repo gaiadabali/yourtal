@@ -72,4 +72,35 @@ describe("BillingAlertsPanel (14.13.b)", () => {
     expect(screen.getByText("Peringatan anggaran")).toBeInTheDocument();
     expect(screen.getByText("Paket 10.000 poin: 80% terpakai")).toBeInTheDocument();
   });
+
+  it("labels a receipt package's alert and uses receipt wording", () => {
+    render(
+      <BillingAlertsPanel
+        alerts={[alert({ programme: "receipts", thresholdPct: 50 })]}
+        locale="en-AU"
+      />,
+    );
+    expect(screen.getByText("Receipt package")).toBeInTheDocument();
+    expect(screen.getByText("Receipt package of 10,000 points: 50% used")).toBeInTheDocument();
+    expect(screen.queryByText(/campaigns funded from it/)).not.toBeInTheDocument();
+  });
+
+  it("says receipt points pause when a receipt package is fully used", () => {
+    render(
+      <BillingAlertsPanel
+        alerts={[alert({ programme: "receipts", thresholdPct: 100 })]}
+        locale="en-AU"
+      />,
+    );
+    expect(
+      screen.getByText(
+        "Receipt package of 10,000 points: 100% used — receipt points pause when no other receipt package has room",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("does not label an ordinary package", () => {
+    render(<BillingAlertsPanel alerts={[alert({})]} locale="en-AU" />);
+    expect(screen.queryByText("Receipt package")).not.toBeInTheDocument();
+  });
 });

@@ -14,7 +14,7 @@ import type { CampaignScoringRule } from "@yourtal/contracts/campaign";
 import { useRegion } from "@/features/region/use-region";
 import { setRewardConfigLive } from "./campaign-builder-actions";
 import { assessRewardToDataCost, describeRewardDataCostRatio } from "./campaign-reward-risk";
-import { rewardConfigPatchFor } from "./campaign-reward-patch";
+import { rewardConfigPatchFor, rewardErrorText } from "./campaign-reward-patch";
 import type { CampaignDraft, CampaignDraftFormValues } from "./campaign-draft";
 import { campaignFormErrorText, draftEstimatedDataMb } from "./campaign-draft";
 
@@ -92,7 +92,7 @@ export function CampaignEditorReward({
     // The budget saves with the reward (14.2); see rewardConfigPatchFor.
     const result = await setRewardConfigLive(draft.businessId, draft.id, merchantName, patch);
     if (!result.ok) {
-      setSaveState({ status: "error", message: result.message });
+      setSaveState({ status: "error", message: rewardErrorText(result, t) });
       return;
     }
     // Only the reward comes back from the server; the author's unsaved

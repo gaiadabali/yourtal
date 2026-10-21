@@ -13,6 +13,7 @@ import {
   getBalance,
   getCard,
   getPayouts,
+  getReceiptProgramme,
   getPurchase,
   getStatements,
   listPackages,
@@ -28,6 +29,7 @@ import {
 } from "@/features/studio/billing/billing-payouts-panel";
 import { BillingStatementsPanel } from "@/features/studio/billing/billing-statements-panel";
 import { BillingScreen } from "@/features/studio/billing/billing-screen";
+import { ReceiptProgrammePanel } from "@/features/studio/billing/receipt-programme-panel";
 
 const param = (value: string | string[] | undefined) =>
   typeof value === "string" ? value : undefined;
@@ -69,15 +71,17 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
 
   const { id: businessId, currency } = current.business;
   const purchaseId = param(searchParams.purchase);
-  const [balance, packages, alerts, card, purchase, payouts, statements] = await Promise.all([
-    getBalance(businessId),
-    listPackages(businessId, currency),
-    getAlerts(businessId),
-    getCard(businessId),
-    purchaseId === undefined ? Promise.resolve(null) : getPurchase(businessId, purchaseId),
-    getPayouts(businessId),
-    getStatements(businessId),
-  ]);
+  const [balance, packages, alerts, card, purchase, payouts, statements, receiptProgramme] =
+    await Promise.all([
+      getBalance(businessId),
+      listPackages(businessId, currency),
+      getAlerts(businessId),
+      getCard(businessId),
+      purchaseId === undefined ? Promise.resolve(null) : getPurchase(businessId, purchaseId),
+      getPayouts(businessId),
+      getStatements(businessId),
+      getReceiptProgramme(businessId),
+    ]);
   // Minted once per render, not per submit — see `billing-screen.tsx`'s doc comment.
   const idempotencyKey = crypto.randomUUID();
 
@@ -92,6 +96,9 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
       <div className="flex flex-col gap-6">
         {searchParams.purchased === "1" ? (
           <Notice tone="success">{t("billing.purchased")}</Notice>
+        ) : null}
+        {searchParams.purchased === "receipts" ? (
+          <Notice tone="success">{t("billing.receiptPurchased")}</Notice>
         ) : null}
         <PurchaseReturnNotice
           purchase={purchase}
@@ -112,6 +119,13 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
           balance={balance}
           packages={packages}
           alerts={alerts}
+          canPurchase={canPurchase}
+          idempotencyKey={idempotencyKey}
+          locale={locale}
+        />
+        <ReceiptProgrammePanel
+          businessId={businessId}
+          programme={receiptProgramme}
           canPurchase={canPurchase}
           idempotencyKey={idempotencyKey}
           locale={locale}

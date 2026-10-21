@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { apiDraftToWebDraft } from "./campaign-draft-live-mapping";
 import type { ApiCampaignDraft } from "./campaign-draft-live-response";
 import { createEmptyCampaignDraft } from "./campaign-draft-fixtures";
-import { draftBudgetIssue, rewardConfigPatchFor } from "./campaign-reward-patch";
+import { draftBudgetIssue, rewardConfigPatchFor, rewardErrorText } from "./campaign-reward-patch";
 
 const BUSINESS_ID = "00000000-0000-4000-8000-000000000602";
 
@@ -99,5 +99,23 @@ describe("apiDraftToWebDraft (14.2)", () => {
     expect(draft.budget).toEqual({ totalBudgetPoints: 5_000, dailyCapPoints: 600 });
     expect(draft.allocationId).toBe("alloc-1");
     expect(draft.accuracyBonusPoints).toBe(20);
+  });
+});
+
+describe("rewardErrorText (2.10.b, F127)", () => {
+  const t = () => "That funding is a receipt package.";
+  it("words a receipt package refusal from the catalogue, not the server's id-bearing message", () => {
+    expect(
+      rewardErrorText(
+        { message: "allocation abc is a receipt package", code: "allocation_not_campaign_funding" },
+        t,
+      ),
+    ).toBe("That funding is a receipt package.");
+  });
+  it("keeps the server's message for any other refusal", () => {
+    expect(rewardErrorText({ message: "reward too high", code: "reward_exceeds_ceiling" }, t)).toBe(
+      "reward too high",
+    );
+    expect(rewardErrorText({ message: "network error" }, t)).toBe("network error");
   });
 });

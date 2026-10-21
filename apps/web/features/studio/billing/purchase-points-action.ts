@@ -25,6 +25,8 @@ export async function purchasePointsAction(formData: FormData): Promise<void> {
   const tier = packageTierKeySchema.safeParse(formData.get("tierKey"));
   const currency = formData.get("currency");
   const idempotencyKey = formData.get("idempotencyKey");
+  // 2.10.b (F127): only the receipt panel sets this; the server refuses anyone who is not the funder.
+  const programme = formData.get("programme") === "receipts" ? "receipts" : undefined;
   if (
     typeof businessId !== "string" ||
     !tier.success ||
@@ -37,10 +39,12 @@ export async function purchasePointsAction(formData: FormData): Promise<void> {
   const back = (outcome: string) =>
     `/studio/billing?business=${encodeURIComponent(businessId)}&${outcome}` as const;
   const tierKey = tier.data;
+  // A receipt package and an ordinary one of the same tier are different bodies, so they never share a key.
+  const key = `${idempotencyKey}:${programme === undefined ? "" : "receipts:"}${tierKey}`;
 
   let result: PurchaseResult;
   try {
-    result = await purchasePoints(businessId, tierKey, currency, `${idempotencyKey}:${tierKey}`);
+    result = await purchasePoints(businessId, tierKey, currency, key, programme);
   } catch {
     redirect(back("error=purchase_failed"));
   }
@@ -51,7 +55,7 @@ export async function purchasePointsAction(formData: FormData): Promise<void> {
   redirect(
     back(
       result.status === "paid"
-        ? "purchased=1"
+        ? `purchased=${programme === undefined ? "1" : "receipts"}`
         : `purchase=${encodeURIComponent(result.purchaseId)}`,
     ),
   );

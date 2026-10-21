@@ -50,7 +50,39 @@ describe("purchasePointsAction (14.13)", () => {
         form({ businessId: "b1", tierKey: "grow", currency: "AUD", idempotencyKey: "k1" }),
       ),
     ).rejects.toThrow("REDIRECT /studio/billing?business=b1&purchased=1");
-    expect(purchasePoints).toHaveBeenCalledWith("b1", "grow", "AUD", "k1:grow");
+    expect(purchasePoints).toHaveBeenCalledWith("b1", "grow", "AUD", "k1:grow", undefined);
+  });
+
+  it("buys a receipt package with programme receipts and its own key and return", async () => {
+    vi.mocked(purchasePoints).mockResolvedValue(paid);
+    await expect(
+      purchasePointsAction(
+        form({
+          ...{ businessId: "b1", tierKey: "grow", currency: "AUD", idempotencyKey: "k1" },
+          programme: "receipts",
+        }),
+      ),
+    ).rejects.toThrow("REDIRECT /studio/billing?business=b1&purchased=receipts");
+    expect(purchasePoints).toHaveBeenCalledWith(
+      "b1",
+      "grow",
+      "AUD",
+      "k1:receipts:grow",
+      "receipts",
+    );
+  });
+
+  it("ignores any programme other than receipts", async () => {
+    vi.mocked(purchasePoints).mockResolvedValue(paid);
+    await expect(
+      purchasePointsAction(
+        form({
+          ...{ businessId: "b1", tierKey: "grow", currency: "AUD", idempotencyKey: "k1" },
+          programme: "other",
+        }),
+      ),
+    ).rejects.toThrow("purchased=1");
+    expect(purchasePoints).toHaveBeenCalledWith("b1", "grow", "AUD", "k1:grow", undefined);
   });
 
   it("refuses a points amount in place of a tier", async () => {

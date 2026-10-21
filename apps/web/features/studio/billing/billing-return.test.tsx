@@ -48,6 +48,19 @@ describe("the Billing page after the checkout (5.1.a)", () => {
     expect(screen.getByText(text)).toBeInTheDocument();
   });
 
+  it("says a paid receipt package is ready to earn, not ready for campaigns", () => {
+    render(
+      <PurchaseReturnNotice
+        purchase={{ ...purchase("paid"), programme: "receipts" }}
+        cancelled={false}
+        locale="en-AU"
+      />,
+    );
+    expect(
+      screen.getByText("Receipt package bought. Receipt points are ready to earn."),
+    ).toBeInTheDocument();
+  });
+
   it("speaks Indonesian for an Indonesian business", () => {
     render(
       <PurchaseReturnNotice purchase={purchase("pending")} cancelled={false} locale="id-ID" />,

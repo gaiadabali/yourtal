@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
+import { Badge } from "@yourtal/ui/badge";
 import { EmptyState } from "@yourtal/ui/empty-state";
 import type { BudgetAlert } from "@yourtal/contracts/billing";
 import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
@@ -38,12 +39,19 @@ export function BillingAlertsPanel({ alerts, locale }: BillingAlertsPanelProps) 
                 formatted: number.format(alert.totalPoints),
                 title: alert.campaignTitle ?? t("billing.alertCampaignUntitled"),
               };
-              const key = `billing.alert${alert.kind === "package" ? "Package" : "Campaign"}${stopped ? "Stopped" : ""}`;
+              // 2.10.b (F127): a receipt package's alert uses receipt wording and says so.
+              const receipts = alert.kind === "package" && alert.programme === "receipts";
+              const key = `billing.alert${receipts ? "ReceiptPackage" : alert.kind === "package" ? "Package" : "Campaign"}${stopped ? "Stopped" : ""}`;
               return (
                 <li
                   key={alert.id}
                   className="flex flex-col gap-1 rounded-control border border-border-subtle p-3"
                 >
+                  {receipts ? (
+                    <div>
+                      <Badge variant="secondary">{t("billing.alertReceiptLabel")}</Badge>
+                    </div>
+                  ) : null}
                   <p
                     className={
                       stopped

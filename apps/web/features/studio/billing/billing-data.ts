@@ -7,6 +7,7 @@ import {
   cardPurchaseSchema,
   pointPackagesSchema,
   purchaseResultSchema,
+  receiptProgrammeViewSchema,
   startCardSetupResultSchema,
 } from "@yourtal/contracts/billing";
 import type {
@@ -16,7 +17,9 @@ import type {
   BudgetAlert,
   CardPurchase,
   PointPackage,
+  PurchasePointsRequest,
   PurchaseResult,
+  ReceiptProgrammeView,
   StartCardSetupResult,
 } from "@yourtal/contracts/billing";
 import { payoutLinkSchema, studioPayoutsSchema } from "@yourtal/contracts/billing/payouts";
@@ -26,6 +29,9 @@ import { resolveStudioDataSource } from "../studio-data-source";
 import { toPoints } from "@yourtal/contracts/money";
 import { apiFetch } from "@/lib/api/api-fetch";
 import { mockPackages } from "./billing-mock-packages";
+
+/** 2.10.b (F127): the only programme a purchase can name today. */
+export type PurchaseProgramme = NonNullable<PurchasePointsRequest["programme"]>;
 
 export interface BillingBalance {
   totalPoints: number;
@@ -39,12 +45,15 @@ interface BillingDataSource {
   listPackages: (businessId: string, currency: Currency) => Promise<PointPackage[]>;
   /** 14.13.b: package and campaign budget alerts, newest first. */
   getAlerts: (businessId: string) => Promise<BudgetAlert[]>;
+  /** 2.10.b (F127): the receipt funder's programme view; null for any business that is not a funder. */
+  getReceiptProgramme: (businessId: string) => Promise<ReceiptProgrammeView | null>;
   getBalance: (businessId: string) => Promise<BillingBalance>;
   purchasePoints: (
     businessId: string,
     tierKey: string,
     currency: Currency,
     idempotencyKey: string,
+    programme?: PurchaseProgramme,
   ) => Promise<PurchaseResult>;
   /** 5.1.a: a card purchase's status, for the page the checkout returns to. Null if not this business's. */
   getPurchase: (businessId: string, purchaseId: string) => Promise<CardPurchase | null>;
@@ -81,6 +90,14 @@ const liveDataSource: BillingDataSource = {
     // A failed read hides the list rather than breaking the whole Billing page.
     return result.ok ? result.data.alerts : [];
   },
+  getReceiptProgramme: async (businessId) => {
+    const result = await apiFetch(
+      `/api/${businessId}/studio/billing/receipt-programme`,
+      receiptProgrammeViewSchema,
+    );
+    // 404 `not_a_receipt_funder` is the normal answer for most businesses; any failed read hides the panel rather than breaking Billing.
+    return result.ok ? result.data : null;
+  },
   getBalance: async (businessId) => {
     const result = await apiFetch(
       `/api/${businessId}/studio/billing/balance`,
@@ -93,14 +110,14 @@ const liveDataSource: BillingDataSource = {
       allocations: [...result.data.allocations],
     };
   },
-  purchasePoints: async (businessId, tierKey, currency, idempotencyKey) => {
+  purchasePoints: async (businessId, tierKey, currency, idempotencyKey, programme) => {
     const result = await apiFetch(
       `/api/${businessId}/studio/billing/purchases`,
       purchaseResultSchema,
       {
         method: "POST",
         headers: { "idempotency-key": idempotencyKey },
-        body: { tierKey, currency },
+        body: { tierKey, currency, ...(programme === undefined ? {} : { programme }) },
       },
     );
     if (!result.ok) throw new Error(`Could not buy points: ${result.error.message}`);
@@ -169,6 +186,7 @@ function mockStateFor(businessId: string): MockState {
 const mockDataSource: BillingDataSource = {
   listPackages: (_businessId, currency) => Promise.resolve(mockPackages(currency)),
   getAlerts: () => Promise.resolve([]),
+  getReceiptProgramme: () => Promise.resolve(null),
   getBalance: (businessId) => {
     const state = mockStateFor(businessId);
     return Promise.resolve({
@@ -177,7 +195,7 @@ const mockDataSource: BillingDataSource = {
       allocations: state.allocations,
     });
   },
-  purchasePoints: (businessId, tierKey, currency) => {
+  purchasePoints: (businessId, tierKey, currency, _idempotencyKey, programme) => {
     const state = mockStateFor(businessId);
     const quote = mockPackages(currency).find((candidate) => candidate.tierKey === tierKey);
     if (!quote) return Promise.reject(new Error(`Unknown package: ${tierKey}`));
@@ -190,7 +208,7 @@ const mockDataSource: BillingDataSource = {
       funderType: "partner" as const,
       totalPoints: toPoints(points),
       remainingPoints: toPoints(points),
-      programme: null,
+      programme: programme ?? null,
       createdAt: new Date().toISOString(),
     };
     state.allocations = [...state.allocations, allocation];
@@ -212,7 +230,7 @@ const mockDataSource: BillingDataSource = {
         taxRateBps: quote.taxRateBps,
         currency,
         allocationId: allocation.allocationId,
-        programme: null,
+        programme: programme ?? null,
         createdAt: allocation.createdAt,
         paidAt: allocation.createdAt,
       },
@@ -243,6 +261,10 @@ export function getAlerts(businessId: string): Promise<BudgetAlert[]> {
   return billingDataSource.getAlerts(businessId);
 }
 
+export function getReceiptProgramme(businessId: string): Promise<ReceiptProgrammeView | null> {
+  return billingDataSource.getReceiptProgramme(businessId);
+}
+
 export function getBalance(businessId: string): Promise<BillingBalance> {
   return billingDataSource.getBalance(businessId);
 }
@@ -252,8 +274,9 @@ export function purchasePoints(
   tierKey: string,
   currency: Currency,
   idempotencyKey: string,
+  programme?: PurchaseProgramme,
 ): Promise<PurchaseResult> {
-  return billingDataSource.purchasePoints(businessId, tierKey, currency, idempotencyKey);
+  return billingDataSource.purchasePoints(businessId, tierKey, currency, idempotencyKey, programme);
 }
 
 export function getPurchase(businessId: string, purchaseId: string): Promise<CardPurchase | null> {

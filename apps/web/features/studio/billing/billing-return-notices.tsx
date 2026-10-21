@@ -21,9 +21,21 @@ export function PurchaseReturnNotice({
   if (purchase === null) return null;
   switch (purchase.status) {
     case "paid":
-      return <Notice tone="success">{t("billing.purchased")}</Notice>;
+      return (
+        <Notice tone="success">
+          {t(purchase.programme === "receipts" ? "billing.receiptPurchased" : "billing.purchased")}
+        </Notice>
+      );
     case "needs_review":
-      return <Notice tone="info">{t("billing.returnReview")}</Notice>;
+      return (
+        <Notice tone="info">
+          {t(
+            purchase.programme === "receipts"
+              ? "billing.receiptReturnReview"
+              : "billing.returnReview",
+          )}
+        </Notice>
+      );
     case "refunded":
       return <Notice tone="info">{t("billing.returnRefunded")}</Notice>;
     case "expired":

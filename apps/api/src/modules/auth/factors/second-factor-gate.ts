@@ -101,7 +101,14 @@ export class SecondFactorGate {
     }
 
     await this.store.dropPending(hash);
-    const token = await this.sessions.issue(pending.userId, now, PASSWORD_AND_CODE_AMR);
+    // Only while the app still exists: a reset removing it serialises with this.
+    const token = await this.sessions.issueWhileFactorRemains(
+      pending.userId,
+      now,
+      PASSWORD_AND_CODE_AMR,
+      { kind: "totp" },
+    );
+    if (token === null) return err({ type: "factor_invalid" });
     return ok({ token, userId: pending.userId });
   }
 }

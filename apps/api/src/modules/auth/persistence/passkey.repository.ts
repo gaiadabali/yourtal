@@ -32,8 +32,11 @@ export interface PasskeyRepository {
    * (with that handle) if this is its first. `false`, storing nothing, when
    * the credential id is already registered (to anyone) or the account
    * already has a different handle (a concurrent first registration won).
+   * If the account had no factor when it was stored (decided under the
+   * account lock, see `factor-lock.ts`), its factor window is set to
+   * `windowUntil` in the same transaction.
    */
-  create(passkey: NewPasskey, userHandle: string): Promise<boolean>;
+  create(passkey: NewPasskey, userHandle: string, windowUntil: Date): Promise<boolean>;
   /**
    * Moves the signature counter forward. `false` when another sign-in already
    * moved it as far: a non-zero counter must grow, so two sign-ins racing

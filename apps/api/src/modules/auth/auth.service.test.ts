@@ -90,13 +90,13 @@ const guardianConsents = new DrizzleGuardianConsentRepository(db);
 const sessionService = new SessionService(sessionRepo, CONFIG);
 const throttle = new ThrottleService(redis);
 const devTokenAccess = new DevTokenAccess();
-const sessionIssuer = new SessionIssuer(staffRoles, sessionService);
+const sessionIssuer = new SessionIssuer(staffRoles, sessionService, db);
 const secondFactor = new SecondFactorGate(
   new TotpService(CONFIG, credentials, new InMemoryFactorStore(), throttle),
   sessionIssuer,
   new InMemoryFactorStore(),
   new RecordingFactorNotifier(),
-  new FactorWindow(credentials, new DrizzlePasskeyRepository(db), sessionService),
+  new FactorWindow(credentials, new DrizzlePasskeyRepository(db)),
 );
 // The real simulated driver (1.6.a) against its default in-memory store —
 // fine for every test below except the one that checks `platform.sim_outbox`

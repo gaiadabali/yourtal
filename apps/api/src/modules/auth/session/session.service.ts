@@ -4,6 +4,7 @@ import type { AppConfig } from "../../../config/app-config";
 import { hashOpaqueToken, issueOpaqueToken } from "../crypto/opaque-token";
 import { SESSION_REPOSITORY } from "../persistence/session.repository";
 import type { SessionRepository, StoredSession } from "../persistence/session.repository";
+import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import { parseAmr } from "./amr";
 import type { AuthMethod } from "./amr";
 
@@ -60,19 +61,23 @@ export class SessionService {
     kind: SessionKind,
     amr: readonly AuthMethod[],
     signedInAt: Date = now,
+    tx?: AppDb,
   ): Promise<string> {
     const { token, hash } = issueOpaqueToken();
     const absoluteTtlMs =
       kind === "staff"
         ? this.config.session.staffAbsoluteTtlMs
         : this.config.session.consumerAbsoluteTtlMs;
-    await this.sessions.create({
-      id: hash,
-      userId,
-      absoluteExpiresAt: new Date(now.getTime() + absoluteTtlMs),
-      amr,
-      signedInAt,
-    });
+    await this.sessions.create(
+      {
+        id: hash,
+        userId,
+        absoluteExpiresAt: new Date(now.getTime() + absoluteTtlMs),
+        amr,
+        signedInAt,
+      },
+      tx,
+    );
     return token;
   }
 

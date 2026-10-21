@@ -34,11 +34,6 @@ export type CallerNeed = "session" | "add_factor" | "strong";
 export interface Caller {
   readonly userId: string;
   readonly sessionToken: string;
-  /**
-   * `add_factor` only: the account has no factor yet, so this is its first.
-   * Adding it opens the account's factor window.
-   */
-  readonly firstFactor: boolean;
 }
 
 @Injectable()
@@ -57,7 +52,7 @@ export class SignedInCaller {
     const token = presentedSessionToken(request);
     const session = await this.sessions.validateWithSignIn(token, now);
     if (!session.valid) return err({ type: "session_invalid" });
-    const caller = { userId: session.userId, sessionToken: token, firstFactor: false };
+    const caller = { userId: session.userId, sessionToken: token };
     if (need === "session") return ok(caller);
 
     const steppedUp = await this.store.hasStepUp(hashOpaqueToken(token), session.userId);
@@ -66,11 +61,12 @@ export class SignedInCaller {
 
     const proved = steppedUp || session.amr.includes("hwk") || session.amr.includes("mfa");
     if (need === "strong") return proved ? ok(caller) : err({ type: "step_up_required" });
-    // An account with no factor gets its first one with whatever session it
-    // has (one signed in with a passkey since removed included), and that
-    // opens the factor window.
-    const hasFactor = await this.window.hasFactor(session.userId);
-    if (hasFactor && !proved) return err({ type: "step_up_required" });
-    return ok({ ...caller, firstFactor: !hasFactor });
+    // An account with no factor may get its first one from a recent sign-in;
+    // storing it opens the factor window (decided again under the account
+    // lock when it is stored, see `persistence/factor-lock.ts`).
+    if (!proved && (await this.window.hasFactor(session.userId))) {
+      return err({ type: "step_up_required" });
+    }
+    return ok(caller);
   }
 }

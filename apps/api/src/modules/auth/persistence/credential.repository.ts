@@ -80,28 +80,31 @@ export interface CredentialRepository {
   /**
    * Writes a credential that is already confirmed (an authenticator app after
    * its first code). Returns `false`, changing nothing, when one of this kind
-   * is already verified (switched on).
+   * is already verified (switched on). Like a passkey's `create`, it opens the
+   * factor window (to `windowUntil`) when the account had no factor, decided
+   * under the account lock in the same transaction.
    */
-  putVerified(input: {
-    userId: string;
-    kind: string;
-    identifier: string;
-    secretHash: string;
-    verifiedAt: Date;
-  }): Promise<boolean>;
+  putVerified(
+    input: {
+      userId: string;
+      kind: string;
+      identifier: string;
+      secretHash: string;
+      verifiedAt: Date;
+    },
+    windowUntil: Date,
+  ): Promise<boolean>;
 
   /** Whether any account has a verified credential of this kind (a boot check). */
   anyVerified(kind: string): Promise<boolean>;
 
-  /** Sets (a Date) or closes (null) the account's factor window, on its password row. */
-  setFactorsOpenUntil(userId: string, until: Date | null): Promise<void>;
-
   /**
-   * Removes every passkey (the marker row, which cascades to the keys) and
-   * the authenticator app, and closes the factor window, in one transaction.
-   * Returns how many sign-in methods it removed.
+   * Under the account lock, in one transaction: removes every passkey (the
+   * marker row, which cascades to the keys) and the authenticator app, closes
+   * the factor window, and ends every session. Returns how many sign-in
+   * methods it removed.
    */
-  removeAllFactors(userId: string): Promise<number>;
+  removeAllFactors(userId: string, now: Date): Promise<number>;
 
   /** Returns `false` when there was nothing to delete. */
   deleteByUserAndKind(userId: string, kind: string): Promise<boolean>;

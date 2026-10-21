@@ -60,20 +60,33 @@ export class InMemoryCredentialRepository implements CredentialRepository {
     return Promise.resolve(true);
   }
 
-  putVerified(input: {
-    userId: string;
-    kind: string;
-    identifier: string;
-    secretHash: string;
-    verifiedAt: Date;
-  }): Promise<boolean> {
+  /** Set by `InMemoryPasskeyRepository`, so both fakes agree on "has a factor". */
+  passkeyCount: (userId: string) => number = () => 0;
+
+  hasFactor(userId: string): boolean {
+    const totp = this.rows.get(this.key(userId, TOTP_CREDENTIAL_KIND));
+    return this.passkeyCount(userId) > 0 || (totp !== undefined && totp.verifiedAt !== null);
+  }
+
+  putVerified(
+    input: {
+      userId: string;
+      kind: string;
+      identifier: string;
+      secretHash: string;
+      verifiedAt: Date;
+    },
+    windowUntil: Date,
+  ): Promise<boolean> {
     const row = this.rows.get(this.key(input.userId, input.kind));
     if (row !== undefined && row.verifiedAt !== null) return Promise.resolve(false);
+    const firstFactor = !this.hasFactor(input.userId);
     this.rows.set(this.key(input.userId, input.kind), {
       ...input,
       updatedAt: new Date(),
       factorsOpenUntil: null,
     });
+    if (firstFactor) void this.setFactorsOpenUntil(input.userId, windowUntil);
     return Promise.resolve(true);
   }
 
@@ -91,7 +104,7 @@ export class InMemoryCredentialRepository implements CredentialRepository {
   /** Also drops the in-memory passkeys when a `passkeys` fake is attached (the cascade). */
   onFactorsRemoved: ((userId: string) => void) | null = null;
 
-  async removeAllFactors(userId: string): Promise<number> {
+  async removeAllFactors(userId: string, _now: Date): Promise<number> {
     let removed = 0;
     for (const kind of [PASSKEY_CREDENTIAL_KIND, TOTP_CREDENTIAL_KIND]) {
       if (await this.deleteByUserAndKind(userId, kind)) removed += 1;
@@ -117,6 +130,8 @@ export class InMemoryPasskeyRepository implements PasskeyRepository {
   readonly rows = new Map<string, StoredPasskey>();
 
   constructor(private readonly credentials: InMemoryCredentialRepository) {
+    credentials.passkeyCount = (userId) =>
+      [...this.rows.values()].filter((row) => row.userId === userId).length;
     credentials.onFactorsRemoved = (userId) => {
       for (const [id, row] of this.rows) if (row.userId === userId) this.rows.delete(id);
     };
@@ -140,8 +155,9 @@ export class InMemoryPasskeyRepository implements PasskeyRepository {
     return Promise.resolve([...this.rows.values()].filter((row) => row.userId === userId));
   }
 
-  async create(passkey: NewPasskey, userHandle: string): Promise<boolean> {
+  async create(passkey: NewPasskey, userHandle: string, windowUntil: Date): Promise<boolean> {
     if (this.rows.has(passkey.credentialId)) return false;
+    const firstFactor = !this.credentials.hasFactor(passkey.userId);
     await this.credentials.create({
       userId: passkey.userId,
       kind: PASSKEY_CREDENTIAL_KIND,
@@ -150,6 +166,7 @@ export class InMemoryPasskeyRepository implements PasskeyRepository {
     });
     if ((await this.userHandleOf(passkey.userId)) !== userHandle) return false;
     this.rows.set(passkey.credentialId, { ...passkey, createdAt: new Date(), lastUsedAt: null });
+    if (firstFactor) await this.credentials.setFactorsOpenUntil(passkey.userId, windowUntil);
     return true;
   }
 

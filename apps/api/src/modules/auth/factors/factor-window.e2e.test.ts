@@ -41,6 +41,7 @@ afterAll(async () => {
 
 async function addPasskey(token: string): Promise<SoftAuthenticator> {
   const options = await app.inject({
+    remoteAddress: testIp(),
     method: "POST",
     url: "/api/auth/passkeys/register/options",
     headers: bearer(token),
@@ -49,6 +50,7 @@ async function addPasskey(token: string): Promise<SoftAuthenticator> {
   const device = new SoftAuthenticator(E2E_RP_ID, E2E_ORIGIN);
   const added = await app.inject({
     method: "POST",
+    remoteAddress: testIp(),
     url: "/api/auth/passkeys/register",
     headers: bearer(token),
     payload: {
@@ -86,6 +88,7 @@ async function signInWith(device: SoftAuthenticator): Promise<string> {
 /** Sets up an authenticator app from `token`'s session; returns its seed. */
 async function addApp(token: string): Promise<string> {
   const enrolled = await app.inject({
+    remoteAddress: testIp(),
     method: "POST",
     url: "/api/auth/totp/enrol",
     headers: bearer(token),
@@ -93,6 +96,7 @@ async function addApp(token: string): Promise<string> {
   expect(enrolled.statusCode, enrolled.body).toBe(201);
   const { secret } = enrolled.json<{ secret: string }>();
   const confirmed = await app.inject({
+    remoteAddress: testIp(),
     method: "POST",
     url: "/api/auth/totp/confirm",
     headers: bearer(token),
@@ -121,7 +125,12 @@ async function factorCount(userId: string): Promise<number> {
 }
 
 async function signedIn(token: string): Promise<boolean> {
-  const me = await app.inject({ method: "GET", url: "/api/me", headers: bearer(token) });
+  const me = await app.inject({
+    remoteAddress: testIp(),
+    method: "GET",
+    url: "/api/me",
+    headers: bearer(token),
+  });
   return me.statusCode === 200;
 }
 
@@ -178,6 +187,7 @@ describe("the factor window", () => {
     const session = await accountFor(app, PASSWORD);
     const seed = await addApp(session.token);
     const stepUp = await app.inject({
+      remoteAddress: testIp(),
       method: "POST",
       url: "/api/auth/step-up",
       headers: bearer(session.token),
@@ -202,20 +212,96 @@ describe("the factor window", () => {
     expect(await factorCount(session.userId)).toBe(2);
   });
 
-  it("closes when the last factor goes, and the next first factor opens a new one", async () => {
+  it("stays put when the last factor goes, and the next first factor restarts it", async () => {
     const session = await accountFor(app, PASSWORD);
     const only = await addPasskey(session.token);
     const hwk = await signInWith(only);
+    await closeWindow(session.userId);
+    const closedAt = await windowOf(session.userId);
     const removed = await app.inject({
+      remoteAddress: testIp(),
       method: "DELETE",
       url: `/api/auth/passkeys/${only.credentialId}`,
       headers: bearer(hwk),
     });
     expect(removed.statusCode, removed.body).toBe(200);
-    expect(await windowOf(session.userId)).toBeNull();
+    // Removing a factor never touches the window; an account with none is harmless.
+    expect(await windowOf(session.userId)).toEqual(closedAt);
 
     await addPasskey(hwk);
-    expect(await windowOf(session.userId)).not.toBeNull();
+    const restarted = await windowOf(session.userId);
+    expect((restarted?.getTime() ?? 0) - Date.now()).toBeGreaterThan(71.9 * 3_600_000);
+  });
+
+  it("never leaves factors without an open window when registering and removing race", async () => {
+    for (let round = 0; round < 8; round += 1) {
+      const session = await accountFor(app, PASSWORD);
+      const p1 = await addPasskey(session.token);
+      const hwk = await signInWith(p1);
+      const options = await app.inject({
+        remoteAddress: testIp(),
+        method: "POST",
+        url: "/api/auth/passkeys/register/options",
+        headers: bearer(hwk),
+      });
+      const p2 = new SoftAuthenticator(E2E_RP_ID, E2E_ORIGIN);
+      const response = p2.register(
+        options.json<{ options: PublicKeyCredentialCreationOptionsJSON }>().options,
+      );
+      const [registered, removed] = await Promise.all([
+        app.inject({
+          remoteAddress: testIp(),
+          method: "POST",
+          url: "/api/auth/passkeys/register",
+          headers: bearer(hwk),
+          payload: { response },
+        }),
+        app.inject({
+          remoteAddress: testIp(),
+          method: "DELETE",
+          url: `/api/auth/passkeys/${p1.credentialId}`,
+          headers: bearer(hwk),
+        }),
+      ]);
+      expect(registered.statusCode, registered.body).toBe(201);
+      expect(removed.statusCode, removed.body).toBe(200);
+      expect(await factorCount(session.userId)).toBe(1);
+      const until = await windowOf(session.userId);
+      expect(until, `round ${String(round)}`).not.toBeNull();
+      expect((until?.getTime() ?? 0) > Date.now(), `round ${String(round)}`).toBe(true);
+    }
+  });
+
+  it("refuses a passkey sign-in whose passkey a reset has removed", async () => {
+    const victim = await accountFor(app, PASSWORD);
+    const planted = await addPasskey(victim.token);
+    // A sign-in that passed its check but has not written its session yet is
+    // modelled by answering a fresh challenge after the reset removed the key.
+    const remoteAddress = testIp();
+    const options = await app.inject({
+      method: "POST",
+      url: "/api/auth/passkeys/sign-in/options",
+      remoteAddress,
+    });
+    const ceremony = options.json<{
+      challengeId: string;
+      options: PublicKeyCredentialRequestOptionsJSON;
+    }>();
+    const answer = planted.assert(ceremony.options);
+    const reset = await resetPassword(app, victim);
+    expect(reset.statusCode, reset.body).toBe(201);
+    const late = await app.inject({
+      method: "POST",
+      url: "/api/auth/passkeys/sign-in",
+      remoteAddress,
+      payload: { challengeId: ceremony.challengeId, response: answer },
+    });
+    expect(late.statusCode).toBe(401);
+    const { rows } = await owner.execute<{ n: string }>(
+      sql`SELECT count(*) AS n FROM identity.session
+          WHERE user_id = ${victim.userId} AND revoked_at IS NULL AND 'hwk' = ANY(amr)`,
+    );
+    expect(Number(rows[0]?.n)).toBe(0);
   });
 });
 
@@ -229,6 +315,7 @@ describe("removing a factor ends the account's other sessions", () => {
     expect(await signedIn(session.token)).toBe(true);
 
     const removed = await app.inject({
+      remoteAddress: testIp(),
       method: "DELETE",
       url: `/api/auth/passkeys/${second.credentialId}`,
       headers: bearer(caller),
@@ -243,6 +330,7 @@ describe("removing a factor ends the account's other sessions", () => {
     const session = await accountFor(app, PASSWORD);
     const seed = await addApp(session.token);
     const stepUp = await app.inject({
+      remoteAddress: testIp(),
       method: "POST",
       url: "/api/auth/step-up",
       headers: bearer(session.token),
@@ -252,6 +340,7 @@ describe("removing a factor ends the account's other sessions", () => {
     const first = await addPasskey(session.token);
     const elsewhere = await signInWith(first);
     const off = await app.inject({
+      remoteAddress: testIp(),
       method: "POST",
       url: "/api/auth/totp/disable",
       headers: bearer(session.token),

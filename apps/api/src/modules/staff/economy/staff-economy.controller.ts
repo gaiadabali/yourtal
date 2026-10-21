@@ -511,7 +511,7 @@ export class StaffEconomyController {
     const region = parseRegion(regionParam);
     const principal = await this.principals.resolve(request);
 
-    await assertSettingValue(this.ledger, region, body.key, body.value);
+    await assertSettingValue(this.ledger, region, body.key, body.value, this.proposals);
     const setting = await this.ledger.proposeSetting({
       region,
       key: body.key,
@@ -565,7 +565,7 @@ export class StaffEconomyController {
 
     // Checked against the row that will take effect, not this queue's copy of it.
     const pending = await this.proposals.pendingSettingValue(payload.ledgerRef);
-    await assertSettingValue(this.ledger, region, payload.key, pending?.value);
+    await assertSettingValue(this.ledger, region, payload.key, pending?.value, this.proposals);
     const setting = await this.ledger.approveSetting({
       id: payload.ledgerRef,
       approvedBy: principal.id,

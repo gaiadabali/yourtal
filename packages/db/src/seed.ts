@@ -10,6 +10,7 @@ import { seedStore } from "./seed/store";
 import { seedWatch } from "./seed/watch";
 import { backfillDemoTags } from "./seed/demo-tags";
 import { ensureDemoInvoiceIssuer } from "./seed/demo-invoice-issuer";
+import { ensureDemoReceiptFunders } from "./seed/demo-receipt-funders";
 
 /**
  * Seeds the local database from the same mock generators Phase U renders.
@@ -144,6 +145,8 @@ async function main(): Promise<void> {
   try {
     const counts = await seed(pool);
     await ensureDemoInvoiceIssuer(pool, console.log);
+    // Whose package pays SnapApp's receipts; production waits for finance to name the business.
+    await ensureDemoReceiptFunders(pool, console.log);
     console.log(
       `Seeded ${String(counts.businesses)} businesses, ${String(counts.campaigns)} campaigns, ` +
         `${String(counts.listings)} listings, ${String(counts.vouchers)} vouchers, ` +

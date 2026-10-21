@@ -241,8 +241,8 @@ const TIMEZONE_ID = "Asia/Jakarta";
 /** Comfortably 18+ in either region — these are staff/demo fixtures, not an age-policy test. */
 const ADULT_DOB = "1990-01-01";
 
-const SNAP_APP_AU_ID = "00000000-0000-4000-9000-000000000001";
-const SNAP_APP_ID_ID = "00000000-0000-4000-9000-000000000002";
+export const SNAP_APP_AU_ID = "00000000-0000-4000-9000-000000000001";
+export const SNAP_APP_ID_ID = "00000000-0000-4000-9000-000000000002";
 
 const CAMPAIGN_IDS = {
   auOne: "00000000-0000-4000-9000-000000000101",

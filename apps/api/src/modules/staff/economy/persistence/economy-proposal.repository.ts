@@ -39,6 +39,9 @@ export interface EconomyProposalRepository {
   findById(id: string): Promise<EconomyProposalRow | null>;
   /** 14.13: the value a still-pending `platform.region_setting` row will put in force; null once decided or missing. */
   pendingSettingValue(settingId: string): Promise<{ readonly value: unknown } | null>;
+  /** 2.10.b: reads for the receipt funder setting's check (`ReceiptFunderFacts`). */
+  partnerExists(partnerId: string): Promise<boolean>;
+  businessFacts(businessId: string): Promise<{ region: Region; isVerified: boolean } | null>;
   listPending(region: Region, kind?: EconomyProposalKind): Promise<readonly EconomyProposalRow[]>;
   listAll(region: Region, kind: EconomyProposalKind): Promise<readonly EconomyProposalRow[]>;
   /** Approves and stamps the ledger's own result, in one row -- same "decided once" shape as `region_setting`. */
@@ -147,6 +150,24 @@ export class PostgresEconomyProposalRepository implements EconomyProposalReposit
     );
     const row = result.rows[0];
     return row === undefined ? null : { value: row.value };
+  }
+
+  async partnerExists(partnerId: string): Promise<boolean> {
+    const result = await this.pool.query(
+      `SELECT 1 FROM platform.partner_credential WHERE partner_id = $1`,
+      [partnerId],
+    );
+    return result.rowCount === 1;
+  }
+
+  async businessFacts(businessId: string): Promise<{ region: Region; isVerified: boolean } | null> {
+    const result = await this.pool.query<{ region: Region | null; is_verified: boolean }>(
+      `SELECT region, is_verified FROM business.business_accounts WHERE id = $1`,
+      [businessId],
+    );
+    const row = result.rows[0];
+    if (row === undefined || row.region === null) return null;
+    return { region: row.region, isVerified: row.is_verified };
   }
 
   async listPending(

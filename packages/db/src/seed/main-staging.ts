@@ -15,6 +15,7 @@ import { alignDemoCampaignTerms } from "./demo-campaign-terms";
 import { repairDemoListingCopy, repairDemoListingImages } from "./demo-listing-images";
 import { retireLeakedFixtures } from "./retire-leaked-fixtures";
 import { ensureDemoInvoiceIssuer } from "./demo-invoice-issuer";
+import { ensureDemoReceiptFunders } from "./demo-receipt-funders";
 import { SNAP_APP_ASSET_ID, captionSnapAppMedia, repairSnapAppMedia } from "./snap-app-media";
 import type { DemoCampaignFundingResult } from "./demo-campaign-funding";
 import { runDemoMediaVouchers } from "./demo-media-vouchers";
@@ -314,6 +315,8 @@ async function main(): Promise<void> {
     await retireLeakedFixtures(pool, console.log);
     // Demo company details for invoices; production gets none, so issuing waits there.
     await ensureDemoInvoiceIssuer(pool, console.log);
+    // Whose package pays SnapApp's receipts; production waits for finance to name the business.
+    await ensureDemoReceiptFunders(pool, console.log);
     const demoMediaVouchersSeeded = demoMediaVoucherResults.filter(
       (r: DemoMediaVoucherResult) => r.status === "seeded",
     ).length;

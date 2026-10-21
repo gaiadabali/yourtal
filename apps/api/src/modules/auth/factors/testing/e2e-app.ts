@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
+import { ZodValidationPipe } from "nestjs-zod";
 import type { LightMyRequestResponse } from "fastify";
 import { AppModule } from "../../../../app.module";
 import type { AppDb } from "../../../../shared/persistence/drizzle-client";
@@ -28,6 +29,8 @@ export async function bootFactorsApp(): Promise<{
   process.env["WEBAUTHN_ORIGIN"] = E2E_ORIGIN;
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   const app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+  // As main.ts does, so request bodies are checked against their contracts here too.
+  app.useGlobalPipes(new ZodValidationPipe());
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
   return {

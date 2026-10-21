@@ -42,8 +42,11 @@ export class DrizzlePacingStateRepository implements PacingStateRepository {
     const counts = new Map<string, number>();
     for (const id of campaignIds) counts.set(id, (counts.get(id) ?? 0) + 1);
     const today = new Date().toISOString().slice(0, 10);
+    // Sorted, so two concurrent feeds that serve the same campaigns lock their rows in the same order and cannot deadlock.
     const values = sql.join(
-      [...counts].map(([id, n]) => sql`(${id}::uuid, ${today}::date, ${n}::int, now())`),
+      [...counts]
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        .map(([id, n]) => sql`(${id}::uuid, ${today}::date, ${n}::int, now())`),
       sql`, `,
     );
     await this.db.execute(sql`

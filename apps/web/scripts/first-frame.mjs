@@ -4,11 +4,15 @@
 //
 //   YT_VIEWER_EMAIL=... YT_VIEWER_PASSWORD=... \
 //     node apps/web/scripts/first-frame.mjs https://yourtal.gaiada.com [--runs 9] [--path /shorts]
-//       [--auth signed-in|signed-out|both] [--warm] [--trace out.json] [--headed] [--chrome-path <exe>]
+//       [--auth signed-in|signed-out|both] [--warm] [--fresh] [--trace out.json] [--headed] [--chrome-path <exe>]
 //       [--insecure]
 //
 // For a local stand-in server, YT_SESSION_TOKEN (a yt_session value) replaces the sign-in, and
 // --insecure accepts its self-signed certificate.
+//
+// --fresh starts a new browser process for every run (a run then cannot slow the next); FF_CPU overrides the CPU
+// throttle (1 for the unthrottled cost of a main-thread task). The pSent / pEnd columns are when the poster request
+// was sent and its last byte arrived (blank for a cross-origin poster, which the browser does not time).
 //
 // "Poster painted" is the largest-contentful-paint entry for the first Short's poster (13.4.a's
 // definition); "video frame" is the first requestVideoFrameCallback of the first <video>. Each run
@@ -37,7 +41,14 @@ const tracePath = flag("trace", undefined);
 const waitMs = Number(flag("timeout", "20000"));
 
 // lighthouserc.cjs, field for field.
-const PROFILE = { width: 360, height: 640, dpr: 2.625, cpu: 4, rttMs: 170, kbps: 9000 };
+const PROFILE = {
+  width: 360,
+  height: 640,
+  dpr: 2.625,
+  cpu: Number(process.env.FF_CPU ?? 4),
+  rttMs: 170,
+  kbps: 9000,
+};
 const MOBILE_UA =
   "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36";
 
@@ -100,11 +111,13 @@ const median = (xs) => {
 };
 const ms = (x) => (typeof x === "number" ? `${Math.round(x)}`.padStart(6) : "     -");
 
-const browser = await chromium.launch({
-  headless: !has("headed"),
-  ...(has("chrome-path") ? { executablePath: flag("chrome-path") } : { channel: "chrome" }),
-  args: ["--autoplay-policy=no-user-gesture-required"],
-});
+const launch = () =>
+  chromium.launch({
+    headless: !has("headed"),
+    ...(has("chrome-path") ? { executablePath: flag("chrome-path") } : { channel: "chrome" }),
+    args: ["--autoplay-policy=no-user-gesture-required"],
+  });
+let browser = await launch();
 const contextOptions = {
   viewport: { width: PROFILE.width, height: PROFILE.height },
   deviceScaleFactor: PROFILE.dpr,
@@ -204,6 +217,9 @@ async function oneRun(storageState, { trace, warm }) {
       responseEnd: nav.responseEnd,
       dcl: nav.domContentLoadedEventEnd,
       posterUrl: window.__ff.posterUrl,
+      // The poster request's own timing: when it was sent and when its last byte arrived.
+      posterSent: res.find((r) => r.name === window.__ff.posterUrl)?.requestStart ?? null,
+      posterEnd: res.find((r) => r.name === window.__ff.posterUrl)?.responseEnd ?? null,
       items: document.querySelectorAll("video").length,
       jsKb: Math.round(
         res.filter((r) => r.name.endsWith(".js")).reduce((n, r) => n + r.encodedBodySize, 0) / 1024,
@@ -226,16 +242,23 @@ for (const mode of modes) {
   console.log(
     `\n${base}${route}  ${mode}  ${runs} runs${has("warm") ? ", warm" : ", cold context"}  (360x640 @2.625, 4x CPU, 170 ms RTT, 9 Mbps)`,
   );
-  console.log("  run  poster  frame     fcp      fp     dcl  respEnd  jsKB cssKB videos");
+  console.log(
+    "  run  poster  frame     fcp      fp     dcl  respEnd  jsKB cssKB videos  pSent  pEnd",
+  );
   const rows = [];
   for (let i = 0; i < runs; i += 1) {
+    // --fresh: a new browser process per run, so one run's leftovers cannot slow the next.
+    if (has("fresh") && i > 0) {
+      await browser.close();
+      browser = await launch();
+    }
     const r = await oneRun(mode === "signed-in" ? storageState : undefined, {
       trace: i === 0 && tracePath ? tracePath : null,
       warm: has("warm"),
     });
     rows.push(r);
     console.log(
-      `  ${String(i + 1).padStart(3)} ${ms(r.poster)} ${ms(r.frame)} ${ms(r.fcp)} ${ms(r.fp)} ${ms(r.dcl)} ${ms(r.responseEnd)} ${String(r.jsKb).padStart(5)} ${String(r.cssKb).padStart(5)} ${String(r.items).padStart(5)}`,
+      `  ${String(i + 1).padStart(3)} ${ms(r.poster)} ${ms(r.frame)} ${ms(r.fcp)} ${ms(r.fp)} ${ms(r.dcl)} ${ms(r.responseEnd)} ${String(r.jsKb).padStart(5)} ${String(r.cssKb).padStart(5)} ${String(r.items).padStart(5)} ${ms(r.posterSent)} ${ms(r.posterEnd)}`,
     );
   }
   const col = (k) => rows.map((r) => r[k]);

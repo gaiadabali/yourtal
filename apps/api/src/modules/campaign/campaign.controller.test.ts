@@ -139,6 +139,9 @@ class LimitRecordingRepository implements CampaignRepository {
   rewardConfigFor(): ReturnType<CampaignRepository["rewardConfigFor"]> {
     return Promise.resolve(null);
   }
+  rewardConfigsFor(): ReturnType<CampaignRepository["rewardConfigsFor"]> {
+    return Promise.resolve(new Map());
+  }
   targetDistrictsFor(): ReturnType<CampaignRepository["targetDistrictsFor"]> {
     return Promise.resolve(new Map());
   }

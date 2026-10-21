@@ -79,7 +79,7 @@ async function finish(
     boost !== undefined && surface === "home" && effective.sort === "for_you" && !teen
       ? await fillBoostSlots(items, boost)
       : items;
-  for (const item of served) await pacing.recordServe(item.campaignId);
+  await pacing.recordServes(served.map((item) => item.campaignId));
   return { surface, items: served, facets: feedFacets(ranked, effective) };
 }
 
@@ -146,13 +146,8 @@ export async function getFeed(
       ? []
       : await fetchFundedCampaigns(campaigns, ledger, suspendedBusinesses, region);
 
-  const canServeMap = new Map(
-    await Promise.all(
-      candidates.map(async (candidate): Promise<[string, boolean]> => [
-        candidate.campaign.id,
-        await pacing.canServe(candidate.campaign.id),
-      ]),
-    ),
+  const canServeMap = await pacing.canServeMany(
+    candidates.map((candidate) => candidate.campaign.id),
   );
 
   const channelMap = await channels.channelsFor(

@@ -34,18 +34,18 @@ export async function fetchFundedCampaigns(
   );
   const regionCandidates = inRegion.filter((campaign) => !suspendedIds.has(campaign.businessId));
 
-  const rewardConfigs = await Promise.all(
-    regionCandidates.map((campaign) => campaigns.rewardConfigFor(campaign.id)),
+  const rewardConfigs = await campaigns.rewardConfigsFor(
+    regionCandidates.map((campaign) => campaign.id),
   );
 
   const withConfig = regionCandidates
-    .map((campaign, index) => ({ campaign, rewardConfig: rewardConfigs[index] ?? null }))
+    .map((campaign) => ({ campaign, rewardConfig: rewardConfigs.get(campaign.id) ?? null }))
     .filter(
       (
         entry,
       ): entry is {
         campaign: Campaign;
-        rewardConfig: NonNullable<(typeof rewardConfigs)[number]>;
+        rewardConfig: NonNullable<ReturnType<typeof rewardConfigs.get>>;
       } => entry.rewardConfig !== null,
     );
 

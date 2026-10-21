@@ -49,7 +49,7 @@ export class DrizzleCampaignRepository implements CampaignRepository {
       .orderBy(desc(campaigns.publishedAt))
       .limit(limit);
 
-    const assembled = await Promise.all(rows.map((row) => this.assemble(row)));
+    const assembled = await this.assembleMany(rows);
     // A campaign that fails to parse is DROPPED from a list rather than
     // failing the whole request. One malformed row must not blank the Earn
     // board for everybody — but it is never silently repaired either: the
@@ -79,7 +79,7 @@ export class DrizzleCampaignRepository implements CampaignRepository {
       .orderBy(desc(campaigns.publishedAt))
       .limit(limit);
 
-    const assembled = await Promise.all(rows.map((row) => this.assemble(row)));
+    const assembled = await this.assembleMany(rows);
     return assembled.filter((campaign): campaign is Campaign => campaign !== null);
   }
 
@@ -91,7 +91,7 @@ export class DrizzleCampaignRepository implements CampaignRepository {
       .limit(1);
 
     const row = rows[0];
-    return row === undefined ? null : this.assemble(row);
+    return row === undefined ? null : ((await this.assembleMany([row]))[0] ?? null);
   }
 
   async currentTermsVersion(campaignId: string): Promise<number | null> {
@@ -172,6 +172,42 @@ export class DrizzleCampaignRepository implements CampaignRepository {
     };
   }
 
+  /** 14.6.a: `rewardConfigFor` for many campaigns in one query (the feed asked once per candidate). */
+  async rewardConfigsFor(
+    campaignIds: readonly string[],
+  ): Promise<ReadonlyMap<string, CampaignRewardConfigRow>> {
+    if (campaignIds.length === 0) return new Map();
+    const result = await this.db.execute<{
+      campaign_id: string;
+      allocation_id: string;
+      funder_type: string;
+      max_points_for_campaign: string;
+      reward_points_per_completion: string;
+      accuracy_bonus_points: string;
+    }>(sql`
+      SELECT campaign_id, allocation_id, funder_type, max_points_for_campaign,
+             reward_points_per_completion, accuracy_bonus_points
+        FROM campaign.reward_config
+       WHERE campaign_id IN (${sql.join(
+         campaignIds.map((id) => sql`${id}`),
+         sql`, `,
+       )})
+    `);
+    return new Map(
+      result.rows.map((row) => [
+        row.campaign_id,
+        {
+          campaignId: row.campaign_id,
+          allocationId: row.allocation_id,
+          funderType: row.funder_type as CampaignRewardConfigRow["funderType"],
+          maxPointsForCampaign: Number(row.max_points_for_campaign),
+          rewardPointsPerCompletion: Number(row.reward_points_per_completion),
+          accuracyBonusPoints: Number(row.accuracy_bonus_points),
+        },
+      ]),
+    );
+  }
+
   async targetDistrictsFor(
     campaignIds: readonly string[],
   ): Promise<ReadonlyMap<string, readonly string[]>> {
@@ -192,20 +228,40 @@ export class DrizzleCampaignRepository implements CampaignRepository {
    * nothing ever read a campaign back. `safeParse` here means the API cannot
    * serve a shape the contract forbids.
    */
-  private async assemble(row: typeof campaigns.$inferSelect): Promise<Campaign | null> {
-    const [chapters, videoSource] = await Promise.all([
+  private async assembleMany(
+    rows: readonly (typeof campaigns.$inferSelect)[],
+  ): Promise<(Campaign | null)[]> {
+    if (rows.length === 0) return [];
+    // 14.6.a: two queries for the whole list, not two per campaign.
+    const ids = rows.map((row) => row.id);
+    const [chapterRows, videoSourceRows] = await Promise.all([
       this.db
         .select()
         .from(campaignChapters)
-        .where(eq(campaignChapters.campaignId, row.id))
+        .where(inArray(campaignChapters.campaignId, ids))
         .orderBy(asc(campaignChapters.ordinal)),
       this.db
         .select()
         .from(campaignVideoSources)
-        .where(eq(campaignVideoSources.campaignId, row.id))
-        .limit(1),
+        .where(inArray(campaignVideoSources.campaignId, ids)),
     ]);
+    const chaptersBy = new Map<string, (typeof chapterRows)[number][]>();
+    for (const chapter of chapterRows) {
+      const list = chaptersBy.get(chapter.campaignId);
+      if (list === undefined) chaptersBy.set(chapter.campaignId, [chapter]);
+      else list.push(chapter);
+    }
+    const videoSourceBy = new Map(videoSourceRows.map((source) => [source.campaignId, source]));
+    return rows.map((row) =>
+      this.assemble(row, chaptersBy.get(row.id) ?? [], videoSourceBy.get(row.id)),
+    );
+  }
 
+  private assemble(
+    row: typeof campaigns.$inferSelect,
+    chapters: readonly (typeof campaignChapters.$inferSelect)[],
+    videoSource: typeof campaignVideoSources.$inferSelect | undefined,
+  ): Campaign | null {
     const parsed = campaignSchema.safeParse({
       id: row.id,
       kind: row.kind,
@@ -251,9 +307,9 @@ export class DrizzleCampaignRepository implements CampaignRepository {
         rewardWeight: Number(chapter.rewardWeight),
       })),
       videoSource:
-        videoSource[0] === undefined
+        videoSource === undefined
           ? undefined
-          : { kind: videoSource[0].kind, manifestUrl: videoSource[0].manifestUrl },
+          : { kind: videoSource.kind, manifestUrl: videoSource.manifestUrl },
     });
 
     return parsed.success ? parsed.data : null;

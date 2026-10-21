@@ -85,6 +85,10 @@ export interface CampaignRepository {
    * failing outright.
    */
   rewardConfigFor(campaignId: string): Promise<CampaignRewardConfigRow | null>;
+  /** 14.6.a: `rewardConfigFor` for many campaigns in one read. A campaign with none is absent from the map. */
+  rewardConfigsFor(
+    campaignIds: readonly string[],
+  ): Promise<ReadonlyMap<string, CampaignRewardConfigRow>>;
   /**
    * 14.2: the districts each campaign targets (empty: every district), for
    * the feed's district filter. Never part of the viewer-facing `Campaign`.

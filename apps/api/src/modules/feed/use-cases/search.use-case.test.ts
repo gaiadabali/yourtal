@@ -71,6 +71,22 @@ function run(
         accuracyBonusPoints: 0,
       }),
 
+    rewardConfigsFor: (ids: readonly string[]) =>
+      Promise.resolve(
+        new Map(
+          ids.map((id) => [
+            id,
+            {
+              campaignId: id,
+              allocationId: id,
+              funderType: "partner",
+              maxPointsForCampaign: 100_000,
+              rewardPointsPerCompletion: 100,
+              accuracyBonusPoints: 0,
+            },
+          ]),
+        ),
+      ),
     targetDistrictsFor: (ids: readonly string[]) =>
       Promise.resolve(new Map(ids.map((id) => [id, byId.get(id)?.districts ?? []]))),
   } as unknown as CampaignRepository;

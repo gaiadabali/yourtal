@@ -19,7 +19,14 @@ export const devInboxEntrySchema = z.object({
   createdAt: z.iso.datetime(),
 });
 
+/**
+ * 5.13.b: `access` says which entries the caller was given (see
+ * `dev-inbox-visibility.ts`), and `viewerEmail` whose they are, so the page
+ * can say so. `viewerEmail` is null in local dev, where no session is read.
+ */
 export const devInboxResponseSchema = z.object({
+  access: z.enum(["open", "staff", "own"]),
+  viewerEmail: z.string().nullable(),
   entries: z.array(devInboxEntrySchema),
 });
 

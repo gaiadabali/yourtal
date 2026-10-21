@@ -14,6 +14,7 @@ import { createLedgerClient } from "../../shared/ledger-client/create-ledger-cli
 import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
+import { IdentityModule } from "../identity/identity.module";
 import { DevInboxController } from "./dev-inbox.controller";
 import { DevClockController } from "./dev-clock.controller";
 import { DemoResetController } from "./demo-reset.controller";
@@ -41,6 +42,8 @@ class DevClockQueueShutdown implements OnApplicationShutdown {
  * now" is the one place `apps/api` itself sends a job, everywhere else that
  * is `apps/worker`'s job. */
 @Module({
+  // 5.13.b: `DevInboxController` reads the caller's staff roles and sign-in email.
+  imports: [IdentityModule],
   controllers: [DevInboxController, DevClockController, DemoResetController],
   providers: [
     {

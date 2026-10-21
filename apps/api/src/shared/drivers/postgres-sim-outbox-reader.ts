@@ -3,6 +3,9 @@ import type { SimOutboxRecord } from "@yourtal/drivers/sim-outbox";
 
 export const SIM_OUTBOX_READER = Symbol("SIM_OUTBOX_READER");
 
+const COLUMNS = `id, boundary, region, recipient, category, subject, body, metadata,
+       idempotency_key, created_at`;
+
 /**
  * The read half of `platform.sim_outbox`, 1.6.b. `SimOutboxStore` (the write
  * half every boundary driver shares) deliberately has no read method of its
@@ -20,15 +23,24 @@ export const SIM_OUTBOX_READER = Symbol("SIM_OUTBOX_READER");
 export class PostgresSimOutboxReader {
   constructor(private readonly pool: Pool) {}
 
-  async listRecent(limit = 50): Promise<SimOutboxRecord[]> {
-    const { rows } = await this.pool.query<StoredRow>(
-      `SELECT id, boundary, region, recipient, category, subject, body, metadata,
-              idempotency_key, created_at
-         FROM platform.sim_outbox
-        ORDER BY created_at DESC
-        LIMIT $1`,
-      [limit],
-    );
+  /**
+   * `recipient` (5.13.b) narrows the read to one address, case-insensitively,
+   * so a viewer's own mail is not pushed out of the newest `limit` by
+   * everyone else's. `dev-inbox-visibility.ts` still filters what comes back.
+   */
+  async listRecent(limit = 50, recipient?: string): Promise<SimOutboxRecord[]> {
+    const { rows } =
+      recipient === undefined
+        ? await this.pool.query<StoredRow>(
+            `SELECT ${COLUMNS} FROM platform.sim_outbox ORDER BY created_at DESC LIMIT $1`,
+            [limit],
+          )
+        : await this.pool.query<StoredRow>(
+            `SELECT ${COLUMNS} FROM platform.sim_outbox
+              WHERE lower(btrim(recipient)) = lower(btrim($2))
+              ORDER BY created_at DESC LIMIT $1`,
+            [limit, recipient],
+          );
     return rows.map(toRecord);
   }
 }

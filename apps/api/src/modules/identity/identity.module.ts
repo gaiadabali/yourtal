@@ -104,6 +104,8 @@ export { IDENTITY_DB };
     USER_PROFILE_REPOSITORY,
     BUSINESS_MEMBERSHIP_READER,
     STAFF_ROLE_READER,
+    // 5.13.b: `/api/dev/inbox` shows a non-staff viewer only mail sent to this address.
+    ACCOUNT_EMAIL_READER,
     GUARDIAN_CONSENT_REPOSITORY,
   ],
 })

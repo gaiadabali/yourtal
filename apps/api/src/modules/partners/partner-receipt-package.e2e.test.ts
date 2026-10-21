@@ -3,6 +3,7 @@ import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
 import { sql } from "drizzle-orm";
+import { ZodValidationPipe } from "nestjs-zod";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { toPoints } from "@yourtal/contracts/money";
 import { AppModule } from "../../app.module";
@@ -34,6 +35,8 @@ beforeAll(async () => {
   app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter(), {
     rawBody: true,
   });
+  // As main.ts does: the test harness does not add it, and the bad-region case needs it.
+  app.useGlobalPipes(new ZodValidationPipe());
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
   ledger = app.get<LedgerInternalClient>(LEDGER_INTERNAL_CLIENT);

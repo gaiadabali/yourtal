@@ -1628,10 +1628,10 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
 
 YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of record is `god/TASKS.md`; each task here names its ID there, and both are ticked together.
 
-- [ ] **14.1 Live email through Resend** (group 1.3) · A · needs: — — 🔄 2026-10-20
+- [x] **14.1 Live email through Resend** (group 1.3) · A · needs: — — 🔄 2026-10-20 — ✅ 2026-10-21 b7e11db7
   - [x] 14.1.a A live driver for Resend in `packages/drivers/src/boundaries/email.ts`
   - [x] 14.1.b Staging: `EMAIL_DRIVER=live` with Free Tax Returns' Resend account (a proof of concept, F103), sending from its verified domain → eaf59c62, allow-list @gaiada.com
-  - [ ] 14.1.c Check: sign-up verification, password reset, team invite and guardian approval emails arrive → group 1.3.c, 2026-10-21: the founder found the guardian, invite and verification emails in Gmail's Spam. Rewording them with links instead of raw tokens, on group/1.3c-email-copy (.claude/worktrees/g-email)
+  - [x] 14.1.c Check: sign-up verification, password reset, team invite and guardian approval emails arrive → group 1.3.c, 2026-10-21: the founder found the guardian, invite and verification emails in Gmail's Spam. Rewording them with links instead of raw tokens, on group/1.3c-email-copy (.claude/worktrees/g-email) → done 2026-10-21 on b7e11db7 (group 1.3.c): verify, reset, invite and guardian all arrive with the link-led copy (7195481c); inbox only through the founder's Gmail filter, Spam otherwise (group launch gate 6.9)
   - [x] 14.1.d Staging sends live email only to an allow-list (`EMAIL_LIVE_ALLOWLIST`); others go to the dev inbox (group 1.3.d, F115) → de7b5efb
 - [x] **14.2 Campaign budget, daily cap and districts are saved and enforced** (group 1.6) · A + C · needs: — — ✅ 2026-10-21 00b21ed5
   - [x] 14.2.a Add-only migration, and the campaign API takes the three fields → 4c4d8281

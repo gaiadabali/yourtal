@@ -9,10 +9,16 @@ import { StatusBadge } from "@yourtal/ui/status-badge";
 import { Text } from "@yourtal/ui/text";
 import { Textarea } from "@yourtal/ui/textarea";
 import type { EconomyProposal, SettingsScreen } from "@yourtal/contracts/staff/economy";
+import {
+  identityCheckApplies,
+  POINTS_IDENTITY_CHECK_SETTING_KEY,
+} from "@yourtal/contracts/identity/earning-check";
 import { approveSettingAction, proposeSettingAction } from "./staff-economy-actions";
 
 export interface StaffEconomySettingsScreenProps {
   readonly t: (key: string, values?: Record<string, string | number>) => string;
+  /** `APP_ENV`: production always requires the identity check, whatever its setting says (F126). */
+  readonly appEnv: string;
   readonly region: "AU" | "ID";
   readonly settings: SettingsScreen;
   readonly canPropose: boolean;
@@ -63,6 +69,7 @@ function approveForm(
  */
 export function StaffEconomySettingsScreen({
   t,
+  appEnv,
   region,
   settings,
   canPropose,
@@ -76,6 +83,14 @@ export function StaffEconomySettingsScreen({
     expiry.value !== null &&
     "enabled" in expiry.value &&
     expiry.value.enabled === true;
+  // F126: the state the earning paths act on, not only the stored value.
+  const identityCheck = settings.current.find((s) => s.key === POINTS_IDENTITY_CHECK_SETTING_KEY);
+  const identityCheckState =
+    appEnv === "production"
+      ? "required"
+      : identityCheckApplies(appEnv, identityCheck?.value)
+        ? "on"
+        : "off";
 
   return (
     <div className="flex flex-col gap-6">
@@ -107,6 +122,46 @@ export function StaffEconomySettingsScreen({
             ]}
           />
           <p className="mt-2 text-body-sm text-fg-muted">{t("economy.pointsExpiryHint")}</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle as="h2">{t("economy.identityCheckTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <KeyValue
+            items={[
+              {
+                key: "identity-check",
+                label: t("economy.identityCheckStatus"),
+                value:
+                  identityCheckState === "off" ? (
+                    <StatusBadge status="warning">{t("economy.identityCheckOff")}</StatusBadge>
+                  ) : (
+                    <StatusBadge status="success">
+                      {t(
+                        identityCheckState === "required"
+                          ? "economy.identityCheckRequired"
+                          : "economy.identityCheckOn",
+                      )}
+                    </StatusBadge>
+                  ),
+              },
+              {
+                key: "identity-check-raw",
+                label: t("economy.currentValue"),
+                value: identityCheck === undefined ? "—" : JSON.stringify(identityCheck.value),
+              },
+            ]}
+          />
+          <p className="mt-2 text-body-sm text-fg-muted">
+            {t(
+              identityCheckState === "required"
+                ? "economy.identityCheckHintProduction"
+                : "economy.identityCheckHint",
+            )}
+          </p>
         </CardContent>
       </Card>
 

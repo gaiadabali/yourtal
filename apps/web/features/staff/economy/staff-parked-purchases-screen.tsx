@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@yourtal/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { DataTable } from "@yourtal/ui/data-table";
@@ -35,9 +35,9 @@ function money(row: ParkedPurchase): string {
   return formatMoney(asDisplayIdr(row.totalMinor), row.currency);
 }
 
-function when(iso: string | null): string {
-  return iso === null ? "—" : new Date(iso).toLocaleString();
-}
+// A fixed zone per region: without one the server formats in its own zone and the browser in the
+// visitor's, and React refuses to hydrate the mismatch.
+const TIME_ZONE = { AU: "Australia/Sydney", ID: "Asia/Jakarta" } as const;
 
 /** 5.1.g: card purchases that were charged but not turned into points, and the two-person refund of each. */
 export function StaffParkedPurchasesScreen({
@@ -46,9 +46,19 @@ export function StaffParkedPurchasesScreen({
   currentStaffId,
 }: StaffParkedPurchasesScreenProps) {
   const t = useTranslations("staff");
+  const format = useFormatter();
   const router = useRouter();
   const [flash, setFlash] = useState<Flash>(null);
   const [isPending, startTransition] = useTransition();
+
+  const when = (iso: string | null): string =>
+    iso === null
+      ? "—"
+      : format.dateTime(new Date(iso), {
+          dateStyle: "medium",
+          timeStyle: "short",
+          timeZone: TIME_ZONE[region],
+        });
 
   const waiting = purchases.filter((row) => row.status === "needs_review");
   const refunded = purchases.filter((row) => row.status === "refunded");
@@ -111,7 +121,9 @@ export function StaffParkedPurchasesScreen({
     return (
       <div className="flex flex-col items-start gap-2">
         <Text size="body-sm" tone="muted">
-          {t("parkedPurchases.proposedBy", { staff: proposal.proposedBy })}
+          {t("parkedPurchases.proposedBy", {
+            staff: row.proposedByEmail ?? t("parkedPurchases.staffUnknown"),
+          })}
         </Text>
         {proposal.proposedBy === currentStaffId ? (
           <Text size="body-sm" tone="muted">
@@ -151,7 +163,7 @@ export function StaffParkedPurchasesScreen({
     {
       key: "points",
       header: t("parkedPurchases.columnPoints"),
-      cell: (row: ParkedPurchase) => row.points.toLocaleString(),
+      cell: (row: ParkedPurchase) => format.number(row.points),
       align: "end" as const,
     },
     {
@@ -234,7 +246,7 @@ export function StaffParkedPurchasesScreen({
                             })
                           : t("parkedPurchases.refundedBy", {
                               date: when(row.refundedAt),
-                              staff: row.refundedBy,
+                              staff: row.refundedByEmail ?? t("parkedPurchases.staffUnknown"),
                             })}
                       </Text>
                     </div>

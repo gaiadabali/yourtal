@@ -198,7 +198,10 @@ describe("parked purchases and their refund (5.1.g)", () => {
     expect((await propose(b.cookie, parked.purchaseId)).statusCode).toBe(409);
     expect(
       (await queue(b.cookie)).purchases.find((p) => p.purchaseId === parked.purchaseId),
-    ).toMatchObject({ proposal: { id: proposal.id, proposedBy: a.userId } });
+    ).toMatchObject({
+      proposal: { id: proposal.id, proposedBy: a.userId },
+      proposedByEmail: a.email,
+    });
 
     const before = await refundsAtProcessor();
     expect((await decide(a.cookie, proposal.id, "approve")).statusCode).toBe(403);
@@ -262,7 +265,11 @@ describe("parked purchases and their refund (5.1.g)", () => {
 
     // It leaves the queue's parked list and shows as refunded, by whom and when.
     const after = (await queue(a.cookie)).purchases.find((p) => p.purchaseId === parked.purchaseId);
-    expect(after).toMatchObject({ status: "refunded", refundedBy: b.userId });
+    expect(after).toMatchObject({
+      status: "refunded",
+      refundedBy: b.userId,
+      refundedByEmail: b.email,
+    });
   });
 
   it("finishes an approval after the processor already refunded it under the same key, without refunding twice", async () => {

@@ -43,7 +43,7 @@ describe("disbursementLine (5.2)", () => {
     ],
     [
       row({ status: "failed", failureCode: "account_closed", attempt: 2 }),
-      "Failed (account_closed) (attempt 2)",
+      "Failed: The brand's bank account is closed (attempt 2)",
     ],
     [
       row({ status: "failed", failureCode: "payout_unconfirmed" }),
@@ -53,6 +53,15 @@ describe("disbursementLine (5.2)", () => {
       row({ status: "failed", failureCode: "transfer_declined", attempt: 2 }),
       "Failed: The processor declined the transfer (attempt 2)",
     ],
+    [
+      row({ status: "failed", failureCode: "no_account" }),
+      "Failed: The bank account could not be found",
+    ],
+    [
+      row({ status: "failed", failureCode: "brand_new_code" }),
+      "Failed: The processor gave a reason this console does not know (brand_new_code)",
+    ],
+    [row({ status: "failed", failureCode: null }), "Failed: No reason was recorded"],
   ] as const)("%#", (disbursement, text) => {
     expect(disbursementLine(t, disbursement)).toBe(text);
   });

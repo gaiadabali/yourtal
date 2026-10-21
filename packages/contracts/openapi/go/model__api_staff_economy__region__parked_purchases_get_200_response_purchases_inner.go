@@ -36,7 +36,9 @@ type ApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner struct {
 	PaidAt NullableTime `json:"paidAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 	RefundedAt NullableTime `json:"refundedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 	RefundedBy NullableString `json:"refundedBy"`
+	RefundedByEmail NullableString `json:"refundedByEmail"`
 	Proposal NullableApiStaffEconomyRegionRateProposalsPost201Response `json:"proposal"`
+	ProposedByEmail NullableString `json:"proposedByEmail"`
 	Refundable bool `json:"refundable"`
 	AdditionalProperties map[string]interface{}
 }
@@ -47,7 +49,7 @@ type _ApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner ApiStaffE
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner(purchaseId NullableString, businessId NullableString, businessName NullableString, region NullableString, currency string, tierKey NullableString, points int64, subtotalMinor int64, taxMinor int64, totalMinor int64, status string, reason string, paidAt NullableTime, refundedAt NullableTime, refundedBy NullableString, proposal NullableApiStaffEconomyRegionRateProposalsPost201Response, refundable bool) *ApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner {
+func NewApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner(purchaseId NullableString, businessId NullableString, businessName NullableString, region NullableString, currency string, tierKey NullableString, points int64, subtotalMinor int64, taxMinor int64, totalMinor int64, status string, reason string, paidAt NullableTime, refundedAt NullableTime, refundedBy NullableString, refundedByEmail NullableString, proposal NullableApiStaffEconomyRegionRateProposalsPost201Response, proposedByEmail NullableString, refundable bool) *ApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner {
 	this := ApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner{}
 	this.PurchaseId = purchaseId
 	this.BusinessId = businessId
@@ -64,7 +66,9 @@ func NewApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner(purchas
 	this.PaidAt = paidAt
 	this.RefundedAt = refundedAt
 	this.RefundedBy = refundedBy
+	this.RefundedByEmail = refundedByEmail
 	this.Proposal = proposal
+	this.ProposedByEmail = proposedByEmail
 	this.Refundable = refundable
 	return &this
 }
@@ -453,6 +457,32 @@ func (o *ApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner) SetRe
 	o.RefundedBy.Set(&v)
 }
 
+// GetRefundedByEmail returns the RefundedByEmail field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *ApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner) GetRefundedByEmail() string {
+	if o == nil || o.RefundedByEmail.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.RefundedByEmail.Get()
+}
+
+// GetRefundedByEmailOk returns a tuple with the RefundedByEmail field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner) GetRefundedByEmailOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.RefundedByEmail.Get(), o.RefundedByEmail.IsSet()
+}
+
+// SetRefundedByEmail sets field value
+func (o *ApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner) SetRefundedByEmail(v string) {
+	o.RefundedByEmail.Set(&v)
+}
+
 // GetProposal returns the Proposal field value
 // If the value is explicit nil, the zero value for ApiStaffEconomyRegionRateProposalsPost201Response will be returned
 func (o *ApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner) GetProposal() ApiStaffEconomyRegionRateProposalsPost201Response {
@@ -477,6 +507,32 @@ func (o *ApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner) GetPr
 // SetProposal sets field value
 func (o *ApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner) SetProposal(v ApiStaffEconomyRegionRateProposalsPost201Response) {
 	o.Proposal.Set(&v)
+}
+
+// GetProposedByEmail returns the ProposedByEmail field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *ApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner) GetProposedByEmail() string {
+	if o == nil || o.ProposedByEmail.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.ProposedByEmail.Get()
+}
+
+// GetProposedByEmailOk returns a tuple with the ProposedByEmail field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner) GetProposedByEmailOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.ProposedByEmail.Get(), o.ProposedByEmail.IsSet()
+}
+
+// SetProposedByEmail sets field value
+func (o *ApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner) SetProposedByEmail(v string) {
+	o.ProposedByEmail.Set(&v)
 }
 
 // GetRefundable returns the Refundable field value
@@ -528,7 +584,9 @@ func (o ApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner) ToMap(
 	toSerialize["paidAt"] = o.PaidAt.Get()
 	toSerialize["refundedAt"] = o.RefundedAt.Get()
 	toSerialize["refundedBy"] = o.RefundedBy.Get()
+	toSerialize["refundedByEmail"] = o.RefundedByEmail.Get()
 	toSerialize["proposal"] = o.Proposal.Get()
+	toSerialize["proposedByEmail"] = o.ProposedByEmail.Get()
 	toSerialize["refundable"] = o.Refundable
 
 	for key, value := range o.AdditionalProperties {
@@ -558,7 +616,9 @@ func (o *ApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner) Unmar
 		"paidAt",
 		"refundedAt",
 		"refundedBy",
+		"refundedByEmail",
 		"proposal",
+		"proposedByEmail",
 		"refundable",
 	}
 
@@ -604,7 +664,9 @@ func (o *ApiStaffEconomyRegionParkedPurchasesGet200ResponsePurchasesInner) Unmar
 		delete(additionalProperties, "paidAt")
 		delete(additionalProperties, "refundedAt")
 		delete(additionalProperties, "refundedBy")
+		delete(additionalProperties, "refundedByEmail")
 		delete(additionalProperties, "proposal")
+		delete(additionalProperties, "proposedByEmail")
 		delete(additionalProperties, "refundable")
 		o.AdditionalProperties = additionalProperties
 	}

@@ -23436,6 +23436,12 @@
                               "null"
                             ]
                           },
+                          "refundedByEmail": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "proposal": {
                             "anyOf": [
                               {
@@ -23529,6 +23535,12 @@
                               }
                             ]
                           },
+                          "proposedByEmail": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "refundable": {
                             "type": "boolean"
                           }
@@ -23549,7 +23561,9 @@
                           "paidAt",
                           "refundedAt",
                           "refundedBy",
+                          "refundedByEmail",
                           "proposal",
+                          "proposedByEmail",
                           "refundable"
                         ],
                         "additionalProperties": false

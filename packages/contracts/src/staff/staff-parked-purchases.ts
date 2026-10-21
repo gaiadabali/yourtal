@@ -38,8 +38,12 @@ export const parkedPurchaseSchema = z
     refundedAt: z.iso.datetime().nullable(),
     /** The staff member whose approval sent the refund; null if the processor refunded it elsewhere. */
     refundedBy: z.string().nullable(),
+    /** `refundedBy`'s sign-in email, for the screen to name them; null when there is none to show. */
+    refundedByEmail: z.string().nullable(),
     /** The pending refund proposal, if one is waiting for a second staff member. */
     proposal: economyProposalSchema.nullable(),
+    /** The pending proposal's proposer, by sign-in email (the proposal itself carries only their id); null without a proposal or an email. */
+    proposedByEmail: z.string().nullable(),
     /** False when there is nothing to refund through (no payment reference); the row explains why in `reason`. */
     refundable: z.boolean(),
   })

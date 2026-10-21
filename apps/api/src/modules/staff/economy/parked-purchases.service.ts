@@ -11,6 +11,8 @@ import type { Region } from "@yourtal/contracts/region";
 import type { ParkedPurchase, ParkedPurchases } from "@yourtal/contracts/staff/parked-purchases";
 import { PAYMENT_PROVIDERS } from "../../../shared/drivers/payment-providers.module";
 import type { RegionPaymentProviders } from "../../../shared/drivers/payment-providers.module";
+import { STAFF_DIRECTORY } from "../persistence/staff-directory";
+import type { StaffDirectory } from "../persistence/staff-directory";
 import { CARD_PURCHASE_REFUNDS } from "../../billing/persistence/card-purchase-refund.repository";
 import type {
   CardPurchaseRefundRepository,
@@ -49,6 +51,7 @@ export class ParkedPurchasesService {
     @Inject(CARD_PURCHASE_REFUNDS) private readonly refunds: CardPurchaseRefundRepository,
     @Inject(ECONOMY_PROPOSAL_REPOSITORY) private readonly proposals: EconomyProposalRepository,
     @Inject(PAYMENT_PROVIDERS) private readonly providers: RegionPaymentProviders,
+    @Inject(STAFF_DIRECTORY) private readonly directory: StaffDirectory,
   ) {}
 
   async list(region: Region): Promise<ParkedPurchases> {
@@ -57,6 +60,15 @@ export class ParkedPurchasesService {
       this.proposals.listPending(region, "refund_purchase"),
     ]);
     const byPurchase = new Map(pending.map((row) => [purchaseIdOf(row), row]));
+    // The screen names staff by email; one lookup per distinct staff member, not per row.
+    const staffIds = new Set<string>();
+    for (const row of rows) if (row.refundRequestedBy !== null) staffIds.add(row.refundRequestedBy);
+    for (const row of pending) staffIds.add(row.proposedBy);
+    const emails = new Map(
+      await Promise.all(
+        [...staffIds].map(async (id) => [id, await this.directory.emailOf(id)] as const),
+      ),
+    );
     return {
       region,
       purchases: rows.map((row) => {
@@ -65,6 +77,7 @@ export class ParkedPurchasesService {
           region,
           row,
           proposal === undefined ? null : toEconomyProposal(proposal),
+          emails,
         );
       }),
     };
@@ -249,6 +262,7 @@ export class ParkedPurchasesService {
     region: Region,
     row: ParkedPurchaseRow,
     proposal: ParkedPurchase["proposal"],
+    emails: ReadonlyMap<string, string | null>,
   ): ParkedPurchase {
     const refundable =
       row.status === "needs_review" &&
@@ -270,7 +284,10 @@ export class ParkedPurchasesService {
       paidAt: row.paidAt === null ? null : row.paidAt.toISOString(),
       refundedAt: row.refundedAt === null ? null : row.refundedAt.toISOString(),
       refundedBy: row.refundRequestedBy,
+      refundedByEmail:
+        row.refundRequestedBy === null ? null : (emails.get(row.refundRequestedBy) ?? null),
       proposal,
+      proposedByEmail: proposal === null ? null : (emails.get(proposal.proposedBy) ?? null),
       refundable,
     };
   }

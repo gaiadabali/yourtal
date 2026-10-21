@@ -49,7 +49,9 @@ const row = (over: Partial<ParkedPurchase>): ParkedPurchase => ({
   paidAt: "2026-10-20T10:00:00.000Z",
   refundedAt: null,
   refundedBy: null,
+  refundedByEmail: null,
   proposal: null,
+  proposedByEmail: null,
   refundable: true,
   ...over,
 });
@@ -137,8 +139,11 @@ describe("the parked purchases screen (5.1.g)", () => {
   it("offers approve and reject on a proposal someone else made", async () => {
     vi.mocked(decideRefundAction).mockResolvedValue({ ok: true });
     const user = userEvent.setup();
-    show([row({ proposal: proposal(OTHER) })]);
-    expect(screen.getAllByText(`Refund proposed by ${OTHER}`).length).toBeGreaterThan(0);
+    show([row({ proposal: proposal(OTHER), proposedByEmail: "ops.lee@yourtal.test" })]);
+    expect(screen.getAllByText("Refund proposed by ops.lee@yourtal.test").length).toBeGreaterThan(
+      0,
+    );
+    expect(screen.queryByText(new RegExp(OTHER))).not.toBeInTheDocument();
     await user.click(screen.getAllByRole("button", { name: "Approve refund: Acme Pty Ltd" })[0]!);
     expect(decideRefundAction).toHaveBeenCalledWith("AU", "prop-1", "approve");
     expect(
@@ -185,6 +190,7 @@ describe("the parked purchases screen (5.1.g)", () => {
         status: "refunded",
         refundedAt: "2026-10-21T01:00:00.000Z",
         refundedBy: "staff-finance",
+        refundedByEmail: "fin.kim@yourtal.test",
       }),
       row({
         purchaseId: "7d9b8a52-6c9a-4b3e-9d0e-0a2f5d3c1b21",
@@ -195,8 +201,19 @@ describe("the parked purchases screen (5.1.g)", () => {
     ]);
     expect(screen.getByRole("heading", { name: "Refunded" })).toBeInTheDocument();
     expect(screen.getAllByText("Refunded").length).toBeGreaterThan(1);
-    expect(screen.getAllByText(/by staff-finance/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/by fin.kim@yourtal.test/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/at the processor/).length).toBeGreaterThan(0);
+  });
+
+  it("names a proposer with no email as a staff member, never an id", () => {
+    show([row({ proposal: proposal(OTHER) })]);
+    expect(screen.getAllByText("Refund proposed by a staff member").length).toBeGreaterThan(0);
+  });
+
+  it("writes dates in the region's zone and the app's language, so server and browser agree", () => {
+    show([row({})]);
+    // 10:00 UTC is 21:00 in Sydney in October.
+    expect(screen.getAllByText(/^20 Oct 2026, 9:00/).length).toBeGreaterThan(0);
   });
 
   it("speaks Indonesian", () => {

@@ -7,12 +7,27 @@ import type { EconomyProposal } from "@yourtal/contracts/staff/economy";
 
 type Translate = (key: string, values?: Record<string, string | number>) => string;
 
-/** Failures the job will not retry by itself; each has plain wording in the catalogue. */
-const STAFF_FAILURE_CODES: readonly string[] = [
+/** Every failure code the app can show with plain wording: the four the job will not retry itself, then the processor's bank-payout codes. */
+const KNOWN_FAILURE_CODES: readonly string[] = [
   "transfer_unconfirmed",
   "payout_unconfirmed",
   "transfer_declined",
   "payout_declined",
+  "account_closed",
+  "account_frozen",
+  "bank_account_restricted",
+  "bank_ownership_changed",
+  "could_not_process",
+  "debit_not_authorized",
+  "declined",
+  "insufficient_funds",
+  "invalid_account_number",
+  "incorrect_account_holder_name",
+  "invalid_currency",
+  "no_account",
+  "unsupported_card",
+  "payout_failed",
+  "canceled",
 ];
 
 /** One line for an approved payout's disbursement. No row yet means it is still queued. */
@@ -40,12 +55,15 @@ export function disbursementLine(
         }) + attempt
       );
     default: {
-      const code = disbursement.failureCode ?? "unknown";
-      return (
-        (STAFF_FAILURE_CODES.includes(code)
-          ? t("settlement.disbursement.failedWhy", { why: t(`settlement.failureWhy.${code}`) })
-          : t("settlement.disbursement.failed", { code })) + attempt
-      );
+      const code = disbursement.failureCode;
+      // A code this console has no wording for still shows, so staff can look it up at the processor.
+      const why =
+        code === null
+          ? t("settlement.failureWhy.none")
+          : KNOWN_FAILURE_CODES.includes(code)
+            ? t(`settlement.failureWhy.${code}`)
+            : t("settlement.failureWhy.other", { code });
+      return t("settlement.disbursement.failedWhy", { why }) + attempt;
     }
   }
 }

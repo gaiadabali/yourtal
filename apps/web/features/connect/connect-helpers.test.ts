@@ -46,12 +46,14 @@ describe("pickConnectLocale", () => {
 });
 
 describe("isNavigableRedirect", () => {
-  it("accepts http(s) and nothing else", () => {
+  it("accepts the provider's http(s) routes and nothing else", () => {
     expect(isNavigableRedirect("https://yourtal.gaiada.com/oidc/auth/abc")).toBe(true);
     expect(isNavigableRedirect("http://localhost:26301/oidc/auth/abc")).toBe(true);
     expect(isNavigableRedirect("javascript:alert(1)")).toBe(false);
     expect(isNavigableRedirect("data:text/html,x")).toBe(false);
     expect(isNavigableRedirect("/relative")).toBe(false);
+    expect(isNavigableRedirect("https://evil.example/phish")).toBe(false);
+    expect(isNavigableRedirect("https://yourtal.gaiada.com/me")).toBe(false);
   });
 });
 

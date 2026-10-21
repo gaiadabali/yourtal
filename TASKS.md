@@ -1728,7 +1728,7 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
 
 - [ ] **14.20 The ledger contract spec passes against the real ledger** (group 1.28) · A · needs: — — 🔄 g5
   - [x] 14.20.a The holdback cases fund the fake ledger they run on (group 1.28.a) → 7a71d896
-  - [ ] 14.20.b The fake applies the adult daily and monthly earn caps like the Go ledger (4.4.k); 10.7.a checks K6 under the cap (group 1.28.b; after 2.10.b T3b)
+  - [x] 14.20.b The fake applies the adult daily and monthly earn caps like the Go ledger (4.4.k); 10.7.a checks K6 under the cap (group 1.28.b; after 2.10.b T3b) → 692421d7; ledger-live 45 passed, 5 fake-only skipped
   - [x] 14.20.c The package-tiers case gets `pricing: "tier"` from the Go ledger (group 1.28.c) → 7eb85011
   - [ ] 14.20.d CI runs `pnpm test:ledger-live` (group 1.28.d, god-99)
 

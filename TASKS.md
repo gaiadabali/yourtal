@@ -1734,6 +1734,17 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
   - [ ] 14.20.d CI runs `pnpm test:ledger-live` (group 1.28.d, god-99)
 - [ ] **14.21 Watch: the first live boost charge through Stripe on staging** (group 5.12) · A · needs: — — 🔄 g5
   - [ ] 14.21.a A boosted AU campaign's closed days reach A$0.50 and boost-settle charges them through the Stripe driver on the simulation, once, with GST and a demo Tax invoice; the 5.1.f `boost` step passes
+- [ ] **14.22 Fix what the founder walkthrough found** (group 5.13, from 13.6 / group 5.7) · A + B + C · needs: — — 🔄 g5
+  - [ ] 14.22.a Studio landing and Reports crash for finance and marketers: role-restricted reads throw into error.tsx (group 5.13.a)
+  - [ ] 14.22.b Staging's /api/dev/inbox is public, links included; the /dev/inbox page shows 404 (group 5.13.b, the lead)
+  - [ ] 14.22.c The player restarts after a checkpoint, the overlay is clipped at 390 px, already-earned videos show the wrong state, it sometimes never starts (group 5.13.c)
+  - [ ] 14.22.d Sign-up links go to log in, /signup is a 404, no verification state or resend on Me, no unlock notification (group 5.13.d)
+  - [ ] 14.22.e The campaign editor: targeting not saved, reward save and ceiling errors, raw database error on submit, submit without budget, lost edits, placeholder as value (group 5.13.e)
+  - [ ] 14.22.f Boost: low-bid error in minor units; no way to switch a boost off (group 5.13.f)
+  - [ ] 14.22.g The store counter: pairing steps, amount in cents with one-click full redemption, device id shown, ID counter in English, raw order ids, no revoke confirmation (group 5.13.g)
+  - [ ] 14.22.h Studio layout and copy, Reports without metrics, ID billing copy (group 5.13.h)
+  - [ ] 14.22.i Viewer copy and contrast, /review in Bahasa (group 5.13.i)
+  - [ ] 14.22.j Staging's demo data: test content on public pages, "new viewer" logins not new (group 5.13.j)
 
 ## Not in this plan (deferred)
 

@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 12/18 | 53/66 | `████████░░`  80% |
-| **All** | | | **117/124** | **599/613** | `██████████`  98% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 12/19 | 55/70 | `████████░░`  79% |
+| **All** | | | **117/125** | **601/617** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1712,6 +1712,11 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [ ] 14.16.d Teens: every client refuses them except SnapApp by a guardian's invite; the teen invite API (group 3.9.e)
   - [ ] 14.16.e Deletion and ended access reach every app as signed events, with the `connected_apps` data domain (group 3.9.f)
   - [ ] 14.16.f Rate limits, a sign-in log per client, an uptime check and one restore test (group 3.9.h)
+- [ ] **14.19 Phase 5's screens: evidence and fixes** (group 5.11) · B + C · needs: — — 🔄 g5
+  - [x] 14.19.a Screenshots and axe for every Phase 5 screen, both widths, themes and locales: no WCAG A/AA violations, no overflow (2026-10-21)
+  - [x] 14.19.b The auction page crashed for bidders (a client-only helper called on the server) → edd733d6
+  - [ ] 14.19.c The other findings: parked-purchases hydration error, the statements badge, id-ID money formats, staff raw codes and ids, the simulation's id placeholder, axe's review items on the package picker
+  - [ ] 14.19.d Capture again: the auction states and signed-out Shorts with videos
 Group 5.7, the founder's walkthrough, is 13.6 here.
 - [x] **14.17 The Security workflow is green again** (group 1.25) · A · needs: — — ✅ 2026-10-21 14c0259b
   - [x] 14.17.a vitest's vite lifted to 8.3.4 for GHSA-698v-4r3x-3vcv (a workspace override); pnpm audit passes (group 1.25.a) → 14c0259b

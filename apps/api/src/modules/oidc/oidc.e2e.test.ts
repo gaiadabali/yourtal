@@ -144,7 +144,9 @@ async function person(options: { region?: "AU" | "ID"; teen?: boolean; verified?
              'Australia/Sydney', CASE WHEN $4 THEN 'granted' ELSE 'not_required' END)`,
     [userId, region, region === "AU" ? "en-AU" : "id-ID", options.teen === true],
   );
-  const token = await app.get(SessionService, { strict: false }).issue(userId, new Date());
+  const token = await app
+    .get(SessionService, { strict: false })
+    .issue(userId, new Date(), "consumer", ["pwd"]);
   return { userId, token, email } satisfies Person;
 }
 

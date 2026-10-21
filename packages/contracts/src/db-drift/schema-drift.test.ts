@@ -599,7 +599,7 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "5.1.e (F106, 20261020134318_paysim.sql): the payment simulation's Stripe objects as jsonb. They are Stripe's API shapes, read only by packages/paysim; the app sees them through the Stripe driver, never as a contract.",
   "paysim.idempotency": "Same as paysim.object: the simulation's Idempotency-Key records.",
   "paysim.delivery": "Same as paysim.object: the simulation's webhook delivery queue.",
-  // Group 3.9 (20261020210014_oidc_provider.sql): YourTal as an OpenID Connect
+  // Group 3.9 (20261021025420_oidc_provider.sql): YourTal as an OpenID Connect
   // provider. Apps see these only through the protocol (ID tokens, events).
   "oidc.model":
     "Group 3.9: oidc-provider's adapter storage (codes, grants, sessions, interactions) as the library's jsonb. The library's shapes, never a contract; apps see tokens, not rows.",

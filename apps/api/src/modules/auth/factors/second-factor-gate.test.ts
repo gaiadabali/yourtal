@@ -12,7 +12,6 @@ import {
   InMemoryPasskeyRepository,
 } from "./testing/in-memory-repositories";
 import { FactorWindow } from "./factor-window";
-import type { SessionService } from "../session/session.service";
 import { FACTORS_CONFIG, InMemoryThrottle, RecordingSessionIssuer } from "./testing/fakes";
 import { totpCodeAt } from "./totp-code";
 import { hashOpaqueToken as hashOf } from "../crypto/opaque-token";
@@ -30,7 +29,6 @@ let throttle: InMemoryThrottle;
 let notifier: RecordingFactorNotifier;
 let passkeys: InMemoryPasskeyRepository;
 let window: FactorWindow;
-let revoked: string[];
 let gate: SecondFactorGate;
 
 beforeEach(async () => {
@@ -41,13 +39,7 @@ beforeEach(async () => {
   issuer = new RecordingSessionIssuer();
   notifier = new RecordingFactorNotifier();
   passkeys = new InMemoryPasskeyRepository(credentials);
-  revoked = [];
-  window = new FactorWindow(credentials, passkeys, {
-    revokeAllForUser: (userId: string) => {
-      revoked.push(userId);
-      return Promise.resolve();
-    },
-  } as unknown as SessionService);
+  window = new FactorWindow(credentials, passkeys);
   gate = new SecondFactorGate(totp, issuer.asIssuer(), store, notifier, window);
   await credentials.create({
     userId: USER,
@@ -260,7 +252,8 @@ describe("authenticator apps switched off on this deployment", () => {
 describe("a password reset", () => {
   it("tells the person what can still sign them in, then asks for the code", async () => {
     await switchOnTotp();
-    const signIn = await gate.afterPasswordReset(USER, later(60));
+    // After the factor window (72 hours from the first factor), so the app stays.
+    const signIn = await gate.afterPasswordReset(USER, later(73 * 60 * 60));
     expect(signIn.kind).toBe("second_factor");
     expect(notifier.sent).toEqual([{ userId: USER, notice: "reset_summary" }]);
   });
@@ -269,9 +262,31 @@ describe("a password reset", () => {
 describe("the account's factor window and a password reset", () => {
   const HOUR = 60 * 60;
 
-  it("inside the window removes every factor, ends every session, and asks for no code", async () => {
+  it("opens with the first factor, and a later one does not move it", async () => {
     await switchOnTotp();
-    await window.openForFirstFactor(USER, T0);
+    const opened = (await credentials.findByUserAndKind(USER, "password"))?.factorsOpenUntil;
+    expect(opened).toEqual(new Date(T0.getTime() + 72 * HOUR * 1000));
+    await passkeys.create(
+      {
+        credentialId: "later",
+        userId: USER,
+        publicKey: Buffer.from("key"),
+        signCount: 0,
+        transports: [],
+        deviceType: "multiDevice",
+        backedUp: true,
+        name: "Later",
+      },
+      "handle",
+      later(HOUR),
+    );
+    expect((await credentials.findByUserAndKind(USER, "password"))?.factorsOpenUntil).toEqual(
+      opened,
+    );
+  });
+
+  it("inside the window removes every factor and asks for no code", async () => {
+    await switchOnTotp();
     await passkeys.create(
       {
         credentialId: "planted",
@@ -284,13 +299,13 @@ describe("the account's factor window and a password reset", () => {
         name: "Planted",
       },
       "handle",
+      later(60),
     );
     const signIn = await gate.afterPasswordReset(USER, later(71 * HOUR));
     expect(signIn.kind).toBe("session");
     expect(issuer.issued.at(-1)).toEqual({ userId: USER, amr: ["pwd"] });
     expect(await totp.isEnabled(USER)).toBe(false);
     expect(await passkeys.listForUser(USER)).toEqual([]);
-    expect(revoked).toEqual([USER]);
     expect(await window.isOpen(USER, later(71 * HOUR))).toBe(false);
     expect(notifier.sent.map((sent) => sent.notice)).toEqual([
       { kind: "factors_removed_after_reset" },
@@ -300,27 +315,8 @@ describe("the account's factor window and a password reset", () => {
 
   it("after 72 hours leaves the factors and asks for the code", async () => {
     await switchOnTotp();
-    await window.openForFirstFactor(USER, T0);
     const signIn = await gate.afterPasswordReset(USER, later(73 * HOUR));
     expect(signIn.kind).toBe("second_factor");
     expect(await totp.isEnabled(USER)).toBe(true);
-    expect(revoked).toEqual([]);
-  });
-
-  it("does nothing on an account whose window was never opened", async () => {
-    await switchOnTotp();
-    const signIn = await gate.afterPasswordReset(USER, later(HOUR));
-    expect(signIn.kind).toBe("second_factor");
-    expect(await totp.isEnabled(USER)).toBe(true);
-  });
-
-  it("closes when the account has no factor left", async () => {
-    await switchOnTotp();
-    await window.openForFirstFactor(USER, T0);
-    await window.closeIfNoFactors(USER);
-    expect(await window.isOpen(USER, later(60))).toBe(true);
-    expect((await totp.remove(USER)).isOk()).toBe(true);
-    await window.closeIfNoFactors(USER);
-    expect(await window.isOpen(USER, later(60))).toBe(false);
   });
 });

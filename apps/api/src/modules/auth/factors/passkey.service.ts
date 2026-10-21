@@ -23,7 +23,7 @@ import {
 import type { CredentialRepository } from "../persistence/credential.repository";
 import { PASSKEY_REPOSITORY } from "../persistence/passkey.repository";
 import type { PasskeyRepository, StoredPasskey } from "../persistence/passkey.repository";
-import { CEREMONY_TTL_SECONDS } from "./factor-settings";
+import { CEREMONY_TTL_SECONDS, FACTOR_WINDOW_MS } from "./factor-settings";
 import type { AuthFactorSettings } from "./factor-settings";
 import { FACTOR_STORE } from "./factor-store";
 import type { FactorStore } from "./factor-store";
@@ -105,6 +105,7 @@ export class PasskeyService {
     userId: string,
     response: RegistrationResponseJSON,
     name: string | undefined,
+    now: Date,
   ): Outcome<StoredPasskey> {
     const settings = this.config.authFactors;
     if (settings === undefined) return err({ type: "factors_unavailable" });
@@ -133,7 +134,8 @@ export class PasskeyService {
       name: name ?? DEFAULT_NAME,
     };
     // Registered already, to this account or another: refused, never moved.
-    if (!(await this.passkeys.create(passkey, pending.handle))) {
+    const windowUntil = new Date(now.getTime() + FACTOR_WINDOW_MS);
+    if (!(await this.passkeys.create(passkey, pending.handle, windowUntil))) {
       return err({ type: "factor_invalid" });
     }
     const stored = await this.passkeys.findByCredentialId(passkey.credentialId);

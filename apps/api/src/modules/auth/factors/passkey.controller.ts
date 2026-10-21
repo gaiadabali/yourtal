@@ -17,7 +17,6 @@ import { FACTOR_NOTIFIER } from "./factor-notifier";
 import type { FactorNotifications } from "./factor-notifier";
 import { PasskeyService } from "./passkey.service";
 import { passkeySummary } from "./passkey-summary";
-import { FactorWindow } from "./factor-window";
 import { SignedInCaller } from "./signed-in-session";
 import { mapFactorErrorToHttpException } from "./to-http-exception";
 
@@ -37,7 +36,6 @@ export class PasskeyController {
     private readonly issuer: SessionIssuer,
     @Inject(FACTOR_NOTIFIER) private readonly notifier: FactorNotifications,
     private readonly sessions: SessionService,
-    private readonly window: FactorWindow,
   ) {}
 
   @NotValueMoving("Mints a single-use challenge and changes nothing else.")
@@ -65,7 +63,12 @@ export class PasskeyController {
       now,
     );
     if (proved.isErr()) throw mapFactorErrorToHttpException(proved.error);
-    const token = await this.issuer.issue(proved.value, now, PASSKEY_AMR);
+    // Only while the passkey still exists: a reset removing it serialises with this.
+    const token = await this.issuer.issueWhileFactorRemains(proved.value, now, PASSKEY_AMR, {
+      kind: "passkey",
+      credentialId: body.response.id,
+    });
+    if (token === null) throw mapFactorErrorToHttpException({ type: "factor_invalid" });
     return { token, userId: proved.value };
   }
 
@@ -92,11 +95,10 @@ export class PasskeyController {
     const now = new Date();
     const caller = await this.caller.resolve(request, now, "add_factor");
     if (caller.isErr()) throw mapFactorErrorToHttpException(caller.error);
-    const { userId, firstFactor } = caller.value;
+    const { userId } = caller.value;
     const response = body.response as RegistrationResponseJSON;
-    const result = await this.passkeys.register(userId, response, body.name);
+    const result = await this.passkeys.register(userId, response, body.name, now);
     if (result.isErr()) throw mapFactorErrorToHttpException(result.error);
-    if (firstFactor) await this.window.openForFirstFactor(userId, now);
     await this.notifier.notify(userId, { kind: "passkey_added", name: result.value.name });
     return passkeySummary(result.value);
   }
@@ -130,7 +132,6 @@ export class PasskeyController {
     // A session signed in with the removed passkey ends with it; only the
     // caller's stays.
     await this.sessions.revokeOthers(userId, sessionToken, now);
-    await this.window.closeIfNoFactors(userId);
     await this.notifier.notify(userId, { kind: "passkey_removed", name: name ?? "Passkey" });
     return { removed: true };
   }

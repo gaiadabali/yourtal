@@ -40,7 +40,7 @@ async function registered(userId: string): Promise<SoftAuthenticator> {
   const device = new SoftAuthenticator(TEST_RP_ID, TEST_ORIGIN);
   const options = await service.registrationOptions(userId);
   if (options.isErr()) throw new Error(options.error.type);
-  const done = await service.register(userId, device.register(options.value), "Phone");
+  const done = await service.register(userId, device.register(options.value), "Phone", NOW);
   if (done.isErr()) throw new Error(done.error.type);
   return device;
 }
@@ -67,7 +67,7 @@ describe("registering a passkey", () => {
     });
 
     const device = new SoftAuthenticator(TEST_RP_ID, TEST_ORIGIN);
-    const done = await service.register(ANA, device.register(options.value), "Phone");
+    const done = await service.register(ANA, device.register(options.value), "Phone", NOW);
     expect(done.isOk()).toBe(true);
     const [stored] = await passkeys.listForUser(ANA);
     expect(stored).toMatchObject({
@@ -81,11 +81,11 @@ describe("registering a passkey", () => {
     const options = await service.registrationOptions(ANA);
     if (options.isErr()) throw new Error(options.error.type);
     const phishing = new SoftAuthenticator(TEST_RP_ID, "https://yourtal.test.evil.example");
-    const refused = await service.register(ANA, phishing.register(options.value), undefined);
+    const refused = await service.register(ANA, phishing.register(options.value), undefined, NOW);
     expect(refused.isErr() && refused.error.type).toBe("factor_invalid");
 
     const honest = new SoftAuthenticator(TEST_RP_ID, TEST_ORIGIN);
-    const late = await service.register(ANA, honest.register(options.value), undefined);
+    const late = await service.register(ANA, honest.register(options.value), undefined, NOW);
     expect(late.isErr() && late.error.type).toBe("factor_invalid");
     expect(await passkeys.listForUser(ANA)).toHaveLength(0);
   });

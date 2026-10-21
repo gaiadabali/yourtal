@@ -7,6 +7,7 @@ import type {
   RemovePasskeyOutcome,
   StoredPasskey,
 } from "./passkey.repository";
+import { hasAnyFactor, lockAccount, openFactorWindow } from "./factor-lock";
 import { credentials } from "./schema/credential.table";
 import { passkeys } from "./schema/passkey.table";
 
@@ -51,9 +52,11 @@ export class DrizzlePasskeyRepository implements PasskeyRepository {
     return rows.map(toStored);
   }
 
-  async create(passkey: NewPasskey, userHandle: string): Promise<boolean> {
+  async create(passkey: NewPasskey, userHandle: string, windowUntil: Date): Promise<boolean> {
     return this.db
       .transaction(async (tx) => {
+        await lockAccount(tx, passkey.userId, "update");
+        const firstFactor = !(await hasAnyFactor(tx, passkey.userId));
         // The marker row arrives with the first passkey, never before.
         await tx
           .insert(credentials)
@@ -92,6 +95,7 @@ export class DrizzlePasskeyRepository implements PasskeyRepository {
           .returning({ credentialId: passkeys.credentialId });
         // A duplicate credential id must not leave a fresh marker row behind.
         if (inserted.length === 0) throw new NotStored();
+        if (firstFactor) await openFactorWindow(tx, passkey.userId, windowUntil);
         return true;
       })
       .catch((cause: unknown) => {

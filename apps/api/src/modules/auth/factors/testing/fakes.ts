@@ -28,6 +28,15 @@ export class RecordingSessionIssuer {
     return Promise.resolve(`session-${String(this.issued.length)}`);
   }
 
+  /** Factor presence is the repositories' job; the fake records like `issue`. */
+  issueWhileFactorRemains(
+    userId: string,
+    now: Date,
+    amr: readonly AuthMethod[],
+  ): Promise<string | null> {
+    return this.issue(userId, now, amr);
+  }
+
   asIssuer(): SessionIssuer {
     return this as unknown as SessionIssuer;
   }

@@ -1,3 +1,5 @@
+import type { AppDb } from "../../../shared/persistence/drizzle-client";
+
 export const SESSION_REPOSITORY = Symbol("SESSION_REPOSITORY");
 
 export interface StoredSession {
@@ -14,13 +16,16 @@ export interface StoredSession {
 }
 
 export interface SessionRepository {
-  create(input: {
-    id: string;
-    userId: string;
-    absoluteExpiresAt: Date;
-    amr: readonly string[];
-    signedInAt: Date;
-  }): Promise<void>;
+  create(
+    input: {
+      id: string;
+      userId: string;
+      absoluteExpiresAt: Date;
+      amr: readonly string[];
+      signedInAt: Date;
+    },
+    tx?: AppDb,
+  ): Promise<void>;
 
   /**
    * Looked up by the HASH of the presented token — `session.service.ts`

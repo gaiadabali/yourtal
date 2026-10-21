@@ -1,6 +1,8 @@
 import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
+import { hasAnyFactor, lockAccount, openFactorWindow } from "./factor-lock";
 import { credentials } from "./schema/credential.table";
+import { sessions } from "./schema/session.table";
 import {
   PASSKEY_CREDENTIAL_KIND,
   PASSWORD_CREDENTIAL_KIND,
@@ -69,39 +71,44 @@ export class DrizzleCredentialRepository implements CredentialRepository {
     return updated.length > 0;
   }
 
-  async putVerified(input: {
-    userId: string;
-    kind: string;
-    identifier: string;
-    secretHash: string;
-    verifiedAt: Date;
-  }): Promise<boolean> {
-    const written = await this.db
-      .insert(credentials)
-      .values(input)
-      .onConflictDoUpdate({
-        target: [credentials.userId, credentials.kind],
-        set: {
-          secretHash: input.secretHash,
-          verifiedAt: input.verifiedAt,
-          updatedAt: new Date(),
-        },
-        // A verified (switched-on) credential is never replaced from here.
-        setWhere: isNull(credentials.verifiedAt),
-      })
-      .returning({ userId: credentials.userId });
-    return written.length > 0;
-  }
-
-  async setFactorsOpenUntil(userId: string, until: Date | null): Promise<void> {
-    await this.db
-      .update(credentials)
-      .set({ factorsOpenUntil: until })
-      .where(and(eq(credentials.userId, userId), eq(credentials.kind, PASSWORD_CREDENTIAL_KIND)));
-  }
-
-  async removeAllFactors(userId: string): Promise<number> {
+  async putVerified(
+    input: {
+      userId: string;
+      kind: string;
+      identifier: string;
+      secretHash: string;
+      verifiedAt: Date;
+    },
+    windowUntil: Date,
+  ): Promise<boolean> {
     return this.db.transaction(async (tx) => {
+      await lockAccount(tx, input.userId, "update");
+      const firstFactor = !(await hasAnyFactor(tx, input.userId));
+      const written = await tx
+        .insert(credentials)
+        .values(input)
+        .onConflictDoUpdate({
+          target: [credentials.userId, credentials.kind],
+          set: {
+            secretHash: input.secretHash,
+            verifiedAt: input.verifiedAt,
+            updatedAt: new Date(),
+          },
+          // A verified (switched-on) credential is never replaced from here.
+          setWhere: isNull(credentials.verifiedAt),
+        })
+        .returning({ userId: credentials.userId });
+      if (written.length === 0) return false;
+      if (firstFactor) await openFactorWindow(tx, input.userId, windowUntil);
+      return true;
+    });
+  }
+
+  async removeAllFactors(userId: string, now: Date): Promise<number> {
+    return this.db.transaction(async (tx) => {
+      // FOR UPDATE: a passkey or code sign-in holds FOR SHARE while it checks
+      // its factor and writes its session, so none slips in around this.
+      await lockAccount(tx, userId, "update");
       const removed = await tx
         .delete(credentials)
         .where(
@@ -115,6 +122,10 @@ export class DrizzleCredentialRepository implements CredentialRepository {
         .update(credentials)
         .set({ factorsOpenUntil: null })
         .where(and(eq(credentials.userId, userId), eq(credentials.kind, PASSWORD_CREDENTIAL_KIND)));
+      await tx
+        .update(sessions)
+        .set({ revokedAt: now })
+        .where(and(eq(sessions.userId, userId), isNull(sessions.revokedAt)));
       return removed.length;
     });
   }

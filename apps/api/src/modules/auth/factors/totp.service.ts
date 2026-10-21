@@ -12,7 +12,7 @@ import {
 import type { CredentialRepository } from "../persistence/credential.repository";
 import { ThrottleService } from "../throttle/throttle.service";
 import type { ThrottleLimits } from "../throttle/throttle.service";
-import { ENROLMENT_TTL_SECONDS } from "./factor-settings";
+import { ENROLMENT_TTL_SECONDS, FACTOR_WINDOW_MS } from "./factor-settings";
 import { FACTOR_STORE } from "./factor-store";
 import type { FactorStore } from "./factor-store";
 import type { FactorError } from "./factor.errors";
@@ -111,13 +111,16 @@ export class TotpService implements OnApplicationBootstrap {
 
     const checked = await this.check(userId, enrolment.sealedSeed, code, now);
     if (checked.isErr()) return err(checked.error);
-    const written = await this.credentials.putVerified({
-      userId,
-      kind: TOTP_CREDENTIAL_KIND,
-      identifier: userId,
-      secretHash: enrolment.sealedSeed,
-      verifiedAt: now,
-    });
+    const written = await this.credentials.putVerified(
+      {
+        userId,
+        kind: TOTP_CREDENTIAL_KIND,
+        identifier: userId,
+        secretHash: enrolment.sealedSeed,
+        verifiedAt: now,
+      },
+      new Date(now.getTime() + FACTOR_WINDOW_MS),
+    );
     await this.store.dropEnrolment(sessionHash);
     return written ? ok(undefined) : err({ type: "totp_already_enabled" });
   }

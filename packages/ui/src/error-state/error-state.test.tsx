@@ -22,4 +22,11 @@ describe("ErrorState", () => {
     expect(screen.getByText("Check your connection and try again")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
+
+  it("is an h3 unless the page says otherwise", () => {
+    const { rerender } = render(<ErrorState title="Couldn't load rewards" />);
+    expect(screen.getByRole("heading", { level: 3 })).toBeInTheDocument();
+    rerender(<ErrorState title="Couldn't load rewards" headingLevel={2} />);
+    expect(screen.getByRole("heading", { level: 2 })).toBeInTheDocument();
+  });
 });

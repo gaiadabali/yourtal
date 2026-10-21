@@ -1,5 +1,6 @@
 {
   "stagingBanner": "Staging — demo data, payments simulated",
+  "stagingBannerLabel": "Staging notice",
   "notifications": {
     "bellLabel": "Notifications",
     "unreadCount": "{count} unread notifications",

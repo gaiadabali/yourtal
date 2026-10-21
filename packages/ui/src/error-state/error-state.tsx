@@ -9,11 +9,13 @@ export interface ErrorStateProps extends React.HTMLAttributes<HTMLDivElement> {
   description?: string;
   /** Rendered after the description, typically a retry button. */
   retry?: React.ReactNode;
+  /** Under an h1 with nothing between, pass 2: a skipped level fails axe's heading-order. */
+  headingLevel?: 2 | 3 | 4;
 }
 
 /** Like EmptyState, but for a failure: announced immediately via role="alert". */
 export const ErrorState = React.forwardRef<HTMLDivElement, ErrorStateProps>(
-  ({ icon, title, description, retry, className, ...props }, ref) => (
+  ({ icon, title, description, retry, headingLevel = 3, className, ...props }, ref) => (
     <div
       ref={ref}
       role="alert"
@@ -28,7 +30,7 @@ export const ErrorState = React.forwardRef<HTMLDivElement, ErrorStateProps>(
           {icon}
         </div>
       ) : null}
-      <Heading level={3} size="title">
+      <Heading level={headingLevel} size="title">
         {title}
       </Heading>
       {description ? <Text tone="muted">{description}</Text> : null}

@@ -104,9 +104,9 @@ export default async function AuctionsPage(props: PageProps<"/auctions">) {
       ) : null}
 
       {auctions === null ? (
-        <ErrorState title={t("error.title")} description={t("error.body")} />
+        <ErrorState title={t("error.title")} description={t("error.body")} headingLevel={2} />
       ) : auctions.length === 0 ? (
-        <EmptyState title={t("empty.title")} description={t("empty.body")} />
+        <EmptyState title={t("empty.title")} description={t("empty.body")} headingLevel={2} />
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {auctions.map((auction) => (

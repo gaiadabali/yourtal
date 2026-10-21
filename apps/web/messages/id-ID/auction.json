@@ -37,6 +37,7 @@
   },
   "yourListing": "Ini lelang Anda. Anda tidak bisa menawar.",
   "back": "Semua lelang",
+  "bidPanelLabel": "Penawaran",
   "voucherFacts": "Berlaku sampai {date}.",
   "moneyPath": "Tawaran pemenang dibayar ke rekening yayasan sendiri. Anda mendapat voucher; yayasan mendapat dananya.",
   "rules": {

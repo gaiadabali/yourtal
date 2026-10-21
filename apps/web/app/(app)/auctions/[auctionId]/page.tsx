@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { HeartHandshake } from "lucide-react";
-import { formatMoney } from "@yourtal/contracts/money/format";
-import { MoneyAmount } from "@yourtal/ui/money-amount";
+import { MoneyAmount, formatMoneyAmount } from "@yourtal/ui/money-amount";
 import { Notice } from "@yourtal/ui/notice";
 import { AuctionBidForm } from "@/features/auction/auction-bid-form";
 import { BidCard } from "@/features/auction/bid-card";
@@ -72,7 +71,10 @@ export default async function AuctionPage(props: PageProps<"/auctions/[auctionId
           </ul>
         </section>
 
-        <aside className="flex flex-col gap-4 rounded-sheet border border-border-subtle bg-surface p-5 lg:sticky lg:top-20 lg:self-start">
+        <aside
+          aria-label={t("bidPanelLabel")}
+          className="flex flex-col gap-4 rounded-sheet border border-border-subtle bg-surface p-5 lg:sticky lg:top-20 lg:self-start"
+        >
           <div className="flex items-baseline justify-between gap-2">
             <span className="text-label font-sans font-semibold text-fg-muted">
               {auction.currentAmountMinor === null ? t("startsAt") : t("currentBid")}
@@ -96,7 +98,7 @@ export default async function AuctionPage(props: PageProps<"/auctions/[auctionId
               }
             >
               {t(`yourStanding.${viewer.bidStatus}`, {
-                amount: formatMoney(viewer.yourHighestBidMinor, auction.currency),
+                amount: formatMoneyAmount(viewer.yourHighestBidMinor, auction.currency, locale),
               })}
             </Notice>
           ) : null}
@@ -110,7 +112,11 @@ export default async function AuctionPage(props: PageProps<"/auctions/[auctionId
                   auctionId={auction.auctionId}
                   currency={auction.currency}
                   minimumNextBidMinor={auction.minimumNextBidMinor}
-                  minimumLabel={formatMoney(auction.minimumNextBidMinor, auction.currency)}
+                  minimumLabel={formatMoneyAmount(
+                    auction.minimumNextBidMinor,
+                    auction.currency,
+                    locale,
+                  )}
                 />
               )}
             </>

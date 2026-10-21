@@ -37,6 +37,7 @@
   },
   "yourListing": "This is your listing. You can't bid on it.",
   "back": "All auctions",
+  "bidPanelLabel": "Bidding",
   "voucherFacts": "Valid until {date}.",
   "moneyPath": "The winning bid is paid to the charity's own account. You get the voucher; the charity gets the money.",
   "rules": {

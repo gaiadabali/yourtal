@@ -5,6 +5,7 @@
   "wallet": "Wallet",
   "me": "Me",
   "primary": "Primary",
+  "sideRail": "Side navigation",
   "searchLabel": "Search YourTal",
   "searchPlaceholder": "Search brands, videos and rewards",
   "pointsAvailable": "{points} points available",

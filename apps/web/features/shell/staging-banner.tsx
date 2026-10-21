@@ -18,7 +18,10 @@ export function StagingBanner({ lang }: StagingBannerProps) {
   });
   // A landmark, so axe's `region` rule holds on every page it tops.
   return (
-    <aside className="bg-warning text-warning-fg px-4 py-1.5 text-center text-sm font-semibold">
+    <aside
+      aria-label={t("stagingBannerLabel")}
+      className="bg-warning text-warning-fg px-4 py-1.5 text-center text-sm font-semibold"
+    >
       {t("stagingBanner")}
     </aside>
   );

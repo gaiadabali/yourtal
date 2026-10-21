@@ -125,7 +125,8 @@ export function ViewerShell({
       />
       <main
         className={cn(
-          "min-h-dvh pb-[calc(4rem+max(0px,env(safe-area-inset-bottom)))]",
+          // A solid ground: the shell's rail gradient behind it stops a contrast check reading the page's colours.
+          "min-h-dvh bg-canvas pb-[calc(4rem+max(0px,env(safe-area-inset-bottom)))]",
           "lg:pb-0 lg:pl-56",
         )}
       >

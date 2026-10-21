@@ -45,6 +45,7 @@ export function SideNav({ locale, signedOutHrefs, homeHref }: SideNavProps) {
 
   return (
     <aside
+      aria-label={t("sideRail")}
       className={cn(
         "fixed inset-y-0 left-0 z-(--z-nav) hidden w-56 flex-col gap-1 border-r border-border-subtle",
         "bg-surface px-3 pb-6 lg:flex",

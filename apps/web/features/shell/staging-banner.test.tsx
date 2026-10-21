@@ -19,6 +19,14 @@ describe("staging posture", () => {
   it("renders the banner in the document's language", () => {
     render(<StagingBanner lang="id-ID" />);
     expect(screen.getByRole("complementary").textContent).toContain("pembayaran disimulasikan");
+    expect(
+      screen.getByRole("complementary", { name: "Pemberitahuan staging" }),
+    ).toBeInTheDocument();
+  });
+
+  it("names the banner, so it is told apart from the side rail and a page's aside", () => {
+    render(<StagingBanner lang="en-AU" />);
+    expect(screen.getByRole("complementary", { name: "Staging notice" })).toBeInTheDocument();
   });
 
   it("falls back to English for an unknown lang", () => {

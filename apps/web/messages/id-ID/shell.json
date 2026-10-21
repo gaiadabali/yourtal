@@ -1,5 +1,6 @@
 {
   "stagingBanner": "Staging — data demo, pembayaran disimulasikan",
+  "stagingBannerLabel": "Pemberitahuan staging",
   "notifications": {
     "bellLabel": "Notifikasi",
     "unreadCount": "{count} notifikasi belum dibaca",

@@ -20,6 +20,33 @@ describe("ViewerShell", () => {
     expect(root).not.toHaveAttribute("data-theme");
   });
 
+  it("names the side rail, so it is told apart from a page's own aside", () => {
+    render(
+      <ViewerShell locale="en-AU" availablePoints={0}>
+        <p>content</p>
+      </ViewerShell>,
+    );
+    expect(screen.getByRole("complementary", { name: "Side navigation" })).toBeInTheDocument();
+  });
+
+  it("names the side rail in Indonesian", () => {
+    render(
+      <ViewerShell locale="id-ID" availablePoints={0}>
+        <p>content</p>
+      </ViewerShell>,
+    );
+    expect(screen.getByRole("complementary", { name: "Navigasi samping" })).toBeInTheDocument();
+  });
+
+  it("gives the page a solid ground, so a contrast check is not blocked by the rail's gradient", () => {
+    render(
+      <ViewerShell locale="en-AU" availablePoints={0}>
+        <p>content</p>
+      </ViewerShell>,
+    );
+    expect(screen.getByRole("main")).toHaveClass("bg-canvas");
+  });
+
   it("accepts a pinned theme", () => {
     const { container } = render(
       <ViewerShell locale="en-AU" availablePoints={0} forceTheme="light">

@@ -40,6 +40,7 @@ export class InMemoryCredentialRepository implements CredentialRepository {
       ...input,
       updatedAt: new Date(),
       verifiedAt: null,
+      bootstrapped: false,
     });
     return Promise.resolve(true);
   }
@@ -58,20 +59,24 @@ export class InMemoryCredentialRepository implements CredentialRepository {
     return Promise.resolve(true);
   }
 
-  putUnverified(input: {
+  putVerified(input: {
     userId: string;
     kind: string;
     identifier: string;
     secretHash: string;
+    verifiedAt: Date;
+    bootstrapped: boolean;
   }): Promise<boolean> {
     const row = this.rows.get(this.key(input.userId, input.kind));
     if (row !== undefined && row.verifiedAt !== null) return Promise.resolve(false);
-    this.rows.set(this.key(input.userId, input.kind), {
-      ...input,
-      updatedAt: new Date(),
-      verifiedAt: null,
-    });
+    this.rows.set(this.key(input.userId, input.kind), { ...input, updatedAt: new Date() });
     return Promise.resolve(true);
+  }
+
+  anyVerified(kind: string): Promise<boolean> {
+    return Promise.resolve(
+      [...this.rows.values()].some((row) => row.kind === kind && row.verifiedAt !== null),
+    );
   }
 
   deleteByUserAndKind(userId: string, kind: string): Promise<boolean> {

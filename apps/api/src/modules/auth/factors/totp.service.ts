@@ -1,4 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
+import type { OnApplicationBootstrap } from "@nestjs/common";
 import { err, ok } from "neverthrow";
 import type { Result } from "neverthrow";
 import { APP_CONFIG } from "../../../config/app-config.module";
@@ -11,6 +12,7 @@ import {
 import type { CredentialRepository } from "../persistence/credential.repository";
 import { ThrottleService } from "../throttle/throttle.service";
 import type { ThrottleLimits } from "../throttle/throttle.service";
+import { ENROLMENT_TTL_SECONDS, withinBootstrapWindow } from "./factor-settings";
 import { FACTOR_STORE } from "./factor-store";
 import type { FactorStore } from "./factor-store";
 import type { FactorError } from "./factor.errors";
@@ -41,13 +43,29 @@ type Outcome<T> = Promise<Result<T, FactorError>>;
 
 /** Authenticator-app codes: enrol, confirm, check, and turn off. */
 @Injectable()
-export class TotpService {
+export class TotpService implements OnApplicationBootstrap {
   constructor(
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(CREDENTIAL_REPOSITORY) private readonly credentials: CredentialRepository,
     @Inject(FACTOR_STORE) private readonly store: FactorStore,
     private readonly throttle: ThrottleService,
   ) {}
+
+  /**
+   * With no seed key, codes cannot be checked and accounts with an app would
+   * fall back to the password alone. That is acceptable only while no account
+   * has one, so outside dev the boot stops instead once any does.
+   */
+  async onApplicationBootstrap(): Promise<void> {
+    if (this.available() || this.config.appEnv === "dev") {
+      return;
+    }
+    if (await this.credentials.anyVerified(TOTP_CREDENTIAL_KIND)) {
+      throw new Error(
+        "TOTP_SECRET_ENCRYPTION_KEY is unset but accounts have authenticator apps; set the key.",
+      );
+    }
+  }
 
   /** False when this deployment has no seed key: authenticator apps are off. */
   available(): boolean {
@@ -60,35 +78,55 @@ export class TotpService {
   }
 
   /**
-   * Starts enrolment with a fresh seed, replacing any unfinished one. The app
-   * is not switched on until `confirm` sees a first code from it.
+   * Starts enrolment with a fresh seed. Nothing is written to the database:
+   * the sealed seed waits in Valkey, tied to this session, for
+   * `ENROLMENT_TTL_SECONDS`, and the app is switched on only by `confirm`.
    */
-  async enrol(userId: string): Outcome<{ otpauthUri: string; secret: string }> {
+  async enrol(
+    userId: string,
+    sessionHash: string,
+  ): Outcome<{ otpauthUri: string; secret: string }> {
     const key = this.config.authFactors?.totpSecretKey;
     if (key === undefined) return err({ type: "authenticator_unavailable" });
+    if (await this.isEnabled(userId)) return err({ type: "totp_already_enabled" });
 
     const seed = generateTotpSeed();
-    const written = await this.credentials.putUnverified({
-      userId,
-      kind: TOTP_CREDENTIAL_KIND,
-      identifier: userId,
-      secretHash: sealSecret(seed, key, userId),
-    });
-    if (!written) return err({ type: "totp_already_enabled" });
-
+    await this.store.putEnrolment(
+      sessionHash,
+      { userId, sealedSeed: sealSecret(seed, key, userId) },
+      ENROLMENT_TTL_SECONDS,
+    );
     const password = await this.credentials.findByUserAndKind(userId, PASSWORD_CREDENTIAL_KIND);
     return ok({ otpauthUri: totpUri(seed, password?.identifier ?? "YourTal"), secret: seed });
   }
 
-  async confirm(userId: string, code: string, now: Date): Outcome<void> {
-    const credential = await this.credentials.findByUserAndKind(userId, TOTP_CREDENTIAL_KIND);
-    if (credential === null) return err({ type: "factor_invalid" });
-    if (credential.verifiedAt !== null) return err({ type: "totp_already_enabled" });
+  /**
+   * Switches the app on with a first code, from the session that enrolled it
+   * and within `ENROLMENT_TTL_SECONDS`. `bootstrapped`: see the migration.
+   */
+  async confirm(
+    userId: string,
+    sessionHash: string,
+    code: string,
+    now: Date,
+    bootstrapped: boolean,
+  ): Outcome<void> {
+    const enrolment = await this.store.readEnrolment(sessionHash);
+    if (enrolment?.userId !== userId) return err({ type: "factor_invalid" });
+    if (await this.isEnabled(userId)) return err({ type: "totp_already_enabled" });
 
-    const checked = await this.check(userId, credential.secretHash, code, now);
+    const checked = await this.check(userId, enrolment.sealedSeed, code, now);
     if (checked.isErr()) return err(checked.error);
-    await this.credentials.markVerified(userId, TOTP_CREDENTIAL_KIND, now);
-    return ok(undefined);
+    const written = await this.credentials.putVerified({
+      userId,
+      kind: TOTP_CREDENTIAL_KIND,
+      identifier: userId,
+      secretHash: enrolment.sealedSeed,
+      verifiedAt: now,
+      bootstrapped,
+    });
+    await this.store.dropEnrolment(sessionHash);
+    return written ? ok(undefined) : err({ type: "totp_already_enabled" });
   }
 
   /** Checks a code against a switched-on authenticator app. */
@@ -104,6 +142,19 @@ export class TotpService {
   async remove(userId: string): Outcome<void> {
     const removed = await this.credentials.deleteByUserAndKind(userId, TOTP_CREDENTIAL_KIND);
     return removed ? ok(undefined) : err({ type: "totp_not_enabled" });
+  }
+
+  /**
+   * Removes the app when it was bootstrapped (added from a password alone to
+   * an account with no factor) less than 72 hours ago. A password reset calls
+   * this: the reset proves the email address, which outranks an app that a
+   * phished password could have planted. True when it removed one.
+   */
+  async removeIfBootstrappedRecently(userId: string, now: Date): Promise<boolean> {
+    const credential = await this.credentials.findByUserAndKind(userId, TOTP_CREDENTIAL_KIND);
+    if (credential === null || credential.verifiedAt === null) return false;
+    if (!withinBootstrapWindow(credential.bootstrapped, credential.verifiedAt, now)) return false;
+    return this.credentials.deleteByUserAndKind(userId, TOTP_CREDENTIAL_KIND);
   }
 
   private async check(userId: string, sealed: string, code: string, now: Date): Outcome<void> {

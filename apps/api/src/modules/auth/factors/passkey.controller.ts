@@ -16,6 +16,7 @@ import { FACTOR_NOTIFIER } from "./factor-notifier";
 import type { FactorNotifications } from "./factor-notifier";
 import { PasskeyService } from "./passkey.service";
 import { passkeySummary } from "./passkey-summary";
+import { withinBootstrapWindow } from "./factor-settings";
 import { SignedInCaller } from "./signed-in-session";
 import { mapFactorErrorToHttpException } from "./to-http-exception";
 
@@ -89,7 +90,12 @@ export class PasskeyController {
     if (caller.isErr()) throw mapFactorErrorToHttpException(caller.error);
     const { userId } = caller.value;
     const response = body.response as RegistrationResponseJSON;
-    const result = await this.passkeys.register(userId, response, body.name);
+    const result = await this.passkeys.register(
+      userId,
+      response,
+      body.name,
+      caller.value.bootstrapping,
+    );
     if (result.isErr()) throw mapFactorErrorToHttpException(result.error);
     await this.notifier.notify(userId, { kind: "passkey_added", name: result.value.name });
     return passkeySummary(result.value);
@@ -112,12 +118,18 @@ export class PasskeyController {
   @Authorize({ kind: "session", action: "manage_sign_in_methods" })
   @Delete(":credentialId")
   async remove(@Req() request: FastifyRequest, @Param("credentialId") credentialId: string) {
-    const caller = await this.caller.resolve(request, new Date(), "strong");
+    const now = new Date();
+    const who = await this.caller.resolve(request, now, "session");
+    if (who.isErr()) throw mapFactorErrorToHttpException(who.error);
+    const own = await this.passkeys.list(who.value.userId);
+    const target = own.find((passkey) => passkey.credentialId === credentialId) ?? null;
+    const caller = await this.caller.resolve(request, now, "strong", {
+      emailProofRemoves:
+        target !== null && withinBootstrapWindow(target.bootstrapped, target.createdAt, now),
+    });
     if (caller.isErr()) throw mapFactorErrorToHttpException(caller.error);
     const { userId } = caller.value;
-    const name = (await this.passkeys.list(userId)).find(
-      (passkey) => passkey.credentialId === credentialId,
-    )?.name;
+    const name = target?.name;
     const result = await this.passkeys.remove(userId, credentialId);
     if (result.isErr()) throw mapFactorErrorToHttpException(result.error);
     await this.notifier.notify(userId, { kind: "passkey_removed", name: name ?? "Passkey" });

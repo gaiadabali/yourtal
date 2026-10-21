@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import { credentials } from "./schema/credential.table";
 import type { Credential, CredentialRepository } from "./credential.repository";
@@ -64,23 +64,39 @@ export class DrizzleCredentialRepository implements CredentialRepository {
     return updated.length > 0;
   }
 
-  async putUnverified(input: {
+  async putVerified(input: {
     userId: string;
     kind: string;
     identifier: string;
     secretHash: string;
+    verifiedAt: Date;
+    bootstrapped: boolean;
   }): Promise<boolean> {
     const written = await this.db
       .insert(credentials)
       .values(input)
       .onConflictDoUpdate({
         target: [credentials.userId, credentials.kind],
-        set: { secretHash: input.secretHash, updatedAt: new Date() },
+        set: {
+          secretHash: input.secretHash,
+          verifiedAt: input.verifiedAt,
+          bootstrapped: input.bootstrapped,
+          updatedAt: new Date(),
+        },
         // A verified (switched-on) credential is never replaced from here.
         setWhere: isNull(credentials.verifiedAt),
       })
       .returning({ userId: credentials.userId });
     return written.length > 0;
+  }
+
+  async anyVerified(kind: string): Promise<boolean> {
+    const [row] = await this.db
+      .select({ userId: credentials.userId })
+      .from(credentials)
+      .where(and(eq(credentials.kind, kind), isNotNull(credentials.verifiedAt)))
+      .limit(1);
+    return row !== undefined;
   }
 
   async deleteByUserAndKind(userId: string, kind: string): Promise<boolean> {

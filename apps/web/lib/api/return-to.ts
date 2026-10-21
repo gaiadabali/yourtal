@@ -5,7 +5,7 @@
  * would leave the site as `//evil.com`; those characters are refused in the
  * raw value and in its percent-decoded form. What passes is resolved against
  * a fixed base, must stay on it, and only its path, query and fragment are
- * returned.
+ * returned, after the same checks again (dot segments can rebuild `//`).
  */
 const BASE = "https://return-to.invalid";
 
@@ -31,5 +31,9 @@ export function internalReturnPath(raw: string | null | undefined): string | nul
     return null;
   }
   if (url.origin !== BASE) return null;
-  return `${url.pathname}${url.search}${url.hash}`;
+  // Dot segments are resolved above, so `/.//evil.com` or `/a/..//evil.com`
+  // only become `//evil.com` now: the result is checked as well.
+  const path = `${url.pathname}${url.search}${url.hash}`;
+  if (UNSAFE.test(path) || path.startsWith("//")) return null;
+  return path;
 }

@@ -1,4 +1,4 @@
-import { primaryKey, text, timestamp, unique } from "drizzle-orm/pg-core";
+import { boolean, primaryKey, text, timestamp, unique } from "drizzle-orm/pg-core";
 import { authIdentityPgSchema } from "./auth-identity-schema";
 
 /**
@@ -24,6 +24,8 @@ export const credentials = authIdentityPgSchema.table(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     /** NULL until `confirmEmailVerification` succeeds (1.4.e). Per-credential, not per-account. */
     verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    /** Added from a password-only session to an account with no other factor; see the migration. */
+    bootstrapped: boolean("bootstrapped").notNull().default(false),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.kind] }),

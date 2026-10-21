@@ -10,6 +10,9 @@ import type {
 import { credentials } from "./schema/credential.table";
 import { passkeys } from "./schema/passkey.table";
 
+/** Thrown inside `create`'s transaction to roll it back. */
+class NotStored extends Error {}
+
 export class DrizzlePasskeyRepository implements PasskeyRepository {
   constructor(private readonly db: AppDb) {}
 
@@ -49,45 +52,53 @@ export class DrizzlePasskeyRepository implements PasskeyRepository {
   }
 
   async create(passkey: NewPasskey, userHandle: string): Promise<boolean> {
-    return this.db.transaction(async (tx) => {
-      // The marker row arrives with the first passkey, never before.
-      await tx
-        .insert(credentials)
-        .values({
-          userId: passkey.userId,
-          kind: PASSKEY_CREDENTIAL_KIND,
-          identifier: userHandle,
-          secretHash: "",
-        })
-        .onConflictDoNothing({ target: [credentials.userId, credentials.kind] });
-      const [marker] = await tx
-        .select({ identifier: credentials.identifier })
-        .from(credentials)
-        .where(
-          and(
-            eq(credentials.userId, passkey.userId),
-            eq(credentials.kind, PASSKEY_CREDENTIAL_KIND),
-          ),
-        )
-        .for("update");
-      // Made for another handle: signing in with it would never match.
-      if (marker?.identifier !== userHandle) return false;
-      const inserted = await tx
-        .insert(passkeys)
-        .values({
-          credentialId: passkey.credentialId,
-          userId: passkey.userId,
-          publicKey: passkey.publicKey,
-          signCount: passkey.signCount,
-          transports: [...passkey.transports],
-          deviceType: passkey.deviceType,
-          backedUp: passkey.backedUp,
-          name: passkey.name,
-        })
-        .onConflictDoNothing({ target: passkeys.credentialId })
-        .returning({ credentialId: passkeys.credentialId });
-      return inserted.length > 0;
-    });
+    return this.db
+      .transaction(async (tx) => {
+        // The marker row arrives with the first passkey, never before.
+        await tx
+          .insert(credentials)
+          .values({
+            userId: passkey.userId,
+            kind: PASSKEY_CREDENTIAL_KIND,
+            identifier: userHandle,
+            secretHash: "",
+          })
+          .onConflictDoNothing({ target: [credentials.userId, credentials.kind] });
+        const [marker] = await tx
+          .select({ identifier: credentials.identifier })
+          .from(credentials)
+          .where(
+            and(
+              eq(credentials.userId, passkey.userId),
+              eq(credentials.kind, PASSKEY_CREDENTIAL_KIND),
+            ),
+          )
+          .for("update");
+        // Made for another handle: signing in with it would never match.
+        if (marker?.identifier !== userHandle) throw new NotStored();
+        const inserted = await tx
+          .insert(passkeys)
+          .values({
+            credentialId: passkey.credentialId,
+            userId: passkey.userId,
+            publicKey: passkey.publicKey,
+            signCount: passkey.signCount,
+            transports: [...passkey.transports],
+            deviceType: passkey.deviceType,
+            backedUp: passkey.backedUp,
+            name: passkey.name,
+            bootstrapped: passkey.bootstrapped,
+          })
+          .onConflictDoNothing({ target: passkeys.credentialId })
+          .returning({ credentialId: passkeys.credentialId });
+        // A duplicate credential id must not leave a fresh marker row behind.
+        if (inserted.length === 0) throw new NotStored();
+        return true;
+      })
+      .catch((cause: unknown) => {
+        if (cause instanceof NotStored) return false;
+        throw cause;
+      });
   }
 
   async recordUse(credentialId: string, signCount: number, usedAt: Date): Promise<boolean> {
@@ -154,5 +165,6 @@ function toStored(row: typeof passkeys.$inferSelect): StoredPasskey {
     name: row.name,
     createdAt: row.createdAt,
     lastUsedAt: row.lastUsedAt,
+    bootstrapped: row.bootstrapped,
   };
 }

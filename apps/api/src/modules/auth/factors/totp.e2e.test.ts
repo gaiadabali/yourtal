@@ -127,6 +127,7 @@ describe("authenticator codes", () => {
     });
     expect(methods.json<{ authenticatorApp: { enabled: boolean } }>().authenticatorApp).toEqual({
       enabled: true,
+      available: true,
     });
   });
 
@@ -289,7 +290,22 @@ describe("authenticator codes", () => {
 
   it("needs a recent sign-in to set up, and will not replace an app that is on", async () => {
     const session = await accountFor(app, PASSWORD);
-    await switchOn(session);
+    const seed = await switchOn(session);
+    // A password-only session must prove the app it already has first.
+    const unproved = await app.inject({
+      method: "POST",
+      url: "/api/auth/totp/enrol",
+      headers: bearer(session.token),
+    });
+    expect(unproved.statusCode).toBe(403);
+    expect(errorCode(unproved)).toBe("step_up_required");
+    const stepUp = await app.inject({
+      method: "POST",
+      url: "/api/auth/step-up",
+      headers: bearer(session.token),
+      payload: { code: codeAt(seed, 0) },
+    });
+    expect(stepUp.statusCode, stepUp.body).toBe(201);
     const again = await app.inject({
       method: "POST",
       url: "/api/auth/totp/enrol",

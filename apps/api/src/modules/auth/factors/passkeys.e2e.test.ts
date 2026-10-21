@@ -101,7 +101,7 @@ describe("passkeys", () => {
       authenticatorApp: { enabled: boolean };
     }>();
     expect(body.password).toBe(true);
-    expect(body.authenticatorApp).toEqual({ enabled: false });
+    expect(body.authenticatorApp).toEqual({ enabled: false, available: true });
     expect(body.passkeys).toEqual([
       expect.objectContaining({ id: device.credentialId, name: "Work laptop", synced: true }),
     ]);

@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 9/18 | 49/66 | `███████░░░`  74% |
-| **All** | | | **114/124** | **595/613** | `██████████`  97% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 11/18 | 51/66 | `████████░░`  77% |
+| **All** | | | **116/124** | **597/613** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1714,8 +1714,8 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
 - [x] **14.17 The Security workflow is green again** (group 1.25) · A · needs: — — ✅ 2026-10-21 14c0259b
   - [x] 14.17.a vitest's vite lifted to 8.3.4 for GHSA-698v-4r3x-3vcv (a workspace override); pnpm audit passes (group 1.25.a) → 14c0259b
   - [x] 14.17.b Every workflow green on main (group 1.25.b) → Security green from 14c0259b; the order-dependent 14.15 test fixed at 1cdd75ba; a one-off Go ledger serialization-retry flake at 2e92adcd, no lost write (god-d1 re-ran it)
-- [ ] **14.18 Invitation erasure keys only on the email** (group 1.26) · A · needs: — — 🔄 2026-10-21 (group plan, god-ff)
-  - [ ] 14.18.a `eraseInvitationsToSubject` matches only `kind = 'password'` credentials; a totp or passkey identifier erases nothing (group 1.26.a)
+- [x] **14.18 Invitation erasure keys only on the email** (group 1.26) · A · needs: — — ✅ 2026-10-21 8ccab08c
+  - [x] 14.18.a `eraseInvitationsToSubject` matches only `kind = 'password'` credentials; a totp or passkey identifier erases nothing (group 1.26.a) → 8ccab08c
 
 ## Not in this plan (deferred)
 
@@ -1806,6 +1806,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-10-21 · 14.18 (group 1.26) done: invitation erasure matches only the password credential’s email (8ccab08c).
 - 2026-10-21 · g5 · **14.8** (group 5.2): Stripe Connect payouts in AU on the payment simulation: brands and charities onboard, the weekly statement job (14.8.d, with a ledger fix so statements stop re-claiming each other's money), transfer and payout once per approved statement, read-back and two-person staff retry; a demo brand was paid on staging · 033fae42
 - 2026-10-21 · 14.17 (group 1.25) done: Security green again (vite 8.3.4 override for GHSA-698v-4r3x-3vcv), 14.15 test order fixed (14c0259b, 1cdd75ba).
 - 2026-10-21 · 14.15 (group 1.24) done: erasure removes pending invitations to the subject’s email, and DELETE /api/me reports complete (0551286a).

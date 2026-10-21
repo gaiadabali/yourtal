@@ -62,6 +62,7 @@ const ALLOCATION: Allocation = {
   funderType: "partner",
   totalPoints: toPoints(10_000),
   remainingPoints: toPoints(10_000),
+  programme: null,
   createdAt: new Date().toISOString(),
 };
 

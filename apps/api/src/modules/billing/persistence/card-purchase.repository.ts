@@ -150,6 +150,7 @@ export function toCardPurchase(row: CardPurchaseRow): CardPurchase {
     taxRateBps: row.taxRateBps,
     currency: row.currency,
     allocationId: row.allocationId,
+    programme: null,
     createdAt: row.createdAt.toISOString(),
     paidAt: row.paidAt === null ? null : row.paidAt.toISOString(),
   };

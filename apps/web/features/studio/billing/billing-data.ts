@@ -190,6 +190,7 @@ const mockDataSource: BillingDataSource = {
       funderType: "partner" as const,
       totalPoints: toPoints(points),
       remainingPoints: toPoints(points),
+      programme: null,
       createdAt: new Date().toISOString(),
     };
     state.allocations = [...state.allocations, allocation];
@@ -211,6 +212,7 @@ const mockDataSource: BillingDataSource = {
         taxRateBps: quote.taxRateBps,
         currency,
         allocationId: allocation.allocationId,
+        programme: null,
         createdAt: allocation.createdAt,
         paidAt: allocation.createdAt,
       },

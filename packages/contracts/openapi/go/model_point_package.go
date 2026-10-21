@@ -37,6 +37,7 @@ type PointPackage struct {
 	PricePer1000Minor int64 `json:"pricePer1000Minor"`
 	// A whole number of some currency's minor unit, WITHOUT saying which (YT-0513). The currency is a sibling field on the same record — listingSchema.currency, voucherSchema.currency — one per record, so an amount can never be stored without its currency and two amounts on one record can never disagree. This replaced IdrMinorUnits on the wire: that brand named a currency it did not always hold, and AU fixtures stored AUD cents in a field typed IdrMinorUnits. Not a nested Money object, because the contracts-to-migrations drift gate maps each field to a snake_case column and a nested object needs columns corresponding to nothing; callers compose money(record.fooMinor, record.currency) at the point of use.
 	SavingMinor int64 `json:"savingMinor"`
+	Pricing string `json:"pricing"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -46,7 +47,7 @@ type _PointPackage PointPackage
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewPointPackage(tierKey string, points int64, discountBps int32, subtotalMinor int64, taxMinor int64, totalMinor int64, taxRateBps int32, currency Currency, pricePer1000Minor int64, savingMinor int64) *PointPackage {
+func NewPointPackage(tierKey string, points int64, discountBps int32, subtotalMinor int64, taxMinor int64, totalMinor int64, taxRateBps int32, currency Currency, pricePer1000Minor int64, savingMinor int64, pricing string) *PointPackage {
 	this := PointPackage{}
 	this.TierKey = tierKey
 	this.Points = points
@@ -58,6 +59,7 @@ func NewPointPackage(tierKey string, points int64, discountBps int32, subtotalMi
 	this.Currency = currency
 	this.PricePer1000Minor = pricePer1000Minor
 	this.SavingMinor = savingMinor
+	this.Pricing = pricing
 	return &this
 }
 
@@ -66,6 +68,8 @@ func NewPointPackage(tierKey string, points int64, discountBps int32, subtotalMi
 // but it doesn't guarantee that properties required by API are set
 func NewPointPackageWithDefaults() *PointPackage {
 	this := PointPackage{}
+	var pricing string = "tier"
+	this.Pricing = pricing
 	return &this
 }
 
@@ -309,6 +313,30 @@ func (o *PointPackage) SetSavingMinor(v int64) {
 	o.SavingMinor = v
 }
 
+// GetPricing returns the Pricing field value
+func (o *PointPackage) GetPricing() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Pricing
+}
+
+// GetPricingOk returns a tuple with the Pricing field value
+// and a boolean to check if the value has been set.
+func (o *PointPackage) GetPricingOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Pricing, true
+}
+
+// SetPricing sets field value
+func (o *PointPackage) SetPricing(v string) {
+	o.Pricing = v
+}
+
 func (o PointPackage) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -329,6 +357,7 @@ func (o PointPackage) ToMap() (map[string]interface{}, error) {
 	toSerialize["currency"] = o.Currency
 	toSerialize["pricePer1000Minor"] = o.PricePer1000Minor
 	toSerialize["savingMinor"] = o.SavingMinor
+	toSerialize["pricing"] = o.Pricing
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -352,6 +381,7 @@ func (o *PointPackage) UnmarshalJSON(data []byte) (err error) {
 		"currency",
 		"pricePer1000Minor",
 		"savingMinor",
+		"pricing",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -391,6 +421,7 @@ func (o *PointPackage) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "currency")
 		delete(additionalProperties, "pricePer1000Minor")
 		delete(additionalProperties, "savingMinor")
+		delete(additionalProperties, "pricing")
 		o.AdditionalProperties = additionalProperties
 	}
 

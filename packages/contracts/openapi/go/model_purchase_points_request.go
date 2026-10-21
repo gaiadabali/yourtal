@@ -23,6 +23,7 @@ type PurchasePointsRequest struct {
 	// 14.13 (F122): a point package's key in its region's catalogue, e.g. starter, grow, scale.
 	TierKey string `json:"tierKey" validate:"regexp=^[a-z][a-z0-9_]{0\\,31}$"`
 	Currency Currency `json:"currency"`
+	Programme *string `json:"programme,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -95,6 +96,38 @@ func (o *PurchasePointsRequest) SetCurrency(v Currency) {
 	o.Currency = v
 }
 
+// GetProgramme returns the Programme field value if set, zero value otherwise.
+func (o *PurchasePointsRequest) GetProgramme() string {
+	if o == nil || IsNil(o.Programme) {
+		var ret string
+		return ret
+	}
+	return *o.Programme
+}
+
+// GetProgrammeOk returns a tuple with the Programme field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *PurchasePointsRequest) GetProgrammeOk() (*string, bool) {
+	if o == nil || IsNil(o.Programme) {
+		return nil, false
+	}
+	return o.Programme, true
+}
+
+// HasProgramme returns a boolean if a field has been set.
+func (o *PurchasePointsRequest) HasProgramme() bool {
+	if o != nil && !IsNil(o.Programme) {
+		return true
+	}
+
+	return false
+}
+
+// SetProgramme gets a reference to the given string and assigns it to the Programme field.
+func (o *PurchasePointsRequest) SetProgramme(v string) {
+	o.Programme = &v
+}
+
 func (o PurchasePointsRequest) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -107,6 +140,9 @@ func (o PurchasePointsRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["tierKey"] = o.TierKey
 	toSerialize["currency"] = o.Currency
+	if !IsNil(o.Programme) {
+		toSerialize["programme"] = o.Programme
+	}
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -153,6 +189,7 @@ func (o *PurchasePointsRequest) UnmarshalJSON(data []byte) (err error) {
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
 		delete(additionalProperties, "tierKey")
 		delete(additionalProperties, "currency")
+		delete(additionalProperties, "programme")
 		o.AdditionalProperties = additionalProperties
 	}
 

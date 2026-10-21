@@ -13,7 +13,6 @@ package contracts
 import (
 	"encoding/json"
 	"time"
-	"bytes"
 	"fmt"
 )
 
@@ -29,7 +28,9 @@ type BillingAllocation struct {
 	TotalPoints int64 `json:"totalPoints"`
 	// Platform points. Always a whole number; there is no fractional point.
 	RemainingPoints int64 `json:"remainingPoints"`
+	Programme NullableString `json:"programme"`
 	CreatedAt time.Time `json:"createdAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
+	AdditionalProperties map[string]interface{}
 }
 
 type _BillingAllocation BillingAllocation
@@ -38,13 +39,14 @@ type _BillingAllocation BillingAllocation
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBillingAllocation(allocationId string, region Region, funderType FunderType, totalPoints int64, remainingPoints int64, createdAt time.Time) *BillingAllocation {
+func NewBillingAllocation(allocationId string, region Region, funderType FunderType, totalPoints int64, remainingPoints int64, programme NullableString, createdAt time.Time) *BillingAllocation {
 	this := BillingAllocation{}
 	this.AllocationId = allocationId
 	this.Region = region
 	this.FunderType = funderType
 	this.TotalPoints = totalPoints
 	this.RemainingPoints = remainingPoints
+	this.Programme = programme
 	this.CreatedAt = createdAt
 	return &this
 }
@@ -177,6 +179,32 @@ func (o *BillingAllocation) SetRemainingPoints(v int64) {
 	o.RemainingPoints = v
 }
 
+// GetProgramme returns the Programme field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *BillingAllocation) GetProgramme() string {
+	if o == nil || o.Programme.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.Programme.Get()
+}
+
+// GetProgrammeOk returns a tuple with the Programme field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *BillingAllocation) GetProgrammeOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.Programme.Get(), o.Programme.IsSet()
+}
+
+// SetProgramme sets field value
+func (o *BillingAllocation) SetProgramme(v string) {
+	o.Programme.Set(&v)
+}
+
 // GetCreatedAt returns the CreatedAt field value
 func (o *BillingAllocation) GetCreatedAt() time.Time {
 	if o == nil {
@@ -216,7 +244,13 @@ func (o BillingAllocation) ToMap() (map[string]interface{}, error) {
 	toSerialize["funderType"] = o.FunderType
 	toSerialize["totalPoints"] = o.TotalPoints
 	toSerialize["remainingPoints"] = o.RemainingPoints
+	toSerialize["programme"] = o.Programme.Get()
 	toSerialize["createdAt"] = o.CreatedAt
+
+	for key, value := range o.AdditionalProperties {
+		toSerialize[key] = value
+	}
+
 	return toSerialize, nil
 }
 
@@ -230,6 +264,7 @@ func (o *BillingAllocation) UnmarshalJSON(data []byte) (err error) {
 		"funderType",
 		"totalPoints",
 		"remainingPoints",
+		"programme",
 		"createdAt",
 	}
 
@@ -249,15 +284,26 @@ func (o *BillingAllocation) UnmarshalJSON(data []byte) (err error) {
 
 	varBillingAllocation := _BillingAllocation{}
 
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varBillingAllocation)
+	err = json.Unmarshal(data, &varBillingAllocation)
 
 	if err != nil {
 		return err
 	}
 
 	*o = BillingAllocation(varBillingAllocation)
+
+	additionalProperties := make(map[string]interface{})
+
+	if err = json.Unmarshal(data, &additionalProperties); err == nil {
+		delete(additionalProperties, "allocationId")
+		delete(additionalProperties, "region")
+		delete(additionalProperties, "funderType")
+		delete(additionalProperties, "totalPoints")
+		delete(additionalProperties, "remainingPoints")
+		delete(additionalProperties, "programme")
+		delete(additionalProperties, "createdAt")
+		o.AdditionalProperties = additionalProperties
+	}
 
 	return err
 }

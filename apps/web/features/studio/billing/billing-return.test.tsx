@@ -20,6 +20,7 @@ const purchase = (status: CardPurchase["status"]): CardPurchase => ({
   taxRateBps: 1_000,
   currency: "AUD",
   allocationId: status === "paid" ? "alloc_1" : null,
+  programme: null,
   createdAt: "2026-10-20T10:00:00.000Z",
   paidAt: null,
 });

@@ -46,5 +46,6 @@ export function mockPackages(currency: Currency): PointPackage[] {
     currency,
     pricePer1000Minor: toMinorUnits(per1000),
     savingMinor: toMinorUnits(saving),
+    pricing: "tier" as const,
   }));
 }

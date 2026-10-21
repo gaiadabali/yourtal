@@ -13,6 +13,7 @@ const alert = (over: Partial<BudgetAlert>): BudgetAlert => ({
   thresholdPct: 80,
   usedPoints: toPoints(8_000),
   totalPoints: toPoints(10_000),
+  programme: null,
   createdAt: "2026-10-20T10:00:00.000Z",
   ...over,
 });

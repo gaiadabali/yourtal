@@ -165,6 +165,7 @@ async function answer(
             funderType: allocation.funderType,
             totalPoints: allocation.totalPoints,
             remainingPoints: allocation.remainingPoints,
+            programme: null,
             createdAt: allocation.createdAt,
           },
   };

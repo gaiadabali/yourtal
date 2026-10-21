@@ -34,6 +34,7 @@ export class CampaignFundingController {
         funderType,
         totalPoints,
         remainingPoints,
+        programme: null,
         createdAt,
       }));
   }

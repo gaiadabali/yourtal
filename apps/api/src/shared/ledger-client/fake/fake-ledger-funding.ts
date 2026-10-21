@@ -48,6 +48,7 @@ function toAllocation(row: AllocationRow): Allocation {
     funderType: row.funder_type as Allocation["funderType"],
     totalPoints: toPoints(Number(row.total_points)),
     remainingPoints: toPoints(Number(row.remaining_points)),
+    programme: null,
     createdAt: new Date(row.created_at).toISOString(),
   };
 }
@@ -125,6 +126,7 @@ export function purchasePoints(
         funderType: "partner",
         totalPoints: request.points,
         remainingPoints: request.points,
+        programme: null,
         createdAt: new Date().toISOString(),
       });
     })(),

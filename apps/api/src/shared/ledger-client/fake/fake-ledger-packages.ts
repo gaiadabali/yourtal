@@ -88,6 +88,7 @@ function quoteTier(tier: PackageTier, rate: Rate): Result<PackageTierQuote, Ledg
     ),
     undiscountedMinor: toMinorUnits(Number(ceilDiv(points * rate.issue, 1_000_000n))),
     currency: rate.currency,
+    pricing: "tier",
   });
 }
 

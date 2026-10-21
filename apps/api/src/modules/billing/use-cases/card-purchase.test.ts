@@ -66,6 +66,7 @@ function tierQuote(tierKey: keyof typeof TIERS) {
     totalMinor: toMinorUnits(tier.totalMinor),
     undiscountedMinor: toMinorUnits(tier.undiscountedMinor),
     currency: "AUD" as const,
+    pricing: "tier" as const,
   };
 }
 
@@ -91,6 +92,7 @@ function fakeLedger(refuse?: {
         funderType: "partner" as const,
         totalPoints: request.points,
         remainingPoints: request.points,
+        programme: null,
         createdAt: NOW.toISOString(),
       });
     },

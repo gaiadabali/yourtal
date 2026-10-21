@@ -141,6 +141,7 @@ export class BudgetAlertRepository {
         thresholdPct: alert.thresholdPct,
         usedPoints: toPoints(alert.usedPoints),
         totalPoints: toPoints(alert.totalPoints),
+        programme: null,
         createdAt: new Date(String(row["created_at"])).toISOString(),
       };
     });

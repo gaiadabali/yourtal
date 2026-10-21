@@ -37,6 +37,7 @@ type CardPurchase struct {
 	TaxRateBps int32 `json:"taxRateBps"`
 	Currency Currency `json:"currency"`
 	AllocationId NullableString `json:"allocationId"`
+	Programme NullableString `json:"programme"`
 	CreatedAt time.Time `json:"createdAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 	PaidAt NullableTime `json:"paidAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 }
@@ -47,7 +48,7 @@ type _CardPurchase CardPurchase
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCardPurchase(purchaseId string, status CardPurchaseStatus, tierKey NullableString, points int64, subtotalMinor int64, taxMinor int64, totalMinor int64, taxRateBps int32, currency Currency, allocationId NullableString, createdAt time.Time, paidAt NullableTime) *CardPurchase {
+func NewCardPurchase(purchaseId string, status CardPurchaseStatus, tierKey NullableString, points int64, subtotalMinor int64, taxMinor int64, totalMinor int64, taxRateBps int32, currency Currency, allocationId NullableString, programme NullableString, createdAt time.Time, paidAt NullableTime) *CardPurchase {
 	this := CardPurchase{}
 	this.PurchaseId = purchaseId
 	this.Status = status
@@ -59,6 +60,7 @@ func NewCardPurchase(purchaseId string, status CardPurchaseStatus, tierKey Nulla
 	this.TaxRateBps = taxRateBps
 	this.Currency = currency
 	this.AllocationId = allocationId
+	this.Programme = programme
 	this.CreatedAt = createdAt
 	this.PaidAt = paidAt
 	return &this
@@ -316,6 +318,32 @@ func (o *CardPurchase) SetAllocationId(v string) {
 	o.AllocationId.Set(&v)
 }
 
+// GetProgramme returns the Programme field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *CardPurchase) GetProgramme() string {
+	if o == nil || o.Programme.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.Programme.Get()
+}
+
+// GetProgrammeOk returns a tuple with the Programme field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *CardPurchase) GetProgrammeOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.Programme.Get(), o.Programme.IsSet()
+}
+
+// SetProgramme sets field value
+func (o *CardPurchase) SetProgramme(v string) {
+	o.Programme.Set(&v)
+}
+
 // GetCreatedAt returns the CreatedAt field value
 func (o *CardPurchase) GetCreatedAt() time.Time {
 	if o == nil {
@@ -386,6 +414,7 @@ func (o CardPurchase) ToMap() (map[string]interface{}, error) {
 	toSerialize["taxRateBps"] = o.TaxRateBps
 	toSerialize["currency"] = o.Currency
 	toSerialize["allocationId"] = o.AllocationId.Get()
+	toSerialize["programme"] = o.Programme.Get()
 	toSerialize["createdAt"] = o.CreatedAt
 	toSerialize["paidAt"] = o.PaidAt.Get()
 	return toSerialize, nil
@@ -406,6 +435,7 @@ func (o *CardPurchase) UnmarshalJSON(data []byte) (err error) {
 		"taxRateBps",
 		"currency",
 		"allocationId",
+		"programme",
 		"createdAt",
 		"paidAt",
 	}

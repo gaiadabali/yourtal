@@ -30,7 +30,7 @@ async function seedProfile(userId: string, dateOfBirth: string): Promise<void> {
   });
 }
 
-/** Marketing-funded grants (goodwill/receipt/streak) need AU cash behind them (10.7.a) — a generous, one-off top-up. */
+/** Marketing-funded grants (goodwill/streak) need AU cash behind them (10.7.a) — a generous, one-off top-up. Receipts draw a receipt package instead (F127). */
 async function fundAuMarketing(): Promise<void> {
   await db.execute(sql`
     INSERT INTO platform.ledger_fake_marketing_fund (region, amount_minor, proposed_by, approved_by)
@@ -82,7 +82,7 @@ describe("withAgeBandEnrichment (12.1.c)", () => {
     for (let i = 0; i < 4; i++) {
       // 4 x 60 = 240, under the 250 teen cap
       const granted = await client.grantAction({
-        kind: "receipt",
+        kind: "goodwill",
         userId: teen,
         region: "AU",
         points: toPoints(60),
@@ -92,7 +92,7 @@ describe("withAgeBandEnrichment (12.1.c)", () => {
       expect(granted.isOk()).toBe(true);
     }
     const refused = await client.grantAction({
-      kind: "receipt",
+      kind: "goodwill",
       userId: teen,
       region: "AU",
       points: toPoints(60),
@@ -107,7 +107,7 @@ describe("withAgeBandEnrichment (12.1.c)", () => {
     for (let i = 0; i < 5; i++) {
       // 5 x 60 = 300 — over the TEEN cap but comfortably under the 500 adult one
       const granted = await client.grantAction({
-        kind: "receipt",
+        kind: "goodwill",
         userId: adult,
         region: "AU",
         points: toPoints(60),

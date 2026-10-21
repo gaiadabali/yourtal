@@ -10,6 +10,7 @@ import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-intern
 import type { LedgerInternalClient } from "../../shared/ledger-client/ledger-internal-client";
 import { sessionFor } from "../../shared/testing/session-for";
 import { partnerCredentials } from "./persistence/schema/partner.table";
+import { partnerKit } from "./testing/partner-e2e-kit";
 
 /**
  * TASKS.md 8.4.a's Check, over the real HTTP stack: a real partner HMAC
@@ -70,6 +71,8 @@ async function seedPartner(): Promise<{ partnerId: string; secret: string }> {
   const secretEnvVar = `TEST_PARTNER_SECRET_${randomUUID().replaceAll("-", "_")}`;
   process.env[secretEnvVar] = secret;
   await owner.insert(partnerCredentials).values({ partnerId, secretEnvVar });
+  // 2.10.b (F127): its AU receipts are paid by its funder's receipt package.
+  await partnerKit(app, owner).fundReceipts({ partnerId, secret }, "AU");
   return { partnerId, secret };
 }
 

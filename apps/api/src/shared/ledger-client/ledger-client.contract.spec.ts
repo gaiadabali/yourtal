@@ -1257,28 +1257,8 @@ describe("point packages (14.13, F122)", () => {
  * 2.10.b (F127, docs/27 §3.2–3.3): receipt packages. Prices are ID's, at
  * B = IDR 6 a point (the same rate `pricedListing` assumes), which nothing
  * in this file moves: IDR 6,000 / 60,000 / 300,000 for the three tiers.
- *
- * The draw is T2b's switch. On the fake leg `drawClient` turns it on (the
- * fake's default follows the live ledger, `RECEIPT_DRAW_IN_FORCE`). On the
- * live leg the draw cases run only once the ledger reports the draw, which
- * `receiptDrawInForce` probes: a receipt for a partner with no funder is
- * `allocation_exhausted` under the draw and paid from marketing before it.
- * TODO(2.10.b T2b): once T2b is deployed, drop the probe and run them always.
+ * Receipts draw from them on both legs (T2b's switch).
  */
-const drawClient: LedgerInternalClient =
-  liveUrl === undefined ? new FakeLedgerClient(db, { receiptDraw: true }) : client;
-
-let drawProbe: Promise<boolean> | undefined;
-function receiptDrawInForce(): Promise<boolean> {
-  if (liveUrl === undefined) return Promise.resolve(true);
-  drawProbe ??= Promise.resolve(
-    client.grantAction(receiptGrant(`contract-probe-${randomUUID()}`, 1)),
-  ).then(
-    (probe) => probe.isErr() && probe.error.code === "allocation_exhausted",
-    () => false,
-  );
-  return drawProbe;
-}
 
 /** A partner with an approved receipt funder (two people) in `region`. */
 async function receiptFunder(
@@ -1472,12 +1452,11 @@ describe("receipt packages at cost (2.10.b, F127)", () => {
 });
 
 describe("the receipt draw (2.10.b T2b, F127)", () => {
-  it("pays from the oldest package with room, never split, then stops", async (ctx) => {
-    if (!(await receiptDrawInForce())) ctx.skip();
+  it("pays from the oldest package with room, never split, then stops", async () => {
     const { partnerId, businessId } = await receiptFunder();
     const first = (await buyReceipts(businessId))._unsafeUnwrap().allocationId;
     const second = (await buyReceipts(businessId))._unsafeUnwrap().allocationId;
-    const grant = (points: number) => drawClient.grantAction(receiptGrant(partnerId, points));
+    const grant = (points: number) => client.grantAction(receiptGrant(partnerId, points));
 
     expect((await grant(400))._unsafeUnwrap().points).toBe(400);
     expect((await grant(400)).isOk()).toBe(true);
@@ -1494,16 +1473,15 @@ describe("the receipt draw (2.10.b T2b, F127)", () => {
     expect([await remaining(first), await remaining(second)]).toEqual([0, 200]);
   });
 
-  it("is allocation_exhausted with no funder or no package, and never takes marketing cash", async (ctx) => {
-    if (!(await receiptDrawInForce())) ctx.skip();
-    const noFunder = await drawClient.grantAction(receiptGrant(`contract-${randomUUID()}`, 1));
+  it("is allocation_exhausted with no funder or no package, and never takes marketing cash", async () => {
+    const noFunder = await client.grantAction(receiptGrant(`contract-${randomUUID()}`, 1));
     expect(noFunder._unsafeUnwrapErr().code).toBe("allocation_exhausted");
     const { partnerId, businessId } = await receiptFunder();
-    const noPackage = await drawClient.grantAction(receiptGrant(partnerId, 1));
+    const noPackage = await client.grantAction(receiptGrant(partnerId, 1));
     expect(noPackage._unsafeUnwrapErr().code).toBe("allocation_exhausted");
 
     (await buyReceipts(businessId))._unsafeUnwrap();
-    const paid = (await drawClient.grantAction(receiptGrant(partnerId, 1)))._unsafeUnwrap();
+    const paid = (await client.grantAction(receiptGrant(partnerId, 1)))._unsafeUnwrap();
     if (liveUrl === undefined) {
       const backed = await db.execute(sql`
         SELECT 1 FROM platform.ledger_fake_marketing_backing WHERE grant_id = ${paid.grantId}
@@ -1512,34 +1490,31 @@ describe("the receipt draw (2.10.b T2b, F127)", () => {
     }
   });
 
-  it("replays a paid receipt's first grant after the package is spent, whatever the points", async (ctx) => {
-    if (!(await receiptDrawInForce())) ctx.skip();
+  it("replays a paid receipt's first grant after the package is spent, whatever the points", async () => {
     const { partnerId, businessId } = await receiptFunder();
     const allocationId = (await buyReceipts(businessId))._unsafeUnwrap().allocationId;
     const first = receiptGrant(partnerId, 400);
-    const paid = (await drawClient.grantAction(first))._unsafeUnwrap();
-    expect((await drawClient.grantAction(receiptGrant(partnerId, 600))).isOk()).toBe(true);
+    const paid = (await client.grantAction(first))._unsafeUnwrap();
+    expect((await client.grantAction(receiptGrant(partnerId, 600))).isOk()).toBe(true);
     expect(await remaining(allocationId)).toBe(0);
 
     for (const points of [400, 1]) {
-      const replay = await drawClient.grantAction({ ...first, points: toPoints(points) });
+      const replay = await client.grantAction({ ...first, points: toPoints(points) });
       expect(replay._unsafeUnwrap()).toMatchObject({ grantId: paid.grantId, points: 400 });
     }
-    const fresh = await drawClient.grantAction(receiptGrant(partnerId, 1));
+    const fresh = await client.grantAction(receiptGrant(partnerId, 1));
     expect(fresh._unsafeUnwrapErr().code).toBe("allocation_exhausted");
   });
 
-  it("refuses a receipt that names no partner", async (ctx) => {
-    if (!(await receiptDrawInForce())) ctx.skip();
-    const unnamed = await drawClient.grantAction(receiptGrant(undefined, 1));
+  it("refuses a receipt that names no partner", async () => {
+    const unnamed = await client.grantAction(receiptGrant(undefined, 1));
     expect(unnamed._unsafeUnwrapErr().code).toBe("refused");
   });
 
-  it("never lets a campaign hold or pay from a receipt package", async (ctx) => {
-    if (!(await receiptDrawInForce())) ctx.skip();
+  it("never lets a campaign hold or pay from a receipt package", async () => {
     const { businessId } = await receiptFunder();
     const allocationId = (await buyReceipts(businessId))._unsafeUnwrap().allocationId;
-    const held = await drawClient.hold({ allocationId, points: toPoints(1), sagaId: randomUUID() });
+    const held = await client.hold({ allocationId, points: toPoints(1), sagaId: randomUUID() });
     expect(held._unsafeUnwrapErr().code).toBe("refused");
 
     const campaign = await rewardedCampaign();
@@ -1547,7 +1522,7 @@ describe("the receipt draw (2.10.b T2b, F127)", () => {
       UPDATE campaign.reward_config SET allocation_id = ${allocationId}
        WHERE campaign_id = ${campaign.campaignId}::uuid
     `);
-    const paid = await drawClient.grantReward(reward(campaign, randomUUID(), 3));
+    const paid = await client.grantReward(reward(campaign, randomUUID(), 3));
     expect(paid._unsafeUnwrapErr().code).toBe("refused");
     expect(await remaining(allocationId)).toBe(1_000);
   });

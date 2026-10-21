@@ -8,14 +8,14 @@ const RECEIPT_POINTS = { AU: 1, ID: 10 } as const;
 
 /**
  * Journey 12 (product-intent §2.2): the snap-app server calls the earn API
- * with a receipt, signed with its partner secret. The points are funded by
- * group marketing (K6), arrive pending, and one receipt earns once. Checks
- * the ledger grant row and its marketing-expense posting.
+ * with a receipt, signed with its partner secret. The points are paid by
+ * snap-app's receipt package (F127), arrive pending, and one receipt earns
+ * once. Checks the ledger grant row and its points-issued posting.
  */
 test.afterAll(closeDb);
 
 for (const r of REGIONS) {
-  test(`J12 ${r.region}: a snap-app receipt earns marketing-funded points once`, async ({
+  test(`J12 ${r.region}: a snap-app receipt earns package-funded points once`, async ({
     page,
     context,
     request,
@@ -79,7 +79,7 @@ for (const r of REGIONS) {
       w.pendingPoints + w.availablePoints;
     expect(total(after) - total(before)).toBe(RECEIPT_POINTS[r.region]);
 
-    // One grant, in this region, posted against the marketing expense (K6).
+    // One grant, in this region, posted against points issued: the partner paid (F127).
     const { rows: grants } = await db().query<{ points: string; region: string; tid: string }>(
       `SELECT points::text, region, transfer_id AS tid FROM ledger.grant
         WHERE user_id = $1 AND action_type = 'receipt_scanned'`,
@@ -93,7 +93,7 @@ for (const r of REGIONS) {
          JOIN ledger.account a ON a.id = e.account_id WHERE e.transfer_id = $1 ORDER BY a.id`,
       [grants[0]?.tid],
     );
-    expect(legs.map((leg) => leg.id)).toContain(`plat_${r.region}_marketing_expense`);
+    expect(legs.map((leg) => leg.id)).toContain(`plat_${r.region}_points_issued`);
     expect(legs.reduce((sum, leg) => sum + Number(leg.amount), 0)).toBe(0);
 
     // The wallet shows it as pending.

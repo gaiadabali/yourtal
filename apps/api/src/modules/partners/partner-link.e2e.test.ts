@@ -35,6 +35,7 @@ afterAll(async () => {
 describe("a lasting partner link (14.3)", () => {
   it("earns 11 minutes after linking, long after the code has expired", async () => {
     const partner = await kit.seedPartner();
+    await kit.fundReceipts(partner, "AU");
     const { session, code, linkId } = await kit.linkedAdult(partner);
 
     const elevenMinutesAgo = new Date(Date.now() - 11 * 60 * 1000);
@@ -60,6 +61,7 @@ describe("a lasting partner link (14.3)", () => {
 
   it("pays ID's rate (10) and keeps one active link per partner", async () => {
     const partner = await kit.seedPartner();
+    await kit.fundReceipts(partner, "ID");
     const { session, linkId } = await kit.linkedAdult(partner, "ID");
 
     const { code: second } = (await kit.issueCode(session.cookie)).json<{ code: string }>();
@@ -85,6 +87,7 @@ describe("a lasting partner link (14.3)", () => {
 
   it("a replayed receipt pays once, under any idempotency key", async () => {
     const partner = await kit.seedPartner();
+    await kit.fundReceipts(partner, "AU");
     const { session, linkId } = await kit.linkedAdult(partner);
     const body = receipt(linkId);
 
@@ -122,6 +125,7 @@ describe("a lasting partner link (14.3)", () => {
 
   it("a revoked link earns nothing and says so; linking again works", async () => {
     const partner = await kit.seedPartner();
+    await kit.fundReceipts(partner, "AU");
     const { session, linkId } = await kit.linkedAdult(partner);
 
     const someoneElse = await sessionFor(app, { jurisdiction: "AU" });

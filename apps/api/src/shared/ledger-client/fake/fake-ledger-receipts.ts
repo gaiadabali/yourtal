@@ -20,13 +20,11 @@ import type { AppDb } from "../../persistence/drizzle-client";
 type Executor = Pick<AppDb, "execute">;
 
 /**
- * The switch. The live ledger pays receipts from marketing until T2b flips
- * `receipt_scanned` to `MarketingFunded: false` (with migration B); the fake
- * follows it, so dev and the partner e2e suites keep earning until then.
- * T2b sets this to true in the same change. Before that, a client built with
- * `{ receiptDraw: true }` (the contract spec) runs the draw.
+ * The switch, as the live ledger has it since T2b (`receipt_scanned` is
+ * `MarketingFunded: false`, with migration B): receipts draw from the
+ * funder's receipt packages and never from marketing.
  */
-export const RECEIPT_DRAW_IN_FORCE = false;
+export const RECEIPT_DRAW_IN_FORCE = true;
 
 export interface FakeLedgerOptions {
   /** Receipts draw from the funder's receipt packages; campaigns refuse a package. */

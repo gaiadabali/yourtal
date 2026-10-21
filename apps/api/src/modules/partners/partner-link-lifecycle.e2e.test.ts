@@ -54,6 +54,7 @@ describe("POST /api/partners/links/:linkId/revoke", () => {
 
   it("treats another partner's link, or a malformed id, as unknown and leaves it alone", async () => {
     const owning = await kit.seedPartner();
+    await kit.fundReceipts(owning, "AU");
     const other = await kit.seedPartner();
     const { session, linkId } = await kit.linkedAdult(owning);
 
@@ -70,6 +71,7 @@ describe("POST /api/partners/links/:linkId/revoke", () => {
 
   it("refuses a bad signature without revoking", async () => {
     const partner = await kit.seedPartner();
+    await kit.fundReceipts(partner, "AU");
     const { linkId } = await kit.linkedAdult(partner);
     const forged = await kit.partnerPost(partner, `links/${linkId}/revoke`, {}, "wrong-secret");
     expect(forged.statusCode).toBe(401);
@@ -80,6 +82,7 @@ describe("POST /api/partners/links/:linkId/revoke", () => {
 describe("account deletion ends partner links (DSAR partner_links)", () => {
   it("a deleted account's link earns nothing, its codes are gone, its receipts are detached", async () => {
     const partner = await kit.seedPartner();
+    await kit.fundReceipts(partner, "AU");
     const { session, linkId } = await kit.linkedAdult(partner);
     const earned = receipt(linkId);
     expect((await kit.partnerPost(partner, "actions", earned)).statusCode).toBe(200);

@@ -18,6 +18,7 @@ import { merchantLocations } from "../store/persistence/schema/listing.table";
 import { issueDeviceCredential, issuePairingCode } from "../devices/crypto/device-token";
 import { startLiveServices, type LiveServices } from "../devices/testing/live-services";
 import { partnerCredentials } from "./persistence/schema/partner.table";
+import { partnerKit } from "./testing/partner-e2e-kit";
 
 /**
  * TASKS.md 8.4.b's Check, end to end against the live ledger and voucher
@@ -234,6 +235,8 @@ describe.skipIf(!live)("snap-app link, earn and redeem (8.4.b), live", () => {
 
       // 4. 8.4.a: snap-app scans a receipt, signed with the seeded partner secret.
       const { partnerId, secret: partnerSecret } = await seedPartner();
+      // 2.10.b (F127): the receipt is paid by the partner's receipt package.
+      await partnerKit(app, owner).fundReceipts({ partnerId, secret: partnerSecret }, region);
       const rawBody = JSON.stringify({
         user: linkCode,
         action: "receipt_scanned",

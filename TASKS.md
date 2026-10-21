@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 8/17 | 48/63 | `████████░░`  76% |
-| **All** | | | **113/123** | **594/610** | `██████████`  97% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 8/17 | 48/65 | `███████░░░`  74% |
+| **All** | | | **113/123** | **594/612** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1674,10 +1674,12 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.8.b Settlement statements trigger real payouts, after approval → cef84dd8
   - [x] 14.8.c Read a payout back when its webhook never arrives (`getPayout`), and a staff action for disbursements left unconfirmed or refused (group 5.2.c) → 033fae42
   - [x] 14.8.d The weekly statement job 10.1.b names but which was never built, with a backfill of recent closed weeks (group 5.2.d) → 1742a5ce
+  - [ ] 14.8.e Check on staging: an approved statement's payout reaches a demo brand's account (group 5.2.e)
 - [ ] **14.9 GST tax invoices** (group 5.3) · C · needs: — (real invoices need the AU company, group 6.1.a) — 🔄 g5 (helper `g-phase5-inv`)
   - [x] 14.9.a GST tax invoices (AU) for points and boosts; PPN waits until ID takes real money (F104) → 216cc736
   - [x] 14.9.b Invoice numbering, the company's details read from the settings store, and a PDF downloadable in Studio → 216cc736
   - [x] 14.9.c Validate the `invoice_issuer` setting when staff propose it (group 5.3.c) → 033fae42
+  - [ ] 14.9.d Real tax invoices once the AU company's details are approved in `invoice_issuer` (group 5.3.d, needs 6.1.a)
 - [ ] **14.10 Identity check before real points** (group 5.9, F102) · A · needs: group 3.9.c (passkeys)
   - [ ] 14.10.a Before the first real points go to a real person (docs/16 N-5), an account needs a verified email and a passkey
   - [ ] 14.10.b The fraud checks rest on that, plus the holdback by trust tier and the earn caps; record it in docs/16

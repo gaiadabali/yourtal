@@ -42,6 +42,7 @@ export default async function ShortsPage() {
         />
       ) : result.data.items.length === 0 ? (
         <EmptyState
+          headingLevel={2}
           title={t("shortsEmpty.heading")}
           description={result.data.signedOut ? t("shortsEmpty.visitorBody") : t("shortsEmpty.body")}
           action={

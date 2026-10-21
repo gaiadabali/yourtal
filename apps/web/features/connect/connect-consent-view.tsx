@@ -70,9 +70,7 @@ export function ConnectConsentView({ details, mode }: ConnectConsentViewProps) {
           </div>
           <div className="flex flex-col gap-2">
             <Text size="body-sm">
-              {clause === null
-                ? t("policyAlone", { app: client.name })
-                : `${clause} ${t("policyAfterClause")}`}
+              {clause === null ? t("policyAlone") : `${clause} ${t("policyAfterClause")}`}
             </Text>
             <Text size="body-sm" className="flex gap-4">
               {/* No referrer: this address carries the sign-in's id. */}

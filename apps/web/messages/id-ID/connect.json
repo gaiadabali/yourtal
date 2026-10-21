@@ -46,7 +46,7 @@
     "runByExternal": "{app} dijalankan oleh {operator}, bukan oleh YourTal.",
     "notRunByYourtal": "{app} tidak dijalankan oleh YourTal.",
     "policyAfterClause": "Kebijakan privasinya menjelaskan cara data kamu dipakai.",
-    "policyAlone": "Kebijakan privasi {app} menjelaskan cara data kamu dipakai.",
+    "policyAlone": "Kebijakan privasinya menjelaskan cara data kamu dipakai.",
     "privacyLink": "Kebijakan privasi",
     "termsLink": "Ketentuan",
     "linkedApps": "Kamu bisa menghapus {app} kapan saja di YourTal, lewat Saya → Aplikasi tertaut."
@@ -69,6 +69,9 @@
       "body": "Untuk memakai {app} dengan akun remaja, orang tua atau wali yang menyetujui akun YourTal kamu perlu mengundangmu dari akun {app} mereka. Tidak ada data akunmu yang dibagikan ke {app}."
     },
     "backCta": "Kembali ke {app}"
+  },
+  "continuing": {
+    "heading": "Melanjutkan…"
   },
   "ended": {
     "heading": "Proses masuk ini sudah berakhir",

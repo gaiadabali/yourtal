@@ -24,11 +24,16 @@ vi.mock("./connect-actions", () => ({
 }));
 
 const navigateTo = vi.fn<(url: string) => void>();
-vi.mock("./connect-navigate", () => ({ navigateTo: (url: string): void => navigateTo(url) }));
+const reloadHere = vi.fn<() => void>();
+vi.mock("./connect-navigate", () => ({
+  navigateTo: (url: string): void => navigateTo(url),
+  reloadHere: (): void => reloadHere(),
+}));
 
 const { details } = await import("./connect-fixtures");
 const { ConnectScreen } = await import("./connect-screen");
-const { ConnectEndedView, ConnectUnavailableView } = await import("./connect-notice-views");
+const { ConnectEndedView, ConnectReloadView, ConnectUnavailableView } =
+  await import("./connect-notice-views");
 
 function renderScreen(value: InteractionDetails, locale: "en-AU" | "id-ID" = "en-AU") {
   return render(
@@ -51,6 +56,7 @@ function renderEn(node: React.ReactNode) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  window.sessionStorage.clear();
 });
 
 describe("login and create", () => {
@@ -185,7 +191,7 @@ describe("consent", () => {
     renderScreen(details({ client: { ...details().client, operator: "SnapApp" } }));
     expect(screen.queryByText(/is run by/)).not.toBeInTheDocument();
     expect(
-      screen.getByText("The privacy policy of SnapApp explains how it uses your details."),
+      screen.getByText("Its privacy policy explains how it uses your details."),
     ).toBeInTheDocument();
   });
 
@@ -348,5 +354,36 @@ describe("Indonesian", () => {
     expect(screen.getByRole("button", { name: "Lanjutkan" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Batal" })).toBeInTheDocument();
     expect(screen.getByText("Kamu akan kembali ke snap-apps.gaiada.com.")).toBeInTheDocument();
+  });
+});
+
+describe("no interaction cookie: one reload, then ended", () => {
+  it("reloads the same address once and says so in the meantime", () => {
+    renderEn(<ConnectReloadView uid="uid_1" />);
+    expect(reloadHere).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("heading", { level: 1, name: "Continuing…" })).toBeInTheDocument();
+    expect(window.sessionStorage.getItem("connect-reload:uid_1")).toBe("1");
+  });
+
+  it("shows ended, and does not reload again, on the visit after the reload", () => {
+    window.sessionStorage.setItem("connect-reload:uid_1", "1");
+    renderEn(<ConnectReloadView uid="uid_1" />);
+    expect(reloadHere).not.toHaveBeenCalled();
+    expect(screen.getByRole("heading", { name: "This sign-in has ended" })).toBeInTheDocument();
+  });
+
+  it("guards each sign-in on its own", () => {
+    window.sessionStorage.setItem("connect-reload:uid_1", "1");
+    renderEn(<ConnectReloadView uid="uid_2" />);
+    expect(reloadHere).toHaveBeenCalledTimes(1);
+  });
+
+  it("is Indonesian in id-ID", () => {
+    render(
+      <NextIntlClientProvider locale="id-ID" messages={{ connect: idID }}>
+        <ConnectReloadView uid="uid_1" />
+      </NextIntlClientProvider>,
+    );
+    expect(screen.getByRole("heading", { name: "Melanjutkan…" })).toBeInTheDocument();
   });
 });

@@ -46,7 +46,7 @@
     "runByExternal": "{app} is run by {operator}, not by YourTal.",
     "notRunByYourtal": "{app} isn't run by YourTal.",
     "policyAfterClause": "Its privacy policy explains how it uses your details.",
-    "policyAlone": "The privacy policy of {app} explains how it uses your details.",
+    "policyAlone": "Its privacy policy explains how it uses your details.",
     "privacyLink": "Privacy policy",
     "termsLink": "Terms",
     "linkedApps": "You can remove {app} at any time in YourTal, under Me → Linked apps."
@@ -69,6 +69,9 @@
       "body": "To use {app} with a teen account, the parent or guardian who approved your YourTal account needs to invite you from their {app} account. Nothing from your account was shared with {app}."
     },
     "backCta": "Back to {app}"
+  },
+  "continuing": {
+    "heading": "Continuing…"
   },
   "ended": {
     "heading": "This sign-in has ended",

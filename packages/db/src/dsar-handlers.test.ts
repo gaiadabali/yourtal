@@ -307,8 +307,8 @@ describe("erasing identity: profile, credential, session, guardian consent and b
 
     const report = await executeDeletion(subjectId, postgresHandlers(pool));
     const identity = report.results.find((result) => result.domain === "identity");
-    // The credential and the two unaccepted invitations.
-    expect(identity?.outcome).toMatchObject({ status: "erased", records: 3 });
+    // Two credentials (password and totp) and the two unaccepted invitations.
+    expect(identity?.outcome).toMatchObject({ status: "erased", records: 4 });
 
     const left = await pool.query<{ email: string; accepted: boolean }>(
       `SELECT email, accepted_at IS NOT NULL AS accepted

@@ -1,6 +1,11 @@
-import { and, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import { credentials } from "./schema/credential.table";
+import {
+  PASSKEY_CREDENTIAL_KIND,
+  PASSWORD_CREDENTIAL_KIND,
+  TOTP_CREDENTIAL_KIND,
+} from "./credential.repository";
 import type { Credential, CredentialRepository } from "./credential.repository";
 
 export class DrizzleCredentialRepository implements CredentialRepository {
@@ -70,7 +75,6 @@ export class DrizzleCredentialRepository implements CredentialRepository {
     identifier: string;
     secretHash: string;
     verifiedAt: Date;
-    bootstrapped: boolean;
   }): Promise<boolean> {
     const written = await this.db
       .insert(credentials)
@@ -80,7 +84,6 @@ export class DrizzleCredentialRepository implements CredentialRepository {
         set: {
           secretHash: input.secretHash,
           verifiedAt: input.verifiedAt,
-          bootstrapped: input.bootstrapped,
           updatedAt: new Date(),
         },
         // A verified (switched-on) credential is never replaced from here.
@@ -88,6 +91,32 @@ export class DrizzleCredentialRepository implements CredentialRepository {
       })
       .returning({ userId: credentials.userId });
     return written.length > 0;
+  }
+
+  async setFactorsOpenUntil(userId: string, until: Date | null): Promise<void> {
+    await this.db
+      .update(credentials)
+      .set({ factorsOpenUntil: until })
+      .where(and(eq(credentials.userId, userId), eq(credentials.kind, PASSWORD_CREDENTIAL_KIND)));
+  }
+
+  async removeAllFactors(userId: string): Promise<number> {
+    return this.db.transaction(async (tx) => {
+      const removed = await tx
+        .delete(credentials)
+        .where(
+          and(
+            eq(credentials.userId, userId),
+            inArray(credentials.kind, [PASSKEY_CREDENTIAL_KIND, TOTP_CREDENTIAL_KIND]),
+          ),
+        )
+        .returning({ kind: credentials.kind });
+      await tx
+        .update(credentials)
+        .set({ factorsOpenUntil: null })
+        .where(and(eq(credentials.userId, userId), eq(credentials.kind, PASSWORD_CREDENTIAL_KIND)));
+      return removed.length;
+    });
   }
 
   async anyVerified(kind: string): Promise<boolean> {

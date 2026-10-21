@@ -105,7 +105,6 @@ export class PasskeyService {
     userId: string,
     response: RegistrationResponseJSON,
     name: string | undefined,
-    bootstrapped: boolean,
   ): Outcome<StoredPasskey> {
     const settings = this.config.authFactors;
     if (settings === undefined) return err({ type: "factors_unavailable" });
@@ -132,7 +131,6 @@ export class PasskeyService {
       deviceType: info.credentialDeviceType,
       backedUp: info.credentialBackedUp,
       name: name ?? DEFAULT_NAME,
-      bootstrapped,
     };
     // Registered already, to this account or another: refused, never moved.
     if (!(await this.passkeys.create(passkey, pending.handle))) {

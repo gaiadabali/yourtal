@@ -16,7 +16,6 @@ import {
   accountFor,
   ageSessions,
   amrOf,
-  resetPassword,
   securityNotices,
   signedInAtOf,
   bearer,
@@ -295,68 +294,6 @@ describe("passkeys", () => {
       });
       expect(refused.statusCode, name).toBe(400);
     }
-  });
-
-  describe("a passkey planted with a phished password", () => {
-    it("can be removed after a password reset, within 72 hours", async () => {
-      const victim = await accountFor(app);
-      const planted = await addPasskey(victim, "Not mine");
-      const reset = await resetPassword(app, victim);
-      expect(reset.statusCode, reset.body).toBe(201);
-      const { token } = reset.json<{ token: string }>();
-      const removed = await app.inject({
-        method: "DELETE",
-        url: `/api/auth/passkeys/${planted.credentialId}`,
-        headers: bearer(token),
-      });
-      expect(removed.statusCode, removed.body).toBe(200);
-      const notices = await securityNotices(owner, victim.email);
-      expect(notices.at(-1)).toContain("A passkey was removed from your YourTal account");
-    });
-
-    it("cannot be removed that way after 72 hours, or by a plain password sign-in", async () => {
-      const victim = await accountFor(app);
-      const planted = await addPasskey(victim);
-      const path = `/api/auth/passkeys/${planted.credentialId}`;
-      const signedIn = await login(victim.email);
-      const plain = await app.inject({ method: "DELETE", url: path, headers: bearer(signedIn) });
-      expect(errorCode(plain)).toBe("step_up_required");
-
-      await owner.execute(
-        sql`UPDATE identity.passkey SET created_at = now() - interval '73 hours'
-            WHERE credential_id = ${planted.credentialId}`,
-      );
-      const reset = await resetPassword(app, victim);
-      const late = await app.inject({
-        method: "DELETE",
-        url: path,
-        headers: bearer(reset.json<{ token: string }>().token),
-      });
-      expect(late.statusCode).toBe(403);
-      expect(errorCode(late)).toBe("step_up_required");
-    });
-
-    it("never opens this way to a passkey added with proof of another factor", async () => {
-      const session = await accountFor(app);
-      const first = await addPasskey(session);
-      const hwk = (await signInWith(first)).signedIn.json<{ token: string }>().token;
-      const second = await addPasskey({ ...session, token: hwk }, "Added with proof");
-      const { rows } = await owner.execute<{ credential_id: string; bootstrapped: boolean }>(
-        sql`SELECT credential_id, bootstrapped FROM identity.passkey WHERE user_id = ${session.userId}`,
-      );
-      const flags = Object.fromEntries(rows.map((row) => [row.credential_id, row.bootstrapped]));
-      expect(flags).toEqual({ [first.credentialId]: true, [second.credentialId]: false });
-
-      const reset = await resetPassword(app, session);
-      const token = reset.json<{ token: string }>().token;
-      const proved = await app.inject({
-        method: "DELETE",
-        url: `/api/auth/passkeys/${second.credentialId}`,
-        headers: bearer(token),
-      });
-      expect(proved.statusCode).toBe(403);
-      expect(errorCode(proved)).toBe("step_up_required");
-    });
   });
 
   it("asks a password-only session to prove the existing passkey before adding another", async () => {

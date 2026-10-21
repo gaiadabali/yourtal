@@ -1,6 +1,7 @@
 import {
   PASSKEY_CREDENTIAL_KIND,
   PASSWORD_CREDENTIAL_KIND,
+  TOTP_CREDENTIAL_KIND,
 } from "../../persistence/credential.repository";
 import type { Credential, CredentialRepository } from "../../persistence/credential.repository";
 import type {
@@ -40,7 +41,7 @@ export class InMemoryCredentialRepository implements CredentialRepository {
       ...input,
       updatedAt: new Date(),
       verifiedAt: null,
-      bootstrapped: false,
+      factorsOpenUntil: null,
     });
     return Promise.resolve(true);
   }
@@ -65,12 +66,39 @@ export class InMemoryCredentialRepository implements CredentialRepository {
     identifier: string;
     secretHash: string;
     verifiedAt: Date;
-    bootstrapped: boolean;
   }): Promise<boolean> {
     const row = this.rows.get(this.key(input.userId, input.kind));
     if (row !== undefined && row.verifiedAt !== null) return Promise.resolve(false);
-    this.rows.set(this.key(input.userId, input.kind), { ...input, updatedAt: new Date() });
+    this.rows.set(this.key(input.userId, input.kind), {
+      ...input,
+      updatedAt: new Date(),
+      factorsOpenUntil: null,
+    });
     return Promise.resolve(true);
+  }
+
+  setFactorsOpenUntil(userId: string, until: Date | null): Promise<void> {
+    const row = this.rows.get(this.key(userId, PASSWORD_CREDENTIAL_KIND));
+    if (row !== undefined) {
+      this.rows.set(this.key(userId, PASSWORD_CREDENTIAL_KIND), {
+        ...row,
+        factorsOpenUntil: until,
+      });
+    }
+    return Promise.resolve();
+  }
+
+  /** Also drops the in-memory passkeys when a `passkeys` fake is attached (the cascade). */
+  onFactorsRemoved: ((userId: string) => void) | null = null;
+
+  async removeAllFactors(userId: string): Promise<number> {
+    let removed = 0;
+    for (const kind of [PASSKEY_CREDENTIAL_KIND, TOTP_CREDENTIAL_KIND]) {
+      if (await this.deleteByUserAndKind(userId, kind)) removed += 1;
+    }
+    this.onFactorsRemoved?.(userId);
+    await this.setFactorsOpenUntil(userId, null);
+    return removed;
   }
 
   anyVerified(kind: string): Promise<boolean> {
@@ -88,7 +116,11 @@ export class InMemoryCredentialRepository implements CredentialRepository {
 export class InMemoryPasskeyRepository implements PasskeyRepository {
   readonly rows = new Map<string, StoredPasskey>();
 
-  constructor(private readonly credentials: InMemoryCredentialRepository) {}
+  constructor(private readonly credentials: InMemoryCredentialRepository) {
+    credentials.onFactorsRemoved = (userId) => {
+      for (const [id, row] of this.rows) if (row.userId === userId) this.rows.delete(id);
+    };
+  }
 
   async userHandleOf(userId: string): Promise<string | null> {
     const row = await this.credentials.findByUserAndKind(userId, PASSKEY_CREDENTIAL_KIND);

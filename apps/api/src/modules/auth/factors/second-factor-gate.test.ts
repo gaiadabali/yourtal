@@ -7,7 +7,12 @@ import { parseAmr } from "../session/amr";
 import { RecordingFactorNotifier } from "./factor-notifier";
 import { InMemoryFactorStore } from "./factor-store";
 import { SecondFactorGate } from "./second-factor-gate";
-import { InMemoryCredentialRepository } from "./testing/in-memory-repositories";
+import {
+  InMemoryCredentialRepository,
+  InMemoryPasskeyRepository,
+} from "./testing/in-memory-repositories";
+import { FactorWindow } from "./factor-window";
+import type { SessionService } from "../session/session.service";
 import { FACTORS_CONFIG, InMemoryThrottle, RecordingSessionIssuer } from "./testing/fakes";
 import { totpCodeAt } from "./totp-code";
 import { hashOpaqueToken as hashOf } from "../crypto/opaque-token";
@@ -23,6 +28,9 @@ let totp: TotpService;
 let issuer: RecordingSessionIssuer;
 let throttle: InMemoryThrottle;
 let notifier: RecordingFactorNotifier;
+let passkeys: InMemoryPasskeyRepository;
+let window: FactorWindow;
+let revoked: string[];
 let gate: SecondFactorGate;
 
 beforeEach(async () => {
@@ -32,7 +40,15 @@ beforeEach(async () => {
   totp = new TotpService(FACTORS_CONFIG, credentials, store, throttle.asThrottle());
   issuer = new RecordingSessionIssuer();
   notifier = new RecordingFactorNotifier();
-  gate = new SecondFactorGate(totp, issuer.asIssuer(), store, notifier);
+  passkeys = new InMemoryPasskeyRepository(credentials);
+  revoked = [];
+  window = new FactorWindow(credentials, passkeys, {
+    revokeAllForUser: (userId: string) => {
+      revoked.push(userId);
+      return Promise.resolve();
+    },
+  } as unknown as SessionService);
+  gate = new SecondFactorGate(totp, issuer.asIssuer(), store, notifier, window);
   await credentials.create({
     userId: USER,
     kind: PASSWORD_CREDENTIAL_KIND,
@@ -45,11 +61,11 @@ beforeEach(async () => {
 const SESSION = "session-hash-1";
 
 /** Enrols and confirms an authenticator app; returns its seed. */
-async function switchOnTotp(bootstrapped = false, at = T0): Promise<string> {
+async function switchOnTotp(at = T0): Promise<string> {
   const enrolled = await totp.enrol(USER, SESSION);
   if (enrolled.isErr()) throw new Error(enrolled.error.type);
   const code = totpCodeAt(enrolled.value.secret, at);
-  const confirmed = await totp.confirm(USER, SESSION, code, at, bootstrapped);
+  const confirmed = await totp.confirm(USER, SESSION, code, at);
   expect(confirmed.isOk()).toBe(true);
   return enrolled.value.secret;
 }
@@ -153,12 +169,12 @@ describe("enrolment", () => {
     expect(enrolled.value.otpauthUri).toContain("ana%40example.com");
 
     const code = totpCodeAt(enrolled.value.secret, T0);
-    expect((await totp.confirm(USER, SESSION, "000000", T0, false)).isErr()).toBe(true);
+    expect((await totp.confirm(USER, SESSION, "000000", T0)).isErr()).toBe(true);
     // Another session cannot finish this enrolment.
-    const elsewhere = await totp.confirm(USER, "another-session", code, T0, false);
+    const elsewhere = await totp.confirm(USER, "another-session", code, T0);
     expect(elsewhere.isErr() && elsewhere.error.type).toBe("factor_invalid");
     expect(await totp.isEnabled(USER)).toBe(false);
-    expect((await totp.confirm(USER, SESSION, code, T0, false)).isOk()).toBe(true);
+    expect((await totp.confirm(USER, SESSION, code, T0)).isOk()).toBe(true);
     expect(await totp.isEnabled(USER)).toBe(true);
     const row = await credentials.findByUserAndKind(USER, TOTP_CREDENTIAL_KIND);
     expect(row?.secretHash).not.toContain(enrolled.value.secret);
@@ -231,7 +247,7 @@ describe("authenticator apps switched off on this deployment", () => {
       store,
       throttle.asThrottle(),
     );
-    const offGate = new SecondFactorGate(off, issuer.asIssuer(), store, notifier);
+    const offGate = new SecondFactorGate(off, issuer.asIssuer(), store, notifier, window);
     expect(off.available()).toBe(false);
     const signIn = await offGate.afterPassword(USER, later(60));
     expect(signIn.kind).toBe("session");
@@ -250,55 +266,61 @@ describe("a password reset", () => {
   });
 });
 
-describe("a bootstrapped authenticator app and a password reset", () => {
+describe("the account's factor window and a password reset", () => {
   const HOUR = 60 * 60;
 
-  it("is removed by a reset inside 72 hours, without asking for its code", async () => {
-    await switchOnTotp(true);
+  it("inside the window removes every factor, ends every session, and asks for no code", async () => {
+    await switchOnTotp();
+    await window.openForFirstFactor(USER, T0);
+    await passkeys.create(
+      {
+        credentialId: "planted",
+        userId: USER,
+        publicKey: Buffer.from("key"),
+        signCount: 0,
+        transports: [],
+        deviceType: "multiDevice",
+        backedUp: true,
+        name: "Planted",
+      },
+      "handle",
+    );
     const signIn = await gate.afterPasswordReset(USER, later(71 * HOUR));
     expect(signIn.kind).toBe("session");
+    expect(issuer.issued.at(-1)).toEqual({ userId: USER, amr: ["pwd"] });
     expect(await totp.isEnabled(USER)).toBe(false);
+    expect(await passkeys.listForUser(USER)).toEqual([]);
+    expect(revoked).toEqual([USER]);
+    expect(await window.isOpen(USER, later(71 * HOUR))).toBe(false);
     expect(notifier.sent.map((sent) => sent.notice)).toEqual([
-      { kind: "authenticator_removed_after_reset" },
+      { kind: "factors_removed_after_reset" },
       "reset_summary",
     ]);
-    if (signIn.kind !== "session") return;
-    expect(await store.hasResetProof(hashOf(signIn.token), USER)).toBe(true);
   });
 
-  it("is trusted like any other after 72 hours: the reset asks for its code", async () => {
-    await switchOnTotp(true);
+  it("after 72 hours leaves the factors and asks for the code", async () => {
+    await switchOnTotp();
+    await window.openForFirstFactor(USER, T0);
     const signIn = await gate.afterPasswordReset(USER, later(73 * HOUR));
     expect(signIn.kind).toBe("second_factor");
     expect(await totp.isEnabled(USER)).toBe(true);
+    expect(revoked).toEqual([]);
   });
 
-  it("is never removed this way when it was added with proof of another factor", async () => {
-    await switchOnTotp(false);
+  it("does nothing on an account whose window was never opened", async () => {
+    await switchOnTotp();
     const signIn = await gate.afterPasswordReset(USER, later(HOUR));
     expect(signIn.kind).toBe("second_factor");
     expect(await totp.isEnabled(USER)).toBe(true);
   });
 
-  it("marks the session from a reset's code step as email-proven, and no other", async () => {
-    const seed = await switchOnTotp(false);
-    const reset = await gate.afterPasswordReset(USER, later(60));
-    const plain = await gate.afterPassword(USER, later(61));
-    if (reset.kind !== "second_factor" || plain.kind !== "second_factor") {
-      throw new Error("expected code steps");
-    }
-    const viaReset = await gate.completeWithTotp(
-      reset.pendingToken,
-      totpCodeAt(seed, later(60)),
-      later(60),
-    );
-    const viaLogin = await gate.completeWithTotp(
-      plain.pendingToken,
-      totpCodeAt(seed, later(90)),
-      later(90),
-    );
-    if (viaReset.isErr() || viaLogin.isErr()) throw new Error("expected sessions");
-    expect(await store.hasResetProof(hashOf(viaReset.value.token), USER)).toBe(true);
-    expect(await store.hasResetProof(hashOf(viaLogin.value.token), USER)).toBe(false);
+  it("closes when the account has no factor left", async () => {
+    await switchOnTotp();
+    await window.openForFirstFactor(USER, T0);
+    await window.closeIfNoFactors(USER);
+    expect(await window.isOpen(USER, later(60))).toBe(true);
+    expect((await totp.remove(USER)).isOk()).toBe(true);
+    await window.closeIfNoFactors(USER);
+    expect(await window.isOpen(USER, later(60))).toBe(false);
   });
 });

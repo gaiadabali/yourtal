@@ -7,8 +7,6 @@ import type { AuthMethod } from "../session/amr";
 export interface PendingSignIn {
   readonly userId: string;
   readonly amr: readonly AuthMethod[];
-  /** The password was just set by a reset (an emailed link). */
-  readonly viaReset?: boolean;
 }
 
 /** An authenticator app being set up: the sealed seed, until its first code. */
@@ -43,9 +41,6 @@ export interface FactorStore {
   /** The session (by token hash) proved a second factor just now. */
   grantStepUp(sessionHash: string, userId: string, ttlSeconds: number): Promise<void>;
   hasStepUp(sessionHash: string, userId: string): Promise<boolean>;
-  /** The session (by token hash) came from a password reset just now. */
-  markResetProof(sessionHash: string, userId: string, ttlSeconds: number): Promise<void>;
-  hasResetProof(sessionHash: string, userId: string): Promise<boolean>;
   /** An unfinished app enrolment, tied to the session that started it. */
   putEnrolment(sessionHash: string, enrolment: PendingEnrolment, ttlSeconds: number): Promise<void>;
   readEnrolment(sessionHash: string): Promise<PendingEnrolment | null>;
@@ -116,14 +111,6 @@ export class RedisFactorStore implements FactorStore {
     return (await this.redis.get(`${PREFIX}:step-up:${sessionHash}`)) === userId;
   }
 
-  async markResetProof(sessionHash: string, userId: string, ttlSeconds: number): Promise<void> {
-    await this.redis.set(`${PREFIX}:reset-proof:${sessionHash}`, userId, "EX", ttlSeconds);
-  }
-
-  async hasResetProof(sessionHash: string, userId: string): Promise<boolean> {
-    return (await this.redis.get(`${PREFIX}:reset-proof:${sessionHash}`)) === userId;
-  }
-
   async putEnrolment(
     sessionHash: string,
     enrolment: PendingEnrolment,
@@ -154,7 +141,6 @@ export class InMemoryFactorStore implements FactorStore {
   private readonly tries = new Map<string, number>();
   private readonly steps = new Map<string, number>();
   private readonly stepUps = new Map<string, string>();
-  private readonly resetProofs = new Map<string, string>();
   readonly enrolments = new Map<string, PendingEnrolment>();
 
   putChallenge(key: string, value: string): Promise<void> {
@@ -203,15 +189,6 @@ export class InMemoryFactorStore implements FactorStore {
 
   hasStepUp(sessionHash: string, userId: string): Promise<boolean> {
     return Promise.resolve(this.stepUps.get(sessionHash) === userId);
-  }
-
-  markResetProof(sessionHash: string, userId: string): Promise<void> {
-    this.resetProofs.set(sessionHash, userId);
-    return Promise.resolve();
-  }
-
-  hasResetProof(sessionHash: string, userId: string): Promise<boolean> {
-    return Promise.resolve(this.resetProofs.get(sessionHash) === userId);
   }
 
   putEnrolment(sessionHash: string, enrolment: PendingEnrolment): Promise<void> {

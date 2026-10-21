@@ -36,17 +36,14 @@ CREATE TABLE identity.passkey (
   device_type    text        NOT NULL CHECK (device_type IN ('singleDevice', 'multiDevice')),
   backed_up      boolean     NOT NULL,
   -- One printable line: it is shown in Me and written into security emails.
-  -- No control characters (C0, DEL, C1), line or paragraph separators, or
-  -- invisible format characters (Unicode Cf, e.g. bidi overrides).
+  -- The same characters the contract refuses (Unicode Cc, Cf, Zl, Zp as of
+  -- Unicode 15.1): control characters (C0, DEL, C1), line and paragraph
+  -- separators, and invisible format characters such as bidi overrides and
+  -- the tag characters outside the BMP.
   name           text        NOT NULL CHECK (
     char_length(name) BETWEEN 1 AND 64
-    AND name !~ '[\x01-\x1f\x7f-\x9f\u00ad\u0600-\u0605\u061c\u06dd\u070f\u180e\u200b-\u200f\u2028-\u202e\u2060-\u2064\u2066-\u206f\ufeff\ufff9-\ufffb]'
+    AND name !~ '[\x01-\x1f\x7f-\x9f\u00ad\u0600-\u0605\u061c\u06dd\u070f\u0890-\u0891\u08e2\u180e\u200b-\u200f\u2028-\u202e\u2060-\u2064\u2066-\u206f\ufeff\ufff9-\ufffb\U000110bd\U000110cd\U00013430-\U0001343f\U0001bca0-\U0001bca3\U0001d173-\U0001d17a\U000e0001\U000e0020-\U000e007f]'
   ),
-  -- Added from a password-only session to an account with no other factor.
-  -- For 72 hours such a passkey can also be removed by a session that came
-  -- from a password reset, so one planted with a phished password can be
-  -- taken off by the owner of the email address. See the auth module.
-  bootstrapped   boolean     NOT NULL DEFAULT false,
   created_at     timestamptz NOT NULL DEFAULT now(),
   last_used_at   timestamptz,
   FOREIGN KEY (user_id, kind) REFERENCES identity.credential (user_id, kind) ON DELETE CASCADE
@@ -74,7 +71,12 @@ ALTER TABLE identity.session
   ALTER COLUMN signed_in_at SET DEFAULT now(),
   ALTER COLUMN signed_in_at SET NOT NULL;
 
--- The same bootstrapped mark for an authenticator app ('totp' rows), with
--- verified_at as its enrolment time. A password reset within 72 hours of
--- a bootstrapped app removes it instead of asking for its code.
-ALTER TABLE identity.credential ADD COLUMN bootstrapped boolean NOT NULL DEFAULT false;
+-- The account's factor window (on its 'password' row, one per account). When
+-- an account with no passkey and no authenticator app gets its first one
+-- from a session signed in with a password alone, this is set to 72 hours
+-- later; more factors added meanwhile do not move it, and it is cleared when
+-- the account has no factor left. While it is open, a password reset (which
+-- proves the mailbox) removes every passkey and app and ends every session,
+-- so a factor planted with a phished password, and anything added with it,
+-- comes off. NULL: closed.
+ALTER TABLE identity.credential ADD COLUMN factors_open_until timestamptz;

@@ -87,7 +87,6 @@ export class DrizzlePasskeyRepository implements PasskeyRepository {
             deviceType: passkey.deviceType,
             backedUp: passkey.backedUp,
             name: passkey.name,
-            bootstrapped: passkey.bootstrapped,
           })
           .onConflictDoNothing({ target: passkeys.credentialId })
           .returning({ credentialId: passkeys.credentialId });
@@ -165,6 +164,5 @@ function toStored(row: typeof passkeys.$inferSelect): StoredPasskey {
     name: row.name,
     createdAt: row.createdAt,
     lastUsedAt: row.lastUsedAt,
-    bootstrapped: row.bootstrapped,
   };
 }

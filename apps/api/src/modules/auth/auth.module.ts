@@ -30,6 +30,7 @@ import { PasskeyController } from "./factors/passkey.controller";
 import { TotpController } from "./factors/totp.controller";
 import { SignInMethodsController } from "./factors/sign-in-methods.controller";
 import { SignedInCaller } from "./factors/signed-in-session";
+import { FactorWindow } from "./factors/factor-window";
 import { EmailFactorNotifier, FACTOR_NOTIFIER } from "./factors/factor-notifier";
 
 /**
@@ -70,6 +71,7 @@ import { EmailFactorNotifier, FACTOR_NOTIFIER } from "./factors/factor-notifier"
     TotpService,
     SecondFactorGate,
     SignedInCaller,
+    FactorWindow,
     { provide: FACTOR_STORE, useClass: RedisFactorStore },
     { provide: FACTOR_NOTIFIER, useClass: EmailFactorNotifier },
     { provide: SESSION_VALIDATOR, useExisting: SessionService },

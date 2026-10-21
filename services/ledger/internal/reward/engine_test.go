@@ -422,9 +422,13 @@ func TestEveryTaxonomyEntryIsUsable(t *testing.T) {
 		if action != reward.ActionWatchCompleted && definition.Points <= 0 {
 			t.Errorf("%s pays %d", action, definition.Points)
 		}
-		if definition.MaxPerUserPerDay <= 0 {
+		// F127: a receipt has no per-person count, said explicitly.
+		if definition.MaxPerUserPerDay <= 0 && definition.MaxPerUserPerDay != reward.NoPerUserCount {
 			t.Errorf("%s is capped at %d per day, so it can never pay",
 				action, definition.MaxPerUserPerDay)
+		}
+		if (definition.MaxPerUserPerDay == reward.NoPerUserCount) != (action == reward.ActionReceiptScanned) {
+			t.Errorf("%s: per-person count %d; only receipts have none", action, definition.MaxPerUserPerDay)
 		}
 	}
 }

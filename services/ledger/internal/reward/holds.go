@@ -22,9 +22,15 @@ type HoldRequest struct {
 	TTL time.Duration
 }
 
-// Hold reserves points, or returns ErrAllocationExhausted.
+// Hold reserves points, or returns ErrAllocationExhausted. A receipt
+// package is refused (ErrWrongFunder): it pays receipts only, and a package
+// never stops being one.
 func (e *Engine) Hold(ctx context.Context, req HoldRequest) error {
-	held, err := sqlcgen.New(e.pool).HoldAllocation(ctx, sqlcgen.HoldAllocationParams{
+	q := sqlcgen.New(e.pool)
+	if err := refuseReceiptPackage(ctx, q, req.AllocationID); err != nil {
+		return err
+	}
+	held, err := q.HoldAllocation(ctx, sqlcgen.HoldAllocationParams{
 		HoldID: req.ID, AllocationID: req.AllocationID, Points: req.Points,
 		TtlSeconds: int64(req.TTL / time.Second),
 	})

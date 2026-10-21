@@ -178,13 +178,14 @@ func TestGrantActionIsMarketingFundedAndBacked(t *testing.T) {
 		t.Fatal(err)
 	}
 	user := freshUser()
-	for _, kind := range []string{"streak", "receipt", "goodwill"} {
+	// Receipts are paid by their partner's receipt package (receipts_test.go).
+	for _, kind := range []string{"streak", "goodwill"} {
 		if _, err := engine.GrantAction(ctx, reward.ActionRequest{Kind: kind, UserID: user, Points: 60,
 			TrustTier: 3, IdempotencyKey: kind + "-1"}); err != nil {
 			t.Fatalf("%s: %v", kind, err)
 		}
 	}
-	if b, _ := ledger.New(pool).Balance(ctx, ledger.UserAccountID(user, ledger.PurposeAvailable)); b != 180 {
-		t.Errorf("available = %d, want 180", b)
+	if b, _ := ledger.New(pool).Balance(ctx, ledger.UserAccountID(user, ledger.PurposeAvailable)); b != 120 {
+		t.Errorf("available = %d, want 120", b)
 	}
 }

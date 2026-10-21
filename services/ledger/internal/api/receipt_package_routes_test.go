@@ -170,26 +170,36 @@ func TestAReceiptPackagePurchaseOverHTTP(t *testing.T) {
 	}
 }
 
-// The expand step (docs/27 §4): a receipt grant may name its partner, and an
-// older body without it is still paid as before.
-func TestAnActionGrantAcceptsAPartner(t *testing.T) {
+// The switch (T2b, docs/27 §3.3): a receipt names its partner and is paid
+// by the partner's receipt package; with no package it is not paid at all.
+func TestAReceiptGrantIsPaidByItsPartnersPackage(t *testing.T) {
 	s := newServer(t)
-	s.mustCall("/economy/marketing/fund", map[string]any{"region": "AU", "amountMinor": 100_000,
-		"proposedBy": "alice", "approvedBy": "bob"}, nil)
-	s.mustCall("/allocations/purchase", map[string]any{"businessId": uuid(), "region": "AU", "currency": "AUD",
-		"points": 10_000, "paidMinor": 45_000, "idempotencyKey": unique("buy")}, nil)
-	for _, partner := range []string{"snap-app", ""} {
+	partner, business := unique("partner"), uuid()
+	ledgertest.SetRegionSetting(t, "AU", "receipt_funder."+partner, fmt.Sprintf(`{"businessId": %q}`, business))
+	receipt := func(partner string) map[string]any {
 		body := map[string]any{"kind": "receipt", "userId": uuid(), "region": "AU", "points": 1,
 			"trustTier": 3, "idempotencyKey": unique("receipt"), "ageBand": "adult"}
 		if partner != "" {
 			body["partnerId"] = partner
 		}
-		var granted struct {
-			Points int64 `json:"points"`
-		}
-		s.mustCall("/actions/grants", body, &granted)
-		if granted.Points != 1 {
-			t.Errorf("partner %q: granted = %+v", partner, granted)
-		}
+		return body
+	}
+
+	var paused problem
+	if code := s.call("/actions/grants", receipt(partner), &paused); code != http.StatusConflict || paused.Code != "allocation_exhausted" {
+		t.Errorf("no package yet: %d %+v, want 409 allocation_exhausted", code, paused)
+	}
+	s.mustCall("/allocations/purchase", map[string]any{"businessId": business, "region": "AU", "currency": "AUD",
+		"points": 1_000, "paidMinor": 3_000, "idempotencyKey": unique("rcpt"), "tierKey": "starter", "programme": "receipts"}, nil)
+	var granted struct {
+		Points int64 `json:"points"`
+	}
+	s.mustCall("/actions/grants", receipt(partner), &granted)
+	if granted.Points != 1 {
+		t.Errorf("granted = %+v", granted)
+	}
+	var refused httpError
+	if code := s.call("/actions/grants", receipt(""), &refused); code != http.StatusBadRequest || refused.Error.Code != "refused" {
+		t.Errorf("no partner: %d %+v, want 400 refused", code, refused)
 	}
 }

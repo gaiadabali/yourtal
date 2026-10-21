@@ -83,14 +83,16 @@ func (e *Engine) WithCaps(caps Caps) *Engine {
 // the counts it reads cannot change before the grant is written (EM-06,
 // EW-11). Every count uses the database's now(), never the caller's.
 func (e *Engine) checkCaps(ctx context.Context, q *sqlcgen.Queries, req GrantRequest, def ActionDefinition, caps Caps) error {
-	perUser, err := q.CountRecentGrantsForUser(ctx, sqlcgen.CountRecentGrantsForUserParams{
-		UserID: req.UserID, ActionType: string(req.Action),
-	})
-	if err != nil {
-		return fmt.Errorf("counting user grants: %w", err)
-	}
-	if perUser >= int64(def.MaxPerUserPerDay) {
-		return fmt.Errorf("%w: %d of %d for %s", ErrUserCapReached, perUser, def.MaxPerUserPerDay, req.Action)
+	if def.MaxPerUserPerDay != NoPerUserCount {
+		perUser, err := q.CountRecentGrantsForUser(ctx, sqlcgen.CountRecentGrantsForUserParams{
+			UserID: req.UserID, ActionType: string(req.Action),
+		})
+		if err != nil {
+			return fmt.Errorf("counting user grants: %w", err)
+		}
+		if perUser >= int64(def.MaxPerUserPerDay) {
+			return fmt.Errorf("%w: %d of %d for %s", ErrUserCapReached, perUser, def.MaxPerUserPerDay, req.Action)
+		}
 	}
 
 	// Device and IP caps span every action: several different actions from

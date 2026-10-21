@@ -117,6 +117,9 @@ func (e *Engine) HoldForCampaign(ctx context.Context, req HoldRequest, campaignI
 			return fmt.Errorf("%w: campaign %s is paid from %s, not %s",
 				ErrWrongFunder, campaignID, config.AllocationID, req.AllocationID)
 		}
+		if err := refuseReceiptPackage(ctx, q, req.AllocationID); err != nil {
+			return err
+		}
 		if err := e.checkCampaignBudget(ctx, q, campaignID, req.ID, req.Points); err != nil {
 			return err
 		}

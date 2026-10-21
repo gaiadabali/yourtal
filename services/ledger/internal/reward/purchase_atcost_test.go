@@ -226,8 +226,7 @@ func TestAReceiptPackageReplaysOnlyAsTheSameProgramme(t *testing.T) {
 
 // K6 for the slice: once a package's points are all issued, the reserve
 // holds exactly what they would settle for at B, and issuing them moved no
-// cash. The receipt draw is T2b's, so the spend here is ordinary grants on
-// the package's allocation.
+// cash. The spend is receipts, drawn from the package (T2b).
 func TestAFullySpentPackageIsBackedAtExactlyB(t *testing.T) {
 	au, _, pool := atCostEngines(t)
 	au = au.WithCaps(uncapped)
@@ -239,7 +238,8 @@ func TestAFullySpentPackageIsBackedAtExactlyB(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bought, err := au.RecordPurchase(ctx, receiptPurchase(receiptFunder(t, ledger.RegionAU), ledger.RegionAU, "starter", 1_000, 3_000))
+	partner, business := fundedPartner(t, ledger.RegionAU)
+	bought, err := au.RecordPurchase(ctx, receiptPurchase(business, ledger.RegionAU, "starter", 1_000, 3_000))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -247,7 +247,9 @@ func TestAFullySpentPackageIsBackedAtExactlyB(t *testing.T) {
 
 	users := []string{unique("usr"), unique("usr")}
 	for _, user := range users {
-		if _, err := au.Grant(ctx, reward.WithPoints(request(user, bought.AllocationID, reward.ActionWatchCompleted), 500)); err != nil {
+		receipt := receiptFor(user, partner, 500)
+		receipt.TrustTier = 1 // held back, so the points stay pending
+		if _, err := au.GrantAction(ctx, receipt); err != nil {
 			t.Fatalf("spending the package: %v", err)
 		}
 	}

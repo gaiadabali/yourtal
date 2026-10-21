@@ -120,10 +120,14 @@ type GrantRequest struct {
 	// validity belongs to whoever owns that evidence.
 	Evidence string
 	// AllocationID is the funded block this draws from. Mandatory — that is
-	// the whole point.
+	// the whole point — except for a receipt, whose partner's receipt
+	// package is found by drawReceipt.
 	AllocationID string
-	DeviceID     string
-	IPAddress    string
+	// PartnerID is the partner that reported a receipt (F127); its funder's
+	// receipt packages pay it. Required for receipts, ignored otherwise.
+	PartnerID string
+	DeviceID  string
+	IPAddress string
 	// HoldID is the reward session's hold (Hold), when it has one.
 	HoldID string
 	// CampaignID is set for campaign rewards.
@@ -278,6 +282,14 @@ func (e *Engine) issue(
 		}
 		defer unlock()
 	}
+	// F127: a receipt takes its partner's receipts lock, after the user's.
+	if req.Action == ActionReceiptScanned && req.PartnerID != "" {
+		unlock, err := lockReceiptsSession(ctx, conn, e.region, req.PartnerID)
+		if err != nil {
+			return GrantResult{}, err
+		}
+		defer unlock()
+	}
 
 	err = ledger.WithSerializableRetry(ctx, conn,
 		func(tx pgx.Tx) error {
@@ -301,9 +313,10 @@ func (e *Engine) issue(
 			}
 
 			// K6, structurally: the allocation verbs are the only way points
-			// leave an allocation, and an exhausted one draws nothing.
+			// leave an allocation, and an exhausted one draws nothing. A
+			// receipt draws from its partner's receipt packages (F127).
 			ref := fmt.Sprintf("%s_%s_%s", req.UserID, req.Action, req.ExternalRef)
-			allocation, err := drawFor(ctx, queries, req, ref, def.Points)
+			allocation, err := e.draw(ctx, tx, queries, req, ref, def.Points)
 			if err != nil {
 				return err
 			}
@@ -390,10 +403,22 @@ func (e *Engine) issue(
 	return result, nil
 }
 
+// draw takes the grant's points from its funding: a receipt from its
+// partner's receipt packages, anything else from its own allocation.
+func (e *Engine) draw(
+	ctx context.Context, tx pgx.Tx, q *sqlcgen.Queries, req GrantRequest, ref string, points int64,
+) (sqlcgen.GetAllocationRow, error) {
+	if req.Action == ActionReceiptScanned {
+		return e.drawReceipt(ctx, tx, q, req.PartnerID, ref, points)
+	}
+	return drawFor(ctx, q, req, ref, points)
+}
+
 // postingFor picks the ledger pattern. Both credit the user's pending
-// account identically; the debit says who paid: the partner (points_issued)
-// or the platform (marketing_expense). checkFunder has already matched the
-// allocation to the action.
+// account identically; the debit says who paid: the partner (points_issued,
+// which includes a receipt package's funder) or the platform
+// (marketing_expense). checkFunder has already matched the allocation to the
+// action.
 func (e *Engine) postingFor(def ActionDefinition, userID string) []ledger.Entry {
 	if def.MarketingFunded {
 		return ledger.GrantMarketing(e.region, userID, def.Points)

@@ -63,8 +63,8 @@ type ActionRequest struct {
 	// AgeBand is 12.1.c's teen/adult cap selector (required by the
 	// contract's grantAction handler — see earning_routes.go).
 	AgeBand AgeBand
-	// PartnerID is the partner that reported a receipt (F127), whose receipt
-	// package will pay it. Accepted from 2.10.b T2a; not read yet.
+	// PartnerID is the partner that reported a receipt (F127), whose
+	// funder's receipt package pays it. Required for receipts.
 	PartnerID string
 }
 
@@ -72,8 +72,9 @@ var actionKinds = map[string]ActionType{
 	"streak": ActionDailyStreak, "receipt": ActionReceiptScanned, "goodwill": ActionGoodwill,
 }
 
-// GrantAction pays a marketing-funded action from the region's marketing
-// budget; every point is backed by marketing cash as it is issued (K6).
+// GrantAction pays a streak or goodwill credit from the region's marketing
+// budget, every point backed by marketing cash as it is issued (K6), and a
+// receipt from its partner's receipt package (F127, drawReceipt).
 func (e *Engine) GrantAction(ctx context.Context, req ActionRequest) (GrantResult, error) {
 	action, known := actionKinds[req.Kind]
 	if !known {
@@ -82,47 +83,78 @@ func (e *Engine) GrantAction(ctx context.Context, req ActionRequest) (GrantResul
 	if req.Points <= 0 || req.IdempotencyKey == "" {
 		return GrantResult{}, fmt.Errorf("reward: an action needs points and an idempotency key")
 	}
-	budget, err := e.marketingBudget(ctx)
-	if err != nil {
-		return GrantResult{}, err
-	}
 	def, _ := Definition(action)
 	def.Points, def.Evidence = req.Points, EvidenceNone
-	return e.contractGrant(ctx, GrantRequest{
-		UserID: req.UserID, Action: action, ExternalRef: req.IdempotencyKey, AllocationID: budget,
+	grant := GrantRequest{
+		UserID: req.UserID, Action: action, ExternalRef: req.IdempotencyKey,
 		IdempotencyKey: req.IdempotencyKey, def: &def,
 		DeviceID: req.DeviceID, IPAddress: req.IPAddress,
 		AgeBand: req.AgeBand,
-	}, req.TrustTier)
+	}
+	if action == ActionReceiptScanned {
+		// Refused before the replay, as the fake does: a receipt names its partner.
+		if req.PartnerID == "" {
+			return GrantResult{}, errNoPartner
+		}
+		grant.PartnerID = req.PartnerID
+	} else {
+		budget, err := e.marketingBudget(ctx)
+		if err != nil {
+			return GrantResult{}, err
+		}
+		grant.AllocationID = budget
+	}
+	return e.contractGrant(ctx, grant, req.TrustTier)
 }
 
 // contractGrant is Grant with the contract's replay rule and the tier's
-// holdback.
+// holdback. The replay runs before any funding is looked up, so a paid
+// receipt stays a duplicate after its package is spent. A receipt's replay
+// answers the first grant even if its points differ: the receipt rate may
+// have changed since (F127).
 func (e *Engine) contractGrant(ctx context.Context, req GrantRequest, tier int) (GrantResult, error) {
-	prior, err := sqlcgen.New(e.pool).GetGrantByExternalRef(ctx, sqlcgen.GetGrantByExternalRefParams{
-		UserID: req.UserID, ActionType: string(req.Action), ExternalRef: req.ExternalRef,
-	})
-	if err == nil {
-		sameKey := prior.IdempotencyKey != nil && *prior.IdempotencyKey == req.IdempotencyKey
-		switch {
-		case sameKey && prior.Points == req.def.Points:
-			return GrantResult{GrantID: prior.ID, Points: prior.Points, Region: e.region,
-				GrantedAt: prior.CreatedAt.Time, UnlockAt: prior.UnlockAt.Time}, nil
-		case sameKey:
-			return GrantResult{}, fmt.Errorf("%w: %s was granted %d points",
-				ledger.ErrIdempotencyConflict, req.IdempotencyKey, prior.Points)
-		default:
-			return GrantResult{}, fmt.Errorf("%w: %s/%s", ErrAlreadyGranted, req.Action, req.ExternalRef)
-		}
-	} else if !errors.Is(err, pgx.ErrNoRows) {
-		return GrantResult{}, fmt.Errorf("reading an earlier grant: %w", err)
+	if replay, found, err := e.replay(ctx, req); found || err != nil {
+		return replay, err
 	}
 	hours, err := e.holdbackHours(ctx, tier)
 	if err != nil {
 		return GrantResult{}, err
 	}
 	req.HoldbackHours = &hours
-	return e.Grant(ctx, req)
+	granted, err := e.Grant(ctx, req)
+	if errors.Is(err, ErrAlreadyGranted) {
+		// A concurrent request with this key was paid first: answer it.
+		if replay, found, replayErr := e.replay(ctx, req); found || replayErr != nil {
+			return replay, replayErr
+		}
+	}
+	return granted, err
+}
+
+// replay answers an earlier grant of the same external ref: the grant for
+// the same key, a conflict for the same key with other points, or
+// ErrAlreadyGranted for another key. found is false when there is none.
+func (e *Engine) replay(ctx context.Context, req GrantRequest) (result GrantResult, found bool, err error) {
+	prior, err := sqlcgen.New(e.pool).GetGrantByExternalRef(ctx, sqlcgen.GetGrantByExternalRefParams{
+		UserID: req.UserID, ActionType: string(req.Action), ExternalRef: req.ExternalRef,
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return GrantResult{}, false, nil
+	}
+	if err != nil {
+		return GrantResult{}, false, fmt.Errorf("reading an earlier grant: %w", err)
+	}
+	sameKey := prior.IdempotencyKey != nil && *prior.IdempotencyKey == req.IdempotencyKey
+	switch {
+	case sameKey && (prior.Points == req.def.Points || req.Action == ActionReceiptScanned):
+		return GrantResult{GrantID: prior.ID, Points: prior.Points, Region: e.region,
+			GrantedAt: prior.CreatedAt.Time, UnlockAt: prior.UnlockAt.Time}, true, nil
+	case sameKey:
+		return GrantResult{}, true, fmt.Errorf("%w: %s was granted %d points",
+			ledger.ErrIdempotencyConflict, req.IdempotencyKey, prior.Points)
+	default:
+		return GrantResult{}, true, fmt.Errorf("%w: %s/%s", ErrAlreadyGranted, req.Action, req.ExternalRef)
+	}
 }
 
 // holdbackHours is the tier's holdback from the region's settings (F12).

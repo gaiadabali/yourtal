@@ -98,11 +98,15 @@ func (e *Engine) campaignGrant(ctx context.Context, req RewardRequest) (GrantReq
 		return GrantRequest{}, fmt.Errorf("%w: allocation %s: %w", ErrWrongFunder, config.AllocationID, err)
 	}
 	// EM-05/EM-16: only the campaign owner's own purchased points, in the
-	// campaign's region, pay its viewers.
+	// campaign's region, pay its viewers; never a receipt package (F127).
 	if allocation.FunderType != "partner" || allocation.FunderID != uuidText(owner.BusinessID) ||
 		allocation.Region == nil || *allocation.Region != owner.Region {
 		return GrantRequest{}, fmt.Errorf("%w: allocation %s is not %s's partner allocation in %s",
 			ErrWrongFunder, config.AllocationID, uuidText(owner.BusinessID), owner.Region)
+	}
+	if allocation.IsReceiptPackage {
+		return GrantRequest{}, fmt.Errorf("%w: allocation %s is a receipt package; it pays receipts only",
+			ErrWrongFunder, config.AllocationID)
 	}
 
 	def, _ := Definition(ActionWatchCompleted)

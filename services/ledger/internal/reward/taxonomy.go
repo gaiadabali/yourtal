@@ -26,7 +26,10 @@ import "time"
 // reward silently rewrites history in every report that groups by action.
 // "How much did we pay for a completion in September" stops being answerable
 // the first time the number moves.
-const TaxonomyVersion = 1
+//
+// 2 (F127): receipts are paid by the partner's receipt package, not
+// marketing, and have no per-person daily count.
+const TaxonomyVersion = 2
 
 // ActionType is the closed set of things a user can be paid for.
 //
@@ -72,7 +75,8 @@ type ActionDefinition struct {
 	// §9's "never in its arithmetic" means two users completing the same
 	// campaign are paid the same, whatever the engine thinks of them.
 	Points int64
-	// MaxPerUserPerDay caps repetition of this action by one person.
+	// MaxPerUserPerDay caps repetition of this action by one person, or is
+	// NoPerUserCount. Zero is not "unlimited": it can never pay.
 	MaxPerUserPerDay int
 	// Evidence must be present or the grant is refused.
 	Evidence EvidenceRequirement
@@ -82,6 +86,10 @@ type ActionDefinition struct {
 	// advertiser paying for attention is a report that misleads.
 	MarketingFunded bool
 }
+
+// NoPerUserCount: the action has no per-person daily count; the daily and
+// monthly earn caps (and device and IP caps) still bound it.
+const NoPerUserCount = -1
 
 // taxonomy is the whole price list. Fixed at this version; changing a number
 // means bumping TaxonomyVersion, so old grants stay attributable to the
@@ -107,8 +115,10 @@ var taxonomy = map[ActionType]ActionDefinition{
 		Points: 5_000, MaxPerUserPerDay: 5, Evidence: EvidenceReferralCode, MarketingFunded: true,
 	},
 	ActionReceiptScanned: {
-		// Marketing-funded (K6): the platform pays for receipts, not a partner.
-		Points: 300, MaxPerUserPerDay: 10, Evidence: EvidenceReceiptHash, MarketingFunded: true,
+		// F127: the partner's receipt package pays (drawReceipt), so no
+		// marketing cash. No per-person count: a receipt needs a paid scan
+		// worth more than its points, so farming loses money.
+		Points: 300, MaxPerUserPerDay: NoPerUserCount, Evidence: EvidenceReceiptHash,
 	},
 	ActionGoodwill: {
 		Points: 500, MaxPerUserPerDay: 3, Evidence: EvidenceNone, MarketingFunded: true,

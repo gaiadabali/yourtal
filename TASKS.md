@@ -1715,7 +1715,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
 - [ ] **14.19 Phase 5's screens: evidence and fixes** (group 5.11) · B + C · needs: — — 🔄 g5
   - [x] 14.19.a Screenshots and axe for every Phase 5 screen, both widths, themes and locales: no WCAG A/AA violations, no overflow (2026-10-21)
   - [x] 14.19.b The auction page crashed for bidders (a client-only helper called on the server) → edd733d6
-  - [ ] 14.19.c The other findings: parked-purchases hydration error, the statements badge, id-ID money formats, staff raw codes and ids, the simulation's id placeholder, axe's review items on the package picker
+  - [x] 14.19.c The other findings: parked-purchases hydration error, the statements badge, id-ID money formats, staff raw codes and ids, the simulation's id placeholder, axe's review items on the package picker → 6e7724cd
   - [ ] 14.19.d Capture again: the auction states and signed-out Shorts with videos
 Group 5.7, the founder's walkthrough, is 13.6 here.
 - [x] **14.17 The Security workflow is green again** (group 1.25) · A · needs: — — ✅ 2026-10-21 14c0259b

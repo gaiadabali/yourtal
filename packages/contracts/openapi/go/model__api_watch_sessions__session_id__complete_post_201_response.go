@@ -19,7 +19,7 @@ import (
 // checks if the ApiWatchSessionsSessionIdCompletePost201Response type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &ApiWatchSessionsSessionIdCompletePost201Response{}
 
-// ApiWatchSessionsSessionIdCompletePost201Response `completed` is always true on success — a refusal throws instead (see the 403 below). `granted` is false with `reason` set (never `pendingPoints`/`unlockAt`) when the session was non-earning (already_earned, no funding configured, the allocation hold failed, or the grant call itself failed after coverage completed) — 5.1.b/5.3.a. `deliveryCoverage` is the 10.4.c segment-log cross-check's verdict, `\"unknown\"` until that lands (5.1.d).
+// ApiWatchSessionsSessionIdCompletePost201Response `completed` is always true on success — a refusal throws instead (see the 403 below). `granted` is false with `reason` set (never `pendingPoints`/`unlockAt`) when the session was non-earning (already_earned, no funding configured, identity_check_required (F126), the allocation hold failed, or the grant call itself failed after coverage completed) — 5.1.b/5.3.a. `deliveryCoverage` is the 10.4.c segment-log cross-check's verdict, `\"unknown\"` until that lands (5.1.d).
 type ApiWatchSessionsSessionIdCompletePost201Response struct {
 	Completed interface{} `json:"completed"`
 	Granted bool `json:"granted"`

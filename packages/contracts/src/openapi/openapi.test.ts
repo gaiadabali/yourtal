@@ -126,6 +126,12 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "Passkeys and codes: the browser's assertion, documented inline in route-registry.a-auth.ts inside the passkey sign-in and TOTP disable bodies.",
   webAuthnOptionsSchema:
     "Passkeys and codes: WebAuthn options passed to the browser as they are, documented inline in route-registry.a-auth.ts.",
+  pointsIdentityCheckSettingSchema:
+    "F126: the shape staff may propose for the points_identity_check region setting, checked server-side when proposed and approved. A value inside ProposeSettingBody.value, never a body of its own.",
+  identityCheckStepSchema:
+    "F126: one step of identityCheckSchema, nested inside POST /api/watch/sessions's inline identityCheck (route-registry.b.ts).",
+  identityCheckSchema:
+    "F126: POST /api/watch/sessions's identityCheck field, documented inline in route-registry.b.ts.",
   passkeyCeremonySchema:
     "Passkeys and codes: the passkey sign-in and step-up options responses, documented inline in route-registry.a-auth.ts.",
   passkeySignInRequestSchema:

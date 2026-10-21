@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
 import { receiptFunderKey } from "@yourtal/contracts/billing/receipt-funder";
 import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
+import { regionDateString } from "@yourtal/contracts/me/streak";
 import type {
   GenerateStatementRequest,
   Statement,
@@ -737,8 +738,12 @@ describe("earning and spending", () => {
   });
 
   it("10.7.b: a burn in AU shows in AU's pointsRedeemed and never in ID's", async () => {
-    const today = new Date().toISOString().slice(0, 10);
+    // The ledger buckets a day in the REGION's own zone (services/ledger
+    // internal/ledger/chart.go: Sydney for AU, Jakarta for ID), not UTC. A UTC
+    // "today" made this case fail whenever the runner's clock sat in the hours
+    // where the region's date had already rolled over (CI runs in UTC).
     const redeemedToday = async (region: "AU" | "ID"): Promise<number> => {
+      const today = regionDateString(new Date(), region);
       const rows = (await client.economyDaily({ region, from: today, to: today }))._unsafeUnwrap();
       return rows.find((row) => row.date === today)?.pointsRedeemed ?? 0;
     };

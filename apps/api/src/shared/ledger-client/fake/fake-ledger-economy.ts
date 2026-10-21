@@ -21,6 +21,7 @@ import type {
   Statement,
   StatementsRequest,
 } from "@yourtal/contracts/ledger-internal/economy";
+import { REGION_TIMEZONE } from "@yourtal/contracts/me/streak";
 import type { AppDb } from "../../persistence/drizzle-client";
 
 /** DisputeWindowDays is F12's "Settlement | Dispute window 7 days" (services/ledger/internal/settlement's own constant, mirrored here). */
@@ -81,11 +82,15 @@ export function economyDaily(
 ): ResultAsync<readonly EconomyDayRow[], LedgerError> {
   return new ResultAsync(
     (async (): Promise<Result<readonly EconomyDayRow[], LedgerError>> => {
+      // A day is the REGION's calendar day, as services/ledger buckets it
+      // (chart.go TimeZone), not the database session's. Found by the live
+      // contract leg in CI (1.28.d): UTC and Sydney disagree for ~11h a day.
+      const tz = REGION_TIMEZONE[request.region as keyof typeof REGION_TIMEZONE];
       const issuedRows = await db.execute<{ day: string; issued: string }>(sql`
-        SELECT to_char(granted_at, 'YYYY-MM-DD') AS day, SUM(points) AS issued
+        SELECT to_char(granted_at AT TIME ZONE ${tz}, 'YYYY-MM-DD') AS day, SUM(points) AS issued
           FROM platform.ledger_fake_grant
          WHERE region = ${request.region} AND NOT reversed
-           AND granted_at::date BETWEEN ${request.from}::date AND ${request.to}::date
+           AND (granted_at AT TIME ZONE ${tz})::date BETWEEN ${request.from}::date AND ${request.to}::date
          GROUP BY day ORDER BY day
       `);
       // 10.7.b: region-tagged now (fake-ledger-rewards.ts's burnForVoucher
@@ -93,10 +98,10 @@ export function economyDaily(
       // excludes a K13 reinstatement, whose points are no longer redeemed,
       // the same way `NOT reversed` excludes a reversed grant above.
       const burnedRows = await db.execute<{ day: string; burned: string }>(sql`
-        SELECT to_char(burned_at, 'YYYY-MM-DD') AS day, SUM(points) AS burned
+        SELECT to_char(burned_at AT TIME ZONE ${tz}, 'YYYY-MM-DD') AS day, SUM(points) AS burned
           FROM platform.ledger_fake_burn
          WHERE region = ${request.region} AND state = 'burned'
-           AND burned_at::date BETWEEN ${request.from}::date AND ${request.to}::date
+           AND (burned_at AT TIME ZONE ${tz})::date BETWEEN ${request.from}::date AND ${request.to}::date
          GROUP BY day
       `);
       const reserveRows = await db.execute<{ reserve: string }>(sql`

@@ -89,6 +89,20 @@ async function fundReserve(region: "AU" | "ID", minor: number): Promise<void> {
   );
 }
 
+/** F126's facts, seeded the way sign-in writes them: a verified password credential and one passkey. */
+async function seedIdentityCheck(userId: string): Promise<void> {
+  await pool.query(
+    `INSERT INTO identity.credential (user_id, kind, identifier, secret_hash, verified_at)
+     VALUES ($1, 'password', $2, 'not-a-hash', now()), ($1, 'passkey', $3, '', NULL)`,
+    [userId, `backstop+${userId}@example.test`, `handle-${userId}`],
+  );
+  await pool.query(
+    `INSERT INTO identity.passkey (credential_id, user_id, public_key, device_type, backed_up, name)
+     VALUES ($1, $2, decode('00', 'hex'), 'multiDevice', true, 'Test passkey')`,
+    [`cred-${userId}`, userId],
+  );
+}
+
 describe("streak-backstop job", () => {
   it("grants the day-3 bonus for a user who never calls GET /api/me/streak, exactly once", async () => {
     const campaign = await seededCampaign();
@@ -170,5 +184,34 @@ describe("streak-backstop job", () => {
     // broken streak never costs points"); day3Granted stays false so a
     // later tick, once coverage recovers, still pays it.
     expect(state.rows[0]?.day3_granted).toBe(false);
+  });
+
+  it("F126: in production an account without the identity check forfeits the bonus; one with it is paid", async () => {
+    const campaign = await seededCampaign();
+    const unchecked = randomUUID();
+    const checked = randomUUID();
+    await seedProfile(unchecked, "1990-01-01");
+    await seedProfile(checked, "1990-01-01");
+    await seedIdentityCheck(checked);
+    await fundReserve("AU", 1_000_000_00);
+    for (const userId of [unchecked, checked]) {
+      await seedCompletedSession(userId, new Date("2026-08-11T04:00:00Z"), campaign);
+      await seedCompletedSession(userId, new Date("2026-08-12T04:00:00Z"), campaign);
+      await seedCompletedSession(userId, new Date("2026-08-13T04:00:00Z"), campaign);
+    }
+
+    await runStreakBackstop(pool, new Date("2026-08-13T12:00:00Z"), undefined, "production");
+
+    const grants = await pool.query<{ user_id: string }>(
+      `SELECT user_id FROM platform.ledger_fake_grant WHERE user_id = ANY($1) AND kind = 'streak'`,
+      [[unchecked, checked]],
+    );
+    expect(grants.rows.map((row) => row.user_id)).toEqual([checked]);
+    const state = await pool.query<{ day3_granted: boolean }>(
+      `SELECT day3_granted FROM me.streak_state WHERE user_id = $1`,
+      [unchecked],
+    );
+    // Forfeited, not deferred: passing the check later does not pay this streak.
+    expect(state.rows[0]?.day3_granted).toBe(true);
   });
 });

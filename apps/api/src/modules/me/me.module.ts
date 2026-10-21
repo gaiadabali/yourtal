@@ -5,6 +5,7 @@ import type { AppConfig } from "../../config/app-config";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { PaymentProvidersModule } from "../../shared/drivers/payment-providers.module";
+import { EarningCheckModule } from "../auth/earning-check/earning-check.module";
 import { IdentityModule } from "../identity/identity.module";
 import { WalletModule } from "../wallet/wallet.module";
 import { CampaignModule, CAMPAIGN_DB } from "../campaign/campaign.module";
@@ -74,7 +75,14 @@ export const ME_DB = Symbol("ME_DB");
  * for the ledger client (grantAction/coverage/settings).
  */
 @Module({
-  imports: [IdentityModule, WalletModule, CampaignModule, PaymentProvidersModule],
+  imports: [
+    IdentityModule,
+    WalletModule,
+    CampaignModule,
+    PaymentProvidersModule,
+    // F126: streak bonuses wait for the identity check like every other earn.
+    EarningCheckModule,
+  ],
   controllers: [
     ConsentController,
     InterestsController,

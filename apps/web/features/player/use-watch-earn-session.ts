@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PresentedQuestion } from "@yourtal/contracts/question/presented-question";
+import type { IdentityCheckStep } from "@yourtal/contracts/identity/earning-check";
 import { questionsAskedFor } from "./question-schedule";
 import { MIN_RESUMABLE_SECONDS } from "./resume-position";
 import {
@@ -47,7 +48,12 @@ export type WatchEarnPhase =
       answerTimerMs: number;
     }
   /** D1 (1.6.l): the server refused the reward at start (budget or daily cap used up, paused, ...). Shown BEFORE any video plays; the viewer may still watch without earning. */
-  | { kind: "refused"; reason: string | null }
+  | {
+      kind: "refused";
+      reason: string | null;
+      /** F126: the identity-check steps still missing, when that is why. */
+      identityCheck?: readonly IdentityCheckStep[];
+    }
   | { kind: "claiming" }
   | { kind: "earned"; points: number; unlockAt: string | null }
   | { kind: "not_earning"; reason: string | null }
@@ -139,7 +145,7 @@ export function useWatchEarnSession(campaignId: string) {
       );
       return;
     }
-    const { session, manifestUrl, durationSeconds } = started.data;
+    const { session, manifestUrl, durationSeconds, identityCheck } = started.data;
     sessionIdRef.current = session.id;
     manifestUrlRef.current = manifestUrl;
     durationRef.current = durationSeconds;
@@ -151,7 +157,11 @@ export function useWatchEarnSession(campaignId: string) {
     // A repeat visit (already earned) just plays; any other refusal is told to
     // the viewer first, and playback waits for their choice.
     if (!earning && session.nonEarningReason !== "already_earned") {
-      setPhase({ kind: "refused", reason: session.nonEarningReason });
+      setPhase({
+        kind: "refused",
+        reason: session.nonEarningReason,
+        ...(identityCheck === undefined ? {} : { identityCheck: identityCheck.missing }),
+      });
       return;
     }
     await beginPlayback(session.id, manifestUrl, durationSeconds, earning);

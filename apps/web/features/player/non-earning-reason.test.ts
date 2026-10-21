@@ -11,6 +11,7 @@ describe("nonEarningReasonKey", () => {
     ],
     ["already_earned", "alreadyEarned"],
     ["no_funding_configured", "noFunding"],
+    ["identity_check_required", "identityCheck"],
     ["Rewards are paused right now.", "paused"],
   ])("maps %s", (reason, key) => {
     expect(nonEarningReasonKey(reason)).toBe(key);

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { completeWatchAction, reportWatchProgressAction, startWatchAction } from "./feed-actions";
+import type { IdentityCheckStep } from "@yourtal/contracts/identity/earning-check";
 
 export type QuickEarnPhase =
   | { kind: "idle" }
@@ -9,7 +10,8 @@ export type QuickEarnPhase =
   | { kind: "watching"; sessionId: string; manifestUrl: string; durationSeconds: number }
   | { kind: "claiming" }
   | { kind: "earned"; points: number; unlockAt: string | null }
-  | { kind: "not_earning"; alreadyEarned: boolean }
+  /** `identityCheck`: F126's steps still missing, when that is why. */
+  | { kind: "not_earning"; alreadyEarned: boolean; identityCheck?: readonly IdentityCheckStep[] }
   /** 12.2.b: a teen's own quiet hours (21:00-07:00) refused a NEW reward session — kindly, not as a generic failure. */
   | { kind: "quiet_hours" }
   | { kind: "failed" };
@@ -41,9 +43,13 @@ export function useQuickEarn(campaignId: string) {
       );
       return;
     }
-    const { session, alreadyEarned, manifestUrl, durationSeconds } = started.data;
+    const { session, alreadyEarned, manifestUrl, durationSeconds, identityCheck } = started.data;
     if (session.nonEarning) {
-      setPhase({ kind: "not_earning", alreadyEarned });
+      setPhase({
+        kind: "not_earning",
+        alreadyEarned,
+        ...(identityCheck === undefined ? {} : { identityCheck: identityCheck.missing }),
+      });
       return;
     }
     reportedTo.current = 0;

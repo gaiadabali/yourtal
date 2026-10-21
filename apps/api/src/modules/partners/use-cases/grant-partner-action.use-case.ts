@@ -1,9 +1,10 @@
 import { createHash } from "node:crypto";
-import { okAsync } from "neverthrow";
+import { errAsync, okAsync } from "neverthrow";
 import type { ResultAsync } from "neverthrow";
 import { toPoints } from "@yourtal/contracts/money";
 import type { LedgerError } from "@yourtal/contracts/ledger-internal/ledger-error";
 import type { PartnerActionResult } from "@yourtal/contracts/device/partner-action";
+import type { EarningVerdict } from "@yourtal/contracts/identity/earning-check";
 import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-internal-client";
 import type { PartnerReceiptRepository } from "../persistence/partner-receipt.repository";
 import type { PartnerLink } from "../persistence/partner-link.repository";
@@ -23,10 +24,17 @@ export interface GrantPartnerActionInput {
 /** A region setting reader, narrowed to the one call this use-case needs (`ledger.getSettings`'s own shape, threaded through so this file stays test-fakeable without a real ledger client). */
 export type ReceiptPointsReader = (region: "AU" | "ID") => Promise<number>;
 
+/** F126's rule (`EarningIdentityCheck.verdictFor`), narrowed to this use-case. */
+export type IdentityVerdictReader = (
+  userId: string,
+  region: "AU" | "ID",
+) => Promise<EarningVerdict>;
+
 export interface GrantPartnerActionDeps extends PartnerLinkDeps {
   readonly ledger: LedgerInternalClient;
   readonly receipts: PartnerReceiptRepository;
   readonly receiptPoints: ReceiptPointsReader;
+  readonly identityVerdict: IdentityVerdictReader;
 }
 
 /** F12: trust tier 3 for a partner-sourced action — staff-set only, never shown to the user, same as any demo/partner-originated grant. */
@@ -61,7 +69,24 @@ export function grantPartnerAction(
   );
 }
 
+/**
+ * F126: no earning before the identity check. The first thing once the
+ * account is known, so a refused receipt is not even recorded and earns
+ * nothing; the partner shows `identity_check_required`.
+ */
 function grantForLink(
+  deps: GrantPartnerActionDeps,
+  link: PartnerLink,
+  input: GrantPartnerActionInput,
+): ResultAsync<PartnerActionResult, PartnersError> {
+  return wrapPersistence(deps.identityVerdict(link.userId, link.region)).andThen((verdict) =>
+    verdict.mayEarn
+      ? claimAndGrant(deps, link, input)
+      : errAsync<PartnerActionResult, PartnersError>({ type: "identity_check_required" }),
+  );
+}
+
+function claimAndGrant(
   deps: GrantPartnerActionDeps,
   link: PartnerLink,
   input: GrantPartnerActionInput,

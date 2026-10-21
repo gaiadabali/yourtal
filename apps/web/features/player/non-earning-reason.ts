@@ -18,12 +18,15 @@ export type NonEarningReasonKey =
   | "velocityCapped"
   | "unavailable"
   | "notConfirmed"
+  | "identityCheck"
   | "generic";
 
 const BY_REASON: Readonly<Record<string, NonEarningReasonKey>> = {
   already_earned: "alreadyEarned",
   no_funding_configured: "noFunding",
   pending_funding_check: "notConfirmed",
+  // F126: the account has not verified its email and added a passkey yet.
+  identity_check_required: "identityCheck",
   "This campaign has given out all its rewards.": "campaignCapReached",
   "This campaign has given out today's rewards. You can earn from it again tomorrow.":
     "campaignDailyCapReached",

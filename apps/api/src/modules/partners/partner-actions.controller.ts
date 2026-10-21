@@ -37,6 +37,8 @@ import type { GrantPartnerActionDeps } from "./use-cases/grant-partner-action.us
 import { linkPartnerAccount, revokePartnerLink } from "./use-cases/partner-link.use-case";
 import { receiptPointsReader } from "./receipt-points-reader";
 import { mapPartnersErrorToHttpException } from "./to-http-exception";
+import { EARNING_IDENTITY_CHECK } from "../auth/earning-check/earning-identity-check";
+import type { EarningIdentityCheck } from "../auth/earning-check/earning-identity-check";
 
 const PARTNER_RETENTION_MS = 24 * 60 * 60 * 1000;
 const linkIdParam = z.uuid();
@@ -67,6 +69,7 @@ export class PartnerActionsController {
     @Inject(PARTNER_LINK_REPOSITORY) links: PartnerLinkRepository,
     @Inject(ACCOUNT_AGE_LOOKUP) ages: AccountAgeLookup,
     @Inject(LEDGER_INTERNAL_CLIENT) ledger: LedgerInternalClient,
+    @Inject(EARNING_IDENTITY_CHECK) identityCheck: EarningIdentityCheck,
   ) {
     this.deps = {
       ledger,
@@ -75,6 +78,7 @@ export class PartnerActionsController {
       links,
       ages,
       receiptPoints: receiptPointsReader(ledger),
+      identityVerdict: (userId, region) => identityCheck.verdictFor(userId, region),
     };
   }
 

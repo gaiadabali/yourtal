@@ -53,6 +53,10 @@ import { describeLedgerRefusal } from "./ledger-refusal";
 import { WATCH_COMPLETION_HOOK } from "./watch-completion-hook";
 import type { WatchCompletionHook } from "./watch-completion-hook";
 import type { DeliveryCoverageReader } from "./delivery-coverage";
+import { IDENTITY_CHECK_REQUIRED } from "@yourtal/contracts/identity/earning-check";
+import type { EarningVerdict, IdentityCheck } from "@yourtal/contracts/identity/earning-check";
+import { EARNING_IDENTITY_CHECK } from "../auth/earning-check/earning-identity-check";
+import type { EarningIdentityCheck } from "../auth/earning-check/earning-identity-check";
 
 const startBody = z.object({ campaignId: z.uuid() });
 const progressBody = z.object({
@@ -96,6 +100,7 @@ export class WatchController {
     @Inject(MANIFEST_SIGNING_SECRET) private readonly manifestSigningSecret: string,
     @Inject(DELIVERY_COVERAGE_READER) private readonly delivery: DeliveryCoverageReader,
     @Inject(WATCH_COMPLETION_HOOK) private readonly completionHook: WatchCompletionHook,
+    @Inject(EARNING_IDENTITY_CHECK) private readonly identityCheck: EarningIdentityCheck,
   ) {}
 
   @Authorize({ kind: "campaign_view", action: "earn" })
@@ -149,27 +154,51 @@ export class WatchController {
       throw new ForbiddenException("This campaign's current terms could not be read.");
     }
 
-    const { session: started, resumed } = await this.sessions.startOrResume({
+    // F126: no earning before the identity check. Asked before the session
+    // starts, so a refused account never takes a hold.
+    const identity: EarningVerdict =
+      profile === null
+        ? { mayEarn: true }
+        : await this.identityCheck.verdictFor(userId, profile.region);
+
+    let { session: started, resumed } = await this.sessions.startOrResume({
       userId,
       campaignId,
       termsVersion,
     });
-
-    if (!resumed) {
-      const outcome = await this.decideEarningOutcome(
+    // Someone who was refused for the check and has since passed it gets a
+    // fresh, earning attempt rather than the old non-earning one back.
+    if (
+      resumed &&
+      identity.mayEarn &&
+      started.nonEarningReason === IDENTITY_CHECK_REQUIRED &&
+      (await this.sessions.supersedeNonEarning(started.id, IDENTITY_CHECK_REQUIRED))
+    ) {
+      ({ session: started, resumed } = await this.sessions.startOrResume({
         userId,
         campaignId,
-        started.id,
-        terms.durationSeconds,
-      );
+        termsVersion,
+      }));
+    }
+
+    if (!resumed) {
+      const outcome = identity.mayEarn
+        ? await this.decideEarningOutcome(userId, campaignId, started.id, terms.durationSeconds)
+        : { nonEarning: true, nonEarningReason: IDENTITY_CHECK_REQUIRED, holdId: null };
       await this.sessions.finalizeEarningOutcome(started.id, outcome);
     }
     const session = (await this.sessions.findById(started.id)) ?? started;
+    const identityCheck: IdentityCheck | undefined =
+      session.nonEarningReason === IDENTITY_CHECK_REQUIRED && !identity.mayEarn
+        ? { missing: [...identity.missing] }
+        : undefined;
 
     return {
       session,
       durationSeconds: terms.durationSeconds,
       alreadyEarned: session.nonEarningReason === "already_earned",
+      // F126: what the viewer still has to do before this would earn.
+      ...(identityCheck === undefined ? {} : { identityCheck }),
       // 5.6.a: a per-session manifest URL, signed with the same scheme
       // `/api/internal/hls-auth` verifies for nginx.
       manifestUrl: mintManifestUrl({
@@ -363,6 +392,15 @@ export class WatchController {
     const profile = await this.profiles.findByUserId(session.userId);
     if (profile === null) {
       throw new ForbiddenException("No account profile found for this session.");
+    }
+    // F126 again at the grant: a session that started earning before the
+    // check was switched on (or before a passkey was removed) pays nothing.
+    if (!(await this.identityCheck.verdictFor(session.userId, profile.region)).mayEarn) {
+      if (session.holdId !== null) {
+        const released = await this.ledger.release(session.holdId);
+        if (released.isErr()) this.logger.warn(`hold release failed: ${released.error.code}`);
+      }
+      return { completed: true, granted: false, reason: IDENTITY_CHECK_REQUIRED, pendingPoints: 0 };
     }
 
     const points = pointsForCompletion(

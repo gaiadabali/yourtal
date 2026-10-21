@@ -15,6 +15,7 @@ import { DrizzleCampaignRepository } from "../campaign/persistence/drizzle-campa
 import { StreakService } from "./streak.service";
 import { DrizzleStreakStateRepository } from "./persistence/streak-state.repository";
 import { DrizzleCompletedWatchDaysReader } from "./persistence/completed-watch-days.reader";
+import type { EarningIdentityCheck } from "../auth/earning-check/earning-identity-check";
 
 /**
  * Exercises the real streak arithmetic (`@yourtal/contracts/me/streak`) and
@@ -133,6 +134,14 @@ function fakeProfiles(dateOfBirth: string, trustTier = 0) {
 const ADULT_PROFILES = fakeProfiles("1990-01-01");
 const TEEN_PROFILES = fakeProfiles("2012-01-01");
 
+/** F126's check, decided per test: off (anyone earns), or refusing everyone. */
+const ALLOW_EARNING: EarningIdentityCheck = {
+  verdictFor: () => Promise.resolve({ mayEarn: true }),
+};
+const REFUSE_EARNING: EarningIdentityCheck = {
+  verdictFor: () => Promise.resolve({ mayEarn: false, missing: ["add_passkey"] }),
+};
+
 /** Inserts a completed `watch.session` row directly — see the suite's own header. */
 async function seedCompletedSession(
   userId: string,
@@ -155,6 +164,7 @@ describe("StreakService.sync", () => {
       completedDays,
       ledger as unknown as LedgerInternalClient,
       ADULT_PROFILES as never,
+      ALLOW_EARNING,
     );
 
     // Three consecutive UTC days at midday — safely inside one AU calendar
@@ -194,12 +204,14 @@ describe("StreakService.sync", () => {
       completedDays,
       ledger as unknown as LedgerInternalClient,
       ADULT_PROFILES as never,
+      ALLOW_EARNING,
     );
     const serviceB = new StreakService(
       streakStates,
       completedDays,
       ledger as unknown as LedgerInternalClient,
       ADULT_PROFILES as never,
+      ALLOW_EARNING,
     );
 
     await seedCompletedSession(userId, new Date("2026-08-01T04:00:00Z"), campaign);
@@ -225,6 +237,7 @@ describe("StreakService.sync", () => {
       completedDays,
       ledger as unknown as LedgerInternalClient,
       ADULT_PROFILES as never,
+      ALLOW_EARNING,
     );
 
     await seedCompletedSession(userId, new Date("2026-03-01T04:00:00Z"), campaign);
@@ -254,6 +267,7 @@ describe("StreakService.sync", () => {
       completedDays,
       ledger as unknown as LedgerInternalClient,
       TEEN_PROFILES as never,
+      ALLOW_EARNING,
     );
 
     await seedCompletedSession(userId, new Date("2026-04-01T04:00:00Z"), campaign);
@@ -266,5 +280,39 @@ describe("StreakService.sync", () => {
     expect(ledger.granted).toHaveLength(0);
     // Marked granted regardless — a teen account never retries this bonus.
     expect((await streakStates.find(userId))?.day3Granted).toBe(true);
+  });
+
+  it("F126: an account without the identity check gets no bonus, and that streak never pays later", async () => {
+    const campaign = await seededCampaign();
+    const userId = randomUUID();
+    const ledger = new StubLedger();
+    const unchecked = new StreakService(
+      streakStates,
+      completedDays,
+      ledger as unknown as LedgerInternalClient,
+      ADULT_PROFILES as never,
+      REFUSE_EARNING,
+    );
+
+    await seedCompletedSession(userId, new Date("2026-05-01T04:00:00Z"), campaign);
+    await seedCompletedSession(userId, new Date("2026-05-02T04:00:00Z"), campaign);
+    await seedCompletedSession(userId, new Date("2026-05-03T04:00:00Z"), campaign);
+
+    const result = await unchecked.sync(userId);
+    expect(result.state.currentLength).toBe(3);
+    expect(result.grantsIssued).toHaveLength(0);
+    expect(ledger.granted).toHaveLength(0);
+    expect((await streakStates.find(userId))?.day3Granted).toBe(true);
+
+    // Passing the check later does not pay the day-3 bonus already passed.
+    const checked = new StreakService(
+      streakStates,
+      completedDays,
+      ledger as unknown as LedgerInternalClient,
+      ADULT_PROFILES as never,
+      ALLOW_EARNING,
+    );
+    expect((await checked.sync(userId)).grantsIssued).toHaveLength(0);
+    expect(ledger.granted).toHaveLength(0);
   });
 });

@@ -13,6 +13,11 @@ import { DEFAULT_HOLDBACK_HOURS_BY_TIER } from "@yourtal/contracts/ledger-intern
 import type { TrustTier } from "@yourtal/contracts/ledger-internal/rewards";
 import { toPoints } from "@yourtal/contracts/money";
 import { ageBandFrom, ageYearsFrom } from "@yourtal/jurisdiction/age";
+import {
+  identityCheckApplies,
+  judgeEarningIdentity,
+  POINTS_IDENTITY_CHECK_SETTING_KEY,
+} from "@yourtal/contracts/identity/earning-check";
 import { defineJob } from "../job";
 import { createWorkerLedgerClient } from "../ledger-client";
 import type { WorkerLedgerClient } from "../ledger-client";
@@ -157,6 +162,32 @@ async function getSetting(client: PoolClient, region: Region, key: string): Prom
   return rows[0]?.value;
 }
 
+/**
+ * F126, the same rule `EarningIdentityCheck` applies in the API: a verified
+ * sign-in email and at least one passkey, required in production and behind
+ * the region setting elsewhere.
+ */
+async function mayEarnPoints(
+  client: PoolClient,
+  region: Region,
+  userId: string,
+  appEnv: string,
+): Promise<boolean> {
+  const setting = await getSetting(client, region, POINTS_IDENTITY_CHECK_SETTING_KEY);
+  if (!identityCheckApplies(appEnv, setting)) return true;
+  const { rows } = await client.query<{ email_verified: boolean; passkeys: number }>(
+    `SELECT EXISTS (SELECT 1 FROM identity.credential
+                     WHERE user_id = $1 AND kind = 'password' AND verified_at IS NOT NULL) AS email_verified,
+            (SELECT count(*) FROM identity.passkey WHERE user_id = $1)::int AS passkeys`,
+    [userId],
+  );
+  const facts = rows[0];
+  return judgeEarningIdentity(true, {
+    emailVerified: facts?.email_verified === true,
+    passkeyCount: facts?.passkeys ?? 0,
+  }).mayEarn;
+}
+
 /** Mirrors `fake-ledger-economy.ts`'s `coverage()` formula exactly (1.2.a). */
 async function coverageRatio(
   client: PoolClient,
@@ -223,6 +254,7 @@ async function processCandidate(
   candidate: Candidate,
   now: Date,
   liveLedger: WorkerLedgerClient | undefined,
+  appEnv: string,
 ): Promise<void> {
   const client = await db.connect();
   try {
@@ -272,7 +304,13 @@ async function processCandidate(
       const { state: advanced, bonuses } = advanceStreak(before, days);
       finalState = advanced;
       const isTeen = ageBandFrom(ageYearsFrom(candidate.dateOfBirth, now)) === "teen";
-      if (bonuses.length > 0 && !isTeen) {
+      // F126: an account without the identity check forfeits the bonus,
+      // the same way a teen does (StreakService.sync).
+      if (
+        bonuses.length > 0 &&
+        !isTeen &&
+        (await mayEarnPoints(client, region, candidate.userId, appEnv))
+      ) {
         const bonusPoints = (await getSetting(client, region, "streak_bonus_points")) as
           { day3?: unknown; day7?: unknown } | undefined;
         const pauseThresholdRaw = await getSetting(
@@ -371,11 +409,12 @@ export async function runStreakBackstop(
   db: Pool,
   now: Date = new Date(),
   liveLedger?: WorkerLedgerClient,
+  appEnv = "dev",
 ): Promise<void> {
   for (const region of REGIONS) {
     const candidates = await candidatesFor(db, region, now);
     for (const candidate of candidates) {
-      await processCandidate(db, region, candidate, now, liveLedger);
+      await processCandidate(db, region, candidate, now, liveLedger, appEnv);
     }
   }
 }
@@ -386,6 +425,6 @@ export const job = defineJob({
   async handle(_job, { config }) {
     const liveLedger =
       config.ledger.mode === "live" ? createWorkerLedgerClient(config.ledger) : undefined;
-    await runStreakBackstop(poolFor(config.databaseUrl), new Date(), liveLedger);
+    await runStreakBackstop(poolFor(config.databaseUrl), new Date(), liveLedger, config.appEnv);
   },
 });

@@ -103,7 +103,14 @@
       "velocityCapped": "You have reached today's earning limit.",
       "unavailable": "Rewards are temporarily unavailable.",
       "notConfirmed": "Your points could not be confirmed right now.",
-      "generic": "This video isn't giving out points right now."
+      "generic": "This video isn't giving out points right now.",
+      "identityCheck": "Verify your email and add a passkey to start earning."
     }
+  },
+  "identityCheck": {
+    "verifyEmailCta": "Send me the verification email",
+    "verifyEmailSent": "Check your inbox and open the link, then come back to earn points.",
+    "verifyEmailFailed": "The email couldn't be sent. Try again in a minute.",
+    "addPasskeyCta": "Add a passkey"
   }
 }

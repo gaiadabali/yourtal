@@ -29,4 +29,9 @@ export type PartnerLinkError =
   | LinkRevokedError
   | TeenNotAllowedError;
 
-export type PartnerActionError = PartnerLinkError;
+/** F126: the account has not passed the identity check (a verified email and a passkey), so it earns nothing yet. */
+export interface IdentityCheckRequiredError {
+  readonly type: "identity_check_required";
+}
+
+export type PartnerActionError = PartnerLinkError | IdentityCheckRequiredError;

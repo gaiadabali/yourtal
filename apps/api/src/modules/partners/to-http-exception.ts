@@ -44,6 +44,14 @@ export function mapPartnersErrorToHttpException(error: PartnersError): HttpExcep
       return new ForbiddenException(
         body("teen_consent_not_allowed", "a teen account can't link a partner app", linkId),
       );
+    case "identity_check_required":
+      return new ForbiddenException(
+        body(
+          "identity_check_required",
+          "the user must verify their email and add a passkey in YourTal before they can earn points",
+          linkId,
+        ),
+      );
     case "persistence_failed":
       logger.error(error.cause);
       return new ServiceUnavailableException(

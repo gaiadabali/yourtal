@@ -2,6 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import * as z from "zod";
+import { identityCheckSchema } from "@yourtal/contracts/identity/earning-check";
 import { apiFetch } from "@/lib/api/api-fetch";
 import type { ApiResult } from "@/lib/api/api-fetch";
 
@@ -26,6 +27,7 @@ const startSchema = z.object({
   durationSeconds: z.number().int().positive(),
   alreadyEarned: z.boolean(),
   manifestUrl: z.string().min(1),
+  identityCheck: identityCheckSchema.optional(),
 });
 export type StartedWatch = z.infer<typeof startSchema>;
 

@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import * as z from "zod";
 import type { PresentedQuestion } from "@yourtal/contracts/question/presented-question";
+import { identityCheckSchema } from "@yourtal/contracts/identity/earning-check";
 import { apiFetch } from "@/lib/api/api-fetch";
 import type { ApiResult } from "@/lib/api/api-fetch";
 
@@ -28,6 +29,8 @@ const startSchema = z.object({
   durationSeconds: z.number().int().positive(),
   alreadyEarned: z.boolean(),
   manifestUrl: z.string().min(1),
+  /** F126: present when the session will not earn until the viewer passes the identity check. */
+  identityCheck: identityCheckSchema.optional(),
 });
 export type StartedWatch = z.infer<typeof startSchema>;
 

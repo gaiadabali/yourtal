@@ -45,6 +45,15 @@ const LINK_REVOKED: RouteErrorResponse = {
   documented: true,
 };
 
+const IDENTITY_CHECK_REQUIRED: RouteErrorResponse = {
+  status: 403,
+  description:
+    "The account has not passed YourTal's identity check (a verified email and a passkey), so " +
+    "it earns nothing yet and the receipt is not recorded (identity_check_required, F126). " +
+    "Ask the user to finish it in YourTal; the body carries the linkId to use next time.",
+  documented: true,
+};
+
 const LEDGER_REFUSED: RouteErrorResponse = {
   status: 409,
   description:
@@ -116,6 +125,7 @@ export const PARTNERS_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       INVALID_PARTNER_SIGNATURE,
       TEEN_NOT_ALLOWED,
       LINK_REVOKED,
+      IDENTITY_CHECK_REQUIRED,
       LEDGER_REFUSED,
       SERVICE_UNAVAILABLE,
     ],

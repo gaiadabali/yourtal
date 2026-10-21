@@ -645,6 +645,7 @@
     "receiptPaused": "Poin struk dijeda",
     "receiptPausedHint": "Beli paket struk agar struk kembali memberi poin.",
     "receiptRemaining": "{formatted} poin tersisa",
+    "receiptLeftSuffix": "poin tersisa",
     "receiptPerReceipt": "{count, plural, other {# poin}} per struk",
     "receiptPackagesTitle": "Paket struk",
     "receiptPackagesNote": "Hanya untuk hadiah struk",

@@ -57,6 +57,9 @@ export function ReceiptProgrammePanel({
             size="lg"
             formatLabel={(formatted) => t("billing.receiptRemaining", { formatted })}
           />
+          <span aria-hidden="true" className="text-body-sm text-fg-muted">
+            {t("billing.receiptLeftSuffix")}
+          </span>
           <span className="text-body-sm text-fg-muted">
             {t("billing.receiptPerReceipt", { count: programme.pointsPerReceipt })}
           </span>

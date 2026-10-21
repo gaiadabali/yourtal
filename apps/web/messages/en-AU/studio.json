@@ -645,6 +645,7 @@
     "receiptPaused": "Receipt points are paused",
     "receiptPausedHint": "Buy a receipt package and receipts start earning again.",
     "receiptRemaining": "{formatted} points left",
+    "receiptLeftSuffix": "points left",
     "receiptPerReceipt": "{count, plural, one {# point} other {# points}} per receipt",
     "receiptPackagesTitle": "Receipt packages",
     "receiptPackagesNote": "For receipt rewards only",

@@ -16,6 +16,7 @@ import {
   useBrowserSupportsWebAuthn,
 } from "@/features/auth/passkey-ceremony";
 import { SignInMethodError } from "./sign-in-method-error";
+import { StepUpPanel } from "./step-up";
 import {
   registerPasskeyAction,
   registerPasskeyOptionsAction,
@@ -24,6 +25,15 @@ import {
 
 export interface MePasskeysSectionProps {
   initialPasskeys: readonly PasskeySummary[];
+  /** The authenticator app is on and available, so a code from it can confirm a change. */
+  appCodeAvailable: boolean;
+}
+
+/** What the API refused for want of a step-up, to run again once the person has confirmed. */
+type Refused = { kind: "add" } | { kind: "remove"; id: string };
+
+function errorCodeOf(error: { kind: string; code?: string }): string {
+  return error.kind === "http" && error.code ? error.code : error.kind;
 }
 
 /**
@@ -31,9 +41,11 @@ export interface MePasskeysSectionProps {
  * and removes one after an inline confirm. The list comes from the server, so
  * every change ends in `router.refresh()`; a removed row is hidden at once
  * (`removedIds`) rather than waiting for that round trip. Whether the last
- * sign-in method may go is the API's call (`last_sign_in_method`).
+ * sign-in method may go is the API's call (`last_sign_in_method`). When the
+ * API wants a fresh proof first (`step_up_required`), the "Confirm it's you"
+ * panel opens and the refused change runs again once it passes.
  */
-export function MePasskeysSection({ initialPasskeys }: MePasskeysSectionProps) {
+export function MePasskeysSection({ initialPasskeys, appCodeAvailable }: MePasskeysSectionProps) {
   const t = useTranslations("me.passkeys");
   const format = useFormatter();
   const router = useRouter();
@@ -43,46 +55,42 @@ export function MePasskeysSection({ initialPasskeys }: MePasskeysSectionProps) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [done, setDone] = useState<"added" | "removed" | null>(null);
+  const [refused, setRefused] = useState<Refused | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const passkeys = initialPasskeys.filter((passkey) => !removedIds.has(passkey.id));
   const day = (iso: string) => format.dateTime(new Date(iso), { dateStyle: "medium" });
 
-  function handleAdd() {
-    setErrorCode(null);
-    setDone(null);
-    startTransition(async () => {
-      const ceremony = await runRegistration(registerPasskeyOptionsAction);
-      if (!ceremony.ok) {
-        setErrorCode(ceremony.code);
-        return;
-      }
-      const saved = await registerPasskeyAction(ceremony.data.response, name);
-      if (!saved.ok) {
-        const code = saved.error.kind === "http" ? saved.error.code : saved.error.kind;
-        setErrorCode(passkeyApiCode(code));
-        return;
-      }
-      setName("");
-      setDone("added");
-      router.refresh();
-    });
+  /** Runs one change; a step-up refusal parks it in `refused` instead of showing an error. */
+  function failed(code: string, retry: Refused): void {
+    if (code === "step_up_required") setRefused(retry);
+    else setErrorCode(code);
   }
 
-  function handleRemove(id: string) {
+  async function addPasskey() {
+    const ceremony = await runRegistration(registerPasskeyOptionsAction);
+    if (!ceremony.ok) return failed(ceremony.code, { kind: "add" });
+    const saved = await registerPasskeyAction(ceremony.data.response, name);
+    if (!saved.ok) return failed(passkeyApiCode(errorCodeOf(saved.error)), { kind: "add" });
+    setName("");
+    setDone("added");
+    router.refresh();
+  }
+
+  async function removePasskey(id: string) {
+    const result = await removePasskeyAction(id);
+    setConfirmingId(null);
+    if (!result.ok) return failed(errorCodeOf(result.error), { kind: "remove", id });
+    setRemovedIds((ids) => new Set(ids).add(id));
+    setDone("removed");
+    router.refresh();
+  }
+
+  function run(change: Refused) {
     setErrorCode(null);
     setDone(null);
-    startTransition(async () => {
-      const result = await removePasskeyAction(id);
-      setConfirmingId(null);
-      if (!result.ok) {
-        setErrorCode(result.error.kind === "http" ? result.error.code : result.error.kind);
-        return;
-      }
-      setRemovedIds((ids) => new Set(ids).add(id));
-      setDone("removed");
-      router.refresh();
-    });
+    setRefused(null);
+    startTransition(() => (change.kind === "add" ? addPasskey() : removePasskey(change.id)));
   }
 
   return (
@@ -119,7 +127,7 @@ export function MePasskeysSection({ initialPasskeys }: MePasskeysSectionProps) {
                         variant="danger"
                         size="sm"
                         disabled={isPending}
-                        onClick={() => handleRemove(passkey.id)}
+                        onClick={() => run({ kind: "remove", id: passkey.id })}
                       >
                         {t("confirmRemoveCta")}
                       </Button>
@@ -144,6 +152,7 @@ export function MePasskeysSection({ initialPasskeys }: MePasskeysSectionProps) {
                     onClick={() => {
                       setErrorCode(null);
                       setDone(null);
+                      setRefused(null);
                       setConfirmingId(passkey.id);
                     }}
                   >
@@ -164,7 +173,12 @@ export function MePasskeysSection({ initialPasskeys }: MePasskeysSectionProps) {
               value={name}
               onChange={(event) => setName(event.target.value)}
             />
-            <Button type="button" onClick={handleAdd} disabled={isPending} className="self-start">
+            <Button
+              type="button"
+              onClick={() => run({ kind: "add" })}
+              disabled={isPending}
+              className="self-start"
+            >
               {t("addCta")}
             </Button>
           </div>
@@ -172,6 +186,14 @@ export function MePasskeysSection({ initialPasskeys }: MePasskeysSectionProps) {
           <Notice tone="info">{t("unsupported")}</Notice>
         )}
 
+        {refused ? (
+          <StepUpPanel
+            hasPasskeys={initialPasskeys.length > 0}
+            codeAvailable={appCodeAvailable}
+            onSteppedUp={() => run(refused)}
+            onCancel={() => setRefused(null)}
+          />
+        ) : null}
         {errorCode ? <SignInMethodError code={errorCode} /> : null}
         {done ? <Notice tone="success">{t(done === "added" ? "added" : "removed")}</Notice> : null}
       </div>

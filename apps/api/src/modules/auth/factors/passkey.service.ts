@@ -38,6 +38,12 @@ export interface PasskeyCeremony<T> {
 
 const DEFAULT_NAME = "Passkey";
 
+/** What a registration challenge carries until the passkey is stored. */
+interface PendingRegistration {
+  readonly challenge: string;
+  readonly handle: string;
+}
+
 /**
  * WebAuthn passkeys: register one while signed in, sign in with one (a
  * discoverable credential, so no email first), prove one again before a
@@ -62,11 +68,14 @@ export class PasskeyService {
     const settings = this.config.authFactors;
     if (settings === undefined) return err({ type: "factors_unavailable" });
 
-    const [handle, existing, password] = await Promise.all([
-      this.passkeys.userHandleFor(userId, () => randomBytes(32).toString("base64url")),
+    const [stored, existing, password] = await Promise.all([
+      this.passkeys.userHandleOf(userId),
       this.passkeys.listForUser(userId),
       this.credentials.findByUserAndKind(userId, PASSWORD_CREDENTIAL_KIND),
     ]);
+    // Nothing is written until a passkey is: a first one's handle rides with
+    // the challenge and is stored with the passkey.
+    const handle = stored ?? randomBytes(32).toString("base64url");
     const accountName = password?.identifier ?? "YourTal";
     const options = await generateRegistrationOptions({
       rpName: settings.rpName,
@@ -83,7 +92,12 @@ export class PasskeyService {
       })),
       authenticatorSelection: { residentKey: "required", userVerification: "required" },
     });
-    await this.store.putChallenge(registrationKey(userId), options.challenge, CEREMONY_TTL_SECONDS);
+    const pending: PendingRegistration = { challenge: options.challenge, handle };
+    await this.store.putChallenge(
+      registrationKey(userId),
+      JSON.stringify(pending),
+      CEREMONY_TTL_SECONDS,
+    );
     return ok(options);
   }
 
@@ -94,12 +108,13 @@ export class PasskeyService {
   ): Outcome<StoredPasskey> {
     const settings = this.config.authFactors;
     if (settings === undefined) return err({ type: "factors_unavailable" });
-    const challenge = await this.store.takeChallenge(registrationKey(userId));
-    if (challenge === null) return err({ type: "factor_invalid" });
+    const raw = await this.store.takeChallenge(registrationKey(userId));
+    if (raw === null) return err({ type: "factor_invalid" });
+    const pending = JSON.parse(raw) as PendingRegistration;
 
     const verified = await verifyRegistrationResponse({
       response,
-      expectedChallenge: challenge,
+      expectedChallenge: pending.challenge,
       expectedOrigin: [...settings.origins],
       expectedRPID: settings.rpId,
       requireUserVerification: true,
@@ -118,7 +133,9 @@ export class PasskeyService {
       name: name ?? DEFAULT_NAME,
     };
     // Registered already, to this account or another: refused, never moved.
-    if (!(await this.passkeys.create(passkey))) return err({ type: "factor_invalid" });
+    if (!(await this.passkeys.create(passkey, pending.handle))) {
+      return err({ type: "factor_invalid" });
+    }
     const stored = await this.passkeys.findByCredentialId(passkey.credentialId);
     return stored === null ? err({ type: "factor_invalid" }) : ok(stored);
   }
@@ -228,12 +245,13 @@ export class PasskeyService {
     }).catch(() => null);
     if (verified?.verified !== true) return err({ type: "factor_invalid" });
 
-    await this.passkeys.recordUse(
+    // A counter another sign-in already moved past is a replay or a clone.
+    const counted = await this.passkeys.recordUse(
       passkey.credentialId,
       verified.authenticationInfo.newCounter,
       now,
     );
-    return ok(passkey.userId);
+    return counted ? ok(passkey.userId) : err({ type: "factor_invalid" });
   }
 }
 

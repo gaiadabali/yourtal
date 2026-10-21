@@ -25368,10 +25368,14 @@
                       "properties": {
                         "enabled": {
                           "type": "boolean"
+                        },
+                        "available": {
+                          "type": "boolean"
                         }
                       },
                       "required": [
-                        "enabled"
+                        "enabled",
+                        "available"
                       ],
                       "additionalProperties": false
                     }
@@ -25461,7 +25465,7 @@
             }
           },
           "403": {
-            "description": "reauthentication_required: adding a sign-in method needs a sign-in from the last 15 minutes. Sign in again, then retry. OR: The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "description": "reauthentication_required: adding a sign-in method needs a sign-in from the last 15 minutes. Sign in again, then retry. OR: step_up_required: the account already has a passkey or an authenticator app and this session was signed in with a password alone. Prove one with POST /api/auth/step-up, or sign in with it, then retry. OR: The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
             "content": {
               "application/json": {
                 "schema": {
@@ -25670,7 +25674,7 @@
             }
           },
           "403": {
-            "description": "reauthentication_required: adding a sign-in method needs a sign-in from the last 15 minutes. Sign in again, then retry. OR: The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "description": "reauthentication_required: adding a sign-in method needs a sign-in from the last 15 minutes. Sign in again, then retry. OR: step_up_required: the account already has a passkey or an authenticator app and this session was signed in with a password alone. Prove one with POST /api/auth/step-up, or sign in with it, then retry. OR: The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
             "content": {
               "application/json": {
                 "schema": {
@@ -25780,7 +25784,7 @@
     },
     "/api/auth/passkeys/{credentialId}": {
       "delete": {
-        "summary": "Remove one of the caller's passkeys",
+        "summary": "Remove one of the caller's passkeys (needs proof of a factor)",
         "tags": [
           "auth"
         ],
@@ -25827,7 +25831,7 @@
             }
           },
           "403": {
-            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "description": "reauthentication_required: adding a sign-in method needs a sign-in from the last 15 minutes. Sign in again, then retry. OR: step_up_required: the account already has a passkey or an authenticator app and this session was signed in with a password alone. Prove one with POST /api/auth/step-up, or sign in with it, then retry. OR: The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
             "content": {
               "application/json": {
                 "schema": {
@@ -25856,8 +25860,186 @@
               }
             }
           },
+          "429": {
+            "description": "Too many attempts: the route's rate limit, or (codes) five wrong codes for this account in 15 minutes. The body carries retryAfterSeconds."
+          },
           "503": {
             "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/step-up": {
+      "post": {
+        "summary": "Prove an existing passkey or authenticator code again on this session",
+        "tags": [
+          "auth"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "code, or challengeId with response from /passkeys/step-up/options.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "pattern": "^\\d{6}$"
+                  },
+                  "challengeId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "response": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 16384,
+                        "pattern": "^[A-Za-z0-9_-]+$"
+                      },
+                      "rawId": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 16384,
+                        "pattern": "^[A-Za-z0-9_-]+$"
+                      },
+                      "type": {
+                        "type": "string",
+                        "const": "public-key"
+                      },
+                      "response": {
+                        "type": "object",
+                        "properties": {
+                          "clientDataJSON": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 16384,
+                            "pattern": "^[A-Za-z0-9_-]+$"
+                          },
+                          "authenticatorData": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 16384,
+                            "pattern": "^[A-Za-z0-9_-]+$"
+                          },
+                          "signature": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 16384,
+                            "pattern": "^[A-Za-z0-9_-]+$"
+                          },
+                          "userHandle": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 16384,
+                            "pattern": "^[A-Za-z0-9_-]+$"
+                          }
+                        },
+                        "required": [
+                          "clientDataJSON",
+                          "authenticatorData",
+                          "signature"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "authenticatorAttachment": {
+                        "type": "string",
+                        "enum": [
+                          "platform",
+                          "cross-platform"
+                        ]
+                      },
+                      "clientExtensionResults": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {}
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "rawId",
+                      "type",
+                      "response",
+                      "clientExtensionResults"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "For the next few minutes this session may change its sign-in methods, as if just signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "steppedUp": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "expiresInSeconds": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991,
+                      "format": "int64"
+                    }
+                  },
+                  "required": [
+                    "steppedUp",
+                    "expiresInSeconds"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "401": {
+            "description": "factor_invalid: a wrong or already-used code, an unknown passkey, a response that does not verify, or a challenge that expired or was already answered. One code for all of them. OR: session_invalid: no live session.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many attempts: the route's rate limit, or (codes) five wrong codes for this account in 15 minutes. The body carries retryAfterSeconds."
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed). OR: authenticator_unavailable: this deployment has authenticator apps switched off (no seed key). Passkeys still work.",
             "content": {
               "application/json": {
                 "schema": {
@@ -25937,7 +26119,7 @@
             "description": "Too many attempts: the route's rate limit, or (codes) five wrong codes for this account in 15 minutes. The body carries retryAfterSeconds."
           },
           "503": {
-            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed). OR: authenticator_unavailable: this deployment has authenticator apps switched off (no seed key). Passkeys still work.",
             "content": {
               "application/json": {
                 "schema": {
@@ -25979,7 +26161,7 @@
         },
         "responses": {
           "201": {
-            "description": "On. Password sign-ins now ask for a code.",
+            "description": "On. Password sign-ins now ask for a code, and the account's other sessions are ended.",
             "content": {
               "application/json": {
                 "schema": {

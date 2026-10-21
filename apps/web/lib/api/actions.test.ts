@@ -290,7 +290,11 @@ describe("identity Server Actions (1.7.b)", () => {
         if (url.endsWith("/api/auth/sign-in-methods")) {
           return passkeys === "down"
             ? reply({ code: "internal", message: "boom" }, 500)
-            : reply({ password: true, passkeys, authenticatorApp: { enabled: false } });
+            : reply({
+                password: true,
+                passkeys,
+                authenticatorApp: { enabled: false, available: true },
+              });
         }
         return reply({ code: "not_found", message: url }, 404);
       });

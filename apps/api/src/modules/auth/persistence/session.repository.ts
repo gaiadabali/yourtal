@@ -9,6 +9,8 @@ export interface StoredSession {
   readonly revokedAt: Date | null;
   /** OIDC `amr` values, see `session/amr.ts`. */
   readonly amr: readonly string[];
+  /** When the person last proved who they are; see the migration. */
+  readonly signedInAt: Date;
 }
 
 export interface SessionRepository {
@@ -17,6 +19,7 @@ export interface SessionRepository {
     userId: string;
     absoluteExpiresAt: Date;
     amr: readonly string[];
+    signedInAt: Date;
   }): Promise<void>;
 
   /**
@@ -43,6 +46,9 @@ export interface SessionRepository {
    * each" cannot survive the rotation by timing.
    */
   revokeAllForUser(userId: string, now: Date): Promise<void>;
+
+  /** Every live session of this user except `keepId`, in one statement. */
+  revokeOthers(userId: string, keepId: string, now: Date): Promise<void>;
 
   /** Past `absoluteExpiresAt`. Scheduled, never on the request path. */
   pruneExpired(now: Date): Promise<number>;

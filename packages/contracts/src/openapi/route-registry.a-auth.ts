@@ -6,6 +6,8 @@ import {
   passkeySummarySchema,
   signInMethodsSchema,
   signedInSchema,
+  stepUpRequestSchema,
+  stepUpResultSchema,
   totpCodeRequestSchema,
   totpDisableRequestSchema,
   totpEnrolmentSchema,
@@ -50,6 +52,23 @@ const REAUTHENTICATION_REQUIRED: RouteErrorResponse = {
   description:
     "reauthentication_required: adding a sign-in method needs a sign-in from the last 15 " +
     "minutes. Sign in again, then retry.",
+  documented: true,
+};
+
+const STEP_UP_REQUIRED: RouteErrorResponse = {
+  status: 403,
+  description:
+    "step_up_required: the account already has a passkey or an authenticator app and this " +
+    "session was signed in with a password alone. Prove one with POST /api/auth/step-up, or sign " +
+    "in with it, then retry.",
+  documented: true,
+};
+
+const AUTHENTICATOR_UNAVAILABLE: RouteErrorResponse = {
+  status: 503,
+  description:
+    "authenticator_unavailable: this deployment has authenticator apps switched off (no seed " +
+    "key). Passkeys still work.",
   documented: true,
 };
 
@@ -127,7 +146,14 @@ export const SIGN_IN_METHOD_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     successStatus: 201,
     successDescription: "Options for navigator.credentials.create(); the challenge is single-use.",
     successSchema: inlineSchema(z.object({ options: webAuthnOptionsSchema })),
-    errors: [SESSION_INVALID, REAUTHENTICATION_REQUIRED, FORBIDDEN, THROTTLED, SERVICE_UNAVAILABLE],
+    errors: [
+      SESSION_INVALID,
+      REAUTHENTICATION_REQUIRED,
+      STEP_UP_REQUIRED,
+      FORBIDDEN,
+      THROTTLED,
+      SERVICE_UNAVAILABLE,
+    ],
   },
   {
     method: "post",
@@ -147,6 +173,7 @@ export const SIGN_IN_METHOD_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       FACTOR_INVALID,
       SESSION_INVALID,
       REAUTHENTICATION_REQUIRED,
+      STEP_UP_REQUIRED,
       FORBIDDEN,
       THROTTLED,
       SERVICE_UNAVAILABLE,
@@ -166,7 +193,7 @@ export const SIGN_IN_METHOD_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   {
     method: "delete",
     path: "/api/auth/passkeys/{credentialId}",
-    summary: "Remove one of the caller's passkeys",
+    summary: "Remove one of the caller's passkeys (needs proof of a factor)",
     tags: TAGS,
     pathParams: [CREDENTIAL_ID_PARAM],
     successStatus: 200,
@@ -174,6 +201,9 @@ export const SIGN_IN_METHOD_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     successSchema: inlineSchema(z.object({ removed: z.literal(true) })),
     errors: [
       SESSION_INVALID,
+      REAUTHENTICATION_REQUIRED,
+      STEP_UP_REQUIRED,
+      THROTTLED,
       PASSKEY_NOT_FOUND,
       TOTP_CONFLICT(
         "last_sign_in_method",
@@ -181,6 +211,30 @@ export const SIGN_IN_METHOD_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       ),
       FORBIDDEN,
       SERVICE_UNAVAILABLE,
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/auth/step-up",
+    summary: "Prove an existing passkey or authenticator code again on this session",
+    tags: TAGS,
+    pathParams: [],
+    requestBody: {
+      description: "code, or challengeId with response from /passkeys/step-up/options.",
+      schema: inlineSchema(stepUpRequestSchema),
+    },
+    successStatus: 201,
+    successDescription:
+      "For the next few minutes this session may change its sign-in methods, as if just signed in.",
+    successSchema: inlineSchema(stepUpResultSchema),
+    errors: [
+      VALIDATION_400,
+      FACTOR_INVALID,
+      SESSION_INVALID,
+      FORBIDDEN,
+      THROTTLED,
+      SERVICE_UNAVAILABLE,
+      AUTHENTICATOR_UNAVAILABLE,
     ],
   },
   {
@@ -200,6 +254,7 @@ export const SIGN_IN_METHOD_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       FORBIDDEN,
       THROTTLED,
       SERVICE_UNAVAILABLE,
+      AUTHENTICATOR_UNAVAILABLE,
     ],
   },
   {
@@ -213,7 +268,8 @@ export const SIGN_IN_METHOD_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       schema: inlineSchema(totpCodeRequestSchema),
     },
     successStatus: 201,
-    successDescription: "On. Password sign-ins now ask for a code.",
+    successDescription:
+      "On. Password sign-ins now ask for a code, and the account's other sessions are ended.",
     successSchema: inlineSchema(z.object({ enabled: z.literal(true) })),
     errors: [
       VALIDATION_400,

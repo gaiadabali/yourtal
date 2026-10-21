@@ -12,6 +12,7 @@ import {
   disableTotpWithPasskeyAction,
   passkeyStepUpOptionsAction,
   startTotpEnrolmentAction,
+  stepUpAction,
 } from "./sign-in-methods-actions";
 
 const refresh = vi.fn();
@@ -35,6 +36,7 @@ vi.mock("./sign-in-methods-actions", () => ({
   disableTotpWithCodeAction: vi.fn(),
   disableTotpWithPasskeyAction: vi.fn(),
   passkeyStepUpOptionsAction: vi.fn(),
+  stepUpAction: vi.fn(),
   signInAgainAction: vi.fn(),
 }));
 
@@ -61,7 +63,7 @@ describe("MeAuthenticatorSection", () => {
     const user = userEvent.setup();
     vi.mocked(startTotpEnrolmentAction).mockResolvedValue({ ok: true, data: ENROLMENT });
     vi.mocked(confirmTotpAction).mockResolvedValue({ ok: true, data: { enabled: true } });
-    renderSection({ enabled: false, hasPasskeys: false });
+    renderSection({ enabled: false, available: true, hasPasskeys: false });
 
     expect(screen.getByText("Off")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Set up" }));
@@ -90,7 +92,7 @@ describe("MeAuthenticatorSection", () => {
       ok: false,
       error: { kind: "http", status: 401, code: "factor_invalid", message: "bad" },
     });
-    renderSection({ enabled: false, hasPasskeys: false });
+    renderSection({ enabled: false, available: true, hasPasskeys: false });
 
     await user.click(screen.getByRole("button", { name: "Set up" }));
     await screen.findByRole("img", { name: /QR code/ });
@@ -110,7 +112,7 @@ describe("MeAuthenticatorSection", () => {
       ok: false,
       error: { kind: "http", status: 409, code: "totp_already_enabled", message: "on" },
     });
-    renderSection({ enabled: false, hasPasskeys: false });
+    renderSection({ enabled: false, available: true, hasPasskeys: false });
 
     await user.click(screen.getByRole("button", { name: "Set up" }));
 
@@ -124,7 +126,7 @@ describe("MeAuthenticatorSection", () => {
       ok: false,
       error: { kind: "http", status: 403, code: "reauthentication_required", message: "old" },
     });
-    renderSection({ enabled: false, hasPasskeys: false });
+    renderSection({ enabled: false, available: true, hasPasskeys: false });
 
     await user.click(screen.getByRole("button", { name: "Set up" }));
 
@@ -134,7 +136,7 @@ describe("MeAuthenticatorSection", () => {
   it("when on, turns off with a current code", async () => {
     const user = userEvent.setup();
     vi.mocked(disableTotpWithCodeAction).mockResolvedValue({ ok: true, data: { enabled: false } });
-    renderSection({ enabled: true, hasPasskeys: false });
+    renderSection({ enabled: true, available: true, hasPasskeys: false });
 
     expect(screen.getByText("On")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Set up" })).not.toBeInTheDocument();
@@ -161,7 +163,7 @@ describe("MeAuthenticatorSection", () => {
       ok: true,
       data: { enabled: false },
     });
-    renderSection({ enabled: true, hasPasskeys: true });
+    renderSection({ enabled: true, available: true, hasPasskeys: true });
 
     await user.click(screen.getByRole("button", { name: "Turn off" }));
     await user.click(screen.getByRole("button", { name: "Use a passkey instead" }));
@@ -182,7 +184,7 @@ describe("MeAuthenticatorSection", () => {
     vi.mocked(startAuthentication).mockRejectedValue(
       Object.assign(new Error("x"), { name: "NotAllowedError" }),
     );
-    renderSection({ enabled: true, hasPasskeys: true });
+    renderSection({ enabled: true, available: true, hasPasskeys: true });
 
     await user.click(screen.getByRole("button", { name: "Turn off" }));
     await user.click(screen.getByRole("button", { name: "Use a passkey instead" }));
@@ -190,5 +192,68 @@ describe("MeAuthenticatorSection", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("The passkey prompt was closed");
     expect(disableTotpWithPasskeyAction).not.toHaveBeenCalled();
     expect(screen.getByText("On")).toBeInTheDocument();
+  });
+
+  it("hides the section when authenticator apps are switched off and it is not on", () => {
+    const { container } = renderSection({ enabled: false, available: false, hasPasskeys: true });
+
+    expect(screen.queryByRole("button", { name: "Set up" })).not.toBeInTheDocument();
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("when switched off but still on, shows it as on and only turns off with a passkey", async () => {
+    const user = userEvent.setup();
+    renderSection({ enabled: true, available: false, hasPasskeys: true });
+
+    expect(screen.getByText("On")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Turn off" }));
+
+    expect(screen.queryByLabelText("6-digit code from your app")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Turn off authenticator app" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Use a passkey instead" })).toBeInTheDocument();
+  });
+
+  it("offers no way to turn it off with a code when switched off and there is no passkey", () => {
+    renderSection({ enabled: true, available: false, hasPasskeys: false });
+
+    expect(screen.getByText("On")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Turn off" })).not.toBeInTheDocument();
+  });
+
+  it("asks to confirm it's you when setup needs a step-up, then retries setup", async () => {
+    const user = userEvent.setup();
+    vi.mocked(startTotpEnrolmentAction)
+      .mockResolvedValueOnce({
+        ok: false,
+        error: { kind: "http", status: 403, code: "step_up_required", message: "step" },
+      })
+      .mockResolvedValueOnce({ ok: true, data: ENROLMENT });
+    vi.mocked(passkeyStepUpOptionsAction).mockResolvedValue({
+      ok: true,
+      data: { challengeId: "chal-3", options: { challenge: "abc" } },
+    });
+    vi.mocked(startAuthentication).mockResolvedValue({ id: "cred-1" } as never);
+    vi.mocked(stepUpAction).mockResolvedValue({
+      ok: true,
+      data: { steppedUp: true, expiresInSeconds: 600 },
+    });
+    renderSection({ enabled: false, available: true, hasPasskeys: true });
+
+    await user.click(screen.getByRole("button", { name: "Set up" }));
+    expect(await screen.findByText("Confirm it's you")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    // The app is not on yet, so a passkey is the only way to confirm here.
+    expect(screen.queryByLabelText("6-digit code from your app")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Use a passkey" }));
+
+    expect(await screen.findByRole("img", { name: /QR code/ })).toBeInTheDocument();
+    expect(stepUpAction).toHaveBeenCalledWith({
+      challengeId: "chal-3",
+      response: { id: "cred-1" },
+    });
+    expect(startTotpEnrolmentAction).toHaveBeenCalledTimes(2);
+    expect(screen.queryByText("Confirm it's you")).not.toBeInTheDocument();
   });
 });

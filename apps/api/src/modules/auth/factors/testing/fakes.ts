@@ -46,6 +46,17 @@ export class InMemoryThrottle {
     );
   }
 
+  reserve(scope: string, key: string, limits: ThrottleLimits): Promise<ThrottleVerdict> {
+    const name = `${scope}:${key}`;
+    const count = (this.counts.get(name) ?? 0) + 1;
+    this.counts.set(name, count);
+    return Promise.resolve(
+      count > limits.maxAttempts
+        ? { blocked: true, retryAfterSeconds: limits.windowSeconds }
+        : { blocked: false },
+    );
+  }
+
   recordFailure(scope: string, key: string): Promise<void> {
     const name = `${scope}:${key}`;
     this.counts.set(name, (this.counts.get(name) ?? 0) + 1);

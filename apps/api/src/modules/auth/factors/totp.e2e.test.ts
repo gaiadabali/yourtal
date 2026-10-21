@@ -17,6 +17,7 @@ import {
   accountFor,
   ageSessions,
   amrOf,
+  securityNotices,
   bearer,
   bootFactorsApp,
   errorCode,
@@ -129,6 +130,59 @@ describe("authenticator codes", () => {
     });
   });
 
+  it("ends the account's other sessions when an app is switched on", async () => {
+    const session = await accountFor(app, PASSWORD);
+    const elsewhere = await login(session.email);
+    const otherToken = elsewhere.json<{ token: string }>().token;
+    await switchOn(session);
+    const other = await app.inject({ method: "GET", url: "/api/me", headers: bearer(otherToken) });
+    expect(other.statusCode).toBe(401);
+    const own = await app.inject({ method: "GET", url: "/api/me", headers: bearer(session.token) });
+    expect(own.statusCode).toBe(200);
+    expect((await securityNotices(owner, session.email))[0]).toContain(
+      "An authenticator app was set up for YourTal",
+    );
+  });
+
+  it("refuses a code already used, on a new pending sign-in", async () => {
+    const session = await accountFor(app, PASSWORD);
+    const seed = await switchOn(session);
+    const code = codeAt(seed, 0);
+    const first = await login(session.email);
+    const ok = await app.inject({
+      method: "POST",
+      url: "/api/auth/totp/sign-in",
+      payload: { pendingToken: first.json<{ pendingToken: string }>().pendingToken, code },
+    });
+    expect(ok.statusCode, ok.body).toBe(201);
+    const second = await login(session.email);
+    const replay = await app.inject({
+      method: "POST",
+      url: "/api/auth/totp/sign-in",
+      payload: { pendingToken: second.json<{ pendingToken: string }>().pendingToken, code },
+    });
+    expect(replay.statusCode).toBe(401);
+    expect(errorCode(replay)).toBe("factor_invalid");
+  });
+
+  it("checks at most five codes even when twenty arrive at once", async () => {
+    const session = await accountFor(app, PASSWORD);
+    await switchOn(session);
+    const outcomes = await Promise.all(
+      Array.from({ length: 20 }, () =>
+        app.inject({
+          method: "POST",
+          url: "/api/auth/totp/disable",
+          headers: bearer(session.token),
+          payload: { code: "000000" },
+        }),
+      ),
+    );
+    const statuses = outcomes.map((outcome) => outcome.statusCode);
+    expect(statuses.filter((status) => status === 401)).toHaveLength(5);
+    expect(statuses.filter((status) => status === 429)).toHaveLength(15);
+  });
+
   it("asks for a code after a password reset too", async () => {
     const session = await accountFor(app, PASSWORD);
     await switchOn(session);
@@ -148,6 +202,9 @@ describe("authenticator codes", () => {
       secondFactor: "totp",
     });
     expect(reset.json<{ token?: string }>().token).toBeUndefined();
+    const notices = await securityNotices(owner, session.email);
+    expect(notices.at(-1)).toContain("Check how you sign in to YourTal");
+    expect(notices.at(-1)).toContain("an authenticator app");
   });
 
   it("turns off only with a fresh code or a passkey, and then a password is enough again", async () => {
@@ -177,7 +234,22 @@ describe("authenticator codes", () => {
 
   it("turns off with a passkey instead of a code", async () => {
     const session = await accountFor(app, PASSWORD);
-    await switchOn(session);
+    const seed = await switchOn(session);
+    // The account has an app now, so adding a passkey needs a code first.
+    const refused = await app.inject({
+      method: "POST",
+      url: "/api/auth/passkeys/register/options",
+      headers: bearer(session.token),
+    });
+    expect(refused.statusCode).toBe(403);
+    expect(errorCode(refused)).toBe("step_up_required");
+    const stepUp = await app.inject({
+      method: "POST",
+      url: "/api/auth/step-up",
+      headers: bearer(session.token),
+      payload: { code: codeAt(seed, 0) },
+    });
+    expect(stepUp.statusCode, stepUp.body).toBe(201);
     const registerOptions = await app.inject({
       method: "POST",
       url: "/api/auth/passkeys/register/options",
@@ -196,12 +268,12 @@ describe("authenticator codes", () => {
     });
     expect(added.statusCode, added.body).toBe(201);
 
-    const stepUp = await app.inject({
+    const passkeyOptions = await app.inject({
       method: "POST",
       url: "/api/auth/passkeys/step-up/options",
       headers: bearer(session.token),
     });
-    const ceremony = stepUp.json<{
+    const ceremony = passkeyOptions.json<{
       challengeId: string;
       options: PublicKeyCredentialRequestOptionsJSON;
     }>();

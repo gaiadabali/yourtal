@@ -19,17 +19,27 @@ export type RemovePasskeyOutcome = "removed" | "not_found" | "last_sign_in_metho
 
 export interface PasskeyRepository {
   /**
-   * The account's WebAuthn user handle, created on first use. Random, so an
-   * authenticator never holds the internal user id.
+   * The account's WebAuthn user handle, or null before its first passkey.
+   * Random, so an authenticator never holds the internal user id.
    */
-  userHandleFor(userId: string, mint: () => string): Promise<string>;
+  userHandleOf(userId: string): Promise<string | null>;
   /** The account a user handle belongs to, if any. */
   userIdForHandle(handle: string): Promise<string | null>;
   findByCredentialId(credentialId: string): Promise<StoredPasskey | null>;
   listForUser(userId: string): Promise<readonly StoredPasskey[]>;
-  /** `false` when the credential id is already registered (to anyone). */
-  create(passkey: NewPasskey): Promise<boolean>;
-  recordUse(credentialId: string, signCount: number, usedAt: Date): Promise<void>;
+  /**
+   * Stores a passkey made for `userHandle`, writing the account's marker row
+   * (with that handle) if this is its first. `false`, storing nothing, when
+   * the credential id is already registered (to anyone) or the account
+   * already has a different handle (a concurrent first registration won).
+   */
+  create(passkey: NewPasskey, userHandle: string): Promise<boolean>;
+  /**
+   * Moves the signature counter forward. `false` when another sign-in already
+   * moved it as far: a non-zero counter must grow, so two sign-ins racing
+   * with the same counter cannot both count.
+   */
+  recordUse(credentialId: string, signCount: number, usedAt: Date): Promise<boolean>;
   /**
    * Removes one of the user's passkeys, refusing when nothing else could sign
    * the person in afterwards (no password and no other passkey).

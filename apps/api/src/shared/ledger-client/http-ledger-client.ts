@@ -12,6 +12,7 @@ import type {
   QuotePurchaseRequest,
   QuotePurchaseResult,
   QuoteRequest,
+  ReceiptPackageTiersRequest,
   ValuePointsRequest,
   ValuePointsResult,
 } from "@yourtal/contracts/ledger-internal/pricing";
@@ -91,6 +92,19 @@ import { parseLedgerRefusal } from "./parse-ledger-refusal";
 
 /** The services allowed to sign a ledger call (services/ledger/internal/serviceauth). */
 export type LedgerCaller = ServiceCaller;
+
+/**
+ * 2.10.b: the answer fields docs/27 §3.7 added, defaulted as their contract
+ * schemas do, so a ledger older than T2a still reads as "no programme" and
+ * "tier pricing" rather than as undefined.
+ */
+function withProgramme(allocation: Allocation): Allocation {
+  return { ...allocation, programme: (allocation as Partial<Allocation>).programme ?? null };
+}
+
+function withPricing(quote: PackageTierQuote): PackageTierQuote {
+  return { ...quote, pricing: (quote as Partial<PackageTierQuote>).pricing ?? "tier" };
+}
 
 /**
  * The live ledger client (1.2.d, 4.1.c). Every call is a POST signed the way
@@ -176,11 +190,21 @@ export class HttpLedgerClient implements LedgerInternalClient {
   }
 
   packageTiers(region: Region): ResultAsync<readonly PackageTierQuote[], LedgerError> {
-    return this.post("/v1/pricing/package-tiers", { region });
+    return this.post<readonly PackageTierQuote[]>("/v1/pricing/package-tiers", { region }).map(
+      (quotes) => quotes.map(withPricing),
+    );
   }
 
   quotePackage(request: QuotePackageRequest): ResultAsync<PackageTierQuote, LedgerError> {
-    return this.post("/v1/pricing/package-quote", request);
+    return this.post<PackageTierQuote>("/v1/pricing/package-quote", request).map(withPricing);
+  }
+
+  receiptPackageTiers(
+    request: ReceiptPackageTiersRequest,
+  ): ResultAsync<readonly PackageTierQuote[], LedgerError> {
+    return this.post<readonly PackageTierQuote[]>("/v1/pricing/receipt-package-tiers", request).map(
+      (quotes) => quotes.map(withPricing),
+    );
   }
 
   checkPackageTiers(request: CheckPackageTiersRequest): ResultAsync<void, LedgerError> {
@@ -188,15 +212,17 @@ export class HttpLedgerClient implements LedgerInternalClient {
   }
 
   purchasePoints(request: PurchasePointsRequest): ResultAsync<Allocation, LedgerError> {
-    return this.post("/v1/allocations/purchase", request);
+    return this.post<Allocation>("/v1/allocations/purchase", request).map(withProgramme);
   }
 
   listAllocations(businessId: string): ResultAsync<readonly Allocation[], LedgerError> {
-    return this.post("/v1/allocations/list", { businessId });
+    return this.post<readonly Allocation[]>("/v1/allocations/list", { businessId }).map(
+      (allocations) => allocations.map(withProgramme),
+    );
   }
 
   getAllocation(allocationId: string): ResultAsync<Allocation, LedgerError> {
-    return this.post("/v1/allocations/get", { allocationId });
+    return this.post<Allocation>("/v1/allocations/get", { allocationId }).map(withProgramme);
   }
 
   hold(request: HoldRequest): ResultAsync<Hold, LedgerError> {

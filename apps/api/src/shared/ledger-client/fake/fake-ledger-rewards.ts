@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
-import { ResultAsync, err, ok } from "neverthrow";
+import { ResultAsync, err, errAsync, ok } from "neverthrow";
 import type { Result } from "neverthrow";
 import { ledgerError } from "@yourtal/contracts/ledger-internal/ledger-error";
 import type { LedgerError } from "@yourtal/contracts/ledger-internal/ledger-error";
@@ -20,6 +20,13 @@ import type { AppDb } from "../../persistence/drizzle-client";
 import { LedgerNotFoundError } from "../ledger-not-found";
 import { availablePoints } from "./fake-ledger-balance";
 import { campaignBudgetRefusal } from "./fake-ledger-campaign-budget";
+import {
+  DEFAULT_FAKE_LEDGER_OPTIONS,
+  drawReceipt,
+  isReceiptPackage,
+  receiptPackageRefusal,
+} from "./fake-ledger-receipts";
+import type { FakeLedgerOptions } from "./fake-ledger-receipts";
 
 /**
  * 12.1.c: the teen half of F12's earn cap, so fake-mode e2e refuses a
@@ -168,14 +175,36 @@ async function insertGrant(
 export function grantReward(
   db: AppDb,
   request: GrantRewardRequest,
+  options: FakeLedgerOptions = DEFAULT_FAKE_LEDGER_OPTIONS,
 ): ResultAsync<Grant, LedgerError> {
   return new ResultAsync(
     db.transaction((tx) =>
-      insertGrant(tx, "campaign", request.campaignId, request, (executor) =>
-        admitCampaignGrant(executor, request),
+      insertGrant(
+        tx,
+        "campaign",
+        request.campaignId,
+        request,
+        async (executor) =>
+          (options.receiptDraw
+            ? await receiptFundedCampaign(executor, request.campaignId)
+            : null) ?? admitCampaignGrant(executor, request),
       ),
     ),
   );
+}
+
+/** 2.10.b (T2b's campaignGrant): a campaign whose reward config names a receipt package is refused. */
+async function receiptFundedCampaign(
+  executor: Pick<AppDb, "execute">,
+  campaignId: string,
+): Promise<LedgerError | null> {
+  const { rows } = await executor.execute<{ allocation_id: string }>(sql`
+    SELECT allocation_id FROM campaign.reward_config WHERE campaign_id = ${campaignId}::uuid
+  `);
+  const allocationId = rows[0]?.allocation_id;
+  return allocationId !== undefined && (await isReceiptPackage(executor, allocationId))
+    ? receiptPackageRefusal(allocationId)
+    : null;
 }
 
 /**
@@ -204,9 +233,13 @@ async function admitCampaignGrant(
 }
 
 /**
- * 10.7.a, K6 (4.4.h, F24): every `grantAction` kind (streak, receipt,
- * goodwill) is marketing-funded, never a partner's allocation — the same
- * rule services/ledger's `backMarketingGrant` enforces for real. `backing`
+ * 10.7.a, K6 (4.4.h, F24): `streak` and `goodwill` grants are
+ * marketing-funded, never a partner's allocation — the same rule
+ * services/ledger's `backMarketingGrant` enforces for real. So are receipts
+ * until the draw switch (`RECEIPT_DRAW_IN_FORCE`, T2b); with it, a receipt
+ * names its partner and is paid from the funder's receipt package, never
+ * from marketing, and a replay answers the first grant even if `points`
+ * changed (docs/27 §3.3). `backing`
  * (ceil(points × B), B the region's current backing rate) is debited from
  * the region's marketing fund in the SAME transaction as the grant, and a
  * grant the fund cannot back is refused with `insufficient_available` —
@@ -216,7 +249,13 @@ async function admitCampaignGrant(
 export function grantAction(
   db: AppDb,
   request: GrantActionRequest,
+  options: FakeLedgerOptions = DEFAULT_FAKE_LEDGER_OPTIONS,
 ): ResultAsync<Grant, LedgerError> {
+  const draw = options.receiptDraw && request.kind === "receipt";
+  const { partnerId } = request;
+  if (draw && partnerId === undefined) {
+    return errAsync(ledgerError("refused", "a receipt grant names the partner that reported it"));
+  }
   return new ResultAsync(
     db.transaction(async (tx): Promise<Result<Grant, LedgerError>> => {
       // The idempotency check runs INSIDE the transaction now: a replay
@@ -230,7 +269,7 @@ export function grantAction(
         const matches =
           prior.kind === request.kind &&
           prior.user_id === request.userId &&
-          Number(prior.points) === request.points;
+          (draw || Number(prior.points) === request.points);
         if (!matches) {
           return err(
             ledgerError(
@@ -249,6 +288,15 @@ export function grantAction(
         ageBand: request.ageBand,
       });
       if (refusal !== null) return err(refusal);
+      if (draw && partnerId !== undefined) {
+        const drawn = await drawReceipt(tx, {
+          partnerId,
+          region: request.region,
+          points: request.points,
+        });
+        if (drawn.isErr()) return err(drawn.error);
+        return ok(await insertActionGrant(tx, request, drawn.value));
+      }
 
       const rateRows = await tx.execute<{ backing_rate_micros_per_pt: string }>(sql`
         SELECT backing_rate_micros_per_pt FROM platform.ledger_fake_backing_rate
@@ -292,37 +340,42 @@ export function grantAction(
         );
       }
 
-      const id = randomUUID();
-      const holdbackHours = DEFAULT_HOLDBACK_HOURS_BY_TIER[request.trustTier];
-      const inserted = await tx.execute<{
-        granted_at: string | Date;
-        unlock_at: string | Date;
-      }>(sql`
-        INSERT INTO platform.ledger_fake_grant
-          (id, kind, user_id, region, points, unlock_at, granted_at, idempotency_key, campaign_id)
-        VALUES (${id}, ${request.kind}, ${request.userId}, ${request.region}, ${request.points},
-                now() + make_interval(hours => ${holdbackHours}), now(), ${request.idempotencyKey}, NULL)
-        RETURNING granted_at, unlock_at
-      `);
-      const row = inserted.rows[0];
-      if (row === undefined) throw new Error("the fake grant insert returned no row");
-
+      const grant = await insertActionGrant(tx, request, null);
       await tx.execute(sql`
         INSERT INTO platform.ledger_fake_marketing_backing (region, grant_id, amount_minor)
-        VALUES (${request.region}, ${id}, ${backingMinor})
+        VALUES (${request.region}, ${grant.grantId}, ${backingMinor})
       `);
-
-      return ok({
-        grantId: id,
-        kind: request.kind,
-        userId: request.userId,
-        region: request.region,
-        points: request.points,
-        unlockAt: new Date(row.unlock_at).toISOString(),
-        grantedAt: new Date(row.granted_at).toISOString(),
-      });
+      return ok(grant);
     }),
   );
+}
+
+/** One action grant, paid from `allocationId` (a receipt package) or from marketing (null). */
+async function insertActionGrant(
+  tx: Pick<AppDb, "execute">,
+  request: GrantActionRequest,
+  allocationId: string | null,
+): Promise<Grant> {
+  const id = randomUUID();
+  const holdbackHours = DEFAULT_HOLDBACK_HOURS_BY_TIER[request.trustTier];
+  const inserted = await tx.execute<{ granted_at: string | Date; unlock_at: string | Date }>(sql`
+    INSERT INTO platform.ledger_fake_grant
+      (id, kind, user_id, region, points, unlock_at, granted_at, idempotency_key, campaign_id, allocation_id)
+    VALUES (${id}, ${request.kind}, ${request.userId}, ${request.region}, ${request.points},
+            now() + make_interval(hours => ${holdbackHours}), now(), ${request.idempotencyKey}, NULL, ${allocationId})
+    RETURNING granted_at, unlock_at
+  `);
+  const row = inserted.rows[0];
+  if (row === undefined) throw new Error("the fake grant insert returned no row");
+  return {
+    grantId: id,
+    kind: request.kind,
+    userId: request.userId,
+    region: request.region,
+    points: request.points,
+    unlockAt: new Date(row.unlock_at).toISOString(),
+    grantedAt: new Date(row.granted_at).toISOString(),
+  };
 }
 
 type BurnRow = {

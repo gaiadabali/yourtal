@@ -12,6 +12,7 @@ import type {
   QuotePurchaseRequest,
   QuotePurchaseResult,
   QuoteRequest,
+  ReceiptPackageTiersRequest,
   ValuePointsRequest,
   ValuePointsResult,
 } from "@yourtal/contracts/ledger-internal/pricing";
@@ -90,6 +91,8 @@ import * as economy from "./fake/fake-ledger-economy";
 import * as settings from "./fake/fake-ledger-settings";
 import * as capture from "./fake/fake-ledger-capture";
 import * as dev from "./fake/fake-ledger-dev";
+import { DEFAULT_FAKE_LEDGER_OPTIONS } from "./fake/fake-ledger-receipts";
+import type { FakeLedgerOptions } from "./fake/fake-ledger-receipts";
 
 /**
  * TASKS.md 1.2.d. Real semantics against `platform.ledger_fake_*`, shared by
@@ -97,9 +100,16 @@ import * as dev from "./fake/fake-ledger-dev";
  * — not a per-process in-memory map, which two workers would each keep their
  * own copy of. `LEDGER_MODE=fake` picks this; `createLedgerClient.ts` is
  * where that switch lives.
+ *
+ * `options.receiptDraw` (2.10.b) defaults to the live ledger's own switch
+ * (`RECEIPT_DRAW_IN_FORCE`); the contract spec turns it on to prove the
+ * receipt draw before T2b ships it.
  */
 export class FakeLedgerClient implements LedgerInternalClient {
-  constructor(private readonly db: AppDb) {}
+  constructor(
+    private readonly db: AppDb,
+    private readonly options: FakeLedgerOptions = DEFAULT_FAKE_LEDGER_OPTIONS,
+  ) {}
 
   quote(request: QuoteRequest): ResultAsync<Quote, LedgerError> {
     return pricing.quote(this.db, request);
@@ -129,6 +139,12 @@ export class FakeLedgerClient implements LedgerInternalClient {
     return packages.quotePackage(this.db, request);
   }
 
+  receiptPackageTiers(
+    request: ReceiptPackageTiersRequest,
+  ): ResultAsync<readonly PackageTierQuote[], LedgerError> {
+    return packages.receiptPackageTiers(this.db, request);
+  }
+
   checkPackageTiers(request: CheckPackageTiersRequest): ResultAsync<void, LedgerError> {
     return packages.checkPackageTiers(this.db, request);
   }
@@ -146,7 +162,7 @@ export class FakeLedgerClient implements LedgerInternalClient {
   }
 
   hold(request: HoldRequest): ResultAsync<Hold, LedgerError> {
-    return funding.hold(this.db, request);
+    return funding.hold(this.db, request, this.options);
   }
 
   consume(holdId: string): ResultAsync<Hold, LedgerError> {
@@ -172,11 +188,11 @@ export class FakeLedgerClient implements LedgerInternalClient {
   }
 
   grantReward(request: GrantRewardRequest): ResultAsync<Grant, LedgerError> {
-    return rewards.grantReward(this.db, request);
+    return rewards.grantReward(this.db, request, this.options);
   }
 
   grantAction(request: GrantActionRequest): ResultAsync<Grant, LedgerError> {
-    return rewards.grantAction(this.db, request);
+    return rewards.grantAction(this.db, request, this.options);
   }
 
   burnForVoucher(request: BurnForVoucherRequest): ResultAsync<Burn, LedgerError> {

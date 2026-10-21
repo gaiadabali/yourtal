@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
+import { receiptFunderKey } from "@yourtal/contracts/billing/receipt-funder";
 import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
 import type {
   GenerateStatementRequest,
@@ -528,13 +529,14 @@ describe("earning and spending", () => {
     expect(balance.pending).toHaveLength(0);
   });
 
+  // A goodwill grant: a receipt replays its first grant whatever the points (2.10.b, below).
   it("the same idempotency key with a different body returns idempotency_conflict", async () => {
     const userId = randomUUID();
     const idempotencyKey = randomUUID();
     expect(
       (
         await client.grantAction({
-          kind: "receipt",
+          kind: "goodwill",
           userId,
           region: "ID",
           points: toPoints(10),
@@ -545,7 +547,7 @@ describe("earning and spending", () => {
       ).isOk(),
     ).toBe(true);
     const conflict = await client.grantAction({
-      kind: "receipt",
+      kind: "goodwill",
       userId,
       region: "ID",
       points: toPoints(99),
@@ -1183,5 +1185,305 @@ describe("point packages (14.13, F122)", () => {
       idempotencyKey: randomUUID(),
     });
     expect(untiered._unsafeUnwrapErr().code).toBe("refused");
+  });
+});
+
+/**
+ * 2.10.b (F127, docs/27 §3.2–3.3): receipt packages. Prices are ID's, at
+ * B = IDR 6 a point (the same rate `pricedListing` assumes), which nothing
+ * in this file moves: IDR 6,000 / 60,000 / 300,000 for the three tiers.
+ *
+ * The draw is T2b's switch. On the fake leg `drawClient` turns it on (the
+ * fake's default follows the live ledger, `RECEIPT_DRAW_IN_FORCE`). On the
+ * live leg the draw cases run only once the ledger reports the draw, which
+ * `receiptDrawInForce` probes: a receipt for a partner with no funder is
+ * `allocation_exhausted` under the draw and paid from marketing before it.
+ * TODO(2.10.b T2b): once T2b is deployed, drop the probe and run them always.
+ */
+const drawClient: LedgerInternalClient =
+  liveUrl === undefined ? new FakeLedgerClient(db, { receiptDraw: true }) : client;
+
+let drawProbe: Promise<boolean> | undefined;
+function receiptDrawInForce(): Promise<boolean> {
+  if (liveUrl === undefined) return Promise.resolve(true);
+  drawProbe ??= Promise.resolve(
+    client.grantAction(receiptGrant(`contract-probe-${randomUUID()}`, 1)),
+  ).then(
+    (probe) => probe.isErr() && probe.error.code === "allocation_exhausted",
+    () => false,
+  );
+  return drawProbe;
+}
+
+/** A partner with an approved receipt funder (two people) in `region`. */
+async function receiptFunder(
+  region: "AU" | "ID" = "ID",
+): Promise<{ partnerId: string; businessId: string }> {
+  const partnerId = `contract-partner-${randomUUID()}`;
+  const businessId = randomUUID();
+  const proposed = await client.proposeSetting({
+    region,
+    key: receiptFunderKey(partnerId),
+    value: { businessId },
+    proposedBy: "staff-1",
+  });
+  await client.approveSetting({ id: proposed.id, approvedBy: "staff-2" });
+  return { partnerId, businessId };
+}
+
+const AT_COST_ID = { starter: 6_000, grow: 60_000, scale: 300_000 } as const;
+
+/** One ID receipt package bought at cost by `businessId`. */
+function buyReceipts(
+  businessId: string,
+  overrides: {
+    tierKey?: keyof typeof AT_COST_ID | "platinum";
+    points?: number;
+    paidMinor?: number;
+    idempotencyKey?: string;
+  } = {},
+) {
+  const tierKey = overrides.tierKey ?? "starter";
+  return client.purchasePoints({
+    businessId,
+    region: "ID",
+    currency: "IDR",
+    points: toPoints(overrides.points ?? 1_000),
+    paidMinor: toMinorUnits(overrides.paidMinor ?? AT_COST_ID.starter),
+    idempotencyKey: overrides.idempotencyKey ?? randomUUID(),
+    tierKey,
+    programme: "receipts",
+  });
+}
+
+/** A receipt grant to a fresh ID adult, as the partner call sends it. */
+function receiptGrant(
+  partnerId: string | undefined,
+  points: number,
+  idempotencyKey = randomUUID(),
+) {
+  return {
+    kind: "receipt" as const,
+    userId: randomUUID(),
+    region: "ID" as const,
+    points: toPoints(points),
+    trustTier: 3 as const,
+    idempotencyKey,
+    ageBand: "adult" as const,
+    ...(partnerId === undefined ? {} : { partnerId }),
+  };
+}
+
+async function remaining(allocationId: string): Promise<number> {
+  return (await client.getAllocation(allocationId))._unsafeUnwrap().remainingPoints;
+}
+
+describe("receipt packages at cost (2.10.b, F127)", () => {
+  it("quotes every tier size at B with no discount, to the funder only", async () => {
+    const { businessId } = await receiptFunder();
+    const tiers = (await client.receiptPackageTiers({ region: "ID", businessId }))._unsafeUnwrap();
+    expect(
+      tiers.map((t) => [t.tierKey, t.points, t.discountBps, t.totalMinor, t.undiscountedMinor]),
+    ).toEqual([
+      ["starter", 1_000, 0, 6_000, 6_000],
+      ["grow", 10_000, 0, 60_000, 60_000],
+      ["scale", 50_000, 0, 300_000, 300_000],
+    ]);
+    expect(tiers.every((t) => t.pricing === "at_cost" && t.currency === "IDR")).toBe(true);
+
+    const grow = await client.quotePackage({
+      region: "ID",
+      tierKey: "grow",
+      programme: "receipts",
+      businessId,
+    });
+    expect(grow._unsafeUnwrap()).toEqual({
+      tierKey: "grow",
+      points: 10_000,
+      discountBps: 0,
+      totalMinor: 60_000,
+      undiscountedMinor: 60_000,
+      currency: "IDR",
+      pricing: "at_cost",
+    });
+
+    // Not a funder: a stranger, or the funder in the other region.
+    const stranger = randomUUID();
+    for (const refused of [
+      await client.receiptPackageTiers({ region: "ID", businessId: stranger }),
+      await client.receiptPackageTiers({ region: "AU", businessId }),
+      await client.quotePackage({
+        region: "ID",
+        tierKey: "grow",
+        programme: "receipts",
+        businessId: stranger,
+      }),
+    ]) {
+      expect(refused._unsafeUnwrapErr().code).toBe("refused");
+    }
+    // Without the programme, the same tier is the ordinary discounted one.
+    const ordinary = (await client.quotePackage({ region: "ID", tierKey: "grow" }))._unsafeUnwrap();
+    expect([ordinary.totalMinor, ordinary.pricing]).toEqual([85_500, "tier"]);
+  });
+
+  it("sells the funder a tier's size at cost, refuses anyone else, less, or another size", async () => {
+    const { businessId } = await receiptFunder();
+    const key = randomUUID();
+    const bought = (await buyReceipts(businessId, { idempotencyKey: key }))._unsafeUnwrap();
+    expect(bought).toMatchObject({
+      businessId,
+      region: "ID",
+      funderType: "partner",
+      totalPoints: 1_000,
+      remainingPoints: 1_000,
+      programme: "receipts",
+    });
+    const scale = await buyReceipts(businessId, {
+      tierKey: "scale",
+      points: 50_000,
+      paidMinor: AT_COST_ID.scale,
+    });
+    expect(scale._unsafeUnwrap().totalPoints).toBe(50_000);
+
+    for (const refused of [
+      await buyReceipts(businessId, { paidMinor: AT_COST_ID.starter - 1 }),
+      await buyReceipts(businessId, { points: 10_000, paidMinor: AT_COST_ID.grow }),
+      await buyReceipts(businessId, { tierKey: "platinum" }),
+      await buyReceipts(randomUUID()),
+    ]) {
+      expect(refused._unsafeUnwrapErr().code).toBe("refused");
+    }
+    const untiered = await client.purchasePoints({
+      businessId,
+      region: "ID",
+      currency: "IDR",
+      points: toPoints(1_000),
+      paidMinor: toMinorUnits(AT_COST_ID.starter),
+      idempotencyKey: randomUUID(),
+      programme: "receipts",
+    });
+    expect(untiered._unsafeUnwrapErr().code).toBe("refused");
+
+    // A replay answers the same package; the same key as an ordinary purchase conflicts.
+    const replay = (await buyReceipts(businessId, { idempotencyKey: key }))._unsafeUnwrap();
+    expect(replay.allocationId).toBe(bought.allocationId);
+    const ordinaryReplay = await client.purchasePoints({
+      businessId,
+      region: "ID",
+      currency: "IDR",
+      points: toPoints(1_000),
+      paidMinor: toMinorUnits(AT_COST_ID.starter),
+      idempotencyKey: key,
+      tierKey: "starter",
+    });
+    expect(ordinaryReplay._unsafeUnwrapErr().code).toBe("idempotency_conflict");
+  });
+
+  it("names the programme on every allocation view", async () => {
+    const { businessId } = await receiptFunder();
+    const receipts = (await buyReceipts(businessId))._unsafeUnwrap();
+    const ordinary = (
+      await client.purchasePoints({
+        businessId,
+        region: "ID",
+        currency: "IDR",
+        points: toPoints(1_000),
+        paidMinor: toMinorUnits(9_000),
+        idempotencyKey: randomUUID(),
+        tierKey: "starter",
+      })
+    )._unsafeUnwrap();
+    expect(ordinary.programme).toBeNull();
+    expect((await client.getAllocation(receipts.allocationId))._unsafeUnwrap().programme).toBe(
+      "receipts",
+    );
+    const listed = (await client.listAllocations(businessId))._unsafeUnwrap();
+    expect(
+      Object.fromEntries(
+        listed.map((allocation) => [allocation.allocationId, allocation.programme]),
+      ),
+    ).toEqual({ [receipts.allocationId]: "receipts", [ordinary.allocationId]: null });
+  });
+});
+
+describe("the receipt draw (2.10.b T2b, F127)", () => {
+  it("pays from the oldest package with room, never split, then stops", async (ctx) => {
+    if (!(await receiptDrawInForce())) ctx.skip();
+    const { partnerId, businessId } = await receiptFunder();
+    const first = (await buyReceipts(businessId))._unsafeUnwrap().allocationId;
+    const second = (await buyReceipts(businessId))._unsafeUnwrap().allocationId;
+    const grant = (points: number) => drawClient.grantAction(receiptGrant(partnerId, points));
+
+    expect((await grant(400))._unsafeUnwrap().points).toBe(400);
+    expect((await grant(400)).isOk()).toBe(true);
+    // 200 left in the first: 400 more comes whole from the second.
+    expect((await grant(400)).isOk()).toBe(true);
+    expect([await remaining(first), await remaining(second)]).toEqual([200, 600]);
+    // The oldest with room again.
+    expect((await grant(200)).isOk()).toBe(true);
+    expect((await grant(400)).isOk()).toBe(true);
+    expect([await remaining(first), await remaining(second)]).toEqual([0, 200]);
+
+    const exhausted = await grant(400);
+    expect(exhausted._unsafeUnwrapErr().code).toBe("allocation_exhausted");
+    expect([await remaining(first), await remaining(second)]).toEqual([0, 200]);
+  });
+
+  it("is allocation_exhausted with no funder or no package, and never takes marketing cash", async (ctx) => {
+    if (!(await receiptDrawInForce())) ctx.skip();
+    const noFunder = await drawClient.grantAction(receiptGrant(`contract-${randomUUID()}`, 1));
+    expect(noFunder._unsafeUnwrapErr().code).toBe("allocation_exhausted");
+    const { partnerId, businessId } = await receiptFunder();
+    const noPackage = await drawClient.grantAction(receiptGrant(partnerId, 1));
+    expect(noPackage._unsafeUnwrapErr().code).toBe("allocation_exhausted");
+
+    (await buyReceipts(businessId))._unsafeUnwrap();
+    const paid = (await drawClient.grantAction(receiptGrant(partnerId, 1)))._unsafeUnwrap();
+    if (liveUrl === undefined) {
+      const backed = await db.execute(sql`
+        SELECT 1 FROM platform.ledger_fake_marketing_backing WHERE grant_id = ${paid.grantId}
+      `);
+      expect(backed.rows).toHaveLength(0);
+    }
+  });
+
+  it("replays a paid receipt's first grant after the package is spent, whatever the points", async (ctx) => {
+    if (!(await receiptDrawInForce())) ctx.skip();
+    const { partnerId, businessId } = await receiptFunder();
+    const allocationId = (await buyReceipts(businessId))._unsafeUnwrap().allocationId;
+    const first = receiptGrant(partnerId, 400);
+    const paid = (await drawClient.grantAction(first))._unsafeUnwrap();
+    expect((await drawClient.grantAction(receiptGrant(partnerId, 600))).isOk()).toBe(true);
+    expect(await remaining(allocationId)).toBe(0);
+
+    for (const points of [400, 1]) {
+      const replay = await drawClient.grantAction({ ...first, points: toPoints(points) });
+      expect(replay._unsafeUnwrap()).toMatchObject({ grantId: paid.grantId, points: 400 });
+    }
+    const fresh = await drawClient.grantAction(receiptGrant(partnerId, 1));
+    expect(fresh._unsafeUnwrapErr().code).toBe("allocation_exhausted");
+  });
+
+  it("refuses a receipt that names no partner", async (ctx) => {
+    if (!(await receiptDrawInForce())) ctx.skip();
+    const unnamed = await drawClient.grantAction(receiptGrant(undefined, 1));
+    expect(unnamed._unsafeUnwrapErr().code).toBe("refused");
+  });
+
+  it("never lets a campaign hold or pay from a receipt package", async (ctx) => {
+    if (!(await receiptDrawInForce())) ctx.skip();
+    const { businessId } = await receiptFunder();
+    const allocationId = (await buyReceipts(businessId))._unsafeUnwrap().allocationId;
+    const held = await drawClient.hold({ allocationId, points: toPoints(1), sagaId: randomUUID() });
+    expect(held._unsafeUnwrapErr().code).toBe("refused");
+
+    const campaign = await rewardedCampaign();
+    await db.execute(sql`
+      UPDATE campaign.reward_config SET allocation_id = ${allocationId}
+       WHERE campaign_id = ${campaign.campaignId}::uuid
+    `);
+    const paid = await drawClient.grantReward(reward(campaign, randomUUID(), 3));
+    expect(paid._unsafeUnwrapErr().code).toBe("refused");
+    expect(await remaining(allocationId)).toBe(1_000);
   });
 });

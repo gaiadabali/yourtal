@@ -92,6 +92,8 @@ function grantForLink(
           points: toPoints(points),
           trustTier: PARTNER_TRUST_TIER,
           idempotencyKey,
+          // F127 (docs/27 §3.3): the partner's receipt package pays it.
+          partnerId: input.partnerId,
         })
         .map((grant): PartnerActionResult => ({
           granted: true,

@@ -128,6 +128,8 @@ describe("grantPartnerAction (14.3.b)", () => {
     });
     const { linkId } = first._unsafeUnwrap();
     expect(first._unsafeUnwrap()).toEqual({ granted: true, points: 1, linkId, duplicate: false });
+    // F127: the ledger pays the receipt from this partner's receipt package.
+    expect([...world.grants.values()].map((grant) => grant.partnerId)).toEqual([PARTNER]);
 
     const reused = await grantPartnerAction(world.deps(), {
       partnerId: PARTNER,

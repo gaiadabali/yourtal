@@ -15,8 +15,15 @@ import type {
 } from "@yourtal/contracts/ledger-internal/funding";
 import type { AppDb } from "../../persistence/drizzle-client";
 import { campaignBudgetRefusal, campaignRegion } from "./fake-ledger-campaign-budget";
-import { priceTier } from "./fake-ledger-packages";
+import { priceTier, priceTierAtCost } from "./fake-ledger-packages";
 import { priceAtIssueRate } from "./fake-ledger-pricing";
+import {
+  DEFAULT_FAKE_LEDGER_OPTIONS,
+  isReceiptPackage,
+  receiptFunderRefusal,
+  receiptPackageRefusal,
+} from "./fake-ledger-receipts";
+import type { FakeLedgerOptions } from "./fake-ledger-receipts";
 
 /**
  * TASKS.md 1.2.a's funding group, against `platform.ledger_fake_allocation`
@@ -37,6 +44,7 @@ type AllocationRow = {
   readonly funder_type: string;
   readonly total_points: string;
   readonly remaining_points: string;
+  readonly programme: string | null;
   readonly created_at: string;
 };
 
@@ -48,7 +56,7 @@ function toAllocation(row: AllocationRow): Allocation {
     funderType: row.funder_type as Allocation["funderType"],
     totalPoints: toPoints(Number(row.total_points)),
     remainingPoints: toPoints(Number(row.remaining_points)),
-    programme: null,
+    programme: row.programme === "receipts" ? "receipts" : null,
     createdAt: new Date(row.created_at).toISOString(),
   };
 }
@@ -66,9 +74,12 @@ export function purchasePoints(
         currency: string;
         points: string;
         paid_minor: string;
+        programme: string | null;
       }>(sql`
-        SELECT allocation_id, business_id, region, currency, points, paid_minor
-          FROM platform.ledger_fake_point_purchase WHERE idempotency_key = ${request.idempotencyKey}
+        SELECT p.allocation_id, p.business_id, p.region, p.currency, p.points, p.paid_minor, a.programme
+          FROM platform.ledger_fake_point_purchase p
+          JOIN platform.ledger_fake_allocation a ON a.id = p.allocation_id
+         WHERE p.idempotency_key = ${request.idempotencyKey}
       `);
       const priorRow = existing.rows[0];
       if (priorRow !== undefined) {
@@ -77,7 +88,8 @@ export function purchasePoints(
           priorRow.region === request.region &&
           priorRow.currency === request.currency &&
           Number(priorRow.points) === request.points &&
-          Number(priorRow.paid_minor) === request.paidMinor;
+          Number(priorRow.paid_minor) === request.paidMinor &&
+          (priorRow.programme ?? undefined) === request.programme;
         if (!matches) {
           return err(
             ledgerError(
@@ -87,7 +99,7 @@ export function purchasePoints(
           );
         }
         const allocationRows = await db.execute<AllocationRow>(sql`
-          SELECT id, business_id, region, funder_type, total_points, remaining_points, created_at
+          SELECT id, business_id, region, funder_type, total_points, remaining_points, programme, created_at
             FROM platform.ledger_fake_allocation WHERE id = ${priorRow.allocation_id}
         `);
         const row = allocationRows.rows[0];
@@ -109,9 +121,9 @@ export function purchasePoints(
       const allocationId = randomUUID();
       await db.execute(sql`
         INSERT INTO platform.ledger_fake_allocation
-          (id, business_id, region, funder_type, currency, total_points, remaining_points)
+          (id, business_id, region, funder_type, currency, total_points, remaining_points, programme)
         VALUES (${allocationId}, ${request.businessId}, ${request.region}, 'partner',
-                ${request.currency}, ${request.points}, ${request.points})
+                ${request.currency}, ${request.points}, ${request.points}, ${request.programme ?? null})
       `);
       await db.execute(sql`
         INSERT INTO platform.ledger_fake_point_purchase
@@ -126,7 +138,7 @@ export function purchasePoints(
         funderType: "partner",
         totalPoints: request.points,
         remainingPoints: request.points,
-        programme: null,
+        programme: request.programme ?? null,
         createdAt: new Date().toISOString(),
       });
     })(),
@@ -136,21 +148,46 @@ export function purchasePoints(
 /**
  * K6, as services/ledger's RecordPurchase: the least a purchase may pay is
  * the tier's price (which also checks B and the tier's size) or, untiered,
- * whole 1,000-point packs at P_issue.
+ * whole 1,000-point packs at P_issue. 2.10.b: a receipt package is a tier's
+ * size at cost, for the region's receipt funder only (`receiptPackagePrice`).
  */
 async function purchasePrice(
   db: AppDb,
   request: PurchasePointsRequest,
 ): Promise<Result<number, LedgerError>> {
+  if (request.points <= 0 || request.points % 1_000 !== 0) {
+    return err(
+      ledgerError("refused", `points are sold in packs of 1,000, not ${String(request.points)}`),
+    );
+  }
+  if (request.programme === "receipts") return receiptPackagePrice(db, request);
   if (request.tierKey === undefined) {
-    if (request.points <= 0 || request.points % 1_000 !== 0) {
-      return err(
-        ledgerError("refused", `points are sold in packs of 1,000, not ${String(request.points)}`),
-      );
-    }
     return priceAtIssueRate(request.region, request.points).map((quote) => quote.totalMinor);
   }
   const quote = await priceTier(db, request.region, request.tierKey);
+  if (quote.isErr()) return err(quote.error);
+  if (quote.value.points !== request.points) {
+    return err(
+      ledgerError(
+        "refused",
+        `${request.tierKey} is ${String(quote.value.points)} points, not ${String(request.points)}`,
+      ),
+    );
+  }
+  return ok(quote.value.totalMinor);
+}
+
+/** Funder first, then the tier, then its size, in Go's order. */
+async function receiptPackagePrice(
+  db: AppDb,
+  request: PurchasePointsRequest,
+): Promise<Result<number, LedgerError>> {
+  const refusal = await receiptFunderRefusal(db, request.region, request.businessId);
+  if (refusal !== null) return err(refusal);
+  if (request.tierKey === undefined) {
+    return err(ledgerError("refused", "a receipt package names its tier"));
+  }
+  const quote = await priceTierAtCost(db, request.region, request.tierKey);
   if (quote.isErr()) return err(quote.error);
   if (quote.value.points !== request.points) {
     return err(
@@ -170,7 +207,7 @@ export function listAllocations(
   return new ResultAsync(
     (async (): Promise<Result<readonly Allocation[], LedgerError>> => {
       const result = await db.execute<AllocationRow>(sql`
-        SELECT id, business_id, region, funder_type, total_points, remaining_points, created_at
+        SELECT id, business_id, region, funder_type, total_points, remaining_points, programme, created_at
           FROM platform.ledger_fake_allocation WHERE business_id = ${businessId}
          ORDER BY created_at
       `);
@@ -186,7 +223,7 @@ export function getAllocation(
   return new ResultAsync(
     (async (): Promise<Result<Allocation, LedgerError>> => {
       const result = await db.execute<AllocationRow>(sql`
-        SELECT id, business_id, region, funder_type, total_points, remaining_points, created_at
+        SELECT id, business_id, region, funder_type, total_points, remaining_points, programme, created_at
           FROM platform.ledger_fake_allocation WHERE id = ${allocationId}
       `);
       const row = result.rows[0];
@@ -214,8 +251,23 @@ function toHold(row: HoldRow): Hold {
   };
 }
 
-export function hold(db: AppDb, request: HoldRequest): ResultAsync<Hold, LedgerError> {
+export function hold(
+  db: AppDb,
+  request: HoldRequest,
+  options: FakeLedgerOptions = DEFAULT_FAKE_LEDGER_OPTIONS,
+): ResultAsync<Hold, LedgerError> {
   const { campaignId } = request;
+  // 2.10.b (T2b's holds.go): a receipt package pays receipts only, never a hold.
+  if (options.receiptDraw) {
+    return new ResultAsync(
+      (async (): Promise<Result<Hold, LedgerError>> => {
+        if (await isReceiptPackage(db, request.allocationId)) {
+          return err(receiptPackageRefusal(request.allocationId));
+        }
+        return hold(db, request, { ...options, receiptDraw: false });
+      })(),
+    );
+  }
   if (campaignId === undefined) return new ResultAsync(holdIn(db, request));
   // 14.2: a reward session's hold also reserves room in its campaign's budget
   // and today's cap, in one transaction under the campaign's lock.

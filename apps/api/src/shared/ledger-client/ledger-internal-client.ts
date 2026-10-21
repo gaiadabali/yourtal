@@ -12,6 +12,7 @@ import type {
   QuotePurchaseRequest,
   QuotePurchaseResult,
   QuoteRequest,
+  ReceiptPackageTiersRequest,
   ValuePointsRequest,
   ValuePointsResult,
 } from "@yourtal/contracts/ledger-internal/pricing";
@@ -101,8 +102,16 @@ export interface LedgerInternalClient extends LedgerSettingsOperations {
   valuePoints(request: ValuePointsRequest): ResultAsync<ValuePointsResult, LedgerError>;
   /** 14.13 (F122): every package tier on sale in a region, priced by the ledger; never B. */
   packageTiers(region: Region): ResultAsync<readonly PackageTierQuote[], LedgerError>;
-  /** 14.13: one tier, priced now. An unknown tier, or one under B, is `refused`. */
+  /**
+   * 14.13: one tier, priced now. An unknown tier, or one under B, is `refused`.
+   * 2.10.b: with `programme: "receipts"` and the funder's `businessId`, at cost
+   * (`pricing: "at_cost"`); a business that is not the funder is `refused`.
+   */
   quotePackage(request: QuotePackageRequest): ResultAsync<PackageTierQuote, LedgerError>;
+  /** 2.10.b (F127): every tier size at cost, for the region's receipt funder only; anyone else is `refused`. */
+  receiptPackageTiers(
+    request: ReceiptPackageTiersRequest,
+  ): ResultAsync<readonly PackageTierQuote[], LedgerError>;
   /** 14.13: whether a proposed tier catalogue may be stored or approved (its shape, and every tier above B). */
   checkPackageTiers(request: CheckPackageTiersRequest): ResultAsync<void, LedgerError>;
 

@@ -2,11 +2,14 @@ import { createHmac, randomUUID } from "node:crypto";
 import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
-import { toMinorUnits } from "@yourtal/contracts/money";
+import { sql } from "drizzle-orm";
+import { receiptFunderKey } from "@yourtal/contracts/billing/receipt-funder";
+import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
 import { AppModule } from "../../../app.module";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import { LEDGER_INTERNAL_CLIENT } from "../../../shared/ledger-client/ledger-internal-client";
 import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-internal-client";
+import { seedBusinessMembership } from "../../../shared/testing/seed-business-membership";
 import { sessionFor } from "../../../shared/testing/session-for";
 import { partnerCredentials } from "../persistence/schema/partner.table";
 
@@ -45,6 +48,14 @@ export const receipt = (linkId: string) => ({
   action: "receipt_scanned",
   externalRef: `receipt-${randomUUID()}`,
 });
+
+/** What `fundReceipts` bought: the funder business and its receipt package. */
+export interface FundedReceipts {
+  readonly businessId: string;
+  readonly ownerCookie: string;
+  readonly allocationId: string;
+  readonly points: number;
+}
 
 export function partnerKit(app: NestFastifyApplication, owner: AppDb) {
   /** The table names an env var, not a value: a fresh var per partner, so none share a secret. */
@@ -95,5 +106,60 @@ export function partnerKit(app: NestFastifyApplication, owner: AppDb) {
     return { session, code, linkId };
   }
 
-  return { seedPartner, partnerPost, issueCode, availablePoints, linkedAdult };
+  /**
+   * 2.10.b (F127): a verified business in `region` with an owner, approved
+   * (two people) as `partner`'s receipt funder there, that has bought one
+   * receipt package of `tierKey` at cost. Its receipts pay from that package
+   * once the ledger draws them (T2b); call it again to buy another.
+   */
+  async function fundReceipts(
+    partner: Partner,
+    region: "AU" | "ID",
+    tierKey = "starter",
+  ): Promise<FundedReceipts> {
+    const ledger = app.get<LedgerInternalClient>(LEDGER_INTERNAL_CLIENT);
+    const ownerSession = await sessionFor(app, { jurisdiction: region });
+    const businessId = await seedBusinessMembership(owner, {
+      userId: ownerSession.userId,
+      role: "owner",
+      region,
+    });
+    await owner.execute(
+      sql`UPDATE business.business_accounts SET is_verified = true WHERE id = ${businessId}::uuid`,
+    );
+    const proposed = await ledger.proposeSetting({
+      region,
+      key: receiptFunderKey(partner.partnerId),
+      value: { businessId },
+      proposedBy: "staff-1",
+    });
+    await ledger.approveSetting({ id: proposed.id, approvedBy: "staff-2" });
+
+    const quote = await ledger.quotePackage({
+      region,
+      tierKey,
+      programme: "receipts",
+      businessId,
+    });
+    if (quote.isErr()) throw new Error(`quoting receipts: ${quote.error.message}`);
+    const bought = await ledger.purchasePoints({
+      businessId,
+      region,
+      currency: quote.value.currency,
+      points: toPoints(quote.value.points),
+      paidMinor: quote.value.totalMinor,
+      idempotencyKey: randomUUID(),
+      tierKey,
+      programme: "receipts",
+    });
+    if (bought.isErr()) throw new Error(`buying receipts: ${bought.error.message}`);
+    return {
+      businessId,
+      ownerCookie: ownerSession.cookie,
+      allocationId: bought.value.allocationId,
+      points: bought.value.totalPoints,
+    };
+  }
+
+  return { seedPartner, partnerPost, issueCode, availablePoints, linkedAdult, fundReceipts };
 }

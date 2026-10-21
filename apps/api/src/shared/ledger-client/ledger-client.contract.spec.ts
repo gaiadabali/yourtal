@@ -759,7 +759,9 @@ describe("earning and spending", () => {
       ).isOk(),
     ).toBe(true);
 
-    const { listingId, points } = await pricedAuListing(500);
+    // 200, not 500: the listing's rounded price can land a point or two above its
+    // target, and a user cannot earn more than AU's 500-point daily cap (F12).
+    const { listingId, points } = await pricedAuListing(200);
     const userId = randomUUID();
     expect(
       (

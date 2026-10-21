@@ -15,7 +15,7 @@ export async function withEarnCaps<T>(
   client: Pick<LedgerInternalClient, "getSettings" | "proposeSetting" | "approveSetting">,
   region: Region,
   caps: { readonly daily: number; readonly monthly: number },
-  body: () => Promise<T>,
+  body: () => PromiseLike<T>,
 ): Promise<T> {
   const keys = ["daily_earn_cap", "monthly_earn_cap"] as const;
   const set = async (values: Record<(typeof keys)[number], unknown>): Promise<void> => {
@@ -49,3 +49,6 @@ export async function withEarnCaps<T>(
     await set(original);
   }
 }
+
+/** Caps no fixture grant reaches, for a test that tops a user up past one day's earn cap. */
+export const HIGH_EARN_CAPS = { daily: 10_000_000_000, monthly: 10_000_000_000 } as const;

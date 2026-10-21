@@ -12,6 +12,7 @@ import { createAppDb, type AppDb } from "../../shared/persistence/drizzle-client
 import { sessionFor, type TestSession } from "../../shared/testing/session-for";
 import { SAGA_DEPS } from "./checkout.tokens";
 import type { SagaDeps } from "./use-cases/run-saga";
+import { HIGH_EARN_CAPS, withEarnCaps } from "../../shared/testing/with-earn-caps";
 
 // 4.7.c, K13, over real HTTP against the configured clients (the fakes in CI).
 
@@ -59,14 +60,17 @@ async function bought(): Promise<{ session: TestSession; voucherId: string; pric
   const quote = checkoutQuoteSchema.parse(
     (await post("/api/checkout/quote", session, { listingId: listing.rows[0]?.id })).json(),
   );
-  const granted = await deps.ledger.grantAction({
-    kind: "goodwill",
-    userId: session.userId,
-    region: "ID",
-    points: toPoints(quote.pricePoints),
-    trustTier: 3,
-    idempotencyKey: randomUUID(),
-  });
+  // A voucher can cost more than one day's earn cap (F12), so lift it for this top-up.
+  const granted = await withEarnCaps(deps.ledger, "ID", HIGH_EARN_CAPS, () =>
+    deps.ledger.grantAction({
+      kind: "goodwill",
+      userId: session.userId,
+      region: "ID",
+      points: toPoints(quote.pricePoints),
+      trustTier: 3,
+      idempotencyKey: randomUUID(),
+    }),
+  );
   expect(granted.isOk()).toBe(true);
   const result = checkoutResultSchema.parse(
     (await post("/api/checkout", session, { checkoutId: quote.checkoutId })).json(),

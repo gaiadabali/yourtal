@@ -13,6 +13,7 @@ import { sessionFor } from "../../../shared/testing/session-for";
 import { SAGA_DEPS } from "../checkout.tokens";
 import { recoverSagas } from "./recover-sagas";
 import { runSaga, type SagaDeps } from "./run-saga";
+import { HIGH_EARN_CAPS, withEarnCaps } from "../../../shared/testing/with-earn-caps";
 
 // The saga when a service does not answer at all (found by 4.7.d's live run):
 // an unreachable voucher service or ledger rejects instead of refusing.
@@ -68,14 +69,17 @@ async function reservedSaga(): Promise<{ sagaId: string; userId: string }> {
     payload: { listingId: rows.rows[0]?.id },
   });
   const quote = checkoutQuoteSchema.parse(quoted.json());
-  const granted = await deps.ledger.grantAction({
-    kind: "goodwill",
-    userId: session.userId,
-    region: "ID",
-    points: toPoints(quote.pricePoints),
-    trustTier: 3,
-    idempotencyKey: randomUUID(),
-  });
+  // A voucher can cost more than one day's earn cap (F12), so lift it for this top-up.
+  const granted = await withEarnCaps(deps.ledger, "ID", HIGH_EARN_CAPS, () =>
+    deps.ledger.grantAction({
+      kind: "goodwill",
+      userId: session.userId,
+      region: "ID",
+      points: toPoints(quote.pricePoints),
+      trustTier: 3,
+      idempotencyKey: randomUUID(),
+    }),
+  );
   expect(granted.isOk()).toBe(true);
   const reserved = await deps.vouchers.reserve({
     listingId: quote.listingId,

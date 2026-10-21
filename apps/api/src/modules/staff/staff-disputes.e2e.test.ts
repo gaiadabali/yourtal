@@ -14,6 +14,7 @@ import { sessionFor, type TestSession } from "../../shared/testing/session-for";
 import { SAGA_DEPS } from "../checkout/checkout.tokens";
 import type { SagaDeps } from "../checkout/use-cases/run-saga";
 import { grantStaffRole, ownerPool } from "./staff.test-helper";
+import { HIGH_EARN_CAPS, withEarnCaps } from "../../shared/testing/with-earn-caps";
 
 /**
  * TASKS.md 9.4.d, K13, and 9.4.e's Check (the dispute half): a captured
@@ -79,14 +80,17 @@ async function queuedDispute(): Promise<{ voucherId: string; userId: string }> {
   const quote = checkoutQuoteSchema.parse(
     (await post("/api/checkout/quote", session, { listingId: listing.rows[0]?.id })).json(),
   );
-  const granted = await deps.ledger.grantAction({
-    kind: "goodwill",
-    userId: session.userId,
-    region: "ID",
-    points: toPoints(quote.pricePoints),
-    trustTier: 3,
-    idempotencyKey: randomUUID(),
-  });
+  // A voucher can cost more than one day's earn cap (F12), so lift it for this top-up.
+  const granted = await withEarnCaps(deps.ledger, "ID", HIGH_EARN_CAPS, () =>
+    deps.ledger.grantAction({
+      kind: "goodwill",
+      userId: session.userId,
+      region: "ID",
+      points: toPoints(quote.pricePoints),
+      trustTier: 3,
+      idempotencyKey: randomUUID(),
+    }),
+  );
   expect(granted.isOk()).toBe(true);
   const result = checkoutResultSchema.parse(
     (await post("/api/checkout", session, { checkoutId: quote.checkoutId })).json(),

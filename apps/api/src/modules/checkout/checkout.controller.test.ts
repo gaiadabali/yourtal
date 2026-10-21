@@ -13,6 +13,7 @@ import { sessionFor } from "../../shared/testing/session-for";
 import { SAGA_DEPS } from "./checkout.tokens";
 import { recoverSagas } from "./use-cases/recover-sagas";
 import type { SagaDeps } from "./use-cases/run-saga";
+import { HIGH_EARN_CAPS, withEarnCaps } from "../../shared/testing/with-earn-caps";
 
 // 4.7 over real HTTP, a real PDP and the ledger/voucher clients the app is
 // configured with (the fakes in CI; the live ledger re-checks in Go).
@@ -67,14 +68,17 @@ async function buyableListing(region: "ID" | "AU", channel = "in_store"): Promis
 }
 
 async function earn(userId: string, region: "ID" | "AU", points: number): Promise<void> {
-  const granted = await deps.ledger.grantAction({
-    kind: "goodwill",
-    userId,
-    region,
-    points: toPoints(points),
-    trustTier: 3,
-    idempotencyKey: randomUUID(),
-  });
+  // A voucher can cost more than one day's earn cap (F12), so lift it for this top-up.
+  const granted = await withEarnCaps(deps.ledger, region, HIGH_EARN_CAPS, () =>
+    deps.ledger.grantAction({
+      kind: "goodwill",
+      userId,
+      region,
+      points: toPoints(points),
+      trustTier: 3,
+      idempotencyKey: randomUUID(),
+    }),
+  );
   expect(granted.isOk()).toBe(true);
 }
 

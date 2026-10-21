@@ -58,7 +58,9 @@ export async function amrOf(owner: AppDb, token: string): Promise<string[] | und
 /** Pretends the person signed in an hour ago, so adding a sign-in method needs a fresh one. */
 export async function ageSessions(owner: AppDb, userId: string): Promise<void> {
   await owner.execute(
-    sql`UPDATE identity.session SET signed_in_at = now() - interval '1 hour' WHERE user_id = ${userId}`,
+    sql`UPDATE identity.session
+        SET signed_in_at = date_trunc('milliseconds', now() - interval '1 hour')
+        WHERE user_id = ${userId}`,
   );
 }
 

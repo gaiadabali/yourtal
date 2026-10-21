@@ -3,6 +3,7 @@ import { minorUnitsSchema, pointsSchema } from "../money/money";
 import { currencySchema } from "../money/money-value";
 import { regionSchema } from "../region/region";
 import { packageTierKeySchema } from "../billing/package-tiers";
+import { receiptProgrammeSchema } from "../billing/receipt-funder";
 
 /**
  * TASKS.md 1.2.a's pricing group. `quote` never carries the backing rate
@@ -107,14 +108,42 @@ export const packageTierQuoteSchema = z.object({
   totalMinor: minorUnitsSchema,
   undiscountedMinor: minorUnitsSchema,
   currency: currencySchema,
+  /**
+   * 2.10.b (F127): `at_cost` for a receipt package (no discount, so
+   * `undiscountedMinor` equals `totalMinor`), else `tier`. An older ledger sends none.
+   */
+  pricing: z.enum(["tier", "at_cost"]).default("tier"),
 });
 export type PackageTierQuote = z.infer<typeof packageTierQuoteSchema>;
 
-export const quotePackageRequestSchema = z.object({
-  region: regionSchema,
-  tierKey: packageTierKeySchema,
-});
+export const quotePackageRequestSchema = z
+  .object({
+    region: regionSchema,
+    tierKey: packageTierKeySchema,
+    /** 2.10.b (F127): `receipts` with the funder's `businessId` quotes the receipt package at cost. Both or neither. */
+    programme: receiptProgrammeSchema.optional(),
+    businessId: z.uuid().optional(),
+  })
+  .refine((body) => (body.programme === undefined) === (body.businessId === undefined), {
+    message: "send `programme` and `businessId` together, or neither",
+    path: ["businessId"],
+  });
 export type QuotePackageRequest = z.infer<typeof quotePackageRequestSchema>;
+
+/**
+ * 2.10.b (F127): `POST /v1/pricing/receipt-package-tiers`. The tiers a receipt
+ * funder may buy, each priced at cost. A business that is not the approved
+ * funder in the region is refused. The answer is a bare array, like
+ * `package-tiers`; every entry has `pricing: "at_cost"`.
+ */
+export const receiptPackageTiersRequestSchema = z.object({
+  region: regionSchema,
+  businessId: z.uuid(),
+});
+export type ReceiptPackageTiersRequest = z.infer<typeof receiptPackageTiersRequestSchema>;
+
+export const receiptPackageTiersResultSchema = z.array(packageTierQuoteSchema);
+export type ReceiptPackageTiersResult = z.infer<typeof receiptPackageTiersResultSchema>;
 
 /** Staff's propose and approve ask this before a catalogue is stored or put in force. */
 export const checkPackageTiersRequestSchema = z.object({

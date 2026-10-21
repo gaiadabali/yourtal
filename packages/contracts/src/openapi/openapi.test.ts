@@ -498,6 +498,18 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "device/partner-action.ts's response for POST /api/partners/links (14.3.b) — documented inline (route-registry.c-partners.ts).",
   partnerLinkRevokeResultSchema:
     "device/partner-action.ts's response for POST /api/partners/links/{linkId}/revoke — documented inline (route-registry.c-partners.ts).",
+  partnerReceiptStatusRequestSchema:
+    "device/partner-action.ts's request body for POST /api/partners/receipts/status (2.10.b) — documented inline once the route is registered (T4).",
+  partnerReceiptStatusResultSchema:
+    "device/partner-action.ts's response for POST /api/partners/receipts/status (2.10.b) — documented inline once the route is registered (T4).",
+  receiptProgrammeViewSchema:
+    "billing.ts's response for GET .../billing/receipt-programme (2.10.b) — documented inline once the route is registered (T5).",
+  receiptProgrammeSchema:
+    "billing/receipt-funder.ts's closed programme literal, nested inside other schemas — not a standalone component.",
+  receiptFunderValueSchema:
+    "billing/receipt-funder.ts's value of the receipt_funder.<partnerId> region setting, which staff send as ProposeSettingBody.value (unknown in the contract); validated server-side, never a route body of its own.",
+  receiptPackageTiersRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  receiptPackageTiersResultSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
 
   // --- oidc: the sign-in screens' interaction API (group 3.9) ---
   interactionDetailsSchema:

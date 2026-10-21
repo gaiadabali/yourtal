@@ -3,22 +3,33 @@ import { minorUnitsSchema, pointsSchema } from "../money/money";
 import { currencySchema } from "../money/money-value";
 import { regionSchema } from "../region/region";
 import { packageTierKeySchema } from "../billing/package-tiers";
+import { receiptProgrammeSchema } from "../billing/receipt-funder";
 
 /** TASKS.md 1.2.a's funding-and-allocations group. */
 
 export const funderTypeSchema = z.enum(["partner", "marketing"]);
 export type FunderType = z.infer<typeof funderTypeSchema>;
 
-export const purchasePointsRequestSchema = z.object({
-  businessId: z.uuid(),
-  region: regionSchema,
-  currency: currencySchema,
-  points: pointsSchema,
-  paidMinor: minorUnitsSchema,
-  idempotencyKey: z.string().min(1),
-  /** 14.13 (F122): a package tier; the ledger prices it and requires its size. Omitted: untiered, at P_issue. */
-  tierKey: packageTierKeySchema.optional(),
-});
+export const purchasePointsRequestSchema = z
+  .object({
+    businessId: z.uuid(),
+    region: regionSchema,
+    currency: currencySchema,
+    points: pointsSchema,
+    paidMinor: minorUnitsSchema,
+    idempotencyKey: z.string().min(1),
+    /** 14.13 (F122): a package tier; the ledger prices it and requires its size. Omitted: untiered, at P_issue. */
+    tierKey: packageTierKeySchema.optional(),
+    /**
+     * 2.10.b (F127): `receipts` buys a receipt package, priced at cost for the
+     * approved receipt funder only. Needs `tierKey`. Omitted: an ordinary package.
+     */
+    programme: receiptProgrammeSchema.optional(),
+  })
+  .refine((body) => body.programme === undefined || body.tierKey !== undefined, {
+    message: "a receipt package needs a `tierKey`",
+    path: ["tierKey"],
+  });
 export type PurchasePointsRequest = z.infer<typeof purchasePointsRequestSchema>;
 
 export const allocationSchema = z.object({
@@ -28,6 +39,8 @@ export const allocationSchema = z.object({
   funderType: funderTypeSchema,
   totalPoints: pointsSchema,
   remainingPoints: pointsSchema,
+  /** 2.10.b (F127): `receipts` for a receipt package, else null. An older ledger sends none. */
+  programme: receiptProgrammeSchema.nullable().default(null),
   createdAt: z.iso.datetime(),
 });
 export type Allocation = z.infer<typeof allocationSchema>;

@@ -3,6 +3,7 @@ import { minorUnitsSchema, pointsSchema } from "../money/money";
 import { currencySchema } from "../money/money-value";
 import { regionSchema } from "../region/region";
 import { packageTierKeySchema } from "./package-tiers";
+import { receiptProgrammeSchema } from "./receipt-funder";
 
 /**
  * 7.5: Studio billing — buying points. `P_issue` (the pack price) appears
@@ -35,6 +36,8 @@ export const pointPackageSchema = z.object({
   currency: currencySchema,
   pricePer1000Minor: minorUnitsSchema,
   savingMinor: minorUnitsSchema,
+  /** 2.10.b (F127): `at_cost` for a receipt package (no discount), else `tier`. */
+  pricing: z.enum(["tier", "at_cost"]).default("tier"),
 });
 export type PointPackage = z.infer<typeof pointPackageSchema>;
 
@@ -56,6 +59,12 @@ export type PurchaseQuote = PointPackage;
 export const purchasePointsRequestSchema = z.object({
   tierKey: packageTierKeySchema,
   currency: currencySchema,
+  /**
+   * 2.10.b (F127): `receipts` buys a receipt package at cost. Only the
+   * approved receipt funder may; any other business is refused with 404
+   * `not_a_receipt_funder`. Omitted: an ordinary package.
+   */
+  programme: receiptProgrammeSchema.optional(),
 });
 export type PurchasePointsRequest = z.infer<typeof purchasePointsRequestSchema>;
 
@@ -67,6 +76,8 @@ export const billingAllocationSchema = z.object({
   funderType: funderTypeSchema,
   totalPoints: pointsSchema,
   remainingPoints: pointsSchema,
+  /** 2.10.b (F127): `receipts` for a receipt package, else null. */
+  programme: receiptProgrammeSchema.nullable().default(null),
   createdAt: z.iso.datetime(),
 });
 export type BillingAllocation = z.infer<typeof billingAllocationSchema>;
@@ -99,6 +110,8 @@ export const cardPurchaseSchema = z.object({
   currency: currencySchema,
   /** Set once the points are granted. */
   allocationId: z.string().min(1).nullable(),
+  /** 2.10.b (F127): `receipts` for a receipt package purchase, else null. */
+  programme: receiptProgrammeSchema.nullable().default(null),
   createdAt: z.iso.datetime(),
   paidAt: z.iso.datetime().nullable(),
 });
@@ -211,6 +224,8 @@ export const budgetAlertSchema = z.object({
   thresholdPct: z.union([z.literal(50), z.literal(80), z.literal(100)]),
   usedPoints: pointsSchema,
   totalPoints: pointsSchema,
+  /** 2.10.b (F127): `receipts` for a receipt package's alert (receipt wording), else null. */
+  programme: receiptProgrammeSchema.nullable().default(null),
   createdAt: z.iso.datetime(),
 });
 export type BudgetAlert = z.infer<typeof budgetAlertSchema>;
@@ -218,3 +233,19 @@ export type BudgetAlert = z.infer<typeof budgetAlertSchema>;
 /** `GET .../billing/alerts`: the business's alerts, newest first. */
 export const budgetAlertsSchema = z.object({ alerts: z.array(budgetAlertSchema) });
 export type BudgetAlerts = z.infer<typeof budgetAlertsSchema>;
+
+/**
+ * 2.10.b (F127): `GET .../billing/receipt-programme`, the receipt funder's
+ * view (billing `view`); 404 for any business that is not a funder.
+ * `partners` are the partner ids it funds in its region. `earning` is true
+ * when a package has room for one receipt; `remainingPoints` is the room left
+ * across its receipt packages; every package has `pricing: "at_cost"`.
+ */
+export const receiptProgrammeViewSchema = z.object({
+  partners: z.array(z.string().min(1)),
+  pointsPerReceipt: pointsSchema,
+  earning: z.boolean(),
+  remainingPoints: pointsSchema,
+  packages: z.array(pointPackageSchema),
+});
+export type ReceiptProgrammeView = z.infer<typeof receiptProgrammeViewSchema>;

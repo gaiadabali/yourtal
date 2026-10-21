@@ -78,7 +78,12 @@ export const grantRewardRequestSchema = z.object({
 });
 export type GrantRewardRequest = z.infer<typeof grantRewardRequestSchema>;
 
-/** `streak`, `receipt` and `goodwill` grants are marketing-funded, never a partner's allocation. */
+/**
+ * `streak` and `goodwill` grants are marketing-funded. From F127 (docs/27) a
+ * `receipt` grant is paid from the partner's receipt package, so it names the
+ * partner: `partnerId` is optional on the type (the other kinds send none) but
+ * required for `kind: "receipt"`, and the ledger refuses a receipt without it.
+ */
 export const grantActionRequestSchema = z.object({
   kind: z.enum(["streak", "receipt", "goodwill"]),
   userId: z.uuid(),
@@ -87,6 +92,8 @@ export const grantActionRequestSchema = z.object({
   trustTier: trustTierSchema,
   idempotencyKey: z.string().min(1),
   ageBand: ageBandSchema.optional(),
+  /** The partner whose receipt package pays the grant. Required for `kind: "receipt"` (F127). */
+  partnerId: z.string().min(1).optional(),
 });
 export type GrantActionRequest = z.infer<typeof grantActionRequestSchema>;
 

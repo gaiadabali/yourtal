@@ -67,3 +67,24 @@ export const partnerLinkRevokeResultSchema = z.object({
   revokedAt: z.iso.datetime(),
 });
 export type PartnerLinkRevokeResult = z.infer<typeof partnerLinkRevokeResultSchema>;
+
+/**
+ * 2.10.b (F127): `POST /api/partners/receipts/status` -- a partner polls
+ * whether its receipt points are being paid (YourTal has no outbound partner
+ * channel). Partner-HMAC authenticated, not value-moving.
+ */
+export const partnerReceiptStatusRequestSchema = z.object({
+  region: z.enum(["AU", "ID"]),
+});
+export type PartnerReceiptStatusRequest = z.infer<typeof partnerReceiptStatusRequestSchema>;
+
+export const partnerReceiptStatusResultSchema = z.object({
+  region: z.enum(["AU", "ID"]),
+  /** True when a receipt package has room for one receipt. */
+  earning: z.boolean(),
+  /** Points paid per receipt: 1 in AU, 10 in ID. */
+  pointsPerReceipt: z.number().int().min(0),
+  /** Points left across the funder's receipt packages. */
+  remainingPoints: z.number().int().min(0),
+});
+export type PartnerReceiptStatusResult = z.infer<typeof partnerReceiptStatusResultSchema>;

@@ -25490,6 +25490,18 @@
           "remainingPoints": {
             "$ref": "#/components/schemas/Points"
           },
+          "programme": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "receipts"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -25502,6 +25514,7 @@
           "funderType",
           "totalPoints",
           "remainingPoints",
+          "programme",
           "createdAt"
         ],
         "additionalProperties": false
@@ -26028,6 +26041,18 @@
           "totalPoints": {
             "$ref": "#/components/schemas/Points"
           },
+          "programme": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "receipts"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -26042,6 +26067,7 @@
           "thresholdPct",
           "usedPoints",
           "totalPoints",
+          "programme",
           "createdAt"
         ],
         "additionalProperties": false
@@ -26866,6 +26892,18 @@
               }
             ]
           },
+          "programme": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "receipts"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -26895,6 +26933,7 @@
           "taxRateBps",
           "currency",
           "allocationId",
+          "programme",
           "createdAt",
           "paidAt"
         ],
@@ -29323,6 +29362,14 @@
           },
           "savingMinor": {
             "$ref": "#/components/schemas/MinorUnits"
+          },
+          "pricing": {
+            "default": "tier",
+            "type": "string",
+            "enum": [
+              "tier",
+              "at_cost"
+            ]
           }
         },
         "required": [
@@ -29335,7 +29382,8 @@
           "taxRateBps",
           "currency",
           "pricePer1000Minor",
-          "savingMinor"
+          "savingMinor",
+          "pricing"
         ],
         "additionalProperties": false
       },
@@ -29894,6 +29942,10 @@
           },
           "currency": {
             "$ref": "#/components/schemas/Currency"
+          },
+          "programme": {
+            "type": "string",
+            "const": "receipts"
           }
         },
         "required": [
@@ -29939,6 +29991,14 @@
           },
           "savingMinor": {
             "$ref": "#/components/schemas/MinorUnits"
+          },
+          "pricing": {
+            "default": "tier",
+            "type": "string",
+            "enum": [
+              "tier",
+              "at_cost"
+            ]
           }
         },
         "required": [
@@ -29951,7 +30011,8 @@
           "taxRateBps",
           "currency",
           "pricePer1000Minor",
-          "savingMinor"
+          "savingMinor",
+          "pricing"
         ],
         "additionalProperties": false
       },

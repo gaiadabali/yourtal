@@ -76,9 +76,10 @@ const FUNDERS = {
     currency: "IDR",
   },
 };
-// docs/27 section 1: a tier is its size at exactly B, the backing rate in force (ceil(points x B)),
-// with no discount. B is read from the staff rate screen, never pinned: staging's AUD rate is not 3c.
+// docs/27 section 1: a tier is its size at exactly B (no discount). B is not visible to staff or
+// businesses (F54), so prices are checked for shape, not pinned.
 const TAX_BPS = { AU: 1_000, ID: 0 };
+const halfUpTax = (subtotal, bps) => Math.floor((subtotal * bps + 5_000) / 10_000);
 const TIER_POINTS = { starter: 1_000, grow: 10_000, scale: 50_000 };
 const RECEIPT_WORDING = "YourTal points for receipt rewards";
 const PAUSED_MESSAGE = "receipt points are paused: the receipt package is used up";
@@ -265,31 +266,16 @@ async function submitCard(checkoutUrl, number) {
 
 // ----------------------------------------------------------- shared reads
 
-const halfUpTax = (subtotal, bps) => Math.floor((subtotal * bps + 5_000) / 10_000);
-const rates = new Map();
-/** B in force for a region, in micros per point, from the staff rate screen. */
-async function backingRate(region) {
-  if (!rates.has(region)) {
-    const finance = await login(staff("finance"));
-    const screen = await ok(
-      await call("GET", `/api/staff/economy/${region}/rate`, finance),
-      `${region} rate`,
-    );
-    if (!Number.isInteger(screen.currentBackingRateMicrosPerPoint))
-      throw new Error(`${region}: the staff rate screen shows no backing rate in force`);
-    rates.set(region, screen.currentBackingRateMicrosPerPoint);
-    note(
-      `${region} backing rate in force`,
-      `${screen.currentBackingRateMicrosPerPoint} micros a point`,
-    );
-  }
-  return rates.get(region);
-}
-/** What a tier costs at cost: [subtotal, tax] in minor units. */
-async function atCost(region, tier) {
-  const micros = await backingRate(region);
-  const subtotal = Math.ceil((TIER_POINTS[tier] * micros) / 1_000_000);
-  return [subtotal, halfUpTax(subtotal, TAX_BPS[region])];
+/**
+ * A tier's at-cost [subtotal, tax] as the funder's programme read shows it. B is never exposed
+ * (F54), so prices are not derived: the purchase, checkout and simulation must equal this read.
+ */
+async function programmeTier(region, tier) {
+  const { biz } = FUNDERS[region];
+  const view = await ok(await programmeOf(await funderOwner(region), biz), `${region} programme`);
+  const p = view.packages.find((x) => x.tierKey === tier);
+  if (!p) throw new Error(`${region}: the receipt programme has no ${tier} tier`);
+  return [p.subtotalMinor, p.taxMinor];
 }
 const billing = (biz) => `/api/${biz}/studio/billing`;
 
@@ -402,7 +388,7 @@ async function checkInvoices() {
 async function buyReceiptStarter(region, { force }) {
   const { biz, currency } = FUNDERS[region];
   const owner = await funderOwner(region);
-  const [subtotal, tax] = await atCost(region, "starter");
+  const [subtotal, tax] = await programmeTier(region, "starter");
   const before = await balanceOf(owner, biz);
   const existing = receiptPackages(before);
   if (existing.length > 0 && !force) {
@@ -477,7 +463,7 @@ async function buyReceiptStarter(region, { force }) {
   expect(
     paid.programme === "receipts" && paid.subtotalMinor === subtotal && paid.points === 1_000,
     `${region}: the paid purchase carries programme receipts and the at-cost amount`,
-    `${paid.subtotalMinor} ex-tax for ${paid.points} points (ceil(1,000 x B) = ${subtotal})`,
+    `${paid.subtotalMinor} ex-tax for ${paid.points} points (the programme read said ${subtotal})`,
   );
   const after = await balanceOf(owner, biz);
   const allocation = after.allocations.find((a) => a.allocationId === paid.allocationId);
@@ -567,20 +553,43 @@ async function phaseA() {
       `${region}: the programme names the partner it funds`,
       short(view.partners),
     );
+    const tiers = Object.fromEntries(view.packages.map((x) => [x.tierKey, x]));
     for (const tier of Object.keys(TIER_POINTS)) {
-      const [subtotal, tax] = await atCost(region, tier);
-      const p = view.packages.find((x) => x.tierKey === tier);
+      const p = tiers[tier];
       expect(
         p?.pricing === "at_cost" &&
           p.points === TIER_POINTS[tier] &&
-          p.subtotalMinor === subtotal &&
-          p.taxMinor === tax &&
-          p.totalMinor === subtotal + tax &&
-          p.taxRateBps === TAX_BPS[region] &&
+          p.discountBps === 0 &&
           p.currency === currency &&
-          p.discountBps === 0,
-        `${region}: ${tier} is ${subtotal} + tax ${tax} = ${subtotal + tax} ${currency}, at cost`,
+          p.taxRateBps === TAX_BPS[region] &&
+          p.taxMinor === halfUpTax(p.subtotalMinor, TAX_BPS[region]) &&
+          p.totalMinor === p.subtotalMinor + p.taxMinor,
+        `${region}: ${tier} is at cost, no discount, tax is half-up of ${TAX_BPS[region]} bps`,
         short(p),
+      );
+    }
+    const { starter, grow, scale } = tiers;
+    if (starter && grow && scale) {
+      expect(
+        Math.abs(grow.subtotalMinor - 10 * starter.subtotalMinor) <= 10 &&
+          Math.abs(scale.subtotalMinor - 50 * starter.subtotalMinor) <= 50,
+        `${region}: subtotals are proportional to points (no volume discount)`,
+        `starter ${starter.subtotalMinor}, grow ${grow.subtotalMinor}, scale ${scale.subtotalMinor} ${currency}`,
+      );
+      note(
+        `${region} at-cost starter price`,
+        `${starter.subtotalMinor} ${currency} ex-tax per 1,000 points`,
+      );
+      const ordinary = await ok(
+        await call("GET", `${billing(biz)}/packages`, owner),
+        `${region} ordinary packages`,
+      );
+      const o = ordinary.packages.find((x) => x.tierKey === "starter");
+      const before = o ? o.subtotalMinor + o.savingMinor : null;
+      expect(
+        o && o.pricing !== "at_cost" && starter.subtotalMinor < before,
+        `${region}: at cost is below the ordinary starter price before discounts`,
+        `at cost ${starter.subtotalMinor} vs ordinary ${before} ${currency} (${o?.subtotalMinor} after its discount)`,
       );
     }
     expect(

@@ -535,6 +535,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "10.7.a's K6 parity: the debit side of platform.ledger_fake_marketing_fund, one row per grantAction call, so a region's remaining marketing cash is SUM(fund) - SUM(backing). Same reason as platform.ledger_fake_capture above -- no public contract mirrors a row of it, only the region's own remaining balance the K6 refusal reads.",
   "ledger.marketing_funding":
     "K6/EM-02 (4.4.h, 20260925195000_k6_marketing_backing.sql): a two-person funding decision for marketing cash. Same ledger-internals note as ledger.account above -- `yourtal_app` is REVOKEd from it entirely, so there is no path from a read of this table into any response this API could ever serve.",
+  "ledger.receipt_package":
+    "Group 2.10.b (F127, 20261021042150_receipt_packages.sql): marks a partner allocation bought at cost to pay receipt points, checked against B at COMMIT. Same ledger-internals note as ledger.account above -- `yourtal_app` is REVOKEd from it; the allocation views' `programme` is the public projection.",
   "checkout.dispute":
     "4.7.c: a viewer's dispute of one voucher and what came of it, read by the staff queue (9.4); no contract publishes its rows.",
   "store.counter_capture_log":

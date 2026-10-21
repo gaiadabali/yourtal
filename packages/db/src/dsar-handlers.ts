@@ -183,7 +183,8 @@ export function eraseViewerArea(pool: pg.Pool): DomainHandler {
  * only in `identity.credential.identifier` of the password credential (other
  * kinds, such as totp or passkey, hold a user id or a WebAuthn handle there).
  * Once `eraseCredentials` has run, nothing can say whose address it was, so
- * this has to run BEFORE it, inside the same domain; `org_memberships` (a later domain) can no longer find it.
+ * this has to run BEFORE it, inside the same domain; `org_memberships` (a
+ * later domain) can no longer find it.
  * `eraseIdentity` runs this first and the rest after it.
  *
  * Pending means not accepted: open, revoked or expired rows all still hold the

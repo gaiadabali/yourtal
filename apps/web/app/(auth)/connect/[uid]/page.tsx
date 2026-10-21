@@ -4,7 +4,11 @@ import type { DisplayLocale } from "@yourtal/contracts/identity/user-profile";
 import { loadInteraction } from "@/features/connect/connect-api";
 import type { LoadedInteraction } from "@/features/connect/connect-api";
 import { pickConnectLocale } from "@/features/connect/connect-locale";
-import { ConnectEndedView, ConnectUnavailableView } from "@/features/connect/connect-notice-views";
+import {
+  ConnectEndedView,
+  ConnectReloadView,
+  ConnectUnavailableView,
+} from "@/features/connect/connect-notice-views";
 import { ConnectScreen } from "@/features/connect/connect-screen";
 import { isInteractionUid } from "@/features/connect/connect-uid";
 import { getDisplayLocale } from "@/i18n/get-locale";
@@ -51,6 +55,8 @@ export default async function ConnectPage({ params }: ConnectPageProps) {
           <ConnectScreen key={loaded.details.screen} details={loaded.details} />
         ) : loaded.kind === "ended" ? (
           <ConnectEndedView />
+        ) : loaded.kind === "no-cookie" ? (
+          <ConnectReloadView uid={uid} />
         ) : (
           <ConnectUnavailableView />
         )}

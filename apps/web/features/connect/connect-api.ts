@@ -34,9 +34,17 @@ export type LoadedInteraction =
   | { readonly kind: "ok"; readonly details: InteractionDetails }
   /** 404: the sign-in ended, or belongs to another browser. */
   | { readonly kind: "ended" }
+  /** The request carried no interaction cookie at all, so nothing was asked of the API. */
+  | { readonly kind: "no-cookie" }
   | { readonly kind: "unavailable" };
 
 export async function loadInteraction(uid: string): Promise<LoadedInteraction> {
+  // A server action's redirect renders this page inside the POST to /login (or /register), which
+  // carries only the cookies scoped to that path. A cookie the API rejects is a 404 below; none at
+  // all is a request the browser should repeat as a real GET.
+  if (interactionCookieHeader((await headers()).get("cookie")) === null) {
+    return { kind: "no-cookie" };
+  }
   const result = await interactionFetch(uid, "", interactionDetailsSchema);
   if (result.ok) return { kind: "ok", details: result.data };
   if (result.error.kind === "http" && result.error.status === 404) return { kind: "ended" };

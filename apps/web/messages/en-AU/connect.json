@@ -1,0 +1,82 @@
+{
+  "common": {
+    "continueCta": "Continue",
+    "cancelCta": "Cancel",
+    "notYou": "Not you?",
+    "useAnotherCta": "Use another account",
+    "returnNote": "You'll go back to {returnHost}.",
+    "actionFailed": "Something went wrong. Try again."
+  },
+  "login": {
+    "heading": "Sign in to continue to {app}",
+    "intro": "{app} uses your YourTal account to sign you in.",
+    "signInCta": "Sign in",
+    "newPrompt": "New to YourTal?",
+    "createCta": "Create an account"
+  },
+  "create": {
+    "heading": "Create an account to continue to {app}",
+    "intro": "{app} uses your YourTal account to sign you in.",
+    "createCta": "Create an account",
+    "havePrompt": "Already have a YourTal account?",
+    "signInCta": "Sign in"
+  },
+  "verify": {
+    "heading": "Check your email",
+    "intro": "We sent a link to {email}. Open it to confirm it's yours, then you'll go on to {app}.",
+    "doneCta": "I've confirmed my email",
+    "resendPrompt": "Can't find it? Check your spam folder, or ask for another.",
+    "resendCta": "Send the link again",
+    "resent": "We've sent a new link to {email}.",
+    "resendThrottled": "You asked a moment ago. Wait a few minutes, then try again.",
+    "resendFailed": "We couldn't send it. Try again shortly."
+  },
+  "consent": {
+    "heading": "Continue to {app} as {name}",
+    "willGet": "{app} will get:",
+    "shareNameEmail": "your name and email address",
+    "shareName": "your name",
+    "shareEmail": "your email address",
+    "shareAdult": "that you're 18 or over",
+    "shareTeen": "that you're under 18",
+    "shareRegionAU": "that your YourTal account is for Australia",
+    "shareRegionID": "that your YourTal account is for Indonesia",
+    "wontGet": "It won't get your date of birth, your password or your points.",
+    "runBy": "{app} is run by {operator}.",
+    "runByExternal": "{app} is run by {operator}, not by YourTal.",
+    "notRunByYourtal": "{app} isn't run by YourTal.",
+    "policyAfterClause": "Its privacy policy explains how it uses your details.",
+    "policyAlone": "The privacy policy of {app} explains how it uses your details.",
+    "privacyLink": "Privacy policy",
+    "termsLink": "Terms",
+    "linkedApps": "You can remove {app} at any time in YourTal, under Me → Linked apps."
+  },
+  "refused": {
+    "account_on_hold": {
+      "title": "Your YourTal account is on hold",
+      "body": "You can't use it to sign in to other apps right now. Contact YourTal support."
+    },
+    "region_not_supported": {
+      "title": "{app} isn't available for your account",
+      "body": "Your YourTal account is for a country {app} doesn't support, so you can't use it to sign in to {app}. Nothing from your account was shared."
+    },
+    "teen_not_allowed": {
+      "title": "{app} is for people 18 and over",
+      "body": "Your YourTal account is a teen account, so you can't use it to sign in to {app}. Nothing from your account was shared with {app}."
+    },
+    "teen_invite_required": {
+      "title": "You need an invite from your parent",
+      "body": "To use {app} with a teen account, the parent or guardian who approved your YourTal account needs to invite you from their {app} account. Nothing from your account was shared with {app}."
+    },
+    "backCta": "Back to {app}"
+  },
+  "ended": {
+    "heading": "This sign-in has ended",
+    "body": "Go back to the app and try again."
+  },
+  "unavailable": {
+    "heading": "We couldn't load this sign-in",
+    "body": "Something went wrong on our end. Try again in a moment.",
+    "retryCta": "Try again"
+  }
+}

@@ -205,7 +205,7 @@ export default tseslint.config(
   // rules on for its own features in 7.8.
   {
     files: [
-      "apps/web/features/{auth,campaign,player,checkpoint,quick,store,burn,wallet,me,streak,shell,onboarding,region,open-view,public,notifications,rum}/**/*.{ts,tsx}",
+      "apps/web/features/{auth,connect,campaign,player,checkpoint,quick,store,burn,wallet,me,streak,shell,onboarding,region,open-view,public,notifications,rum}/**/*.{ts,tsx}",
       // 6.2.a: the (auth) route group's own page.tsx files are B-owned too
       // (TASKS.md "Areas and ownership") and hold the same hidden-field/
       // catalogue-copy conventions as the features above.

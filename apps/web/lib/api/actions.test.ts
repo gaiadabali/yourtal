@@ -162,6 +162,86 @@ describe("identity Server Actions (1.7.b)", () => {
       expect(jar.has("yt_session")).toBe(false);
     });
 
+    it.each(["//evil.example", "/\\evil.example", "https://evil.example/x", "evil"])(
+      "never redirects to %s after a successful login: only a same-origin path is followed",
+      async (returnTo) => {
+        global.fetch = vi.fn((input: RequestInfo | URL) => {
+          const url = requestUrl(input);
+          if (url.endsWith("/api/auth/login")) {
+            return Promise.resolve(
+              new Response(JSON.stringify({ token: "tok-1", userId: "user-1" }), { status: 200 }),
+            );
+          }
+          if (url.endsWith("/api/me")) {
+            return Promise.resolve(
+              new Response(
+                JSON.stringify({
+                  profile: {
+                    userId: "user-1",
+                    region: "AU",
+                    displayLocale: "en-AU",
+                    displayName: "Ada",
+                    ageBand: "adult",
+                    timezone: "Australia/Sydney",
+                  },
+                  businessMemberships: [],
+                  staffRoles: [],
+                }),
+                { status: 200 },
+              ),
+            );
+          }
+          return Promise.resolve(new Response("{}", { status: 404 }));
+        });
+        const { api } = createCookieJar();
+        const { loginAction } = await loadActions(api);
+
+        const url = await expectRedirectTo(
+          loginAction(formData({ email: "a@example.com", password: "x", returnTo })),
+        );
+
+        expect(url).toBe("/");
+      },
+    );
+
+    it("follows a sign-in's own return path, /connect/<uid>", async () => {
+      global.fetch = vi.fn((input: RequestInfo | URL) => {
+        const url = requestUrl(input);
+        if (url.endsWith("/api/auth/login")) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ token: "tok-1", userId: "user-1" }), { status: 200 }),
+          );
+        }
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              profile: {
+                userId: "user-1",
+                region: "AU",
+                displayLocale: "en-AU",
+                displayName: "Ada",
+                ageBand: "adult",
+                timezone: "Australia/Sydney",
+              },
+              businessMemberships: [],
+              staffRoles: [],
+            }),
+            { status: 200 },
+          ),
+        );
+      });
+      const { api } = createCookieJar();
+      const { loginAction } = await loadActions(api);
+
+      const url = await expectRedirectTo(
+        loginAction(
+          formData({ email: "a@example.com", password: "x", returnTo: "/connect/abc_DEF-123" }),
+        ),
+      );
+
+      expect(url).toBe("/connect/abc_DEF-123");
+    });
+
     it("does not set any cookie if GET /api/me fails right after a successful login", async () => {
       global.fetch = vi.fn((input: RequestInfo | URL) => {
         const url = requestUrl(input);

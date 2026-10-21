@@ -1,0 +1,82 @@
+{
+  "common": {
+    "continueCta": "Lanjutkan",
+    "cancelCta": "Batal",
+    "notYou": "Bukan kamu?",
+    "useAnotherCta": "Pakai akun lain",
+    "returnNote": "Kamu akan kembali ke {returnHost}.",
+    "actionFailed": "Terjadi masalah. Coba lagi."
+  },
+  "login": {
+    "heading": "Masuk untuk melanjutkan ke {app}",
+    "intro": "{app} memakai akun YourTal kamu untuk memasukkanmu.",
+    "signInCta": "Masuk",
+    "newPrompt": "Baru di YourTal?",
+    "createCta": "Buat akun"
+  },
+  "create": {
+    "heading": "Buat akun untuk melanjutkan ke {app}",
+    "intro": "{app} memakai akun YourTal kamu untuk memasukkanmu.",
+    "createCta": "Buat akun",
+    "havePrompt": "Sudah punya akun YourTal?",
+    "signInCta": "Masuk"
+  },
+  "verify": {
+    "heading": "Cek email kamu",
+    "intro": "Kami mengirim tautan ke {email}. Buka tautan itu untuk memastikan email ini milikmu, lalu kamu akan lanjut ke {app}.",
+    "doneCta": "Saya sudah konfirmasi email",
+    "resendPrompt": "Tidak ketemu? Cek folder spam, atau minta tautan baru.",
+    "resendCta": "Kirim tautan lagi",
+    "resent": "Kami sudah mengirim tautan baru ke {email}.",
+    "resendThrottled": "Kamu baru saja memintanya. Tunggu beberapa menit, lalu coba lagi.",
+    "resendFailed": "Kami tidak bisa mengirimnya. Coba lagi sebentar lagi."
+  },
+  "consent": {
+    "heading": "Lanjutkan ke {app} sebagai {name}",
+    "willGet": "{app} akan mendapatkan:",
+    "shareNameEmail": "nama dan alamat email kamu",
+    "shareName": "nama kamu",
+    "shareEmail": "alamat email kamu",
+    "shareAdult": "bahwa kamu berusia 18 tahun ke atas",
+    "shareTeen": "bahwa kamu berusia di bawah 18 tahun",
+    "shareRegionAU": "bahwa akun YourTal kamu untuk Australia",
+    "shareRegionID": "bahwa akun YourTal kamu untuk Indonesia",
+    "wontGet": "{app} tidak akan mendapatkan tanggal lahir, kata sandi, atau poin kamu.",
+    "runBy": "{app} dijalankan oleh {operator}.",
+    "runByExternal": "{app} dijalankan oleh {operator}, bukan oleh YourTal.",
+    "notRunByYourtal": "{app} tidak dijalankan oleh YourTal.",
+    "policyAfterClause": "Kebijakan privasinya menjelaskan cara data kamu dipakai.",
+    "policyAlone": "Kebijakan privasi {app} menjelaskan cara data kamu dipakai.",
+    "privacyLink": "Kebijakan privasi",
+    "termsLink": "Ketentuan",
+    "linkedApps": "Kamu bisa menghapus {app} kapan saja di YourTal, lewat Saya → Aplikasi tertaut."
+  },
+  "refused": {
+    "account_on_hold": {
+      "title": "Akun YourTal kamu sedang ditahan",
+      "body": "Saat ini akun itu tidak bisa dipakai untuk masuk ke aplikasi lain. Hubungi dukungan YourTal."
+    },
+    "region_not_supported": {
+      "title": "{app} tidak tersedia untuk akunmu",
+      "body": "Akun YourTal kamu untuk negara yang tidak didukung {app}, jadi tidak bisa dipakai untuk masuk ke {app}. Tidak ada data akunmu yang dibagikan."
+    },
+    "teen_not_allowed": {
+      "title": "{app} untuk usia 18 tahun ke atas",
+      "body": "Akun YourTal kamu adalah akun remaja, jadi tidak bisa dipakai untuk masuk ke {app}. Tidak ada data akunmu yang dibagikan ke {app}."
+    },
+    "teen_invite_required": {
+      "title": "Kamu butuh undangan dari orang tuamu",
+      "body": "Untuk memakai {app} dengan akun remaja, orang tua atau wali yang menyetujui akun YourTal kamu perlu mengundangmu dari akun {app} mereka. Tidak ada data akunmu yang dibagikan ke {app}."
+    },
+    "backCta": "Kembali ke {app}"
+  },
+  "ended": {
+    "heading": "Proses masuk ini sudah berakhir",
+    "body": "Kembali ke aplikasinya dan coba lagi."
+  },
+  "unavailable": {
+    "heading": "Kami tidak bisa memuat proses masuk ini",
+    "body": "Ada masalah di pihak kami. Coba lagi sebentar lagi.",
+    "retryCta": "Coba lagi"
+  }
+}

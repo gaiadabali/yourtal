@@ -6,6 +6,7 @@ import { apiFetch } from "./api-fetch";
 import type { ApiError } from "./api-fetch";
 import { loginResponseSchema, logoutResponseSchema } from "./auth-schema";
 import { meResponseSchema } from "./me-schema";
+import { parseReturnTo } from "@/features/onboarding/onboarding-return-to";
 import { themeResponseSchema } from "@yourtal/contracts/me/theme-setting";
 import {
   clearSessionCookie,
@@ -32,9 +33,10 @@ import {
  * `network` / `invalid_response` for a plumbing failure.
  */
 
+/** Same-origin absolute paths only: `//host`, `/\host` and anything with a scheme fall back, so a crafted link cannot send a signed-in person elsewhere. */
 function safeReturnTo(formData: FormData, fallback: string): string {
   const entry = formData.get("returnTo");
-  return typeof entry === "string" && entry.startsWith("/") ? entry : fallback;
+  return (typeof entry === "string" ? parseReturnTo(entry) : null) ?? fallback;
 }
 
 function errorCode(error: ApiError): string {

@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import { defaultCache } from "@serwist/next/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
-import { Serwist } from "serwist";
+import { NetworkOnly, Serwist } from "serwist";
 
 /**
  * The Serwist service worker (YT-0424: "renders from cache with the network
@@ -90,7 +90,15 @@ const serwist = new Serwist({
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: defaultCache,
+  runtimeCaching: [
+    // A sign-in page is one person's, for a few minutes, and shows their name
+    // and email: never kept for the offline fallback below.
+    {
+      matcher: ({ sameOrigin, url }) => sameOrigin && url.pathname.startsWith("/connect/"),
+      handler: new NetworkOnly(),
+    },
+    ...defaultCache,
+  ],
 });
 
 serwist.addEventListeners();

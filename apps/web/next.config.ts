@@ -72,8 +72,25 @@ const config: NextConfig = {
   },
   // Staging is open to reviewers but never indexed, OG images and llms.txt included.
   async headers() {
-    if (process.env["APP_ENV"] !== "staging") return [];
-    return [{ source: "/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] }];
+    const rules: { source: string; headers: { key: string; value: string }[] }[] = [
+      // Group 3.9: the sign-in screens (docs/26 §4). Never cached or framed, here as
+      // well as at nginx, so `next start` on its own is as safe as the deployed site.
+      {
+        source: "/connect/:uid",
+        headers: [
+          { key: "Cache-Control", value: "no-store" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+        ],
+      },
+    ];
+    if (process.env["APP_ENV"] === "staging") {
+      rules.push({
+        source: "/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      });
+    }
+    return rules;
   },
 };
 

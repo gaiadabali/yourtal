@@ -8,6 +8,7 @@ import { AppModule } from "../../../../app.module";
 import type { AppDb } from "../../../../shared/persistence/drizzle-client";
 import type { TestSession } from "../../../../shared/testing/session-for";
 import { AuthService } from "../../auth.service";
+import { DevTokenAccess } from "../../dev-token-access";
 import { hashOpaqueToken } from "../../crypto/opaque-token";
 
 /** The relying party the e2e app is booted with, and the soft authenticator answers for. */
@@ -122,4 +123,20 @@ export async function accountFor(
   const { token, userId } = login.json<{ token?: string; userId?: string }>();
   if (token === undefined || userId === undefined) throw new Error(`accountFor: ${login.body}`);
   return { userId, email, token, cookie: `yt_session=${token}` };
+}
+
+/** Resets the password through the emailed-link route, as the owner of the address would. */
+export async function resetPassword(
+  app: NestFastifyApplication,
+  session: TestSession,
+  newPassword = "a-brand-new-password-for-factors",
+): Promise<LightMyRequestResponse> {
+  const requested = await app.get(AuthService).requestPasswordReset(session.email, new Date());
+  if (requested.isErr()) throw new Error(`resetPassword: ${requested.error.type}`);
+  const token = app.get(DevTokenAccess).peekToken("password_reset", session.userId, Date.now());
+  return app.inject({
+    method: "POST",
+    url: "/api/auth/password/reset/confirm",
+    payload: { token, newPassword },
+  });
 }

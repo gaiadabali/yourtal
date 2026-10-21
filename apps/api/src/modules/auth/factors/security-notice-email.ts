@@ -11,6 +11,7 @@ export type SecurityNotice =
   | { readonly kind: "passkey_removed"; readonly name: string }
   | { readonly kind: "authenticator_on" }
   | { readonly kind: "authenticator_off" }
+  | { readonly kind: "authenticator_removed_after_reset" }
   | {
       readonly kind: "password_reset_summary";
       readonly passkeyNames: readonly string[];
@@ -59,6 +60,13 @@ function englishCopy(notice: SecurityNotice): Copy {
         lead: "The authenticator app on your YourTal account was turned off. Signing in with your password no longer asks for a code.",
         ifNotYou: notYou,
       };
+    case "authenticator_removed_after_reset":
+      return {
+        subject: "Your YourTal authenticator app was removed",
+        lead: "You reset your YourTal password, so the authenticator app added to your account in the last 3 days was removed. If you set it up yourself, you can add it again.",
+        ifNotYou:
+          "If you didn't reset your password, reset it again now and check how you sign in, under Me → Passkeys and authenticator app:",
+      };
     case "password_reset_summary":
       return {
         subject: "Check how you sign in to YourTal",
@@ -96,6 +104,13 @@ function indonesianCopy(notice: SecurityNotice): Copy {
         subject: "Aplikasi autentikator YourTal-mu dimatikan",
         lead: "Aplikasi autentikator di akun YourTal-mu dimatikan. Masuk dengan kata sandi tidak lagi meminta kode.",
         ifNotYou: notYou,
+      };
+    case "authenticator_removed_after_reset":
+      return {
+        subject: "Aplikasi autentikator YourTal-mu dihapus",
+        lead: "Kamu mengatur ulang kata sandi YourTal-mu, jadi aplikasi autentikator yang ditambahkan ke akunmu dalam 3 hari terakhir dihapus. Kalau kamu yang memasangnya, kamu bisa menambahkannya lagi.",
+        ifNotYou:
+          "Kalau bukan kamu yang mengatur ulang kata sandi, segera atur ulang lagi dan periksa cara kamu masuk di Saya → Passkey dan aplikasi autentikator:",
       };
     case "password_reset_summary":
       return {

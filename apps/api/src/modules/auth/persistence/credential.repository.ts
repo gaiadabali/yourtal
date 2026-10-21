@@ -16,6 +16,8 @@ export interface Credential {
   readonly updatedAt: Date;
   /** NULL until `confirmEmailVerification` succeeds (1.4.e). */
   readonly verifiedAt: Date | null;
+  /** An authenticator app added from a password-only session to an account with no factor. */
+  readonly bootstrapped: boolean;
 }
 
 export interface CredentialRepository {
@@ -76,16 +78,21 @@ export interface CredentialRepository {
   markVerified(userId: string, kind: string, verifiedAt: Date): Promise<boolean>;
 
   /**
-   * Starts (or restarts) an unconfirmed credential: inserts it, or replaces
-   * the secret of one still unverified. Returns `false`, changing nothing,
-   * when one of this kind is already verified (switched on).
+   * Writes a credential that is already confirmed (an authenticator app after
+   * its first code). Returns `false`, changing nothing, when one of this kind
+   * is already verified (switched on).
    */
-  putUnverified(input: {
+  putVerified(input: {
     userId: string;
     kind: string;
     identifier: string;
     secretHash: string;
+    verifiedAt: Date;
+    bootstrapped: boolean;
   }): Promise<boolean>;
+
+  /** Whether any account has a verified credential of this kind (a boot check). */
+  anyVerified(kind: string): Promise<boolean>;
 
   /** Returns `false` when there was nothing to delete. */
   deleteByUserAndKind(userId: string, kind: string): Promise<boolean>;

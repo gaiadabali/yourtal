@@ -17,6 +17,11 @@ const ATTACKS = [
   ["an absolute URL", "https://evil.com/"],
   ["an embedded scheme", "/redirect?to=https://evil.com"],
   ["a relative path", "wallet"],
+  ["a dot segment before //", "/.//evil.com"],
+  ["a parent segment before //", "/..//evil.com"],
+  ["an encoded dot segment", "/%2e//evil.com"],
+  ["a parent segment inside a path", "/a/..//evil.com"],
+  ["an encoded parent segment", "/a/%2e%2e//evil.com"],
 ] as const;
 
 describe("returnTo: only a path on this site", () => {

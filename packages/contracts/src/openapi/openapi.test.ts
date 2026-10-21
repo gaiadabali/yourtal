@@ -148,6 +148,8 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "Passkeys and codes: the session the sign-in routes return, documented inline in route-registry.a-auth.ts.",
   secondFactorRequiredSchema:
     "Passkeys and codes: the code-step branch of POST /api/auth/login, a route not yet in this registry (route-drift.test.ts's out-of-scope list).",
+  passkeyNameSchema:
+    "Passkeys and codes: a leaf of POST /api/auth/passkeys/register's body, documented inline in route-registry.a-auth.ts.",
   stepUpRequestSchema:
     "Passkeys and codes: POST /api/auth/step-up's body, documented inline in route-registry.a-auth.ts.",
   stepUpResultSchema:

@@ -11,6 +11,8 @@ export interface StoredPasskey {
   readonly name: string;
   readonly createdAt: Date;
   readonly lastUsedAt: Date | null;
+  /** Added from a password-only session to an account with no other factor. */
+  readonly bootstrapped: boolean;
 }
 
 export type NewPasskey = Omit<StoredPasskey, "createdAt" | "lastUsedAt">;

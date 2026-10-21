@@ -62,6 +62,7 @@ async function business() {
   return { businessId, cookie: ownerSession.cookie, emails: [ownerSession.email, finance.email] };
 }
 
+/** Published long ago, so `campaign.controller.e2e`'s "newest live campaign" is never this AU fixture. */
 async function liveCampaign(businessId: string, allocationId: string, budget: number) {
   const id = randomUUID();
   await owner.execute(sql`
@@ -73,7 +74,7 @@ async function liveCampaign(businessId: string, allocationId: string, budget: nu
        starts_at, ends_at, open_viewing, teaser_start_seconds)
     VALUES
       (${id}, 'quick', 'Spring launch', ${randomUUID()}, 'alerts merchant', 'fixture', ${DURATION},
-       5, ${REWARD}, 0, 'base_only', 'live', now(), ${businessId}, 'AU', 'all_ages', 'entertainment',
+       5, ${REWARD}, 0, 'base_only', 'live', now() - interval '30 days', ${businessId}, 'AU', 'all_ages', 'entertainment',
        'https://example.test/poster.jpg', 'https://example.test/teaser.m3u8',
        'https://example.test/hls.m3u8', '16:9', 1000000,
        now() - interval '1 hour', now() + interval '30 days', false, 0)`);

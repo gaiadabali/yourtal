@@ -31,7 +31,10 @@ import {
  */
 export const TOTP_THROTTLE_LIMITS: ThrottleLimits = { maxAttempts: 5, windowSeconds: 15 * 60 };
 
-/** Long enough to outlive every step a code can still match in. */
+/**
+ * How long the last used step is remembered: longer than any step a code can
+ * still match in, after which an older step is refused by the clock anyway.
+ */
 const USED_STEP_TTL_SECONDS = TOTP_PERIOD_SECONDS * (2 * TOTP_DRIFT_STEPS + 2);
 
 type Outcome<T> = Promise<Result<T, FactorError>>;
@@ -46,6 +49,11 @@ export class TotpService {
     private readonly throttle: ThrottleService,
   ) {}
 
+  /** False when this deployment has no seed key: authenticator apps are off. */
+  available(): boolean {
+    return this.config.authFactors?.totpSecretKey !== undefined;
+  }
+
   async isEnabled(userId: string): Promise<boolean> {
     const credential = await this.credentials.findByUserAndKind(userId, TOTP_CREDENTIAL_KIND);
     return credential !== null && credential.verifiedAt !== null;
@@ -57,7 +65,7 @@ export class TotpService {
    */
   async enrol(userId: string): Outcome<{ otpauthUri: string; secret: string }> {
     const key = this.config.authFactors?.totpSecretKey;
-    if (key === undefined) return err({ type: "factors_unavailable" });
+    if (key === undefined) return err({ type: "authenticator_unavailable" });
 
     const seed = generateTotpSeed();
     const written = await this.credentials.putUnverified({
@@ -100,23 +108,22 @@ export class TotpService {
 
   private async check(userId: string, sealed: string, code: string, now: Date): Outcome<void> {
     const key = this.config.authFactors?.totpSecretKey;
-    if (key === undefined) return err({ type: "factors_unavailable" });
+    if (key === undefined) return err({ type: "authenticator_unavailable" });
 
+    // The attempt is counted before the code is looked at, so parallel
+    // guesses cannot all slip in under the limit; a right code gives it back.
     const throttleKey = `totp:${userId}`;
-    const verdict = await this.throttle.peek("account", throttleKey, TOTP_THROTTLE_LIMITS);
+    const verdict = await this.throttle.reserve("account", throttleKey, TOTP_THROTTLE_LIMITS);
     if (verdict.blocked) {
       return err({ type: "throttled", retryAfterSeconds: verdict.retryAfterSeconds ?? 900 });
     }
 
     const step = matchTotpCode(openSecret(sealed, key, userId), code, now);
-    // A code used once is refused like a wrong one: a code read over someone's
-    // shoulder must not open a second session.
+    // Only a step later than the last one used is accepted (RFC 6238 §5.2):
+    // a code read over someone's shoulder, or any earlier one, opens nothing.
     const fresh =
-      step !== null && (await this.store.claimTotpStep(userId, step, USED_STEP_TTL_SECONDS));
-    if (!fresh) {
-      await this.throttle.recordFailure("account", throttleKey, TOTP_THROTTLE_LIMITS);
-      return err({ type: "factor_invalid" });
-    }
+      step !== null && (await this.store.advanceTotpStep(userId, step, USED_STEP_TTL_SECONDS));
+    if (!fresh) return err({ type: "factor_invalid" });
     await this.throttle.reset("account", throttleKey);
     return ok(undefined);
   }

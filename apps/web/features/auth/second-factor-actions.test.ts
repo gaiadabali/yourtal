@@ -81,7 +81,7 @@ describe("second-factor Server Actions (3.9c)", () => {
         return reply({
           password: true,
           passkeys: [{ id: "p" }],
-          authenticatorApp: { enabled: true },
+          authenticatorApp: { enabled: true, available: true },
         });
       }
       return reply({ code: "not_found", message: url }, 404);

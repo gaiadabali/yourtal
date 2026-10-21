@@ -5,6 +5,7 @@ import * as z from "zod";
 import {
   passkeyCeremonySchema,
   passkeySummarySchema,
+  stepUpResultSchema,
   totpEnrolmentSchema,
   webAuthnOptionsSchema,
 } from "@yourtal/contracts/identity/sign-in-methods";
@@ -57,6 +58,19 @@ export async function removePasskeyAction(id: string): Promise<ApiResult<{ remov
 /** A challenge over the account's own passkeys, to prove it is them before turning a protection off. */
 export async function passkeyStepUpOptionsAction(): Promise<ApiResult<PasskeyCeremony>> {
   return apiFetch("/api/auth/passkeys/step-up/options", passkeyCeremonySchema, { method: "POST" });
+}
+
+export type StepUpProof =
+  { readonly code: string } | { readonly challengeId: string; readonly response: unknown };
+
+/**
+ * Proves a passkey or a current code again, so this session may change its
+ * sign-in methods for the next few minutes. The API remembers it per session.
+ */
+export async function stepUpAction(
+  proof: StepUpProof,
+): Promise<ApiResult<{ steppedUp: true; expiresInSeconds: number }>> {
+  return apiFetch("/api/auth/step-up", stepUpResultSchema, { method: "POST", body: proof });
 }
 
 export async function startTotpEnrolmentAction(): Promise<ApiResult<TotpEnrolment>> {

@@ -81,6 +81,13 @@ Every app may rely on these, and on nothing else.
 
 The ID token also carries `iss`, `aud`, `azp`, `exp`, `iat`, `auth_time`, `nonce` (when the app sent one) and `amr`. `amr` says how the person signed in: `pwd` for a password, `hwk` for a passkey, `otp` for an authenticator code, and `mfa` when two were used. Apps may require `hwk` or `mfa` for staff (§1.10).
 
+What `amr` does and does not promise (group 3.9.c):
+
+- **Any passkey counts as `hwk`**, synced ones (iCloud Keychain, Google Password Manager, 1Password) included. RFC 8176 reserves `hwk` for a hardware-bound key; YourTal uses it for every passkey because what the staff rule needs is phishing resistance, which a synced passkey has too. YourTal accepts attestation `none`, so it cannot tell a device-bound key from a synced one, and does not try.
+- **A password alone never yields `hwk` or `mfa`.** Adding a passkey or an authenticator app to an account that already has one needs a session signed in with one of them, or a fresh step-up with one; every addition and removal is emailed to the account; a password reset emails the list of passkeys and apps that can still sign in. The first factor on an account that has none can still be added with a recent password sign-in alone, so the email is the safeguard there.
+- **`auth_time` is the last real sign-in.** A session minted to replace another (a password change) keeps the original's `auth_time` and `amr`.
+- **Accepted for now:** someone who holds the password can spend the account's five wrong-code attempts per 15 minutes and so keep the real person from finishing a password-and-code sign-in for that time. A passkey sign-in is not affected.
+
 **Never shared:** the date of birth, the guardian's email or identity, password and passkey data, the points balance, the trust tier, watch history and YourTal's user id.
 
 An ID token for SnapApp's website, decoded:

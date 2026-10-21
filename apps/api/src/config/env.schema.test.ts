@@ -182,11 +182,7 @@ describe("passkeys and authenticator codes", () => {
       rpId: "localhost",
       origins: ["http://localhost:3000"],
     });
-    const staging = loadAppConfig({
-      ...base,
-      APP_ENV: "staging",
-      TOTP_SECRET_ENCRYPTION_KEY: "staging-totp-secret-encryption-key-for-this-test",
-    });
+    const staging = loadAppConfig({ ...base, APP_ENV: "staging" });
     expect(staging.authFactors).toMatchObject({
       rpId: "yourtal.gaiada.com",
       origins: ["https://yourtal.gaiada.com"],
@@ -205,9 +201,18 @@ describe("passkeys and authenticator codes", () => {
     });
   });
 
-  it("refuses the local-only seed key outside dev", () => {
-    expect(loadAppConfig(base).authFactors?.totpSecretKey.startsWith("local-only")).toBe(true);
-    expect(() => loadAppConfig({ ...base, APP_ENV: "staging" })).toThrow(/TOTP_SECRET/);
-    expect(() => loadAppConfig({ ...base, APP_ENV: "production" })).toThrow(/TOTP_SECRET/);
+  it("uses the local-only seed key in dev only, and refuses it anywhere else", () => {
+    expect(loadAppConfig(base).authFactors?.totpSecretKey?.startsWith("local-only")).toBe(true);
+    const devKey = { TOTP_SECRET_ENCRYPTION_KEY: "local-only-totp-secret-encryption-key-not-real" };
+    expect(() => loadAppConfig({ ...base, ...devKey, APP_ENV: "staging" })).toThrow(/TOTP_SECRET/);
+    expect(() => loadAppConfig({ ...base, ...devKey, APP_ENV: "production" })).toThrow(
+      /TOTP_SECRET/,
+    );
+  });
+
+  it("turns authenticator apps off, not the boot, when the key is unset outside dev", () => {
+    const staging = loadAppConfig({ ...base, APP_ENV: "staging" });
+    expect(staging.authFactors?.totpSecretKey).toBeUndefined();
+    expect(staging.authFactors?.rpId).toBe("yourtal.gaiada.com");
   });
 });

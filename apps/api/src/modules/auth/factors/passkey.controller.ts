@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Param, Post, Req } from "@nestjs/common";
+import { Body, Controller, Delete, Inject, Param, Post, Req } from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import type { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/server";
 import { Authorize } from "../../../shared/authz/authorize.decorator";
@@ -11,25 +11,29 @@ import {
 } from "../../../shared/rate-limit/rate-limit.decorator";
 import { PASSKEY_AMR } from "../session/amr";
 import { SessionIssuer } from "../session/session-issuer";
-import { SessionService } from "../session/session.service";
 import { PasskeyRegisterDto, PasskeySignInDto } from "./dto/sign-in-methods.dto";
+import { FACTOR_NOTIFIER } from "./factor-notifier";
+import type { FactorNotifications } from "./factor-notifier";
 import { PasskeyService } from "./passkey.service";
 import { passkeySummary } from "./passkey-summary";
-import { signedInUser } from "./signed-in-session";
+import { SignedInCaller } from "./signed-in-session";
 import { mapFactorErrorToHttpException } from "./to-http-exception";
 
 /**
  * Passkeys. Signing in with one is for a signed-out caller and needs no email
  * first; the rest is the signed-in person managing their own. The PDP decides
  * who reaches each route (`session.yaml`); the account a route acts on is
- * always the caller's own session, never an id from the request.
+ * always the caller's own session, never an id from the request. Adding one
+ * to an account that already has a factor, and removing one, need proof of a
+ * factor (`SignedInCaller`), and both are emailed to the account.
  */
 @Controller("api/auth/passkeys")
 export class PasskeyController {
   constructor(
     private readonly passkeys: PasskeyService,
-    private readonly sessions: SessionService,
+    private readonly caller: SignedInCaller,
     private readonly issuer: SessionIssuer,
+    @Inject(FACTOR_NOTIFIER) private readonly notifier: FactorNotifications,
   ) {}
 
   @NotValueMoving("Mints a single-use challenge and changes nothing else.")
@@ -66,9 +70,9 @@ export class PasskeyController {
   @Authorize({ kind: "session", action: "manage_sign_in_methods" })
   @Post("register/options")
   async registrationOptions(@Req() request: FastifyRequest) {
-    const userId = await signedInUser(this.sessions, request, new Date(), { fresh: true });
-    if (userId.isErr()) throw mapFactorErrorToHttpException(userId.error);
-    const result = await this.passkeys.registrationOptions(userId.value);
+    const caller = await this.caller.resolve(request, new Date(), "add_factor");
+    if (caller.isErr()) throw mapFactorErrorToHttpException(caller.error);
+    const result = await this.passkeys.registrationOptions(caller.value.userId);
     if (result.isErr()) throw mapFactorErrorToHttpException(result.error);
     return { options: result.value };
   }
@@ -81,14 +85,13 @@ export class PasskeyController {
   @Authorize({ kind: "session", action: "manage_sign_in_methods" })
   @Post("register")
   async register(@Req() request: FastifyRequest, @Body() body: PasskeyRegisterDto) {
-    const userId = await signedInUser(this.sessions, request, new Date(), { fresh: true });
-    if (userId.isErr()) throw mapFactorErrorToHttpException(userId.error);
-    const result = await this.passkeys.register(
-      userId.value,
-      body.response as RegistrationResponseJSON,
-      body.name,
-    );
+    const caller = await this.caller.resolve(request, new Date(), "add_factor");
+    if (caller.isErr()) throw mapFactorErrorToHttpException(caller.error);
+    const { userId } = caller.value;
+    const response = body.response as RegistrationResponseJSON;
+    const result = await this.passkeys.register(userId, response, body.name);
     if (result.isErr()) throw mapFactorErrorToHttpException(result.error);
+    await this.notifier.notify(userId, { kind: "passkey_added", name: result.value.name });
     return passkeySummary(result.value);
   }
 
@@ -97,21 +100,27 @@ export class PasskeyController {
   @Authorize({ kind: "session", action: "manage_sign_in_methods" })
   @Post("step-up/options")
   async stepUpOptions(@Req() request: FastifyRequest) {
-    const userId = await signedInUser(this.sessions, request, new Date(), { fresh: false });
-    if (userId.isErr()) throw mapFactorErrorToHttpException(userId.error);
-    const result = await this.passkeys.stepUpOptions(userId.value);
+    const caller = await this.caller.resolve(request, new Date(), "session");
+    if (caller.isErr()) throw mapFactorErrorToHttpException(caller.error);
+    const result = await this.passkeys.stepUpOptions(caller.value.userId);
     if (result.isErr()) throw mapFactorErrorToHttpException(result.error);
     return result.value;
   }
 
   @NotValueMoving("Removing an already-removed passkey is a 404, never a second change.")
+  @RateLimit(SIGN_IN_METHOD_CHANGE_RATE_LIMIT)
   @Authorize({ kind: "session", action: "manage_sign_in_methods" })
   @Delete(":credentialId")
   async remove(@Req() request: FastifyRequest, @Param("credentialId") credentialId: string) {
-    const userId = await signedInUser(this.sessions, request, new Date(), { fresh: false });
-    if (userId.isErr()) throw mapFactorErrorToHttpException(userId.error);
-    const result = await this.passkeys.remove(userId.value, credentialId);
+    const caller = await this.caller.resolve(request, new Date(), "strong");
+    if (caller.isErr()) throw mapFactorErrorToHttpException(caller.error);
+    const { userId } = caller.value;
+    const name = (await this.passkeys.list(userId)).find(
+      (passkey) => passkey.credentialId === credentialId,
+    )?.name;
+    const result = await this.passkeys.remove(userId, credentialId);
     if (result.isErr()) throw mapFactorErrorToHttpException(result.error);
+    await this.notifier.notify(userId, { kind: "passkey_removed", name: name ?? "Passkey" });
     return { removed: true };
   }
 }

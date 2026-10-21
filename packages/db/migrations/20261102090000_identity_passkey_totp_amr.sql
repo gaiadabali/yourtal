@@ -1,5 +1,5 @@
 -- Passkeys, authenticator-app codes, and how each session was signed in to.
--- Add-only: one new table, one new column, one grant.
+-- Add-only: one new table, two new columns, one grant.
 --
 -- identity.credential stays one row per (user_id, kind), and gains two kinds
 -- with no DDL, since `kind` is free text:
@@ -9,9 +9,10 @@
 --     recoverable to check a code, so it cannot be hashed), and verified_at =
 --     when the person confirmed it with a first code. NULL means enrolment was
 --     started and never finished: it is not a way to sign in.
---   * 'passkey': one row per account that has passkeys. identifier = the
---     WebAuthn user handle (random, so the authenticator never holds the user
---     id), secret_hash = '' (the public keys live below).
+--   * 'passkey': one row per account that has passkeys, written with its
+--     first passkey. identifier = the WebAuthn user handle (random, so the
+--     authenticator never holds the user id), secret_hash = '' (the public
+--     keys live below).
 --
 -- Each passkey is a row in identity.passkey, tied to that 'passkey' row by a
 -- foreign key with ON DELETE CASCADE. Account deletion already erases every
@@ -51,3 +52,13 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON identity.passkey TO yourtal_app;
 ALTER TABLE identity.session
   ADD COLUMN amr text[] NOT NULL DEFAULT '{pwd}'
     CHECK (cardinality(amr) > 0 AND amr <@ ARRAY['pwd', 'hwk', 'otp', 'mfa']::text[]);
+
+-- When the person last proved who they are (OIDC `auth_time`). Starts as the
+-- session's creation, but a session minted to replace another (a password
+-- change) keeps the original's, so a replacement never counts as a fresh
+-- sign-in.
+ALTER TABLE identity.session ADD COLUMN signed_in_at timestamptz;
+UPDATE identity.session SET signed_in_at = created_at;
+ALTER TABLE identity.session
+  ALTER COLUMN signed_in_at SET DEFAULT now(),
+  ALTER COLUMN signed_in_at SET NOT NULL;

@@ -82,7 +82,11 @@ export type PasskeySummary = z.infer<typeof passkeySummarySchema>;
 export const signInMethodsSchema = z.object({
   password: z.boolean(),
   passkeys: z.array(passkeySummarySchema),
-  authenticatorApp: z.object({ enabled: z.boolean() }),
+  authenticatorApp: z.object({
+    enabled: z.boolean(),
+    /** False when this deployment has authenticator apps switched off: hide setting one up. */
+    available: z.boolean(),
+  }),
 });
 export type SignInMethods = z.infer<typeof signInMethodsSchema>;
 
@@ -110,6 +114,19 @@ export const totpDisableRequestSchema = z.object({
   code: totpCodeSchema.optional(),
   challengeId: z.string().min(1).max(64).optional(),
   response: passkeyAuthenticationResponseSchema.optional(),
+});
+
+/**
+ * Proving an existing factor again (a code, or a passkey from
+ * `/passkeys/step-up/options`) before changing sign-in methods from a session
+ * signed in with a password alone. Same body as turning the app off.
+ */
+export const stepUpRequestSchema = totpDisableRequestSchema;
+
+export const stepUpResultSchema = z.object({
+  steppedUp: z.literal(true),
+  /** How long changes stay unlocked on this session. */
+  expiresInSeconds: z.number().int().positive(),
 });
 
 export const totpSignInRequestSchema = z.object({

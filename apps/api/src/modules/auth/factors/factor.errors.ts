@@ -10,6 +10,20 @@ export interface ReauthenticationRequiredError {
   readonly type: "reauthentication_required";
 }
 
+/**
+ * The account already has a passkey or an authenticator app, so changing its
+ * sign-in methods needs one of them: a session signed in with it (amr hwk or
+ * mfa) or a step-up just now. A password alone is not enough.
+ */
+export interface StepUpRequiredError {
+  readonly type: "step_up_required";
+}
+
+/** Authenticator apps are switched off on this deployment (no seed key). */
+export interface AuthenticatorUnavailableError {
+  readonly type: "authenticator_unavailable";
+}
+
 export interface TotpAlreadyEnabledError {
   readonly type: "totp_already_enabled";
 }
@@ -34,6 +48,8 @@ export interface FactorsUnavailableError {
 export type FactorError =
   | FactorInvalidError
   | ReauthenticationRequiredError
+  | StepUpRequiredError
+  | AuthenticatorUnavailableError
   | TotpAlreadyEnabledError
   | TotpNotEnabledError
   | PasskeyNotFoundError

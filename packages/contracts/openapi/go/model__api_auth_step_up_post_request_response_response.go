@@ -16,41 +16,41 @@ import (
 	"fmt"
 )
 
-// checks if the ApiAuthTotpDisablePostRequestResponseResponse type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ApiAuthTotpDisablePostRequestResponseResponse{}
+// checks if the ApiAuthStepUpPostRequestResponseResponse type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ApiAuthStepUpPostRequestResponseResponse{}
 
-// ApiAuthTotpDisablePostRequestResponseResponse struct for ApiAuthTotpDisablePostRequestResponseResponse
-type ApiAuthTotpDisablePostRequestResponseResponse struct {
+// ApiAuthStepUpPostRequestResponseResponse struct for ApiAuthStepUpPostRequestResponseResponse
+type ApiAuthStepUpPostRequestResponseResponse struct {
 	ClientDataJSON string `json:"clientDataJSON" validate:"regexp=^[A-Za-z0-9_-]+$"`
 	AuthenticatorData string `json:"authenticatorData" validate:"regexp=^[A-Za-z0-9_-]+$"`
 	Signature string `json:"signature" validate:"regexp=^[A-Za-z0-9_-]+$"`
 	UserHandle *string `json:"userHandle,omitempty" validate:"regexp=^[A-Za-z0-9_-]+$"`
 }
 
-type _ApiAuthTotpDisablePostRequestResponseResponse ApiAuthTotpDisablePostRequestResponseResponse
+type _ApiAuthStepUpPostRequestResponseResponse ApiAuthStepUpPostRequestResponseResponse
 
-// NewApiAuthTotpDisablePostRequestResponseResponse instantiates a new ApiAuthTotpDisablePostRequestResponseResponse object
+// NewApiAuthStepUpPostRequestResponseResponse instantiates a new ApiAuthStepUpPostRequestResponseResponse object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiAuthTotpDisablePostRequestResponseResponse(clientDataJSON string, authenticatorData string, signature string) *ApiAuthTotpDisablePostRequestResponseResponse {
-	this := ApiAuthTotpDisablePostRequestResponseResponse{}
+func NewApiAuthStepUpPostRequestResponseResponse(clientDataJSON string, authenticatorData string, signature string) *ApiAuthStepUpPostRequestResponseResponse {
+	this := ApiAuthStepUpPostRequestResponseResponse{}
 	this.ClientDataJSON = clientDataJSON
 	this.AuthenticatorData = authenticatorData
 	this.Signature = signature
 	return &this
 }
 
-// NewApiAuthTotpDisablePostRequestResponseResponseWithDefaults instantiates a new ApiAuthTotpDisablePostRequestResponseResponse object
+// NewApiAuthStepUpPostRequestResponseResponseWithDefaults instantiates a new ApiAuthStepUpPostRequestResponseResponse object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewApiAuthTotpDisablePostRequestResponseResponseWithDefaults() *ApiAuthTotpDisablePostRequestResponseResponse {
-	this := ApiAuthTotpDisablePostRequestResponseResponse{}
+func NewApiAuthStepUpPostRequestResponseResponseWithDefaults() *ApiAuthStepUpPostRequestResponseResponse {
+	this := ApiAuthStepUpPostRequestResponseResponse{}
 	return &this
 }
 
 // GetClientDataJSON returns the ClientDataJSON field value
-func (o *ApiAuthTotpDisablePostRequestResponseResponse) GetClientDataJSON() string {
+func (o *ApiAuthStepUpPostRequestResponseResponse) GetClientDataJSON() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -61,7 +61,7 @@ func (o *ApiAuthTotpDisablePostRequestResponseResponse) GetClientDataJSON() stri
 
 // GetClientDataJSONOk returns a tuple with the ClientDataJSON field value
 // and a boolean to check if the value has been set.
-func (o *ApiAuthTotpDisablePostRequestResponseResponse) GetClientDataJSONOk() (*string, bool) {
+func (o *ApiAuthStepUpPostRequestResponseResponse) GetClientDataJSONOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -69,12 +69,12 @@ func (o *ApiAuthTotpDisablePostRequestResponseResponse) GetClientDataJSONOk() (*
 }
 
 // SetClientDataJSON sets field value
-func (o *ApiAuthTotpDisablePostRequestResponseResponse) SetClientDataJSON(v string) {
+func (o *ApiAuthStepUpPostRequestResponseResponse) SetClientDataJSON(v string) {
 	o.ClientDataJSON = v
 }
 
 // GetAuthenticatorData returns the AuthenticatorData field value
-func (o *ApiAuthTotpDisablePostRequestResponseResponse) GetAuthenticatorData() string {
+func (o *ApiAuthStepUpPostRequestResponseResponse) GetAuthenticatorData() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -85,7 +85,7 @@ func (o *ApiAuthTotpDisablePostRequestResponseResponse) GetAuthenticatorData() s
 
 // GetAuthenticatorDataOk returns a tuple with the AuthenticatorData field value
 // and a boolean to check if the value has been set.
-func (o *ApiAuthTotpDisablePostRequestResponseResponse) GetAuthenticatorDataOk() (*string, bool) {
+func (o *ApiAuthStepUpPostRequestResponseResponse) GetAuthenticatorDataOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -93,12 +93,12 @@ func (o *ApiAuthTotpDisablePostRequestResponseResponse) GetAuthenticatorDataOk()
 }
 
 // SetAuthenticatorData sets field value
-func (o *ApiAuthTotpDisablePostRequestResponseResponse) SetAuthenticatorData(v string) {
+func (o *ApiAuthStepUpPostRequestResponseResponse) SetAuthenticatorData(v string) {
 	o.AuthenticatorData = v
 }
 
 // GetSignature returns the Signature field value
-func (o *ApiAuthTotpDisablePostRequestResponseResponse) GetSignature() string {
+func (o *ApiAuthStepUpPostRequestResponseResponse) GetSignature() string {
 	if o == nil {
 		var ret string
 		return ret
@@ -109,7 +109,7 @@ func (o *ApiAuthTotpDisablePostRequestResponseResponse) GetSignature() string {
 
 // GetSignatureOk returns a tuple with the Signature field value
 // and a boolean to check if the value has been set.
-func (o *ApiAuthTotpDisablePostRequestResponseResponse) GetSignatureOk() (*string, bool) {
+func (o *ApiAuthStepUpPostRequestResponseResponse) GetSignatureOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -117,12 +117,12 @@ func (o *ApiAuthTotpDisablePostRequestResponseResponse) GetSignatureOk() (*strin
 }
 
 // SetSignature sets field value
-func (o *ApiAuthTotpDisablePostRequestResponseResponse) SetSignature(v string) {
+func (o *ApiAuthStepUpPostRequestResponseResponse) SetSignature(v string) {
 	o.Signature = v
 }
 
 // GetUserHandle returns the UserHandle field value if set, zero value otherwise.
-func (o *ApiAuthTotpDisablePostRequestResponseResponse) GetUserHandle() string {
+func (o *ApiAuthStepUpPostRequestResponseResponse) GetUserHandle() string {
 	if o == nil || IsNil(o.UserHandle) {
 		var ret string
 		return ret
@@ -132,7 +132,7 @@ func (o *ApiAuthTotpDisablePostRequestResponseResponse) GetUserHandle() string {
 
 // GetUserHandleOk returns a tuple with the UserHandle field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *ApiAuthTotpDisablePostRequestResponseResponse) GetUserHandleOk() (*string, bool) {
+func (o *ApiAuthStepUpPostRequestResponseResponse) GetUserHandleOk() (*string, bool) {
 	if o == nil || IsNil(o.UserHandle) {
 		return nil, false
 	}
@@ -140,7 +140,7 @@ func (o *ApiAuthTotpDisablePostRequestResponseResponse) GetUserHandleOk() (*stri
 }
 
 // HasUserHandle returns a boolean if a field has been set.
-func (o *ApiAuthTotpDisablePostRequestResponseResponse) HasUserHandle() bool {
+func (o *ApiAuthStepUpPostRequestResponseResponse) HasUserHandle() bool {
 	if o != nil && !IsNil(o.UserHandle) {
 		return true
 	}
@@ -149,11 +149,11 @@ func (o *ApiAuthTotpDisablePostRequestResponseResponse) HasUserHandle() bool {
 }
 
 // SetUserHandle gets a reference to the given string and assigns it to the UserHandle field.
-func (o *ApiAuthTotpDisablePostRequestResponseResponse) SetUserHandle(v string) {
+func (o *ApiAuthStepUpPostRequestResponseResponse) SetUserHandle(v string) {
 	o.UserHandle = &v
 }
 
-func (o ApiAuthTotpDisablePostRequestResponseResponse) MarshalJSON() ([]byte, error) {
+func (o ApiAuthStepUpPostRequestResponseResponse) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -161,7 +161,7 @@ func (o ApiAuthTotpDisablePostRequestResponseResponse) MarshalJSON() ([]byte, er
 	return json.Marshal(toSerialize)
 }
 
-func (o ApiAuthTotpDisablePostRequestResponseResponse) ToMap() (map[string]interface{}, error) {
+func (o ApiAuthStepUpPostRequestResponseResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["clientDataJSON"] = o.ClientDataJSON
 	toSerialize["authenticatorData"] = o.AuthenticatorData
@@ -172,7 +172,7 @@ func (o ApiAuthTotpDisablePostRequestResponseResponse) ToMap() (map[string]inter
 	return toSerialize, nil
 }
 
-func (o *ApiAuthTotpDisablePostRequestResponseResponse) UnmarshalJSON(data []byte) (err error) {
+func (o *ApiAuthStepUpPostRequestResponseResponse) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
@@ -196,53 +196,53 @@ func (o *ApiAuthTotpDisablePostRequestResponseResponse) UnmarshalJSON(data []byt
 		}
 	}
 
-	varApiAuthTotpDisablePostRequestResponseResponse := _ApiAuthTotpDisablePostRequestResponseResponse{}
+	varApiAuthStepUpPostRequestResponseResponse := _ApiAuthStepUpPostRequestResponseResponse{}
 
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varApiAuthTotpDisablePostRequestResponseResponse)
+	err = decoder.Decode(&varApiAuthStepUpPostRequestResponseResponse)
 
 	if err != nil {
 		return err
 	}
 
-	*o = ApiAuthTotpDisablePostRequestResponseResponse(varApiAuthTotpDisablePostRequestResponseResponse)
+	*o = ApiAuthStepUpPostRequestResponseResponse(varApiAuthStepUpPostRequestResponseResponse)
 
 	return err
 }
 
-type NullableApiAuthTotpDisablePostRequestResponseResponse struct {
-	value *ApiAuthTotpDisablePostRequestResponseResponse
+type NullableApiAuthStepUpPostRequestResponseResponse struct {
+	value *ApiAuthStepUpPostRequestResponseResponse
 	isSet bool
 }
 
-func (v NullableApiAuthTotpDisablePostRequestResponseResponse) Get() *ApiAuthTotpDisablePostRequestResponseResponse {
+func (v NullableApiAuthStepUpPostRequestResponseResponse) Get() *ApiAuthStepUpPostRequestResponseResponse {
 	return v.value
 }
 
-func (v *NullableApiAuthTotpDisablePostRequestResponseResponse) Set(val *ApiAuthTotpDisablePostRequestResponseResponse) {
+func (v *NullableApiAuthStepUpPostRequestResponseResponse) Set(val *ApiAuthStepUpPostRequestResponseResponse) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableApiAuthTotpDisablePostRequestResponseResponse) IsSet() bool {
+func (v NullableApiAuthStepUpPostRequestResponseResponse) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableApiAuthTotpDisablePostRequestResponseResponse) Unset() {
+func (v *NullableApiAuthStepUpPostRequestResponseResponse) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableApiAuthTotpDisablePostRequestResponseResponse(val *ApiAuthTotpDisablePostRequestResponseResponse) *NullableApiAuthTotpDisablePostRequestResponseResponse {
-	return &NullableApiAuthTotpDisablePostRequestResponseResponse{value: val, isSet: true}
+func NewNullableApiAuthStepUpPostRequestResponseResponse(val *ApiAuthStepUpPostRequestResponseResponse) *NullableApiAuthStepUpPostRequestResponseResponse {
+	return &NullableApiAuthStepUpPostRequestResponseResponse{value: val, isSet: true}
 }
 
-func (v NullableApiAuthTotpDisablePostRequestResponseResponse) MarshalJSON() ([]byte, error) {
+func (v NullableApiAuthStepUpPostRequestResponseResponse) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableApiAuthTotpDisablePostRequestResponseResponse) UnmarshalJSON(src []byte) error {
+func (v *NullableApiAuthStepUpPostRequestResponseResponse) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

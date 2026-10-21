@@ -18,6 +18,7 @@ import {
 } from "@/features/auth/passkey-ceremony";
 import { VoucherQrCode } from "@/features/wallet/voucher-qr-code";
 import { SignInMethodError } from "./sign-in-method-error";
+import { StepUpPanel } from "./step-up";
 import {
   confirmTotpAction,
   disableTotpWithCodeAction,
@@ -28,6 +29,8 @@ import {
 
 export interface MeAuthenticatorSectionProps {
   enabled: boolean;
+  /** False when this deployment has authenticator apps switched off. */
+  available: boolean;
   hasPasskeys: boolean;
 }
 
@@ -49,8 +52,16 @@ function codeOf(error: { kind: string; code?: string }): string {
  * account has one. The seed lives only in this component's state while the QR
  * is on screen; it is never stored or logged. The status flips at once
  * (`override`) and `router.refresh()` brings the server's view in line.
+ * Setting it up can need a step-up first (`step_up_required`). When the
+ * deployment has authenticator apps off (`available` false) there is nothing
+ * to set up, and an app that is somehow still on can only be turned off with
+ * a passkey, since no code can be checked.
  */
-export function MeAuthenticatorSection({ enabled, hasPasskeys }: MeAuthenticatorSectionProps) {
+export function MeAuthenticatorSection({
+  enabled,
+  available,
+  hasPasskeys,
+}: MeAuthenticatorSectionProps) {
   const t = useTranslations("me.authenticatorApp");
   const router = useRouter();
   const passkeysSupported = useBrowserSupportsWebAuthn();
@@ -60,10 +71,12 @@ export function MeAuthenticatorSection({ enabled, hasPasskeys }: MeAuthenticator
   const [code, setCode] = useState("");
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [done, setDone] = useState<"on" | "off" | null>(null);
+  const [needsStepUp, setNeedsStepUp] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const isOn = override ?? enabled;
   const cleanCode = code.replace(/\s+/g, "");
+  const canPasskey = hasPasskeys && passkeysSupported;
 
   function reset(next: Mode) {
     setMode(next);
@@ -71,6 +84,7 @@ export function MeAuthenticatorSection({ enabled, hasPasskeys }: MeAuthenticator
     setCode("");
     setErrorCode(null);
     setDone(null);
+    setNeedsStepUp(false);
   }
 
   function handleSetUp() {
@@ -79,6 +93,10 @@ export function MeAuthenticatorSection({ enabled, hasPasskeys }: MeAuthenticator
       const result = await startTotpEnrolmentAction();
       if (!result.ok) {
         setMode("idle");
+        if (codeOf(result.error) === "step_up_required") {
+          setNeedsStepUp(true);
+          return;
+        }
         setErrorCode(codeOf(result.error));
         // Another tab may have finished setting it up already.
         if (codeOf(result.error) === "totp_already_enabled") {
@@ -160,6 +178,9 @@ export function MeAuthenticatorSection({ enabled, hasPasskeys }: MeAuthenticator
     />
   );
 
+  // Nothing to set up and nothing to turn off: leave the section out.
+  if (!available && !isOn) return null;
+
   return (
     <Section title={t("heading")} description={t("intro")}>
       <div className="flex flex-col gap-4">
@@ -169,7 +190,7 @@ export function MeAuthenticatorSection({ enabled, hasPasskeys }: MeAuthenticator
           </Badge>
         </div>
 
-        {mode === "idle" && !isOn ? (
+        {mode === "idle" && !isOn && available ? (
           <Button type="button" onClick={handleSetUp} disabled={isPending} className="self-start">
             {t("setUpCta")}
           </Button>
@@ -208,7 +229,7 @@ export function MeAuthenticatorSection({ enabled, hasPasskeys }: MeAuthenticator
           </form>
         ) : null}
 
-        {mode === "idle" && isOn ? (
+        {mode === "idle" && isOn && (available || canPasskey) ? (
           <Button
             type="button"
             variant="secondary"
@@ -222,16 +243,22 @@ export function MeAuthenticatorSection({ enabled, hasPasskeys }: MeAuthenticator
 
         {mode === "turnOff" ? (
           <form onSubmit={handleTurnOffWithCode} className="flex flex-col gap-3">
-            <Text size="body-sm">{t("turnOffPrompt")}</Text>
-            {codeInput}
+            <Text size="body-sm">{available ? t("turnOffPrompt") : t("turnOffPasskeyPrompt")}</Text>
+            {available ? codeInput : null}
             <div className="flex flex-wrap gap-2">
-              <Button type="submit" variant="danger" disabled={isPending || cleanCode.length !== 6}>
-                {t("confirmTurnOffCta")}
-              </Button>
-              {hasPasskeys && passkeysSupported ? (
+              {available ? (
+                <Button
+                  type="submit"
+                  variant="danger"
+                  disabled={isPending || cleanCode.length !== 6}
+                >
+                  {t("confirmTurnOffCta")}
+                </Button>
+              ) : null}
+              {canPasskey ? (
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant={available ? "secondary" : "danger"}
                   disabled={isPending}
                   onClick={handleTurnOffWithPasskey}
                 >
@@ -250,6 +277,14 @@ export function MeAuthenticatorSection({ enabled, hasPasskeys }: MeAuthenticator
           </form>
         ) : null}
 
+        {needsStepUp ? (
+          <StepUpPanel
+            hasPasskeys={hasPasskeys}
+            codeAvailable={isOn && available}
+            onSteppedUp={handleSetUp}
+            onCancel={() => setNeedsStepUp(false)}
+          />
+        ) : null}
         {errorCode ? <SignInMethodError code={errorCode} /> : null}
         {done ? (
           <Notice tone="success">{t(done === "on" ? "turnedOn" : "turnedOff")}</Notice>

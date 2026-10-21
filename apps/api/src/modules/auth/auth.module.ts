@@ -28,6 +28,9 @@ import { TotpService } from "./factors/totp.service";
 import { SecondFactorGate } from "./factors/second-factor-gate";
 import { PasskeyController } from "./factors/passkey.controller";
 import { TotpController } from "./factors/totp.controller";
+import { SignInMethodsController } from "./factors/sign-in-methods.controller";
+import { SignedInCaller } from "./factors/signed-in-session";
+import { EmailFactorNotifier, FACTOR_NOTIFIER } from "./factors/factor-notifier";
 
 /**
  * Email and password authentication (YT-0540). Owns `identity.credential`,
@@ -58,7 +61,7 @@ import { TotpController } from "./factors/totp.controller";
  */
 @Module({
   imports: [RedisClientModule, IdentityModule, EmailDriverModule],
-  controllers: [AuthController, PasskeyController, TotpController],
+  controllers: [AuthController, PasskeyController, TotpController, SignInMethodsController],
   providers: [
     AuthService,
     SessionService,
@@ -66,7 +69,9 @@ import { TotpController } from "./factors/totp.controller";
     PasskeyService,
     TotpService,
     SecondFactorGate,
+    SignedInCaller,
     { provide: FACTOR_STORE, useClass: RedisFactorStore },
+    { provide: FACTOR_NOTIFIER, useClass: EmailFactorNotifier },
     { provide: SESSION_VALIDATOR, useExisting: SessionService },
     ThrottleService,
     DevTokenAccess,

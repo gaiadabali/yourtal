@@ -85,15 +85,9 @@ export class InMemoryPasskeyRepository implements PasskeyRepository {
 
   constructor(private readonly credentials: InMemoryCredentialRepository) {}
 
-  async userHandleFor(userId: string, mint: () => string): Promise<string> {
-    await this.credentials.create({
-      userId,
-      kind: PASSKEY_CREDENTIAL_KIND,
-      identifier: mint(),
-      secretHash: "",
-    });
+  async userHandleOf(userId: string): Promise<string | null> {
     const row = await this.credentials.findByUserAndKind(userId, PASSKEY_CREDENTIAL_KIND);
-    return row?.identifier ?? "";
+    return row?.identifier ?? null;
   }
 
   async userIdForHandle(handle: string): Promise<string | null> {
@@ -109,16 +103,26 @@ export class InMemoryPasskeyRepository implements PasskeyRepository {
     return Promise.resolve([...this.rows.values()].filter((row) => row.userId === userId));
   }
 
-  create(passkey: NewPasskey): Promise<boolean> {
-    if (this.rows.has(passkey.credentialId)) return Promise.resolve(false);
+  async create(passkey: NewPasskey, userHandle: string): Promise<boolean> {
+    if (this.rows.has(passkey.credentialId)) return false;
+    await this.credentials.create({
+      userId: passkey.userId,
+      kind: PASSKEY_CREDENTIAL_KIND,
+      identifier: userHandle,
+      secretHash: "",
+    });
+    if ((await this.userHandleOf(passkey.userId)) !== userHandle) return false;
     this.rows.set(passkey.credentialId, { ...passkey, createdAt: new Date(), lastUsedAt: null });
-    return Promise.resolve(true);
+    return true;
   }
 
-  recordUse(credentialId: string, signCount: number, usedAt: Date): Promise<void> {
+  recordUse(credentialId: string, signCount: number, usedAt: Date): Promise<boolean> {
     const row = this.rows.get(credentialId);
-    if (row !== undefined) this.rows.set(credentialId, { ...row, signCount, lastUsedAt: usedAt });
-    return Promise.resolve();
+    if (row === undefined || (signCount !== 0 && row.signCount >= signCount)) {
+      return Promise.resolve(false);
+    }
+    this.rows.set(credentialId, { ...row, signCount, lastUsedAt: usedAt });
+    return Promise.resolve(true);
   }
 
   async remove(userId: string, credentialId: string): Promise<RemovePasskeyOutcome> {

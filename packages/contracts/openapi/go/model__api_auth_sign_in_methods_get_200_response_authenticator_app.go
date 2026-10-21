@@ -21,6 +21,7 @@ var _ MappedNullable = &ApiAuthSignInMethodsGet200ResponseAuthenticatorApp{}
 // ApiAuthSignInMethodsGet200ResponseAuthenticatorApp struct for ApiAuthSignInMethodsGet200ResponseAuthenticatorApp
 type ApiAuthSignInMethodsGet200ResponseAuthenticatorApp struct {
 	Enabled bool `json:"enabled"`
+	Available bool `json:"available"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -30,9 +31,10 @@ type _ApiAuthSignInMethodsGet200ResponseAuthenticatorApp ApiAuthSignInMethodsGet
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiAuthSignInMethodsGet200ResponseAuthenticatorApp(enabled bool) *ApiAuthSignInMethodsGet200ResponseAuthenticatorApp {
+func NewApiAuthSignInMethodsGet200ResponseAuthenticatorApp(enabled bool, available bool) *ApiAuthSignInMethodsGet200ResponseAuthenticatorApp {
 	this := ApiAuthSignInMethodsGet200ResponseAuthenticatorApp{}
 	this.Enabled = enabled
+	this.Available = available
 	return &this
 }
 
@@ -68,6 +70,30 @@ func (o *ApiAuthSignInMethodsGet200ResponseAuthenticatorApp) SetEnabled(v bool) 
 	o.Enabled = v
 }
 
+// GetAvailable returns the Available field value
+func (o *ApiAuthSignInMethodsGet200ResponseAuthenticatorApp) GetAvailable() bool {
+	if o == nil {
+		var ret bool
+		return ret
+	}
+
+	return o.Available
+}
+
+// GetAvailableOk returns a tuple with the Available field value
+// and a boolean to check if the value has been set.
+func (o *ApiAuthSignInMethodsGet200ResponseAuthenticatorApp) GetAvailableOk() (*bool, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Available, true
+}
+
+// SetAvailable sets field value
+func (o *ApiAuthSignInMethodsGet200ResponseAuthenticatorApp) SetAvailable(v bool) {
+	o.Available = v
+}
+
 func (o ApiAuthSignInMethodsGet200ResponseAuthenticatorApp) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -79,6 +105,7 @@ func (o ApiAuthSignInMethodsGet200ResponseAuthenticatorApp) MarshalJSON() ([]byt
 func (o ApiAuthSignInMethodsGet200ResponseAuthenticatorApp) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["enabled"] = o.Enabled
+	toSerialize["available"] = o.Available
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -93,6 +120,7 @@ func (o *ApiAuthSignInMethodsGet200ResponseAuthenticatorApp) UnmarshalJSON(data 
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"enabled",
+		"available",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -123,6 +151,7 @@ func (o *ApiAuthSignInMethodsGet200ResponseAuthenticatorApp) UnmarshalJSON(data 
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
 		delete(additionalProperties, "enabled")
+		delete(additionalProperties, "available")
 		o.AdditionalProperties = additionalProperties
 	}
 

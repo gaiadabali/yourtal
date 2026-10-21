@@ -23,6 +23,16 @@ export function mapFactorErrorToHttpException(error: FactorError): HttpException
         code: "reauthentication_required",
         message: "sign in again to change how you sign in",
       });
+    case "step_up_required":
+      return new ForbiddenException({
+        code: "step_up_required",
+        message: "confirm it's you with your passkey or authenticator app first",
+      });
+    case "authenticator_unavailable":
+      return new ServiceUnavailableException({
+        code: "authenticator_unavailable",
+        message: "authenticator apps are not available right now",
+      });
     case "totp_already_enabled":
       return new ConflictException({
         code: "totp_already_enabled",

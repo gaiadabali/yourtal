@@ -32,7 +32,7 @@ export type SessionSignIn =
       readonly userId: string;
       /** OIDC `amr`: how this session was signed in to. */
       readonly amr: readonly AuthMethod[];
-      /** OIDC `auth_time`: the session's creation, never extended by use. */
+      /** OIDC `auth_time`: when the person last proved who they are, never extended by use. */
       readonly authTime: Date;
     }
   | SessionRefusal;
@@ -59,6 +59,7 @@ export class SessionService {
     now: Date,
     kind: SessionKind,
     amr: readonly AuthMethod[],
+    signedInAt: Date = now,
   ): Promise<string> {
     const { token, hash } = issueOpaqueToken();
     const absoluteTtlMs =
@@ -70,6 +71,7 @@ export class SessionService {
       userId,
       absoluteExpiresAt: new Date(now.getTime() + absoluteTtlMs),
       amr,
+      signedInAt,
     });
     return token;
   }
@@ -108,7 +110,7 @@ export class SessionService {
       valid: true,
       userId: record.userId,
       amr: parseAmr(record.amr),
-      authTime: record.createdAt,
+      authTime: record.signedInAt,
     };
   }
 
@@ -128,6 +130,11 @@ export class SessionService {
    */
   async revokeAllForUser(userId: string, now: Date): Promise<void> {
     await this.sessions.revokeAllForUser(userId, now);
+  }
+
+  /** Ends every other session of this user, keeping the caller's (`token`). */
+  async revokeOthers(userId: string, token: string, now: Date): Promise<void> {
+    await this.sessions.revokeOthers(userId, hashOpaqueToken(token), now);
   }
 
   private async lookup(token: string): Promise<StoredSession | null> {

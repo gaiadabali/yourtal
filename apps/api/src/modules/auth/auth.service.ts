@@ -348,7 +348,7 @@ export class AuthService {
     if (!validation.valid) {
       return err({ type: "session_invalid" });
     }
-    const { userId, amr } = validation;
+    const { userId, amr, authTime } = validation;
 
     return this.guarded(async () => {
       const credential = await this.credentials.findByUserAndKind(userId, PASSWORD_CREDENTIAL_KIND);
@@ -366,9 +366,10 @@ export class AuthService {
       const newHash = await hashPassword(newPassword);
       await this.credentials.updateSecret(userId, PASSWORD_CREDENTIAL_KIND, newHash);
       await this.sessions.revokeAllForUser(userId, now);
-      // The replacement keeps how the caller signed in: a password change
-      // proves the password again, not a second factor.
-      const token = await this.sessionIssuer.issue(userId, now, amr);
+      // The replacement keeps how and when the caller signed in: a password
+      // change proves the password again, not a second factor, and is not a
+      // fresh sign-in for the checks that need one.
+      const token = await this.sessionIssuer.issue(userId, now, amr, authTime);
       return ok({ token });
     });
   }
@@ -428,7 +429,7 @@ export class AuthService {
       await this.sessions.revokeAllForUser(userId, now);
       // An emailed link plus a new password is still one factor: an account
       // with an authenticator app still has to give a code.
-      return ok(await this.secondFactor.afterPassword(userId, now));
+      return ok(await this.secondFactor.afterPasswordReset(userId, now));
     });
   }
 

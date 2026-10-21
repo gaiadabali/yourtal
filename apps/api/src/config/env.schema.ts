@@ -245,12 +245,11 @@ export const envSchema = z.object({
   /**
    * Seals each account's authenticator-app seed (AES-256-GCM, the same scheme
    * as `WEBHOOK_SECRET_ENCRYPTION_KEY`): a seed has to be recoverable to check
-   * a code. The default is local-only; `loadAppConfig` refuses it outside dev.
+   * a code. Unset, dev uses a local-only default and every other environment
+   * runs with authenticator apps off (passkeys still work); the local-only
+   * value outside dev refuses to boot. See `loadAppConfig`.
    */
-  TOTP_SECRET_ENCRYPTION_KEY: z
-    .string()
-    .min(32)
-    .default("local-only-totp-secret-encryption-key-not-real"),
+  TOTP_SECRET_ENCRYPTION_KEY: z.string().min(32).optional(),
 
   /**
    * 5.1.e / F106: every payment is simulated. With this on, the API mounts its

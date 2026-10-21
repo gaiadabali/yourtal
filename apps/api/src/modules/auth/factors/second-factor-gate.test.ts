@@ -1,14 +1,16 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   PASSWORD_CREDENTIAL_KIND,
   TOTP_CREDENTIAL_KIND,
 } from "../persistence/credential.repository";
 import { parseAmr } from "../session/amr";
+import { RecordingFactorNotifier } from "./factor-notifier";
 import { InMemoryFactorStore } from "./factor-store";
 import { SecondFactorGate } from "./second-factor-gate";
 import { InMemoryCredentialRepository } from "./testing/in-memory-repositories";
 import { FACTORS_CONFIG, InMemoryThrottle, RecordingSessionIssuer } from "./testing/fakes";
 import { totpCodeAt } from "./totp-code";
+import { hashOpaqueToken as hashOf } from "../crypto/opaque-token";
 import { TotpService } from "./totp.service";
 
 const USER = "user-totp";
@@ -20,6 +22,7 @@ let store: InMemoryFactorStore;
 let totp: TotpService;
 let issuer: RecordingSessionIssuer;
 let throttle: InMemoryThrottle;
+let notifier: RecordingFactorNotifier;
 let gate: SecondFactorGate;
 
 beforeEach(async () => {
@@ -28,7 +31,8 @@ beforeEach(async () => {
   throttle = new InMemoryThrottle();
   totp = new TotpService(FACTORS_CONFIG, credentials, store, throttle.asThrottle());
   issuer = new RecordingSessionIssuer();
-  gate = new SecondFactorGate(totp, issuer.asIssuer(), store);
+  notifier = new RecordingFactorNotifier();
+  gate = new SecondFactorGate(totp, issuer.asIssuer(), store, notifier);
   await credentials.create({
     userId: USER,
     kind: PASSWORD_CREDENTIAL_KIND,
@@ -162,5 +166,75 @@ describe("enrolment", () => {
     }
     const right = await totp.verify(USER, totpCodeAt(seed, later(60)), later(60));
     expect(right.isErr() && right.error.type).toBe("throttled");
+  });
+});
+
+describe("guess limits under parallel requests", () => {
+  it("checks at most five codes per account however many arrive at once", async () => {
+    await switchOnTotp();
+    const outcomes = await Promise.all(
+      Array.from({ length: 20 }, () => totp.verify(USER, "000000", later(60))),
+    );
+    const types = outcomes.map((outcome) => (outcome.isErr() ? outcome.error.type : "ok"));
+    expect(types.filter((type) => type === "factor_invalid")).toHaveLength(5);
+    expect(types.filter((type) => type === "throttled")).toHaveLength(15);
+  });
+
+  it("lets one pending sign-in reach the code check at most five times", async () => {
+    await switchOnTotp();
+    const signIn = await gate.afterPassword(USER, later(60));
+    if (signIn.kind !== "second_factor") throw new Error("expected a code step");
+    const verify = vi.spyOn(totp, "verify");
+    await Promise.all(
+      Array.from({ length: 20 }, () =>
+        gate.completeWithTotp(signIn.pendingToken, "000000", later(60)),
+      ),
+    );
+    expect(verify.mock.calls.length).toBeLessThanOrEqual(5);
+    expect(await store.readPending(hashOf(signIn.pendingToken))).toBeNull();
+  });
+});
+
+describe("a code step is used once, and never an earlier one (RFC 6238 5.2)", () => {
+  it("refuses the same step, and an earlier step still inside the drift window", async () => {
+    const seed = await switchOnTotp();
+    expect((await totp.verify(USER, totpCodeAt(seed, later(90)), later(90))).isOk()).toBe(true);
+    const same = await totp.verify(USER, totpCodeAt(seed, later(90)), later(91));
+    expect(same.isErr() && same.error.type).toBe("factor_invalid");
+    const earlier = await totp.verify(USER, totpCodeAt(seed, later(60)), later(91));
+    expect(earlier.isErr() && earlier.error.type).toBe("factor_invalid");
+    expect((await totp.verify(USER, totpCodeAt(seed, later(120)), later(121))).isOk()).toBe(true);
+  });
+});
+
+describe("authenticator apps switched off on this deployment", () => {
+  it("does not lock an account with an app out of password sign-in", async () => {
+    await switchOnTotp();
+    const factors = FACTORS_CONFIG.authFactors;
+    if (factors === undefined) throw new Error("test config has no factors");
+    const off = new TotpService(
+      {
+        authFactors: { rpId: factors.rpId, rpName: factors.rpName, origins: factors.origins },
+      } as never,
+      credentials,
+      store,
+      throttle.asThrottle(),
+    );
+    const offGate = new SecondFactorGate(off, issuer.asIssuer(), store, notifier);
+    expect(off.available()).toBe(false);
+    const signIn = await offGate.afterPassword(USER, later(60));
+    expect(signIn.kind).toBe("session");
+    expect(issuer.issued.at(-1)).toEqual({ userId: USER, amr: ["pwd"] });
+    const enrol = await off.enrol(USER);
+    expect(enrol.isErr() && enrol.error.type).toBe("authenticator_unavailable");
+  });
+});
+
+describe("a password reset", () => {
+  it("tells the person what can still sign them in, then asks for the code", async () => {
+    await switchOnTotp();
+    const signIn = await gate.afterPasswordReset(USER, later(60));
+    expect(signIn.kind).toBe("second_factor");
+    expect(notifier.sent).toEqual([{ userId: USER, notice: "reset_summary" }]);
   });
 });

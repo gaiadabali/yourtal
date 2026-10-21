@@ -58,8 +58,25 @@ export async function amrOf(owner: AppDb, token: string): Promise<string[] | und
 /** Pretends the person signed in an hour ago, so adding a sign-in method needs a fresh one. */
 export async function ageSessions(owner: AppDb, userId: string): Promise<void> {
   await owner.execute(
-    sql`UPDATE identity.session SET created_at = now() - interval '1 hour' WHERE user_id = ${userId}`,
+    sql`UPDATE identity.session SET signed_in_at = now() - interval '1 hour' WHERE user_id = ${userId}`,
   );
+}
+
+/** When the session a raw token names says the person signed in. */
+export async function signedInAtOf(owner: AppDb, token: string): Promise<Date | undefined> {
+  const { rows } = await owner.execute<{ signed_in_at: Date }>(
+    sql`SELECT signed_in_at FROM identity.session WHERE id = ${hashOpaqueToken(token)}`,
+  );
+  return rows[0]?.signed_in_at;
+}
+
+/** Subjects of the security notices sent to an address, oldest first. */
+export async function securityNotices(owner: AppDb, email: string): Promise<string[]> {
+  const { rows } = await owner.execute<{ subject: string; body: string }>(
+    sql`SELECT subject, body FROM platform.sim_outbox
+        WHERE recipient = ${email} AND category = 'security_notice' ORDER BY created_at`,
+  );
+  return rows.map((row) => `${row.subject}\n${row.body}`);
 }
 
 export function bearer(token: string): Record<string, string> {

@@ -10,30 +10,37 @@ export interface SignInMethodErrorProps {
   code: string;
 }
 
+/** A warning with a "Sign in again" action that signs out and comes straight back to Me. */
+export function SignInAgainNotice({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("me.signInMethods");
+  return (
+    <Notice
+      tone="warning"
+      action={
+        <form action={signInAgainAction} onSubmit={() => clearSessionScopedServiceWorkerCache()}>
+          <Button type="submit" variant="secondary" size="sm">
+            {t("signInAgainCta")}
+          </Button>
+        </form>
+      }
+    >
+      {children}
+    </Notice>
+  );
+}
+
 /**
  * The inline error for any passkey or authenticator-app change. A change that
  * needs a recent sign-in (`reauthentication_required`) says so and offers to
  * sign out and come straight back to Me; everything else is plain copy, with
- * a generic fallback for a code the catalogue does not name.
+ * a generic fallback for a code the catalogue does not name. A refusal that
+ * needs a step-up (`step_up_required`) is handled by `StepUpPanel`, not here.
  */
 export function SignInMethodError({ code }: SignInMethodErrorProps) {
   const t = useTranslations("me.signInMethods");
 
   if (code === "reauthentication_required") {
-    return (
-      <Notice
-        tone="warning"
-        action={
-          <form action={signInAgainAction} onSubmit={() => clearSessionScopedServiceWorkerCache()}>
-            <Button type="submit" variant="secondary" size="sm">
-              {t("signInAgainCta")}
-            </Button>
-          </form>
-        }
-      >
-        {t("reauthRequired")}
-      </Notice>
-    );
+    return <SignInAgainNotice>{t("reauthRequired")}</SignInAgainNotice>;
   }
 
   const key = `errors.${code}`;

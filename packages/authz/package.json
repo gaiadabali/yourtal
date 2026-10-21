@@ -18,12 +18,12 @@
   "dependencies": {
     "@yourtal/contracts": "workspace:*",
     "neverthrow": "8.2.0",
-    "zod": "4.6.5"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@yourtal/tsconfig": "workspace:*",
     "typescript": "6.0.3",
-    "vitest": "5.0.1",
+    "vitest": "5.0.4",
     "yaml": "2.9.1"
   }
 }

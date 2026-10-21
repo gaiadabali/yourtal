@@ -166,6 +166,7 @@ describe("point packages (F118, F122)", () => {
       currency: "AUD",
       pricePer1000Minor: 4_500,
       savingMinor: 0,
+      pricing: "tier",
     });
   });
 

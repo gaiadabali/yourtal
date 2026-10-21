@@ -1122,6 +1122,7 @@ describe("point packages (14.13, F122)", () => {
       totalMinor: 85_500,
       undiscountedMinor: 90_000,
       currency: "IDR",
+      pricing: "tier",
     });
     const unknown = await client.quotePackage({ region: "ID", tierKey: "platinum" });
     expect(unknown._unsafeUnwrapErr().code).toBe("refused");

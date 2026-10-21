@@ -112,6 +112,17 @@ export function toEconomyProposal(row: EconomyProposalRow): EconomyProposal {
   };
 }
 
+/**
+ * A proposal that also names its proposer by sign-in email, for the reads whose screens show one.
+ * A separate function, not a second parameter: `rows.map(toEconomyProposal)` would pass the index.
+ */
+export function toEconomyProposalWithEmail(
+  row: EconomyProposalRow,
+  proposerEmail: string | null,
+): EconomyProposal {
+  return { ...toEconomyProposal(row), proposedByEmail: proposerEmail };
+}
+
 export class PostgresEconomyProposalRepository implements EconomyProposalRepository {
   constructor(private readonly pool: Pool) {}
 

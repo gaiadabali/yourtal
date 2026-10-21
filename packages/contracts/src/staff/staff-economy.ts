@@ -44,6 +44,8 @@ export const economyProposalSchema = z
     region: regionSchema,
     summary: z.string().min(1),
     proposedBy: z.string().min(1),
+    /** `proposedBy`'s sign-in email, for a screen to name them. Only the list reads that show a proposer fill it; null when there is no email to show. */
+    proposedByEmail: z.string().nullable().optional(),
     approvedBy: z.string().nullable(),
     status: economyProposalStatusSchema,
     reason: z.string().nullable(),

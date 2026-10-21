@@ -19559,6 +19559,12 @@
                             "type": "string",
                             "minLength": 1
                           },
+                          "proposedByEmail": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "approvedBy": {
                             "type": [
                               "string",
@@ -19740,6 +19746,12 @@
                             "type": "string",
                             "minLength": 1
                           },
+                          "proposedByEmail": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "approvedBy": {
                             "type": [
                               "string",
@@ -19915,6 +19927,12 @@
                     "proposedBy": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "proposedByEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "approvedBy": {
                       "type": [
@@ -20092,6 +20110,12 @@
                       "type": "string",
                       "minLength": 1
                     },
+                    "proposedByEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "approvedBy": {
                       "type": [
                         "string",
@@ -20251,6 +20275,12 @@
                       "proposedBy": {
                         "type": "string",
                         "minLength": 1
+                      },
+                      "proposedByEmail": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
                       },
                       "approvedBy": {
                         "type": [
@@ -20417,6 +20447,12 @@
                     "proposedBy": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "proposedByEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "approvedBy": {
                       "type": [
@@ -20603,6 +20639,12 @@
                     "proposedBy": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "proposedByEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "approvedBy": {
                       "type": [
@@ -20809,6 +20851,12 @@
                       "type": "string",
                       "minLength": 1
                     },
+                    "proposedByEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "approvedBy": {
                       "type": [
                         "string",
@@ -20994,6 +21042,12 @@
                     "proposedBy": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "proposedByEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "approvedBy": {
                       "type": [
@@ -21212,6 +21266,12 @@
                             "type": "string",
                             "minLength": 1
                           },
+                          "proposedByEmail": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "approvedBy": {
                             "type": [
                               "string",
@@ -21386,6 +21446,12 @@
                     "proposedBy": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "proposedByEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "approvedBy": {
                       "type": [
@@ -21572,6 +21638,12 @@
                     "proposedBy": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "proposedByEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "approvedBy": {
                       "type": [
@@ -22850,6 +22922,12 @@
                         "type": "string",
                         "minLength": 1
                       },
+                      "proposedByEmail": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
                       "approvedBy": {
                         "type": [
                           "string",
@@ -23016,6 +23094,12 @@
                     "proposedBy": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "proposedByEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "approvedBy": {
                       "type": [
@@ -23185,6 +23269,12 @@
                     "proposedBy": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "proposedByEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "approvedBy": {
                       "type": [
@@ -23478,6 +23568,12 @@
                                     "type": "string",
                                     "minLength": 1
                                   },
+                                  "proposedByEmail": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  },
                                   "approvedBy": {
                                     "type": [
                                       "string",
@@ -23693,6 +23789,12 @@
                       "type": "string",
                       "minLength": 1
                     },
+                    "proposedByEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "approvedBy": {
                       "type": [
                         "string",
@@ -23871,6 +23973,12 @@
                     "proposedBy": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "proposedByEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "approvedBy": {
                       "type": [
@@ -24067,6 +24175,12 @@
                     "proposedBy": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "proposedByEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "approvedBy": {
                       "type": [
@@ -24381,6 +24495,12 @@
                                   "type": "string",
                                   "minLength": 1
                                 },
+                                "proposedByEmail": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
                                 "approvedBy": {
                                   "type": [
                                     "string",
@@ -24605,6 +24725,12 @@
                       "type": "string",
                       "minLength": 1
                     },
+                    "proposedByEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "approvedBy": {
                       "type": [
                         "string",
@@ -24793,6 +24919,12 @@
                     "proposedBy": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "proposedByEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "approvedBy": {
                       "type": [
@@ -24989,6 +25121,12 @@
                     "proposedBy": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "proposedByEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     },
                     "approvedBy": {
                       "type": [
@@ -30750,6 +30888,12 @@
                   "proposedBy": {
                     "type": "string",
                     "minLength": 1
+                  },
+                  "proposedByEmail": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "approvedBy": {
                     "type": [

@@ -7,6 +7,18 @@ export interface StaffDirectory {
   emailOf(userId: string): Promise<string | null>;
 }
 
+/** One lookup per distinct staff member, for a list that names several of them by email. */
+export async function emailsOf(
+  directory: StaffDirectory,
+  userIds: Iterable<string>,
+): Promise<ReadonlyMap<string, string | null>> {
+  return new Map(
+    await Promise.all(
+      [...new Set(userIds)].map(async (id) => [id, await directory.emailOf(id)] as const),
+    ),
+  );
+}
+
 /** Reads `identity.credential` directly, the same "own narrow query" convention 7.6 and 7.7 use. */
 export class PostgresStaffDirectory implements StaffDirectory {
   constructor(private readonly pool: Pool) {}

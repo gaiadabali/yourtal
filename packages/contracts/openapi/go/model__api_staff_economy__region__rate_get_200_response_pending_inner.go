@@ -27,6 +27,7 @@ type ApiStaffEconomyRegionRateGet200ResponsePendingInner struct {
 	Region string `json:"region"`
 	Summary string `json:"summary"`
 	ProposedBy string `json:"proposedBy"`
+	ProposedByEmail NullableString `json:"proposedByEmail,omitempty"`
 	ApprovedBy NullableString `json:"approvedBy"`
 	Status string `json:"status"`
 	Reason NullableString `json:"reason"`
@@ -183,6 +184,48 @@ func (o *ApiStaffEconomyRegionRateGet200ResponsePendingInner) SetProposedBy(v st
 	o.ProposedBy = v
 }
 
+// GetProposedByEmail returns the ProposedByEmail field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *ApiStaffEconomyRegionRateGet200ResponsePendingInner) GetProposedByEmail() string {
+	if o == nil || IsNil(o.ProposedByEmail.Get()) {
+		var ret string
+		return ret
+	}
+	return *o.ProposedByEmail.Get()
+}
+
+// GetProposedByEmailOk returns a tuple with the ProposedByEmail field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiStaffEconomyRegionRateGet200ResponsePendingInner) GetProposedByEmailOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.ProposedByEmail.Get(), o.ProposedByEmail.IsSet()
+}
+
+// HasProposedByEmail returns a boolean if a field has been set.
+func (o *ApiStaffEconomyRegionRateGet200ResponsePendingInner) HasProposedByEmail() bool {
+	if o != nil && o.ProposedByEmail.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetProposedByEmail gets a reference to the given NullableString and assigns it to the ProposedByEmail field.
+func (o *ApiStaffEconomyRegionRateGet200ResponsePendingInner) SetProposedByEmail(v string) {
+	o.ProposedByEmail.Set(&v)
+}
+// SetProposedByEmailNil sets the value for ProposedByEmail to be an explicit nil
+func (o *ApiStaffEconomyRegionRateGet200ResponsePendingInner) SetProposedByEmailNil() {
+	o.ProposedByEmail.Set(nil)
+}
+
+// UnsetProposedByEmail ensures that no value is present for ProposedByEmail, not even an explicit nil
+func (o *ApiStaffEconomyRegionRateGet200ResponsePendingInner) UnsetProposedByEmail() {
+	o.ProposedByEmail.Unset()
+}
+
 // GetApprovedBy returns the ApprovedBy field value
 // If the value is explicit nil, the zero value for string will be returned
 func (o *ApiStaffEconomyRegionRateGet200ResponsePendingInner) GetApprovedBy() string {
@@ -324,6 +367,9 @@ func (o ApiStaffEconomyRegionRateGet200ResponsePendingInner) ToMap() (map[string
 	toSerialize["region"] = o.Region
 	toSerialize["summary"] = o.Summary
 	toSerialize["proposedBy"] = o.ProposedBy
+	if o.ProposedByEmail.IsSet() {
+		toSerialize["proposedByEmail"] = o.ProposedByEmail.Get()
+	}
 	toSerialize["approvedBy"] = o.ApprovedBy.Get()
 	toSerialize["status"] = o.Status
 	toSerialize["reason"] = o.Reason.Get()

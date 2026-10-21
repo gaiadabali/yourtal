@@ -23,9 +23,12 @@ import type { DisbursementRepository } from "../../payouts/disbursement.reposito
 import {
   ECONOMY_PROPOSAL_REPOSITORY,
   toEconomyProposal,
+  toEconomyProposalWithEmail,
 } from "../economy/persistence/economy-proposal.repository";
 import type { EconomyProposalRepository } from "../economy/persistence/economy-proposal.repository";
 import { StaffAction, setStaffAuditContext } from "../staff-action.decorator";
+import { STAFF_DIRECTORY } from "../persistence/staff-directory";
+import type { StaffDirectory } from "../persistence/staff-directory";
 import { DecideSettlementProposalDto } from "./dto/settlement.dto";
 import { ProposeDisbursementRetryDto } from "./dto/recovery.dto";
 import { DisbursementRecoveryService } from "./disbursement-recovery.service";
@@ -57,6 +60,7 @@ export class StaffDisbursementRecoveryController {
     private readonly recovery: DisbursementRecoveryService,
     @Inject(DISBURSEMENTS) private readonly disbursements: DisbursementRepository,
     @Inject(ECONOMY_PROPOSAL_REPOSITORY) private readonly proposals: EconomyProposalRepository,
+    @Inject(STAFF_DIRECTORY) private readonly directory: StaffDirectory,
   ) {}
 
   @Authorize({
@@ -83,9 +87,13 @@ export class StaffDisbursementRecoveryController {
     setStaffAuditContext(request, { detail: { outcome } });
     const pending = await this.proposals.listPending(region, "retry_disbursement");
     const retry = pending.find((proposal) => proposal.payload["disbursementId"] === id);
+    const email = retry === undefined ? null : await this.directory.emailOf(retry.proposedBy);
     return {
       outcome,
-      disbursement: toStaffDisbursement(row, retry === undefined ? null : toEconomyProposal(retry)),
+      disbursement: toStaffDisbursement(
+        row,
+        retry === undefined ? null : toEconomyProposalWithEmail(retry, email),
+      ),
     };
   }
 

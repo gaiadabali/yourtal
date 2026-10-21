@@ -409,7 +409,7 @@ describe("retry (5.2.c): a new payout attempt, never a second transfer, two-pers
     ).json<StaffDisbursements>();
     expect(listed.disbursements.find((d) => d.id === sent.id)).toMatchObject({
       needsStaff: true,
-      retryProposal: { id: proposal.id },
+      retryProposal: { id: proposal.id, proposedByEmail: a.email },
     });
 
     expect((await decide(a.cookie, proposal.id, "approve")).statusCode).toBe(403);

@@ -5,9 +5,11 @@ import { NotValueMoving } from "../../../shared/idempotency/idempotent.decorator
 import { DISBURSEMENTS } from "../../payouts/disbursement.repository";
 import type { DisbursementRepository } from "../../payouts/disbursement.repository";
 import { StaffAction } from "../staff-action.decorator";
+import { STAFF_DIRECTORY, emailsOf } from "../persistence/staff-directory";
+import type { StaffDirectory } from "../persistence/staff-directory";
 import {
   ECONOMY_PROPOSAL_REPOSITORY,
-  toEconomyProposal,
+  toEconomyProposalWithEmail,
 } from "../economy/persistence/economy-proposal.repository";
 import type { EconomyProposalRepository } from "../economy/persistence/economy-proposal.repository";
 import { toStaffDisbursement } from "./to-staff-disbursement";
@@ -26,6 +28,7 @@ export class StaffDisbursementsController {
   constructor(
     @Inject(DISBURSEMENTS) private readonly disbursements: DisbursementRepository,
     @Inject(ECONOMY_PROPOSAL_REPOSITORY) private readonly proposals: EconomyProposalRepository,
+    @Inject(STAFF_DIRECTORY) private readonly directory: StaffDirectory,
   ) {}
 
   @Authorize({
@@ -47,8 +50,16 @@ export class StaffDisbursementsController {
     const rows = await this.disbursements.listForRegion(region);
     // 5.2.c: a retry waiting for a second staff member shows on its row.
     const pending = await this.proposals.listPending(region, "retry_disbursement");
+    // The retry line names its proposer by email; one lookup per distinct staff member.
+    const emails = await emailsOf(
+      this.directory,
+      pending.map((row) => row.proposedBy),
+    );
     const retries = new Map(
-      pending.map((row) => [String(row.payload["disbursementId"]), toEconomyProposal(row)]),
+      pending.map((row) => [
+        String(row.payload["disbursementId"]),
+        toEconomyProposalWithEmail(row, emails.get(row.proposedBy) ?? null),
+      ]),
     );
     return {
       region,

@@ -40,10 +40,13 @@ import {
   ProposeSettingDto,
   TripKillSwitchDto,
 } from "./dto/economy.dto";
+import { STAFF_DIRECTORY, emailsOf } from "../persistence/staff-directory";
+import type { StaffDirectory } from "../persistence/staff-directory";
 import { currentBackingRateMicros, reportedSpreadMinor } from "./coverage-math";
 import {
   ECONOMY_PROPOSAL_REPOSITORY,
   toEconomyProposal,
+  toEconomyProposalWithEmail,
 } from "./persistence/economy-proposal.repository";
 import type {
   EconomyProposalRepository,
@@ -87,6 +90,7 @@ export class StaffEconomyController {
     @Inject(VOUCHER_INTERNAL_CLIENT) private readonly vouchers: VoucherInternalClient,
     @Inject(BUSINESS_REGION_LOOKUP) private readonly businessRegionLookup: BusinessRegionLookup,
     @Inject(ECONOMY_PROPOSAL_REPOSITORY) private readonly proposals: EconomyProposalRepository,
+    @Inject(STAFF_DIRECTORY) private readonly directory: StaffDirectory,
   ) {}
 
   // -- 9.5.a: overview --------------------------------------------------
@@ -153,11 +157,18 @@ export class StaffEconomyController {
     const coverageResult = await this.ledger.coverage(region);
     if (coverageResult.isErr()) throw mapLedgerErrorToHttpException(coverageResult.error);
     const pending = await this.proposals.listPending(region, "rate_change");
+    // The screen names the proposer by email; one lookup per distinct staff member.
+    const emails = await emailsOf(
+      this.directory,
+      pending.map((row) => row.proposedBy),
+    );
     return {
       region,
       currency: REGION_CONFIG[region].currency,
       currentBackingRateMicrosPerPoint: currentBackingRateMicros(coverageResult.value),
-      pending: pending.map(toEconomyProposal),
+      pending: pending.map((row) =>
+        toEconomyProposalWithEmail(row, emails.get(row.proposedBy) ?? null),
+      ),
     };
   }
 

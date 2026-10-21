@@ -130,6 +130,16 @@ describe("rate changes (9.5.b) -- B never leaves this screen", () => {
     const proposal = propose.json<{ id: string; status: string }>();
     expect(proposal.status).toBe("pending");
 
+    // The rate screen names the proposer by sign-in email, not by id.
+    const screen = await app.inject({
+      method: "GET",
+      url: "/api/staff/economy/AU/rate",
+      headers: { cookie: approver.cookie },
+    });
+    expect(
+      screen.json<{ pending: { id: string; proposedByEmail: string | null }[] }>().pending,
+    ).toContainEqual(expect.objectContaining({ id: proposal.id, proposedByEmail: proposer.email }));
+
     const selfApprove = await app.inject({
       method: "POST",
       url: `/api/staff/economy/AU/rate/proposals/${proposal.id}/approve`,

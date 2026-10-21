@@ -276,6 +276,15 @@ type LedgerQuoteLock struct {
 	LockedAt pgtype.Timestamptz
 }
 
+type LedgerReceiptPackage struct {
+	AllocationID string
+	PurchaseID   string
+	FunderID     string
+	Region       string
+	RateID       string
+	CreatedAt    pgtype.Timestamptz
+}
+
 type LedgerReleaseNotice struct {
 	GrantID   string
 	CreatedAt pgtype.Timestamptz

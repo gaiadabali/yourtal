@@ -64,7 +64,7 @@ func TestSqlcSchemaMatchesTheLiveDatabase(t *testing.T) {
 	// sqlc types against but this loop does not name is one the guard cannot
 	// see drift in, which is the same fail-open shape the guard exists to
 	// prevent — the list is the coverage.
-	for _, table := range []string{"account", "transfer", "entry", "backing_rate"} {
+	for _, table := range []string{"account", "transfer", "entry", "backing_rate", "receipt_package"} {
 		t.Run(table, func(t *testing.T) {
 			want, err := columnsDeclaredFor(string(declared), table)
 			if err != nil {

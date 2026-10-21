@@ -248,12 +248,39 @@ INSERT INTO ledger.burn_reinstatement (saga_id, points_transfer_id, liability_tr
 VALUES ($1, $2, $3, $4);
 
 -- name: GetAllocationWithRegion :one
-SELECT id, funder_type, funder_id, region, total_points, remaining_points, created_at
-FROM ledger.allocation WHERE id = $1;
+-- is_receipt_package (2.10.b): the allocation pays receipts only, never a campaign.
+SELECT a.id, a.funder_type, a.funder_id, a.region, a.total_points, a.remaining_points, a.created_at,
+       (p.allocation_id IS NOT NULL)::boolean AS is_receipt_package
+FROM ledger.allocation a
+LEFT JOIN ledger.receipt_package p ON p.allocation_id = a.id
+WHERE a.id = $1;
 
 -- name: ListAllocationsForFunder :many
-SELECT id, funder_type, funder_id, region, total_points, remaining_points, created_at
-FROM ledger.allocation WHERE funder_id = $1 ORDER BY created_at;
+SELECT a.id, a.funder_type, a.funder_id, a.region, a.total_points, a.remaining_points, a.created_at,
+       (p.allocation_id IS NOT NULL)::boolean AS is_receipt_package
+FROM ledger.allocation a
+LEFT JOIN ledger.receipt_package p ON p.allocation_id = a.id
+WHERE a.funder_id = $1 ORDER BY a.created_at;
+
+-- name: InsertReceiptPackage :exec
+-- 2.10.b: in the purchase's own transaction. The deferred trigger checks at
+-- COMMIT that the purchase paid at least points × B at rate_id (K6).
+INSERT INTO ledger.receipt_package (allocation_id, purchase_id, funder_id, region, rate_id)
+VALUES (sqlc.arg(allocation_id), sqlc.arg(purchase_id), sqlc.arg(funder_id), sqlc.arg(region), sqlc.arg(rate_id));
+
+-- name: IsReceiptPackage :one
+SELECT EXISTS (SELECT 1 FROM ledger.receipt_package WHERE allocation_id = $1)::boolean AS is_receipt_package;
+
+-- name: ReceiptPackagesWithRoom :many
+-- A funder's receipt packages in one region that can still pay `points`,
+-- oldest first: the order a receipt draws from them. remaining_points is
+-- already net of live holds.
+SELECT p.allocation_id, a.total_points, a.remaining_points, p.created_at
+FROM ledger.receipt_package p
+JOIN ledger.allocation a ON a.id = p.allocation_id
+WHERE p.funder_id = sqlc.arg(funder_id) AND p.region = sqlc.arg(region)
+  AND a.remaining_points >= sqlc.arg(points)::bigint
+ORDER BY p.created_at, p.allocation_id;
 
 -- name: GetHold :one
 SELECT id, allocation_id, points, state, expires_at FROM ledger.allocation_hold WHERE id = $1;

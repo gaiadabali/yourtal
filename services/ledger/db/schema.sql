@@ -363,3 +363,14 @@ CREATE TABLE ledger.capture_recovery (
   transfer_id  text        NOT NULL UNIQUE REFERENCES ledger.transfer (id),
   created_at   timestamptz NOT NULL DEFAULT now()
 );
+
+-- Added by packages/db/migrations/20261021042150_receipt_packages.sql (group
+-- 2.10.b): a partner allocation bought at cost to pay receipt points.
+CREATE TABLE ledger.receipt_package (
+  allocation_id text        PRIMARY KEY REFERENCES ledger.allocation (id),
+  purchase_id   text        NOT NULL UNIQUE REFERENCES ledger.point_purchase (id),
+  funder_id     text        NOT NULL,
+  region        text        NOT NULL,
+  rate_id       text        NOT NULL REFERENCES ledger.backing_rate (id),
+  created_at    timestamptz NOT NULL DEFAULT now()
+);

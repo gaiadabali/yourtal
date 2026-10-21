@@ -346,20 +346,25 @@ func (q *Queries) GetAllocation(ctx context.Context, id string) (GetAllocationRo
 }
 
 const getAllocationWithRegion = `-- name: GetAllocationWithRegion :one
-SELECT id, funder_type, funder_id, region, total_points, remaining_points, created_at
-FROM ledger.allocation WHERE id = $1
+SELECT a.id, a.funder_type, a.funder_id, a.region, a.total_points, a.remaining_points, a.created_at,
+       (p.allocation_id IS NOT NULL)::boolean AS is_receipt_package
+FROM ledger.allocation a
+LEFT JOIN ledger.receipt_package p ON p.allocation_id = a.id
+WHERE a.id = $1
 `
 
 type GetAllocationWithRegionRow struct {
-	ID              string
-	FunderType      string
-	FunderID        string
-	Region          *string
-	TotalPoints     int64
-	RemainingPoints int64
-	CreatedAt       pgtype.Timestamptz
+	ID               string
+	FunderType       string
+	FunderID         string
+	Region           *string
+	TotalPoints      int64
+	RemainingPoints  int64
+	CreatedAt        pgtype.Timestamptz
+	IsReceiptPackage bool
 }
 
+// is_receipt_package (2.10.b): the allocation pays receipts only, never a campaign.
 func (q *Queries) GetAllocationWithRegion(ctx context.Context, id string) (GetAllocationWithRegionRow, error) {
 	row := q.db.QueryRow(ctx, getAllocationWithRegion, id)
 	var i GetAllocationWithRegionRow
@@ -371,6 +376,7 @@ func (q *Queries) GetAllocationWithRegion(ctx context.Context, id string) (GetAl
 		&i.TotalPoints,
 		&i.RemainingPoints,
 		&i.CreatedAt,
+		&i.IsReceiptPackage,
 	)
 	return i, err
 }
@@ -1182,6 +1188,32 @@ func (q *Queries) InsertQuote(ctx context.Context, arg InsertQuoteParams) (Ledge
 	return i, err
 }
 
+const insertReceiptPackage = `-- name: InsertReceiptPackage :exec
+INSERT INTO ledger.receipt_package (allocation_id, purchase_id, funder_id, region, rate_id)
+VALUES ($1, $2, $3, $4, $5)
+`
+
+type InsertReceiptPackageParams struct {
+	AllocationID string
+	PurchaseID   string
+	FunderID     string
+	Region       string
+	RateID       string
+}
+
+// 2.10.b: in the purchase's own transaction. The deferred trigger checks at
+// COMMIT that the purchase paid at least points × B at rate_id (K6).
+func (q *Queries) InsertReceiptPackage(ctx context.Context, arg InsertReceiptPackageParams) error {
+	_, err := q.db.Exec(ctx, insertReceiptPackage,
+		arg.AllocationID,
+		arg.PurchaseID,
+		arg.FunderID,
+		arg.Region,
+		arg.RateID,
+	)
+	return err
+}
+
 const insertReleaseNotices = `-- name: InsertReleaseNotices :execrows
 INSERT INTO ledger.release_notice (grant_id)
 SELECT r.grant_id FROM ledger.grant_release r WHERE r.grant_id = ANY($1::text[])
@@ -1261,19 +1293,34 @@ func (q *Queries) InsertVoucherHeadAnchor(ctx context.Context, arg InsertVoucher
 	return result.RowsAffected(), nil
 }
 
+const isReceiptPackage = `-- name: IsReceiptPackage :one
+SELECT EXISTS (SELECT 1 FROM ledger.receipt_package WHERE allocation_id = $1)::boolean AS is_receipt_package
+`
+
+func (q *Queries) IsReceiptPackage(ctx context.Context, allocationID string) (bool, error) {
+	row := q.db.QueryRow(ctx, isReceiptPackage, allocationID)
+	var is_receipt_package bool
+	err := row.Scan(&is_receipt_package)
+	return is_receipt_package, err
+}
+
 const listAllocationsForFunder = `-- name: ListAllocationsForFunder :many
-SELECT id, funder_type, funder_id, region, total_points, remaining_points, created_at
-FROM ledger.allocation WHERE funder_id = $1 ORDER BY created_at
+SELECT a.id, a.funder_type, a.funder_id, a.region, a.total_points, a.remaining_points, a.created_at,
+       (p.allocation_id IS NOT NULL)::boolean AS is_receipt_package
+FROM ledger.allocation a
+LEFT JOIN ledger.receipt_package p ON p.allocation_id = a.id
+WHERE a.funder_id = $1 ORDER BY a.created_at
 `
 
 type ListAllocationsForFunderRow struct {
-	ID              string
-	FunderType      string
-	FunderID        string
-	Region          *string
-	TotalPoints     int64
-	RemainingPoints int64
-	CreatedAt       pgtype.Timestamptz
+	ID               string
+	FunderType       string
+	FunderID         string
+	Region           *string
+	TotalPoints      int64
+	RemainingPoints  int64
+	CreatedAt        pgtype.Timestamptz
+	IsReceiptPackage bool
 }
 
 func (q *Queries) ListAllocationsForFunder(ctx context.Context, funderID string) ([]ListAllocationsForFunderRow, error) {
@@ -1293,6 +1340,7 @@ func (q *Queries) ListAllocationsForFunder(ctx context.Context, funderID string)
 			&i.TotalPoints,
 			&i.RemainingPoints,
 			&i.CreatedAt,
+			&i.IsReceiptPackage,
 		); err != nil {
 			return nil, err
 		}
@@ -1730,6 +1778,56 @@ func (q *Queries) PendingBuckets(ctx context.Context, userID string) ([]PendingB
 	for rows.Next() {
 		var i PendingBucketsRow
 		if err := rows.Scan(&i.UnlockAt, &i.Points); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const receiptPackagesWithRoom = `-- name: ReceiptPackagesWithRoom :many
+SELECT p.allocation_id, a.total_points, a.remaining_points, p.created_at
+FROM ledger.receipt_package p
+JOIN ledger.allocation a ON a.id = p.allocation_id
+WHERE p.funder_id = $1 AND p.region = $2
+  AND a.remaining_points >= $3::bigint
+ORDER BY p.created_at, p.allocation_id
+`
+
+type ReceiptPackagesWithRoomParams struct {
+	FunderID string
+	Region   string
+	Points   int64
+}
+
+type ReceiptPackagesWithRoomRow struct {
+	AllocationID    string
+	TotalPoints     int64
+	RemainingPoints int64
+	CreatedAt       pgtype.Timestamptz
+}
+
+// A funder's receipt packages in one region that can still pay `points`,
+// oldest first: the order a receipt draws from them. remaining_points is
+// already net of live holds.
+func (q *Queries) ReceiptPackagesWithRoom(ctx context.Context, arg ReceiptPackagesWithRoomParams) ([]ReceiptPackagesWithRoomRow, error) {
+	rows, err := q.db.Query(ctx, receiptPackagesWithRoom, arg.FunderID, arg.Region, arg.Points)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ReceiptPackagesWithRoomRow
+	for rows.Next() {
+		var i ReceiptPackagesWithRoomRow
+		if err := rows.Scan(
+			&i.AllocationID,
+			&i.TotalPoints,
+			&i.RemainingPoints,
+			&i.CreatedAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

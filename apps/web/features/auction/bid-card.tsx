@@ -14,11 +14,6 @@ const BRAND: Record<string, string> = {
   amex: "American Express",
 };
 
-/** True when a bid in this region charges a saved card and none is saved yet. */
-export function needsCardToBid(card: BillingCard | null): boolean {
-  return card !== null && card.required && card.card === null;
-}
-
 /** The card arrives with the processor's webhook: refresh every few seconds, then say it is still on its way. */
 function RefreshWhileSaving({ stillWaiting }: { stillWaiting: string }) {
   const router = useRouter();

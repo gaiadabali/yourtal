@@ -4,7 +4,8 @@ import { NextIntlClientProvider } from "next-intl";
 import { describe, expect, it, vi } from "vitest";
 import enAuction from "@/messages/en-AU/auction.json";
 import idAuction from "@/messages/id-ID/auction.json";
-import { BidCard, needsCardToBid } from "./bid-card";
+import { BidCard } from "./bid-card";
+import { needsCardToBid } from "./bid-card-rules";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("./auction-actions", () => ({ startBidCardAction: vi.fn() }));

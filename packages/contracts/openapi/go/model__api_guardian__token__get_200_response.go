@@ -22,7 +22,7 @@ var _ MappedNullable = &ApiGuardianTokenGet200Response{}
 type ApiGuardianTokenGet200Response struct {
 	Status string `json:"status"`
 	DisplayName NullableString `json:"displayName"`
-	Region string `json:"region"`
+	Region NullableString `json:"region"`
 	Locale string `json:"locale"`
 	AdditionalProperties map[string]interface{}
 }
@@ -33,7 +33,7 @@ type _ApiGuardianTokenGet200Response ApiGuardianTokenGet200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiGuardianTokenGet200Response(status string, displayName NullableString, region string, locale string) *ApiGuardianTokenGet200Response {
+func NewApiGuardianTokenGet200Response(status string, displayName NullableString, region NullableString, locale string) *ApiGuardianTokenGet200Response {
 	this := ApiGuardianTokenGet200Response{}
 	this.Status = status
 	this.DisplayName = displayName
@@ -101,27 +101,29 @@ func (o *ApiGuardianTokenGet200Response) SetDisplayName(v string) {
 }
 
 // GetRegion returns the Region field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiGuardianTokenGet200Response) GetRegion() string {
-	if o == nil {
+	if o == nil || o.Region.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Region
+	return *o.Region.Get()
 }
 
 // GetRegionOk returns a tuple with the Region field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiGuardianTokenGet200Response) GetRegionOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Region, true
+	return o.Region.Get(), o.Region.IsSet()
 }
 
 // SetRegion sets field value
 func (o *ApiGuardianTokenGet200Response) SetRegion(v string) {
-	o.Region = v
+	o.Region.Set(&v)
 }
 
 // GetLocale returns the Locale field value
@@ -160,7 +162,7 @@ func (o ApiGuardianTokenGet200Response) ToMap() (map[string]interface{}, error) 
 	toSerialize := map[string]interface{}{}
 	toSerialize["status"] = o.Status
 	toSerialize["displayName"] = o.DisplayName.Get()
-	toSerialize["region"] = o.Region
+	toSerialize["region"] = o.Region.Get()
 	toSerialize["locale"] = o.Locale
 
 	for key, value := range o.AdditionalProperties {

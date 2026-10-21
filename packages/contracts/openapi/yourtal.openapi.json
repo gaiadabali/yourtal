@@ -1487,6 +1487,123 @@
         }
       }
     },
+    "/api/dev/inbox": {
+      "get": {
+        "summary": "Read the simulated messages the app would have sent, newest first",
+        "tags": [
+          "dev"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "access: \"open\" on dev (everyone's, no session needed), \"staff\" for a staff viewer (everyone's), \"own\" for anyone else (only mail to viewerEmail, case-insensitively).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "access": {
+                      "type": "string",
+                      "enum": [
+                        "open",
+                        "staff",
+                        "own"
+                      ]
+                    },
+                    "viewerEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "boundary": {
+                            "type": "string",
+                            "enum": [
+                              "email",
+                              "push",
+                              "webhook"
+                            ]
+                          },
+                          "region": {
+                            "type": "string",
+                            "enum": [
+                              "AU",
+                              "ID"
+                            ]
+                          },
+                          "recipient": {
+                            "type": "string"
+                          },
+                          "category": {
+                            "type": "string"
+                          },
+                          "subject": {
+                            "type": "string"
+                          },
+                          "body": {
+                            "type": "string"
+                          },
+                          "metadata": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {}
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "boundary",
+                          "region",
+                          "recipient",
+                          "category",
+                          "body",
+                          "metadata",
+                          "createdAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "access",
+                    "viewerEmail",
+                    "entries"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Outside dev, a session is required: none was presented (no_session), or it no longer validates (session_invalid).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Always in production, so the route does not appear to exist."
+          }
+        }
+      }
+    },
     "/api/guardian/{token}": {
       "get": {
         "summary": "What a guardian's own consent link shows them — no session",

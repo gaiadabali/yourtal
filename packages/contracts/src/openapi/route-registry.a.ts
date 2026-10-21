@@ -394,12 +394,66 @@ export const CHECKOUT_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   },
 ];
 
+// --- dev-inbox.controller.ts (1.6.b, 5.13.b) ---
+//
+// Given an entry in 5.13.b, when it stopped being open to anyone: outside
+// dev it needs a session, and who sees what is now part of the contract.
+// `@PublicRoute`, so no PDP question and no FORBIDDEN/PDP_UNAVAILABLE.
+// Transcribed by hand from dev-inbox.schema.ts, same convention as dev-clock.
+
+const devInboxEntrySchema = z.object({
+  id: z.string(),
+  boundary: z.enum(["email", "push", "webhook"]),
+  region: z.enum(["AU", "ID"]),
+  recipient: z.string(),
+  category: z.string(),
+  subject: z.string().optional(),
+  body: z.string(),
+  metadata: z.record(z.string(), z.unknown()),
+  createdAt: z.iso.datetime(),
+});
+
+const devInboxResponseSchema = inlineSchema(
+  z.object({
+    access: z.enum(["open", "staff", "own"]),
+    viewerEmail: z.string().nullable(),
+    entries: z.array(devInboxEntrySchema),
+  }),
+);
+
+export const DEV_INBOX_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
+  {
+    method: "get",
+    path: "/api/dev/inbox",
+    summary: "Read the simulated messages the app would have sent, newest first",
+    tags: ["dev"],
+    pathParams: [],
+    successStatus: 200,
+    successDescription:
+      'access: "open" on dev (everyone\'s, no session needed), "staff" for a staff viewer ' +
+      '(everyone\'s), "own" for anyone else (only mail to viewerEmail, case-insensitively).',
+    successSchema: devInboxResponseSchema,
+    errors: [
+      {
+        status: 401,
+        description:
+          "Outside dev, a session is required: none was presented (no_session), or it no " +
+          "longer validates (session_invalid).",
+        documented: true,
+      },
+      {
+        status: 404,
+        description: "Always in production, so the route does not appear to exist.",
+        documented: false,
+      },
+    ],
+  },
+];
+
 // --- dev-clock.controller.ts (2.3.d) ---
 //
-// Unlike `/api/dev/inbox` (KNOWN_OUT_OF_SCOPE in route-drift.test.ts), these
-// ARE given entries: this ticket asks for it explicitly, and unlike inbox's
-// read-only reviewer view, these routes write real rows (platform.ledger_
-// fake_grant, platform.dev_clock_audit, pgboss.job) worth documenting.
+// Given entries from the start: these routes write real rows (platform.
+// ledger_fake_grant, platform.dev_clock_audit, pgboss.job) worth documenting.
 // Schemas transcribed by hand from dev-clock.schema.ts, same convention as
 // health's above — apps/api-local DTOs, never promoted to a named component.
 

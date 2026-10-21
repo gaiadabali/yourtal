@@ -149,8 +149,6 @@ const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
     "7.2.b: apps/worker's transcode-complete callback, HMAC-signed and blocked on the public vhost the same way hls-auth is, so not a published contract.",
   "POST /api/dev/demo/reset":
     "13.1.a: the staff console's demo-reset button, 404 in production, so not a published contract. It only enqueues the worker's demo-reset job.",
-  "GET /api/dev/inbox":
-    "1.6.b: a dev-only reader of simulated messages, 404 in production, so not a published contract.",
   "POST /api/watch/sessions/{sessionId}/checkpoints/{checkpointIndex}":
     "CheckpointModule — 5.2, a separate in-flight stream from watch.controller.ts's routes. Its response carries a PresentedQuestion (no answer key), a signed single-use token, and the one checkpoint time being asked for — deliberately not a published contract yet: publishing the shape invites a client to expect the whole schedule alongside it, which is exactly the predictability the PRF in watch-checkpoint-token.ts exists to deny. It gets a contract when the player consumes it (Phase 6, 6.4.b).",
   "POST /api/watch/sessions/{sessionId}/checkpoints/{checkpointIndex}/answer":

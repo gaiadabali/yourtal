@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 8/17 | 48/65 | `███████░░░`  74% |
-| **All** | | | **113/123** | **594/612** | `██████████`  97% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 8/18 | 48/66 | `███████░░░`  73% |
+| **All** | | | **113/124** | **594/613** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -223,6 +223,8 @@ The founder's answers to Phase 0 of the cross-app plan, `god/TASKS.md` (its IDs 
 | **F121** | Point packages and budget alerts (group 0.10.c, 5.10) | **Every business, SnapApp included, buys points in package tiers** (e.g. Starter, Grow, Scale), so it can start small or grow. **Alerts at 50%, 80% and 100%** of a package or campaign budget; rewards stop at 100%. |
 | **F122** | Package tiers and their prices (group 5.10) | **Bigger tiers cost less per point**: Starter 1,000 pts at today's rate (A$45.00 ex-GST), Grow 10,000 pts 5% cheaper per point, Scale 50,000 pts 10% cheaper per point. Sizes and discounts are region settings. The ledger refuses any price below the rate today, so 14.13 adds a tier-aware price there; every tier stays above B (10% off 4.5c is 4.05c against B = 3c), so K6 holds and only the spread narrows. Offered: the same price at every tier (recommended); a 500-point entry tier. |
 | **F123** | A paid card purchase YourTal could not turn into points (group 5.1.g) | **Refund the card**: staff refund the payment in full through Stripe with two-person approval, and the brand buys again at today's price. F107's "purchases are final" covers points delivered, and these never were. Offered: grant whole packs at today's price and refund the rest; grant at the old price. |
+| **F124** | Where Free Tax Returns tests Sign in with YourTal (group 3.5) | **On freetaxreturns.com.au, behind a switch.** FTR is pre-launch with no real users; the YourTal button shows only while the switch is on, and it stays off for real users until the hosting and APP 8 position is settled (group 6.7, F108). There is no FTR staging site, so docs/26’s `ftr-staging-web` client becomes `ftr-web` for freetaxreturns.com.au. Offered: an FTR staging copy at freetaxreturns.gaiada.online; FTR waits. |
+| **F125** | Company names on the consent screens until F114’s legal names arrive | **Brand names for now** (“SnapApp”, “Free Tax Returns”), from one setting, so the legal names drop in with no code change. Offered: hold the consent screens until the legal names are in. |
 | **F118** | GST in AU (group 5.3) | **AU prices are ex-GST, and GST is added on top**: a brand pays A$49.50 for 1,000 points (A$45.00 + A$4.50 GST) and claims the GST back; boost spend is charged the same way. The spread and the reserve stay as F12 set them: the ledger records the ex-GST amount, and the GST is recorded on the tax invoice. The rate and the issuer's details are settings. ID adds no tax while it stays a demo (F104). Offered: prices include GST; ask the accountant first. |
 | **F106** | Stripe for now (group 0.7.f) | **Every payment is simulated; no Stripe account for now.** The real Stripe driver runs on staging against YourTal's own payment simulation, which speaks Stripe's API: a checkout page that takes only Stripe's test cards, signed and retried webhooks, refunds, and Connect onboarding, transfers and payouts. A production host refuses to start the simulation. Going live (group 6.8) is keys and an address, not new code. |
 | **F107** | Brand refunds (group 5.1) | **None: a brand's points purchase is final.** The Stripe driver and the simulation keep refunds for later; the staging check has no refund step. Offered: a full refund while unused (recommended), refunds of unused packs. |
@@ -1712,6 +1714,8 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
 - [x] **14.17 The Security workflow is green again** (group 1.25) · A · needs: — — ✅ 2026-10-21 14c0259b
   - [x] 14.17.a vitest's vite lifted to 8.3.4 for GHSA-698v-4r3x-3vcv (a workspace override); pnpm audit passes (group 1.25.a) → 14c0259b
   - [x] 14.17.b Every workflow green on main (group 1.25.b) → Security green from 14c0259b; the order-dependent 14.15 test fixed at 1cdd75ba; a one-off Go ledger serialization-retry flake at 2e92adcd, no lost write (god-d1 re-ran it)
+- [ ] **14.18 Invitation erasure keys only on the email** (group 1.26) · A · needs: — — 🔄 2026-10-21 (group plan, god-ff)
+  - [ ] 14.18.a `eraseInvitationsToSubject` matches only `kind = 'password'` credentials; a totp or passkey identifier erases nothing (group 1.26.a)
 
 ## Not in this plan (deferred)
 

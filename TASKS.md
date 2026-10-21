@@ -1685,9 +1685,12 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.9.c Validate the `invoice_issuer` setting when staff propose it (group 5.3.c) → 033fae42
   - [ ] 14.9.d Real tax invoices once the AU company's details are approved in `invoice_issuer` (group 5.3.d, needs 6.1.a)
   - [x] 14.9.e A demo AU company with a demo ABN on staging and dev, so the Tax invoice path runs end to end; documents outside production say they are demos (group 5.3.e) → e7538310 → checked on staging: YT-AU-000006 to 000008, issued after the deploy, are demo tax invoices with ABN 99000000032
-- [ ] **14.10 Identity check before real points** (group 5.9, F102) · A · needs: group 3.9.c (passkeys) — 🔄 g5 (helper `g-phase5-sim`, on `group/3.9c-passkeys` until it merges)
-  - [ ] 14.10.a Before the first real points go to a real person (docs/16 N-5), an account needs a verified email and a passkey: no earning at all until then (F126)
-  - [ ] 14.10.b The fraud checks rest on that, plus the holdback by trust tier and the earn caps; record it in docs/16
+- [ ] **14.10 Identity check before real points** (group 5.9, F102) · A · needs: — — 🔄 g5 (simplified by the founder 2026-10-21 to a verified email; the passkey joins later, 14.10.d)
+  - [x] 14.10.a Before the first real points go to a real person (docs/16 N-5), an account needs a verified email and a passkey: no earning at all until then (F126) → simplified to a verified email from a permanent (not disposable) address, ef9fc40c; watch start and completion, partner receipts (403, final) and streak bonuses gated
+  - [x] 14.10.b The fraud checks rest on that, plus the holdback by trust tier and the earn caps; record it in docs/16 → F126 in docs/16, ef9fc40c
+  - [x] 14.10.c The staff economy settings show the check's effective state (Required in production, On, Off) (group 5.9.d) → ef9fc40c
+  - [ ] 14.10.d Add the passkey to the check once group 3.9.c is on main, as a second switch (group 5.9.e)
+  - [ ] 14.10.e Loose ends: name what is missing in the completion response; the partner link made before a refused receipt (group 5.9.f)
 
 - [x] **14.11 Record the payment simulation** (group 0.7.g) · lead · needs: — — ✅ 2026-10-20 fbcd08d5
   - [x] 14.11.a F106 in `docs/16-decisions.md`: every payment is simulated until real Stripe (group 6.8), and going live is keys and an address, not new code

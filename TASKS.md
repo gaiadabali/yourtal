@@ -1709,7 +1709,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
 Group 5.7, the founder's walkthrough, is 13.6 here.
 - [x] **14.17 The Security workflow is green again** (group 1.25) · A · needs: — — ✅ 2026-10-21 14c0259b
   - [x] 14.17.a vitest's vite lifted to 8.3.4 for GHSA-698v-4r3x-3vcv (a workspace override); pnpm audit passes (group 1.25.a) → 14c0259b
-  - [x] 14.17.b Every workflow green on main (group 1.25.b) → Security green from 14c0259b; the order-dependent 14.15 test fixed at 1cdd75ba; the Go ledger concurrency failure at 2e92adcd is 14.13’s (god-d1)
+  - [x] 14.17.b Every workflow green on main (group 1.25.b) → Security green from 14c0259b; the order-dependent 14.15 test fixed at 1cdd75ba; a one-off Go ledger serialization-retry flake at 2e92adcd, no lost write (god-d1 re-ran it)
 
 ## Not in this plan (deferred)
 

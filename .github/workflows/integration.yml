@@ -466,7 +466,7 @@ jobs:
           set -o pipefail
           pnpm test:ledger-live 2>&1 | tee /tmp/ledger-live.log
           # vitest colours its summary even when piped; strip it to match.
-          sed -E 's/\[[0-9;]*m//g' /tmp/ledger-live.log > /tmp/ledger-live.plain.log
+          sed -E $'s/\x1b\[[0-9;]*m//g' /tmp/ledger-live.log > /tmp/ledger-live.plain.log
           echo "--- live leg summary ---"
           grep -E "^ +(Test Files|Tests) " /tmp/ledger-live.plain.log
           if ! grep -qE "Tests +[0-9]+ passed" /tmp/ledger-live.plain.log; then

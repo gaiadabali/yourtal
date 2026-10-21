@@ -21,7 +21,7 @@ var _ MappedNullable = &ApiAuthPasskeysRegisterPostRequest{}
 // ApiAuthPasskeysRegisterPostRequest struct for ApiAuthPasskeysRegisterPostRequest
 type ApiAuthPasskeysRegisterPostRequest struct {
 	Response ApiAuthPasskeysRegisterPostRequestResponse `json:"response"`
-	Name *string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty" validate:"regexp=^[^\\p{Cc}\\p{Cf}\\p{Zl}\\p{Zp}]+$"`
 	AdditionalProperties map[string]interface{}
 }
 

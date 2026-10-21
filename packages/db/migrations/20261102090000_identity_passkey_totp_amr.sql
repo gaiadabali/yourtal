@@ -1,5 +1,5 @@
 -- Passkeys, authenticator-app codes, and how each session was signed in to.
--- Add-only: one new table, two new columns, one grant.
+-- Add-only: one new table, three new columns, one grant.
 --
 -- identity.credential stays one row per (user_id, kind), and gains two kinds
 -- with no DDL, since `kind` is free text:
@@ -7,8 +7,8 @@
 --   * 'totp': identifier = user_id, secret_hash = the authenticator seed
 --     sealed with AES-256-GCM under TOTP_SECRET_ENCRYPTION_KEY (a seed must be
 --     recoverable to check a code, so it cannot be hashed), and verified_at =
---     when the person confirmed it with a first code. NULL means enrolment was
---     started and never finished: it is not a way to sign in.
+--     when the person confirmed it with a first code. An unfinished
+--     enrolment lives only in Valkey, so every 'totp' row is switched on.
 --   * 'passkey': one row per account that has passkeys, written with its
 --     first passkey. identifier = the WebAuthn user handle (random, so the
 --     authenticator never holds the user id), secret_hash = '' (the public
@@ -35,7 +35,18 @@ CREATE TABLE identity.passkey (
   transports     text[]      NOT NULL DEFAULT '{}',
   device_type    text        NOT NULL CHECK (device_type IN ('singleDevice', 'multiDevice')),
   backed_up      boolean     NOT NULL,
-  name           text        NOT NULL CHECK (char_length(name) BETWEEN 1 AND 64),
+  -- One printable line: it is shown in Me and written into security emails.
+  -- No control characters (C0, DEL, C1), line or paragraph separators, or
+  -- invisible format characters (Unicode Cf, e.g. bidi overrides).
+  name           text        NOT NULL CHECK (
+    char_length(name) BETWEEN 1 AND 64
+    AND name !~ '[\x01-\x1f\x7f-\x9f\u00ad\u0600-\u0605\u061c\u06dd\u070f\u180e\u200b-\u200f\u2028-\u202e\u2060-\u2064\u2066-\u206f\ufeff\ufff9-\ufffb]'
+  ),
+  -- Added from a password-only session to an account with no other factor.
+  -- For 72 hours such a passkey can also be removed by a session that came
+  -- from a password reset, so one planted with a phished password can be
+  -- taken off by the owner of the email address. See the auth module.
+  bootstrapped   boolean     NOT NULL DEFAULT false,
   created_at     timestamptz NOT NULL DEFAULT now(),
   last_used_at   timestamptz,
   FOREIGN KEY (user_id, kind) REFERENCES identity.credential (user_id, kind) ON DELETE CASCADE
@@ -62,3 +73,8 @@ UPDATE identity.session SET signed_in_at = created_at;
 ALTER TABLE identity.session
   ALTER COLUMN signed_in_at SET DEFAULT now(),
   ALTER COLUMN signed_in_at SET NOT NULL;
+
+-- The same bootstrapped mark for an authenticator app ('totp' rows), with
+-- verified_at as its enrolment time. A password reset within 72 hours of
+-- a bootstrapped app removes it instead of asking for its code.
+ALTER TABLE identity.credential ADD COLUMN bootstrapped boolean NOT NULL DEFAULT false;

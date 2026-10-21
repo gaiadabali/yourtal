@@ -41,11 +41,15 @@ beforeEach(async () => {
   });
 });
 
+/** The enrolling session's token hash: an unfinished enrolment is tied to it. */
+const SESSION = "session-hash-1";
+
 /** Enrols and confirms an authenticator app; returns its seed. */
-async function switchOnTotp(): Promise<string> {
-  const enrolled = await totp.enrol(USER);
+async function switchOnTotp(bootstrapped = false, at = T0): Promise<string> {
+  const enrolled = await totp.enrol(USER, SESSION);
   if (enrolled.isErr()) throw new Error(enrolled.error.type);
-  const confirmed = await totp.confirm(USER, totpCodeAt(enrolled.value.secret, T0), T0);
+  const code = totpCodeAt(enrolled.value.secret, at);
+  const confirmed = await totp.confirm(USER, SESSION, code, at, bootstrapped);
   expect(confirmed.isOk()).toBe(true);
   return enrolled.value.secret;
 }
@@ -140,22 +144,29 @@ describe("the code step after a password", () => {
 
 describe("enrolment", () => {
   it("is off until a first code confirms it, and stores the seed sealed", async () => {
-    const enrolled = await totp.enrol(USER);
+    const enrolled = await totp.enrol(USER, SESSION);
     if (enrolled.isErr()) throw new Error(enrolled.error.type);
     expect(await totp.isEnabled(USER)).toBe(false);
-    const row = await credentials.findByUserAndKind(USER, TOTP_CREDENTIAL_KIND);
-    expect(row?.secretHash).not.toContain(enrolled.value.secret);
+    // Nothing in the database until the first code; the seed waits sealed.
+    expect(await credentials.findByUserAndKind(USER, TOTP_CREDENTIAL_KIND)).toBeNull();
+    expect(store.enrolments.get(SESSION)?.sealedSeed).not.toContain(enrolled.value.secret);
     expect(enrolled.value.otpauthUri).toContain("ana%40example.com");
 
-    expect((await totp.confirm(USER, "000000", T0)).isErr()).toBe(true);
+    const code = totpCodeAt(enrolled.value.secret, T0);
+    expect((await totp.confirm(USER, SESSION, "000000", T0, false)).isErr()).toBe(true);
+    // Another session cannot finish this enrolment.
+    const elsewhere = await totp.confirm(USER, "another-session", code, T0, false);
+    expect(elsewhere.isErr() && elsewhere.error.type).toBe("factor_invalid");
     expect(await totp.isEnabled(USER)).toBe(false);
-    expect((await totp.confirm(USER, totpCodeAt(enrolled.value.secret, T0), T0)).isOk()).toBe(true);
+    expect((await totp.confirm(USER, SESSION, code, T0, false)).isOk()).toBe(true);
     expect(await totp.isEnabled(USER)).toBe(true);
+    const row = await credentials.findByUserAndKind(USER, TOTP_CREDENTIAL_KIND);
+    expect(row?.secretHash).not.toContain(enrolled.value.secret);
   });
 
   it("will not replace an app that is switched on", async () => {
     await switchOnTotp();
-    const again = await totp.enrol(USER);
+    const again = await totp.enrol(USER, SESSION);
     expect(again.isErr() && again.error.type).toBe("totp_already_enabled");
   });
 
@@ -225,7 +236,7 @@ describe("authenticator apps switched off on this deployment", () => {
     const signIn = await offGate.afterPassword(USER, later(60));
     expect(signIn.kind).toBe("session");
     expect(issuer.issued.at(-1)).toEqual({ userId: USER, amr: ["pwd"] });
-    const enrol = await off.enrol(USER);
+    const enrol = await off.enrol(USER, SESSION);
     expect(enrol.isErr() && enrol.error.type).toBe("authenticator_unavailable");
   });
 });
@@ -236,5 +247,58 @@ describe("a password reset", () => {
     const signIn = await gate.afterPasswordReset(USER, later(60));
     expect(signIn.kind).toBe("second_factor");
     expect(notifier.sent).toEqual([{ userId: USER, notice: "reset_summary" }]);
+  });
+});
+
+describe("a bootstrapped authenticator app and a password reset", () => {
+  const HOUR = 60 * 60;
+
+  it("is removed by a reset inside 72 hours, without asking for its code", async () => {
+    await switchOnTotp(true);
+    const signIn = await gate.afterPasswordReset(USER, later(71 * HOUR));
+    expect(signIn.kind).toBe("session");
+    expect(await totp.isEnabled(USER)).toBe(false);
+    expect(notifier.sent.map((sent) => sent.notice)).toEqual([
+      { kind: "authenticator_removed_after_reset" },
+      "reset_summary",
+    ]);
+    if (signIn.kind !== "session") return;
+    expect(await store.hasResetProof(hashOf(signIn.token), USER)).toBe(true);
+  });
+
+  it("is trusted like any other after 72 hours: the reset asks for its code", async () => {
+    await switchOnTotp(true);
+    const signIn = await gate.afterPasswordReset(USER, later(73 * HOUR));
+    expect(signIn.kind).toBe("second_factor");
+    expect(await totp.isEnabled(USER)).toBe(true);
+  });
+
+  it("is never removed this way when it was added with proof of another factor", async () => {
+    await switchOnTotp(false);
+    const signIn = await gate.afterPasswordReset(USER, later(HOUR));
+    expect(signIn.kind).toBe("second_factor");
+    expect(await totp.isEnabled(USER)).toBe(true);
+  });
+
+  it("marks the session from a reset's code step as email-proven, and no other", async () => {
+    const seed = await switchOnTotp(false);
+    const reset = await gate.afterPasswordReset(USER, later(60));
+    const plain = await gate.afterPassword(USER, later(61));
+    if (reset.kind !== "second_factor" || plain.kind !== "second_factor") {
+      throw new Error("expected code steps");
+    }
+    const viaReset = await gate.completeWithTotp(
+      reset.pendingToken,
+      totpCodeAt(seed, later(60)),
+      later(60),
+    );
+    const viaLogin = await gate.completeWithTotp(
+      plain.pendingToken,
+      totpCodeAt(seed, later(90)),
+      later(90),
+    );
+    if (viaReset.isErr() || viaLogin.isErr()) throw new Error("expected sessions");
+    expect(await store.hasResetProof(hashOf(viaReset.value.token), USER)).toBe(true);
+    expect(await store.hasResetProof(hashOf(viaLogin.value.token), USER)).toBe(false);
   });
 });

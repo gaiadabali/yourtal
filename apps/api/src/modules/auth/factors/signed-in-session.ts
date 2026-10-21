@@ -27,12 +27,27 @@ import { TotpService } from "./totp.service";
  * Proof of a factor is a session signed in with one (`amr` hwk or mfa), or a
  * step-up on this session in the last few minutes (`POST /api/auth/step-up`),
  * which also counts as a recent sign-in.
+ *
+ * One exception to `strong`: a factor bootstrapped (added from a password
+ * alone to an account with none) less than 72 hours ago may be removed by a
+ * session that a password reset just opened. Otherwise a person whose
+ * phished password was used to plant a passkey could never take it off.
  */
 export type CallerNeed = "session" | "add_factor" | "strong";
 
 export interface Caller {
   readonly userId: string;
   readonly sessionToken: string;
+  /**
+   * `add_factor` only: the factor is being added with no proof of another,
+   * to an account that has none. It is stored as bootstrapped.
+   */
+  readonly bootstrapping: boolean;
+}
+
+export interface CallerOptions {
+  /** `strong` only: the target is a bootstrapped factor still in its 72-hour window. */
+  readonly emailProofRemoves?: boolean;
 }
 
 @Injectable()
@@ -48,23 +63,29 @@ export class SignedInCaller {
     request: FastifyRequest,
     now: Date,
     need: CallerNeed,
+    options: CallerOptions = {},
   ): Promise<Result<Caller, FactorError>> {
     const token = presentedSessionToken(request);
     const session = await this.sessions.validateWithSignIn(token, now);
     if (!session.valid) return err({ type: "session_invalid" });
-    const caller = { userId: session.userId, sessionToken: token };
+    const caller = { userId: session.userId, sessionToken: token, bootstrapping: false };
     if (need === "session") return ok(caller);
 
-    const steppedUp = await this.store.hasStepUp(hashOpaqueToken(token), session.userId);
+    const sessionHash = hashOpaqueToken(token);
+    const steppedUp = await this.store.hasStepUp(sessionHash, session.userId);
     const recent = steppedUp || now.getTime() - session.authTime.getTime() <= FRESH_SIGN_IN_MS;
     if (!recent) return err({ type: "reauthentication_required" });
 
     const proved = steppedUp || session.amr.includes("hwk") || session.amr.includes("mfa");
     if (proved) return ok(caller);
-    if (need === "strong" || (await this.hasFactor(session.userId))) {
-      return err({ type: "step_up_required" });
+    if (need === "strong") {
+      const emailProven =
+        options.emailProofRemoves === true &&
+        (await this.store.hasResetProof(sessionHash, session.userId));
+      return emailProven ? ok(caller) : err({ type: "step_up_required" });
     }
-    return ok(caller);
+    if (await this.hasFactor(session.userId)) return err({ type: "step_up_required" });
+    return ok({ ...caller, bootstrapping: true });
   }
 
   private async hasFactor(userId: string): Promise<boolean> {

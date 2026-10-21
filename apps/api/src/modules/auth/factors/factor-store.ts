@@ -7,6 +7,14 @@ import type { AuthMethod } from "../session/amr";
 export interface PendingSignIn {
   readonly userId: string;
   readonly amr: readonly AuthMethod[];
+  /** The password was just set by a reset (an emailed link). */
+  readonly viaReset?: boolean;
+}
+
+/** An authenticator app being set up: the sealed seed, until its first code. */
+export interface PendingEnrolment {
+  readonly userId: string;
+  readonly sealedSeed: string;
 }
 
 export const FACTOR_STORE = Symbol("FACTOR_STORE");
@@ -35,6 +43,13 @@ export interface FactorStore {
   /** The session (by token hash) proved a second factor just now. */
   grantStepUp(sessionHash: string, userId: string, ttlSeconds: number): Promise<void>;
   hasStepUp(sessionHash: string, userId: string): Promise<boolean>;
+  /** The session (by token hash) came from a password reset just now. */
+  markResetProof(sessionHash: string, userId: string, ttlSeconds: number): Promise<void>;
+  hasResetProof(sessionHash: string, userId: string): Promise<boolean>;
+  /** An unfinished app enrolment, tied to the session that started it. */
+  putEnrolment(sessionHash: string, enrolment: PendingEnrolment, ttlSeconds: number): Promise<void>;
+  readEnrolment(sessionHash: string): Promise<PendingEnrolment | null>;
+  dropEnrolment(sessionHash: string): Promise<void>;
 }
 
 const PREFIX = "yt:auth:factor";
@@ -100,6 +115,36 @@ export class RedisFactorStore implements FactorStore {
   async hasStepUp(sessionHash: string, userId: string): Promise<boolean> {
     return (await this.redis.get(`${PREFIX}:step-up:${sessionHash}`)) === userId;
   }
+
+  async markResetProof(sessionHash: string, userId: string, ttlSeconds: number): Promise<void> {
+    await this.redis.set(`${PREFIX}:reset-proof:${sessionHash}`, userId, "EX", ttlSeconds);
+  }
+
+  async hasResetProof(sessionHash: string, userId: string): Promise<boolean> {
+    return (await this.redis.get(`${PREFIX}:reset-proof:${sessionHash}`)) === userId;
+  }
+
+  async putEnrolment(
+    sessionHash: string,
+    enrolment: PendingEnrolment,
+    ttlSeconds: number,
+  ): Promise<void> {
+    await this.redis.set(
+      `${PREFIX}:enrolment:${sessionHash}`,
+      JSON.stringify(enrolment),
+      "EX",
+      ttlSeconds,
+    );
+  }
+
+  async readEnrolment(sessionHash: string): Promise<PendingEnrolment | null> {
+    const raw = await this.redis.get(`${PREFIX}:enrolment:${sessionHash}`);
+    return raw === null ? null : (JSON.parse(raw) as PendingEnrolment);
+  }
+
+  async dropEnrolment(sessionHash: string): Promise<void> {
+    await this.redis.del(`${PREFIX}:enrolment:${sessionHash}`);
+  }
 }
 
 /** In-memory, for unit tests. Expiry is not modelled; each call is atomic. */
@@ -109,6 +154,8 @@ export class InMemoryFactorStore implements FactorStore {
   private readonly tries = new Map<string, number>();
   private readonly steps = new Map<string, number>();
   private readonly stepUps = new Map<string, string>();
+  private readonly resetProofs = new Map<string, string>();
+  readonly enrolments = new Map<string, PendingEnrolment>();
 
   putChallenge(key: string, value: string): Promise<void> {
     this.challenges.set(key, value);
@@ -156,5 +203,28 @@ export class InMemoryFactorStore implements FactorStore {
 
   hasStepUp(sessionHash: string, userId: string): Promise<boolean> {
     return Promise.resolve(this.stepUps.get(sessionHash) === userId);
+  }
+
+  markResetProof(sessionHash: string, userId: string): Promise<void> {
+    this.resetProofs.set(sessionHash, userId);
+    return Promise.resolve();
+  }
+
+  hasResetProof(sessionHash: string, userId: string): Promise<boolean> {
+    return Promise.resolve(this.resetProofs.get(sessionHash) === userId);
+  }
+
+  putEnrolment(sessionHash: string, enrolment: PendingEnrolment): Promise<void> {
+    this.enrolments.set(sessionHash, enrolment);
+    return Promise.resolve();
+  }
+
+  readEnrolment(sessionHash: string): Promise<PendingEnrolment | null> {
+    return Promise.resolve(this.enrolments.get(sessionHash) ?? null);
+  }
+
+  dropEnrolment(sessionHash: string): Promise<void> {
+    this.enrolments.delete(sessionHash);
+    return Promise.resolve();
   }
 }

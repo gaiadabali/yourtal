@@ -36,6 +36,7 @@ export const passkeys = authIdentityPgSchema.table(
     name: text("name").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    bootstrapped: boolean("bootstrapped").notNull().default(false),
   },
   (table) => [
     index("passkey_user_id").on(table.userId),

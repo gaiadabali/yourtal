@@ -7,6 +7,7 @@ import {
   SIGN_IN_METHOD_CHANGE_RATE_LIMIT,
   TOTP_SIGN_IN_RATE_LIMIT,
 } from "../../../shared/rate-limit/rate-limit.decorator";
+import { hashOpaqueToken } from "../crypto/opaque-token";
 import { SessionService } from "../session/session.service";
 import { TotpCodeDto, TotpDisableDto, TotpSignInDto } from "./dto/sign-in-methods.dto";
 import { FACTOR_NOTIFIER } from "./factor-notifier";
@@ -48,7 +49,8 @@ export class TotpController {
     }
     const caller = await this.caller.resolve(request, new Date(), "add_factor");
     if (caller.isErr()) throw mapFactorErrorToHttpException(caller.error);
-    const result = await this.totp.enrol(caller.value.userId);
+    const { userId, sessionToken } = caller.value;
+    const result = await this.totp.enrol(userId, hashOpaqueToken(sessionToken));
     if (result.isErr()) throw mapFactorErrorToHttpException(result.error);
     return result.value;
   }
@@ -59,10 +61,18 @@ export class TotpController {
   @Post("confirm")
   async confirm(@Req() request: FastifyRequest, @Body() body: TotpCodeDto) {
     const now = new Date();
-    const caller = await this.caller.resolve(request, now, "session");
+    // The same check as enrolling: a session that could not add a factor
+    // cannot finish adding one either.
+    const caller = await this.caller.resolve(request, now, "add_factor");
     if (caller.isErr()) throw mapFactorErrorToHttpException(caller.error);
-    const { userId, sessionToken } = caller.value;
-    const result = await this.totp.confirm(userId, body.code, now);
+    const { userId, sessionToken, bootstrapping } = caller.value;
+    const result = await this.totp.confirm(
+      userId,
+      hashOpaqueToken(sessionToken),
+      body.code,
+      now,
+      bootstrapping,
+    );
     if (result.isErr()) throw mapFactorErrorToHttpException(result.error);
     // Sessions signed in elsewhere with the password alone end here: from now
     // on a password sign-in also needs a code.

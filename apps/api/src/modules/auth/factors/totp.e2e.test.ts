@@ -8,8 +8,6 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { TestSession } from "../../../shared/testing/session-for";
 import { createAppDb } from "../../../shared/persistence/drizzle-client";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
-import { AuthService } from "../auth.service";
-import { DevTokenAccess } from "../dev-token-access";
 import { SoftAuthenticator } from "./testing/soft-authenticator";
 import {
   E2E_ORIGIN,
@@ -17,6 +15,7 @@ import {
   accountFor,
   ageSessions,
   amrOf,
+  resetPassword,
   securityNotices,
   bearer,
   bootFactorsApp,
@@ -184,28 +183,106 @@ describe("authenticator codes", () => {
     expect(statuses.filter((status) => status === 429)).toHaveLength(15);
   });
 
-  it("asks for a code after a password reset too", async () => {
+  describe("a password reset", () => {
+    it("removes an app added from a password alone in the last 72 hours", async () => {
+      const victim = await accountFor(app, PASSWORD);
+      await switchOn(victim);
+      const reset = await resetPassword(app, victim);
+      expect(reset.statusCode, reset.body).toBe(201);
+      const body = reset.json<{ token?: string; secondFactor?: string }>();
+      expect(body.secondFactor).toBeUndefined();
+      expect(body.token).toBeDefined();
+      const methods = await app.inject({
+        method: "GET",
+        url: "/api/auth/sign-in-methods",
+        headers: bearer(body.token ?? ""),
+      });
+      expect(
+        methods.json<{ authenticatorApp: { enabled: boolean } }>().authenticatorApp.enabled,
+      ).toBe(false);
+      const notices = await securityNotices(owner, victim.email);
+      expect(notices.some((notice) => notice.includes("authenticator app was removed"))).toBe(true);
+    });
+
+    it("asks for the code once that app is older than 72 hours, and lists it", async () => {
+      const session = await accountFor(app, PASSWORD);
+      await switchOn(session);
+      await owner.execute(
+        sql`UPDATE identity.credential SET verified_at = now() - interval '73 hours'
+            WHERE user_id = ${session.userId} AND kind = 'totp'`,
+      );
+      const reset = await resetPassword(app, session);
+      expect(reset.statusCode, reset.body).toBe(201);
+      expect(reset.json<{ secondFactor?: string }>().secondFactor).toBe("totp");
+      expect(reset.json<{ token?: string }>().token).toBeUndefined();
+      const notices = await securityNotices(owner, session.email);
+      expect(notices.at(-1)).toContain("Check how you sign in to YourTal");
+      expect(notices.at(-1)).toContain("an authenticator app");
+    });
+
+    it("asks for the code of an app added with proof of another factor", async () => {
+      const session = await accountFor(app, PASSWORD);
+      const registerOptions = await app.inject({
+        method: "POST",
+        url: "/api/auth/passkeys/register/options",
+        headers: bearer(session.token),
+      });
+      const device = new SoftAuthenticator(E2E_RP_ID, E2E_ORIGIN);
+      await app.inject({
+        method: "POST",
+        url: "/api/auth/passkeys/register",
+        headers: bearer(session.token),
+        payload: {
+          response: device.register(
+            registerOptions.json<{ options: PublicKeyCredentialCreationOptionsJSON }>().options,
+          ),
+        },
+      });
+      // Signed in with the passkey (amr hwk), so the app is not bootstrapped.
+      const options = await app.inject({
+        method: "POST",
+        url: "/api/auth/passkeys/sign-in/options",
+        remoteAddress: testIp(),
+      });
+      const ceremony = options.json<{
+        challengeId: string;
+        options: PublicKeyCredentialRequestOptionsJSON;
+      }>();
+      const hwk = await app.inject({
+        method: "POST",
+        url: "/api/auth/passkeys/sign-in",
+        remoteAddress: testIp(),
+        payload: { challengeId: ceremony.challengeId, response: device.assert(ceremony.options) },
+      });
+      await switchOn({ ...session, token: hwk.json<{ token: string }>().token });
+      const reset = await resetPassword(app, session);
+      expect(reset.json<{ secondFactor?: string }>().secondFactor).toBe("totp");
+    });
+  });
+
+  it("finishes an enrolment only from the session that started it", async () => {
     const session = await accountFor(app, PASSWORD);
-    await switchOn(session);
-    const auth = app.get(AuthService);
-    const requested = await auth.requestPasswordReset(session.email, new Date());
-    expect(requested.isOk()).toBe(true);
-    const resetToken = app
-      .get(DevTokenAccess)
-      .peekToken("password_reset", session.userId, Date.now());
-    const reset = await app.inject({
+    const enrolled = await app.inject({
       method: "POST",
-      url: "/api/auth/password/reset/confirm",
-      payload: { token: resetToken, newPassword: "a-brand-new-password-for-totp" },
+      url: "/api/auth/totp/enrol",
+      headers: bearer(session.token),
     });
-    expect(reset.statusCode, reset.body).toBe(201);
-    expect(reset.json<{ secondFactor?: string; token?: string }>()).toMatchObject({
-      secondFactor: "totp",
+    const { secret } = enrolled.json<{ secret: string }>();
+    const elsewhere = await login(session.email);
+    const otherToken = elsewhere.json<{ token: string }>().token;
+    const refused = await app.inject({
+      method: "POST",
+      url: "/api/auth/totp/confirm",
+      headers: bearer(otherToken),
+      payload: { code: codeAt(secret, 0) },
     });
-    expect(reset.json<{ token?: string }>().token).toBeUndefined();
-    const notices = await securityNotices(owner, session.email);
-    expect(notices.at(-1)).toContain("Check how you sign in to YourTal");
-    expect(notices.at(-1)).toContain("an authenticator app");
+    expect(refused.statusCode).toBe(401);
+    expect(errorCode(refused)).toBe("factor_invalid");
+    const { rows } = await owner.execute<{ n: number }>(
+      sql`SELECT count(*)::int AS n FROM identity.credential
+          WHERE user_id = ${session.userId} AND kind = 'totp'`,
+    );
+    expect(rows[0]?.n).toBe(0);
   });
 
   it("turns off only with a fresh code or a passkey, and then a password is enough again", async () => {

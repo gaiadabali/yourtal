@@ -64,9 +64,22 @@ export const passkeySignInRequestSchema = z.object({
   response: passkeyAuthenticationResponseSchema,
 });
 
+/**
+ * A passkey's name: one printable line, because it is shown in Me and written
+ * into security emails. No control characters, line or paragraph separators,
+ * or invisible format characters (bidi overrides and the like). The database
+ * checks the same.
+ */
+export const passkeyNameSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(64)
+  .regex(/^[^\p{Cc}\p{Cf}\p{Zl}\p{Zp}]+$/u);
+
 export const passkeyRegisterRequestSchema = z.object({
   response: passkeyRegistrationResponseSchema,
-  name: z.string().trim().min(1).max(64).optional(),
+  name: passkeyNameSchema.optional(),
 });
 
 export const passkeySummarySchema = z.object({

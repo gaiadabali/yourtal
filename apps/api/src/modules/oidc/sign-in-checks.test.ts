@@ -13,7 +13,7 @@ function signInClient(clientId: string): SignInClient {
 }
 
 const SNAPAPP = signInClient("snapapp-staging-web");
-const FTR = signInClient("ftr-staging-web");
+const FTR = signInClient("ftr-web");
 const NOW = new Date("2026-10-21T00:00:00Z");
 const SCOPES = ["openid", "email", "profile", "account"];
 

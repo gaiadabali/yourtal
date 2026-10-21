@@ -15,6 +15,9 @@ function memoryStore() {
       rows.set(key, sub);
       return Promise.resolve(sub);
     },
+    findSubject(sector: string, userId: string) {
+      return Promise.resolve(rows.get(`${sector}|${userId}`) ?? null);
+    },
   };
 }
 
@@ -36,28 +39,39 @@ describe("pairwise subjects (docs/26 §1.2)", () => {
   it("are made once per sector and person, then read back", async () => {
     const store = memoryStore();
     const pairwise = pairwiseIdentifierFor(store, CLIENTS);
-    const first = await pairwise(USER, "snapapp-staging-web");
-    expect(await pairwise(USER, "snapapp-staging-web")).toBe(first);
+    const first = await pairwise(USER, "snapapp-staging-web", true);
+    expect(await pairwise(USER, "snapapp-staging-web", true)).toBe(first);
     expect(store.rows.size).toBe(1);
   });
 
   it("are shared by SnapApp's web, phone and server clients, and differ at FTR", async () => {
     const pairwise = pairwiseIdentifierFor(memoryStore(), CLIENTS);
-    const web = await pairwise(USER, "snapapp-staging-web");
-    expect(await pairwise(USER, "snapapp-staging-mobile")).toBe(web);
-    expect(await pairwise(USER, "snapapp-staging-server")).toBe(web);
-    expect(await pairwise(USER, "ftr-staging-web")).not.toBe(web);
+    const web = await pairwise(USER, "snapapp-staging-web", true);
+    expect(await pairwise(USER, "snapapp-staging-mobile", true)).toBe(web);
+    expect(await pairwise(USER, "snapapp-staging-server", true)).toBe(web);
+    expect(await pairwise(USER, "ftr-web", true)).not.toBe(web);
   });
 
   it("differ between people in one app", async () => {
     const pairwise = pairwiseIdentifierFor(memoryStore(), CLIENTS);
-    expect(await pairwise(USER, "ftr-staging-web")).not.toBe(
-      await pairwise("someone-else", "ftr-staging-web"),
+    expect(await pairwise(USER, "ftr-web", true)).not.toBe(
+      await pairwise("someone-else", "ftr-web", true),
     );
+  });
+
+  it("are only made when one is handed to the app; a comparison stores nothing", async () => {
+    const store = memoryStore();
+    const pairwise = pairwiseIdentifierFor(store, CLIENTS);
+    const compared = await pairwise(USER, "ftr-web", false);
+    expect(store.rows.size).toBe(0);
+    const issued = await pairwise(USER, "ftr-web", true);
+    expect(issued).not.toBe(compared);
+    expect(await pairwise(USER, "ftr-web", false)).toBe(issued);
+    expect(store.rows.size).toBe(1);
   });
 
   it("refuse a client the registry does not know", async () => {
     const pairwise = pairwiseIdentifierFor(memoryStore(), CLIENTS);
-    await expect(pairwise(USER, "unknown-app")).rejects.toThrow(/no sector/);
+    await expect(pairwise(USER, "unknown-app", true)).rejects.toThrow(/no sector/);
   });
 });

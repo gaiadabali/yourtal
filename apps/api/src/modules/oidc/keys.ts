@@ -30,12 +30,24 @@ interface KeyFiles {
 
 const DISK: KeyFiles = { exists: existsSync, read: (file) => readFileSync(file, "utf8") };
 
+/**
+ * JSON.parse's own message quotes the text near the fault, which for a key
+ * file is key material. So the error names the file and nothing else.
+ */
+export function parseSecretJson(raw: string, file: string): unknown {
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    throw new Error(`oidc: ${file} is not valid JSON`);
+  }
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function parseSigningKeys(raw: string, file: string): JWK[] {
-  const parsed: unknown = JSON.parse(raw);
+  const parsed = parseSecretJson(raw, file);
   const keys = isRecord(parsed) ? parsed["keys"] : undefined;
   if (!Array.isArray(keys) || keys.length === 0) throw new Error(`oidc: ${file} has no keys`);
   return keys.map((key: unknown, index) => {
@@ -55,7 +67,7 @@ function parseSigningKeys(raw: string, file: string): JWK[] {
 }
 
 function parseCookieKeys(raw: string, file: string): string[] {
-  const parsed: unknown = JSON.parse(raw);
+  const parsed = parseSecretJson(raw, file);
   const keys = isRecord(parsed) ? parsed["keys"] : undefined;
   if (
     !Array.isArray(keys) ||

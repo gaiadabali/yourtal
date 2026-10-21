@@ -21,7 +21,7 @@ function publicJwks(): string {
 const ALL_FILES = {
   [path.join(DIR, "snapapp-staging-web.jwks.json")]: publicJwks(),
   [path.join(DIR, "snapapp-staging-server.jwks.json")]: publicJwks(),
-  [path.join(DIR, "ftr-staging-web.secret")]: `${"s".repeat(40)}\n`,
+  [path.join(DIR, "ftr-web.secret")]: `${"s".repeat(40)}\n`,
 };
 
 describe("the client registry (docs/26 §1.9)", () => {
@@ -30,9 +30,9 @@ describe("the client registry (docs/26 §1.9)", () => {
       "snapapp-staging-web",
       "snapapp-staging-mobile",
       "snapapp-staging-server",
-      "ftr-staging-web",
+      "ftr-web",
     ]);
-    // ftr-web waits for real people (docs/26 §6 Q1); SnapApp's production clients for its domain.
+    // SnapApp's production clients wait for its production domain.
     expect(clientsFor("production")).toEqual([]);
   });
 
@@ -61,8 +61,8 @@ describe("the client registry (docs/26 §1.9)", () => {
     const sectors = new Map(CLIENTS.map((client) => [client.clientId, client.sector]));
     expect(sectors.get("snapapp-staging-mobile")).toBe(sectors.get("snapapp-staging-web"));
     expect(sectors.get("snapapp-staging-server")).toBe(sectors.get("snapapp-staging-web"));
-    expect(sectors.get("ftr-staging-web")).not.toBe(sectors.get("snapapp-staging-web"));
-    expect(sectors.get("ftr-web")).not.toBe(sectors.get("ftr-staging-web"));
+    expect(sectors.get("ftr-web")).not.toBe(sectors.get("snapapp-staging-web"));
+    expect(sectors.get("ftr-web")).toBe("ftr");
   });
 
   it("refuses teens at FTR and takes Australia only there; SnapApp is invite-only for teens", () => {
@@ -75,6 +75,23 @@ describe("the client registry (docs/26 §1.9)", () => {
         expect(client.regions).toEqual(["AU", "ID"]);
       }
     }
+  });
+
+  it("names each app's operator from the settings (F125), brand names by default", () => {
+    const named = clientsFor("staging", { snapapp: "SnapApp Pty Ltd", ftr: "FTR Pty Ltd" });
+    expect(named.map((client) => client.operator)).toEqual([
+      "SnapApp Pty Ltd",
+      "SnapApp Pty Ltd",
+      "SnapApp Pty Ltd",
+      "FTR Pty Ltd",
+    ]);
+    expect(clientsFor("staging").map((client) => client.operator)).toEqual([
+      "SnapApp",
+      "SnapApp",
+      "SnapApp",
+      "Free Tax Returns",
+    ]);
+    expect(named.find((client) => client.clientId === "ftr-web")?.externalOperator).toBe(true);
   });
 
   it("allows sign-in clients the four sign-in scopes, and teen_invites to SnapApp's server only", () => {
@@ -92,7 +109,7 @@ describe("client credentials from the secrets directory", () => {
     expect(loaded.missing).toEqual([]);
     const byId = new Map(loaded.metadata.map((metadata) => [metadata.client_id, metadata]));
     expect(byId.get("snapapp-staging-web")?.jwks?.keys).toHaveLength(1);
-    expect(byId.get("ftr-staging-web")?.client_secret).toBe("s".repeat(40));
+    expect(byId.get("ftr-web")?.client_secret).toBe("s".repeat(40));
     expect(byId.get("snapapp-staging-mobile")?.token_endpoint_auth_method).toBe("none");
     expect(byId.get("snapapp-staging-server")?.grant_types).toEqual(["client_credentials"]);
     expect(byId.get("snapapp-staging-web")?.grant_types).toEqual(["authorization_code"]);
@@ -104,7 +121,7 @@ describe("client credentials from the secrets directory", () => {
     expect(loaded.missing.map((entry) => entry.clientId)).toEqual([
       "snapapp-staging-web",
       "snapapp-staging-server",
-      "ftr-staging-web",
+      "ftr-web",
     ]);
   });
 
@@ -127,7 +144,7 @@ describe("client credentials from the secrets directory", () => {
       loadClients(
         clientsFor("staging"),
         DIR,
-        files({ ...ALL_FILES, [path.join(DIR, "ftr-staging-web.secret")]: "short" }),
+        files({ ...ALL_FILES, [path.join(DIR, "ftr-web.secret")]: "short" }),
       ),
     ).toThrow(/32 characters/);
   });

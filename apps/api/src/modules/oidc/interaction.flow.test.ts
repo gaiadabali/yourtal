@@ -1,3 +1,4 @@
+import { generateKeyPairSync } from "node:crypto";
 import { IncomingMessage, ServerResponse } from "node:http";
 import { createServer, Socket } from "node:net";
 import * as client from "openid-client";
@@ -20,7 +21,7 @@ import type { TestProvider } from "./testing/oidc-test-kit";
  * shows up in seconds rather than in the Integration run.
  */
 const WEB_REDIRECT = "https://snap-apps.gaiada.com/auth/yourtal/callback";
-const FTR_REDIRECT = "https://freetaxreturns.gaiada.online/api/auth/oauth2/callback/yourtal";
+const FTR_REDIRECT = "https://freetaxreturns.com.au/api/auth/oauth2/callback/yourtal";
 
 function memoryStore(accounts: Map<string, OidcAccount>) {
   const subjects = new Map<string, string>();
@@ -28,6 +29,7 @@ function memoryStore(accounts: Map<string, OidcAccount>) {
   const log: { userId: string; clientId: string; result: string }[] = [];
   const store: OidcStore = {
     findAccount: (userId) => Promise.resolve(accounts.get(userId) ?? null),
+    findSubject: (sector, userId) => Promise.resolve(subjects.get(`${sector}|${userId}`) ?? null),
     subjectFor: (sector, userId, fresh) => {
       const key = `${sector}|${userId}`;
       if (!subjects.has(key)) subjects.set(key, fresh());
@@ -66,10 +68,22 @@ const TEEN: OidcAccount = {
   userId: "22222222-2222-4222-8222-222222222222",
   dateOfBirth: "2012-01-01",
 };
+const HELD: OidcAccount = { ...ADULT, userId: "33333333-3333-4333-8333-333333333333" };
 const SESSIONS = new Map([
   ["adult-token", ADULT.userId],
   ["teen-token", TEEN.userId],
+  ["held-token", HELD.userId],
 ]);
+const ACCOUNTS = new Map([ADULT, TEEN, HELD].map((account) => [account.userId, account]));
+
+/** Two signing keys, as mid-rotation: the first signs, the second is only published. */
+function signingKey(kid: string) {
+  const jwk = generateKeyPairSync("rsa", { modulusLength: 2048 }).privateKey.export({
+    format: "jwk",
+  });
+  return { ...jwk, kid, alg: "RS256", use: "sig" };
+}
+const SIGNING_KID = "2026-10-21-sign";
 
 let kit: TestProvider;
 let issuer: string;
@@ -97,14 +111,19 @@ function http(browser: Browser, uid: string): RawHttp {
 beforeAll(async () => {
   const port = await freePort();
   issuer = `http://127.0.0.1:${String(port)}/oidc`;
-  memory = memoryStore(new Map([ADULT, TEEN].map((account) => [account.userId, account])));
+  memory = memoryStore(ACCOUNTS);
   let registered: TestProvider["registered"] = [];
   kit = await buildTestProvider({
     issuer,
-    findAccount: findAccountFrom(memory.store),
+    findAccount: findAccountFrom(memory.store, () => registered, NO_TEEN_INVITES_YET),
     store: memory.store,
-    pairwiseIdentifier: (accountId, clientId) =>
-      pairwiseIdentifierFor(memory.store, registered)(accountId, clientId),
+    keys: {
+      jwks: { keys: [signingKey(SIGNING_KID), signingKey("2026-10-21-next")] },
+      cookieKeys: ["c".repeat(43)],
+      ephemeral: false,
+    },
+    pairwiseIdentifier: (accountId, clientId, create) =>
+      pairwiseIdentifierFor(memory.store, registered)(accountId, clientId, create),
   });
   registered = kit.registered;
   await kit.fastify.listen({ port, host: "127.0.0.1" });
@@ -171,6 +190,10 @@ describe("a sign-in through the interaction service", () => {
       expectedState: started.state,
       expectedNonce: started.nonce,
     });
+    const header = JSON.parse(
+      Buffer.from((tokens.id_token ?? "").split(".")[0] ?? "", "base64url").toString(),
+    ) as { kid?: string };
+    expect(header.kid).toBe(SIGNING_KID);
     const claims = tokens.claims();
     expect(claims?.sub).toBe(memory.subjects.get(`snapapp-staging|${ADULT.userId}`));
     expect(claims).toMatchObject({
@@ -219,7 +242,7 @@ describe("a sign-in through the interaction service", () => {
   });
 
   it("a refused teen goes back to the app with access_denied and the refusal", async () => {
-    const config = await rp("ftr-staging-web", client.ClientSecretBasic(kit.keys.ftrSecret));
+    const config = await rp("ftr-web", client.ClientSecretBasic(kit.keys.ftrSecret));
     const started = await startSignIn(config, FTR_REDIRECT);
     const shown = await service.details(
       http(started.browser, started.uid),
@@ -249,5 +272,72 @@ describe("a sign-in through the interaction service", () => {
     await expect(
       service.details(http(new Browser(), started.uid), started.uid, "adult-token"),
     ).rejects.toEqual(new InteractionError("interaction_not_found"));
+  });
+
+  it("refuses id_token_hint, and makes no sub for an app the person never used", async () => {
+    const snap = await webApp();
+    const started = await startSignIn(snap, WEB_REDIRECT);
+    const { redirectTo } = await service.continue(
+      http(started.browser, started.uid),
+      started.uid,
+      "adult-token",
+      "consent",
+    );
+    const tokens = await client.authorizationCodeGrant(
+      snap,
+      await followToApp(started, redirectTo),
+      {
+        pkceCodeVerifier: started.verifier,
+        expectedState: started.state,
+        expectedNonce: started.nonce,
+      },
+    );
+    const ftr = await rp("ftr-web", client.ClientSecretBasic(kit.keys.ftrSecret));
+    const url = client.buildAuthorizationUrl(ftr, {
+      redirect_uri: FTR_REDIRECT,
+      scope: "openid email profile account",
+      code_challenge: await client.calculatePKCECodeChallenge(client.randomPKCECodeVerifier()),
+      code_challenge_method: "S256",
+      state: "s-hint",
+      id_token_hint: tokens.id_token ?? "",
+    });
+    const back = new URL((await started.browser.get(url)).headers.get("location") ?? "");
+    expect(back.searchParams.get("error")).toBe("invalid_request");
+    expect(memory.subjects.has(`ftr|${ADULT.userId}`)).toBe(false);
+  });
+
+  it("checks the person again at resume: put on hold after Continue, they go back to YourTal's screen", async () => {
+    ACCOUNTS.set(HELD.userId, HELD);
+    const started = await startSignIn(await webApp(), WEB_REDIRECT);
+    const { redirectTo } = await service.continue(
+      http(started.browser, started.uid),
+      started.uid,
+      "held-token",
+      "consent",
+    );
+    ACCOUNTS.set(HELD.userId, { ...HELD, suspended: true });
+    const response = await started.browser.get(redirectTo);
+    expect(response.headers.get("location") ?? "").toMatch(/^http:\/\/localhost:3000\/connect\//);
+  });
+
+  it("checks the person again at the token endpoint: on hold after the code, no tokens", async () => {
+    ACCOUNTS.set(HELD.userId, HELD);
+    const config = await webApp();
+    const started = await startSignIn(config, WEB_REDIRECT);
+    const { redirectTo } = await service.continue(
+      http(started.browser, started.uid),
+      started.uid,
+      "held-token",
+      "consent",
+    );
+    const callback = await followToApp(started, redirectTo);
+    ACCOUNTS.set(HELD.userId, { ...HELD, suspended: true });
+    await expect(
+      client.authorizationCodeGrant(config, callback, {
+        pkceCodeVerifier: started.verifier,
+        expectedState: started.state,
+        expectedNonce: started.nonce,
+      }),
+    ).rejects.toMatchObject({ error: "invalid_grant" });
   });
 });

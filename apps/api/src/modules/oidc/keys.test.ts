@@ -93,6 +93,22 @@ describe("signing and cookie keys (docs/26 §1.8)", () => {
     }
   });
 
+  it("never echoes a malformed key file into the error", () => {
+    const run = () =>
+      loadProviderKeys(
+        { appEnv: "staging", jwksPath: JWKS_PATH },
+        vi.fn(),
+        files({ [JWKS_PATH]: '{"keys":[{"d":"SECRETFRAGMENT', [COOKIES_PATH]: COOKIES }),
+      );
+    expect(run).toThrow(new Error(`oidc: ${JWKS_PATH} is not valid JSON`));
+    try {
+      run();
+    } catch (error) {
+      expect(String(error)).not.toContain("SECRET");
+      expect((error as Error).cause).toBeUndefined();
+    }
+  });
+
   it("refuses short or missing cookie keys", () => {
     for (const cookies of [
       JSON.stringify({ keys: ["short"] }),

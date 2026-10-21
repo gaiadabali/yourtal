@@ -97,13 +97,15 @@ ALTER TABLE identity.consent_record ADD COLUMN audience text;
 GRANT USAGE ON SCHEMA oidc TO yourtal_app;
 -- The adapter writes, consumes and deletes its own records.
 GRANT SELECT, INSERT, UPDATE, DELETE ON oidc.model TO yourtal_app;
--- A sub is never rewritten. Erasure belongs to the connected_apps deletion domain.
-GRANT SELECT, INSERT ON oidc.subject TO yourtal_app;
-GRANT SELECT, INSERT, UPDATE ON oidc.app_consent TO yourtal_app;
-GRANT SELECT, INSERT, UPDATE ON oidc.teen_invite TO yourtal_app;
+-- A sub is never rewritten (no UPDATE). DELETE on this, app_consent, teen_invite
+-- and sign_in_log is for the connected_apps erasure (docs/26 §2.6): every row
+-- here is keyed by the one person being erased.
+GRANT SELECT, INSERT, DELETE ON oidc.subject TO yourtal_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON oidc.app_consent TO yourtal_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON oidc.teen_invite TO yourtal_app;
 -- The delivery job updates attempts and purges delivered rows after 30 days.
 GRANT SELECT, INSERT, UPDATE, DELETE ON oidc.event_outbox TO yourtal_app;
-GRANT SELECT, INSERT ON oidc.sign_in_log TO yourtal_app;
+GRANT SELECT, INSERT, DELETE ON oidc.sign_in_log TO yourtal_app;
 GRANT USAGE, SELECT ON SEQUENCE oidc.sign_in_log_id_seq TO yourtal_app;
 
 -- The region wall every region table carries (13.5.e, F92).

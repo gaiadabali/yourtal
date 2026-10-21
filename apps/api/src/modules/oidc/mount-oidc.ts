@@ -18,6 +18,7 @@ export async function mountOidc(fastify: FastifyInstance, runtime: OidcRuntime):
   const provider = runtime.provider;
   if (provider === null) return false;
   const handle = provider.callback();
+  const issuer = new URL(provider.issuer);
 
   await fastify.register((scope, _options, done) => {
     // Leave the body stream unread: the provider parses its own forms.
@@ -37,6 +38,12 @@ export async function mountOidc(fastify: FastifyInstance, runtime: OidcRuntime):
         raw.originalUrl = full;
         const below = full.slice(OIDC_PREFIX.length);
         raw.url = below.startsWith("/") ? below : `/${below}`;
+        // The provider builds every URL it issues from the request's host, so
+        // the host and scheme are set from the configured issuer, never from
+        // what the caller sent.
+        raw.headers.host = issuer.host;
+        raw.headers["x-forwarded-host"] = issuer.host;
+        raw.headers["x-forwarded-proto"] = issuer.protocol.slice(0, -1);
         void handle(raw, reply.raw);
       },
     });

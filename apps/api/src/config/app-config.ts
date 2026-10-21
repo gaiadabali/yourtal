@@ -72,6 +72,8 @@ export interface AppConfig {
     readonly issuer: string;
     readonly jwksPath: string;
     readonly clientKeysDir: string;
+    /** F125: the name on each app's consent screen. */
+    readonly operators: { readonly snapapp: string; readonly ftr: string };
   };
 }
 
@@ -149,6 +151,7 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
           : "https://yourtal.gaiada.com/oidc"),
       jwksPath: env.OIDC_JWKS_PATH,
       clientKeysDir: env.OIDC_CLIENT_KEYS_DIR,
+      operators: { snapapp: env.OIDC_OPERATOR_SNAPAPP, ftr: env.OIDC_OPERATOR_FTR },
     },
   };
 }

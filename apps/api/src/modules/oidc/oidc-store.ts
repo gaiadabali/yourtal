@@ -24,6 +24,8 @@ export interface OidcStore {
   findAccount(userId: string): Promise<OidcAccount | null>;
   /** The person's pairwise sub for this sector, made on first use from `fresh()`. */
   subjectFor(sector: string, userId: string, fresh: () => string): Promise<string>;
+  /** The person's sub for this sector if one was ever made; never makes one. */
+  findSubject(sector: string, userId: string): Promise<string | null>;
   findAppConsent(userId: string, sector: string): Promise<AppConsent | null>;
   /** The current consent and its append-only evidence, in one transaction. */
   grantAppConsent(input: GrantAppConsent): Promise<void>;
@@ -101,6 +103,14 @@ export function createPgOidcStore(pool: Pool): OidcStore {
         }
       }
       throw new Error("oidc: could not make a pairwise subject");
+    },
+
+    async findSubject(sector, userId) {
+      const result = await pool.query<{ sub: string }>(
+        "SELECT sub FROM oidc.subject WHERE sector = $1 AND user_id = $2",
+        [sector, userId],
+      );
+      return result.rows[0]?.sub ?? null;
     },
 
     async findAppConsent(userId, sector) {

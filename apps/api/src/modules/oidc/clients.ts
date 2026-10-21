@@ -8,12 +8,19 @@ import type { AppConfig } from "../../config/app-config";
  * comes from this file, never from a request.
  */
 export type Region = "AU" | "ID";
+export type OperatedApp = "snapapp" | "ftr";
+
+/** F125: the name on each app's consent screen. Settings, so legal names need no code change. */
+export type Operators = Readonly<Record<OperatedApp, string>>;
+export const DEFAULT_OPERATORS: Operators = { snapapp: "SnapApp", ftr: "Free Tax Returns" };
 
 interface ClientBase {
   readonly clientId: string;
   /** The app, on the screens: "SnapApp". */
   readonly name: string;
-  /** The company named on the consent screen. F114: legal entity names are still to come. */
+  /** Which app, for the operator setting (F125). */
+  readonly app: OperatedApp;
+  /** The company named on the consent screen, from config (F125: brand names until the legal names). */
   readonly operator: string;
   /** Run by a company outside YourTal's group ("…, not by YourTal"). */
   readonly externalOperator: boolean;
@@ -50,9 +57,11 @@ export type YourTalClient = SignInClient | MachineClient;
 export const SIGN_IN_SCOPES = ["openid", "email", "profile", "account"] as const;
 export const REQUIRED_SIGN_IN_SCOPES = ["openid", "account"] as const;
 
+type Definition<T> = T extends YourTalClient ? Omit<T, "operator"> : never;
+
 const SNAPAPP = {
   name: "SnapApp",
-  operator: "SnapApp",
+  app: "snapapp",
   externalOperator: false,
   sector: "snapapp-staging",
   privacyUrl: "https://snap-apps.gaiada.com/legal/privacy",
@@ -66,7 +75,7 @@ const SNAPAPP = {
 
 const FTR = {
   name: "Free Tax Returns",
-  operator: "Benjamin Charles Group",
+  app: "ftr",
   externalOperator: true,
   teens: "refuse",
   // F110: Australia only.
@@ -74,7 +83,7 @@ const FTR = {
   allowedScopes: SIGN_IN_SCOPES,
 } as const;
 
-export const CLIENTS: readonly YourTalClient[] = [
+const DEFINITIONS: readonly Definition<YourTalClient>[] = [
   {
     ...SNAPAPP,
     clientId: "snapapp-staging-web",
@@ -92,7 +101,7 @@ export const CLIENTS: readonly YourTalClient[] = [
   {
     clientId: "snapapp-staging-server",
     name: SNAPAPP.name,
-    operator: SNAPAPP.operator,
+    app: SNAPAPP.app,
     externalOperator: false,
     sector: SNAPAPP.sector,
     kind: "machine",
@@ -102,20 +111,8 @@ export const CLIENTS: readonly YourTalClient[] = [
     environments: ["dev", "staging"],
   },
   {
-    ...FTR,
-    clientId: "ftr-staging-web",
-    sector: "ftr-staging",
-    kind: "web",
-    auth: "client_secret_basic",
-    redirectUri: "https://freetaxreturns.gaiada.online/api/auth/oauth2/callback/yourtal",
-    privacyUrl: "https://freetaxreturns.gaiada.online/privacy",
-    termsUrl: "https://freetaxreturns.gaiada.online/terms",
-    returnHost: "freetaxreturns.gaiada.online",
-    eventsEndpoint: "https://freetaxreturns.gaiada.online/api/yourtal/events",
-    environments: ["dev", "staging"],
-  },
-  {
-    // Registered only once real people may sign in (docs/26 §6 Q1, F108).
+    // F124: FTR has no staging site. Its button shows only behind FTR's own
+    // switch, which stays off for real users until F108 is settled.
     ...FTR,
     clientId: "ftr-web",
     sector: "ftr",
@@ -126,12 +123,26 @@ export const CLIENTS: readonly YourTalClient[] = [
     termsUrl: "https://freetaxreturns.com.au/terms",
     returnHost: "freetaxreturns.com.au",
     eventsEndpoint: "https://freetaxreturns.com.au/api/yourtal/events",
-    environments: [],
+    environments: ["dev", "staging"],
   },
 ];
 
-export function clientsFor(appEnv: AppConfig["appEnv"]): readonly YourTalClient[] {
-  return CLIENTS.filter((client) => client.environments.includes(appEnv));
+function withOperator(definition: Definition<YourTalClient>, operators: Operators): YourTalClient {
+  return { ...definition, operator: operators[definition.app] };
+}
+
+/** Every client in every environment, with the default operator names: for tests and review. */
+export const CLIENTS: readonly YourTalClient[] = DEFINITIONS.map((definition) =>
+  withOperator(definition, DEFAULT_OPERATORS),
+);
+
+export function clientsFor(
+  appEnv: AppConfig["appEnv"],
+  operators: Operators = DEFAULT_OPERATORS,
+): readonly YourTalClient[] {
+  return DEFINITIONS.filter((definition) => definition.environments.includes(appEnv)).map(
+    (definition) => withOperator(definition, operators),
+  );
 }
 
 export function isSignInClient(client: YourTalClient): client is SignInClient {

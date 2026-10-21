@@ -29,7 +29,7 @@ import { followToApp, startSignIn, webServerCall } from "./testing/sign-in-drive
  */
 const WEB_REDIRECT = "https://snap-apps.gaiada.com/auth/yourtal/callback";
 const MOBILE_REDIRECT = "au.com.snapapps.app:/oauth/yourtal";
-const FTR_REDIRECT = "https://freetaxreturns.gaiada.online/api/auth/oauth2/callback/yourtal";
+const FTR_REDIRECT = "https://freetaxreturns.com.au/api/auth/oauth2/callback/yourtal";
 const ENV_KEYS = ["OIDC_ENABLED", "OIDC_ISSUER", "OIDC_CLIENT_KEYS_DIR", "OIDC_JWKS_PATH"];
 
 let app: NestFastifyApplication;
@@ -40,6 +40,8 @@ let keysDir: string;
 let webKey: CryptoKey;
 let serverKey: CryptoKey;
 let ftrSecret: string;
+/** Every route the real app mounts, Nest's and the provider's. */
+const mountedUrls: string[] = [];
 const savedEnv = new Map(ENV_KEYS.map((key) => [key, process.env[key]]));
 
 function freePort(): Promise<number> {
@@ -80,7 +82,7 @@ beforeAll(async () => {
   webKey = await rsaKeyFile("snapapp-staging-web");
   serverKey = await rsaKeyFile("snapapp-staging-server");
   ftrSecret = randomBytes(32).toString("base64url");
-  writeFileSync(path.join(keysDir, "ftr-staging-web.secret"), ftrSecret);
+  writeFileSync(path.join(keysDir, "ftr-web.secret"), ftrSecret);
 
   process.env["OIDC_ENABLED"] = "true";
   process.env["OIDC_ISSUER"] = issuer;
@@ -90,6 +92,12 @@ beforeAll(async () => {
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+  app
+    .getHttpAdapter()
+    .getInstance()
+    .addHook("onRoute", (route) => {
+      mountedUrls.push(route.url);
+    });
   app.useGlobalPipes(new ZodValidationPipe());
   expect(
     await mountOidc(app.getHttpAdapter().getInstance(), app.get<OidcRuntime>(OIDC_RUNTIME)),
@@ -150,7 +158,7 @@ function rp(clientId: string, auth: client.ClientAuth): Promise<client.Configura
 const webApp = () =>
   rp("snapapp-staging-web", client.PrivateKeyJwt({ key: webKey, kid: "snapapp-staging-web-1" }));
 const mobileApp = () => rp("snapapp-staging-mobile", client.None());
-const ftrApp = () => rp("ftr-staging-web", client.ClientSecretBasic(ftrSecret));
+const ftrApp = () => rp("ftr-web", client.ClientSecretBasic(ftrSecret));
 
 /** A whole sign-in: start, the screen, the tap, the redirect back, the code redeemed. */
 async function signIn(
@@ -306,7 +314,7 @@ describe("sign in with YourTal, end to end", () => {
     expect(ftr.tokens.claims()?.sub).not.toBe(snap.tokens.claims()?.sub);
     expect(ftr.details.client).toMatchObject({
       externalOperator: true,
-      returnHost: "freetaxreturns.gaiada.online",
+      returnHost: "freetaxreturns.com.au",
     });
   });
 
@@ -323,10 +331,22 @@ describe("sign in with YourTal, end to end", () => {
       expectedState: started.state,
       expectedNonce: started.nonce,
     };
-    await client.authorizationCodeGrant(config, callback, checks);
+    const first = await client.authorizationCodeGrant(config, callback, checks);
+    const me = () =>
+      fetch(`${issuer}/me`, { headers: { authorization: `Bearer ${first.access_token}` } });
+    expect((await me()).status).toBe(200);
     await expect(client.authorizationCodeGrant(config, callback, checks)).rejects.toMatchObject({
       error: "invalid_grant",
     });
+    // A reused code revokes what its first use issued.
+    expect((await me()).status).toBe(401);
+  });
+});
+
+describe("the real app's routes", () => {
+  it("mount nothing under /oidc except the provider's catch-all", () => {
+    expect(mountedUrls.length).toBeGreaterThan(50);
+    expect([...new Set(mountedUrls.filter((url) => url.startsWith("/oidc")))]).toEqual(["/oidc/*"]);
   });
 });
 
@@ -405,7 +425,7 @@ describe("what the provider refuses", () => {
     const logged = await rows("SELECT client_id, result FROM oidc.sign_in_log WHERE user_id = $1", [
       someone.userId,
     ]);
-    expect(logged).toContainEqual({ client_id: "ftr-staging-web", result: refusal });
+    expect(logged).toContainEqual({ client_id: "ftr-web", result: refusal });
     expect(await rows("SELECT 1 FROM oidc.subject WHERE user_id = $1", [someone.userId])).toEqual(
       [],
     );
@@ -491,7 +511,7 @@ describe("the interaction API", () => {
     expect(swapped.status).toBe(404);
   });
 
-  it("refuses a cross-site POST", async () => {
+  it("the API itself refuses a POST whose Origin is another site", async () => {
     const ana = await person();
     const started = await startSignIn(await webApp(), WEB_REDIRECT);
     const cookie = `${started.browser.cookieHeader(`/connect/${started.uid}`)}; yt_session=${ana.token}`;

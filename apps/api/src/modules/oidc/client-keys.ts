@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { ClientMetadata, JWK } from "oidc-provider";
 import type { YourTalClient } from "./clients";
+import { parseSecretJson } from "./keys";
 
 /**
  * Turns the registry (`clients.ts`) into the provider's client metadata, with
@@ -34,7 +35,7 @@ export function credentialFileFor(client: YourTalClient, dir: string): string | 
 }
 
 function publicJwks(raw: string, file: string): { keys: JWK[] } {
-  const parsed: unknown = JSON.parse(raw);
+  const parsed = parseSecretJson(raw, file);
   const keys =
     typeof parsed === "object" && parsed !== null && "keys" in parsed ? parsed.keys : undefined;
   if (!Array.isArray(keys) || keys.length === 0) throw new Error(`oidc: ${file} has no keys`);

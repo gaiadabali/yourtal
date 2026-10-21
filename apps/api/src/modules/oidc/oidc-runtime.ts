@@ -15,6 +15,7 @@ import { pairwiseIdentifierFor } from "./pairwise";
 import { pgAdapterFactory } from "./pg-adapter";
 import { providerConfiguration } from "./provider-config";
 import { addProviderMiddleware } from "./provider-middleware";
+import type { TeenInviteChecker } from "./sign-in-checks";
 
 export const OIDC_RUNTIME = Symbol("OIDC_RUNTIME");
 
@@ -47,14 +48,18 @@ export function disabledOidcRuntime(): OidcRuntime {
  * production without the key files; leaves out any client whose credential
  * file is missing, saying which.
  */
-export function createOidcRuntime(config: AppConfig, pool?: Pool): OidcRuntime {
+export function createOidcRuntime(
+  config: AppConfig,
+  teenInvites: TeenInviteChecker,
+  pool?: Pool,
+): OidcRuntime {
   const oidc = config.oidc;
   if (oidc?.enabled !== true) return disabledOidcRuntime();
 
   const keys = loadProviderKeys({ appEnv: config.appEnv, jwksPath: oidc.jwksPath }, (message) => {
     logger.warn(message);
   });
-  const loaded = loadClients(clientsFor(config.appEnv), oidc.clientKeysDir);
+  const loaded = loadClients(clientsFor(config.appEnv, oidc.operators), oidc.clientKeysDir);
   for (const { clientId, file } of loaded.missing) {
     logger.warn(`client ${clientId} is not registered: ${file} is missing`);
   }
@@ -71,7 +76,7 @@ export function createOidcRuntime(config: AppConfig, pool?: Pool): OidcRuntime {
       keys,
       webOrigin: config.webOrigin,
       adapter: pgAdapterFactory(usePool),
-      findAccount: findAccountFrom(store),
+      findAccount: findAccountFrom(store, () => loaded.registered, teenInvites),
       pairwiseIdentifier: pairwiseIdentifierFor(store, loaded.registered),
     }),
   );

@@ -1,7 +1,10 @@
+import type { KoaContextWithOIDC } from "oidc-provider";
 import { describe, expect, it } from "vitest";
 import type { OidcAccount } from "./claims";
 import { claimsFor } from "./claims";
+import { CLIENTS } from "./clients";
 import { findAccountFrom } from "./find-account";
+import { NO_TEEN_INVITES_YET } from "./sign-in-checks";
 
 const ACCOUNT: OidcAccount = {
   userId: "6f1c2b9e-4a7d-4c1e-9b2a-3d5e6f708192",
@@ -47,13 +50,20 @@ describe("claims (docs/26 §1.3)", () => {
   });
 });
 
+/** The provider's context as findAccount reads it: the asking client and the request's params. */
+function asking(clientId: string): KoaContextWithOIDC {
+  return { oidc: { client: { clientId }, params: {} } } as unknown as KoaContextWithOIDC;
+}
+
 describe("findAccount", () => {
   it("gives the provider the user id as accountId and the claims above, nothing more", async () => {
     const findAccount = findAccountFrom(
       { findAccount: () => Promise.resolve(ACCOUNT) },
+      () => CLIENTS,
+      NO_TEEN_INVITES_YET,
       () => AFTER_18TH,
     );
-    const account = await findAccount({} as never, ACCOUNT.userId);
+    const account = await findAccount(asking("snapapp-staging-web"), ACCOUNT.userId);
     expect(account?.accountId).toBe(ACCOUNT.userId);
     const claims = await account?.claims("id_token", "openid email profile account", {}, []);
     expect(claims).toEqual({
@@ -68,7 +78,43 @@ describe("findAccount", () => {
   });
 
   it("finds nothing for an account that no longer exists", async () => {
-    const findAccount = findAccountFrom({ findAccount: () => Promise.resolve(null) });
-    expect(await findAccount({} as never, "gone")).toBeUndefined();
+    const findAccount = findAccountFrom(
+      { findAccount: () => Promise.resolve(null) },
+      () => CLIENTS,
+      NO_TEEN_INVITES_YET,
+    );
+    expect(await findAccount(asking("snapapp-staging-web"), "gone")).toBeUndefined();
+  });
+
+  it.each([
+    ["an unverified email", { emailVerified: false }, "snapapp-staging-web"],
+    ["a suspended account", { suspended: true }, "snapapp-staging-web"],
+    ["an Indonesian account at FTR", { region: "ID" as const }, "ftr-web"],
+    ["a teen at FTR", { dateOfBirth: "2012-01-01" }, "ftr-web"],
+    ["a teen at SnapApp with no invite", { dateOfBirth: "2012-01-01" }, "snapapp-staging-web"],
+  ])(
+    "issues nothing for %s (docs/26 §1.5, checked again at issuance)",
+    async (_who, change, clientId) => {
+      const findAccount = findAccountFrom(
+        {
+          findAccount: () => Promise.resolve({ ...ACCOUNT, dateOfBirth: "1990-01-01", ...change }),
+        },
+        () => CLIENTS,
+        NO_TEEN_INVITES_YET,
+        () => AFTER_18TH,
+      );
+      expect(await findAccount(asking(clientId), ACCOUNT.userId)).toBeUndefined();
+    },
+  );
+
+  it("issues nothing to a client the registry does not know, or to SnapApp's server", async () => {
+    const findAccount = findAccountFrom(
+      { findAccount: () => Promise.resolve(ACCOUNT) },
+      () => CLIENTS,
+      NO_TEEN_INVITES_YET,
+      () => AFTER_18TH,
+    );
+    expect(await findAccount(asking("unknown"), ACCOUNT.userId)).toBeUndefined();
+    expect(await findAccount(asking("snapapp-staging-server"), ACCOUNT.userId)).toBeUndefined();
   });
 });

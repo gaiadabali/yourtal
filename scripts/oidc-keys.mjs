@@ -53,7 +53,12 @@ function writeSecret(file, value) {
 
 function read(file) {
   if (!existsSync(file)) fail(`${file} does not exist; run init first`);
-  return JSON.parse(readFileSync(file, "utf8"));
+  try {
+    return JSON.parse(readFileSync(file, "utf8"));
+  } catch {
+    // JSON.parse quotes the text near the fault, which here is key material.
+    return fail(`${file} is not valid JSON`);
+  }
 }
 
 /** A key id is never reused: apps cache keys by kid. */
@@ -74,10 +79,17 @@ function newSigningKey() {
 const newCookieKey = () => randomBytes(32).toString("base64url");
 
 function status() {
-  const { keys } = read(jwksPath);
+  const jwks = read(jwksPath);
+  const { keys } = jwks;
   const cookies = read(cookiesPath).keys;
   keys.forEach((key, index) => {
-    console.log(`${key.kid}\t${index === 0 ? "signing" : "published, not signing"}`);
+    const role =
+      index === 0
+        ? "signing"
+        : key.kid === jwks.next
+          ? "next, published, not signing yet"
+          : "old, verify only";
+    console.log(`${key.kid}\t${role}`);
   });
   console.log(`cookie keys: ${String(cookies.length)} (the first signs)`);
 }
@@ -93,17 +105,24 @@ switch (command) {
   }
   case "add-next": {
     const jwks = read(jwksPath);
-    if (jwks.keys.length > 1) fail("a rotation is already under way: promote or remove-old first");
-    jwks.keys.push(newSigningKey());
-    writeSecret(jwksPath, jwks);
+    if (jwks.next !== undefined || jwks.keys.length > 1) {
+      fail("a rotation is already under way: promote or remove-old first");
+    }
+    const key = newSigningKey();
+    jwks.keys.push(key);
+    // The marker is what promote acts on, so a second promote cannot swap back.
+    writeSecret(jwksPath, { keys: jwks.keys, next: key.kid });
     status();
     break;
   }
   case "promote": {
     const jwks = read(jwksPath);
-    if (jwks.keys.length < 2) fail("no next key to promote: run add-next first");
-    jwks.keys.unshift(jwks.keys.pop());
-    writeSecret(jwksPath, jwks);
+    const index = jwks.keys.findIndex((key) => key.kid === jwks.next);
+    if (jwks.next === undefined || index < 1) {
+      fail("no published, unused next key to promote: run add-next first");
+    }
+    const [next] = jwks.keys.splice(index, 1);
+    writeSecret(jwksPath, { keys: [next, ...jwks.keys] });
     const cookies = read(cookiesPath);
     writeSecret(cookiesPath, { keys: [newCookieKey(), cookies.keys[0]] });
     status();
@@ -111,7 +130,11 @@ switch (command) {
   }
   case "remove-old": {
     const jwks = read(jwksPath);
+    // Keeps only the signing key, so it can never remove that one. A next key
+    // that has not signed yet must be promoted first, or it would just vanish.
+    if (jwks.next !== undefined) fail("the next key has not been promoted yet: run promote first");
     const cookies = read(cookiesPath);
+    if (jwks.keys.length === 1 && cookies.keys.length === 1) fail("there is no old key to remove");
     writeSecret(jwksPath, { keys: jwks.keys.slice(0, 1) });
     writeSecret(cookiesPath, { keys: cookies.keys.slice(0, 1) });
     status();

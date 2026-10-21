@@ -1,4 +1,4 @@
-import { errors, interactionPolicy } from "oidc-provider";
+import { interactionPolicy } from "oidc-provider";
 import type {
   AdapterFactory,
   ClientMetadata,
@@ -7,7 +7,7 @@ import type {
   KoaContextWithOIDC,
 } from "oidc-provider";
 import type { ProviderKeys } from "./keys";
-import { REQUIRED_SIGN_IN_SCOPES } from "./clients";
+import { validateAuthorizationRequest } from "./authorization-request";
 import { SCOPE_CLAIMS } from "./claims";
 import { renderError } from "./render-error";
 
@@ -24,8 +24,16 @@ export interface ProviderConfigDeps {
   readonly webOrigin: string;
   readonly adapter: AdapterFactory;
   readonly findAccount: FindAccount;
-  readonly pairwiseIdentifier: (accountId: string, clientId: string) => Promise<string>;
+  /** `create` is true only when a token or userinfo is being issued (see pairwise.ts). */
+  readonly pairwiseIdentifier: (
+    accountId: string,
+    clientId: string,
+    create: boolean,
+  ) => Promise<string>;
 }
+
+/** The routes that hand a `sub` to an app: the ID token and userinfo. */
+const ISSUING_ROUTES = new Set(["token", "userinfo"]);
 
 /** docs/26 §1.6, in seconds. */
 export const TTL = {
@@ -42,47 +50,20 @@ export const TTL = {
 
 export const SCOPES = ["openid", "email", "profile", "account", "teen_invites"] as const;
 
-const TEEN_INVITE_PARAM = /^[A-Za-z0-9_-]{1,128}$/;
-
-/**
- * Runs on every authorization request, after the client and redirect URI are
- * confirmed (the library calls each extraParams validator whether or not its
- * parameter is present). A scope outside the client's allowlist, or one the
- * library does not know, is refused rather than silently dropped (docs/26 §1.4):
- * the library itself refuses known scopes but drops unknown ones.
- */
-function validateAuthorizationRequest(
-  ctx: KoaContextWithOIDC,
-  teenInvite: string | undefined,
-): void {
-  const client = ctx.oidc.client;
-  // The query as sent: the library has already dropped scopes it does not know
-  // from its own params. Authorization is GET only, with no request objects or PAR.
-  const scopeParam = ctx.query["scope"];
-  const requested =
-    typeof scopeParam === "string" ? scopeParam.split(" ").filter((scope) => scope.length > 0) : [];
-  const allowed = new Set((client?.scope ?? "").split(" "));
-  const outside = requested.filter((scope) => !allowed.has(scope));
-  if (outside.length > 0) {
-    throw new errors.InvalidScope("requested scope is not allowed", outside.join(" "));
-  }
-  for (const scope of REQUIRED_SIGN_IN_SCOPES) {
-    if (!requested.includes(scope)) {
-      throw new errors.InvalidScope(`the ${scope} scope is required`, scope);
-    }
-  }
-  if (teenInvite !== undefined && !TEEN_INVITE_PARAM.test(teenInvite)) {
-    throw new errors.InvalidRequest("invalid teen_invite parameter");
-  }
-}
-
 /**
  * The library's prompts, plus two of YourTal's: `create` (OpenID Connect
  * "Initiating User Registration", docs/26 §1.7), and a login check that is
  * only met by a sign-in finished on YourTal's screen in this very request.
  * So every sign-in shows the person which app and which account, and
  * `prompt=none` answers `login_required` (docs/26 §1.4: no silent sign-in).
+ * The same check sends the person back to YourTal's screen when findAccount
+ * refuses them at resume (on hold, wrong region, a teen), rather than going on.
  */
+/** Typed as always there; it is not when findAccount refused the person. */
+function accountOf(ctx: KoaContextWithOIDC): unknown {
+  return (ctx.oidc as { account?: unknown }).account;
+}
+
 export function signInPolicy(): interactionPolicy.DefaultPolicy {
   const { Check, Prompt, base } = interactionPolicy;
   const policy = base();
@@ -94,12 +75,19 @@ export function signInPolicy(): interactionPolicy.DefaultPolicy {
         "every sign-in is confirmed on YourTal's screen",
         "login_required",
         (ctx) =>
-          ctx.oidc.result?.login === undefined ? Check.REQUEST_PROMPT : Check.NO_NEED_TO_PROMPT,
+          ctx.oidc.result?.login === undefined || accountOf(ctx) === undefined
+            ? Check.REQUEST_PROMPT
+            : Check.NO_NEED_TO_PROMPT,
       ),
       0,
     );
   policy.add(new Prompt({ name: "create", requestable: true }), 0);
   return policy;
+}
+
+/** The JWT access token format calls the hook without a request; treat that as not issuing. */
+function routeOf(ctx: KoaContextWithOIDC | undefined): string | undefined {
+  return ctx?.oidc.route;
 }
 
 export function providerConfiguration(deps: ProviderConfigDeps): Configuration {
@@ -113,8 +101,8 @@ export function providerConfiguration(deps: ProviderConfigDeps): Configuration {
       short: { httpOnly: true, sameSite: "lax", signed: true },
     },
     findAccount: deps.findAccount,
-    pairwiseIdentifier: (_ctx, accountId, client) =>
-      deps.pairwiseIdentifier(accountId, client.clientId),
+    pairwiseIdentifier: (ctx, accountId, client) =>
+      deps.pairwiseIdentifier(accountId, client.clientId, ISSUING_ROUTES.has(routeOf(ctx) ?? "")),
     // Static clients only, so there is no sector document to fetch.
     sectorIdentifierUriValidate: () => false,
 

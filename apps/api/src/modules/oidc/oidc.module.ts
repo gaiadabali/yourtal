@@ -6,6 +6,7 @@ import { InteractionController } from "./interaction.controller";
 import { InteractionService } from "./interaction.service";
 import { OIDC_RUNTIME, OidcRuntime, createOidcRuntime } from "./oidc-runtime";
 import { NO_TEEN_INVITES_YET, TEEN_INVITE_CHECKER } from "./sign-in-checks";
+import type { TeenInviteChecker } from "./sign-in-checks";
 
 /**
  * Group 3.9 (docs/26): YourTal as an OpenID Connect provider. The provider
@@ -20,8 +21,9 @@ import { NO_TEEN_INVITES_YET, TEEN_INVITE_CHECKER } from "./sign-in-checks";
   providers: [
     {
       provide: OIDC_RUNTIME,
-      useFactory: (config: AppConfig): OidcRuntime => createOidcRuntime(config),
-      inject: [APP_CONFIG],
+      useFactory: (config: AppConfig, teenInvites: TeenInviteChecker): OidcRuntime =>
+        createOidcRuntime(config, teenInvites),
+      inject: [APP_CONFIG, TEEN_INVITE_CHECKER],
     },
     // The teen invite ticket (3.9.e) replaces this with the real check.
     { provide: TEEN_INVITE_CHECKER, useValue: NO_TEEN_INVITES_YET },

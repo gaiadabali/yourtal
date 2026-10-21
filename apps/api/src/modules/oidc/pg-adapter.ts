@@ -1,4 +1,5 @@
 import type { Pool } from "pg";
+import { errors } from "oidc-provider";
 import type { Adapter, AdapterFactory, AdapterPayload } from "oidc-provider";
 
 /**
@@ -69,11 +70,33 @@ class PgAdapter implements Adapter {
     return Promise.resolve(undefined);
   }
 
+  /**
+   * The library reads `consumed` before it calls this and ignores what it
+   * returns, so two redemptions racing past that read would both win. Only
+   * one UPDATE can flip consumed_at; the loser does what the library does for
+   * a reused code (revokes the grant and everything issued from it) and
+   * throws invalid_grant, which the token endpoint answers as a 400.
+   */
   async consume(id: string): Promise<void> {
-    await this.pool.query(
-      "UPDATE oidc.model SET consumed_at = now() WHERE kind = $1 AND id = $2 AND consumed_at IS NULL",
+    const result = await this.pool.query<{ grant_id: string | null }>(
+      `UPDATE oidc.model SET consumed_at = now()
+        WHERE kind = $1 AND id = $2 AND consumed_at IS NULL
+        RETURNING grant_id`,
       [this.kind, id],
     );
+    if (result.rowCount === 1 || this.kind !== "AuthorizationCode") return;
+    const row = await this.pool.query<{ grant_id: string | null }>(
+      "SELECT grant_id FROM oidc.model WHERE kind = $1 AND id = $2",
+      [this.kind, id],
+    );
+    const grantId = row.rows[0]?.grant_id;
+    if (grantId !== null && grantId !== undefined) {
+      await this.pool.query(
+        "DELETE FROM oidc.model WHERE grant_id = $1 OR (kind = 'Grant' AND id = $1)",
+        [grantId],
+      );
+    }
+    throw new errors.InvalidGrant("authorization code already consumed");
   }
 
   async destroy(id: string): Promise<void> {

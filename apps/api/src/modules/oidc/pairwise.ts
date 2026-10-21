@@ -16,14 +16,20 @@ export function randomSubject(): string {
  * The provider's `pairwiseIdentifier` hook. The sector comes from YourTal's
  * registry, not the library's redirect-host sector, so an app's web, phone and
  * server clients share one `sub`.
+ *
+ * A sub is only made when one is handed to the app (`create`: the ID token or
+ * userinfo). Anywhere else the library asks only to compare, so an existing
+ * sub is read back and a person who never used the app gets a throwaway value
+ * that matches nothing and is never stored.
  */
 export function pairwiseIdentifierFor(
-  store: Pick<OidcStore, "subjectFor">,
+  store: Pick<OidcStore, "subjectFor" | "findSubject">,
   clients: readonly YourTalClient[],
-): (accountId: string, clientId: string) => Promise<string> {
-  return async (accountId, clientId) => {
+): (accountId: string, clientId: string, create: boolean) => Promise<string> {
+  return async (accountId, clientId, create) => {
     const client = clientById(clients, clientId);
     if (client === undefined) throw new Error(`oidc: no sector for client ${clientId}`);
-    return store.subjectFor(client.sector, accountId, randomSubject);
+    if (create) return store.subjectFor(client.sector, accountId, randomSubject);
+    return (await store.findSubject(client.sector, accountId)) ?? randomSubject();
   };
 }

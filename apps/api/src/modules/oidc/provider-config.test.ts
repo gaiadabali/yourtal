@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { clientsFor } from "./clients";
 import { loadClients } from "./client-keys";
+import { MAX_PARAM_LENGTH } from "./authorization-request";
 import { TTL, providerConfiguration } from "./provider-config";
 import type { ProviderConfigDeps } from "./provider-config";
 import {
@@ -275,5 +276,62 @@ describe("authorization requests", () => {
   it("a missing redirect URI is refused even though each client has one", async () => {
     const response = await authorize({ redirect_uri: "" });
     expect(response.headers.location).toBeUndefined();
+  });
+
+  it("caps every parameter, so no request can store a large state or nonce", async () => {
+    for (const name of ["state", "nonce", "login_hint", "ui_locales"]) {
+      const response = await authorize({ [name]: "x".repeat(MAX_PARAM_LENGTH + 1) });
+      expect(errorOf(response.headers.location), name).toBe("invalid_request");
+    }
+    const fits = await authorize({ state: "x".repeat(MAX_PARAM_LENGTH) });
+    expect(fits.headers.location ?? "").toContain("/connect/");
+  });
+
+  it("does not accept authorization requests by POST", async () => {
+    const response = await kit.fastify.inject({
+      method: "POST",
+      url: "/oidc/auth",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      payload: new URLSearchParams({
+        ...WEB,
+        response_type: "code",
+        scope: "openid account",
+      }).toString(),
+    });
+    expect(response.headers.location ?? "").not.toContain("/connect/");
+    expect(response.statusCode).toBe(404);
+  });
+
+  it("builds every URL from the configured issuer, whatever host the request names", async () => {
+    const response = await kit.fastify.inject({
+      method: "GET",
+      url: "/oidc/.well-known/openid-configuration",
+      headers: {
+        host: "evil.example",
+        "x-forwarded-host": "evil.example",
+        "x-forwarded-proto": "https",
+      },
+    });
+    const metadata: Record<string, unknown> = response.json();
+    for (const key of [
+      "authorization_endpoint",
+      "token_endpoint",
+      "jwks_uri",
+      "userinfo_endpoint",
+    ]) {
+      expect(String(metadata[key])).toMatch(/^http:\/\/127\.0\.0\.1:26999\/oidc\//);
+    }
+    const started = await kit.fastify.inject({
+      method: "GET",
+      url: `/oidc/auth?${new URLSearchParams({
+        ...WEB,
+        response_type: "code",
+        scope: "openid account",
+        code_challenge: CHALLENGE,
+        code_challenge_method: "S256",
+      }).toString()}`,
+      headers: { host: "evil.example", "x-forwarded-host": "evil.example" },
+    });
+    expect(String(started.headers["set-cookie"])).not.toMatch(/domain=evil/i);
   });
 });

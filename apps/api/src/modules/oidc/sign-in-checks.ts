@@ -6,7 +6,16 @@ import type { AppConsent } from "./oidc-store";
 
 /**
  * The seam for SnapApp's teen invites (docs/26 §3.3). The invite ticket fills
- * it in; until then no teen gets in anywhere.
+ * it in; until then no teen gets in anywhere. For that ticket:
+ * - It is asked from GET /api/connect/{uid} (showing a screen) and from
+ *   findAccount at token and userinfo time, so it must only ever read: an
+ *   invite is used up when the teen taps Continue, never by a check.
+ * - At token and userinfo time there is no invite code; answer from the
+ *   standing, accepted invite and the guardian's consent.
+ * - A teen's consent is recorded with source `guardian_invite` and
+ *   `granted_via = 'guardian_invite'`, not as `oidc_consent_screen`.
+ * - The code travels in the authorization URL's query, so it must be
+ *   single-use and short-lived, and kept only as a hash.
  */
 export interface TeenInviteChecker {
   check(input: {
@@ -71,31 +80,49 @@ function consentCovers(input: SignInInput, ageBand: "adult" | "teen"): boolean {
 }
 
 /**
- * docs/26 §1.5, in order, once the person is known and before any code is
- * issued: email verified, not on hold, region, teens, then consent.
+ * docs/26 §1.5 checks 1 to 4, in order: email verified, not on hold, region,
+ * teens. Null when the person may sign in to this app. Also run by findAccount
+ * when a code or token is issued, so nothing that changed since the screen
+ * (a suspension, a refused teen) slips through.
  */
+export async function signInBlock(
+  account: OidcAccount,
+  client: SignInClient,
+  teenInvites: TeenInviteChecker,
+  teenInviteCode: string | undefined,
+  now: Date,
+): Promise<"verify_email" | SignInRefusal | null> {
+  if (!account.emailVerified || account.email === null) return "verify_email";
+  if (account.suspended) return "account_on_hold";
+  if (!client.regions.includes(account.region)) return "region_not_supported";
+  if (ageBandOf(account, now) === "teen") {
+    if (client.teens === "refuse") return "teen_not_allowed";
+    const invite = await teenInvites.check({
+      userId: account.userId,
+      client,
+      inviteCode: teenInviteCode,
+      now,
+    });
+    if (!invite.allowed) return "teen_invite_required";
+  }
+  return null;
+}
+
+/** docs/26 §1.5, in order, once the person is known and before any code is issued. */
 export async function decideSignIn(input: SignInInput): Promise<SignInState> {
   const { account, client } = input;
   if (account === null) return { screen: input.prompts.has("create") ? "create" : "login" };
-  if (!account.emailVerified || account.email === null) return { screen: "verify_email", account };
-  if (account.suspended) return { screen: "refused", account, refusal: "account_on_hold" };
-  if (!client.regions.includes(account.region)) {
-    return { screen: "refused", account, refusal: "region_not_supported" };
-  }
+  const block = await signInBlock(
+    account,
+    client,
+    input.teenInvites,
+    input.teenInviteCode,
+    input.now,
+  );
+  if (block === "verify_email") return { screen: "verify_email", account };
+  if (block !== null) return { screen: "refused", account, refusal: block };
 
   const ageBand = ageBandOf(account, input.now);
-  if (ageBand === "teen") {
-    if (client.teens === "refuse")
-      return { screen: "refused", account, refusal: "teen_not_allowed" };
-    const invite = await input.teenInvites.check({
-      userId: account.userId,
-      client,
-      inviteCode: input.teenInviteCode,
-      now: input.now,
-    });
-    if (!invite.allowed) return { screen: "refused", account, refusal: "teen_invite_required" };
-  }
-
   const sharing: InteractionSharing = {
     claims: sharedClaims(input.scopes),
     ageBand,

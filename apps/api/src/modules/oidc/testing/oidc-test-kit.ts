@@ -9,6 +9,7 @@ import { loadClients } from "../client-keys";
 import { clientsFor } from "../clients";
 import type { YourTalClient } from "../clients";
 import { loadProviderKeys } from "../keys";
+import type { ProviderKeys } from "../keys";
 import { mountOidc } from "../mount-oidc";
 import { OidcRuntime } from "../oidc-runtime";
 import { providerConfiguration } from "../provider-config";
@@ -46,7 +47,7 @@ export function makeTestClientKeys(): TestClientKeys {
       path.join(CLIENT_KEYS_DIR, "snapapp-staging-server.jwks.json"),
       publicJwks(server.publicKey, "srv-1"),
     ],
-    [path.join(CLIENT_KEYS_DIR, "ftr-staging-web.secret"), ftrSecret],
+    [path.join(CLIENT_KEYS_DIR, "ftr-web.secret"), ftrSecret],
   ]);
   return {
     files: {
@@ -115,7 +116,13 @@ export interface TestProvider {
 export interface TestProviderOptions {
   readonly issuer?: string;
   readonly findAccount?: FindAccount;
-  readonly pairwiseIdentifier?: (accountId: string, clientId: string) => Promise<string>;
+  readonly pairwiseIdentifier?: (
+    accountId: string,
+    clientId: string,
+    create: boolean,
+  ) => Promise<string>;
+  /** Signing and cookie keys; throwaway ones when absent. */
+  readonly keys?: ProviderKeys;
   readonly store?: Pick<OidcStore, "logSignIn">;
 }
 
@@ -127,7 +134,9 @@ export async function buildTestProvider(options: TestProviderOptions = {}): Prom
     options.issuer ?? TEST_ISSUER,
     providerConfiguration({
       clients: loaded.metadata,
-      keys: loadProviderKeys({ appEnv: "dev", jwksPath: "/test/oidc/none.json" }, () => undefined),
+      keys:
+        options.keys ??
+        loadProviderKeys({ appEnv: "dev", jwksPath: "/test/oidc/none.json" }, () => undefined),
       webOrigin: TEST_WEB_ORIGIN,
       adapter: memoryAdapterFactory(),
       findAccount: options.findAccount ?? (() => undefined),

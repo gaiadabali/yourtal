@@ -450,6 +450,28 @@ jobs:
           API_INTERNAL_URL: http://127.0.0.1:26344
         run: pnpm test:e2e:offline
 
+      # 1.28.d: the SAME ledger-client contract spec the API suite runs
+      # against the in-memory fake, run against the REAL Go ledger. Fake/live
+      # drift went unseen for weeks because only the fake leg ran in CI
+      # (god TASKS 1.28, YourTal 14.20). `pnpm test:ledger-live` gives the spec
+      # its own throwaway yourtal_test_* database (with-test-db.mjs), builds
+      # and starts the ledger on a free loopback port, waits for /readyz,
+      # sets LEDGER_CONTRACT_LIVE_URL, and fails on any spec failure. Own
+      # database and port, so it cannot collide with the ledger on 27110.
+      # The fake-only cases skip by design; the vitest summary is printed
+      # and a run where nothing passed is refused.
+      - name: Ledger contract spec against the live Go ledger (1.28.d)
+        timeout-minutes: 10
+        run: |
+          set -o pipefail
+          pnpm test:ledger-live 2>&1 | tee /tmp/ledger-live.log
+          echo "--- live leg summary ---"
+          grep -E "^ +(Test Files|Tests) " /tmp/ledger-live.log
+          if ! grep -qE "Tests +[0-9]+ passed" /tmp/ledger-live.log; then
+            echo "::error::The live ledger leg reported no passing tests; it did not run."
+            exit 1
+          fi
+
       # Everything else, now that Postgres and a live PDP are up. The
       # targeted steps above exist for their SKIP guards and their tee'd
       # logs; this runs every suite they did not.

@@ -1,6 +1,8 @@
 import { err, ok } from "neverthrow";
 import type { Result } from "neverthrow";
 import type { BillingAllocation, PurchaseResult } from "@yourtal/contracts/billing";
+import { partnersFundedBy } from "@yourtal/contracts/billing/receipt-funder";
+import type { ReceiptProgramme } from "@yourtal/contracts/billing/receipt-funder";
 import { withTax } from "@yourtal/contracts/money/tax";
 import type { BoundaryFailure } from "@yourtal/drivers/fault-engine";
 import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-internal-client";
@@ -22,7 +24,10 @@ export const PURCHASE_PREFIX = "card-purchase";
 const CHECKOUT_LIFETIME_MS = 31 * 60 * 1000;
 
 export interface StartPurchaseDeps {
-  readonly ledger: Pick<LedgerInternalClient, "quotePackage" | "purchasePoints" | "getAllocation">;
+  readonly ledger: Pick<
+    LedgerInternalClient,
+    "quotePackage" | "purchasePoints" | "getAllocation" | "getSettings"
+  >;
   readonly businesses: BusinessRegionLookup;
   readonly settings: RegionSettingsReader;
   readonly purchases: Pick<
@@ -42,6 +47,8 @@ export interface StartPurchaseCommand {
   readonly currency: string;
   /** The route's `Idempotency-Key`, scoped to this business. Also the ledger's key for the grant. */
   readonly idempotencyKey: string;
+  /** 2.10.b (F127): `receipts` buys a receipt package at cost; the approved funder only. */
+  readonly programme?: ReceiptProgramme;
 }
 
 /**
@@ -67,9 +74,18 @@ export async function startPurchase(
   const owner = { kind: "business" as const, id: command.merchantId, region: business.region };
   const driver = deps.accounts.driverFor(owner);
 
+  const programme = command.programme ?? null;
+  if (programme !== null) {
+    // Before any quote, row or checkout: a business that is not the funder gets nothing.
+    const settings = await deps.ledger.getSettings(business.region);
+    if (partnersFundedBy(settings, command.merchantId, business.region).length === 0) {
+      return err({ type: "not_a_receipt_funder" });
+    }
+  }
   const quote = await deps.ledger.quotePackage({
     region: business.region,
     tierKey: command.tierKey,
+    ...(programme === null ? {} : { programme, businessId: command.merchantId }),
   });
   if (quote.isErr()) return err({ type: "ledger_refused", ...quote.error });
   const taxRateBps = await gstRateBpsFor(deps.settings, business.region);
@@ -80,6 +96,7 @@ export async function startPurchase(
     region: business.region,
     currency: business.currency,
     tierKey: command.tierKey,
+    programme,
     points: quote.value.points,
     ...split,
     taxRateBps,
@@ -87,7 +104,11 @@ export async function startPurchase(
     provider: driver.provider,
     checkoutExpiresAt: new Date(deps.now().getTime() + CHECKOUT_LIFETIME_MS),
   });
-  if (row.businessId !== command.merchantId || row.tierKey !== command.tierKey) {
+  if (
+    row.businessId !== command.merchantId ||
+    row.tierKey !== command.tierKey ||
+    row.programme !== programme
+  ) {
     return err({ type: "purchase_conflict" });
   }
   if (row.status !== "pending" || row.checkoutExpiresAt <= deps.now()) {
@@ -125,9 +146,10 @@ export async function startPurchase(
 }
 
 function describePoints(row: CardPurchaseRow): string {
-  return row.region === "ID"
-    ? `${new Intl.NumberFormat("id-ID").format(row.points)} poin YourTal`
-    : `${new Intl.NumberFormat("en-AU").format(row.points)} YourTal points`;
+  const receipts = row.programme === "receipts";
+  const points = new Intl.NumberFormat(row.region === "ID" ? "id-ID" : "en-AU").format(row.points);
+  if (row.region === "ID") return `${points} poin YourTal${receipts ? " untuk hadiah struk" : ""}`;
+  return `${points} YourTal points${receipts ? " for receipt rewards" : ""}`;
 }
 
 function paymentError(failure: BoundaryFailure): PurchasePointsError {
@@ -165,7 +187,7 @@ async function answer(
             funderType: allocation.funderType,
             totalPoints: allocation.totalPoints,
             remainingPoints: allocation.remainingPoints,
-            programme: null,
+            programme: allocation.programme,
             createdAt: allocation.createdAt,
           },
   };

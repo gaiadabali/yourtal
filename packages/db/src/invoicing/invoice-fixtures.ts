@@ -52,6 +52,8 @@ export async function seedCardPurchase(
     points?: number;
     money?: Money;
     status?: "paid" | "pending";
+    /** 2.10.b: a receipt package (the table requires its tier). */
+    programme?: "receipts";
   } = {},
 ): Promise<{ id: string } & Money & { paymentRef: string }> {
   const region = options.region ?? "AU";
@@ -61,8 +63,8 @@ export async function seedCardPurchase(
   const { rows } = await db.query<{ id: string }>(
     `INSERT INTO payment.card_purchase
        (business_id, region, currency, points, subtotal_minor, tax_minor, total_minor, tax_rate_bps,
-        idempotency_key, provider, checkout_expires_at, payment_ref, status, allocation_id, paid_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'simulated', now() + interval '1 hour', $10, $11, $12, $13)
+        idempotency_key, provider, checkout_expires_at, payment_ref, status, allocation_id, paid_at, tier_key, programme)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'simulated', now() + interval '1 hour', $10, $11, $12, $13, $14, $15)
      RETURNING id::text AS id`,
     [
       businessId,
@@ -78,6 +80,8 @@ export async function seedCardPurchase(
       status,
       status === "paid" ? "alloc-1" : null,
       status === "paid" ? new Date() : null,
+      options.programme === undefined ? null : "starter",
+      options.programme ?? null,
     ],
   );
   return { id: rows[0]?.id ?? "", ...money, paymentRef };

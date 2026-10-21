@@ -11038,6 +11038,77 @@
         }
       }
     },
+    "/api/{tenantId}/studio/billing/receipt-programme": {
+      "get": {
+        "summary": "The receipt funder's package panel: earning, room left and the at-cost packages",
+        "tags": [
+          "studio",
+          "billing"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The partners this business funds, whether receipts are earning, and the receipt packages at cost with GST on top (2.10.b, F127).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptProgrammeView"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "not_a_receipt_funder: no approved receipt_funder setting names this business in its region.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/{tenantId}/studio/billing/alerts": {
       "get": {
         "summary": "Budget alerts: packages and campaign budgets at 50%, 80% and 100% used",
@@ -30547,6 +30618,42 @@
         },
         "required": [
           "reason"
+        ],
+        "additionalProperties": false
+      },
+      "ReceiptProgrammeView": {
+        "description": "2.10.b (F127): the receipt funder's panel. partners are the partner ids it funds; earning is true while a receipt package has room for one receipt; every package is priced at cost (pricing at_cost) with GST on top.",
+        "type": "object",
+        "properties": {
+          "partners": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "pointsPerReceipt": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "earning": {
+            "type": "boolean"
+          },
+          "remainingPoints": {
+            "$ref": "#/components/schemas/Points"
+          },
+          "packages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PurchaseQuote"
+            }
+          }
+        },
+        "required": [
+          "partners",
+          "pointsPerReceipt",
+          "earning",
+          "remainingPoints",
+          "packages"
         ],
         "additionalProperties": false
       },

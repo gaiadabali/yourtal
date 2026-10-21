@@ -10,14 +10,19 @@ import { wrapLedgerCall } from "../wrap-billing";
  * already "remaining minus active holds" -- `ledger-client.hold` decrements
  * `remaining_points` at the moment a hold is placed, so there is nothing
  * further to subtract here.
+ * 2.10.b (F127): receipt packages fund receipts, not campaigns, so the totals
+ * leave them out; they still appear in `allocations`, marked by `programme`.
  */
 export function getBalance(
   ledger: Pick<LedgerInternalClient, "listAllocations">,
   merchantId: string,
 ): ResultAsync<BillingBalance, GetBalanceError> {
-  return wrapLedgerCall(ledger.listAllocations(merchantId)).map((allocations) => ({
-    totalPoints: toPoints(allocations.reduce((sum, a) => sum + a.totalPoints, 0)),
-    remainingPoints: toPoints(allocations.reduce((sum, a) => sum + a.remainingPoints, 0)),
-    allocations: [...allocations],
-  }));
+  return wrapLedgerCall(ledger.listAllocations(merchantId)).map((allocations) => {
+    const campaignFunding = allocations.filter((a) => a.programme !== "receipts");
+    return {
+      totalPoints: toPoints(campaignFunding.reduce((sum, a) => sum + a.totalPoints, 0)),
+      remainingPoints: toPoints(campaignFunding.reduce((sum, a) => sum + a.remainingPoints, 0)),
+      allocations: [...allocations],
+    };
+  });
 }

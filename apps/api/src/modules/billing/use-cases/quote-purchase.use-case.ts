@@ -31,7 +31,7 @@ export function toPointPackage(quote: PackageTierQuote, taxRateBps: number): Poi
     // Display only, rounded up: never shows a package cheaper than it is.
     pricePer1000Minor: toMinorUnits(Math.ceil((quote.totalMinor * 1_000) / quote.points)),
     savingMinor: toMinorUnits(Math.max(0, quote.undiscountedMinor - quote.totalMinor)),
-    pricing: "tier",
+    pricing: quote.pricing,
   };
 }
 

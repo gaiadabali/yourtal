@@ -6,6 +6,7 @@ import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
 import { ZodValidationPipe } from "nestjs-zod";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { receiptFunderKey } from "@yourtal/contracts/billing/receipt-funder";
 import { createPaymentProviders } from "@yourtal/drivers/payment-providers";
 import { signStripePayload } from "@yourtal/drivers/stripe/signature";
 import { createBrowser } from "@yourtal/paysim/browser";
@@ -13,6 +14,8 @@ import type { PaySimBrowser } from "@yourtal/paysim/browser";
 import { startPaySimServer } from "@yourtal/paysim/server";
 import type { PaySimServer } from "@yourtal/paysim/server";
 import { AppModule } from "../../app.module";
+import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
+import type { LedgerInternalClient } from "../../shared/ledger-client/ledger-internal-client";
 import { PAYMENT_PROVIDERS } from "../../shared/drivers/payment-providers.module";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { sessionFor } from "../../shared/testing/session-for";
@@ -77,12 +80,16 @@ async function owner() {
   return { cookie: session.cookie, businessId };
 }
 
-async function buy(who: { cookie: string; businessId: string }, tierKey = "starter") {
+async function buy(
+  who: { cookie: string; businessId: string },
+  tierKey = "starter",
+  programme?: "receipts",
+) {
   const response = await app.inject({
     method: "POST",
     url: `/api/${who.businessId}/studio/billing/purchases`,
     headers: { cookie: who.cookie, "idempotency-key": `e2e-${randomUUID()}` },
-    payload: { tierKey, currency: "AUD" },
+    payload: { tierKey, currency: "AUD", ...(programme === undefined ? {} : { programme }) },
   });
   expect(response.statusCode).toBe(201);
   const body = response.json<{
@@ -112,6 +119,21 @@ async function allocations(businessId: string): Promise<number> {
   return Number(rows[0]?.["n"]);
 }
 
+/** Names `who` the approved receipt funder for a fresh partner in AU (two people, as staff do). */
+async function makeFunder(who: { businessId: string }) {
+  await db.execute(
+    sql`UPDATE business.business_accounts SET is_verified = true WHERE id = ${who.businessId}::uuid`,
+  );
+  const ledger = app.get<LedgerInternalClient>(LEDGER_INTERNAL_CLIENT);
+  const proposed = await ledger.proposeSetting({
+    region: "AU",
+    key: receiptFunderKey(`test-partner-${randomUUID()}`),
+    value: { businessId: who.businessId },
+    proposedBy: "staff-1",
+  });
+  await ledger.approveSetting({ id: proposed.id, approvedBy: "staff-2" });
+}
+
 function post(body: string, signature: string) {
   return fetch(webhookUrl, {
     method: "POST",
@@ -123,6 +145,25 @@ const signed = (body: string) =>
   signStripePayload(body, paysim.webhookSecret, Math.floor(Date.now() / 1000));
 
 describe("Stripe card purchases through the simulation (5.1.a)", () => {
+  it("a receipt package keeps its programme through the webhook (2.10.b)", async () => {
+    const who = await owner();
+    await makeFunder(who);
+    const purchase = await buy(who, "starter", "receipts");
+    // At cost: A$30.00 ex-GST + A$3.00 GST.
+    expect(purchase.purchase.totalMinor).toBe(3_300);
+
+    await browser.submitCheckout(purchase.sessionId, OK);
+    await paysim.tick();
+    expect((await status(who, purchase.purchaseId)).status).toBe("paid");
+
+    const { rows } = await db.execute(
+      sql`SELECT a.programme AS allocation, p.programme AS purchase
+            FROM platform.ledger_fake_allocation a, payment.card_purchase p
+           WHERE a.business_id = ${who.businessId}::uuid AND p.id = ${purchase.purchaseId}::uuid`,
+    );
+    expect(rows).toEqual([{ allocation: "receipts", purchase: "receipts" }]);
+  });
+
   it("4242 pays, the webhook grants once, and a replayed delivery grants nothing more", async () => {
     const who = await owner();
     const purchase = await buy(who);

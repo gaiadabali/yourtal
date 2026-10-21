@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import type { CardPurchase, CardPurchaseStatus } from "@yourtal/contracts/billing";
+import type { ReceiptProgramme } from "@yourtal/contracts/billing/receipt-funder";
 import type { Currency } from "@yourtal/contracts/money/currency";
 import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
 import type { Region } from "@yourtal/contracts/region";
@@ -15,6 +16,8 @@ export interface CardPurchaseRow {
   readonly currency: Currency;
   /** 14.13: the package bought; null for a purchase made before packages. */
   readonly tierKey: string | null;
+  /** 2.10.b (F127): `receipts` for a receipt package bought at cost, else null. */
+  readonly programme: ReceiptProgramme | null;
   readonly points: number;
   readonly subtotalMinor: number;
   readonly taxMinor: number;
@@ -36,6 +39,7 @@ export type NewCardPurchase = Pick<
   | "region"
   | "currency"
   | "tierKey"
+  | "programme"
   | "points"
   | "subtotalMinor"
   | "taxMinor"
@@ -57,9 +61,9 @@ export class CardPurchaseRepository {
   async insertOnce(purchase: NewCardPurchase): Promise<CardPurchaseRow> {
     await this.db.execute(sql`
       INSERT INTO payment.card_purchase
-        (business_id, region, currency, tier_key, points, subtotal_minor, tax_minor, total_minor,
+        (business_id, region, currency, tier_key, programme, points, subtotal_minor, tax_minor, total_minor,
          tax_rate_bps, idempotency_key, provider, checkout_expires_at)
-      VALUES (${purchase.businessId}, ${purchase.region}, ${purchase.currency}, ${purchase.tierKey},
+      VALUES (${purchase.businessId}, ${purchase.region}, ${purchase.currency}, ${purchase.tierKey}, ${purchase.programme},
               ${purchase.points},
               ${purchase.subtotalMinor}, ${purchase.taxMinor}, ${purchase.totalMinor},
               ${purchase.taxRateBps}, ${purchase.idempotencyKey}, ${purchase.provider},
@@ -121,6 +125,7 @@ function toRow(row: Record<string, unknown>): CardPurchaseRow {
     region: row["region"] as Region,
     currency: row["currency"] as Currency,
     tierKey: text(row["tier_key"]),
+    programme: row["programme"] === "receipts" ? "receipts" : null,
     points: Number(row["points"]),
     subtotalMinor: Number(row["subtotal_minor"]),
     taxMinor: Number(row["tax_minor"]),
@@ -150,7 +155,7 @@ export function toCardPurchase(row: CardPurchaseRow): CardPurchase {
     taxRateBps: row.taxRateBps,
     currency: row.currency,
     allocationId: row.allocationId,
-    programme: null,
+    programme: row.programme,
     createdAt: row.createdAt.toISOString(),
     paidAt: row.paidAt === null ? null : row.paidAt.toISOString(),
   };

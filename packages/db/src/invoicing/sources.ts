@@ -1,7 +1,7 @@
 import * as z from "zod";
 import { taxMinorOf } from "@yourtal/contracts/money/tax";
 import type { InvoiceSourceKind } from "@yourtal/contracts/invoice";
-import { boostLine, pointsLine } from "./format";
+import { boostLine, pointsLine, receiptPointsLine } from "./format";
 import { gstRateBps } from "./settings";
 import type { InvoiceSourceRef, Queryable, SkipReason, SourceFacts } from "./types";
 
@@ -18,6 +18,7 @@ const cardRow = z.object({
   region,
   currency,
   points: bigintValue,
+  programme: z.enum(["receipts"]).nullable(),
   subtotal_minor: bigintValue,
   tax_minor: bigintValue,
   total_minor: bigintValue,
@@ -64,7 +65,7 @@ const REGION_CURRENCY = { AU: "AUD", ID: "IDR" } as const;
 
 async function cardPurchase(db: Queryable, id: string): Promise<SourceResult> {
   const { rows } = await db.query(
-    `SELECT business_id::text, region, currency, points::text, subtotal_minor::text,
+    `SELECT business_id::text, region, currency, points::text, programme, subtotal_minor::text,
             tax_minor::text, total_minor::text, tax_rate_bps, payment_ref, status
        FROM payment.card_purchase WHERE id = $1`,
     [id],
@@ -83,7 +84,10 @@ async function cardPurchase(db: Queryable, id: string): Promise<SourceResult> {
       totalMinor: row.total_minor,
       taxRateBps: row.tax_rate_bps,
       paymentRef: row.payment_ref,
-      description: pointsLine(row.points),
+      description:
+        row.programme === "receipts"
+          ? receiptPointsLine(row.points, row.region)
+          : pointsLine(row.points),
     },
   };
 }

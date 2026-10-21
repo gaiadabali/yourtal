@@ -502,8 +502,6 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "device/partner-action.ts's request body for POST /api/partners/receipts/status (2.10.b) — documented inline once the route is registered (T4).",
   partnerReceiptStatusResultSchema:
     "device/partner-action.ts's response for POST /api/partners/receipts/status (2.10.b) — documented inline once the route is registered (T4).",
-  receiptProgrammeViewSchema:
-    "billing.ts's response for GET .../billing/receipt-programme (2.10.b) — documented inline once the route is registered (T5).",
   receiptProgrammeSchema:
     "billing/receipt-funder.ts's closed programme literal, nested inside other schemas — not a standalone component.",
   receiptFunderValueSchema:

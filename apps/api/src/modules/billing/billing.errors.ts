@@ -34,6 +34,11 @@ export interface PurchaseConflictError {
   readonly type: "purchase_conflict";
 }
 
+/** 2.10.b (F127): the business is not the approved receipt funder in its region. */
+export interface NotAReceiptFunderError {
+  readonly type: "not_a_receipt_funder";
+}
+
 export interface PurchaseNotFoundError {
   readonly type: "purchase_not_found";
   readonly purchaseId: string;
@@ -58,8 +63,13 @@ export type PurchasePointsError =
   | PaymentDeclinedError
   | PaymentUnavailableError
   | PurchaseConflictError
+  | NotAReceiptFunderError
   | LedgerRefusedError
   | PersistenceFailedError;
+
+/** 2.10.b: the funder's receipt-programme read. */
+export type ReceiptProgrammeError =
+  BusinessNotFoundError | NotAReceiptFunderError | LedgerRefusedError | PersistenceFailedError;
 
 export type GetBalanceError = BusinessNotFoundError | LedgerRefusedError | PersistenceFailedError;
 

@@ -190,6 +190,19 @@ describe("each source kind", () => {
     ]);
   });
 
+  it("words a receipt package's line for receipt rewards, with the real point count", async () => {
+    const buyer = await seedBusiness(app);
+    const purchase = await seedCardPurchase(app, buyer.id, {
+      points: 10_000,
+      programme: "receipts",
+      money: { subtotalMinor: 30_000, taxMinor: 3_000 },
+    });
+    await issueInvoice(app, { kind: "card_purchase", id: purchase.id });
+    expect(await lines("card_purchase", purchase.id)).toMatchObject([
+      { description: "10,000 YourTal points for receipt rewards", subtotal_minor: "30000" },
+    ]);
+  });
+
   it("invoices a charged boost batch, naming the campaign and the days", async () => {
     const buyer = await seedBusiness(app);
     const batch = await seedBoostBatch(app, buyer.id, {

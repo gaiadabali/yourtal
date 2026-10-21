@@ -16,6 +16,7 @@ import { listPackages, quotePurchase } from "./quote-purchase.use-case";
 import { startPurchase } from "./start-purchase.use-case";
 
 const BUSINESS = "0c4f0e8e-6a8f-4a39-9b67-2f4b4d1a0b11";
+const OTHER_BUSINESS = "1d5a1f9f-7b9a-4b4a-8c78-3a5c5e2b1c22";
 const NOW = new Date("2026-10-20T10:00:00.000Z");
 
 function memoryPurchases() {
@@ -70,18 +71,44 @@ function tierQuote(tierKey: keyof typeof TIERS) {
   };
 }
 
-function fakeLedger(refuse?: {
-  code: "refused" | "kill_switch" | "already_granted";
-  message: string;
-}) {
+/** The AU Starter receipt package at cost: 1,000 points x 3c. */
+const AT_COST = {
+  ...tierQuote("starter"),
+  totalMinor: toMinorUnits(3_000),
+  undiscountedMinor: toMinorUnits(3_000),
+  pricing: "at_cost" as const,
+};
+
+/** An approved `receipt_funder.snap-app` setting naming `funder` in AU. */
+function funderSettings(funder: string) {
+  return [
+    {
+      key: "receipt_funder.snap-app",
+      region: "AU" as const,
+      value: { businessId: funder },
+      approvedBy: "staff-2",
+    },
+  ];
+}
+
+function fakeLedger(
+  refuse?: { code: "refused" | "kill_switch" | "already_granted"; message: string },
+  funder: string | null = BUSINESS,
+) {
   const grants: PurchasePointsRequest[] = [];
+  const quotes: QuotePackageRequest[] = [];
   return {
     grants,
+    quotes,
+    getSettings: () => Promise.resolve(funder === null ? [] : (funderSettings(funder) as never)),
     packageTiers: () => okAsync([tierQuote("starter"), tierQuote("grow")]),
-    quotePackage: (request: QuotePackageRequest) =>
-      request.tierKey in TIERS
+    quotePackage: (request: QuotePackageRequest) => {
+      quotes.push(request);
+      if (request.programme === "receipts") return okAsync(AT_COST);
+      return request.tierKey in TIERS
         ? okAsync(tierQuote(request.tierKey as keyof typeof TIERS))
-        : errAsync({ code: "refused" as const, message: "no such package tier" }),
+        : errAsync({ code: "refused" as const, message: "no such package tier" });
+    },
     purchasePoints: (request: PurchasePointsRequest) => {
       grants.push(request);
       if (refuse !== undefined) return errAsync(refuse);
@@ -92,7 +119,7 @@ function fakeLedger(refuse?: {
         funderType: "partner" as const,
         totalPoints: request.points,
         remainingPoints: request.points,
-        programme: null,
+        programme: request.programme ?? null,
         createdAt: NOW.toISOString(),
       });
     },
@@ -282,6 +309,97 @@ describe("startPurchase on the simulated driver (Indonesia, tests)", () => {
     expect(d.ledger.grants).toEqual([
       expect.objectContaining({ paidMinor: 42_750, points: 10_000, tierKey: "grow" }),
     ]);
+  });
+});
+
+describe("receipt packages bought at cost (2.10.b, F127)", () => {
+  const simulated = () =>
+    createSimulatedPayments(undefined, { declaredMinorUnitExponent: simulatedProcessorUnits() });
+  const receipts = (key = "biz:key-1") => ({ ...command(key), programme: "receipts" as const });
+
+  it("quotes the funder at cost, charges the GST-inclusive total and records the programme", async () => {
+    const d = deps(simulated());
+    const result = (await startPurchase(d, receipts()))._unsafeUnwrap();
+    expect(d.ledger.quotes).toEqual([
+      { region: "AU", tierKey: "starter", programme: "receipts", businessId: BUSINESS },
+    ]);
+    expect(result.status).toBe("paid");
+    expect(result.purchase).toMatchObject({
+      programme: "receipts",
+      subtotalMinor: 3_000,
+      taxMinor: 300,
+      totalMinor: 3_300,
+    });
+    expect(result.allocation?.programme).toBe("receipts");
+    expect(d.ledger.grants).toEqual([
+      expect.objectContaining({ paidMinor: 3_000, tierKey: "starter", programme: "receipts" }),
+    ]);
+  });
+
+  it("describes the checkout as receipt rewards", async () => {
+    const { driver, calls } = stripe();
+    expect((await startPurchase(deps(driver), receipts())).isOk()).toBe(true);
+    expect(calls[0]?.body.get("line_items[0][price_data][product_data][name]")).toBe(
+      "1,000 YourTal points for receipt rewards",
+    );
+  });
+
+  it("refuses a business that is not the funder before any quote, row or checkout", async () => {
+    const { driver, calls } = stripe();
+    const d = deps(driver, fakeLedger(undefined, OTHER_BUSINESS));
+    expect((await startPurchase(d, receipts()))._unsafeUnwrapErr()).toEqual({
+      type: "not_a_receipt_funder",
+    });
+    expect(d.ledger.quotes).toEqual([]);
+    expect(d.purchases.rows.size).toBe(0);
+    expect(calls).toEqual([]);
+    const none = deps(driver, fakeLedger(undefined, null));
+    expect((await startPurchase(none, receipts()))._unsafeUnwrapErr().type).toBe(
+      "not_a_receipt_funder",
+    );
+  });
+
+  it("replays the same key to the same purchase, and refuses it for another programme", async () => {
+    const d = deps(simulated());
+    const first = (await startPurchase(d, receipts()))._unsafeUnwrap();
+    const again = (await startPurchase(d, receipts()))._unsafeUnwrap();
+    expect(again.purchaseId).toBe(first.purchaseId);
+    expect(d.purchases.rows.size).toBe(1);
+    expect(d.ledger.grants).toHaveLength(1);
+    expect((await startPurchase(d, command()))._unsafeUnwrapErr()).toEqual({
+      type: "purchase_conflict",
+    });
+  });
+
+  it("keeps the programme when the Stripe webhook fulfils the purchase", async () => {
+    const d = deps(stripe().driver);
+    const started = (await startPurchase(d, receipts()))._unsafeUnwrap();
+    expect(started.status).toBe("awaiting_payment");
+    const handlers = new PaymentEventHandlers();
+    registerPurchaseEvents(handlers, d);
+    await handlers.dispatch({
+      type: "checkout.completed",
+      eventId: "evt_r",
+      checkoutReference: "cs_test_buy",
+      mode: "payment",
+      reference: `card-purchase:${started.purchaseId}`,
+      paymentReference: "pi_r",
+      amountMinor: 3_300,
+      currency: "AUD",
+      customerRef: "cus_1",
+      paymentMethodRef: null,
+    });
+    expect(d.ledger.grants).toEqual([
+      expect.objectContaining({ paidMinor: 3_000, programme: "receipts" }),
+    ]);
+    expect(d.purchases.rows.get(started.purchaseId)?.status).toBe("paid");
+  });
+
+  it("sends no programme for an ordinary package", async () => {
+    const d = deps(simulated());
+    expect((await startPurchase(d, command())).isOk()).toBe(true);
+    expect(d.ledger.grants[0]).not.toHaveProperty("programme");
+    expect(d.purchases.rows.values().next().value?.programme).toBeNull();
   });
 });
 

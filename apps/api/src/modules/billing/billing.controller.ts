@@ -37,6 +37,7 @@ import { getCampaignSpend } from "./use-cases/get-campaign-spend.use-case";
 import { listStatements, toBillingStatement } from "./use-cases/list-statements.use-case";
 import { startPurchase } from "./use-cases/start-purchase.use-case";
 import { listPackages, quotePurchase } from "./use-cases/quote-purchase.use-case";
+import { getReceiptProgramme } from "./use-cases/get-receipt-programme.use-case";
 import { statementsToCsv } from "./statements-csv";
 import { BUDGET_ALERTS } from "./alerts/budget-alert.repository";
 import type { BudgetAlertRepository } from "./alerts/budget-alert.repository";
@@ -70,6 +71,23 @@ export class BillingController {
   @Get("alerts")
   async budgetAlerts(@Param("tenantId") tenantId: string) {
     return { alerts: await this.alerts.listForBusiness(tenantId) };
+  }
+
+  /** 2.10.b (F127): the receipt funder's package panel; 404 `not_a_receipt_funder` for anyone else. */
+  @Authorize({ kind: "billing", action: "view" })
+  @NotValueMoving("A read.")
+  @Get("receipt-programme")
+  async receiptProgramme(@Param("tenantId") tenantId: string) {
+    const result = await getReceiptProgramme(
+      {
+        ledger: this.ledger,
+        businesses: this.businessRegionLookup,
+        settings: this.settings,
+      },
+      tenantId,
+    );
+    if (result.isErr()) throw mapBillingErrorToHttpException(result.error);
+    return result.value;
   }
 
   /** 14.13 (F122): the packages on sale, each priced by the ledger with GST on top. */
@@ -125,7 +143,13 @@ export class BillingController {
         webOrigin: this.config.webOrigin,
         now: () => new Date(),
       },
-      { merchantId: tenantId, tierKey: body.tierKey, currency: body.currency, idempotencyKey },
+      {
+        merchantId: tenantId,
+        tierKey: body.tierKey,
+        currency: body.currency,
+        idempotencyKey,
+        ...(body.programme === undefined ? {} : { programme: body.programme }),
+      },
     );
     if (result.isErr()) throw mapBillingErrorToHttpException(result.error);
     return result.value;

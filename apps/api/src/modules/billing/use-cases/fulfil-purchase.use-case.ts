@@ -67,6 +67,8 @@ export async function fulfilPurchase(
     // 14.13: the ledger prices the package again now; a rate or tier change
     // since the checkout opened parks the money for review below.
     ...(row.tierKey === null ? {} : { tierKey: row.tierKey }),
+    // 2.10.b: a receipt package is bought at cost; the ledger checks the funder again.
+    ...(row.programme === null ? {} : { programme: row.programme }),
   });
   if (granted.isErr()) {
     if (TRANSIENT_REFUSALS.has(granted.error.code)) {

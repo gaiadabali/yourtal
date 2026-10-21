@@ -12,6 +12,7 @@ import type {
   CampaignSpendNotOwnedError,
   CurrencyMismatchError,
   LedgerRefusedError,
+  NotAReceiptFunderError,
   PaymentDeclinedError,
   PaymentUnavailableError,
   PersistenceFailedError,
@@ -25,6 +26,7 @@ export type BillingDomainError =
   | BusinessNotFoundError
   | CurrencyMismatchError
   | LedgerRefusedError
+  | NotAReceiptFunderError
   | PaymentDeclinedError
   | PaymentUnavailableError
   | PurchaseConflictError
@@ -59,6 +61,12 @@ export function mapBillingErrorToHttpException(error: BillingDomainError): HttpE
       return new ConflictException({
         code: "idempotency_conflict",
         message: "This Idempotency-Key was already used for a different purchase.",
+      });
+    case "not_a_receipt_funder":
+      // 404, not 403: a business that is not the funder learns nothing about who is.
+      return new NotFoundException({
+        code: "not_a_receipt_funder",
+        message: "this business does not fund any partner's receipts",
       });
     case "purchase_not_found":
       return new NotFoundException({

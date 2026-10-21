@@ -29,6 +29,24 @@ export const BILLING_CARD_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   },
   {
     method: "get",
+    path: "/api/{tenantId}/studio/billing/receipt-programme",
+    summary: "The receipt funder's package panel: earning, room left and the at-cost packages",
+    tags: ["studio", "billing"],
+    pathParams: [TENANT_ID_PARAM],
+    successStatus: 200,
+    successDescription:
+      "The partners this business funds, whether receipts are earning, and the receipt packages at cost with GST on top (2.10.b, F127).",
+    successSchema: ref("ReceiptProgrammeView"),
+    errors: [
+      FORBIDDEN,
+      nestDefaultError(
+        404,
+        "not_a_receipt_funder: no approved receipt_funder setting names this business in its region.",
+      ),
+    ],
+  },
+  {
+    method: "get",
     path: "/api/{tenantId}/studio/billing/alerts",
     summary: "Budget alerts: packages and campaign budgets at 50%, 80% and 100% used",
     tags: ["studio", "billing"],

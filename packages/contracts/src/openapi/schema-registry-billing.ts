@@ -14,6 +14,7 @@ import {
   purchasePointsRequestSchema,
   purchaseQuoteSchema,
   purchaseResultSchema,
+  receiptProgrammeViewSchema,
   raiseStatementDisputeRequestSchema,
   savedCardSchema,
   startCardSetupResultSchema,
@@ -75,6 +76,13 @@ export const BILLING_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     schema: purchasePointsRequestSchema,
     description:
       "Buy a point package (F121: always a package). currency is required and never defaulted (7.5.a) -- the caller states what it expects to be charged, and a mismatch against the business's own currency is refused rather than coerced.",
+    crossFieldRules: [],
+  },
+  {
+    id: "ReceiptProgrammeView",
+    schema: receiptProgrammeViewSchema,
+    description:
+      "2.10.b (F127): the receipt funder's panel. partners are the partner ids it funds; earning is true while a receipt package has room for one receipt; every package is priced at cost (pricing at_cost) with GST on top.",
     crossFieldRules: [],
   },
   {

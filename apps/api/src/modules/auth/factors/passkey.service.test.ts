@@ -177,6 +177,14 @@ describe("proving a passkey again (step-up)", () => {
 
   it("will not answer a sign-in challenge as a step-up, or the reverse", async () => {
     const device = await registered(ANA);
+    const stepUp = await service.stepUpOptions(ANA);
+    if (stepUp.isErr()) throw new Error(stepUp.error.type);
+    const asSignIn = await service.signIn(
+      stepUp.value.challengeId,
+      device.assert(stepUp.value.options),
+      NOW,
+    );
+    expect(asSignIn.isErr()).toBe(true);
     const signIn = await signInOptions();
     const asStepUp = await service.stepUp(
       ANA,
@@ -206,5 +214,30 @@ describe("removing a passkey", () => {
     expect(notYours.isErr() && notYours.error.type).toBe("passkey_not_found");
     expect((await service.remove(ANA, device.credentialId)).isOk()).toBe(true);
     expect(await passkeys.listForUser(ANA)).toHaveLength(0);
+  });
+});
+
+describe("the account's passkey marker row", () => {
+  it("is written with the first passkey, not when options are asked for", async () => {
+    const options = await service.registrationOptions(ANA);
+    expect(options.isOk()).toBe(true);
+    expect(await passkeys.userHandleOf(ANA)).toBeNull();
+    await registered(ANA);
+    expect(await passkeys.userHandleOf(ANA)).not.toBeNull();
+  });
+});
+
+describe("the signature counter", () => {
+  it("counts once when two sign-ins race with the same counter", async () => {
+    const device = await registered(ANA);
+    const first = await signInOptions();
+    const second = await signInOptions();
+    const a = device.assert(first.options, { counter: 5 });
+    const b = device.assert(second.options, { counter: 5 });
+    const outcomes = await Promise.all([
+      service.signIn(first.challengeId, a, NOW),
+      service.signIn(second.challengeId, b, NOW),
+    ]);
+    expect(outcomes.filter((outcome) => outcome.isOk())).toHaveLength(1);
   });
 });

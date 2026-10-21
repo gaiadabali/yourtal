@@ -19,8 +19,15 @@ export class SessionIssuer {
     private readonly sessions: SessionService,
   ) {}
 
-  async issue(userId: string, now: Date, amr: readonly AuthMethod[]): Promise<string> {
+  /** `signedInAt` is for a replacement session, which keeps the original sign-in time. */
+  async issue(
+    userId: string,
+    now: Date,
+    amr: readonly AuthMethod[],
+    signedInAt: Date = now,
+  ): Promise<string> {
     const roles = await this.staffRoles.listForUser(userId);
-    return this.sessions.issue(userId, now, roles.length > 0 ? "staff" : "consumer", amr);
+    const kind = roles.length > 0 ? "staff" : "consumer";
+    return this.sessions.issue(userId, now, kind, amr, signedInAt);
   }
 }

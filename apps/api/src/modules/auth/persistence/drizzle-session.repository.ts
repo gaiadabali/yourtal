@@ -1,4 +1,4 @@
-import { and, eq, isNull, lt } from "drizzle-orm";
+import { and, eq, isNull, lt, ne } from "drizzle-orm";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import { sessions } from "./schema/session.table";
 import type { SessionRepository, StoredSession } from "./session.repository";
@@ -11,12 +11,14 @@ export class DrizzleSessionRepository implements SessionRepository {
     userId: string;
     absoluteExpiresAt: Date;
     amr: readonly string[];
+    signedInAt: Date;
   }): Promise<void> {
     await this.db.insert(sessions).values({
       id: input.id,
       userId: input.userId,
       absoluteExpiresAt: input.absoluteExpiresAt,
       amr: [...input.amr],
+      signedInAt: input.signedInAt,
     });
   }
 
@@ -41,6 +43,13 @@ export class DrizzleSessionRepository implements SessionRepository {
       .update(sessions)
       .set({ revokedAt: now })
       .where(and(eq(sessions.userId, userId), isNull(sessions.revokedAt)));
+  }
+
+  async revokeOthers(userId: string, keepId: string, now: Date): Promise<void> {
+    await this.db
+      .update(sessions)
+      .set({ revokedAt: now })
+      .where(and(eq(sessions.userId, userId), ne(sessions.id, keepId), isNull(sessions.revokedAt)));
   }
 
   async pruneExpired(now: Date): Promise<number> {

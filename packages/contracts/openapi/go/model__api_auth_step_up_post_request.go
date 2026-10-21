@@ -14,38 +14,38 @@ import (
 	"encoding/json"
 )
 
-// checks if the ApiAuthTotpDisablePostRequest type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ApiAuthTotpDisablePostRequest{}
+// checks if the ApiAuthStepUpPostRequest type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &ApiAuthStepUpPostRequest{}
 
-// ApiAuthTotpDisablePostRequest struct for ApiAuthTotpDisablePostRequest
-type ApiAuthTotpDisablePostRequest struct {
+// ApiAuthStepUpPostRequest struct for ApiAuthStepUpPostRequest
+type ApiAuthStepUpPostRequest struct {
 	Code *string `json:"code,omitempty" validate:"regexp=^\\d{6}$"`
 	ChallengeId *string `json:"challengeId,omitempty"`
-	Response *ApiAuthTotpDisablePostRequestResponse `json:"response,omitempty"`
+	Response *ApiAuthStepUpPostRequestResponse `json:"response,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
-type _ApiAuthTotpDisablePostRequest ApiAuthTotpDisablePostRequest
+type _ApiAuthStepUpPostRequest ApiAuthStepUpPostRequest
 
-// NewApiAuthTotpDisablePostRequest instantiates a new ApiAuthTotpDisablePostRequest object
+// NewApiAuthStepUpPostRequest instantiates a new ApiAuthStepUpPostRequest object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiAuthTotpDisablePostRequest() *ApiAuthTotpDisablePostRequest {
-	this := ApiAuthTotpDisablePostRequest{}
+func NewApiAuthStepUpPostRequest() *ApiAuthStepUpPostRequest {
+	this := ApiAuthStepUpPostRequest{}
 	return &this
 }
 
-// NewApiAuthTotpDisablePostRequestWithDefaults instantiates a new ApiAuthTotpDisablePostRequest object
+// NewApiAuthStepUpPostRequestWithDefaults instantiates a new ApiAuthStepUpPostRequest object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewApiAuthTotpDisablePostRequestWithDefaults() *ApiAuthTotpDisablePostRequest {
-	this := ApiAuthTotpDisablePostRequest{}
+func NewApiAuthStepUpPostRequestWithDefaults() *ApiAuthStepUpPostRequest {
+	this := ApiAuthStepUpPostRequest{}
 	return &this
 }
 
 // GetCode returns the Code field value if set, zero value otherwise.
-func (o *ApiAuthTotpDisablePostRequest) GetCode() string {
+func (o *ApiAuthStepUpPostRequest) GetCode() string {
 	if o == nil || IsNil(o.Code) {
 		var ret string
 		return ret
@@ -55,7 +55,7 @@ func (o *ApiAuthTotpDisablePostRequest) GetCode() string {
 
 // GetCodeOk returns a tuple with the Code field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *ApiAuthTotpDisablePostRequest) GetCodeOk() (*string, bool) {
+func (o *ApiAuthStepUpPostRequest) GetCodeOk() (*string, bool) {
 	if o == nil || IsNil(o.Code) {
 		return nil, false
 	}
@@ -63,7 +63,7 @@ func (o *ApiAuthTotpDisablePostRequest) GetCodeOk() (*string, bool) {
 }
 
 // HasCode returns a boolean if a field has been set.
-func (o *ApiAuthTotpDisablePostRequest) HasCode() bool {
+func (o *ApiAuthStepUpPostRequest) HasCode() bool {
 	if o != nil && !IsNil(o.Code) {
 		return true
 	}
@@ -72,12 +72,12 @@ func (o *ApiAuthTotpDisablePostRequest) HasCode() bool {
 }
 
 // SetCode gets a reference to the given string and assigns it to the Code field.
-func (o *ApiAuthTotpDisablePostRequest) SetCode(v string) {
+func (o *ApiAuthStepUpPostRequest) SetCode(v string) {
 	o.Code = &v
 }
 
 // GetChallengeId returns the ChallengeId field value if set, zero value otherwise.
-func (o *ApiAuthTotpDisablePostRequest) GetChallengeId() string {
+func (o *ApiAuthStepUpPostRequest) GetChallengeId() string {
 	if o == nil || IsNil(o.ChallengeId) {
 		var ret string
 		return ret
@@ -87,7 +87,7 @@ func (o *ApiAuthTotpDisablePostRequest) GetChallengeId() string {
 
 // GetChallengeIdOk returns a tuple with the ChallengeId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *ApiAuthTotpDisablePostRequest) GetChallengeIdOk() (*string, bool) {
+func (o *ApiAuthStepUpPostRequest) GetChallengeIdOk() (*string, bool) {
 	if o == nil || IsNil(o.ChallengeId) {
 		return nil, false
 	}
@@ -95,7 +95,7 @@ func (o *ApiAuthTotpDisablePostRequest) GetChallengeIdOk() (*string, bool) {
 }
 
 // HasChallengeId returns a boolean if a field has been set.
-func (o *ApiAuthTotpDisablePostRequest) HasChallengeId() bool {
+func (o *ApiAuthStepUpPostRequest) HasChallengeId() bool {
 	if o != nil && !IsNil(o.ChallengeId) {
 		return true
 	}
@@ -104,14 +104,14 @@ func (o *ApiAuthTotpDisablePostRequest) HasChallengeId() bool {
 }
 
 // SetChallengeId gets a reference to the given string and assigns it to the ChallengeId field.
-func (o *ApiAuthTotpDisablePostRequest) SetChallengeId(v string) {
+func (o *ApiAuthStepUpPostRequest) SetChallengeId(v string) {
 	o.ChallengeId = &v
 }
 
 // GetResponse returns the Response field value if set, zero value otherwise.
-func (o *ApiAuthTotpDisablePostRequest) GetResponse() ApiAuthTotpDisablePostRequestResponse {
+func (o *ApiAuthStepUpPostRequest) GetResponse() ApiAuthStepUpPostRequestResponse {
 	if o == nil || IsNil(o.Response) {
-		var ret ApiAuthTotpDisablePostRequestResponse
+		var ret ApiAuthStepUpPostRequestResponse
 		return ret
 	}
 	return *o.Response
@@ -119,7 +119,7 @@ func (o *ApiAuthTotpDisablePostRequest) GetResponse() ApiAuthTotpDisablePostRequ
 
 // GetResponseOk returns a tuple with the Response field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *ApiAuthTotpDisablePostRequest) GetResponseOk() (*ApiAuthTotpDisablePostRequestResponse, bool) {
+func (o *ApiAuthStepUpPostRequest) GetResponseOk() (*ApiAuthStepUpPostRequestResponse, bool) {
 	if o == nil || IsNil(o.Response) {
 		return nil, false
 	}
@@ -127,7 +127,7 @@ func (o *ApiAuthTotpDisablePostRequest) GetResponseOk() (*ApiAuthTotpDisablePost
 }
 
 // HasResponse returns a boolean if a field has been set.
-func (o *ApiAuthTotpDisablePostRequest) HasResponse() bool {
+func (o *ApiAuthStepUpPostRequest) HasResponse() bool {
 	if o != nil && !IsNil(o.Response) {
 		return true
 	}
@@ -135,12 +135,12 @@ func (o *ApiAuthTotpDisablePostRequest) HasResponse() bool {
 	return false
 }
 
-// SetResponse gets a reference to the given ApiAuthTotpDisablePostRequestResponse and assigns it to the Response field.
-func (o *ApiAuthTotpDisablePostRequest) SetResponse(v ApiAuthTotpDisablePostRequestResponse) {
+// SetResponse gets a reference to the given ApiAuthStepUpPostRequestResponse and assigns it to the Response field.
+func (o *ApiAuthStepUpPostRequest) SetResponse(v ApiAuthStepUpPostRequestResponse) {
 	o.Response = &v
 }
 
-func (o ApiAuthTotpDisablePostRequest) MarshalJSON() ([]byte, error) {
+func (o ApiAuthStepUpPostRequest) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -148,7 +148,7 @@ func (o ApiAuthTotpDisablePostRequest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o ApiAuthTotpDisablePostRequest) ToMap() (map[string]interface{}, error) {
+func (o ApiAuthStepUpPostRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	if !IsNil(o.Code) {
 		toSerialize["code"] = o.Code
@@ -167,16 +167,16 @@ func (o ApiAuthTotpDisablePostRequest) ToMap() (map[string]interface{}, error) {
 	return toSerialize, nil
 }
 
-func (o *ApiAuthTotpDisablePostRequest) UnmarshalJSON(data []byte) (err error) {
-	varApiAuthTotpDisablePostRequest := _ApiAuthTotpDisablePostRequest{}
+func (o *ApiAuthStepUpPostRequest) UnmarshalJSON(data []byte) (err error) {
+	varApiAuthStepUpPostRequest := _ApiAuthStepUpPostRequest{}
 
-	err = json.Unmarshal(data, &varApiAuthTotpDisablePostRequest)
+	err = json.Unmarshal(data, &varApiAuthStepUpPostRequest)
 
 	if err != nil {
 		return err
 	}
 
-	*o = ApiAuthTotpDisablePostRequest(varApiAuthTotpDisablePostRequest)
+	*o = ApiAuthStepUpPostRequest(varApiAuthStepUpPostRequest)
 
 	additionalProperties := make(map[string]interface{})
 
@@ -190,38 +190,38 @@ func (o *ApiAuthTotpDisablePostRequest) UnmarshalJSON(data []byte) (err error) {
 	return err
 }
 
-type NullableApiAuthTotpDisablePostRequest struct {
-	value *ApiAuthTotpDisablePostRequest
+type NullableApiAuthStepUpPostRequest struct {
+	value *ApiAuthStepUpPostRequest
 	isSet bool
 }
 
-func (v NullableApiAuthTotpDisablePostRequest) Get() *ApiAuthTotpDisablePostRequest {
+func (v NullableApiAuthStepUpPostRequest) Get() *ApiAuthStepUpPostRequest {
 	return v.value
 }
 
-func (v *NullableApiAuthTotpDisablePostRequest) Set(val *ApiAuthTotpDisablePostRequest) {
+func (v *NullableApiAuthStepUpPostRequest) Set(val *ApiAuthStepUpPostRequest) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableApiAuthTotpDisablePostRequest) IsSet() bool {
+func (v NullableApiAuthStepUpPostRequest) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableApiAuthTotpDisablePostRequest) Unset() {
+func (v *NullableApiAuthStepUpPostRequest) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableApiAuthTotpDisablePostRequest(val *ApiAuthTotpDisablePostRequest) *NullableApiAuthTotpDisablePostRequest {
-	return &NullableApiAuthTotpDisablePostRequest{value: val, isSet: true}
+func NewNullableApiAuthStepUpPostRequest(val *ApiAuthStepUpPostRequest) *NullableApiAuthStepUpPostRequest {
+	return &NullableApiAuthStepUpPostRequest{value: val, isSet: true}
 }
 
-func (v NullableApiAuthTotpDisablePostRequest) MarshalJSON() ([]byte, error) {
+func (v NullableApiAuthStepUpPostRequest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableApiAuthTotpDisablePostRequest) UnmarshalJSON(src []byte) error {
+func (v *NullableApiAuthStepUpPostRequest) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

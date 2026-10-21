@@ -22,6 +22,7 @@ import { DevTokenAccess } from "./dev-token-access";
 import { SessionService } from "./session/session.service";
 import { SessionIssuer } from "./session/session-issuer";
 import { InMemoryFactorStore } from "./factors/factor-store";
+import { RecordingFactorNotifier } from "./factors/factor-notifier";
 import { SecondFactorGate } from "./factors/second-factor-gate";
 import type { PasswordSignIn } from "./factors/second-factor-gate";
 import { TotpService } from "./factors/totp.service";
@@ -92,6 +93,7 @@ const secondFactor = new SecondFactorGate(
   new TotpService(CONFIG, credentials, new InMemoryFactorStore(), throttle),
   sessionIssuer,
   new InMemoryFactorStore(),
+  new RecordingFactorNotifier(),
 );
 // The real simulated driver (1.6.a) against its default in-memory store —
 // fine for every test below except the one that checks `platform.sim_outbox`
@@ -402,6 +404,7 @@ describe("session lifecycle — validated by breaking it, not reading it", () =>
       userId,
       absoluteExpiresAt: new Date(Date.now() - 1000),
       amr: ["pwd"],
+      signedInAt: new Date(),
     });
 
     const result = await sessionService.validateAndTouch(token, new Date());

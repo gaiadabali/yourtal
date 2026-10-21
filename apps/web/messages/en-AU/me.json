@@ -157,6 +157,15 @@
     "heading": "Passkeys and authenticator app",
     "reauthRequired": "For your security, sign in again before changing this.",
     "signInAgainCta": "Sign in again",
+    "stepUp": {
+      "heading": "Confirm it's you",
+      "body": "Use your passkey or a code from your authenticator app before changing how you sign in.",
+      "usePasskeyCta": "Use a passkey",
+      "codeLabel": "6-digit code from your app",
+      "confirmCta": "Confirm",
+      "cancelCta": "Cancel",
+      "noFactor": "Sign in again with your passkey or authenticator app, then try again."
+    },
     "errors": {
       "factor_invalid": "That code didn't work. Check your app and try again.",
       "throttled": "Too many attempts. Try again in a few minutes.",
@@ -166,6 +175,7 @@
       "passkey_not_found": "That passkey has already been removed.",
       "last_sign_in_method": "Keep at least one way to sign in. Add another passkey first, then remove this one.",
       "totp_already_enabled": "Your authenticator app is already on.",
+      "authenticator_unavailable": "Authenticator apps aren't available right now. Use a passkey instead.",
       "network": "YourTal couldn't be reached. Check your connection and try again.",
       "unknown": "Something wasn't quite right. Try again."
     }
@@ -207,6 +217,7 @@
     "turnedOn": "Authenticator app is on. You will enter a code each time you sign in.",
     "turnOffCta": "Turn off",
     "turnOffPrompt": "Enter a current code from your app to turn it off.",
+    "turnOffPasskeyPrompt": "Use a passkey to turn it off.",
     "confirmTurnOffCta": "Turn off authenticator app",
     "usePasskeyCta": "Use a passkey instead",
     "turnedOff": "Authenticator app is off."

@@ -157,6 +157,15 @@
     "heading": "Passkey dan aplikasi autentikator",
     "reauthRequired": "Demi keamananmu, masuk lagi sebelum mengubah ini.",
     "signInAgainCta": "Masuk lagi",
+    "stepUp": {
+      "heading": "Pastikan ini kamu",
+      "body": "Pakai passkey atau kode dari aplikasi autentikatormu sebelum mengubah cara masuk.",
+      "usePasskeyCta": "Pakai passkey",
+      "codeLabel": "Kode 6 digit dari aplikasimu",
+      "confirmCta": "Konfirmasi",
+      "cancelCta": "Batal",
+      "noFactor": "Masuk lagi dengan passkey atau aplikasi autentikatormu, lalu coba lagi."
+    },
     "errors": {
       "factor_invalid": "Kode itu tidak berhasil. Periksa aplikasimu dan coba lagi.",
       "throttled": "Terlalu banyak percobaan. Coba lagi dalam beberapa menit.",
@@ -166,6 +175,7 @@
       "passkey_not_found": "Passkey itu sudah dihapus.",
       "last_sign_in_method": "Sisakan setidaknya satu cara untuk masuk. Tambahkan passkey lain dulu, baru hapus yang ini.",
       "totp_already_enabled": "Aplikasi autentikatormu sudah aktif.",
+      "authenticator_unavailable": "Aplikasi autentikator sedang tidak tersedia. Pakai passkey saja.",
       "network": "YourTal tidak dapat dihubungi. Periksa koneksimu dan coba lagi.",
       "unknown": "Ada yang kurang tepat. Coba lagi."
     }
@@ -207,6 +217,7 @@
     "turnedOn": "Aplikasi autentikator aktif. Kamu akan memasukkan kode setiap kali masuk.",
     "turnOffCta": "Matikan",
     "turnOffPrompt": "Masukkan kode terbaru dari aplikasimu untuk mematikannya.",
+    "turnOffPasskeyPrompt": "Pakai passkey untuk mematikannya.",
     "confirmTurnOffCta": "Matikan aplikasi autentikator",
     "usePasskeyCta": "Pakai passkey saja",
     "turnedOff": "Aplikasi autentikator nonaktif."

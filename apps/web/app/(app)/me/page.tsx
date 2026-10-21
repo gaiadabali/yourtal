@@ -142,9 +142,16 @@ export default async function MePage() {
         <MeSecuritySection />
         {signInMethods.ok ? (
           <>
-            <MePasskeysSection initialPasskeys={signInMethods.data.passkeys} />
+            <MePasskeysSection
+              initialPasskeys={signInMethods.data.passkeys}
+              appCodeAvailable={
+                signInMethods.data.authenticatorApp.enabled &&
+                signInMethods.data.authenticatorApp.available
+              }
+            />
             <MeAuthenticatorSection
               enabled={signInMethods.data.authenticatorApp.enabled}
+              available={signInMethods.data.authenticatorApp.available}
               hasPasskeys={signInMethods.data.passkeys.length > 0}
             />
           </>

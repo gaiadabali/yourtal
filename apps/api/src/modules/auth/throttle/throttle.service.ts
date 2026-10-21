@@ -93,6 +93,33 @@ export class ThrottleService {
    * its creator already gave it) and falls through to a plain `INCR`,
    * which needs no `EXPIRE` of its own because one is already running.
    */
+  /**
+   * Counts this attempt BEFORE it is checked, in one MULTI, and refuses it
+   * when it is over the limit. `peek` then `recordFailure` lets a burst of
+   * parallel requests all read the same count before any of them writes;
+   * reserving first means at most `maxAttempts` are ever checked per window.
+   * A success calls `reset`, which gives the reserved count back.
+   */
+  async reserve(
+    scope: ThrottleScope,
+    key: string,
+    limits: ThrottleLimits,
+  ): Promise<ThrottleVerdict> {
+    const redisKey = this.keyFor(scope, key);
+    const results = await this.redis
+      .multi()
+      .set(redisKey, "0", "EX", limits.windowSeconds, "NX")
+      .incr(redisKey)
+      .ttl(redisKey)
+      .exec();
+    const count = Number(results?.[1]?.[1] ?? Number.POSITIVE_INFINITY);
+    const ttl = Number(results?.[2]?.[1] ?? -1);
+    if (count > limits.maxAttempts) {
+      return { blocked: true, retryAfterSeconds: ttl > 0 ? ttl : limits.windowSeconds };
+    }
+    return { blocked: false };
+  }
+
   async recordFailure(scope: ThrottleScope, key: string, limits: ThrottleLimits): Promise<void> {
     const redisKey = this.keyFor(scope, key);
     const created = await this.redis.set(redisKey, "1", "EX", limits.windowSeconds, "NX");

@@ -1,4 +1,4 @@
-import { and, asc, count, eq, ne } from "drizzle-orm";
+import { and, asc, count, eq, lt, ne } from "drizzle-orm";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import { PASSKEY_CREDENTIAL_KIND, PASSWORD_CREDENTIAL_KIND } from "./credential.repository";
 import type {
@@ -13,24 +13,12 @@ import { passkeys } from "./schema/passkey.table";
 export class DrizzlePasskeyRepository implements PasskeyRepository {
   constructor(private readonly db: AppDb) {}
 
-  async userHandleFor(userId: string, mint: () => string): Promise<string> {
-    // Insert-if-absent, then read: two concurrent first registrations agree
-    // on whichever handle landed first.
-    await this.db
-      .insert(credentials)
-      .values({
-        userId,
-        kind: PASSKEY_CREDENTIAL_KIND,
-        identifier: mint(),
-        secretHash: "",
-      })
-      .onConflictDoNothing({ target: [credentials.userId, credentials.kind] });
+  async userHandleOf(userId: string): Promise<string | null> {
     const [row] = await this.db
       .select({ identifier: credentials.identifier })
       .from(credentials)
       .where(and(eq(credentials.userId, userId), eq(credentials.kind, PASSKEY_CREDENTIAL_KIND)));
-    if (row === undefined) throw new Error("passkey user handle vanished after insert");
-    return row.identifier;
+    return row?.identifier ?? null;
   }
 
   async userIdForHandle(handle: string): Promise<string | null> {
@@ -60,29 +48,61 @@ export class DrizzlePasskeyRepository implements PasskeyRepository {
     return rows.map(toStored);
   }
 
-  async create(passkey: NewPasskey): Promise<boolean> {
-    const inserted = await this.db
-      .insert(passkeys)
-      .values({
-        credentialId: passkey.credentialId,
-        userId: passkey.userId,
-        publicKey: passkey.publicKey,
-        signCount: passkey.signCount,
-        transports: [...passkey.transports],
-        deviceType: passkey.deviceType,
-        backedUp: passkey.backedUp,
-        name: passkey.name,
-      })
-      .onConflictDoNothing({ target: passkeys.credentialId })
-      .returning({ credentialId: passkeys.credentialId });
-    return inserted.length > 0;
+  async create(passkey: NewPasskey, userHandle: string): Promise<boolean> {
+    return this.db.transaction(async (tx) => {
+      // The marker row arrives with the first passkey, never before.
+      await tx
+        .insert(credentials)
+        .values({
+          userId: passkey.userId,
+          kind: PASSKEY_CREDENTIAL_KIND,
+          identifier: userHandle,
+          secretHash: "",
+        })
+        .onConflictDoNothing({ target: [credentials.userId, credentials.kind] });
+      const [marker] = await tx
+        .select({ identifier: credentials.identifier })
+        .from(credentials)
+        .where(
+          and(
+            eq(credentials.userId, passkey.userId),
+            eq(credentials.kind, PASSKEY_CREDENTIAL_KIND),
+          ),
+        )
+        .for("update");
+      // Made for another handle: signing in with it would never match.
+      if (marker?.identifier !== userHandle) return false;
+      const inserted = await tx
+        .insert(passkeys)
+        .values({
+          credentialId: passkey.credentialId,
+          userId: passkey.userId,
+          publicKey: passkey.publicKey,
+          signCount: passkey.signCount,
+          transports: [...passkey.transports],
+          deviceType: passkey.deviceType,
+          backedUp: passkey.backedUp,
+          name: passkey.name,
+        })
+        .onConflictDoNothing({ target: passkeys.credentialId })
+        .returning({ credentialId: passkeys.credentialId });
+      return inserted.length > 0;
+    });
   }
 
-  async recordUse(credentialId: string, signCount: number, usedAt: Date): Promise<void> {
-    await this.db
+  async recordUse(credentialId: string, signCount: number, usedAt: Date): Promise<boolean> {
+    const updated = await this.db
       .update(passkeys)
       .set({ signCount, lastUsedAt: usedAt })
-      .where(eq(passkeys.credentialId, credentialId));
+      // sign_count < new, or new = 0 (an authenticator with no counter; the
+      // library already refused a zero after a non-zero).
+      .where(
+        signCount === 0
+          ? eq(passkeys.credentialId, credentialId)
+          : and(eq(passkeys.credentialId, credentialId), lt(passkeys.signCount, signCount)),
+      )
+      .returning({ credentialId: passkeys.credentialId });
+    return updated.length > 0;
   }
 
   async remove(userId: string, credentialId: string): Promise<RemovePasskeyOutcome> {

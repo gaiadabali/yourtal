@@ -11,6 +11,13 @@
 //   auction-settled <auctionId> <destination> <hold,hold,...>   (after the SQL `auction` prints)
 //   payout-sim <statementId> <accountRef> <payoutRef>           (after the SQL `payout` prints)
 // `all` runs the first seven in order, then prints the two follow-up commands.
+//   budget-alerts   (5.10.c, YourTal 14.13.c; not part of `all`, it takes about 12 minutes)
+//     Makes a fresh 15 s Short for au-harbour-grind through Studio (draft, a real
+//     ffmpeg-made upload the worker transcodes, a 10 point total budget, submit,
+//     staff approval), then watches it as five demo viewers in real time and
+//     checks the 50%, 80% and 100% budget alerts each appear once, are emailed to
+//     the owner and finance (read from the dev inbox), and that the next view
+//     starts non-earning. Needs ffmpeg on PATH (or CHECK_VIDEO_FILE) and the worker.
 //
 // Env: STAGING_DEMO_PASSWORD (required), STAGING_REVIEW_PASSWORD (non-staff
 // logins when set, like the demo reset), STRIPE_SECRET_KEY (the simulation's
@@ -18,10 +25,13 @@
 // DEMO_API_BASE_URL (default http://127.0.0.1:26301), PAYSIM_PAGES_BASE_URL
 // (where the simulation's hosted pages are fetched, default <api>/api/paysim),
 // CHECK_INVOICE_WAIT_MIN (default 8), CHECK_PAYOUT_WAIT_MIN (default 15),
-// CHECK_STATE_FILE (the auction step's notes, default in the temp directory).
+// CHECK_STATE_FILE (the auction step's notes, default in the temp directory),
+// CHECK_ALERT_WAIT_MIN (budget-alerts: per alert, default 4), CHECK_MEDIA_WAIT_MIN
+// (its transcode wait, default 5), CHECK_ALERT_REWARD, CHECK_VIDEO_FILE.
 // `payout --new` skips an existing disbursement and proposes a fresh statement.
+import { spawnSync } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -1094,6 +1104,334 @@ async function stepPayoutSim([statementId, accountRef, payoutRef]) {
   );
 }
 
+// ------------------------------------------------- budget alerts (5.10.c)
+
+const ALERT_VIEWS = 5; // a budget of five completions: 40% after two views, then 60%, 80%, 100%
+const ALERT_VIDEO_SECONDS = 15; // AU's 8 points a minute ceiling pays 2 points for 15 s
+const ALERT_WAIT_MS = Number(process.env.CHECK_ALERT_WAIT_MIN ?? 4) * 60_000;
+const ALERT_MEDIA_WAIT_MS = Number(process.env.CHECK_MEDIA_WAIT_MIN ?? 5) * 60_000;
+const ALERT_SWEEP_MS = 2 * 60_000; // the API's own sweep interval
+const BUDGET_REFUSAL = "This campaign has given out all its rewards.";
+
+/** A real, tiny MP4 for the Short: made with ffmpeg unless CHECK_VIDEO_FILE names one. */
+function alertVideo() {
+  if (process.env.CHECK_VIDEO_FILE) return readFileSync(process.env.CHECK_VIDEO_FILE);
+  const out = join(tmpdir(), `check-5.10.c-${RUN}.mp4`);
+  const made = spawnSync(
+    "ffmpeg",
+    [
+      ...["-y", "-loglevel", "error", "-f", "lavfi", "-i"],
+      `testsrc2=size=320x180:rate=15:duration=${ALERT_VIDEO_SECONDS}`,
+      ...["-f", "lavfi", "-i", `sine=frequency=440:duration=${ALERT_VIDEO_SECONDS}`],
+      ...["-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", out],
+    ],
+    { encoding: "utf8" },
+  );
+  if (made.status !== 0)
+    throw new Error(
+      `needs ffmpeg on PATH to make the test video (or CHECK_VIDEO_FILE, a ${ALERT_VIDEO_SECONDS} s mp4): ${made.error?.message ?? made.stderr}`,
+    );
+  const bytes = readFileSync(out);
+  rmSync(out, { force: true });
+  return bytes;
+}
+
+/** The Short's video, uploaded through Studio's media routes and transcoded by the worker. */
+async function uploadShort(owner, biz, campaignId) {
+  const bytes = alertVideo();
+  const init = await ok(
+    await call("POST", `/api/${biz}/studio/media/initiate`, owner, {
+      campaignId,
+      filename: "budget-alert-check.mp4",
+      contentType: "video/mp4",
+      sizeBytes: bytes.length,
+      teaserStartSeconds: 0,
+    }),
+    "media initiate",
+  );
+  const parts = [];
+  for (const part of init.parts) {
+    const from = (part.partNumber - 1) * init.partSizeBytes;
+    const put = await fetch(part.url, {
+      method: "PUT",
+      body: bytes.subarray(from, from + init.partSizeBytes),
+    });
+    const eTag = put.headers.get("etag");
+    if (!put.ok || !eTag) throw new Error(`upload part ${part.partNumber}: HTTP ${put.status}`);
+    parts.push({ partNumber: part.partNumber, eTag });
+  }
+  await ok(
+    await call("POST", `/api/${biz}/studio/media/${init.assetId}/complete`, owner, { parts }),
+    "media complete",
+  );
+  let asset = null;
+  const ready = await until(
+    async () => {
+      asset = await ok(
+        await call("GET", `/api/${biz}/studio/media/${init.assetId}`, owner),
+        "media asset",
+      );
+      return asset.status === "ready" || asset.status === "failed" ? asset : null;
+    },
+    ALERT_MEDIA_WAIT_MS,
+    3_000,
+  );
+  if (!ready)
+    throw new Error(
+      `the video was still ${asset?.status} after ${ALERT_MEDIA_WAIT_MS / 60_000} min (is the worker running?)`,
+    );
+  if (ready.status === "failed") throw new Error(`transcode failed: ${ready.failureReason}`);
+  return { assetId: init.assetId, seconds: ready.durationSeconds };
+}
+
+/**
+ * A fresh Short for the demo brand, made through the real routes: draft, video,
+ * a tiny total budget funded from the brand's own points, submit, staff approval.
+ */
+async function createBudgetShort(owner, biz) {
+  const now = Date.now();
+  const title = `Budget alert check ${RUN}`;
+  const draft = await ok(
+    await call("POST", `/api/${biz}/studio/campaigns`, owner, {
+      kind: "quick",
+      title,
+      synopsis: "A short campaign with a tiny budget, made to prove the budget alerts.",
+      durationSeconds: ALERT_VIDEO_SECONDS,
+      contentCategory: "food-and-drink",
+      audience: "all_ages",
+      startsAt: new Date(now - 60_000).toISOString(),
+      endsAt: new Date(now + 7 * 24 * 3_600_000).toISOString(),
+    }),
+    "create the Short",
+  );
+  const campaignId = draft.id;
+  const media = await uploadShort(owner, biz, campaignId);
+  pass(
+    "the test Short's video was uploaded and transcoded",
+    `campaign ${campaignId}, asset ${media.assetId}, ${media.seconds} s`,
+  );
+
+  const funding = await ok(
+    await call("GET", `/api/${biz}/studio/campaign-funding`, owner),
+    "campaign funding",
+  );
+  const reward = Number(
+    process.env.CHECK_ALERT_REWARD ?? Math.max(1, Math.floor((8 * media.seconds) / 60)),
+  );
+  const budget = reward * ALERT_VIEWS;
+  const allocation = funding
+    .filter((a) => a.remainingPoints >= budget)
+    .sort((a, b) => b.remainingPoints - a.remainingPoints)[0];
+  if (!allocation)
+    throw new Error(`the brand has no partner allocation with ${budget} points left`);
+  const saved = await call("PUT", `/api/${biz}/studio/campaigns/${campaignId}/reward`, owner, {
+    allocationId: allocation.allocationId,
+    rewardPointsPerCompletion: reward,
+    accuracyBonusPoints: 0,
+    maxPointsForCampaign: budget,
+    dailyCapPoints: null,
+  });
+  if (saved.status !== 200)
+    throw new Error(
+      `reward config: HTTP ${saved.status} ${short(saved.body)} (${reward} points for ${media.seconds} s; CHECK_ALERT_REWARD overrides)`,
+    );
+
+  await ok(
+    await call("POST", `/api/${biz}/studio/campaigns/${campaignId}/submit`, owner),
+    "submit",
+  );
+  const moderator = await login(staff("moderator"));
+  await ok(
+    await call("POST", `/api/staff/moderation/campaigns/${campaignId}/approve`, moderator, {
+      reason: "Budget alert check: a test Short with a tiny budget.",
+    }),
+    "staff approval",
+  );
+  const live = await until(
+    async () => {
+      const row = await ok(
+        await call("GET", `/api/${biz}/studio/campaigns/${campaignId}`, owner),
+        "campaign",
+      );
+      return row.lifecycleState === "live" ? row : null;
+    },
+    60_000,
+    2_000,
+  );
+  if (!live) throw new Error("the Short was not live 60 s after the staff approval");
+  pass(
+    "the test Short is live with a tiny total budget",
+    `${campaignId}, ${budget} points (${reward} a view, ${ALERT_VIEWS} views), funded from allocation ${allocation.allocationId}`,
+  );
+  return { campaignId, title, reward, budget, seconds: media.seconds };
+}
+
+/** Starts a session as `viewer`; `finish` watches in real time, as the player would, and completes. */
+async function startView(viewer, campaignId, seconds) {
+  const started = await call("POST", "/api/watch/sessions", viewer, { campaignId });
+  if (started.status !== 201)
+    throw new Error(`${viewer.email} start: HTTP ${started.status} ${short(started.body)}`);
+  const session = started.body.session;
+  const begun = Date.now();
+  const finish = async () => {
+    let from = 0;
+    while (from < seconds) {
+      await sleep(2_000);
+      // Never ahead of the clock: the server refuses faster than real time.
+      const to = Math.min(seconds, Math.floor((Date.now() - begun) / 1_000));
+      if (to <= from) continue;
+      const progress = await call("POST", `/api/watch/sessions/${session.id}/progress`, viewer, {
+        fromSeconds: from,
+        toSeconds: to,
+        reportedAt: new Date().toISOString(),
+      });
+      if (progress.status >= 400)
+        throw new Error(
+          `${viewer.email} progress ${from}-${to}: HTTP ${progress.status} ${short(progress.body)}`,
+        );
+      from = to;
+    }
+    return call("POST", `/api/watch/sessions/${session.id}/complete`, viewer, {});
+  };
+  return { session, finish };
+}
+
+const campaignAlerts = async (owner, biz, campaignId) =>
+  (await ok(await call("GET", `${billing(biz)}/alerts`, owner), "alerts")).alerts.filter(
+    (a) => a.kind === "campaign" && a.subjectId === campaignId,
+  );
+
+async function devInbox() {
+  const res = await fetch(`${API}/api/dev/inbox`);
+  return res.status === 200 ? (await res.json()).entries : null;
+}
+
+async function stepBudgetAlerts() {
+  const { owner, biz } = await ownerAndBrand();
+  const { campaignId, title, reward, budget, seconds } = await createBudgetShort(owner, biz);
+  const viewers = ["viewer", "adult", "guardian", "charity1", "charity2", "member", "finance"].map(
+    (who) => demo(who),
+  );
+  const alertsNow = () => campaignAlerts(owner, biz, campaignId);
+
+  // Used means held or paid: a session's hold reserves its reward at the start.
+  let paidViews = 0;
+  const earn = async () => {
+    for (;;) {
+      const email = viewers.shift();
+      if (!email) throw new Error("ran out of demo viewers");
+      const view = await startView(await login(email), campaignId, seconds);
+      if (view.session.nonEarning) {
+        // Their own caps (not the campaign's): skip to the next viewer.
+        note(`${email} was not admitted as earning, skipped`, view.session.nonEarningReason);
+        continue;
+      }
+      const done = await view.finish();
+      paidViews += 1;
+      expect(
+        done.status === 201 && done.body.granted === true && done.body.pendingPoints === reward,
+        `view ${paidViews} paid ${reward} points`,
+        `${email}: HTTP ${done.status}, ${short(done.body)}`,
+      );
+      return;
+    }
+  };
+  const awaitAlert = async (pct) => {
+    const alert = await until(
+      async () => (await alertsNow()).find((a) => a.thresholdPct === pct) ?? null,
+      ALERT_WAIT_MS,
+      5_000,
+    );
+    if (!alert) {
+      fail(
+        `the ${pct}% alert`,
+        `none within ${ALERT_WAIT_MS / 60_000} min (the API sweeps every ${ALERT_SWEEP_MS / 60_000} min)`,
+      );
+      return null;
+    }
+    expect(
+      alert.totalPoints === budget &&
+        alert.usedPoints * 100 >= pct * budget &&
+        alert.usedPoints <= paidViews * reward &&
+        alert.campaignTitle === title,
+      `the ${pct}% alert is right`,
+      `${alert.id}: ${alert.usedPoints} of ${alert.totalPoints} points used, "${alert.campaignTitle}"`,
+    );
+    return alert;
+  };
+  const only = async (pcts, what) => {
+    const got = (await alertsNow()).map((a) => a.thresholdPct).sort((a, b) => a - b);
+    expect(got.join() === pcts.join(), what, `campaign alerts: ${got.join(", ") || "none"}`);
+  };
+
+  await earn();
+  await earn();
+  await only([], "no alert at 40% used (two views)");
+  await earn(); // 60%: past 50%, short of 80%
+  const a50 = await awaitAlert(50);
+  await only([50], "at 60% used only the 50% alert exists");
+  await earn(); // 80%
+  const a80 = await awaitAlert(80);
+  await only([50, 80], "at 80% used the 50% and 80% alerts exist, not 100%");
+  await earn(); // 100%
+  const a100 = await awaitAlert(100);
+
+  // The budget is spent: the next viewer is told up front, nothing errors, nothing is paid.
+  const last = viewers.shift();
+  if (!last) throw new Error("no demo viewer left for the view after the budget");
+  const refused = await startView(await login(last), campaignId, seconds);
+  expect(
+    refused.session.nonEarning === true && refused.session.nonEarningReason === BUDGET_REFUSAL,
+    "at 100% the next view starts as non-earning, and says why",
+    `${last}: nonEarning ${refused.session.nonEarning}, "${refused.session.nonEarningReason}" (the ledger's campaign_cap_reached)`,
+  );
+  const unpaid = await refused.finish();
+  expect(
+    unpaid.status === 201 && unpaid.body.granted === false && unpaid.body.pendingPoints === 0,
+    "completing that view pays nothing and does not error",
+    `HTTP ${unpaid.status}, ${short(unpaid.body)}`,
+  );
+
+  // Each alert once: let a whole sweep pass, then read them again.
+  say(
+    `-- waiting ${ALERT_SWEEP_MS / 60_000} min for another sweep, to see nothing is raised twice --`,
+  );
+  await sleep(ALERT_SWEEP_MS + 15_000);
+  await only([50, 80, 100], "after another sweep each campaign alert still exists exactly once");
+
+  // Email: staging sends real mail only to its allow-list; the rest lands in the dev inbox.
+  const inbox = await devInbox();
+  if (inbox === null) {
+    note(
+      "the dev inbox is not readable here",
+      "GET /api/dev/inbox did not answer 200: emails not checked",
+    );
+    return;
+  }
+  for (const alert of [a50, a80, a100]) {
+    if (!alert) continue;
+    const to = inbox
+      .filter((m) => m.category === "budget_alert" && m.metadata?.alertId === alert.id)
+      .map((m) => m.recipient)
+      .sort();
+    note(
+      `emails for the ${alert.thresholdPct}% alert`,
+      `${to.length} in the dev inbox: ${to.join(", ") || "none"}`,
+    );
+    expect(
+      to.join() === [demo("finance"), demo("owner")].sort().join(),
+      `the ${alert.thresholdPct}% alert was emailed once each to the owner and finance, not the marketer`,
+      to.length === 0
+        ? "nothing in the newest 50 messages (a recipient on the live allow-list would have had real mail instead)"
+        : "",
+    );
+  }
+  note(
+    "left behind",
+    `campaign ${campaignId} stays live but spent; its ${budget} points went to ${ALERT_VIEWS} demo viewers`,
+  );
+}
+
 // ---------------------------------------------------------------- runner
 
 const STEPS = {
@@ -1106,6 +1444,7 @@ const STEPS = {
   payout: stepPayout,
   "auction-settled": stepAuctionSettled,
   "payout-sim": stepPayoutSim,
+  "budget-alerts": stepBudgetAlerts,
 };
 const ORDER = ["purchase", "declined", "three-ds", "boost", "manual", "auction", "payout"];
 
@@ -1145,7 +1484,7 @@ if (step === "all") {
   await run(step, rest);
 } else {
   console.error(
-    `usage: check-5.1.f-payments.mjs <${[...ORDER, "all", "auction-settled", "payout-sim"].join("|")}>`,
+    `usage: check-5.1.f-payments.mjs <${[...ORDER, "all", "auction-settled", "payout-sim", "budget-alerts"].join("|")}>`,
   );
   process.exitCode = 2;
 }

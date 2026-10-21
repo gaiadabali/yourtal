@@ -754,6 +754,46 @@ async function linkUser(who) {
   return { who, linkId: linked.body.linkId, session };
 }
 
+const REGION_TZ = { AU: "Australia/Sydney" };
+const dayIn = (tz, date) => new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(date);
+
+/**
+ * What the wallet history shows a user earned: points on the region's calendar day (the daily
+ * earn cap's window) and grants in the last 10 minutes (the risk gate's window).
+ */
+async function earnedRecently(session, region) {
+  const today = dayIn(REGION_TZ[region], new Date());
+  const tenMinAgo = Date.now() - 10 * 60_000;
+  let points = 0;
+  let recentGrants = 0;
+  let cursor;
+  for (let page = 0; page < 50; page++) {
+    const res = await ok(
+      await call(
+        "GET",
+        `/api/wallet/history${cursor ? `?startingAfter=${encodeURIComponent(cursor)}` : ""}`,
+        session,
+      ),
+      "wallet history",
+    );
+    let older = false;
+    for (const e of res.entries) {
+      const day = dayIn(REGION_TZ[region], new Date(e.occurredAt));
+      if (day < today) {
+        older = true;
+        break;
+      }
+      if (e.kind === "earn" && e.direction === "credit") {
+        points += e.points;
+        if (Date.parse(e.occurredAt) >= tenMinAgo) recentGrants += 1;
+      }
+    }
+    if (older || !res.nextCursor) break;
+    cursor = res.nextCursor;
+  }
+  return { points, recentGrants };
+}
+
 async function devInbox() {
   const res = await fetch(`${API}/api/dev/inbox`);
   return res.status === 200 ? (await res.json()).entries : null;
@@ -856,6 +896,48 @@ async function phaseB() {
   }
   const refs = (who, n) => `check-2.10b-${RUN}-${who}-${n}`;
 
+  // Room check, before anything is bought or changed: each planned user's points today against
+  // the region's daily_earn_cap, and grants in the last 10 minutes against the risk gate's flag at 6.
+  const capRow = (await staffSettings("AU")).find((r) => r.key === "daily_earn_cap");
+  if (!Number.isInteger(capRow?.value)) {
+    fail("AU daily_earn_cap is not a readable number in the staff settings", short(capRow?.value));
+    return;
+  }
+  const cap = capRow.value;
+  const planned = new Map(); // who -> { points, grants, how }
+  const want = (who, points, grants, how) => {
+    const cur = planned.get(who) ?? { points: 0, grants: 0, how };
+    planned.set(who, { points: cur.points + points, grants: cur.grants + grants, how: cur.how });
+  };
+  want(USER_A, 500, 5, "CHECK_RECEIPT_USERS");
+  want(USER_B, 500, 5, "CHECK_RECEIPT_USERS");
+  want(USER_C, nowPoints, 1, "CHECK_RECEIPT_USERS");
+  for (let i = 0; i < fillerTotal; i++)
+    want(fillers[Math.floor(i / 5)], 100, 1, "CHECK_FILLER_USERS");
+  const blocked = [];
+  for (const [who, need] of planned) {
+    const earned = await earnedRecently(await login(demo(who)), "AU");
+    note(
+      `${who}.au room`,
+      `${earned.points} earned today of ${cap}, needs ${need.points} more; ${earned.recentGrants} grant(s) in the last 10 min, needs ${need.grants}`,
+    );
+    if (earned.points + need.points > cap)
+      blocked.push(
+        `${who} has ${earned.points} of ${cap} points today and needs ${need.points} (set ${need.how} to other demo adults)`,
+      );
+    if (earned.recentGrants + need.grants > 5)
+      blocked.push(
+        `${who} had ${earned.recentGrants} grants in the last 10 minutes and needs ${need.grants}: the risk gate flags at 6, wait 10 minutes`,
+      );
+  }
+  if (blocked.length > 0) {
+    fail(
+      "a planned user has no room to earn",
+      `${blocked.join("; ")}. Nothing was bought or changed`,
+    );
+    return;
+  }
+
   // 2. The subject: a fresh Starter bought now. Alerts are checked on it alone.
   const subjectId = await buyReceiptStarter("AU", { force: true });
   if (!subjectId) return;
@@ -917,14 +999,18 @@ async function phaseB() {
       const ref = refs(user.who, n);
       const res = await receipt(user.linkId, ref);
       sent.push({ user, ref, res });
-      expect(
+      const paid =
         res.status === 200 &&
-          res.body?.granted === true &&
-          res.body.points === 100 &&
-          res.body.duplicate === false,
+        res.body?.granted === true &&
+        res.body.points === 100 &&
+        res.body.duplicate === false;
+      expect(
+        paid,
         `receipt ${user.who}#${n} pays 100 points`,
         `HTTP ${res.status} ${short(res.body)}`,
       );
+      if (!paid)
+        throw new Error(`receipt ${user.who}#${n} was not paid, so the rest would only cascade`);
       return res;
     };
     const awaitAlert = async (pct) => {
@@ -961,7 +1047,20 @@ async function phaseB() {
     for (let n = 4; n <= 5; n++) await send(b, n);
     const a100 = await awaitAlert(100);
 
-    // 3. Paused: C is refused, nothing is paid.
+    // 3. Paused: C is refused, nothing is paid. First make sure the subject really is used up.
+    const subjectNow = receiptPackages(await balanceOf(owner, AU.biz)).find(
+      (x) => x.allocationId === pkg.allocationId,
+    );
+    if (
+      !expect(
+        subjectNow?.remainingPoints === 0,
+        "the subject package is used up before C's receipt",
+        subjectNow
+          ? `${subjectNow.remainingPoints} of ${subjectNow.totalPoints} points are still left: earlier receipts did not all land, so C's refusal cannot be tested`
+          : "the subject package is not in the balance",
+      )
+    )
+      return;
     const refused = await receipt(c.linkId, refs(c.who, 1));
     expect(
       refused.status === 409 &&

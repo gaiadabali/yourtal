@@ -795,7 +795,9 @@ async function earnedRecently(session, region) {
 }
 
 async function devInbox() {
-  const res = await fetch(`${API}/api/dev/inbox`);
+  // Outside dev the inbox needs a session, and only staff see every recipient (5.13.b).
+  const { cookie } = await login(staff("finance"));
+  const res = await fetch(`${API}/api/dev/inbox`, { headers: { cookie } });
   return res.status === 200 ? (await res.json()).entries : null;
 }
 

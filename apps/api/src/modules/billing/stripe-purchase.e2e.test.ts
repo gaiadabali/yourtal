@@ -151,14 +151,12 @@ describe("Stripe card purchases through the simulation (5.1.a)", () => {
     await makeFunder(who);
     const purchase = await buy(who, "starter", "receipts");
     // At cost, not the discounted tier price: B is shared and mutable, so read it back.
-    const at = await app
-      .get<LedgerInternalClient>(LEDGER_INTERNAL_CLIENT)
-      .quotePackage({
-        region: "AU",
-        tierKey: "starter",
-        programme: "receipts",
-        businessId: who.businessId,
-      });
+    const at = await app.get<LedgerInternalClient>(LEDGER_INTERNAL_CLIENT).quotePackage({
+      region: "AU",
+      tierKey: "starter",
+      programme: "receipts",
+      businessId: who.businessId,
+    });
     expect(purchase.purchase.totalMinor).toBe(
       withTax(at._unsafeUnwrap().totalMinor, 1_000).totalMinor,
     );

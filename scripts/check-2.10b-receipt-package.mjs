@@ -971,8 +971,10 @@ async function phaseB() {
       `HTTP ${refused.status} ${short(refused.body)}`,
     );
     expect(
-      !JSON.stringify(refused.body ?? "").match(/[0-9a-f]{8}-[0-9a-f]{4}-/),
-      "the refusal leaks no ledger or business id",
+      !/[0-9a-f]{8}-[0-9a-f]{4}-|alloc_|acct_/i.test(
+        JSON.stringify({ ...refused.body, linkId: undefined }),
+      ) && refused.body?.linkId === c.linkId,
+      "the refusal leaks no ledger or business id (only the partner's own linkId is returned)",
     );
     const status1 = await statusAU();
     expect(
@@ -1007,7 +1009,10 @@ async function phaseB() {
 
     // 5. Alerts: each exactly once in Studio, and emailed.
     say("-- waiting 2.5 min for another alert sweep, to see nothing is raised twice --");
-    await sleep(150_000);
+    for (let waited = 30; waited <= 150; waited += 30) {
+      await sleep(30_000);
+      say(`-- sweep wait: ${waited} of 150 s --`);
+    }
     const final = await alertsFor();
     const counts = [50, 80, 100].map((p) => final.filter((x) => x.thresholdPct === p).length);
     expect(

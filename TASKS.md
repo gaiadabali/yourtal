@@ -1684,7 +1684,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.9.b Invoice numbering, the company's details read from the settings store, and a PDF downloadable in Studio → 216cc736
   - [x] 14.9.c Validate the `invoice_issuer` setting when staff propose it (group 5.3.c) → 033fae42
   - [ ] 14.9.d Real tax invoices once the AU company's details are approved in `invoice_issuer` (group 5.3.d, needs 6.1.a)
-  - [ ] 14.9.e A demo AU company with a demo ABN on staging and dev, so the Tax invoice path runs end to end; documents outside production say they are demos (group 5.3.e) → e7538310
+  - [x] 14.9.e A demo AU company with a demo ABN on staging and dev, so the Tax invoice path runs end to end; documents outside production say they are demos (group 5.3.e) → e7538310 → checked on staging: YT-AU-000006 to 000008, issued after the deploy, are demo tax invoices with ABN 99000000032
 - [ ] **14.10 Identity check before real points** (group 5.9, F102) · A · needs: group 3.9.c (passkeys) — 🔄 g5 (helper `g-phase5-sim`, on `group/3.9c-passkeys` until it merges)
   - [ ] 14.10.a Before the first real points go to a real person (docs/16 N-5), an account needs a verified email and a passkey: no earning at all until then (F126)
   - [ ] 14.10.b The fraud checks rest on that, plus the holdback by trust tier and the earn caps; record it in docs/16
@@ -1736,7 +1736,7 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
   - [ ] 14.21.a A boosted AU campaign's closed days reach A$0.50 and boost-settle charges them through the Stripe driver on the simulation, once, with GST and a demo Tax invoice; the 5.1.f `boost` step passes
 - [ ] **14.22 Fix what the founder walkthrough found** (group 5.13, from 13.6 / group 5.7) · A + B + C · needs: — — 🔄 g5
   - [ ] 14.22.a Studio landing and Reports crash for finance and marketers: role-restricted reads throw into error.tsx (group 5.13.a)
-  - [ ] 14.22.b Staging's /api/dev/inbox is public, links included; the /dev/inbox page shows 404 (group 5.13.b, the lead)
+  - [x] 14.22.b Staging's /api/dev/inbox is public, links included; the /dev/inbox page shows 404 (group 5.13.b, the lead) → 016591d4: a session outside dev; staff see all, others only their own mail; the page reads through apiFetch
   - [ ] 14.22.c The player restarts after a checkpoint, the overlay is clipped at 390 px, already-earned videos show the wrong state, it sometimes never starts (group 5.13.c)
   - [ ] 14.22.d Sign-up links go to log in, /signup is a 404, no verification state or resend on Me, no unlock notification (group 5.13.d)
   - [ ] 14.22.e The campaign editor: targeting not saved, reward save and ceiling errors, raw database error on submit, submit without budget, lost edits, placeholder as value (group 5.13.e)

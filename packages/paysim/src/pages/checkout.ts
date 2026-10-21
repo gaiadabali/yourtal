@@ -84,7 +84,7 @@ ${hiddenCsrf(deps.config, scopeOf(s.id))}
 <label for="number">${esc(t("cardNumber"))}</label>
 <input id="number" name="number" inputmode="numeric" autocomplete="off" required>${fieldError(t, e.number)}
 <label for="expiry">${esc(t("expiry"))}</label>
-<input id="expiry" name="expiry" inputmode="numeric" autocomplete="off" placeholder="MM / YY" required>${fieldError(t, e.expiry)}
+<input id="expiry" name="expiry" inputmode="numeric" autocomplete="off" placeholder="${esc(t("expiryPlaceholder"))}" required>${fieldError(t, e.expiry)}
 <label for="cvc">${esc(t("cvc"))}</label>
 <input id="cvc" name="cvc" inputmode="numeric" autocomplete="off" required>${fieldError(t, e.cvc)}
 <button type="submit">${esc(payment ? t("pay", { amount: `${aud(amount)} AUD` }) : t("saveCard"))}</button>

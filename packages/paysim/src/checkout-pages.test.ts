@@ -218,6 +218,7 @@ describe("the checkout page, payment mode", () => {
     const page = await k.browser.get(`/checkout/${id}`);
     expect(page.html).toContain("Pembayaran simulasi, tanpa uang sungguhan");
     expect(page.html).toContain('lang="id"');
+    expect(page.html).toContain('placeholder="BB / TT"');
     const auto = await session({ locale: "auto" });
     const res = await fetch(`${k.sim.config.publicBaseUrl}/checkout/${auto}`, {
       headers: { "accept-language": "id-ID,id;q=0.9" },
@@ -225,6 +226,7 @@ describe("the checkout page, payment mode", () => {
     expect(await res.text()).toContain("Pembayaran simulasi");
     const en = await session();
     expect((await k.browser.get(`/checkout/${en}`)).html).toContain("Simulated payment");
+    expect((await k.browser.get(`/checkout/${en}`)).html).toContain('placeholder="MM / YY"');
   });
 
   it("answers an unknown session with a 404 page", async () => {

@@ -180,9 +180,10 @@ export function eraseViewerArea(pool: pg.Pool): DomainHandler {
  * 1.24.a: team invitations still waiting for the subject's email address.
  *
  * An invitation is keyed by the address it was sent to, and the address lives
- * only in `identity.credential.identifier`. Once `eraseCredentials` has run
- * nothing can say whose address it was, so this has to run BEFORE it, inside
- * the same domain; `org_memberships` (a later domain) can no longer find it.
+ * only in `identity.credential.identifier` of the password credential (other
+ * kinds, such as totp or passkey, hold a user id or a WebAuthn handle there).
+ * Once `eraseCredentials` has run, nothing can say whose address it was, so
+ * this has to run BEFORE it, inside the same domain; `org_memberships` (a later domain) can no longer find it.
  * `eraseIdentity` runs this first and the rest after it.
  *
  * Pending means not accepted: open, revoked or expired rows all still hold the
@@ -195,7 +196,8 @@ export function eraseInvitationsToSubject(pool: pg.Pool): DomainHandler {
     const result = await pool.query(
       `DELETE FROM business.team_invitations
         WHERE accepted_at IS NULL
-          AND lower(email) IN (SELECT lower(identifier) FROM identity.credential WHERE user_id = $1)`,
+          AND lower(email) IN (SELECT lower(identifier) FROM identity.credential
+                             WHERE user_id = $1 AND kind = 'password')`,
       [subjectId],
     );
     return result.rowCount ?? 0;

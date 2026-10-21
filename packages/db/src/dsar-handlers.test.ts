@@ -278,6 +278,13 @@ describe("erasing identity: profile, credential, session, guardian consent and b
        VALUES ($1, 'password', $2, 'not-a-real-hash')`,
       [subjectId, email],
     );
+    // 1.26: only the password credential holds the email. Another kind whose
+    // identifier happens to equal somebody else's address must erase nothing.
+    await pool.query(
+      `INSERT INTO identity.credential (user_id, kind, identifier, secret_hash)
+       VALUES ($1, 'totp', $2, 'not-a-real-secret')`,
+      [subjectId, otherEmail],
+    );
     const invite = (to: string, accepted: boolean, revoked = false) =>
       pool.query(
         `INSERT INTO business.team_invitations

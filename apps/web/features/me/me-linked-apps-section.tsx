@@ -100,7 +100,8 @@ export function MeLinkedAppsSection({ initialLinkedApps, isTeen }: MeLinkedAppsS
               {issued.code}
             </Text>
             <Text size="caption" tone="muted">
-              {t("expiresPrefix")} {new Date(issued.expiresAt).toLocaleTimeString()}
+              {t("expiresPrefix")}{" "}
+              {format.dateTime(new Date(issued.expiresAt), { timeStyle: "short" })}
             </Text>
           </div>
         ) : null}

@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { NextIntlClientProvider } from "next-intl";
 import enAU from "@/messages/en-AU/me.json";
 import { MeLinkedAppsSection } from "./me-linked-apps-section";
-import { unlinkAppAction } from "./me-actions";
+import { issueLinkCodeAction, unlinkAppAction } from "./me-actions";
 
 const LINK_ID = "0b6f7a52-3c1e-4d8e-9f0a-1b2c3d4e5f60";
 
@@ -40,6 +40,20 @@ describe("MeLinkedAppsSection (14.3.c)", () => {
       expect(screen.queryByText("SnapApp linked")).not.toBeInTheDocument();
     });
     expect(screen.getByRole("button", { name: "Generate code" })).toBeInTheDocument();
+  });
+
+  it("writes when a new code expires in the display language's format, not the browser's", async () => {
+    vi.mocked(issueLinkCodeAction).mockResolvedValue({
+      ok: true,
+      data: { code: "ABC123", expiresAt: "2026-10-20T04:30:00Z" },
+    });
+    const user = userEvent.setup();
+    renderWithIntl(<MeLinkedAppsSection initialLinkedApps={[]} isTeen={false} />);
+
+    await user.click(screen.getByRole("button", { name: "Generate code" }));
+
+    // 04:30 UTC is 3:30 pm in Sydney (UTC+11), the zone the provider is set to.
+    expect(await screen.findByText("Expires at 3:30 pm")).toBeInTheDocument();
   });
 
   it("tells a teen why there is no code to generate", () => {

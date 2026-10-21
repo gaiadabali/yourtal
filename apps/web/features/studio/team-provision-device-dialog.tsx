@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { SubmitEvent } from "react";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import type { MerchantLocation } from "@yourtal/contracts/listing/merchant-location";
 import type { ProvisionDeviceResult } from "@yourtal/contracts/device/counter-device";
 import { Button } from "@yourtal/ui/button";
@@ -45,6 +45,7 @@ export function TeamProvisionDeviceDialog({
   onProvision,
 }: TeamProvisionDeviceDialogProps) {
   const t = useTranslations("studio");
+  const format = useFormatter();
   const [label, setLabel] = useState("");
   const [locationId, setLocationId] = useState(locations[0]?.id ?? "");
   const [pin, setPin] = useState("");
@@ -108,7 +109,10 @@ export function TeamProvisionDeviceDialog({
             </p>
             <p className="text-xs font-sans text-fg-subtle">
               {t("devices.provision.expires", {
-                date: new Date(result.pairingExpiresAt).toLocaleString(),
+                date: format.dateTime(new Date(result.pairingExpiresAt), {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                }),
               })}
             </p>
             <DialogFooter>

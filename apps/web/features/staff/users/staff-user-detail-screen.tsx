@@ -12,6 +12,7 @@ import { StatusBadge } from "@yourtal/ui/status-badge";
 import { Textarea } from "@yourtal/ui/textarea";
 import type { StaffRole } from "@yourtal/contracts/staff/session";
 import type { StaffUserDetail, StaffUserLedgerHistory } from "@yourtal/contracts/staff/users";
+import { useStaffTime } from "../staff-time";
 import {
   goodwillAction,
   releaseUserAction,
@@ -48,6 +49,7 @@ export function StaffUserDetailScreen({
   idempotencyKey,
   flash,
 }: StaffUserDetailScreenProps) {
+  const when = useStaffTime();
   const canSuspend = session.roles.includes("risk_analyst");
   const canGoodwill = session.roles.includes("support");
   const hiddenFields = (
@@ -226,7 +228,7 @@ export function StaffUserDetailScreen({
                 {
                   key: "at",
                   header: t("users.ledgerAt"),
-                  cell: (row) => new Date(row.at).toLocaleString(),
+                  cell: (row) => when(row.at, user.region),
                 },
               ]}
             />

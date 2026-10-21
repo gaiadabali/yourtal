@@ -8,6 +8,7 @@ import { EmptyState } from "@yourtal/ui/empty-state";
 import { Notice } from "@yourtal/ui/notice";
 import type { StaffDisputeQueue } from "@yourtal/contracts/staff/disputes";
 import { StaffReasonDialogButton } from "../staff-reason-dialog-button";
+import { useStaffTime } from "../staff-time";
 import { resolveDisputeAction } from "./staff-disputes-actions";
 
 export interface StaffDisputesListProps {
@@ -22,6 +23,7 @@ export interface StaffDisputesListProps {
  */
 export function StaffDisputesList({ disputes: initial }: StaffDisputesListProps) {
   const t = useTranslations("staff");
+  const when = useStaffTime();
   const [disputes, setDisputes] = useState(initial);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,7 +75,7 @@ export function StaffDisputesList({ disputes: initial }: StaffDisputesListProps)
           {
             key: "createdAt",
             header: t("disputes.columnCreatedAt"),
-            cell: (row) => new Date(row.createdAt).toLocaleString(),
+            cell: (row) => when(row.createdAt, row.region),
           },
           {
             key: "actions",

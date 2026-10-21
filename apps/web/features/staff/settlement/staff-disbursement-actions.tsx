@@ -9,6 +9,7 @@ import { Text } from "@yourtal/ui/text";
 import type { StaffDisbursement } from "@yourtal/contracts/billing/payouts";
 import type { CheckDisbursementOutcome } from "@yourtal/contracts/staff/settlement";
 import { StaffReasonDialogButton } from "../staff-reason-dialog-button";
+import { useStaffTime } from "../staff-time";
 import {
   checkDisbursementAction,
   decideRetryAction,
@@ -37,6 +38,7 @@ export function StaffDisbursementActions({
   currentStaffId,
 }: StaffDisbursementActionsProps) {
   const t = useTranslations("staff");
+  const when = useStaffTime();
   const router = useRouter();
   const [flash, setFlash] = useState<Flash>(null);
   const [outcome, setOutcome] = useState<CheckDisbursementOutcome | null>(null);
@@ -103,7 +105,7 @@ export function StaffDisbursementActions({
       {disbursement.checkedAt === null ? null : (
         <Text size="body-sm" tone="muted">
           {t("settlement.lastChecked", {
-            date: new Date(disbursement.checkedAt).toLocaleString(),
+            date: when(disbursement.checkedAt, region),
           })}
         </Text>
       )}
@@ -131,7 +133,9 @@ export function StaffDisbursementActions({
       {proposal === null ? null : (
         <>
           <Text size="body-sm" tone="muted">
-            {t("settlement.retry.proposedBy", { staff: proposal.proposedBy })}
+            {t("settlement.retry.proposedBy", {
+              staff: proposal.proposedByEmail ?? t("settlement.retry.staffUnknown"),
+            })}
           </Text>
           {proposal.proposedBy === currentStaffId ? (
             <Text size="body-sm" tone="muted">

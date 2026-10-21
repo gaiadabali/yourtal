@@ -137,6 +137,26 @@ describe("a stuck payout's actions (5.2.c)", () => {
     ).toBeInTheDocument();
   });
 
+  it("names the proposer of a retry by email, and as a staff member when there is none, never by id", () => {
+    const { unmount } = show(
+      disbursement({
+        retryProposal: { ...pending("staff-other"), proposedByEmail: "finance.one@example.test" },
+      }),
+    );
+    expect(screen.getByText("Retry proposed by finance.one@example.test")).toBeInTheDocument();
+    unmount();
+
+    show(disbursement({ retryProposal: pending("staff-other") }));
+    expect(screen.getByText("Retry proposed by a staff member")).toBeInTheDocument();
+    expect(screen.queryByText(/staff-other/)).not.toBeInTheDocument();
+  });
+
+  it("writes the last check in the region's zone", () => {
+    // 03:00 UTC on 12 Oct is 14:00 in Sydney (UTC+11).
+    show(disbursement({ checkedAt: "2026-10-12T03:00:00.000Z" }));
+    expect(screen.getByText("Last checked 12 Oct 2026, 2:00 pm")).toBeInTheDocument();
+  });
+
   it("offers approve and reject on someone else's retry, and neither on my own", async () => {
     vi.mocked(decideRetryAction).mockResolvedValue({ ok: true });
     const user = userEvent.setup();

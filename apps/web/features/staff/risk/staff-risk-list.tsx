@@ -10,6 +10,7 @@ import { Notice } from "@yourtal/ui/notice";
 import { Text } from "@yourtal/ui/text";
 import type { StaffRiskFlag } from "@yourtal/contracts/staff/risk-queue";
 import { StaffReasonDialogButton } from "../staff-reason-dialog-button";
+import { useStaffTime } from "../staff-time";
 import { releaseRiskFlagAction, suspendRiskFlagAction } from "./staff-risk-actions";
 
 export interface StaffRiskListProps {
@@ -26,6 +27,7 @@ export interface StaffRiskListProps {
  */
 export function StaffRiskList({ initial }: StaffRiskListProps) {
   const t = useTranslations("staff");
+  const when = useStaffTime();
   const [flags, setFlags] = useState(initial);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,7 +104,7 @@ export function StaffRiskList({ initial }: StaffRiskListProps) {
           {
             key: "createdAt",
             header: t("risk.columnCreatedAt"),
-            cell: (row) => new Date(row.createdAt).toLocaleString(),
+            cell: (row) => when(row.createdAt, row.region),
           },
           {
             key: "actions",

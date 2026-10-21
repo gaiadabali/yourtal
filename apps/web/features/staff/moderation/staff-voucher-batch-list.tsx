@@ -8,6 +8,7 @@ import { EmptyState } from "@yourtal/ui/empty-state";
 import { Notice } from "@yourtal/ui/notice";
 import { Text } from "@yourtal/ui/text";
 import { StaffReasonDialogButton } from "../staff-reason-dialog-button";
+import { useStaffTime } from "../staff-time";
 import { approveVoucherBatchAction, rejectVoucherBatchAction } from "./staff-voucher-batch-actions";
 
 export interface StaffVoucherBatchListProps {
@@ -23,6 +24,7 @@ export interface StaffVoucherBatchListProps {
  */
 export function StaffVoucherBatchList({ initial }: StaffVoucherBatchListProps) {
   const t = useTranslations("staff");
+  const when = useStaffTime();
   const [requests, setRequests] = useState(initial);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,7 +83,7 @@ export function StaffVoucherBatchList({ initial }: StaffVoucherBatchListProps) {
             {
               key: "requested",
               header: t("moderation.columnRequested"),
-              cell: (row) => new Date(row.createdAt).toLocaleDateString(),
+              cell: (row) => when(row.createdAt, null, "date"),
             },
             {
               key: "actions",

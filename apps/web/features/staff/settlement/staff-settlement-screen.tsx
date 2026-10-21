@@ -1,14 +1,17 @@
+import { useLocale } from "next-intl";
 import { Button } from "@yourtal/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { DataTable } from "@yourtal/ui/data-table";
 import { EmptyState } from "@yourtal/ui/empty-state";
 import { Notice } from "@yourtal/ui/notice";
 import { StatusBadge } from "@yourtal/ui/status-badge";
+import { formatMoneyAmount } from "@yourtal/ui/money-amount";
 import { Text } from "@yourtal/ui/text";
 import { Textarea } from "@yourtal/ui/textarea";
 import type { StaffDisbursement } from "@yourtal/contracts/billing/payouts";
 import type { EconomyProposal } from "@yourtal/contracts/staff/economy";
 import type { SettlementQueue } from "@yourtal/contracts/staff/settlement";
+import { useStaffTime } from "../staff-time";
 import { StaffApprovedPayouts } from "./staff-approved-payouts";
 import {
   approvePayoutAction,
@@ -46,11 +49,6 @@ const STATUS_TONE: Record<
   paid: "success",
 };
 
-function minorToDisplay(minor: number, currency: string): string {
-  const major = minor / 100;
-  return `${currency} ${major.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
 /** TASKS.md 10.6.a: the weekly-statement queue, statement disputes and payout approval (two-person). */
 export function StaffSettlementScreen({
   t,
@@ -64,6 +62,8 @@ export function StaffSettlementScreen({
   idempotencyKey,
   flash,
 }: StaffSettlementScreenProps) {
+  const locale = useLocale();
+  const when = useStaffTime();
   // `EconomyProposal` (the wire shape) carries no `payload` field -- the
   // statement id is correlated from `summary`, which `proposePayout` always
   // writes as `Payout for statement ${id}` (staff-settlement.controller.ts).
@@ -110,12 +110,12 @@ export function StaffSettlementScreen({
                 {
                   key: "closing",
                   header: t("settlement.columnClosing"),
-                  cell: (row) => minorToDisplay(row.closingPayableMinor, row.currency),
+                  cell: (row) => formatMoneyAmount(row.closingPayableMinor, row.currency, locale),
                 },
                 {
                   key: "disputeWindow",
                   header: t("settlement.columnDisputeWindow"),
-                  cell: (row) => new Date(row.disputeWindowEndsAt).toLocaleDateString(),
+                  cell: (row) => when(row.disputeWindowEndsAt, region, "date"),
                 },
                 {
                   key: "action",

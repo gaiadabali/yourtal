@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 8/18 | 48/66 | `███████░░░`  73% |
-| **All** | | | **113/124** | **594/613** | `██████████`  97% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 9/18 | 49/66 | `███████░░░`  74% |
+| **All** | | | **114/124** | **595/613** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -87,7 +87,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 9c | `yourtal-p9-c` | free | 2026-10-01 | A2 done: 13.10 ✅, 13.20 and 13.22 backends (closed ✅ 2026-10-01), 13.9.a/b. Db `yourtal_s9c` and ports 26480–26487 free for reuse. |
 | 4 | `yourtal-4` | **13** — viewer side (agent V), paused | 2026-10-02 | Branch `phase/13` (merged), db `yourtal_s4`, ports 26360–26369. Next for V: 13.15.d (store date without its year), 13.3.d (data export), the B half of 13.3.i. (13.4.a moved to the optimisation pass, F97.) |
 | 2b | `yourtal-p11` | free | 2026-09-29 | Phase 11 moved to slot 4. 11.3.a ✅ (d2ae6ab), 11.3.b merged except `VideoObject` (11fc23d). Worktree left detached |
-| g5 | `.claude/worktrees/g-phase5` | **14** — group Phase 5 on the payment simulation (F106) | 2026-10-21 | Branch `group/5-payments`. On main: 14.7.a, 14.7.c (simulation, driver, parity). In CI: `group/5-billing` (Checkout purchases, webhook, saved cards, boost charges, GST). Agents: auctions 14.7.d (`g-phase5-drv`, `group/5-auctions`), payouts 14.8 (`g-phase5-pay`), invoices 14.9 (`g-phase5-inv`), video 14.6 (`g-phase5-video`). Next: 14.13 packages, then the 14.7.e staging check (lead applies the env). 14.10 waits for group 3.9.c; 13.6 is the founder's |
+| g5 | `.claude/worktrees/g-phase5` | **14** — group Phase 5 on the payment simulation (F106) | 2026-10-21 | Done: 14.7.a–d, f, g; 14.8 ✅; 14.9.a–c; 14.11 ✅; 14.13.a–b; 14.6.b–c. Staging runs the Stripe driver against `/api/paysim`; the 14.7.e check passes except a boost day (due 13:15 UTC 2026-10-21). Running: 14.6.a first frame (`g-phase5-video`). Left: 14.13.c on staging, 14.9.d (needs the AU company), 14.10 (waits for group 3.9.c passkeys); 13.6 is the founder's |
 | g3 | `.claude/worktrees/g3-oidc`, `g3-passkeys` | **14.16** — group Phase 3, Sign in with YourTal (god-ca) | 2026-10-21 | Branches `group/3.9-oidc` (the provider) and `group/3.9c-passkeys`. Next: the `/connect` screens, events and the teen invite API once the provider is on main; the lead does nginx and the keys on Helios |
 | 8 | free | **8** Voucher engine for clients — ✅ done | 2026-09-29 | Phase 8 done (all 4 tasks ✅). Helper worktrees `yourtal-p8`, `-p8-b`, `-p8-c` removed; databases `yourtal_s8`, `_s8b`, `_s8c` and ports 26371–26387, 26471–26477 kept for reuse |
 
@@ -1671,12 +1671,12 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [ ] 14.7.e Check on staging (group 5.1.f): a brand buys points (`billing/purchases`), pays for a boost, has a purchase approved by staff (`staff/economy/…/purchases`) and has a card declined; a charity auction holds, captures and releases bids. No refund step (F107); the driver's refunds are checked against the simulation → passed on staging 2026-10-21: purchase, declined card, 3-D Secure, charity auction hold/capture/release. staff-approved purchase (YT-AU-000003). Left: a boost day through Stripe (13:15 UTC 2026-10-21)
   - [x] 14.7.f A staff queue for card purchases parked as `needs_review`, with a way to settle each (group 5.1.g): settled by a full card refund, two-person (F123) → 033fae42
   - [x] 14.7.g Account deletion also deletes the Stripe customer, and the data export lists a bidder's saved card (group 5.1.h) → 63ab2a04
-- [ ] **14.8 Stripe Connect payouts in AU** (group 5.2, F103) · A + C · needs: 14.7 — 🔄 g5 (helper `g-phase5-pay`)
+- [x] **14.8 Stripe Connect payouts in AU** (group 5.2, F103) · A + C · needs: 14.7 — ✅ 2026-10-21 033fae42
   - [x] 14.8.a Stripe Connect payouts to AU brands: on the simulation, a brand and a charity onboard a connected account through the simulated onboarding page, and payouts land in it. ID has no real payouts (F104) → cef84dd8
   - [x] 14.8.b Settlement statements trigger real payouts, after approval → cef84dd8
   - [x] 14.8.c Read a payout back when its webhook never arrives (`getPayout`), and a staff action for disbursements left unconfirmed or refused (group 5.2.c) → 033fae42
   - [x] 14.8.d The weekly statement job 10.1.b names but which was never built, with a backfill of recent closed weeks (group 5.2.d) → 1742a5ce
-  - [ ] 14.8.e Check on staging: an approved statement's payout reaches a demo brand's account (group 5.2.e)
+  - [x] 14.8.e Check on staging: an approved statement's payout reaches a demo brand's account (group 5.2.e) → passed 2026-10-21 (A$12.00 to the brand's account, bank ••3456)
 - [ ] **14.9 GST tax invoices** (group 5.3) · C · needs: — (real invoices need the AU company, group 6.1.a) — 🔄 g5 (helper `g-phase5-inv`)
   - [x] 14.9.a GST tax invoices (AU) for points and boosts; PPN waits until ID takes real money (F104) → 216cc736
   - [x] 14.9.b Invoice numbering, the company's details read from the settings store, and a PDF downloadable in Studio → 216cc736
@@ -1806,6 +1806,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-10-21 · g5 · **14.8** (group 5.2): Stripe Connect payouts in AU on the payment simulation: brands and charities onboard, the weekly statement job (14.8.d, with a ledger fix so statements stop re-claiming each other's money), transfer and payout once per approved statement, read-back and two-person staff retry; a demo brand was paid on staging · 033fae42
 - 2026-10-21 · 14.17 (group 1.25) done: Security green again (vite 8.3.4 override for GHSA-698v-4r3x-3vcv), 14.15 test order fixed (14c0259b, 1cdd75ba).
 - 2026-10-21 · 14.15 (group 1.24) done: erasure removes pending invitations to the subject’s email, and DELETE /api/me reports complete (0551286a).
 - 2026-10-21 · 14.2 (group 1.6) done: budget, daily cap and postcode districts saved and enforced, search and feed use the viewer’s area, staging checked in AU and ID, and the player tells a refused viewer before playing (00b21ed5).

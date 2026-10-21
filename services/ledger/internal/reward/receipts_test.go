@@ -12,9 +12,11 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/yourtal/services/ledger/internal/escrow"
 	"github.com/yourtal/services/ledger/internal/ledger"
 	"github.com/yourtal/services/ledger/internal/ledgertest"
 	"github.com/yourtal/services/ledger/internal/reward"
+	"github.com/yourtal/services/ledger/internal/risk"
 	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
 )
 
@@ -430,5 +432,128 @@ func TestTheDatabaseRefusesAMismatchedGrant(t *testing.T) {
 	}
 	if err := insertGrant(pool, ledger.RegionAU, plain, string(reward.ActionGoodwill)); err != nil {
 		t.Errorf("goodwill from a plain allocation: %v", err)
+	}
+}
+
+// Group 2.10.e (founder decision 2.10.d): receipts are left out of the risk
+// gate's user-velocity signal. These run through the REAL gate (risk.Gate),
+// not AlwaysAllow.
+
+// gatedReceiptsAU is receiptsAU with the real risk gate wired in.
+func gatedReceiptsAU(t *testing.T) (*reward.Engine, *pgxpool.Pool) {
+	t.Helper()
+	pool := receiptPool(t)
+	book := ledger.New(pool)
+	gate := risk.New(pool, book, escrow.New(pool, book))
+	return reward.New(pool, book, gate, ledger.RegionAU).WithCaps(uncapped), pool
+}
+
+// riskFlags counts the user's ledger.risk_flag rows, by severity.
+func riskFlags(t *testing.T, pool *pgxpool.Pool, user string) map[string]int {
+	t.Helper()
+	rows, err := pool.Query(context.Background(),
+		`SELECT severity, count(*) FROM ledger.risk_flag WHERE user_id = $1 GROUP BY severity`, user)
+	if err != nil {
+		t.Fatalf("reading risk flags: %v", err)
+	}
+	defer rows.Close()
+	flags := map[string]int{}
+	for rows.Next() {
+		var severity string
+		var n int
+		if err := rows.Scan(&severity, &n); err != nil {
+			t.Fatal(err)
+		}
+		flags[severity] = n
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	return flags
+}
+
+// sendReceipts pays n one-point receipts for user, in well under a minute,
+// and fails the test if any of them is refused.
+func sendReceipts(t *testing.T, engine *reward.Engine, user, partner string, n int) {
+	t.Helper()
+	start := time.Now()
+	for i := 0; i < n; i++ {
+		if _, err := engine.GrantAction(context.Background(), receiptFor(user, partner, 1)); err != nil {
+			t.Fatalf("receipt %d of %d: %v", i+1, n, err)
+		}
+	}
+	if elapsed := time.Since(start); elapsed >= time.Minute {
+		t.Fatalf("%d receipts took %s; the test needs them inside a minute", n, elapsed)
+	}
+}
+
+func TestAStackOfReceiptsIsNeverFlaggedForVelocity(t *testing.T) {
+	engine, pool := gatedReceiptsAU(t)
+	partner, business := fundedPartner(t, ledger.RegionAU)
+	buyReceipts(t, engine, business, ledger.RegionAU)
+	user := freshUser()
+
+	// 12 is past both FlagUserVelocity (6) and BlockUserVelocity (10).
+	sendReceipts(t, engine, user, partner, 12)
+
+	if flags := riskFlags(t, pool, user); len(flags) != 0 {
+		t.Fatalf("12 receipts wrote risk flags %v, want none", flags)
+	}
+	pending, err := engine.Ledger().Balance(context.Background(), ledger.UserAccountID(user, ledger.PurposePending))
+	if err != nil {
+		t.Fatal(err)
+	}
+	available, err := engine.Ledger().Balance(context.Background(), ledger.UserAccountID(user, ledger.PurposeAvailable))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pending+available != 12 {
+		t.Errorf("pending %d + available %d, want all 12 points paid and none held", pending, available)
+	}
+
+	// The receipts did not count toward the window: a watch after them is
+	// the user's FIRST velocity-counted grant, so it neither blocks (13 would)
+	// nor flags (6+ would).
+	watch := request(user, auFundedAllocation(t, engine, 1_000), reward.ActionQuickWatched)
+	if _, err := engine.Grant(context.Background(), watch); err != nil {
+		t.Fatalf("a watch after 12 receipts: %v, want it paid", err)
+	}
+	if flags := riskFlags(t, pool, user); len(flags) != 0 {
+		t.Errorf("the watch after 12 receipts wrote risk flags %v, want none", flags)
+	}
+}
+
+func TestReceiptsNeitherBlockNorHelpBlockAfterWatches(t *testing.T) {
+	engine, pool := gatedReceiptsAU(t)
+	ctx := context.Background()
+	partner, business := fundedPartner(t, ledger.RegionAU)
+	buyReceipts(t, engine, business, ledger.RegionAU)
+	allocation := auFundedAllocation(t, engine, 10_000)
+	user := freshUser()
+
+	// Nine watches: the last four flag, none block.
+	for i := 0; i < risk.BlockUserVelocity-1; i++ {
+		if _, err := engine.Grant(ctx, request(user, allocation, reward.ActionQuickWatched)); err != nil {
+			t.Fatalf("watch %d: %v", i+1, err)
+		}
+	}
+	before := riskFlags(t, pool, user)
+	if want := risk.BlockUserVelocity - risk.FlagUserVelocity; before["flag"] != want || before["block"] != 0 {
+		t.Fatalf("after 9 watches flags = %v, want %d flag and no block", before, want)
+	}
+
+	// A receipt would have been the 10th grant and blocked; now it is not
+	// judged for velocity at all, so it pays and writes nothing.
+	sendReceipts(t, engine, user, partner, 3)
+	if after := riskFlags(t, pool, user); after["flag"] != before["flag"] || after["block"] != 0 {
+		t.Fatalf("receipts after 9 watches changed the flags from %v to %v", before, after)
+	}
+
+	// The 10th WATCH still blocks: the watches count as before.
+	if _, err := engine.Grant(ctx, request(user, allocation, reward.ActionQuickWatched)); !errors.Is(err, reward.ErrRiskRefused) {
+		t.Fatalf("the 10th watch: err = %v, want ErrRiskRefused", err)
+	}
+	if after := riskFlags(t, pool, user); after["block"] != 1 {
+		t.Errorf("after the 10th watch flags = %v, want one block", after)
 	}
 }

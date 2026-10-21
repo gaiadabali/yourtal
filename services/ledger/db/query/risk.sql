@@ -3,13 +3,17 @@
 -- shared hotspot rule, and this domain has no reason to touch caps/grant
 -- queries that A's own work also reads.
 
--- name: CountGrantsForUserSince :one
--- Velocity: how many grants (any action) this user has had inside the
--- window, regardless of the daily/monthly cap accounting in caps.go, which
--- counts POINTS per calendar day, not events per rolling minute.
+-- name: CountVelocityGrantsForUserSince :one
+-- Velocity: how many grants this user has had inside the window, regardless
+-- of the daily/monthly cap accounting in caps.go, which counts POINTS per
+-- calendar day, not events per rolling minute. Actions in exempt_actions are
+-- not counted at all (group 2.10.e: receipts, see risk.go's
+-- velocityExemptActions), so a stack of scanned receipts never pushes a
+-- later watch over the threshold either.
 SELECT COUNT(*)::bigint AS grants
 FROM ledger.grant
-WHERE user_id = $1 AND created_at >= sqlc.arg(since)::timestamptz;
+WHERE user_id = sqlc.arg(user_id) AND created_at >= sqlc.arg(since)::timestamptz
+  AND NOT (action_type = ANY(sqlc.arg(exempt_actions)::text[]));
 
 -- name: CountDistinctUsersForDeviceSince :one
 -- Impossible flow: how many OTHER identities this device has been granted

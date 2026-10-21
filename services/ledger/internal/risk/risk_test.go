@@ -170,6 +170,55 @@ func TestAFarmingAccountIsFlaggedAndItsBalanceIsHeld(t *testing.T) {
 	}
 }
 
+// The soft case: the FlagUserVelocity-th grant inside the window still
+// pays but queues the account (a "flag" row, nothing held); the ones before
+// it write nothing. Unchanged by group 2.10.e, which only exempts receipts.
+func TestTheSixthWatchIsFlaggedNotBlocked(t *testing.T) {
+	engine, pool, _ := setup(t)
+	ctx := context.Background()
+	allocation := fundedAllocation(t, engine, 100_000)
+	user := unique("usr")
+
+	flagsFor := func() (flags, blocks int, held bool) {
+		t.Helper()
+		rows, err := sqlcgen.New(pool).ListRiskQueue(ctx, sqlcgen.ListRiskQueueParams{Region: "ID", LimitCount: 1_000})
+		if err != nil {
+			t.Fatalf("listing the queue: %v", err)
+		}
+		for _, f := range rows {
+			if f.UserID != user {
+				continue
+			}
+			switch f.Severity {
+			case "flag":
+				flags++
+			case "block":
+				blocks++
+			}
+			held = held || f.EscrowID != nil
+		}
+		return flags, blocks, held
+	}
+
+	for i := 0; i < risk.FlagUserVelocity-1; i++ {
+		if _, err := engine.Grant(ctx, request(user, allocation, "", "")); err != nil {
+			t.Fatalf("watch %d: %v", i+1, err)
+		}
+	}
+	if flags, blocks, _ := flagsFor(); flags != 0 || blocks != 0 {
+		t.Fatalf("%d watches wrote %d flags and %d blocks, want none", risk.FlagUserVelocity-1, flags, blocks)
+	}
+
+	if _, err := engine.Grant(ctx, request(user, allocation, "", "")); err != nil {
+		t.Fatalf("watch %d: %v, want it paid (a flag still grants)", risk.FlagUserVelocity, err)
+	}
+	flags, blocks, held := flagsFor()
+	if flags != 1 || blocks != 0 || held {
+		t.Errorf("after watch %d: %d flags, %d blocks, held=%v; want 1 flag, no block, nothing held",
+			risk.FlagUserVelocity, flags, blocks, held)
+	}
+}
+
 // 10.4.a: one device claiming to be several different people in minutes is
 // device/account farming, not a shared kiosk.
 func TestADeviceBehindManyIdentitiesIsBlocked(t *testing.T) {

@@ -54,27 +54,32 @@ func (q *Queries) CountDistinctUsersForIpSince(ctx context.Context, arg CountDis
 	return other_users, err
 }
 
-const countGrantsForUserSince = `-- name: CountGrantsForUserSince :one
+const countVelocityGrantsForUserSince = `-- name: CountVelocityGrantsForUserSince :one
 
 SELECT COUNT(*)::bigint AS grants
 FROM ledger.grant
 WHERE user_id = $1 AND created_at >= $2::timestamptz
+  AND NOT (action_type = ANY($3::text[]))
 `
 
-type CountGrantsForUserSinceParams struct {
-	UserID string
-	Since  pgtype.Timestamptz
+type CountVelocityGrantsForUserSinceParams struct {
+	UserID        string
+	Since         pgtype.Timestamptz
+	ExemptActions []string
 }
 
 // TASKS.md 10.4: the real RiskGate's own signal queries and its manual-review
 // queue (10.4.b/10.5). A new file rather than an addition to ledger.sql --
 // shared hotspot rule, and this domain has no reason to touch caps/grant
 // queries that A's own work also reads.
-// Velocity: how many grants (any action) this user has had inside the
-// window, regardless of the daily/monthly cap accounting in caps.go, which
-// counts POINTS per calendar day, not events per rolling minute.
-func (q *Queries) CountGrantsForUserSince(ctx context.Context, arg CountGrantsForUserSinceParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countGrantsForUserSince, arg.UserID, arg.Since)
+// Velocity: how many grants this user has had inside the window, regardless
+// of the daily/monthly cap accounting in caps.go, which counts POINTS per
+// calendar day, not events per rolling minute. Actions in exempt_actions are
+// not counted at all (group 2.10.e: receipts, see risk.go's
+// velocityExemptActions), so a stack of scanned receipts never pushes a
+// later watch over the threshold either.
+func (q *Queries) CountVelocityGrantsForUserSince(ctx context.Context, arg CountVelocityGrantsForUserSinceParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countVelocityGrantsForUserSince, arg.UserID, arg.Since, arg.ExemptActions)
 	var grants int64
 	err := row.Scan(&grants)
 	return grants, err

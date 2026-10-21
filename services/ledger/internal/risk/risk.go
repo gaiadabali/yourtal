@@ -1,5 +1,6 @@
 // Package risk is TASKS.md 10.4's real RiskGate (YT-0054), replacing
-// reward.AlwaysAllow. It checks velocity per user, device and IP; flags
+// reward.AlwaysAllow. It checks velocity per user (receipts excepted, see
+// velocityExemptActions), device and IP; flags
 // impossible flows (one device or IP behind several different identities in
 // a short window); and folds in the caller's own timing-plausibility signal.
 // The daily and monthly earn caps are NOT this package's job — those are
@@ -43,8 +44,8 @@ const (
 	// Window every count below looks back across.
 	Window = 10 * time.Minute
 
-	// FlagUserVelocity/BlockUserVelocity: grants by the same user, any
-	// action, inside Window.
+	// FlagUserVelocity/BlockUserVelocity: grants by the same user inside
+	// Window, every action except velocityExemptActions (receipts).
 	FlagUserVelocity  = 6
 	BlockUserVelocity = 10
 
@@ -60,6 +61,31 @@ const (
 	FlagIPIdentities  = 4
 	BlockIPIdentities = 8
 )
+
+// velocityExemptActions are left out of the user-velocity signal entirely
+// (group 2.10.e, founder decision 2.10.d, 2026-10-21). A grant for one of
+// them is never flagged or blocked for velocity, and it is not counted in
+// the window either, so a stack of them cannot push a later watch, streak or
+// goodwill grant over FlagUserVelocity or BlockUserVelocity.
+//
+// Receipts are exempt because each receipt is a paid scan worth 1 point
+// (docs/27 §1, F127: a scan costs the partner about 9c to earn a 3c point),
+// so how fast someone scans carries no farming signal: a real SnapApp user
+// scanning a stack of receipts at once is the normal case, and before this
+// a demo user sending 10 one-point receipts quickly was blocked and had
+// their points escrowed. The daily and monthly earn caps (reward.checkCaps)
+// and the device and IP signals below still apply to receipts.
+var velocityExemptActions = []reward.ActionType{reward.ActionReceiptScanned}
+
+// velocityExempt reports whether action is in velocityExemptActions.
+func velocityExempt(action reward.ActionType) bool {
+	for _, exempt := range velocityExemptActions {
+		if action == exempt {
+			return true
+		}
+	}
+	return false
+}
 
 // Signal is one thing the gate noticed, recorded verbatim in
 // ledger.risk_flag.signals for a reviewer to read (10.5.a).
@@ -116,20 +142,28 @@ func (g *Gate) assess(ctx context.Context, check reward.RiskCheck) ([]Signal, st
 		}
 	}
 
-	userCount, err := q.CountGrantsForUserSince(ctx, sqlcgen.CountGrantsForUserSinceParams{
-		UserID: check.UserID, Since: since,
-	})
-	if err != nil {
-		return nil, "", fmt.Errorf("counting user velocity: %w", err)
-	}
-	// +1: this attempt, if it is allowed, becomes the (userCount+1)th.
-	switch {
-	case userCount+1 >= BlockUserVelocity:
-		signals = append(signals, Signal{Kind: "velocity_user", Detail: fmt.Sprintf("%d grants in %s", userCount+1, Window)})
-		bump("block")
-	case userCount+1 >= FlagUserVelocity:
-		signals = append(signals, Signal{Kind: "velocity_user", Detail: fmt.Sprintf("%d grants in %s", userCount+1, Window)})
-		bump("flag")
+	// A velocity-exempt grant (a receipt) is not judged for velocity at all;
+	// for every other grant the count leaves the exempt ones out.
+	if !velocityExempt(check.Action) {
+		exempt := make([]string, len(velocityExemptActions))
+		for i, action := range velocityExemptActions {
+			exempt[i] = string(action)
+		}
+		userCount, err := q.CountVelocityGrantsForUserSince(ctx, sqlcgen.CountVelocityGrantsForUserSinceParams{
+			UserID: check.UserID, Since: since, ExemptActions: exempt,
+		})
+		if err != nil {
+			return nil, "", fmt.Errorf("counting user velocity: %w", err)
+		}
+		// +1: this attempt, if it is allowed, becomes the (userCount+1)th.
+		switch {
+		case userCount+1 >= BlockUserVelocity:
+			signals = append(signals, Signal{Kind: "velocity_user", Detail: fmt.Sprintf("%d grants in %s", userCount+1, Window)})
+			bump("block")
+		case userCount+1 >= FlagUserVelocity:
+			signals = append(signals, Signal{Kind: "velocity_user", Detail: fmt.Sprintf("%d grants in %s", userCount+1, Window)})
+			bump("flag")
+		}
 	}
 
 	if check.DeviceID != "" {

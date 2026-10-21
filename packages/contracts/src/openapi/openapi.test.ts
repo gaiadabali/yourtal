@@ -200,6 +200,13 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "staff-economy.ts's per-day row, nested inside economyOverviewSchema's own inline schema -- not a standalone component.",
   economyOverviewSchema:
     "9.5.a's overview response -- documented inline (route-registry.c-staff-economy.ts GET .../overview).",
+  receiptProgrammePackageSchema:
+    "2.9.c's receipt-programme package row, nested inside receiptProgrammeRowSchema's own inline schema -- not a standalone component.",
+  receiptProgrammeEarnerSchema: "Same as receiptProgrammePackageSchema above.",
+  receiptProgrammeRowSchema:
+    "2.9.c's per-partner receipt programme row, nested in receiptProgrammeRowsSchema -- documented inline (route-registry.c-staff-economy.ts GET .../receipt-programmes).",
+  receiptProgrammeRowsSchema:
+    "2.9.c's receipt programmes list -- documented inline (route-registry.c-staff-economy.ts GET .../receipt-programmes).",
   rateScreenSchema:
     "9.5.b's rate screen. F54: published inline (route-registry.c-staff-economy.ts GET .../rate), same 'documented but not a registered cross-route component' tier as every other staff-economy schema here -- never a NAMED component, so B can never be referenced from outside the two staff routes that carry it.",
   proposeRateBodySchema:
@@ -358,6 +365,8 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   coverageSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   economyDailyRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   economyDayRowSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  receiptProgrammeStatsRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  receiptProgrammeStatsSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   proposeRateRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   rateProposalSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   approveRateRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,

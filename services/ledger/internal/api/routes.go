@@ -145,6 +145,7 @@ func (a *API) platformRoutes(r chi.Router) {
 
 	r.Post("/economy/coverage", a.coverage)
 	r.Post("/economy/daily", a.economyDaily)
+	r.Post("/economy/receipt-programme-stats", a.receiptProgrammeStats)
 	r.Post("/economy/rates/propose", a.proposeRate)
 	r.Post("/economy/rates/approve", a.approveRate)
 	r.Post("/economy/marketing/fund", a.fundMarketing)

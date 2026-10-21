@@ -63,6 +63,8 @@ import type {
   RateProposal,
   ReleaseVoucherLiabilityRequest,
   ResolveStatementDisputeRequest,
+  ReceiptProgrammeStats,
+  ReceiptProgrammeStatsRequest,
   Statement,
   StatementsRequest,
 } from "@yourtal/contracts/ledger-internal/economy";
@@ -245,6 +247,12 @@ export class FakeLedgerClient implements LedgerInternalClient {
 
   economyDaily(request: EconomyDailyRequest): ResultAsync<readonly EconomyDayRow[], LedgerError> {
     return economy.economyDaily(this.db, request);
+  }
+
+  receiptProgrammeStats(
+    request: ReceiptProgrammeStatsRequest,
+  ): ResultAsync<ReceiptProgrammeStats, LedgerError> {
+    return economy.receiptProgrammeStats(this.db, request);
   }
 
   proposeRate(request: ProposeRateRequest): ResultAsync<RateProposal, LedgerError> {

@@ -33,6 +33,31 @@ export const economyDayRowSchema = z.object({
 });
 export type EconomyDayRow = z.infer<typeof economyDayRowSchema>;
 
+/**
+ * 2.9.c: what a partner's receipt packages have paid, for the staff console.
+ * Only receipt grants from a receipt package in the region count. The users
+ * are the ledger's own opaque ids. No field names the backing rate.
+ */
+export const receiptProgrammeStatsRequestSchema = z.object({
+  region: regionSchema,
+  allocationIds: z.array(z.string().min(1)).max(200),
+});
+export type ReceiptProgrammeStatsRequest = z.infer<typeof receiptProgrammeStatsRequestSchema>;
+
+export const receiptProgrammeStatsSchema = z.object({
+  paidPoints: pointsSchema,
+  paidLast7Days: pointsSchema,
+  /** The ten users paid most over the last 30 days, most first. */
+  topEarners: z.array(
+    z.object({
+      userId: z.string().min(1),
+      points: pointsSchema,
+      receipts: z.number().int().min(0),
+    }),
+  ),
+});
+export type ReceiptProgrammeStats = z.infer<typeof receiptProgrammeStatsSchema>;
+
 export const proposeRateRequestSchema = z.object({
   region: regionSchema,
   currency: currencySchema,

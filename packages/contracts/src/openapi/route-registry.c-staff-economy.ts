@@ -8,6 +8,7 @@ import {
   proposeRateBodySchema,
   proposeSettingBodySchema,
   rateScreenSchema,
+  receiptProgrammeRowsSchema,
   settingsScreenSchema,
 } from "../staff/staff-economy";
 import { killSwitchSchema, setKillSwitchRequestSchema } from "../voucher-internal/kill-switch";
@@ -151,6 +152,21 @@ export const STAFF_ECONOMY_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     successStatus: 200,
     successDescription: "The region's economy overview. B (the backing rate) never appears here.",
     successSchema: inlineSchema(economyOverviewSchema),
+    errors: [FORBIDDEN, SERVICE_UNAVAILABLE],
+  },
+
+  // -- 2.9.c: SnapApp's receipt programme --
+  {
+    method: "get",
+    path: "/api/staff/economy/{region}/receipt-programmes",
+    summary:
+      "Per partner with a receipt funder: its packages, points paid, and top earners (finance and ops)",
+    tags: ["staff-economy"],
+    pathParams: [REGION_PARAM],
+    successStatus: 200,
+    successDescription:
+      "One row per partner with an approved `receipt_funder.<partnerId>` setting in the region; an empty list when none. Top earners are the ledger's opaque user ids. No field names the backing rate.",
+    successSchema: inlineSchema(receiptProgrammeRowsSchema),
     errors: [FORBIDDEN, SERVICE_UNAVAILABLE],
   },
 

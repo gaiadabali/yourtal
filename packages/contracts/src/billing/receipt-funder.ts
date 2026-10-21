@@ -51,6 +51,22 @@ export function funderFor(
   return setting === undefined ? null : funderOf(setting);
 }
 
+/** Every partner with an approved funder in `region`, sorted by partner id, for the staff console. */
+export function receiptFunders(
+  settings: readonly RegionSetting[],
+  region: Region,
+): { partnerId: string; businessId: string }[] {
+  const funders: { partnerId: string; businessId: string }[] = [];
+  for (const row of settings) {
+    if (!row.key.startsWith(RECEIPT_FUNDER_KEY_PREFIX)) continue;
+    if (row.region !== region || row.approvedBy === null) continue;
+    const businessId = funderOf(row);
+    if (businessId === null) continue;
+    funders.push({ partnerId: row.key.slice(RECEIPT_FUNDER_KEY_PREFIX.length), businessId });
+  }
+  return funders.sort((a, b) => a.partnerId.localeCompare(b.partnerId));
+}
+
 /** The partners `businessId` funds in `region`, sorted, for the funder's Studio panel. */
 export function partnersFundedBy(
   settings: readonly RegionSetting[],

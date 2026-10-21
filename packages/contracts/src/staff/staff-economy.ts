@@ -124,6 +124,44 @@ export const proposeManualPurchaseBodySchema = z.object({
 });
 export type ProposeManualPurchaseBody = z.infer<typeof proposeManualPurchaseBodySchema>;
 
+// -- receipt programmes (2.9.c) -- what a partner's receipt package has paid --
+
+export const receiptProgrammePackageSchema = z.object({
+  allocationId: z.string().min(1),
+  totalPoints: pointsSchema,
+  remainingPoints: pointsSchema,
+  boughtAt: z.iso.datetime(),
+});
+export type ReceiptProgrammePackage = z.infer<typeof receiptProgrammePackageSchema>;
+
+export const receiptProgrammeEarnerSchema = z.object({
+  /** The ledger's opaque user id, never an email. */
+  userId: z.string().min(1),
+  points: pointsSchema,
+  receipts: z.number().int().min(0),
+});
+export type ReceiptProgrammeEarner = z.infer<typeof receiptProgrammeEarnerSchema>;
+
+/** One partner with a `receipt_funder.<partnerId>` setting in the region. No field names the backing rate. */
+export const receiptProgrammeRowSchema = z
+  .object({
+    partnerId: z.string().min(1),
+    funderBusinessId: z.uuid(),
+    funderName: z.string(),
+    pointsPerReceipt: pointsSchema,
+    packages: z.array(receiptProgrammePackageSchema),
+    /** Receipt points paid from the funder's packages, all time. */
+    paidPoints: pointsSchema,
+    paidLast7Days: pointsSchema,
+    /** Top 10 over the last 30 days. */
+    topEarners: z.array(receiptProgrammeEarnerSchema).max(10),
+  })
+  .strict();
+export type ReceiptProgrammeRow = z.infer<typeof receiptProgrammeRowSchema>;
+
+export const receiptProgrammeRowsSchema = z.array(receiptProgrammeRowSchema);
+export type ReceiptProgrammeRows = z.infer<typeof receiptProgrammeRowsSchema>;
+
 // -- settings (9.5.d) -- every F12 setting, and points expiry, per region --
 
 export const settingsScreenSchema = z

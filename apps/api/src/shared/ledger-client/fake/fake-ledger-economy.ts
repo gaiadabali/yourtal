@@ -16,6 +16,8 @@ import type {
   GenerateStatementRequest,
   ProposeRateRequest,
   RateProposal,
+  ReceiptProgrammeStats,
+  ReceiptProgrammeStatsRequest,
   ReleaseVoucherLiabilityRequest,
   ResolveStatementDisputeRequest,
   Statement,
@@ -131,6 +133,54 @@ export function economyDaily(
             reserveMinor: toMinorUnits(reserveMinor),
           })),
       );
+    })(),
+  );
+}
+
+/**
+ * 2.9.c: the fake's twin of the ledger's `receipt-programme-stats` read. Only
+ * receipt grants from a receipt package in the region count, over the
+ * database's clock (7 and 30 days), the ten biggest earners first.
+ */
+export function receiptProgrammeStats(
+  db: AppDb,
+  request: ReceiptProgrammeStatsRequest,
+): ResultAsync<ReceiptProgrammeStats, LedgerError> {
+  return new ResultAsync(
+    (async (): Promise<Result<ReceiptProgrammeStats, LedgerError>> => {
+      const ids =
+        request.allocationIds.length === 0
+          ? sql`ARRAY[]::text[]`
+          : sql`ARRAY[${sql.join(
+              request.allocationIds.map((id) => sql`${id}`),
+              sql`, `,
+            )}]::text[]`;
+      const scope = sql`
+        FROM platform.ledger_fake_grant g
+        JOIN platform.ledger_fake_allocation a ON a.id = g.allocation_id
+       WHERE g.kind = 'receipt' AND a.programme = 'receipts' AND a.region = ${request.region}
+         AND g.allocation_id::text = ANY(${ids})`;
+      const paid = await db.execute<{ paid: string; recent: string }>(sql`
+        SELECT COALESCE(SUM(g.points), 0) AS paid,
+               COALESCE(SUM(g.points) FILTER (WHERE g.granted_at >= now() - interval '7 days'), 0) AS recent
+        ${scope}
+      `);
+      const top = await db.execute<{ user_id: string; points: string; receipts: string }>(sql`
+        SELECT g.user_id, SUM(g.points) AS points, COUNT(*) AS receipts
+        ${scope} AND g.granted_at >= now() - interval '30 days'
+        GROUP BY g.user_id
+        ORDER BY SUM(g.points) DESC, COUNT(*) DESC, g.user_id
+        LIMIT 10
+      `);
+      return ok({
+        paidPoints: toPoints(Number(paid.rows[0]?.paid ?? 0)),
+        paidLast7Days: toPoints(Number(paid.rows[0]?.recent ?? 0)),
+        topEarners: top.rows.map((row) => ({
+          userId: row.user_id,
+          points: toPoints(Number(row.points)),
+          receipts: Number(row.receipts),
+        })),
+      });
     })(),
   );
 }

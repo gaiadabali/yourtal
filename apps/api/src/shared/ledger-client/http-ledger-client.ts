@@ -63,6 +63,8 @@ import type {
   RateProposal,
   ReleaseVoucherLiabilityRequest,
   ResolveStatementDisputeRequest,
+  ReceiptProgrammeStats,
+  ReceiptProgrammeStatsRequest,
   Statement,
   StatementsRequest,
 } from "@yourtal/contracts/ledger-internal/economy";
@@ -309,6 +311,12 @@ export class HttpLedgerClient implements LedgerInternalClient {
 
   economyDaily(request: EconomyDailyRequest): ResultAsync<readonly EconomyDayRow[], LedgerError> {
     return this.post("/v1/economy/daily", request);
+  }
+
+  receiptProgrammeStats(
+    request: ReceiptProgrammeStatsRequest,
+  ): ResultAsync<ReceiptProgrammeStats, LedgerError> {
+    return this.post("/v1/economy/receipt-programme-stats", request);
   }
 
   proposeRate(request: ProposeRateRequest): ResultAsync<RateProposal, LedgerError> {

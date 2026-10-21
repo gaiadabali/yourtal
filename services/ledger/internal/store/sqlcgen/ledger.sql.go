@@ -1838,6 +1838,81 @@ func (q *Queries) ReceiptPackagesWithRoom(ctx context.Context, arg ReceiptPackag
 	return items, nil
 }
 
+const receiptProgrammePaid = `-- name: ReceiptProgrammePaid :one
+SELECT COALESCE(SUM(g.points), 0)::bigint AS paid_points,
+       COALESCE(SUM(g.points) FILTER (WHERE g.created_at >= now() - interval '7 days'), 0)::bigint AS paid_last_7_days
+FROM ledger.grant g
+JOIN ledger.receipt_package p ON p.allocation_id = g.allocation_id
+WHERE g.action_type = 'receipt_scanned'
+  AND p.region = $1::text
+  AND g.allocation_id = ANY($2::text[])
+`
+
+type ReceiptProgrammePaidParams struct {
+	Region        string
+	AllocationIds []string
+}
+
+type ReceiptProgrammePaidRow struct {
+	PaidPoints    int64
+	PaidLast7Days int64
+}
+
+// 2.9.c: what a partner's receipt packages have paid, all time and over the
+// last 7 days. Only receipt grants from a receipt package in `region` count.
+func (q *Queries) ReceiptProgrammePaid(ctx context.Context, arg ReceiptProgrammePaidParams) (ReceiptProgrammePaidRow, error) {
+	row := q.db.QueryRow(ctx, receiptProgrammePaid, arg.Region, arg.AllocationIds)
+	var i ReceiptProgrammePaidRow
+	err := row.Scan(&i.PaidPoints, &i.PaidLast7Days)
+	return i, err
+}
+
+const receiptProgrammeTopEarners = `-- name: ReceiptProgrammeTopEarners :many
+SELECT g.user_id, SUM(g.points)::bigint AS points, COUNT(*)::bigint AS receipts
+FROM ledger.grant g
+JOIN ledger.receipt_package p ON p.allocation_id = g.allocation_id
+WHERE g.action_type = 'receipt_scanned'
+  AND p.region = $1::text
+  AND g.allocation_id = ANY($2::text[])
+  AND g.created_at >= now() - interval '30 days'
+GROUP BY g.user_id
+ORDER BY SUM(g.points) DESC, COUNT(*) DESC, g.user_id
+LIMIT 10
+`
+
+type ReceiptProgrammeTopEarnersParams struct {
+	Region        string
+	AllocationIds []string
+}
+
+type ReceiptProgrammeTopEarnersRow struct {
+	UserID   string
+	Points   int64
+	Receipts int64
+}
+
+// 2.9.c: the ten users those packages paid most over the last 30 days. The
+// user id is the ledger's own, never an email.
+func (q *Queries) ReceiptProgrammeTopEarners(ctx context.Context, arg ReceiptProgrammeTopEarnersParams) ([]ReceiptProgrammeTopEarnersRow, error) {
+	rows, err := q.db.Query(ctx, receiptProgrammeTopEarners, arg.Region, arg.AllocationIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ReceiptProgrammeTopEarnersRow
+	for rows.Next() {
+		var i ReceiptProgrammeTopEarnersRow
+		if err := rows.Scan(&i.UserID, &i.Points, &i.Receipts); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const releaseExpiredHolds = `-- name: ReleaseExpiredHolds :one
 SELECT ledger.allocation_release_expired()::integer AS released
 `

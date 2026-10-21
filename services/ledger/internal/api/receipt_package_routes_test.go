@@ -203,3 +203,61 @@ func TestAReceiptGrantIsPaidByItsPartnersPackage(t *testing.T) {
 		t.Errorf("no partner: %d %+v, want 400 refused", code, refused)
 	}
 }
+
+// 2.9.c: the staff console's read of what a partner's receipt packages paid.
+func TestReceiptProgrammeStatsCountOnlyReceiptGrantsFromItsPackages(t *testing.T) {
+	s := newServer(t)
+	partner, business := unique("partner"), uuid()
+	ledgertest.SetRegionSetting(t, "AU", "receipt_funder."+partner, fmt.Sprintf(`{"businessId": %q}`, business))
+	var pkg allocationAnswer
+	s.mustCall("/allocations/purchase", map[string]any{"businessId": business, "region": "AU", "currency": "AUD",
+		"points": 1_000, "paidMinor": 3_000, "idempotencyKey": unique("rcpt"), "tierKey": "starter", "programme": "receipts"}, &pkg)
+
+	type earner struct {
+		UserID   string `json:"userId"`
+		Points   int64  `json:"points"`
+		Receipts int64  `json:"receipts"`
+	}
+	type stats struct {
+		PaidPoints    int64    `json:"paidPoints"`
+		PaidLast7Days int64    `json:"paidLast7Days"`
+		TopEarners    []earner `json:"topEarners"`
+	}
+	read := func(region string, ids ...string) stats {
+		var got stats
+		s.mustCall("/economy/receipt-programme-stats", map[string]any{"region": region, "allocationIds": ids}, &got)
+		return got
+	}
+
+	if got := read("AU", pkg.AllocationID); got.PaidPoints != 0 || got.PaidLast7Days != 0 || got.TopEarners == nil || len(got.TopEarners) != 0 {
+		t.Errorf("before any receipt = %+v, want zeros and an empty list", got)
+	}
+
+	heavy, light := uuid(), uuid()
+	send := func(user string, points int) {
+		s.mustCall("/actions/grants", map[string]any{"kind": "receipt", "userId": user, "region": "AU", "points": points,
+			"trustTier": 3, "idempotencyKey": unique("receipt"), "ageBand": "adult", "partnerId": partner}, nil)
+	}
+	send(heavy, 1)
+	send(heavy, 1)
+	send(light, 1)
+
+	got := read("AU", pkg.AllocationID)
+	if got.PaidPoints != 3 || got.PaidLast7Days != 3 || len(got.TopEarners) != 2 {
+		t.Fatalf("stats = %+v, want 3 paid and two earners", got)
+	}
+	if got.TopEarners[0] != (earner{UserID: heavy, Points: 2, Receipts: 2}) || got.TopEarners[1] != (earner{UserID: light, Points: 1, Receipts: 1}) {
+		t.Errorf("top earners = %+v", got.TopEarners)
+	}
+
+	if other := read("AU", "no-such-allocation"); other.PaidPoints != 0 || len(other.TopEarners) != 0 {
+		t.Errorf("another allocation = %+v, want nothing", other)
+	}
+	if other := read("ID", pkg.AllocationID); other.PaidPoints != 0 {
+		t.Errorf("the package read as ID = %+v, want nothing: a region sees only its own packages", other)
+	}
+	var bad httpError
+	if code := s.call("/economy/receipt-programme-stats", map[string]any{"region": "NZ", "allocationIds": []string{}}, &bad); code != http.StatusBadRequest {
+		t.Errorf("unknown region: %d, want 400", code)
+	}
+}

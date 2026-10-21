@@ -18,6 +18,7 @@ import type {
   EconomyOverview,
   EconomyProposal,
   RateScreen,
+  ReceiptProgrammeRow,
   SettingsScreen,
 } from "@yourtal/contracts/staff/economy";
 import { LEDGER_INTERNAL_CLIENT } from "../../../shared/ledger-client/ledger-internal-client";
@@ -52,6 +53,7 @@ import type {
   EconomyProposalRepository,
   EconomyProposalRow,
 } from "./persistence/economy-proposal.repository";
+import { buildReceiptProgrammes } from "./receipt-programmes";
 import { assertSettingValue } from "./setting-validation";
 import { mapLedgerErrorToHttpException } from "./to-http-exception";
 
@@ -135,6 +137,33 @@ export class StaffEconomyController {
       },
       manualPurchases: purchases.map(toEconomyProposal),
     };
+  }
+
+  // -- 2.9.c: SnapApp's receipt programme, same view rule as the overview --
+
+  @Authorize({
+    kind: "platform_setting",
+    action: "view_setting",
+    idFrom: () => "receipt-programmes",
+  })
+  @StaffAction("economy.view_receipt_programmes")
+  @NotValueMoving("A read.")
+  @Get(":region/receipt-programmes")
+  async receiptProgrammes(
+    @Param("region") regionParam: string,
+    @Req() request: FastifyRequest,
+  ): Promise<readonly ReceiptProgrammeRow[]> {
+    const region = parseRegion(regionParam);
+    const result = await buildReceiptProgrammes(
+      {
+        ledger: this.ledger,
+        funderName: (businessId) => this.proposals.businessLegalName(businessId),
+      },
+      region,
+    );
+    if (result.isErr()) throw mapLedgerErrorToHttpException(result.error);
+    setStaffAuditContext(request, { targetKind: "region", targetId: region, region });
+    return result.value;
   }
 
   // -- 9.5.b: rate management -- finance only, B never leaves this screen --

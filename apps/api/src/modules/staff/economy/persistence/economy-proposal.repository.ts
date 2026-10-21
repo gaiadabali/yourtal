@@ -42,6 +42,8 @@ export interface EconomyProposalRepository {
   /** 2.10.b: reads for the receipt funder setting's check (`ReceiptFunderFacts`). */
   partnerExists(partnerId: string): Promise<boolean>;
   businessFacts(businessId: string): Promise<{ region: Region; isVerified: boolean } | null>;
+  /** 2.9.c: the business's legal name for the receipt programmes screen; null if it does not exist. */
+  businessLegalName(businessId: string): Promise<string | null>;
   listPending(region: Region, kind?: EconomyProposalKind): Promise<readonly EconomyProposalRow[]>;
   listAll(region: Region, kind: EconomyProposalKind): Promise<readonly EconomyProposalRow[]>;
   /** Approves and stamps the ledger's own result, in one row -- same "decided once" shape as `region_setting`. */
@@ -179,6 +181,14 @@ export class PostgresEconomyProposalRepository implements EconomyProposalReposit
     const row = result.rows[0];
     if (row === undefined || row.region === null) return null;
     return { region: row.region, isVerified: row.is_verified };
+  }
+
+  async businessLegalName(businessId: string): Promise<string | null> {
+    const result = await this.pool.query<{ legal_name: string }>(
+      `SELECT legal_name FROM business.business_accounts WHERE id = $1`,
+      [businessId],
+    );
+    return result.rows[0]?.legal_name ?? null;
   }
 
   async listPending(

@@ -487,3 +487,28 @@ LIMIT $1;
 INSERT INTO ledger.release_notice (grant_id)
 SELECT r.grant_id FROM ledger.grant_release r WHERE r.grant_id = ANY(sqlc.arg(grant_ids)::text[])
 ON CONFLICT DO NOTHING;
+
+-- name: ReceiptProgrammePaid :one
+-- 2.9.c: what a partner's receipt packages have paid, all time and over the
+-- last 7 days. Only receipt grants from a receipt package in `region` count.
+SELECT COALESCE(SUM(g.points), 0)::bigint AS paid_points,
+       COALESCE(SUM(g.points) FILTER (WHERE g.created_at >= now() - interval '7 days'), 0)::bigint AS paid_last_7_days
+FROM ledger.grant g
+JOIN ledger.receipt_package p ON p.allocation_id = g.allocation_id
+WHERE g.action_type = 'receipt_scanned'
+  AND p.region = sqlc.arg(region)::text
+  AND g.allocation_id = ANY(sqlc.arg(allocation_ids)::text[]);
+
+-- name: ReceiptProgrammeTopEarners :many
+-- 2.9.c: the ten users those packages paid most over the last 30 days. The
+-- user id is the ledger's own, never an email.
+SELECT g.user_id, SUM(g.points)::bigint AS points, COUNT(*)::bigint AS receipts
+FROM ledger.grant g
+JOIN ledger.receipt_package p ON p.allocation_id = g.allocation_id
+WHERE g.action_type = 'receipt_scanned'
+  AND p.region = sqlc.arg(region)::text
+  AND g.allocation_id = ANY(sqlc.arg(allocation_ids)::text[])
+  AND g.created_at >= now() - interval '30 days'
+GROUP BY g.user_id
+ORDER BY SUM(g.points) DESC, COUNT(*) DESC, g.user_id
+LIMIT 10;

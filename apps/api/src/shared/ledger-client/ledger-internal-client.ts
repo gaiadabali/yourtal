@@ -63,6 +63,8 @@ import type {
   RateProposal,
   ReleaseVoucherLiabilityRequest,
   ResolveStatementDisputeRequest,
+  ReceiptProgrammeStats,
+  ReceiptProgrammeStatsRequest,
   Statement,
   StatementsRequest,
 } from "@yourtal/contracts/ledger-internal/economy";
@@ -155,6 +157,14 @@ export interface LedgerInternalClient extends LedgerSettingsOperations {
   // --- economy ---
   coverage(region: string): ResultAsync<Coverage, LedgerError>;
   economyDaily(request: EconomyDailyRequest): ResultAsync<readonly EconomyDayRow[], LedgerError>;
+  /**
+   * 2.9.c: what a partner's receipt packages have paid (all time and 7 days) and the
+   * ten users paid most over 30 days. Read-only; only receipt grants from a receipt
+   * package in the region count. Users are the ledger's own ids.
+   */
+  receiptProgrammeStats(
+    request: ReceiptProgrammeStatsRequest,
+  ): ResultAsync<ReceiptProgrammeStats, LedgerError>;
   proposeRate(request: ProposeRateRequest): ResultAsync<RateProposal, LedgerError>;
   approveRate(request: ApproveRateRequest): ResultAsync<RateProposal, LedgerError>;
   fundMarketing(request: FundMarketingRequest): ResultAsync<void, LedgerError>;

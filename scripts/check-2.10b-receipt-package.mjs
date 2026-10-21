@@ -15,9 +15,11 @@
 //             and the invoice line. Skips a purchase when the funder already has a receipt
 //             package in that region (NOTE), unless --force.
 //   phase-b   Run AFTER T2b and T4 are deployed, while staging is quiet. Partner status read,
-//             then the drain: receipt_points 100 (two finance staff), three linked adults send
-//             5 + 3 + 2 receipts (50%, 80%, 100% alerts, once each, in Studio and the dev inbox),
-//             a fourth user is refused (409 allocation_exhausted, status earning:false), replays,
+//             needs one AU receipt package with 900 or more points left (it need not be fresh):
+//             a fourth adult (D) sends one-point receipts to leave exactly 900. Then the drain:
+//             receipt_points 100 (two finance staff), linked adults send 5 (A) + 3 + 1 (B)
+//             receipts (50%, 80%, 100% alerts, once each, in Studio and the dev inbox),
+//             a third user (C) is refused (409 allocation_exhausted, status earning:false), replays,
 //             then receipt_points back, a second Starter, and a new receipt earns again.
 //             Needs --yes. Takes about 15 minutes (alerts run every 2 minutes).
 //   restore   Puts receipt_points for AU back (to the value phase-b noted, else 1) after an
@@ -32,8 +34,8 @@
 // var the partner row names, override the name with CHECK_PARTNER_SECRET_ENV),
 // CHECK_PARTNER_ID (default snap-app), CHECK_FINANCE2_EMAIL (the second finance member for the
 // two-person rule, default ops@demo.yourtal.test; it must hold the finance role: on the box run
-// `pnpm staff:add <email> finance` first), CHECK_RECEIPT_USERS (A,B,C demo local parts, default
-// adult,guardian,member), CHECK_INVOICE_WAIT_MIN (default 8), CHECK_ALERT_WAIT_MIN (per alert,
+// `pnpm staff:add <email> finance` first), CHECK_RECEIPT_USERS (A,B,C,D demo local parts, default
+// adult,guardian,member,charity1), CHECK_INVOICE_WAIT_MIN (default 8), CHECK_ALERT_WAIT_MIN (per alert,
 // default 4), CHECK_SETTINGS_WAIT_SEC (after a setting is approved, default 75),
 // CHECK_STATE_FILE (default in the temp directory).
 import { createHmac, randomUUID } from "node:crypto";
@@ -51,7 +53,9 @@ const PARTNER_ID = process.env.CHECK_PARTNER_ID ?? "snap-app";
 const PARTNER_SECRET =
   process.env[process.env.CHECK_PARTNER_SECRET_ENV ?? "SNAP_APP_PARTNER_SECRET"];
 const FINANCE2 = (process.env.CHECK_FINANCE2_EMAIL ?? "ops@demo.yourtal.test").toLowerCase();
-const [USER_A, USER_B, USER_C] = (process.env.CHECK_RECEIPT_USERS ?? "adult,guardian,member")
+const [USER_A, USER_B, USER_C, USER_D] = (
+  process.env.CHECK_RECEIPT_USERS ?? "adult,guardian,member,charity1"
+)
   .split(",")
   .map((s) => s.trim());
 const INVOICE_WAIT_MS = Number(process.env.CHECK_INVOICE_WAIT_MIN ?? 8) * 60_000;
@@ -814,17 +818,31 @@ async function phaseB() {
   );
 
   const balance = await balanceOf(owner, AU.biz);
-  const live = receiptPackages(balance).filter((a) => a.remainingPoints > 0);
-  if (remaining0 !== 1_000 || live.length !== 1) {
+  const packages = receiptPackages(balance);
+  const live = packages.filter((a) => a.remainingPoints > 0);
+  const nowPoints = await currentReceiptPoints();
+  const state = readState();
+  say(
+    `-- state found: receipt_points ${nowPoints}; ${packages.length} AU receipt package(s): ${
+      packages.map((a) => `${a.remainingPoints}/${a.totalPoints} left`).join(", ") || "none"
+    }${state.drainStartedAt ? `; a drain started ${state.drainStartedAt} and did not finish` : ""} --`,
+  );
+  if (nowPoints !== 1) {
     fail(
-      "the drain needs exactly one untouched 1,000-point AU receipt package",
-      `found ${live.length} package(s) with ${remaining0} points left; the 50/80/100% alerts are per package. Use a fresh state, or adjust the plan`,
+      `AU receipt_points is ${nowPoints}, not 1`,
+      `a drain was probably interrupted (state file says original ${state.originalReceiptPoints ?? "unknown"}): run \`restore\` first, then phase-b again`,
     );
     return;
   }
   const pkg = live[0];
-  if (pkg.remainingPoints !== pkg.totalPoints)
-    note("the package is partly used already", `${pkg.remainingPoints} of ${pkg.totalPoints}`);
+  if (
+    !expect(
+      live.length === 1 && pkg.remainingPoints >= 900 && pkg.remainingPoints <= pkg.totalPoints,
+      "the drain needs exactly one AU receipt package with 900 or more points left",
+      `found ${live.length} package(s) with points left (${live.map((a) => `${a.remainingPoints}/${a.totalPoints}`).join(", ")}); the alerts are per package. Buy one with phase-a --force, or finish the others`,
+    )
+  )
+    return;
   const alertsFor = async () =>
     (await ok(await call("GET", `${billing(AU.biz)}/alerts`, owner), "alerts")).alerts.filter(
       (a) => a.subjectId === pkg.allocationId,
@@ -833,19 +851,46 @@ async function phaseB() {
   if (preAlerts.length > 0)
     note("this package already has alerts", preAlerts.map((a) => a.thresholdPct).join(","));
 
-  // 2. Drain: receipt_points = 100.
-  // An interrupted earlier run may have left 100 in force: restore to what it noted, else 1.
-  const now = await currentReceiptPoints();
-  const original = now === 100 ? (readState().originalReceiptPoints ?? 1) : (now ?? 1);
+  const refs = (who, n) => `check-2.10b-${RUN}-${who}-${n}`;
+
+  // 2. Bring the package to exactly 900 left with one-point receipts from a fourth adult.
+  const pre = pkg.remainingPoints - 900;
+  if (pre > 0) {
+    const d = await linkUser(USER_D);
+    let okCount = 0;
+    for (let n = 1; n <= pre; n++) {
+      const res = await receipt(d.linkId, refs(`${d.who}-pre`, n));
+      if (res.status === 200 && res.body?.granted === true && res.body.points === 1) okCount += 1;
+      else {
+        fail(
+          `pre-drain receipt ${n} of ${pre} from ${d.who}`,
+          `HTTP ${res.status} ${short(res.body)}`,
+        );
+        return;
+      }
+      if (n % 100 === 0) await sleep(30_000); // stay well under the partner rate limit
+    }
+    note("pre-drain one-point receipts", `${okCount} sent from ${d.who} to leave 900 points`);
+  } else note("the package is untouched", "no pre-drain receipts needed");
+  const status900 = await statusAU();
+  if (
+    !expect(
+      status900.body?.remainingPoints === 900,
+      "the package has exactly 900 points left",
+      short(status900.body),
+    )
+  )
+    return;
+
+  // 3. Drain: receipt_points = 100.
+  const original = nowPoints;
   saveState({ originalReceiptPoints: original, drainStartedAt: new Date().toISOString() });
   let drained = false;
   try {
-    if (now !== 100 && !(await changeReceiptPoints(100, "2.10.b check: drain the receipt package")))
-      return;
+    if (!(await changeReceiptPoints(100, "2.10.b check: drain the receipt package"))) return;
     drained = true;
 
     const [a, b, c] = [await linkUser(USER_A), await linkUser(USER_B), await linkUser(USER_C)];
-    const refs = (who, n) => `check-2.10b-${RUN}-${who}-${n}`;
     const sent = [];
     const send = async (user, n) => {
       const ref = refs(user.who, n);
@@ -877,8 +922,11 @@ async function phaseB() {
       expect(
         alert.programme === "receipts" &&
           alert.kind === "package" &&
-          alert.totalPoints === 1_000 &&
-          alert.usedPoints * 100 >= pct * 1_000,
+          alert.totalPoints === pkg.totalPoints &&
+          alert.usedPoints * 100 >= pct * pkg.totalPoints &&
+          (pct === 100 ||
+            alert.usedPoints * 100 < (pct === 50 ? 80 : 100) * pkg.totalPoints ||
+            alert.usedPoints === pkg.totalPoints),
         `the ${pct}% alert is a receipt-package alert`,
         `${alert.id}: ${alert.usedPoints} of ${alert.totalPoints} used, programme ${alert.programme}`,
       );
@@ -889,7 +937,7 @@ async function phaseB() {
     const a50 = await awaitAlert(50);
     for (let n = 1; n <= 3; n++) await send(b, n);
     const a80 = await awaitAlert(80);
-    for (let n = 4; n <= 5; n++) await send(b, n);
+    await send(b, 4);
     const a100 = await awaitAlert(100);
 
     // 3. Paused: C is refused, nothing is paid.

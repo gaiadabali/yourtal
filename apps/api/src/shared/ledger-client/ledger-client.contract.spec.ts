@@ -1036,6 +1036,19 @@ describe("settings (1.2.f/1.2.g)", () => {
 describe("dev/staging holdback (2.3.d/2.3.f)", () => {
   const fake = new FakeLedgerClient(db);
 
+  // The file's own `beforeAll` funds `client`'s marketing cash, which is the
+  // live ledger's in a live run, not this fake's (it keeps its own table);
+  // without this the goodwill grants below are refused by K6.
+  beforeAll(async () => {
+    const funded = await fake.fundMarketing({
+      region: "AU",
+      amountMinor: toMinorUnits(1_000),
+      proposedBy: "staff-1",
+      approvedBy: "staff-2",
+    });
+    expect(funded.isOk()).toBe(true);
+  });
+
   it("releaseNow releases a pending grant and is idempotent", async () => {
     const userId = randomUUID();
     const granted = await fake.grantAction({

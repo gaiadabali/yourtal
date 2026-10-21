@@ -216,6 +216,11 @@ describe("the parked purchases screen (5.1.g)", () => {
     expect(screen.getAllByText(/^20 Oct 2026, 9:00/).length).toBeGreaterThan(0);
   });
 
+  it("writes the amount in the viewer's language, in the purchase's own currency", () => {
+    show([row({})], "id-ID");
+    expect(screen.getAllByText("AU$49,50").length).toBeGreaterThan(0);
+  });
+
   it("speaks Indonesian", () => {
     show([row({})], "id-ID");
     expect(

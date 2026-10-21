@@ -50,9 +50,8 @@ describe("ReportsRedemptionLedgerPanel", () => {
     render(<ReportsRedemptionLedgerPanel summary={summary("IDR")} locale="en-AU" />);
     expect(screen.getByRole("heading", { name: "Redemption ledger" })).toBeInTheDocument();
     expect(screen.getAllByText("Measured").length).toBeGreaterThan(0);
-    // 80_000 minor units in IDR renders Rp 80.000 (IDR is whole Rupiah,
-    // exponent 0 — FOUNDER DECISION T-1 — so the minor unit is the display unit).
-    expect(screen.getAllByText(/^Rp\s?80\.000$/).length).toBeGreaterThan(0);
+    // 80_000 minor units in IDR is whole Rupiah (exponent 0, FOUNDER DECISION T-1); in English prose it reads "IDR 80,000".
+    expect(screen.getAllByText(/^IDR\s80,000$/).length).toBeGreaterThan(0);
     expect(screen.queryByText("Expired")).not.toBeInTheDocument();
   });
 
@@ -60,6 +59,16 @@ describe("ReportsRedemptionLedgerPanel", () => {
     render(<ReportsRedemptionLedgerPanel summary={summary("AUD")} locale="en-AU" />);
     expect(screen.getAllByText(/^\$800\.00$/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/^Rp/)).not.toBeInTheDocument();
+  });
+
+  it("writes Rupiah the Indonesian way for an Indonesian viewer", () => {
+    render(<ReportsRedemptionLedgerPanel summary={summary("IDR")} locale="id-ID" />);
+    expect(screen.getAllByText(/^Rp\s80\.000$/).length).toBeGreaterThan(0);
+  });
+
+  it("keeps the vouchers' own currency but the viewer's number format, so dollars never read as Rupiah in Indonesian", () => {
+    render(<ReportsRedemptionLedgerPanel summary={summary("AUD")} locale="id-ID" />);
+    expect(screen.getAllByText(/^AU\$800,00$/).length).toBeGreaterThan(0);
   });
 
   it("states plainly that this ledger is not attributed to a source campaign", () => {

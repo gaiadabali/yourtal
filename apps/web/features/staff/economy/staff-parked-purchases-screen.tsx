@@ -2,15 +2,15 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useFormatter, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Button } from "@yourtal/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { DataTable } from "@yourtal/ui/data-table";
 import { EmptyState } from "@yourtal/ui/empty-state";
 import { Notice } from "@yourtal/ui/notice";
+import { formatMoneyAmount } from "@yourtal/ui/money-amount";
 import { StatusBadge } from "@yourtal/ui/status-badge";
 import { Text } from "@yourtal/ui/text";
-import { asDisplayIdr, formatMoney } from "@yourtal/contracts/money/format";
 import type { ParkedPurchase } from "@yourtal/contracts/staff/parked-purchases";
 import { StaffReasonDialogButton } from "../staff-reason-dialog-button";
 import {
@@ -31,10 +31,6 @@ function businessLabel(row: ParkedPurchase): string {
   return row.businessName ?? row.businessId;
 }
 
-function money(row: ParkedPurchase): string {
-  return formatMoney(asDisplayIdr(row.totalMinor), row.currency);
-}
-
 // A fixed zone per region: without one the server formats in its own zone and the browser in the
 // visitor's, and React refuses to hydrate the mismatch.
 const TIME_ZONE = { AU: "Australia/Sydney", ID: "Asia/Jakarta" } as const;
@@ -47,9 +43,13 @@ export function StaffParkedPurchasesScreen({
 }: StaffParkedPurchasesScreenProps) {
   const t = useTranslations("staff");
   const format = useFormatter();
+  const locale = useLocale();
   const router = useRouter();
   const [flash, setFlash] = useState<Flash>(null);
   const [isPending, startTransition] = useTransition();
+
+  const money = (row: ParkedPurchase): string =>
+    formatMoneyAmount(row.totalMinor, row.currency, locale);
 
   const when = (iso: string | null): string =>
     iso === null

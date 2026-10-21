@@ -36,6 +36,11 @@ describe("en-AU / AUD (YT-0405)", () => {
     expect(result.faceValueLabel).toBe("Worth $50.00");
   });
 
+  it("writes an AUD face value the Indonesian way in Indonesian prose, never as a bare $", () => {
+    const result = formatListingPrice(toPoints(2_500), audCents(5_000), "id-ID", "AUD");
+    expect(result.faceValueLabel).toBe("Senilai AU$50,00");
+  });
+
   it("formats stock remaining and sold-out in English", () => {
     expect(formatStockRemaining(12, "en-AU")).toBe("12 left");
     expect(formatStockRemaining(0, "en-AU")).toBe("Sold out");

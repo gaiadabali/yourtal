@@ -30,7 +30,7 @@ export function MerchantTodayLogPanel({ entries, locale, copy }: MerchantTodayLo
           {copy.todayHeading}
         </CardTitle>
         <p className="text-lg font-sans font-semibold tabular-nums text-fg">
-          {formatMerchantMoney(total, currency)}
+          {formatMerchantMoney(total, currency, locale)}
         </p>
       </CardHeader>
       <CardContent>
@@ -50,7 +50,7 @@ export function MerchantTodayLogPanel({ entries, locale, copy }: MerchantTodayLo
                   </span>
                 </div>
                 <span className="tabular-nums text-fg">
-                  {formatMerchantMoney(entry.amountMinor, entry.currency)}
+                  {formatMerchantMoney(entry.amountMinor, entry.currency, locale)}
                 </span>
               </li>
             ))}

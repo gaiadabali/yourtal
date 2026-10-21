@@ -113,6 +113,7 @@ export function MerchantRedemptionFlowView({
           amountMinor={step.amountMinor}
           effectiveRemainingMinor={step.effectiveRemainingMinor}
           copy={copy}
+          locale={device.locale}
           onAmountChange={onAmountChange}
           onConfirm={onConfirm}
           onCancel={onCancel}

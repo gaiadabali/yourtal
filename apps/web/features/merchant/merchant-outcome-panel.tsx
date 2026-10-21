@@ -51,7 +51,7 @@ export function MerchantOutcomePanel({
           {copy.successHeading}
         </Badge>
         <p className="text-lg font-sans font-semibold tabular-nums text-fg">
-          {formatMerchantMoney(outcome.capture.amountMinor, currency)}
+          {formatMerchantMoney(outcome.capture.amountMinor, currency, locale)}
         </p>
         <Button type="button" size="lg" onClick={onNewRedemption} className="h-14 text-base">
           {copy.newRedemptionButton}

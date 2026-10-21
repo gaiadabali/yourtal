@@ -1,6 +1,6 @@
 import type { MinorUnits } from "@yourtal/contracts/money";
 import type { PartialRedemptionPolicy } from "@yourtal/contracts/listing";
-import { formatMoney } from "@yourtal/contracts/money/format";
+import { formatMoneyAmount } from "@yourtal/ui/money-amount";
 import { getStoreTranslator, type SupportedLocale } from "./store-i18n";
 
 type SupportedCurrency = "AUD" | "IDR";
@@ -46,9 +46,10 @@ export function partialRedemptionPolicyLabel(
  * `policy` is `"minimum_spend"` — enforced by the contract's own refine
  * (`listing.ts`) — so it is only read in that branch.
  *
- * YT-0405/YT-0513: the minimum-spend amount is rendered via `formatMoney`,
+ * YT-0405/YT-0513: the minimum-spend amount is rendered via `formatMoneyAmount`,
  * never a hardcoded `formatIdr` — an `en-AU` caller passing
- * `currency: "AUD"` sees `$75.00`, never `Rp75.000`. `currency` is
+ * `currency: "AUD"` sees `$75.00`, never `Rp75.000`, and an `id-ID` caller
+ * sees the same dollars with Indonesian digits. `currency` is
  * REQUIRED, never defaulted: it must be the listing's/voucher's own
  * `currency` field, never assumed from the viewer's region.
  */
@@ -67,7 +68,7 @@ export function partialRedemptionPolicyDescription(
     case "minimum_spend":
       return minimumSpendMinor
         ? t("redemption.descMinimumSpendWithAmount", {
-            amount: formatMoney(minimumSpendMinor, currency),
+            amount: formatMoneyAmount(minimumSpendMinor, currency, locale),
           })
         : t("redemption.descMinimumSpendUnspecified");
     default: {

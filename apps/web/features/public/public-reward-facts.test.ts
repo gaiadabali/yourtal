@@ -56,4 +56,10 @@ describe("computeOfferRewardFacts", () => {
     // The face value is the real Rp30.000 price, never the points-cost figure passed off as a currency amount.
     expect(facts.worthLabel).toMatch(/30\.000/);
   });
+
+  it("writes the face value in the page's language, in the listing's own currency", () => {
+    const aud = { ...soldOutListingFixture, currency: "AUD", faceValueMinor: 3_000 } as never;
+    expect(computeOfferRewardFacts(aud, publicLocaleConfig("id")).worthLabel).toBe("AU$30,00");
+    expect(computeOfferRewardFacts(aud, publicLocaleConfig("au")).worthLabel).toBe("$30.00");
+  });
 });

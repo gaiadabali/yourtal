@@ -1,6 +1,7 @@
 import type { PublicListing } from "@yourtal/contracts/listing";
-import { formatMoney, formatPointsIn } from "@yourtal/contracts/money/format";
+import { formatPointsIn } from "@yourtal/contracts/money/format";
 import { Card, CardContent } from "@yourtal/ui/card";
+import { formatMoneyAmount } from "@yourtal/ui/money-amount";
 import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
 
 export interface SpendAtBrandProps {
@@ -38,7 +39,7 @@ export function SpendAtBrand({ merchantName, listings, locale }: SpendAtBrandPro
                       {listing.title}
                     </span>
                     <span className="text-xs font-sans text-fg-muted">
-                      {formatMoney(listing.faceValueMinor, listing.currency)}
+                      {formatMoneyAmount(listing.faceValueMinor, listing.currency, locale)}
                     </span>
                   </div>
                   <span className="shrink-0 text-sm font-sans font-semibold text-price">

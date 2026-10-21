@@ -83,6 +83,12 @@ describe("BurnSummary (en-AU, YT-0405)", () => {
     expect(screen.queryByText(/Rp|\bpoin\b/)).not.toBeInTheDocument();
   });
 
+  it("writes an AUD voucher value the Indonesian way for an Indonesian viewer", () => {
+    const listing = makeListingFixture({ currency: "AUD", faceValueMinor: 5_000 });
+    renderWithRegion(<BurnSummary listing={listing} />, "ID");
+    expect(screen.getByText("AU$50,00")).toBeInTheDocument();
+  });
+
   it("shows the confirmation heading in English", () => {
     const listing = makeListingFixture({ currency: "AUD" });
     renderWithRegion(<BurnSummary listing={listing} variant="confirmation" />, "AU");

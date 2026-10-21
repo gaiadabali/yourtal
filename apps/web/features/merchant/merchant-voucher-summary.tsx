@@ -1,12 +1,14 @@
 import type { CounterVoucherPreview } from "@yourtal/contracts/device/counter-redemption";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { formatMerchantMoney } from "./merchant-money";
+import type { MerchantLocale } from "./merchant-device";
 import type { MerchantCopy } from "./merchant-i18n";
 
 export interface MerchantVoucherSummaryProps {
   preview: CounterVoucherPreview;
   effectiveRemainingMinor: number;
   copy: MerchantCopy;
+  locale: MerchantLocale;
 }
 
 /**
@@ -24,6 +26,7 @@ export function MerchantVoucherSummary({
   preview,
   effectiveRemainingMinor,
   copy,
+  locale,
 }: MerchantVoucherSummaryProps) {
   return (
     <Card>
@@ -37,7 +40,7 @@ export function MerchantVoucherSummary({
         <div className="flex items-baseline justify-between">
           <span className="text-sm font-sans text-fg-muted">{copy.remainingValueLabel}</span>
           <span className="text-2xl font-sans font-semibold tabular-nums text-fg">
-            {formatMerchantMoney(effectiveRemainingMinor, preview.currency)}
+            {formatMerchantMoney(effectiveRemainingMinor, preview.currency, locale)}
           </span>
         </div>
         {preview.partialRedemptionPolicy === "single_use" ? (

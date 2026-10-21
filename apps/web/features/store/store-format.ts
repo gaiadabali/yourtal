@@ -1,5 +1,6 @@
 import type { MinorUnits, Points } from "@yourtal/contracts/money";
-import { formatMoney, formatPointsIn } from "@yourtal/contracts/money/format";
+import { formatPointsIn } from "@yourtal/contracts/money/format";
+import { formatMoneyAmount } from "@yourtal/ui/money-amount";
 
 /**
  * Price and date formatting for the Store (YT-0420/YT-0421). Uses
@@ -42,7 +43,7 @@ export function formatListingPrice(
 ): ListingPriceDisplay {
   return {
     pointsLabel: formatPointsIn(locale, priceInPoints),
-    faceValueLabel: `${WORTH_WORD[locale]} ${formatMoney(faceValueMinor, currency)}`,
+    faceValueLabel: `${WORTH_WORD[locale]} ${formatMoneyAmount(faceValueMinor, currency, locale)}`,
   };
 }
 

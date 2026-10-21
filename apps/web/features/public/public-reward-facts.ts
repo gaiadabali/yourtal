@@ -1,6 +1,7 @@
 import type { Campaign } from "@yourtal/contracts/campaign";
 import type { PublicListing } from "@yourtal/contracts/listing";
-import { asDisplayPoints, formatMoney, formatPointsIn } from "@yourtal/contracts/money/format";
+import { asDisplayPoints, formatPointsIn } from "@yourtal/contracts/money/format";
+import { formatMoneyAmount } from "@yourtal/ui/money-amount";
 import { formatDataCost, formatDuration } from "@/features/campaign/campaign-format";
 import type { PublicLocaleConfig } from "./public-locale";
 
@@ -67,8 +68,9 @@ export function computeOfferRewardFacts(
   locale: PublicLocaleConfig,
 ): OfferRewardFacts {
   // The listing's own currency (YT-0513), never the page's route locale —
-  // a listing is always denominated in its own region's currency.
-  const worthLabel = formatMoney(listing.faceValueMinor, listing.currency);
+  // a listing is always denominated in its own region's currency. The digits
+  // and symbol follow the page's language, so the prose around them reads right.
+  const worthLabel = formatMoneyAmount(listing.faceValueMinor, listing.currency, locale.intlLocale);
   const pointsLabel = formatPointsIn(locale.intlLocale, listing.priceInPoints);
   return { worthLabel, pointsLabel, headline: `${worthLabel} · ${pointsLabel}` };
 }

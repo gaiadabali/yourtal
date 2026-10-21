@@ -60,14 +60,14 @@ export function errorCopyFor(
       return {
         heading: t("error.amountExceedsRemainingValue.heading"),
         body: t("error.amountExceedsRemainingValue.body", {
-          remaining: formatMerchantMoney(error.remainingValueMinor ?? 0, currency),
+          remaining: formatMerchantMoney(error.remainingValueMinor ?? 0, currency, locale),
         }),
       };
     case "requires_full_value_redemption":
       return {
         heading: t("error.requiresFullValueRedemption.heading"),
         body: t("error.requiresFullValueRedemption.body", {
-          remaining: formatMerchantMoney(error.remainingValueMinor ?? 0, currency),
+          remaining: formatMerchantMoney(error.remainingValueMinor ?? 0, currency, locale),
         }),
       };
     case "network_error":

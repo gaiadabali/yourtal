@@ -3,14 +3,10 @@
 import { useLocale, useTranslations } from "next-intl";
 import type { PublicListing } from "@yourtal/contracts/listing";
 import type { Points } from "@yourtal/contracts/money";
-import {
-  asDisplayIdr,
-  asDisplayPoints,
-  formatMoney,
-  formatPointsIn,
-} from "@yourtal/contracts/money/format";
+import { asDisplayPoints, formatPointsIn } from "@yourtal/contracts/money/format";
 import type { DisplayLocale } from "@yourtal/contracts/identity/user-profile";
 import { Badge } from "@yourtal/ui/badge";
+import { formatMoneyAmount } from "@yourtal/ui/money-amount";
 
 export interface BurnSummaryProps {
   listing: PublicListing;
@@ -44,8 +40,9 @@ export interface BurnSummaryProps {
  * A Client Component (its only consumer, `burn-flow.tsx`, is already
  * `"use client"`), so it reads its display language ambiently via
  * `useLocale()`/`useTranslations()` (6.1.b) — the face value and minimum
- * spend render via `formatMoney` in the LISTING's own currency (never the
- * viewer's region or display language), never a hardcoded `formatIdr`/`Rp`.
+ * spend render via `formatMoneyAmount` in the LISTING's own currency (never the
+ * viewer's region) and the viewer's display language, never a hardcoded
+ * `formatIdr`/`Rp`.
  */
 export function BurnSummary({
   listing,
@@ -76,7 +73,7 @@ export function BurnSummary({
         </dd>
         <dt className="text-fg-muted">{t("summary.voucherValue")}</dt>
         <dd className="text-right text-fg">
-          {formatMoney(asDisplayIdr(listing.faceValueMinor), listing.currency)}
+          {formatMoneyAmount(listing.faceValueMinor, listing.currency, locale)}
         </dd>
         <dt className="text-fg-muted">{t("summary.youGet")}</dt>
         <dd className="text-right text-fg">
@@ -86,7 +83,7 @@ export function BurnSummary({
           <>
             <dt className="text-fg-muted">{t("summary.minimumSpend")}</dt>
             <dd className="text-right text-fg">
-              {formatMoney(asDisplayIdr(listing.minimumSpendMinor), listing.currency)}
+              {formatMoneyAmount(listing.minimumSpendMinor, listing.currency, locale)}
             </dd>
           </>
         ) : null}

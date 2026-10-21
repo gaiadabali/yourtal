@@ -5,6 +5,7 @@ import type { CounterVoucherPreview } from "@yourtal/contracts/device/counter-re
 import { Button } from "@yourtal/ui/button";
 import { Input } from "@yourtal/ui/input";
 import { MerchantVoucherSummary } from "./merchant-voucher-summary";
+import type { MerchantLocale } from "./merchant-device";
 import type { MerchantCopy } from "./merchant-i18n";
 
 export interface MerchantReviewFormProps {
@@ -12,6 +13,7 @@ export interface MerchantReviewFormProps {
   amountMinor: number;
   effectiveRemainingMinor: number;
   copy: MerchantCopy;
+  locale: MerchantLocale;
   onAmountChange: (amountMinor: number) => void;
   onConfirm: () => void;
   onCancel: () => void;
@@ -29,6 +31,7 @@ export function MerchantReviewForm({
   amountMinor,
   effectiveRemainingMinor,
   copy,
+  locale,
   onAmountChange,
   onConfirm,
   onCancel,
@@ -47,6 +50,7 @@ export function MerchantReviewForm({
         preview={preview}
         effectiveRemainingMinor={effectiveRemainingMinor}
         copy={copy}
+        locale={locale}
       />
       <Input
         label={copy.amountLabel}

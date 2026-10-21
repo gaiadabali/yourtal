@@ -1,8 +1,11 @@
 import type { StudioRedemptionEntry } from "@yourtal/contracts/device/studio-redemptions";
-import { asDisplayIdr, formatMoney } from "@yourtal/contracts/money/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { DataTable } from "@yourtal/ui/data-table";
+import { formatMoneyAmount } from "@yourtal/ui/money-amount";
 import { getStudioTranslator, type SupportedLocale } from "./studio-i18n";
+
+// The counter is in the currency's region; a fixed zone reads the same on the server and in the browser.
+const TIME_ZONE = { AUD: "Australia/Sydney", IDR: "Asia/Jakarta" } as const;
 
 export interface RedemptionsScreenProps {
   entries: readonly StudioRedemptionEntry[];
@@ -27,7 +30,7 @@ export function RedemptionsScreen({ entries, locale }: RedemptionsScreenProps) {
       <CardHeader className="flex-row items-baseline justify-between">
         <CardTitle as="h2">{t("redemptions.title")}</CardTitle>
         <p className="text-lg font-sans font-semibold tabular-nums text-fg">
-          {formatMoney(asDisplayIdr(total), currency)}
+          {formatMoneyAmount(total, currency, locale)}
         </p>
       </CardHeader>
       <CardContent>
@@ -57,7 +60,7 @@ export function RedemptionsScreen({ entries, locale }: RedemptionsScreenProps) {
               {
                 key: "amount",
                 header: t("redemptions.amountHeader"),
-                cell: (row) => formatMoney(row.amountMinor, row.currency),
+                cell: (row) => formatMoneyAmount(row.amountMinor, row.currency, locale),
               },
               {
                 key: "capturedAt",
@@ -66,6 +69,7 @@ export function RedemptionsScreen({ entries, locale }: RedemptionsScreenProps) {
                   new Intl.DateTimeFormat(locale, {
                     dateStyle: "medium",
                     timeStyle: "short",
+                    timeZone: TIME_ZONE[row.currency],
                   }).format(new Date(row.capturedAt)),
               },
             ]}

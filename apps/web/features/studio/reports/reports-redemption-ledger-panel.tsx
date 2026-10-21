@@ -1,6 +1,6 @@
-import { formatMoney } from "@yourtal/contracts/money/format";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { DataTable } from "@yourtal/ui/data-table";
+import { formatMoneyAmount } from "@yourtal/ui/money-amount";
 import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import { ReportProvenanceBadge } from "./report-provenance-badge";
 import { ReportsBarChart } from "./reports-bar-chart";
@@ -23,7 +23,9 @@ export interface ReportsRedemptionLedgerPanelProps {
  * Each row's total is formatted in that row's OWN currency
  * (`row.currency`, read off the underlying vouchers — YT-0513), never the
  * viewer's region: a business's vouchers are always one region's, so this
- * renders the true currency rather than assuming the viewer shares it.
+ * renders the true currency rather than assuming the viewer shares it. The
+ * digits and symbol follow the viewer's language, so Rupiah reads right in
+ * English prose and dollars in Indonesian.
  */
 export function ReportsRedemptionLedgerPanel({
   summary,
@@ -74,7 +76,7 @@ export function ReportsRedemptionLedgerPanel({
                 {
                   key: "value",
                   header: t("reports.ledger.faceValueHeader"),
-                  cell: (row) => formatMoney(row.totalFaceValueMinor, row.currency),
+                  cell: (row) => formatMoneyAmount(row.totalFaceValueMinor, row.currency, locale),
                 },
               ]}
             />

@@ -38,9 +38,13 @@ export default async function StudioReportsPage(props: PageProps<"/studio/report
     typeof searchParams.campaign === "string" ? searchParams.campaign : undefined;
   const businessQuery =
     current.business.id === defaultBusinessId ? "" : `?business=${current.business.id}`;
-  const bundle = allowed
-    ? await getReportsBundle(current.business.id, current.business.displayName)
-    : undefined;
+  const bundle =
+    allowed && current.myRole
+      ? await getReportsBundle(current.business.id, current.business.displayName, {
+          campaigns: canViewZone("campaigns", current.myRole, current.business.roles),
+          inventory: canViewZone("inventory", current.myRole, current.business.roles),
+        })
+      : undefined;
   // Real (7.6.a) when a campaign is selected; `undefined` (no panel) when
   // "All campaigns" is selected. A network/server error degrades to `null`
   // (an honest "no report" gap) rather than failing the whole page for one

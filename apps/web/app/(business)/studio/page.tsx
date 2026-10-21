@@ -9,7 +9,7 @@ import { StudioVerificationBanner } from "@/features/studio/studio-verification-
 import { StudioSetupChecklistCard } from "@/features/studio/studio-setup-checklist-card";
 import { buildSetupChecklist, isSetupComplete } from "@/features/studio/studio-setup-checklist";
 import { buildStudioNavItems } from "@/features/studio/studio-zone-items";
-import { getVisibleZones } from "@/features/studio/studio-zone-access";
+import { canViewZone, getVisibleZones } from "@/features/studio/studio-zone-access";
 import { listCampaignDrafts } from "@/features/studio/campaign-builder/campaign-builder-data";
 import { getBalance } from "@/features/studio/billing/billing-data";
 import { listKybDocuments } from "@/features/studio/onboarding/kyb-data";
@@ -35,23 +35,36 @@ export default async function StudioOverviewPage(props: PageProps<"/studio">) {
   const navItems = buildStudioNavItems(visibleZones, t);
   const businessQuery = business.id === defaultBusinessId ? "" : `?business=${business.id}`;
 
+  // 5.13.a: read only what this role may see; a 403 here used to throw the
+  // whole overview into error.tsx for finance and marketers.
+  const seesCampaigns = myRole ? canViewZone("campaigns", myRole, business.roles) : false;
+  // KYB documents are owner/admin only (kyb_document view: business_team_editor_of).
+  const seesVerification = myRole === "owner" || myRole === "admin";
   const [drafts, balance, kybDocuments] = await Promise.all([
-    listCampaignDrafts(business.id, business.displayName),
+    seesCampaigns ? listCampaignDrafts(business.id, business.displayName) : Promise.resolve([]),
     // Billing is owner/admin/finance only; anyone else still gets an overview.
     getBalance(business.id).catch(() => null),
-    business.isVerified ? Promise.resolve([]) : listKybDocuments(business.id),
+    business.isVerified || !seesVerification ? Promise.resolve([]) : listKybDocuments(business.id),
   ]);
 
   const setupStatus = {
     channelSet: business.logoUrl !== null,
     // Not this person's step when they cannot see billing (left off their list below).
     pointsBought: balance === null || balance.remainingPoints > 0,
-    campaignUploaded: drafts.some((draft) => draft.video.status === "ready"),
-    questionsWritten: drafts.some((draft) => draft.questionBank.length > 0),
-    campaignSubmitted: drafts.some((draft) => draft.status !== "draft"),
+    // Not this person's steps when they cannot see campaigns (left off their list below).
+    campaignUploaded: !seesCampaigns || drafts.some((draft) => draft.video.status === "ready"),
+    questionsWritten: !seesCampaigns || drafts.some((draft) => draft.questionBank.length > 0),
+    campaignSubmitted: !seesCampaigns || drafts.some((draft) => draft.status !== "draft"),
   };
+  const CAMPAIGN_STEPS: readonly string[] = [
+    "campaignUploaded",
+    "questionsWritten",
+    "campaignSubmitted",
+  ];
   const checklist = buildSetupChecklist(setupStatus).filter(
-    (step) => step.id !== "pointsBought" || balance !== null,
+    (step) =>
+      (step.id !== "pointsBought" || balance !== null) &&
+      (seesCampaigns || !CAMPAIGN_STEPS.includes(step.id)),
   );
 
   return (

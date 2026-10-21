@@ -56,8 +56,23 @@ export interface ReportsBundle {
   voucherStatus?: VoucherStatusReport;
 }
 
+/**
+ * 5.13.a: which parts of the bundle this person's role may read. Reports is
+ * open to finance and marketers, but campaigns (and their question banks)
+ * and the store's listings are other zones: reading one a role may not see is
+ * a 403, which used to throw the whole page into `error.tsx`.
+ */
+export interface ReportsAccess {
+  readonly campaigns: boolean;
+  readonly inventory: boolean;
+}
+
 interface ReportsDataSource {
-  getReportsBundle: (businessId: string, businessDisplayName: string) => Promise<ReportsBundle>;
+  getReportsBundle: (
+    businessId: string,
+    businessDisplayName: string,
+    access: ReportsAccess,
+  ) => Promise<ReportsBundle>;
   /** `null` when the API has nothing for this campaign (not found, or not this business's own) — an honest gap, not an error toast. */
   getCampaignReport: (
     businessId: string,
@@ -66,13 +81,17 @@ interface ReportsDataSource {
 }
 
 const mockReportsDataSource: ReportsDataSource = {
-  getReportsBundle: (businessId, businessDisplayName) => {
-    const campaigns = buildCampaignFixtures({ businessId, businessDisplayName });
+  getReportsBundle: (businessId, businessDisplayName, access) => {
+    const campaigns = access.campaigns
+      ? buildCampaignFixtures({ businessId, businessDisplayName })
+      : [];
     const questionsByCampaignId: Record<string, Question[]> = {};
     for (const campaign of campaigns) {
       questionsByCampaignId[campaign.id] = buildQuestionFixtures(campaign);
     }
-    const listings = buildListingFixtures({ businessId, businessDisplayName });
+    const listings = access.inventory
+      ? buildListingFixtures({ businessId, businessDisplayName })
+      : [];
     const vouchers = buildVoucherFixtures({ businessId, businessDisplayName, listings });
     return Promise.resolve({ campaigns, questionsByCampaignId, listings, vouchers });
   },
@@ -152,17 +171,22 @@ const listingsResponseSchema = z.object({ listings: z.array(listingSchema) });
  * suppression and the separately-floored `openViews` (11.2.d, 12.3.c).
  */
 const liveReportsDataSource: ReportsDataSource = {
-  getReportsBundle: async (businessId) => {
-    const campaignsResult = await apiFetch(
-      `/api/${businessId}/studio/campaigns`,
-      z.array(apiCampaignSummarySchema),
-    );
-    if (!campaignsResult.ok) {
-      throw new Error(`Could not load this business's campaigns: ${campaignsResult.error.message}`);
+  getReportsBundle: async (businessId, _businessDisplayName, access) => {
+    let campaigns: ReportsCampaign[] = [];
+    if (access.campaigns) {
+      const campaignsResult = await apiFetch(
+        `/api/${businessId}/studio/campaigns`,
+        z.array(apiCampaignSummarySchema),
+      );
+      if (!campaignsResult.ok) {
+        throw new Error(
+          `Could not load this business's campaigns: ${campaignsResult.error.message}`,
+        );
+      }
+      campaigns = campaignsResult.data
+        .map(toReportsCampaign)
+        .filter((campaign): campaign is ReportsCampaign => campaign !== null);
     }
-    const campaigns = campaignsResult.data
-      .map(toReportsCampaign)
-      .filter((campaign): campaign is ReportsCampaign => campaign !== null);
 
     const questionsByCampaignId: Record<string, Question[]> = {};
     await Promise.all(
@@ -180,12 +204,16 @@ const liveReportsDataSource: ReportsDataSource = {
       }),
     );
 
-    const listingsResult = await apiFetch(
-      `/api/${businessId}/store/listings`,
-      listingsResponseSchema,
-    );
-    if (!listingsResult.ok) {
-      throw new Error(`Could not load this business's listings: ${listingsResult.error.message}`);
+    let listings: z.infer<typeof listingsResponseSchema>["listings"] = [];
+    if (access.inventory) {
+      const listingsResult = await apiFetch(
+        `/api/${businessId}/store/listings`,
+        listingsResponseSchema,
+      );
+      if (!listingsResult.ok) {
+        throw new Error(`Could not load this business's listings: ${listingsResult.error.message}`);
+      }
+      listings = listingsResult.data.listings;
     }
 
     const voucherStatus = await apiFetch(
@@ -199,7 +227,7 @@ const liveReportsDataSource: ReportsDataSource = {
     return {
       campaigns,
       questionsByCampaignId,
-      listings: listingsResult.data.listings,
+      listings,
       vouchers: undefined,
       voucherStatus: voucherStatus.data,
     };
@@ -222,12 +250,13 @@ const reportsDataSource = resolveStudioDataSource({
   live: liveReportsDataSource,
 });
 
-/** Everything this business's Reports zone can honestly render today: its own campaigns, question banks and listings — plus its voucher ledger where a source for it exists (mock only today; see `ReportsBundle.vouchers`). */
+/** Everything this business's Reports zone can honestly render today: its own campaigns, question banks and listings — plus its voucher ledger where a source for it exists (mock only today; see `ReportsBundle.vouchers`). Only the parts `access` allows are read. */
 export function getReportsBundle(
   businessId: string,
   businessDisplayName: string,
+  access: ReportsAccess,
 ): Promise<ReportsBundle> {
-  return reportsDataSource.getReportsBundle(businessId, businessDisplayName);
+  return reportsDataSource.getReportsBundle(businessId, businessDisplayName, access);
 }
 
 /** One campaign's real, server-computed performance report (7.6.a) — aggregates only, suppressed below the cohort floor. */

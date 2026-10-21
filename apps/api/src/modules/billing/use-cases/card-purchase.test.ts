@@ -13,6 +13,7 @@ import type { CardPurchaseRow, NewCardPurchase } from "../persistence/card-purch
 import { fulfilPurchase } from "./fulfil-purchase.use-case";
 import { registerPurchaseEvents } from "./purchase-events";
 import { listPackages, quotePurchase } from "./quote-purchase.use-case";
+import { getReceiptProgramme } from "./get-receipt-programme.use-case";
 import { startPurchase } from "./start-purchase.use-case";
 
 const BUSINESS = "0c4f0e8e-6a8f-4a39-9b67-2f4b4d1a0b11";
@@ -400,6 +401,67 @@ describe("receipt packages bought at cost (2.10.b, F127)", () => {
     expect((await startPurchase(d, command())).isOk()).toBe(true);
     expect(d.ledger.grants[0]).not.toHaveProperty("programme");
     expect(d.purchases.rows.values().next().value?.programme).toBeNull();
+  });
+});
+
+describe("the receipt funder's programme read (2.10.b, F127)", () => {
+  const ledger = (funder: string | null, remaining: number) => ({
+    ...fakeLedger(undefined, funder),
+    receiptPackageTiers: () => okAsync([AT_COST]),
+    listAllocations: () =>
+      okAsync(
+        [
+          { receipts: true, remaining },
+          { receipts: false, remaining: 9_999 },
+        ].map(({ receipts, remaining: left }) => ({
+          allocationId: `alloc_${String(left)}`,
+          businessId: BUSINESS,
+          region: "AU" as const,
+          funderType: "partner" as const,
+          totalPoints: toPoints(1_000),
+          remainingPoints: toPoints(left),
+          programme: receipts ? ("receipts" as const) : null,
+          createdAt: NOW.toISOString(),
+        })),
+      ),
+  });
+  const read = (funder: string | null, remaining = 412) =>
+    getReceiptProgramme(
+      { ...deps(createSimulatedPayments()), ledger: ledger(funder, remaining) },
+      BUSINESS,
+    );
+
+  it("lists the AU Starter at 3,000 + 300 = 3,300, at cost, and counts only receipt packages", async () => {
+    const view = (await read(BUSINESS))._unsafeUnwrap();
+    expect(view).toMatchObject({
+      partners: ["snap-app"],
+      pointsPerReceipt: 1,
+      earning: true,
+      remainingPoints: 412,
+    });
+    expect(view.packages).toEqual([
+      expect.objectContaining({
+        tierKey: "starter",
+        subtotalMinor: 3_000,
+        taxMinor: 300,
+        totalMinor: 3_300,
+        pricing: "at_cost",
+      }),
+    ]);
+  });
+
+  it("is not earning once the packages have no room for a receipt", async () => {
+    expect((await read(BUSINESS, 0))._unsafeUnwrap()).toMatchObject({
+      earning: false,
+      remainingPoints: 0,
+    });
+  });
+
+  it("answers not_a_receipt_funder for any other business", async () => {
+    expect((await read(OTHER_BUSINESS))._unsafeUnwrapErr()).toEqual({
+      type: "not_a_receipt_funder",
+    });
+    expect((await read(null))._unsafeUnwrapErr().type).toBe("not_a_receipt_funder");
   });
 });
 

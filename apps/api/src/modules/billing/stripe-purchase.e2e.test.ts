@@ -7,6 +7,7 @@ import { Test } from "@nestjs/testing";
 import { ZodValidationPipe } from "nestjs-zod";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { receiptFunderKey } from "@yourtal/contracts/billing/receipt-funder";
+import { withTax } from "@yourtal/contracts/money/tax";
 import { createPaymentProviders } from "@yourtal/drivers/payment-providers";
 import { signStripePayload } from "@yourtal/drivers/stripe/signature";
 import { createBrowser } from "@yourtal/paysim/browser";
@@ -149,8 +150,18 @@ describe("Stripe card purchases through the simulation (5.1.a)", () => {
     const who = await owner();
     await makeFunder(who);
     const purchase = await buy(who, "starter", "receipts");
-    // At cost: A$30.00 ex-GST + A$3.00 GST.
-    expect(purchase.purchase.totalMinor).toBe(3_300);
+    // At cost, not the discounted tier price: B is shared and mutable, so read it back.
+    const at = await app
+      .get<LedgerInternalClient>(LEDGER_INTERNAL_CLIENT)
+      .quotePackage({
+        region: "AU",
+        tierKey: "starter",
+        programme: "receipts",
+        businessId: who.businessId,
+      });
+    expect(purchase.purchase.totalMinor).toBe(
+      withTax(at._unsafeUnwrap().totalMinor, 1_000).totalMinor,
+    );
 
     await browser.submitCheckout(purchase.sessionId, OK);
     await paysim.tick();

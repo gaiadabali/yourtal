@@ -2,6 +2,9 @@ import { randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { withTax } from "@yourtal/contracts/money/tax";
+import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
+import type { LedgerInternalClient } from "../../shared/ledger-client/ledger-internal-client";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { sessionFor } from "../../shared/testing/session-for";
 import { seedBusinessMembership } from "../../shared/testing/seed-business-membership";
@@ -41,6 +44,22 @@ interface ProgrammeView {
   earning: boolean;
   remainingPoints: number;
   packages: PackageView[];
+}
+
+/**
+ * The Starter at cost as the fake ledger prices it now, with GST on top. B is a
+ * shared, mutable setting in the test database (other suites change it), so the
+ * amounts are read back from the ledger; the unit suite pins 3,000 + 300.
+ */
+async function starterAtCost(businessId: string) {
+  const ledger = app.get<LedgerInternalClient>(LEDGER_INTERNAL_CLIENT);
+  const quote = await ledger.quotePackage({
+    region: "AU",
+    tierKey: "starter",
+    programme: "receipts",
+    businessId,
+  });
+  return withTax(quote._unsafeUnwrap().totalMinor, 1_000);
 }
 
 const programmeUrl = (businessId: string) => `/api/${businessId}/studio/billing/receipt-programme`;
@@ -95,9 +114,7 @@ describe("GET .../billing/receipt-programme", () => {
     const starter = view.packages.find((p) => p.tierKey === "starter");
     expect(starter).toMatchObject({
       points: 1_000,
-      subtotalMinor: 3_000,
-      taxMinor: 300,
-      totalMinor: 3_300,
+      ...(await starterAtCost(funder.businessId)),
       pricing: "at_cost",
     });
     expect(view.packages.every((p) => p.pricing === "at_cost")).toBe(true);
@@ -126,10 +143,11 @@ describe("POST .../billing/purchases with programme receipts", () => {
       allocation: { programme: string | null; totalPoints: number } | null;
     }>();
     expect(body.status).toBe("paid");
+    const cost = await starterAtCost(funder.businessId);
     expect(body.purchase).toMatchObject({
       programme: "receipts",
-      subtotalMinor: 3_000,
-      totalMinor: 3_300,
+      subtotalMinor: cost.subtotalMinor,
+      totalMinor: cost.totalMinor,
     });
     expect(body.allocation).toMatchObject({ programme: "receipts", totalPoints: 1_000 });
     expect((await cardPurchases(funder.businessId)).map((r) => r.programme)).toEqual(["receipts"]);
@@ -157,8 +175,10 @@ describe("POST .../billing/purchases with programme receipts", () => {
     expect(await cardPurchases(funder.businessId)).toHaveLength(1);
 
     const ordinary = await buyOrdinary(funder.ownerCookie, funder.businessId, key);
+    // The route's own replay store sees a different body first; the use case's
+    // `idempotency_conflict` is covered in card-purchase.test.ts.
     expect(ordinary.statusCode).toBe(409);
-    expect(ordinary.json<{ code: string }>().code).toBe("idempotency_conflict");
+    expect(ordinary.json<{ code: string }>().code).toBe("idempotency_key_reused");
   });
 
   it("refuses a business that is not the funder, leaving no purchase row", async () => {

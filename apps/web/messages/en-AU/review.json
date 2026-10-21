@@ -61,7 +61,7 @@
   "tools": {
     "heading": "Tools",
     "clock": "Clock: move time forward to unlock pending points, end auctions or expire vouchers.",
-    "inbox": "Inbox: every email and text the app would have sent (verification, guardian consent, receipts)."
+    "inbox": "Inbox: the emails and texts the app would have sent you (verification, guardian consent, receipts). Sign in as the person first; you see only their messages."
   },
   "simulated": {
     "heading": "What is simulated",

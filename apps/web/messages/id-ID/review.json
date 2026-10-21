@@ -61,7 +61,7 @@
   "tools": {
     "heading": "Alat",
     "clock": "Jam: majukan waktu untuk membuka poin tertunda, mengakhiri lelang, atau membuat voucher kedaluwarsa.",
-    "inbox": "Kotak masuk: setiap email dan SMS yang akan dikirim aplikasi (verifikasi, persetujuan wali, tanda terima)."
+    "inbox": "Kotak masuk: email dan SMS yang akan dikirim aplikasi kepadamu (verifikasi, persetujuan wali, tanda terima). Masuk dulu sebagai orang tersebut; kamu hanya melihat pesannya."
   },
   "simulated": {
     "heading": "Yang disimulasikan",

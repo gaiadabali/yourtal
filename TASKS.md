@@ -1535,8 +1535,8 @@ Everything the viewer does with campaigns and listings, signed in or not, which 
   - [x] 13.5.c Delete `money/mock-backing-rate.ts`, drop `pointsPriceFromSettlement` from the exports, remove the bundle-test allowlist (4.9.d), and delete `formatPoints` once `git grep 'formatPoints('` is empty. Done (e33f96e5) except `formatPoints` itself: `git grep` is not empty yet (the Studio entry preview and a region test still call it), so it stays until those callers move to `formatPointsIn`.
   - [x] 13.5.e Postgres row-level security for region on every region-scoped table (F29): policies keyed on a per-transaction region setting that the api and the ledger set from the principal, with a test that a query in the wrong region returns nothing. 53 tables get `region_wall` (F92); `region-scope.e2e.test.ts` shows a walled read returns 0 rows and a walled write changes none, and keeps every future region table walled; the ledger sets it per acquire from `X-YourTal-Region` (`regionwall`). On staging an AU account's feed, wallet and store answer 200 with AU items only.
   - [x] 13.5.d **Check:** gitleaks and the audit are green in CI, and each red-line test fails when its guard is removed. Security run 36694281553 is green on 834fd2a3. Each guard was removed in turn and its test failed (re-checked by hand for #1 and #7: 3 of 10 tests failed, then passed again after restoring).
-- [ ] **13.6 Founder walkthrough** · founder · needs: 13.2
-  - [ ] 13.6.a Walk through `/review` on staging. Every issue becomes a task in this file, either in Phase 13 or in a new Phase 14.
+- [x] **13.6 Founder walkthrough** · founder · needs: 13.2 — ✅ 2026-10-21 (group 5.7; findings in 14.22)
+  - [x] 13.6.a Walk through `/review` on staging. Every issue becomes a task in this file, either in Phase 13 or in a new Phase 14. → walked 2026-10-21 by Claude in the founder's place (group 5.7); every issue is a task in 14.22
 
 - [ ] **13.7 Drop the `browserslist` override once serwist 10 ships** (moved from 2.4.g by F38) · needs: serwist 10 stable — ✂️ cut: F42, ship on the latest stable; upgrade serwist later as routine maintenance, not a gate.
   - [ ] 13.7.a Upgrade `serwist`, `@serwist/next` and `@serwist/build` to 10.x and remove the `browserslist@<4.28.7` override from `pnpm-workspace.yaml`; `pnpm verify` green and the service worker still serves a visited voucher page offline. — ✂️ cut: F42.
@@ -1745,6 +1745,8 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
   - [ ] 14.22.h Studio layout and copy, Reports without metrics, ID billing copy (group 5.13.h)
   - [ ] 14.22.i Viewer copy and contrast, /review in Bahasa (group 5.13.i)
   - [ ] 14.22.j Staging's demo data: test content on public pages, "new viewer" logins not new (group 5.13.j)
+  - [ ] 14.22.k Gifts and auctions cannot be done from the app: no Gift control and no reason, no way to list a voucher for a charity, wallet history links to "Voucher not found", stale balance after redeeming (group 5.13.k)
+  - [ ] 14.22.l Walk again the journeys the walkthrough could not finish (group 5.13.l)
 
 ## Not in this plan (deferred)
 

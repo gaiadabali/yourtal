@@ -52,7 +52,9 @@
     "failed": "Tontonanmu tidak bisa dicatat.",
     "retry": "Coba lagi",
     "stoppedEarly": "Berhenti di tengah tidak memberi poin. Tonton sampai selesai.",
-    "quietHours": "Jam tenang sampai jam 7 pagi -- coba lagi besok pagi."
+    "quietHours": "Jam tenang sampai jam 7 pagi -- coba lagi besok pagi.",
+    "identityCheck": "Verifikasi emailmu untuk mulai mendapatkan poin.",
+    "identityCheckPermanentEmail": "Alamat email ini tidak bisa dipakai untuk mendapatkan poin."
   },
   "actions": {
     "label": "Tindakan untuk {title}",

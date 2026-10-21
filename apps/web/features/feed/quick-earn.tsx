@@ -7,6 +7,8 @@ import { Button } from "@yourtal/ui/button";
 import { PointsChip } from "@yourtal/ui/points-chip";
 import { formatFeedPoints, type FeedLocale } from "./feed-terms";
 import type { useQuickEarn } from "./use-quick-earn";
+import { IdentityCheckPrompt } from "@/features/player/identity-check-prompt";
+import { identityCheckKey } from "@/features/player/non-earning-reason";
 
 // Lazy, like the player: hls.js (~170 KB gz) stays out of the feed's initial JS.
 const HlsAttacher = dynamic(
@@ -98,6 +100,17 @@ export function QuickEarnAction({ earn, rewardPoints, locale }: QuickEarnActionP
   }
 
   if (phase.kind === "not_earning") {
+    // F126: an account without the identity check is asked for it first.
+    if (phase.identityCheck !== undefined) {
+      return (
+        <div role="status" className="flex flex-col items-start gap-2 text-white">
+          <p className="text-body-sm font-sans">
+            {t(`earn.${identityCheckKey(phase.identityCheck)}`)}
+          </p>
+          <IdentityCheckPrompt missing={phase.identityCheck} locale={locale} />
+        </div>
+      );
+    }
     return (
       <p role="status" className="text-body-sm font-sans text-white">
         {phase.alreadyEarned ? t("earn.alreadyEarned") : t("earn.notEarning")}

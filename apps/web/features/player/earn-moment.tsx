@@ -1,5 +1,7 @@
 import { PointsChip } from "@yourtal/ui/points-chip";
 import { nonEarningReasonKey } from "./non-earning-reason";
+import { IDENTITY_CHECK_REQUIRED } from "@yourtal/contracts/identity/earning-check";
+import { IdentityCheckPrompt } from "./identity-check-prompt";
 import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
 
 /** Plain `Intl`, not next-intl's `useFormatter` — this feature keeps zero next-intl calls (6.1.d). */
@@ -62,6 +64,9 @@ export function NotEarningMoment({ reason, locale }: NotEarningMomentProps) {
           ? t("earn.notEarningGeneric")
           : t(`refusal.reasons.${nonEarningReasonKey(reason)}`)}
       </p>
+      {reason === IDENTITY_CHECK_REQUIRED ? (
+        <IdentityCheckPrompt missing={[]} locale={locale} />
+      ) : null}
     </div>
   );
 }

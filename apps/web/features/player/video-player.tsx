@@ -11,7 +11,9 @@ import { ChapterTrack } from "./chapter-track";
 import { CaptionsToggle } from "./captions-toggle";
 import { CheckpointOverlay } from "./checkpoint-overlay";
 import { EarnMoment, NotEarningMoment } from "./earn-moment";
-import { nonEarningReasonKey } from "./non-earning-reason";
+import { identityCheckKey, nonEarningReasonKey } from "./non-earning-reason";
+import { IdentityCheckPrompt } from "./identity-check-prompt";
+import { IDENTITY_CHECK_REQUIRED } from "@yourtal/contracts/identity/earning-check";
 import { playerChapters } from "./player-chapters";
 import { PlayIcon } from "./player-icons";
 import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
@@ -197,9 +199,19 @@ export function VideoPlayer({
               {t("refusal.title")}
             </p>
             <p className="text-sm font-sans">
-              {t(`refusal.reasons.${nonEarningReasonKey(phase.reason)}`)}
+              {t(
+                `refusal.reasons.${
+                  phase.reason === IDENTITY_CHECK_REQUIRED
+                    ? identityCheckKey(phase.identityCheck)
+                    : nonEarningReasonKey(phase.reason)
+                }`,
+              )}
             </p>
-            <p className="text-sm font-sans">{t("refusal.noPoints")}</p>
+            {phase.reason === IDENTITY_CHECK_REQUIRED ? (
+              <IdentityCheckPrompt missing={phase.identityCheck ?? []} locale={locale} />
+            ) : (
+              <p className="text-sm font-sans">{t("refusal.noPoints")}</p>
+            )}
             <Button type="button" size="sm" onClick={() => void watchWithoutEarning()}>
               {t("refusal.watchAnyway")}
             </Button>

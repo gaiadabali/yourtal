@@ -46,6 +46,7 @@ export default async function StaffEconomySettingsPage(
       />
       <StaffEconomySettingsScreen
         t={t}
+        appEnv={process.env["APP_ENV"] ?? "dev"}
         region={region}
         settings={settings}
         canPropose={session.roles.includes("finance")}

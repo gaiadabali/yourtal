@@ -52,7 +52,9 @@
     "failed": "We couldn't record that watch.",
     "retry": "Try again",
     "stoppedEarly": "Stopping early earns nothing. Watch to the end to earn.",
-    "quietHours": "Quiet hours until 7am -- try again in the morning."
+    "quietHours": "Quiet hours until 7am -- try again in the morning.",
+    "identityCheck": "Verify your email to start earning points.",
+    "identityCheckPermanentEmail": "This email address can't be used to earn points."
   },
   "actions": {
     "label": "Actions for {title}",

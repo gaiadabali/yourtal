@@ -103,7 +103,15 @@
       "velocityCapped": "Kamu sudah mencapai batas perolehan poin hari ini.",
       "unavailable": "Reward sedang tidak tersedia.",
       "notConfirmed": "Poinmu belum bisa dikonfirmasi saat ini.",
-      "generic": "Video ini sedang tidak memberi poin."
+      "generic": "Video ini sedang tidak memberi poin.",
+      "identityCheck": "Verifikasi emailmu untuk mulai mendapatkan poin.",
+      "identityCheckPermanentEmail": "Alamat email ini tidak bisa dipakai untuk mendapatkan poin."
     }
+  },
+  "identityCheck": {
+    "verifyEmailCta": "Kirim email verifikasi",
+    "verifyEmailSent": "Cek kotak masukmu dan buka tautannya, lalu kembali ke sini untuk mendapatkan poin.",
+    "verifyEmailFailed": "Email tidak bisa dikirim. Coba lagi sebentar lagi.",
+    "usePermanentEmail": "Gunakan alamat email permanen untuk mendapatkan poin. Mengganti email akun belum tersedia."
   }
 }

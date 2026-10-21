@@ -1,3 +1,5 @@
+import type { IdentityCheckStep } from "@yourtal/contracts/identity/earning-check";
+
 /**
  * Maps the API's `nonEarningReason` to a `player.refusal.reasons.*` catalogue
  * key. The API sends either a short code (`already_earned`,
@@ -18,12 +20,16 @@ export type NonEarningReasonKey =
   | "velocityCapped"
   | "unavailable"
   | "notConfirmed"
+  | "identityCheck"
+  | "identityCheckPermanentEmail"
   | "generic";
 
 const BY_REASON: Readonly<Record<string, NonEarningReasonKey>> = {
   already_earned: "alreadyEarned",
   no_funding_configured: "noFunding",
   pending_funding_check: "notConfirmed",
+  // F126: the account has not verified a permanent email yet.
+  identity_check_required: "identityCheck",
   "This campaign has given out all its rewards.": "campaignCapReached",
   "This campaign has given out today's rewards. You can earn from it again tomorrow.":
     "campaignDailyCapReached",
@@ -40,4 +46,17 @@ const BY_REASON: Readonly<Record<string, NonEarningReasonKey>> = {
 export function nonEarningReasonKey(reason: string | null): NonEarningReasonKey {
   if (reason === null || !Object.hasOwn(BY_REASON, reason)) return "generic";
   return BY_REASON[reason] ?? "generic";
+}
+
+/**
+ * F126's banner for a refused identity check: asking to verify would mislead
+ * someone whose email is verified but disposable, so that case says so.
+ * `missing` is absent when the server did not say (the end of a session).
+ */
+export function identityCheckKey(
+  missing: readonly IdentityCheckStep[] | undefined,
+): "identityCheck" | "identityCheckPermanentEmail" {
+  const onlyPermanentEmail =
+    missing !== undefined && missing.length > 0 && !missing.includes("verify_email");
+  return onlyPermanentEmail ? "identityCheckPermanentEmail" : "identityCheck";
 }

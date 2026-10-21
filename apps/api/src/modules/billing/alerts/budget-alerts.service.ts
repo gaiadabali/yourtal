@@ -23,6 +23,9 @@ export interface SweepResult {
 }
 
 /**
+ * 2.10.b (F127): a receipt package's alerts carry `programme='receipts'` and
+ * receipt wording; nothing else about the sweep differs.
+ *
  * 14.13.b (F121): alerts at 50%, 80% and 100% of a package (an allocation a
  * business bought) and of a campaign's total budget, each once. A sweep reads
  * what the ledger says is left (live session holds count as used, since the
@@ -43,7 +46,10 @@ export class BudgetAlertsService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     @Inject(LEDGER_INTERNAL_CLIENT)
-    private readonly ledger: Pick<LedgerInternalClient, "getAllocation" | "campaignBudgets">,
+    private readonly ledger: Pick<
+      LedgerInternalClient,
+      "getAllocation" | "listAllocations" | "campaignBudgets"
+    >,
     @Inject(BUDGET_ALERTS) private readonly alerts: BudgetAlertRepository,
     @Inject(EMAIL_DRIVER) private readonly email: EmailDriver,
   ) {}
@@ -98,6 +104,7 @@ export class BudgetAlertsService implements OnModuleInit, OnModuleDestroy {
         subjectId: allocation.allocationId,
         usedPoints: allocation.totalPoints - allocation.remainingPoints,
         totalPoints: allocation.totalPoints,
+        programme: allocation.programme,
       });
     }
     return raised;
@@ -139,6 +146,7 @@ export class BudgetAlertsService implements OnModuleInit, OnModuleDestroy {
           subjectId: candidate.campaignId,
           usedPoints: Math.max(0, candidate.budgetPoints - left),
           totalPoints: candidate.budgetPoints,
+          programme: null,
         });
       }
     }
@@ -165,10 +173,41 @@ export class BudgetAlertsService implements OnModuleInit, OnModuleDestroy {
     return notified;
   }
 
+  /**
+   * A receipt package's 100% alert says whether receipts stopped or carry on:
+   * the points left in the oldest other receipt package of this business and
+   * region with room (the one the draw pays from next), or null when none.
+   * `undefined` means the ledger could not say, so the alert waits a sweep.
+   */
+  private async nextReceiptPackage(alert: UnnotifiedAlert): Promise<number | null | undefined> {
+    try {
+      const listed = await this.ledger.listAllocations(alert.businessId);
+      if (listed.isErr()) return undefined;
+      const next = listed.value
+        .filter(
+          (a) =>
+            a.programme === "receipts" &&
+            a.region === alert.region &&
+            a.allocationId !== alert.subjectId &&
+            a.remainingPoints > 0,
+        )
+        .sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];
+      return next === undefined ? null : next.remainingPoints;
+    } catch {
+      return undefined;
+    }
+  }
+
   private async send(alert: UnnotifiedAlert): Promise<boolean> {
+    let nextPackagePoints: number | null = null;
+    if (alert.programme === "receipts" && alert.thresholdPct === 100) {
+      const next = await this.nextReceiptPackage(alert);
+      if (next === undefined) return false;
+      nextPackagePoints = next;
+    }
     let delivered = true;
     for (const recipient of await this.alerts.recipients(alert.businessId)) {
-      const { subject, body } = alertEmail(recipient.locale, alert);
+      const { subject, body } = alertEmail(recipient.locale, { ...alert, nextPackagePoints });
       const sent = await this.email.send({
         idempotencyKey: `budget-alert:${alert.id}:${recipient.userId}`,
         to: recipient.email,
@@ -176,7 +215,12 @@ export class BudgetAlertsService implements OnModuleInit, OnModuleDestroy {
         category: "budget_alert",
         subject,
         body,
-        metadata: { alertId: alert.id, kind: alert.kind, thresholdPct: alert.thresholdPct },
+        metadata: {
+          alertId: alert.id,
+          kind: alert.kind,
+          thresholdPct: alert.thresholdPct,
+          programme: alert.programme,
+        },
       });
       if (sent.isErr()) {
         this.logger.warn(`budget alert ${alert.id} to ${recipient.userId}: ${sent.error.detail}`);

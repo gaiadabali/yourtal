@@ -8,6 +8,7 @@ export const BUDGET_ALERTS = Symbol("BUDGET_ALERTS");
 
 export type AlertKind = BudgetAlert["kind"];
 export type Threshold = BudgetAlert["thresholdPct"];
+export type AlertProgramme = BudgetAlert["programme"];
 
 export interface NewAlert {
   readonly businessId: string;
@@ -17,6 +18,8 @@ export interface NewAlert {
   readonly thresholdPct: Threshold;
   readonly usedPoints: number;
   readonly totalPoints: number;
+  /** 2.10.b (F127): `receipts` for a receipt package's alert, else null. */
+  readonly programme: AlertProgramme;
 }
 
 export interface UnnotifiedAlert extends NewAlert {
@@ -87,9 +90,9 @@ export class BudgetAlertRepository {
   async raise(alert: NewAlert): Promise<boolean> {
     const { rows } = await this.db.execute(sql`
       INSERT INTO payment.budget_alert
-        (business_id, region, subject_kind, subject_id, threshold_pct, used_points, total_points)
+        (business_id, region, subject_kind, subject_id, threshold_pct, used_points, total_points, programme)
       VALUES (${alert.businessId}, ${alert.region}, ${alert.kind}, ${alert.subjectId},
-              ${alert.thresholdPct}, ${alert.usedPoints}, ${alert.totalPoints})
+              ${alert.thresholdPct}, ${alert.usedPoints}, ${alert.totalPoints}, ${alert.programme})
       ON CONFLICT ON CONSTRAINT budget_alert_once DO NOTHING
       RETURNING id`);
     return rows.length === 1;
@@ -141,7 +144,7 @@ export class BudgetAlertRepository {
         thresholdPct: alert.thresholdPct,
         usedPoints: toPoints(alert.usedPoints),
         totalPoints: toPoints(alert.totalPoints),
-        programme: null,
+        programme: alert.programme,
         createdAt: new Date(String(row["created_at"])).toISOString(),
       };
     });
@@ -183,5 +186,6 @@ function toNewAlert(row: Record<string, unknown>): NewAlert {
     thresholdPct: Number(row["threshold_pct"]) as Threshold,
     usedPoints: Number(row["used_points"]),
     totalPoints: Number(row["total_points"]),
+    programme: row["programme"] === "receipts" ? "receipts" : null,
   };
 }

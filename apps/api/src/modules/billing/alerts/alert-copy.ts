@@ -15,6 +15,13 @@ export interface AlertFacts {
   readonly usedPoints: number;
   readonly totalPoints: number;
   readonly campaignTitle: string | null;
+  /** 2.10.b (F127): `receipts` for a receipt package (receipt wording). Omitted: today's wording. */
+  readonly programme?: "receipts" | null;
+  /**
+   * A receipt package's 100% alert: points left in the next receipt package,
+   * or null/omitted when no other package has room (receipts have stopped).
+   */
+  readonly nextPackagePoints?: number | null;
 }
 
 type Locale = "en-AU" | "id-ID";
@@ -28,6 +35,42 @@ export function alertEmail(locale: Locale, facts: AlertFacts): { subject: string
   const pct = facts.thresholdPct;
   const title = facts.campaignTitle ?? (locale === "id-ID" ? "Anda" : "Your campaign");
   const full = pct === 100;
+
+  if (facts.kind === "package" && facts.programme === "receipts") {
+    const next = facts.nextPackagePoints ?? null;
+    if (locale === "id-ID") {
+      if (!full) {
+        return {
+          subject: `Paket poin struk Anda sudah terpakai ${String(pct)}%`,
+          body: `Paket poin struk Anda sudah terpakai ${String(pct)}%: tersisa ${left} poin. Beli paket struk lain di Penagihan Studio agar struk di aplikasi Anda terus mendapatkan poin.`,
+        };
+      }
+      return next === null
+        ? {
+            subject: "Paket poin struk Anda sudah habis",
+            body: "Paket poin struk Anda sudah habis, jadi struk di aplikasi Anda berhenti mendapatkan poin YourTal. Beli paket struk lain di Penagihan Studio.",
+          }
+        : {
+            subject: "Sebuah paket poin struk sudah habis",
+            body: `Sebuah paket poin struk sudah habis. Struk kini mendapatkan poin dari paket Anda berikutnya (tersisa ${n.format(next)} poin).`,
+          };
+    }
+    if (!full) {
+      return {
+        subject: `Your receipt points package is ${String(pct)}% used`,
+        body: `Your receipt points package is ${String(pct)}% used: ${left} points are left. Buy another receipt package in Studio Billing so receipts keep earning.`,
+      };
+    }
+    return next === null
+      ? {
+          subject: "Your receipt points package is used up",
+          body: "Your receipt points package is used up, so receipts in your app have stopped earning YourTal points. Buy another receipt package in Studio Billing.",
+        }
+      : {
+          subject: "A receipt points package is used up",
+          body: `A receipt points package is used up. Receipts now earn from your next package (${n.format(next)} points left).`,
+        };
+  }
 
   if (locale === "id-ID") {
     if (facts.kind === "package") {

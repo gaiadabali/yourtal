@@ -4,10 +4,12 @@ import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { receiptFunderKey } from "@yourtal/contracts/billing/receipt-funder";
 import { toPoints } from "@yourtal/contracts/money";
 import { AppModule } from "../../app.module";
 import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
 import type { LedgerInternalClient } from "../../shared/ledger-client/ledger-internal-client";
+import { FakeLedgerClient } from "../../shared/ledger-client/fake-ledger-client";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { seedBusinessMembership } from "../../shared/testing/seed-business-membership";
@@ -273,5 +275,166 @@ describe("14.13.b: a campaign budget's alerts", () => {
     const sent = await emailsTo(biz.emails);
     expect(sent).toHaveLength(2);
     expect(sent[0]?.subject).toBe('Campaign "Spring launch" has used its whole budget');
+  });
+});
+
+/**
+ * 2.10.b (F127, docs/27 §3.5): a receipt package's alerts, with the fake
+ * ledger drawing receipts from it. The app's own ledger keeps the live
+ * default; `drawLedger` shares its database with the draw switched on.
+ */
+describe("2.10.b: a receipt package's alerts", () => {
+  const drawLedger = () => new FakeLedgerClient(db, { receiptDraw: true });
+
+  /** A verified AU business that funds `partnerId`'s receipts, plus a marketer who must not be emailed. */
+  async function receiptFunder() {
+    const biz = await business();
+    const marketer = await sessionFor(app, { jurisdiction: "AU" });
+    await owner.execute(sql`
+      INSERT INTO business.business_members (business_id, user_id, role, invited_by_user_id, joined_at)
+      VALUES (${biz.businessId}, ${marketer.userId}, 'marketer', ${randomUUID()}, now())`);
+    await owner.execute(sql`
+      UPDATE identity.credential SET verified_at = coalesce(verified_at, now())
+       WHERE user_id = ${marketer.userId}`);
+    await owner.execute(
+      sql`UPDATE business.business_accounts SET is_verified = true WHERE id = ${biz.businessId}::uuid`,
+    );
+    const partnerId = `alerts-partner-${randomUUID()}`;
+    const proposed = await ledger.proposeSetting({
+      region: "AU",
+      key: receiptFunderKey(partnerId),
+      value: { businessId: biz.businessId },
+      proposedBy: "staff-1",
+    });
+    await ledger.approveSetting({ id: proposed.id, approvedBy: "staff-2" });
+    return { biz, partnerId, marketerEmail: marketer.email };
+  }
+
+  /** One 1,000-point receipt package, with the paid purchase row the sweep looks for. */
+  async function buyPackage(businessId: string) {
+    const quote = await ledger.quotePackage({
+      region: "AU",
+      tierKey: "starter",
+      programme: "receipts",
+      businessId,
+    });
+    if (quote.isErr()) throw new Error(`quoting receipts: ${quote.error.message}`);
+    const bought = await ledger.purchasePoints({
+      businessId,
+      region: "AU",
+      currency: quote.value.currency,
+      points: toPoints(quote.value.points),
+      paidMinor: quote.value.totalMinor,
+      idempotencyKey: randomUUID(),
+      tierKey: "starter",
+      programme: "receipts",
+    });
+    if (bought.isErr()) throw new Error(`buying receipts: ${bought.error.message}`);
+    const allocationId = bought.value.allocationId;
+    await owner.execute(sql`
+      INSERT INTO payment.card_purchase
+        (business_id, region, currency, points, subtotal_minor, tax_minor, total_minor, tax_rate_bps,
+         idempotency_key, provider, checkout_expires_at, status, allocation_id, paid_at)
+      VALUES (${businessId}, 'AU', 'AUD', ${quote.value.points}, 3000, 0, 3000, 0,
+              ${randomUUID()}, 'simulated', now() + interval '1 hour', 'paid', ${allocationId}, now())`);
+    return allocationId;
+  }
+
+  function receipt(partnerId: string) {
+    return drawLedger().grantAction({
+      kind: "receipt",
+      userId: randomUUID(),
+      region: "AU",
+      points: toPoints(100),
+      trustTier: 3,
+      idempotencyKey: randomUUID(),
+      ageBand: "adult",
+      partnerId,
+    });
+  }
+
+  /** `count` receipts of 100 points, each for a different user. */
+  async function receipts(partnerId: string, count: number) {
+    for (let i = 0; i < count; i += 1) {
+      expect((await receipt(partnerId)).isOk()).toBe(true);
+    }
+  }
+
+  async function alertsOf(businessId: string) {
+    const { rows } = await db.execute<{ threshold_pct: number; programme: string | null }>(sql`
+      SELECT threshold_pct, programme FROM payment.budget_alert
+       WHERE business_id = ${businessId} ORDER BY threshold_pct`);
+    return rows.map((row) => `${String(row.threshold_pct)}:${String(row.programme)}`);
+  }
+
+  async function bodiesTo(address: string) {
+    const { rows } = await db.execute<{ body: string }>(sql`
+      SELECT body FROM platform.sim_outbox
+       WHERE boundary = 'email' AND category = 'budget_alert' AND recipient = ${address}
+       ORDER BY created_at`);
+    return rows.map((row) => row.body);
+  }
+
+  it("raises 50, 80 and 100% once each with receipt wording, to the owner and finance only", async () => {
+    const { biz, partnerId, marketerEmail } = await receiptFunder();
+    await buyPackage(biz.businessId);
+
+    await receipts(partnerId, 5);
+    await alerts.sweep();
+    await alerts.sweep();
+    expect(await alertsOf(biz.businessId)).toEqual(["50:receipts"]);
+    expect((await emailsTo(biz.emails)).map((email) => email.subject)).toEqual([
+      "Your receipt points package is 50% used",
+      "Your receipt points package is 50% used",
+    ]);
+
+    await receipts(partnerId, 3);
+    await alerts.sweep();
+    expect(await alertsOf(biz.businessId)).toEqual(["50:receipts", "80:receipts"]);
+    expect(await emailsTo(biz.emails)).toHaveLength(4);
+    expect((await bodiesTo(biz.emails[0]!)).at(-1)).toBe(
+      "Your receipt points package is 80% used: 200 points are left. Buy another receipt package in Studio Billing so receipts keep earning.",
+    );
+
+    // The last 200 points; then nothing is left and receipts stop.
+    await receipts(partnerId, 2);
+    expect((await receipt(partnerId))._unsafeUnwrapErr().code).toBe("allocation_exhausted");
+    await alerts.sweep();
+    await alerts.sweep();
+    expect(await alertsOf(biz.businessId)).toEqual(["50:receipts", "80:receipts", "100:receipts"]);
+    const sent = await emailsTo(biz.emails);
+    expect(sent).toHaveLength(6);
+    expect(sent.at(-1)?.subject).toBe("Your receipt points package is used up");
+    expect((await bodiesTo(biz.emails[1]!)).at(-1)).toContain(
+      "have stopped earning YourTal points",
+    );
+    expect(await emailsTo([marketerEmail])).toHaveLength(0);
+
+    const listed = await app.inject({
+      method: "GET",
+      url: `/api/${biz.businessId}/studio/billing/alerts`,
+      headers: { cookie: biz.cookie },
+    });
+    expect(listed.statusCode).toBe(200);
+    expect(
+      listed.json<{ alerts: { programme: string | null }[] }>().alerts.map((a) => a.programme),
+    ).toEqual(["receipts", "receipts", "receipts"]);
+  });
+
+  it("at 100% names the next package when another has room", async () => {
+    const { biz, partnerId } = await receiptFunder();
+    await buyPackage(biz.businessId);
+    const second = await buyPackage(biz.businessId);
+    await receipts(partnerId, 10);
+    await alerts.sweep();
+    // The oldest package is spent in one go: all three alerts, one email each.
+    expect(await alertsOf(biz.businessId)).toEqual(["50:receipts", "80:receipts", "100:receipts"]);
+    const sent = await emailsTo(biz.emails);
+    expect(sent).toHaveLength(2);
+    expect(sent[0]?.subject).toBe("A receipt points package is used up");
+    expect(await bodiesTo(biz.emails[0]!)).toEqual([
+      "A receipt points package is used up. Receipts now earn from your next package (1,000 points left).",
+    ]);
+    expect((await ledger.getAllocation(second))._unsafeUnwrap().remainingPoints).toBe(1000);
   });
 });

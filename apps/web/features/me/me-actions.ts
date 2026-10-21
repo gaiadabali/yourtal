@@ -159,7 +159,14 @@ export async function changePasswordAction(
 }
 
 export async function issueLinkCodeAction(): Promise<ApiResult<LinkCodeResponse>> {
-  return apiFetch("/api/me/linked-apps/code", linkCodeResponseSchema, { method: "POST" });
+  // The route is `@Idempotent` and refuses a request without a key (400
+  // `idempotency_key_required`), which left Generate code always failing
+  // (found by the group 2.7 sign-up test). A fresh key per click: each click
+  // asks for a new code.
+  return apiFetch("/api/me/linked-apps/code", linkCodeResponseSchema, {
+    method: "POST",
+    headers: { "idempotency-key": randomUUID() },
+  });
 }
 
 /** 14.3.c: the partner's next call with this link earns nothing and gets `link_revoked`. */

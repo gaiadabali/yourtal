@@ -14,10 +14,11 @@ import type { FastifyRequest } from "fastify";
 import { z } from "zod";
 import type {
   PartnerLinkResult,
+  PartnerReceiptStatusResult,
   PartnerLinkRevokeResult,
 } from "@yourtal/contracts/device/partner-action";
 import { PublicRoute } from "../../shared/authz/authorize.decorator";
-import { Idempotent } from "../../shared/idempotency/idempotent.decorator";
+import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { RateLimit } from "../../shared/rate-limit/rate-limit.decorator";
 import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
 import type { LedgerInternalClient } from "../../shared/ledger-client/ledger-internal-client";
@@ -31,10 +32,15 @@ import { ACCOUNT_AGE_LOOKUP } from "./persistence/account-age-lookup";
 import type { AccountAgeLookup } from "./persistence/account-age-lookup";
 import { PartnerAuthGuard } from "./partner-auth.guard";
 import { verifiedPartnerIdOf } from "./partner-auth";
-import { PartnerActionDto, PartnerLinkDto } from "./dto/partner-action.schema";
+import {
+  PartnerActionDto,
+  PartnerLinkDto,
+  PartnerReceiptStatusDto,
+} from "./dto/partner-action.schema";
 import { grantPartnerAction } from "./use-cases/grant-partner-action.use-case";
 import type { GrantPartnerActionDeps } from "./use-cases/grant-partner-action.use-case";
 import { linkPartnerAccount, revokePartnerLink } from "./use-cases/partner-link.use-case";
+import { receiptStatus } from "./use-cases/receipt-status.use-case";
 import { receiptPointsReader } from "./receipt-points-reader";
 import { mapPartnersErrorToHttpException } from "./to-http-exception";
 
@@ -109,6 +115,22 @@ export class PartnerActionsController {
       throw mapPartnersErrorToHttpException({ type: "unknown_link" });
     }
     const result = await revokePartnerLink(this.deps.links, { partnerId, linkId });
+    if (result.isErr()) throw mapPartnersErrorToHttpException(result.error);
+    return result.value;
+  }
+
+  /** 2.10.b (F127): is the partner's receipt package paying? A read, so it needs no Idempotency-Key. */
+  @NotValueMoving("A read: it moves no points and changes nothing.")
+  @RateLimit({ routeId: "partners.receipts.status", ip: { max: 60, windowSeconds: 60 } })
+  @PublicRoute(PUBLIC_REASON)
+  @Post("receipts/status")
+  @HttpCode(HttpStatus.OK)
+  async receiptStatus(
+    @Body() body: PartnerReceiptStatusDto,
+    @Req() request: FastifyRequest,
+  ): Promise<PartnerReceiptStatusResult> {
+    const partnerId = requirePartnerId(request);
+    const result = await receiptStatus(this.deps, { partnerId, region: body.region });
     if (result.isErr()) throw mapPartnersErrorToHttpException(result.error);
     return result.value;
   }

@@ -4,6 +4,8 @@ import {
   partnerLinkRequestSchema,
   partnerLinkResultSchema,
   partnerLinkRevokeResultSchema,
+  partnerReceiptStatusRequestSchema,
+  partnerReceiptStatusResultSchema,
 } from "../device/partner-action";
 import {
   SERVICE_UNAVAILABLE,
@@ -42,6 +44,15 @@ const TEEN_NOT_ALLOWED: RouteErrorResponse = {
 const LINK_REVOKED: RouteErrorResponse = {
   status: 403,
   description: "The user unlinked this app; the link earns nothing (link_revoked).",
+  documented: true,
+};
+
+const RECEIPTS_PAUSED: RouteErrorResponse = {
+  status: 409,
+  description:
+    "The receipt package is used up, so nothing was paid (allocation_exhausted: " +
+    '"receipt points are paused: the receipt package is used up"). Show receipt points as paused and ' +
+    "stop retrying; poll the status read to see when they resume.",
   documented: true,
 };
 
@@ -116,8 +127,25 @@ export const PARTNERS_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       INVALID_PARTNER_SIGNATURE,
       TEEN_NOT_ALLOWED,
       LINK_REVOKED,
+      RECEIPTS_PAUSED,
       LEDGER_REFUSED,
       SERVICE_UNAVAILABLE,
     ],
+  },
+  {
+    method: "post",
+    path: "/api/partners/receipts/status",
+    summary: "Whether the partner's receipts are being paid from its receipt package",
+    tags: ["partners"],
+    pathParams: [],
+    requestBody: {
+      description: "The region to ask about.",
+      schema: inlineSchema(partnerReceiptStatusRequestSchema),
+    },
+    successStatus: 200,
+    successDescription:
+      "earning is true when a receipt package has room for one receipt. A partner with no receipt package answers earning: false and remainingPoints: 0. A read: it needs no Idempotency-Key.",
+    successSchema: inlineSchema(partnerReceiptStatusResultSchema),
+    errors: [VALIDATION_400, INVALID_PARTNER_SIGNATURE, SERVICE_UNAVAILABLE],
   },
 ];

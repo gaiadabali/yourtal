@@ -2,7 +2,7 @@
 
 For developers of a partner app (SnapApp first) that reports what its users do, so YourTal can pay them points. Your server calls YourTal; the user's device never does, because the requests are signed with a secret only your server holds.
 
-The machine-readable contract is `POST /api/partners/links` and `POST /api/partners/actions` in [`packages/contracts/openapi/yourtal.openapi.json`](../../packages/contracts/openapi/yourtal.openapi.json). This page explains how to use them.
+The machine-readable contract is `POST /api/partners/links`, `POST /api/partners/actions` and `POST /api/partners/receipts/status` in [`packages/contracts/openapi/yourtal.openapi.json`](../../packages/contracts/openapi/yourtal.openapi.json). This page explains how to use them.
 
 ## Before you start
 
@@ -101,13 +101,37 @@ The answer is always `200` once the user is linked and the receipt is accepted:
 | Field       | Meaning                                                                                                              |
 | ----------- | -------------------------------------------------------------------------------------------------------------------- |
 | `granted`   | This receipt has earned points for this user, on this call or an earlier one.                                        |
-| `points`    | How many. Today 10 in AU and 100 in ID; YourTal can change the rate, so show this number rather than a constant.     |
+| `points`    | How many. Today 1 in AU and 10 in ID; YourTal can change the rate, so show this number rather than a constant.       |
 | `linkId`    | The user's link. Store it if you sent a code.                                                                        |
 | `duplicate` | `true` when this receipt had already been reported. **Nothing new was paid.** Treat it as success and stop retrying. |
 
 A receipt that was first reported for a different user answers `{"granted": false, "points": 0, "duplicate": true, ...}`: it earns once, for whoever reported it first.
 
-YourTal may hold new points for a while before the user can spend them; that is YourTal's setting and needs nothing from you. A user can earn for a limited number of receipts a day (currently 10); past that the call answers `409 velocity_capped`.
+YourTal may hold new points for a while before the user can spend them; that is YourTal's setting and needs nothing from you. Receipt points are paid from a **receipt package**: points your company buys in advance, at cost, in YourTal Studio (Billing → Receipt rewards). Every receipt takes its points from the package. When the package is used up, receipts stop earning and the call answers `409 allocation_exhausted` (see section 5); buy another package and they start again. There is no per-person daily limit on receipts. YourTal's general daily and monthly earning caps still apply to every user.
+
+### Is the package still paying?
+
+Ask before you show a user a receipt reward, and now and then while the app is open. It is a read: it moves no points, and it doesn't need an `Idempotency-Key` (one is ignored if you send it). It is limited to 60 requests a minute per source IP.
+
+```http
+POST /api/partners/receipts/status
+Authorization: Partner snap-app:<signature>
+Content-Type: application/json
+
+{"region":"AU"}
+```
+
+```json
+{ "region": "AU", "earning": true, "pointsPerReceipt": 1, "remainingPoints": 412 }
+```
+
+| Field              | Meaning                                                                                                            |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `earning`          | `true` when a receipt package has room for at least one more receipt. When `false`, show receipt points as paused. |
+| `pointsPerReceipt` | What one receipt pays in that region: 1 in AU, 10 in ID.                                                           |
+| `remainingPoints`  | Points left across your receipt packages in that region. `0` when you have none.                                   |
+
+`region` is `AU` or `ID`. YourTal has no outbound channel to you, so there is no webhook: poll this read. A partner with no receipt package yet answers `earning: false` and `remainingPoints: 0`.
 
 ## 3. Signing a request
 
@@ -149,7 +173,7 @@ How to retry:
 - **Network error, timeout, `5xx` or `429`:** retry with the **same key and the same body bytes**, backing off exponentially (for example 1 s, 2 s, 4 s, up to a few minutes). On `429`, wait at least `retryAfterSeconds` from the body. A retried link exchange returns the same `linkId`, even though the code itself is spent.
 - **Any other `4xx`:** don't retry the same request. Fix the cause (see the table below).
 - **Lost track of a receipt?** Report it again under a new key. If it already counted you get `200` with `duplicate: true`; it never pays twice.
-- **A receipt refused by the ledger** (`409 velocity_capped` and the other ledger codes in section 5) has been recorded but not paid. Reporting it again later, under a new key, can still pay it **once**, if the user is then within their daily limit; the answer is `200` with `granted: true` and `duplicate: true`, because the receipt itself was already reported. It never pays more than once.
+- **A receipt refused** (`409 allocation_exhausted` or `409 velocity_capped`) has been recorded but not paid. Reporting it again later, under a new key, can still pay it **once**, for example after a new receipt package is bought; the answer is `200` with `granted: true` and `duplicate: true`, because the receipt itself was already reported. It never pays more than once.
 
 ## 5. Errors
 
@@ -159,20 +183,21 @@ Every error body has a stable `code` and a readable `message`. Switch on `code`,
 { "code": "link_revoked", "message": "the user unlinked this app; ask them to link again" }
 ```
 
-| Status | `code`                                                               | Meaning, and what to do                                                                                                                                     |
-| ------ | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 400    | `invalid_link_code`                                                  | The code is unknown, expired (10 minutes) or already used. Ask the user for a new code.                                                                     |
-| 400    | `unknown_link`                                                       | No link with this id exists for your partner id. Forget the stored link id and link again.                                                                  |
-| 400    | `idempotency_key_required`                                           | Add an `Idempotency-Key` header.                                                                                                                            |
-| 400    | (validation)                                                         | The body doesn't match the schema, for example both or neither of `linkId` and `user`. The body lists the problems.                                         |
-| 401    | `invalid_partner_signature`                                          | Wrong partner id, wrong secret, or the signed bytes are not the sent bytes (section 3).                                                                     |
-| 403    | `link_revoked`                                                       | The link ended: the user unlinked your app, deleted their YourTal account, or you revoked it. Nothing was paid. Forget the link id and offer to link again. |
-| 403    | `teen_consent_not_allowed`                                           | A teen account can't link a partner app.                                                                                                                    |
-| 409    | `velocity_capped`                                                    | The user reached the daily receipt limit, or the earn was refused as unusual. Nothing was paid. You may report the receipt again tomorrow.                  |
-| 409    | `insufficient_available`, `solvency_blocked`, `allocation_exhausted` | YourTal can't fund points right now. Nothing was paid. Retry later under a new key.                                                                         |
-| 409    | `idempotency_key_reused`, `idempotency_request_in_progress`          | See section 4.                                                                                                                                              |
-| 429    | (none; `retryAfterSeconds` in body)                                  | Too many requests: about 120 a minute for receipts and 60 a minute for link exchanges, per source IP. Back off and retry.                                   |
-| 503    | `persistence_unavailable`                                            | A temporary fault on YourTal's side. Retry with the same key.                                                                                               |
+| Status | `code`                                                      | Meaning, and what to do                                                                                                                                                                 |
+| ------ | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 400    | `invalid_link_code`                                         | The code is unknown, expired (10 minutes) or already used. Ask the user for a new code.                                                                                                 |
+| 400    | `unknown_link`                                              | No link with this id exists for your partner id. Forget the stored link id and link again.                                                                                              |
+| 400    | `idempotency_key_required`                                  | Add an `Idempotency-Key` header.                                                                                                                                                        |
+| 400    | (validation)                                                | The body doesn't match the schema, for example both or neither of `linkId` and `user`. The body lists the problems.                                                                     |
+| 401    | `invalid_partner_signature`                                 | Wrong partner id, wrong secret, or the signed bytes are not the sent bytes (section 3).                                                                                                 |
+| 403    | `link_revoked`                                              | The link ended: the user unlinked your app, deleted their YourTal account, or you revoked it. Nothing was paid. Forget the link id and offer to link again.                             |
+| 403    | `teen_consent_not_allowed`                                  | A teen account can't link a partner app.                                                                                                                                                |
+| 409    | `allocation_exhausted`                                      | Receipt points are paused: the receipt package is used up. Nothing was paid. Show receipt points as paused and stop retrying; poll the status read and resume when `earning` is `true`. |
+| 409    | `velocity_capped`                                           | The user reached YourTal's daily or monthly earning cap, or the earn was refused as unusual. Nothing was paid. You may report the receipt again later.                                  |
+| 409    | `insufficient_available`, `solvency_blocked`                | Not expected for receipts. If you see one, nothing was paid and it is final: don't retry.                                                                                               |
+| 409    | `idempotency_key_reused`, `idempotency_request_in_progress` | See section 4.                                                                                                                                                                          |
+| 429    | (none; `retryAfterSeconds` in body)                         | Too many requests: about 120 a minute for receipts, and 60 a minute for link exchanges and for the status read, per source IP. Back off and retry.                                      |
+| 503    | `persistence_unavailable`                                   | A temporary fault on YourTal's side. Retry with the same key.                                                                                                                           |
 
 If a call that sent a code (`user`) links the user and then fails on the receipt, the error body also carries `linkId`. Store it, because the code can't be used again.
 
@@ -191,6 +216,15 @@ curl -sS https://yourtal.gaiada.com/api/partners/actions \
 ```
 
 Use `--data-binary`, not `-d`: `-d` can alter the bytes you signed.
+
+The status read is signed the same way:
+
+```bash
+BODY='{"region":"AU"}'
+SIG=$(printf '%s' "$BODY" | openssl dgst -sha256 -hmac "$SECRET" -hex | sed 's/^.* //')
+
+curl -sS https://yourtal.gaiada.com/api/partners/receipts/status   -H "Authorization: Partner snap-app:$SIG"   -H "Content-Type: application/json"   --data-binary "$BODY"
+```
 
 ## Example: TypeScript (Node 20+)
 

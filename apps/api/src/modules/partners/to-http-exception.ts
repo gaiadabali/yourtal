@@ -22,10 +22,24 @@ function body(code: string, message: string, linkId: string | undefined) {
   return linkId === undefined ? { code, message } : { code, message, linkId };
 }
 
+const FIXED_MESSAGES: Readonly<Partial<Record<LedgerError["code"], string>>> = {
+  allocation_exhausted: "receipt points are paused: the receipt package is used up",
+  insufficient_available: "YourTal can't fund these points right now",
+  solvency_blocked: "YourTal can't fund these points right now",
+  velocity_capped: "this account has reached its earning limit for now",
+};
+
+/** The fixed wording for a code; any other ledger code gets a generic line, never the ledger's own text. */
+function partnerMessageFor(code: LedgerError["code"]): string {
+  return FIXED_MESSAGES[code] ?? "YourTal refused this request";
+}
+
 export function mapPartnersErrorToHttpException(error: PartnersError): HttpException {
   const { linkId } = error;
   if ("code" in error) {
-    return new ConflictException(body(error.code, error.message, linkId));
+    // A partner never sees the ledger's own message: it can name a business or
+    // an allocation. Each partner-facing code has one fixed wording.
+    return new ConflictException(body(error.code, partnerMessageFor(error.code), linkId));
   }
   switch (error.type) {
     case "invalid_link_code":

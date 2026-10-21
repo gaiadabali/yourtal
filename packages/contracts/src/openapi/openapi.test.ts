@@ -499,9 +499,9 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   partnerLinkRevokeResultSchema:
     "device/partner-action.ts's response for POST /api/partners/links/{linkId}/revoke — documented inline (route-registry.c-partners.ts).",
   partnerReceiptStatusRequestSchema:
-    "device/partner-action.ts's request body for POST /api/partners/receipts/status (2.10.b) — documented inline once the route is registered (T4).",
+    "device/partner-action.ts's request body for POST /api/partners/receipts/status (2.10.b) — documented inline (route-registry.c-partners.ts).",
   partnerReceiptStatusResultSchema:
-    "device/partner-action.ts's response for POST /api/partners/receipts/status (2.10.b) — documented inline once the route is registered (T4).",
+    "device/partner-action.ts's response for POST /api/partners/receipts/status (2.10.b) — documented inline (route-registry.c-partners.ts).",
   receiptProgrammeSchema:
     "billing/receipt-funder.ts's closed programme literal, nested inside other schemas — not a standalone component.",
   receiptFunderValueSchema:

@@ -1302,7 +1302,9 @@ const campaignAlerts = async (owner, biz, campaignId) =>
   );
 
 async function devInbox() {
-  const res = await fetch(`${API}/api/dev/inbox`);
+  // Off dev, the inbox needs a session; staff see every recipient's mail.
+  const { cookie } = await login(staff("admin"));
+  const res = await fetch(`${API}/api/dev/inbox`, { headers: { cookie } });
   return res.status === 200 ? (await res.json()).entries : null;
 }
 

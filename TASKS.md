@@ -1716,7 +1716,8 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.19.a Screenshots and axe for every Phase 5 screen, both widths, themes and locales: no WCAG A/AA violations, no overflow (2026-10-21)
   - [x] 14.19.b The auction page crashed for bidders (a client-only helper called on the server) → edd733d6
   - [x] 14.19.c The other findings: parked-purchases hydration error, the statements badge, id-ID money formats, staff raw codes and ids, the simulation's id placeholder, axe's review items on the package picker → 6e7724cd
-  - [ ] 14.19.d Capture again: the auction states and signed-out Shorts with videos
+  - [x] 14.19.d Capture again: the auction states and signed-out Shorts with videos → the auction states locally after 6e7724cd; signed-out Shorts with videos on staging at 503feb89 (16 of 16, 0 WCAG violations)
+  - [ ] 14.19.e What the fixes found next to them (group 5.11.e): other staff screens still format dates with a bare toLocaleString(); redemptions and the reports ledger still use the currency-keyed formatMoney; the settlement retry line and the rate and settings tables print user ids; the auction page and Shorts at 1280 px need a labelled <aside> (axe landmark-unique); triage axe colour-contrast review items
 Group 5.7, the founder's walkthrough, is 13.6 here.
 - [x] **14.17 The Security workflow is green again** (group 1.25) · A · needs: — — ✅ 2026-10-21 14c0259b
   - [x] 14.17.a vitest's vite lifted to 8.3.4 for GHSA-698v-4r3x-3vcv (a workspace override); pnpm audit passes (group 1.25.a) → 14c0259b

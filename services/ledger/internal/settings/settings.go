@@ -26,10 +26,13 @@
 package settings
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -74,4 +77,87 @@ func GetIn(ctx context.Context, db Querier, region, key string) (json.RawMessage
 		return nil, fmt.Errorf("settings: reading %s/%s: %w", region, key, err)
 	}
 	return value, nil
+}
+
+// Receipt funders (F127, docs/27 §3.1): `receipt_funder.<partnerId>` names,
+// per region, the business that pays that partner's receipt points, as
+// {"businessId":"<lowercase uuid>"}. Staff propose and approve it under the
+// two-person rule; the view returns only approved rows in force.
+
+// ReceiptFunderPrefix is the setting key's prefix; the partner id follows.
+const ReceiptFunderPrefix = "receipt_funder."
+
+// ErrReceiptFunderValue — a stored funder setting is not the documented shape.
+var ErrReceiptFunderValue = errors.New("settings: a receipt_funder value is not {\"businessId\":\"<lowercase uuid>\"}")
+
+var lowercaseUUID = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
+
+// ParseReceiptFunder reads a funder setting strictly: businessId present, a
+// lowercase uuid, and nothing else.
+func ParseReceiptFunder(raw []byte) (string, error) {
+	var value struct {
+		BusinessID *string `json:"businessId"`
+	}
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&value); err != nil {
+		return "", fmt.Errorf("%w: %v", ErrReceiptFunderValue, err)
+	}
+	if decoder.More() {
+		return "", fmt.Errorf("%w: trailing data", ErrReceiptFunderValue)
+	}
+	if value.BusinessID == nil || !lowercaseUUID.MatchString(*value.BusinessID) {
+		return "", ErrReceiptFunderValue
+	}
+	return *value.BusinessID, nil
+}
+
+// Lister is a pool or a transaction that can also return rows.
+type Lister interface {
+	Querier
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+}
+
+// IsReceiptFunderIn returns the partners whose receipts businessID funds in
+// region, sorted; none means it is not a receipt funder there. A malformed
+// setting names no business, so it never makes one a funder.
+func IsReceiptFunderIn(ctx context.Context, db Lister, region, businessID string) ([]string, error) {
+	rows, err := db.Query(ctx,
+		`SELECT key, value FROM platform.ledger_setting
+		  WHERE region = $1 AND starts_with(key, $2) ORDER BY key`,
+		region, ReceiptFunderPrefix)
+	if err != nil {
+		return nil, fmt.Errorf("settings: reading %s receipt funders: %w", region, err)
+	}
+	defer rows.Close()
+	var partners []string
+	for rows.Next() {
+		var key string
+		var value json.RawMessage
+		if err := rows.Scan(&key, &value); err != nil {
+			return nil, fmt.Errorf("settings: reading %s receipt funders: %w", region, err)
+		}
+		if funder, err := ParseReceiptFunder(value); err == nil && funder == businessID {
+			partners = append(partners, strings.TrimPrefix(key, ReceiptFunderPrefix))
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("settings: reading %s receipt funders: %w", region, err)
+	}
+	return partners, nil
+}
+
+// ReceiptFunderFor is the business that funds partnerID's receipts in
+// region. ok is false when no approved setting names one; a malformed one is
+// ErrReceiptFunderValue, so a bad setting is loud rather than a silent pause.
+func ReceiptFunderFor(ctx context.Context, db Querier, region, partnerID string) (businessID string, ok bool, err error) {
+	raw, err := GetIn(ctx, db, region, ReceiptFunderPrefix+partnerID)
+	if err != nil || raw == nil {
+		return "", false, err
+	}
+	businessID, err = ParseReceiptFunder(raw)
+	if err != nil {
+		return "", false, fmt.Errorf("%s %s%s: %w", region, ReceiptFunderPrefix, partnerID, err)
+	}
+	return businessID, true, nil
 }

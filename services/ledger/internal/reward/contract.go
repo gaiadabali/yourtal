@@ -63,6 +63,9 @@ type ActionRequest struct {
 	// AgeBand is 12.1.c's teen/adult cap selector (required by the
 	// contract's grantAction handler — see earning_routes.go).
 	AgeBand AgeBand
+	// PartnerID is the partner that reported a receipt (F127), whose receipt
+	// package will pay it. Accepted from 2.10.b T2a; not read yet.
+	PartnerID string
 }
 
 var actionKinds = map[string]ActionType{
@@ -163,12 +166,22 @@ const marketingBudgetPoints = 1_000_000_000_000
 
 // PurchasePoints is purchasePoints: RecordPurchase keyed by the caller's
 // idempotency key. A replay returns the allocation it created; the same key
-// with other amounts is a conflict.
+// with other amounts, or another programme, is a conflict.
 func (e *Engine) PurchasePoints(ctx context.Context, req PurchaseRequest) (PurchaseResult, error) {
-	prior, err := sqlcgen.New(e.pool).GetPointPurchase(ctx, req.ID)
+	queries := sqlcgen.New(e.pool)
+	prior, err := queries.GetPointPurchase(ctx, req.ID)
 	if err == nil {
+		receipts, err := queries.IsReceiptPackage(ctx, prior.AllocationID)
+		if err != nil {
+			return PurchaseResult{}, fmt.Errorf("reading an earlier purchase's programme: %w", err)
+		}
+		priorProgramme := ""
+		if receipts {
+			priorProgramme = ProgrammeReceipts
+		}
 		if prior.PartnerID != req.PartnerID || prior.Points != req.Points ||
-			prior.AmountMinor != req.AmountMinor || prior.Currency != req.Currency {
+			prior.AmountMinor != req.AmountMinor || prior.Currency != req.Currency ||
+			priorProgramme != req.Programme {
 			return PurchaseResult{}, fmt.Errorf("%w: purchase %s", ledger.ErrIdempotencyConflict, req.ID)
 		}
 		return PurchaseResult{PurchaseID: prior.ID, AllocationID: prior.AllocationID, CashTransfer: prior.CashTransferID}, nil

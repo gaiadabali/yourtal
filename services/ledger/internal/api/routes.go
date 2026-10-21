@@ -109,6 +109,7 @@ func (a *API) platformRoutes(r chi.Router) {
 	r.Post("/pricing/package-tiers", a.packageTiers)
 	r.Post("/pricing/package-tiers/check", a.checkPackageTiers)
 	r.Post("/pricing/package-quote", a.quotePackage)
+	r.Post("/pricing/receipt-package-tiers", a.receiptPackageTiers)
 
 	r.Post("/allocations/purchase", a.purchasePoints)
 	r.Post("/allocations/list", a.listAllocations)
@@ -295,6 +296,8 @@ func (a *API) fail(w http.ResponseWriter, err error) {
 		errors.Is(err, pricing.ErrUnknownTier), errors.Is(err, pricing.ErrTierBelowBacking),
 		errors.Is(err, pricing.ErrTierPointsMismatch),
 		errors.Is(err, reward.ErrUnderpriced), errors.Is(err, reward.ErrWrongFunder),
+		errors.Is(err, reward.ErrNotReceiptFunder), errors.Is(err, reward.ErrUnknownProgramme),
+		errors.Is(err, reward.ErrProgrammeNeedsTier),
 		errors.Is(err, reward.ErrUnknownAction), errors.Is(err, reward.ErrAttestation),
 		errors.Is(err, reward.ErrCampaignNotLive), errors.Is(err, reward.ErrPointsMismatch),
 		errors.Is(err, escrow.ErrInvalid), errors.Is(err, settlement.ErrInvalid),

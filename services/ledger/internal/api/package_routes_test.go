@@ -36,12 +36,12 @@ func TestPackageTiersArePricedByTheLedger(t *testing.T) {
 
 	var grow map[string]any
 	s.mustCall("/pricing/package-quote", map[string]any{"region": "ID", "tierKey": "grow"}, &grow)
-	if grow["totalMinor"] != float64(85_500) {
+	if grow["totalMinor"] != float64(85_500) || grow["pricing"] != "tier" {
 		t.Errorf("grow = %v", grow)
 	}
 	for key := range grow {
 		if key != "tierKey" && key != "points" && key != "discountBps" && key != "totalMinor" &&
-			key != "undiscountedMinor" && key != "currency" {
+			key != "undiscountedMinor" && key != "currency" && key != "pricing" {
 			t.Errorf("the quote carries %q", key)
 		}
 	}

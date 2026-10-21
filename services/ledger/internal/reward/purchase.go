@@ -9,6 +9,7 @@ import (
 
 	"github.com/yourtal/services/ledger/internal/ledger"
 	"github.com/yourtal/services/ledger/internal/pricing"
+	"github.com/yourtal/services/ledger/internal/settings"
 	"github.com/yourtal/services/ledger/internal/store/sqlcgen"
 )
 
@@ -39,7 +40,18 @@ var (
 	ErrPurchaseNotPositive = errors.New("reward: a purchase needs both points and payment")
 	// ErrUnderpriced — the payment is below points × P_issue.
 	ErrUnderpriced = errors.New("reward: the payment is below the issue price")
+	// ErrNotReceiptFunder — only a partner's approved receipt funder, in its
+	// own region, buys receipt packages (F127).
+	ErrNotReceiptFunder = errors.New("reward: the business is not a receipt funder in this region")
+	// ErrUnknownProgramme — receipts is the only programme a package has.
+	ErrUnknownProgramme = errors.New("reward: unknown purchase programme")
+	// ErrProgrammeNeedsTier — a receipt package is one of the region's tiers.
+	ErrProgrammeNeedsTier = errors.New("reward: a receipt package names its tier")
 )
+
+// ProgrammeReceipts marks a receipt package (F127): bought at cost by the
+// receipt funder, it pays receipt points only.
+const ProgrammeReceipts = "receipts"
 
 // PurchaseRequest is one partner buying a block of points.
 type PurchaseRequest struct {
@@ -57,6 +69,9 @@ type PurchaseRequest struct {
 	// tier's discount and must be exactly its size. Empty is the untiered
 	// price at P_issue, which staff manual purchases still use.
 	TierKey string
+	// Programme is ProgrammeReceipts for a receipt package, priced at B for
+	// the region's receipt funder only (F127); empty for every other purchase.
+	Programme string
 }
 
 // PurchaseResult links the two sides so a caller can follow either.
@@ -98,6 +113,9 @@ func (e *Engine) RecordPurchase(ctx context.Context, req PurchaseRequest) (Purch
 	if req.Points%pricing.PackPoints != 0 {
 		return PurchaseResult{}, fmt.Errorf("%w: %d", pricing.ErrNotAPack, req.Points)
 	}
+	if req.Programme != "" && req.Programme != ProgrammeReceipts {
+		return PurchaseResult{}, fmt.Errorf("%w: %q", ErrUnknownProgramme, req.Programme)
+	}
 
 	allocationID := fmt.Sprintf("alloc_%s", req.ID)
 	transferID := fmt.Sprintf("led_txn_purchase_%s", req.ID)
@@ -113,7 +131,7 @@ func (e *Engine) RecordPurchase(ctx context.Context, req PurchaseRequest) (Purch
 		// K6: a point is only ever sold at or above its price, P_issue or the
 		// tier's (never below B), priced in this transaction at the
 		// database's now().
-		price, err := purchasePrice(ctx, tx, queries, e.region, req)
+		price, rateID, err := purchasePrice(ctx, tx, queries, e.region, req)
 		if err != nil {
 			return err
 		}
@@ -153,6 +171,17 @@ func (e *Engine) RecordPurchase(ctx context.Context, req PurchaseRequest) (Purch
 			return fmt.Errorf("recording purchase: %w", err)
 		}
 
+		// A receipt package: its trigger checks at COMMIT that this purchase
+		// paid at least points × B at rateID, the rate in force now (K6).
+		if req.Programme == ProgrammeReceipts {
+			if err := queries.InsertReceiptPackage(ctx, sqlcgen.InsertReceiptPackageParams{
+				AllocationID: allocationID, PurchaseID: req.ID, FunderID: req.PartnerID,
+				Region: string(e.region), RateID: rateID,
+			}); err != nil {
+				return fmt.Errorf("recording the receipt package: %w", err)
+			}
+		}
+
 		result = PurchaseResult{
 			PurchaseID:   req.ID,
 			AllocationID: allocationID,
@@ -167,22 +196,79 @@ func (e *Engine) RecordPurchase(ctx context.Context, req PurchaseRequest) (Purch
 	return result, nil
 }
 
-// purchasePrice is the least a purchase may pay: the untiered P_issue price,
-// or the named tier's, which also checks the tier against B and its size.
-func purchasePrice(ctx context.Context, tx pgx.Tx, q *sqlcgen.Queries, region ledger.Region, req PurchaseRequest) (int64, error) {
+// purchasePrice is the least a purchase may pay, and the rate it was priced
+// at: the untiered P_issue price, or the named tier's, which also checks the
+// tier against B and its size, or a receipt package's at cost.
+func purchasePrice(ctx context.Context, tx pgx.Tx, q *sqlcgen.Queries, region ledger.Region, req PurchaseRequest) (int64, string, error) {
+	if req.Programme == ProgrammeReceipts {
+		return receiptPackagePrice(ctx, tx, q, region, req)
+	}
 	if req.TierKey == "" {
 		quote, err := pricing.QuotePurchaseIn(ctx, q, region, req.Points)
-		return quote.AmountMinor, err
+		return quote.AmountMinor, quote.RateID, err
 	}
 	quote, err := pricing.QuoteTierIn(ctx, q, tx, region, req.TierKey)
 	if err != nil {
-		return 0, err
+		return 0, "", err
 	}
 	if quote.Points != req.Points {
-		return 0, fmt.Errorf("%w: %s is %d points, not %d",
+		return 0, "", fmt.Errorf("%w: %s is %d points, not %d",
 			pricing.ErrTierPointsMismatch, req.TierKey, quote.Points, req.Points)
 	}
-	return quote.AmountMinor, nil
+	return quote.AmountMinor, quote.RateID, nil
+}
+
+// receiptPackagePrice is F127's at-cost price, ceil(points × B in force),
+// for the region's receipt funder buying one of the region's tier sizes.
+// The funder, the catalogue and the rate are all read in the purchase's
+// transaction, so the rate it returns is the one the trigger checks.
+func receiptPackagePrice(ctx context.Context, tx pgx.Tx, q *sqlcgen.Queries, region ledger.Region, req PurchaseRequest) (int64, string, error) {
+	if err := checkReceiptFunder(ctx, tx, region, req.PartnerID); err != nil {
+		return 0, "", err
+	}
+	if req.TierKey == "" {
+		return 0, "", ErrProgrammeNeedsTier
+	}
+	quote, err := pricing.QuoteAtCostIn(ctx, q, tx, region, req.TierKey)
+	if err != nil {
+		return 0, "", err
+	}
+	if quote.Points != req.Points {
+		return 0, "", fmt.Errorf("%w: %s is %d points, not %d",
+			pricing.ErrTierPointsMismatch, req.TierKey, quote.Points, req.Points)
+	}
+	return quote.AmountMinor, quote.RateID, nil
+}
+
+// checkReceiptFunder refuses a business that funds no partner's receipts in
+// the region.
+func checkReceiptFunder(ctx context.Context, db settings.Lister, region ledger.Region, businessID string) error {
+	partners, err := settings.IsReceiptFunderIn(ctx, db, string(region), businessID)
+	if err != nil {
+		return err
+	}
+	if len(partners) == 0 {
+		return fmt.Errorf("%w: %s in %s", ErrNotReceiptFunder, businessID, region)
+	}
+	return nil
+}
+
+// ReceiptPackageTiers is the tier sizes at cost, for the region's receipt
+// funder only.
+func (e *Engine) ReceiptPackageTiers(ctx context.Context, businessID string) ([]pricing.TierQuote, error) {
+	if err := checkReceiptFunder(ctx, e.pool, e.region, businessID); err != nil {
+		return nil, err
+	}
+	return pricing.New(e.pool).AtCostTiers(ctx, e.region)
+}
+
+// QuoteReceiptPackage prices one tier at cost, for the region's receipt
+// funder only.
+func (e *Engine) QuoteReceiptPackage(ctx context.Context, businessID, tierKey string) (pricing.TierQuote, error) {
+	if err := checkReceiptFunder(ctx, e.pool, e.region, businessID); err != nil {
+		return pricing.TierQuote{}, err
+	}
+	return pricing.New(e.pool).QuoteAtCost(ctx, e.region, tierKey)
 }
 
 // PartnerPurchases returns both facts of every purchase a partner has made.

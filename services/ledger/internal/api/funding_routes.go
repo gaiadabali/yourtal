@@ -24,14 +24,20 @@ type allocationView struct {
 	FunderType      string `json:"funderType"`
 	TotalPoints     int64  `json:"totalPoints"`
 	RemainingPoints int64  `json:"remainingPoints"`
-	CreatedAt       string `json:"createdAt"`
+	// Programme (F127): "receipts" for a receipt package, else null.
+	Programme *string `json:"programme"`
+	CreatedAt string  `json:"createdAt"`
 }
 
-func toAllocationView(id, funderType, funderID string, region *string, total, remaining int64, created pgtype.Timestamptz) allocationView {
+func toAllocationView(id, funderType, funderID string, region *string, total, remaining int64, created pgtype.Timestamptz, receiptPackage bool) allocationView {
 	view := allocationView{AllocationID: id, BusinessID: funderID, FunderType: funderType,
 		TotalPoints: total, RemainingPoints: remaining, CreatedAt: iso(created.Time)}
 	if region != nil {
 		view.Region = *region
+	}
+	if receiptPackage {
+		programme := reward.ProgrammeReceipts
+		view.Programme = &programme
 	}
 	return view
 }
@@ -47,7 +53,7 @@ func (a *API) allocationByID(w http.ResponseWriter, r *http.Request, id string) 
 		return
 	}
 	httpx.WriteJSON(w, a.logger, http.StatusOK, toAllocationView(row.ID, row.FunderType, row.FunderID, row.Region,
-		row.TotalPoints, row.RemainingPoints, row.CreatedAt))
+		row.TotalPoints, row.RemainingPoints, row.CreatedAt, row.IsReceiptPackage))
 }
 
 func (a *API) purchasePoints(w http.ResponseWriter, r *http.Request) {
@@ -60,6 +66,8 @@ func (a *API) purchasePoints(w http.ResponseWriter, r *http.Request) {
 		IdempotencyKey string `json:"idempotencyKey"`
 		// TierKey (F122): a package tier, priced at its discount.
 		TierKey string `json:"tierKey,omitempty"`
+		// Programme (F127): "receipts" buys a receipt package at cost.
+		Programme string `json:"programme,omitempty"`
 	}
 	if !a.decode(w, r, &body) {
 		return
@@ -71,6 +79,7 @@ func (a *API) purchasePoints(w http.ResponseWriter, r *http.Request) {
 	bought, err := engine.PurchasePoints(r.Context(), reward.PurchaseRequest{
 		ID: body.IdempotencyKey, PartnerID: body.BusinessID, Points: body.Points,
 		AmountMinor: body.PaidMinor, Currency: body.Currency, TierKey: body.TierKey,
+		Programme: body.Programme,
 	})
 	if err != nil {
 		a.fail(w, err)
@@ -94,7 +103,7 @@ func (a *API) listAllocations(w http.ResponseWriter, r *http.Request) {
 	views := make([]allocationView, 0, len(rows))
 	for _, row := range rows {
 		views = append(views, toAllocationView(row.ID, row.FunderType, row.FunderID, row.Region,
-			row.TotalPoints, row.RemainingPoints, row.CreatedAt))
+			row.TotalPoints, row.RemainingPoints, row.CreatedAt, row.IsReceiptPackage))
 	}
 	httpx.WriteJSON(w, a.logger, http.StatusOK, views)
 }

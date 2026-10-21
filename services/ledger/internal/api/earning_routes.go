@@ -96,6 +96,9 @@ func (a *API) grantAction(w http.ResponseWriter, r *http.Request) {
 		TrustTier      int    `json:"trustTier"`
 		IdempotencyKey string `json:"idempotencyKey"`
 		AgeBand        string `json:"ageBand"`
+		// PartnerID (F127): the partner that reported a receipt. Accepted
+		// ahead of the receipt draw, so the api can send it first (docs/27 §4).
+		PartnerID string `json:"partnerId,omitempty"`
 	}
 	if !a.decode(w, r, &body) {
 		return
@@ -110,7 +113,7 @@ func (a *API) grantAction(w http.ResponseWriter, r *http.Request) {
 	}
 	granted, err := engine.GrantAction(r.Context(), reward.ActionRequest{
 		Kind: body.Kind, UserID: body.UserID, Points: body.Points, TrustTier: body.TrustTier,
-		IdempotencyKey: body.IdempotencyKey, AgeBand: ageBand,
+		IdempotencyKey: body.IdempotencyKey, AgeBand: ageBand, PartnerID: body.PartnerID,
 	})
 	if err != nil {
 		a.fail(w, err)

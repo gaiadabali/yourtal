@@ -130,6 +130,12 @@ export interface AllocationNotPartnerFundedError {
   readonly allocationId: string;
 }
 
+/** 2.10.b (F127): a receipt package funds receipt points only, never a campaign's reward. */
+export interface AllocationNotCampaignFundingError {
+  readonly type: "allocation_not_campaign_funding";
+  readonly allocationId: string;
+}
+
 /** F14: base + max accuracy bonus exceeds the region's reward_ceiling_points_per_minute, scaled to the campaign's duration. */
 export interface RewardExceedsCeilingError {
   readonly type: "reward_exceeds_ceiling";
@@ -153,6 +159,7 @@ export type SetRewardConfigError =
   | CampaignBudgetInvalidError
   | AllocationNotOwnedError
   | AllocationNotPartnerFundedError
+  | AllocationNotCampaignFundingError
   | RewardExceedsCeilingError
   | AccuracyBonusTooHighError
   | LedgerRefusedError

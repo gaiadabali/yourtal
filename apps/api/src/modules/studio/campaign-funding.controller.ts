@@ -9,7 +9,9 @@ import type { LedgerInternalClient } from "../../shared/ledger-client/ledger-int
  * 13.3.b (journey 3): the allocations a campaign's reward can draw from, for
  * whoever authors campaigns. Billing's balance is owner, admin and finance
  * only, so a marketer had no allocation to pick. Partner-funded only: the
- * reward config refuses any other (`allocation_not_partner_funded`).
+ * reward config refuses any other (`allocation_not_partner_funded`). Receipt
+ * packages (`programme: "receipts"`) fund receipt points only, so they are
+ * left out here and refused there (`allocation_not_campaign_funding`).
  */
 @Controller("api/:tenantId/studio/campaign-funding")
 export class CampaignFundingController {
@@ -27,7 +29,9 @@ export class CampaignFundingController {
       });
     }
     return result.value
-      .filter((allocation) => allocation.funderType === "partner")
+      .filter(
+        (allocation) => allocation.funderType === "partner" && allocation.programme !== "receipts",
+      )
       .map(({ allocationId, region, funderType, totalPoints, remainingPoints, createdAt }) => ({
         allocationId,
         region,

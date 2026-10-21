@@ -119,6 +119,12 @@ export function setRewardConfig(
             allocationId: input.allocationId,
           });
         }
+        if (allocation.programme === "receipts") {
+          return errAsync<SetRewardConfigResult, SetRewardConfigError>({
+            type: "allocation_not_campaign_funding",
+            allocationId: input.allocationId,
+          });
+        }
 
         return wrap(deps.ledger.getSettings(draft.region)).andThen((settings) => {
           const ceiling = settings.find(

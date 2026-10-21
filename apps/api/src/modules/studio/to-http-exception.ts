@@ -11,6 +11,7 @@ import type {
   AllocationNotOwnedError,
   CampaignBudgetInvalidError,
   AllocationNotPartnerFundedError,
+  AllocationNotCampaignFundingError,
   AudienceMustBeAdultError,
   BusinessNotFoundError,
   CampaignNotDraftError,
@@ -50,6 +51,7 @@ export type StudioDomainError =
   | QuestionTypeImmutableError
   | AllocationNotOwnedError
   | AllocationNotPartnerFundedError
+  | AllocationNotCampaignFundingError
   | RewardExceedsCeilingError
   | AccuracyBonusTooHighError
   | CampaignBudgetInvalidError
@@ -123,6 +125,11 @@ export function mapStudioErrorToHttpException(error: StudioDomainError): HttpExc
       return new BadRequestException({
         code: "allocation_not_partner_funded",
         message: `allocation ${error.allocationId} is not partner-funded`,
+      });
+    case "allocation_not_campaign_funding":
+      return new BadRequestException({
+        code: "allocation_not_campaign_funding",
+        message: `allocation ${error.allocationId} is a receipt package and funds receipt points only, not a campaign`,
       });
     case "reward_exceeds_ceiling":
       return new BadRequestException({

@@ -163,6 +163,23 @@ describe("setRewardConfig (7.3.c/7.3.h)", () => {
     });
   });
 
+  // 2.10.b (F127): a receipt package funds receipt points only, never a campaign.
+  it("refuses an allocation that is a receipt package, and saves nothing", async () => {
+    const rewardConfigs = rewardConfigsStub();
+    const receiptPackage: Allocation = { ...ALLOCATION, programme: "receipts" };
+    const ledger: Pick<LedgerInternalClient, "listAllocations" | "getSettings" | "valuePoints"> = {
+      listAllocations: () => okAsync([receiptPackage]),
+      getSettings: () => Promise.reject(new Error("must not be called")),
+      valuePoints: () => errAsync({ code: "refused", message: "must not be called" }),
+    };
+    const result = await setRewardConfig({ drafts: draftsStub(), rewardConfigs, ledger }, INPUT);
+    expect(result._unsafeUnwrapErr()).toEqual({
+      type: "allocation_not_campaign_funding",
+      allocationId: "alloc-1",
+    });
+    expect(rewardConfigs.upsertCalls).toHaveLength(0);
+  });
+
   // 14.2: refused before any ledger call, never clamped.
   it.each([
     [{ maxPointsForCampaign: toPoints(159) }, "budget_below_one_completion"],

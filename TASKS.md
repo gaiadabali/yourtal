@@ -1683,7 +1683,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.9.b Invoice numbering, the company's details read from the settings store, and a PDF downloadable in Studio → 216cc736
   - [x] 14.9.c Validate the `invoice_issuer` setting when staff propose it (group 5.3.c) → 033fae42
   - [ ] 14.9.d Real tax invoices once the AU company's details are approved in `invoice_issuer` (group 5.3.d, needs 6.1.a)
-- [ ] **14.10 Identity check before real points** (group 5.9, F102) · A · needs: group 3.9.c (passkeys)
+- [ ] **14.10 Identity check before real points** (group 5.9, F102) · A · needs: group 3.9.c (passkeys) — 🔄 g5 (helper `g-phase5-sim`, on `group/3.9c-passkeys` until it merges)
   - [ ] 14.10.a Before the first real points go to a real person (docs/16 N-5), an account needs a verified email and a passkey: no earning at all until then (F126)
   - [ ] 14.10.b The fraud checks rest on that, plus the holdback by trust tier and the earn caps; record it in docs/16
 

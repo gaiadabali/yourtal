@@ -23,6 +23,8 @@ import { SessionService } from "./session/session.service";
 import { SessionIssuer } from "./session/session-issuer";
 import { InMemoryFactorStore } from "./factors/factor-store";
 import { RecordingFactorNotifier } from "./factors/factor-notifier";
+import { FactorWindow } from "./factors/factor-window";
+import { DrizzlePasskeyRepository } from "./persistence/drizzle-passkey.repository";
 import { SecondFactorGate } from "./factors/second-factor-gate";
 import type { PasswordSignIn } from "./factors/second-factor-gate";
 import { TotpService } from "./factors/totp.service";
@@ -94,6 +96,7 @@ const secondFactor = new SecondFactorGate(
   sessionIssuer,
   new InMemoryFactorStore(),
   new RecordingFactorNotifier(),
+  new FactorWindow(credentials, new DrizzlePasskeyRepository(db), sessionService),
 );
 // The real simulated driver (1.6.a) against its default in-memory store —
 // fine for every test below except the one that checks `platform.sim_outbox`

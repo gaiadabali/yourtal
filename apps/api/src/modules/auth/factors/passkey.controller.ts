@@ -11,12 +11,13 @@ import {
 } from "../../../shared/rate-limit/rate-limit.decorator";
 import { PASSKEY_AMR } from "../session/amr";
 import { SessionIssuer } from "../session/session-issuer";
+import { SessionService } from "../session/session.service";
 import { PasskeyRegisterDto, PasskeySignInDto } from "./dto/sign-in-methods.dto";
 import { FACTOR_NOTIFIER } from "./factor-notifier";
 import type { FactorNotifications } from "./factor-notifier";
 import { PasskeyService } from "./passkey.service";
 import { passkeySummary } from "./passkey-summary";
-import { withinBootstrapWindow } from "./factor-settings";
+import { FactorWindow } from "./factor-window";
 import { SignedInCaller } from "./signed-in-session";
 import { mapFactorErrorToHttpException } from "./to-http-exception";
 
@@ -35,6 +36,8 @@ export class PasskeyController {
     private readonly caller: SignedInCaller,
     private readonly issuer: SessionIssuer,
     @Inject(FACTOR_NOTIFIER) private readonly notifier: FactorNotifications,
+    private readonly sessions: SessionService,
+    private readonly window: FactorWindow,
   ) {}
 
   @NotValueMoving("Mints a single-use challenge and changes nothing else.")
@@ -86,17 +89,14 @@ export class PasskeyController {
   @Authorize({ kind: "session", action: "manage_sign_in_methods" })
   @Post("register")
   async register(@Req() request: FastifyRequest, @Body() body: PasskeyRegisterDto) {
-    const caller = await this.caller.resolve(request, new Date(), "add_factor");
+    const now = new Date();
+    const caller = await this.caller.resolve(request, now, "add_factor");
     if (caller.isErr()) throw mapFactorErrorToHttpException(caller.error);
-    const { userId } = caller.value;
+    const { userId, firstFactor } = caller.value;
     const response = body.response as RegistrationResponseJSON;
-    const result = await this.passkeys.register(
-      userId,
-      response,
-      body.name,
-      caller.value.bootstrapping,
-    );
+    const result = await this.passkeys.register(userId, response, body.name);
     if (result.isErr()) throw mapFactorErrorToHttpException(result.error);
+    if (firstFactor) await this.window.openForFirstFactor(userId, now);
     await this.notifier.notify(userId, { kind: "passkey_added", name: result.value.name });
     return passkeySummary(result.value);
   }
@@ -119,19 +119,18 @@ export class PasskeyController {
   @Delete(":credentialId")
   async remove(@Req() request: FastifyRequest, @Param("credentialId") credentialId: string) {
     const now = new Date();
-    const who = await this.caller.resolve(request, now, "session");
-    if (who.isErr()) throw mapFactorErrorToHttpException(who.error);
-    const own = await this.passkeys.list(who.value.userId);
-    const target = own.find((passkey) => passkey.credentialId === credentialId) ?? null;
-    const caller = await this.caller.resolve(request, now, "strong", {
-      emailProofRemoves:
-        target !== null && withinBootstrapWindow(target.bootstrapped, target.createdAt, now),
-    });
+    const caller = await this.caller.resolve(request, now, "strong");
     if (caller.isErr()) throw mapFactorErrorToHttpException(caller.error);
-    const { userId } = caller.value;
-    const name = target?.name;
+    const { userId, sessionToken } = caller.value;
+    const name = (await this.passkeys.list(userId)).find(
+      (passkey) => passkey.credentialId === credentialId,
+    )?.name;
     const result = await this.passkeys.remove(userId, credentialId);
     if (result.isErr()) throw mapFactorErrorToHttpException(result.error);
+    // A session signed in with the removed passkey ends with it; only the
+    // caller's stays.
+    await this.sessions.revokeOthers(userId, sessionToken, now);
+    await this.window.closeIfNoFactors(userId);
     await this.notifier.notify(userId, { kind: "passkey_removed", name: name ?? "Passkey" });
     return { removed: true };
   }

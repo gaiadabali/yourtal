@@ -16,8 +16,8 @@ export interface Credential {
   readonly updatedAt: Date;
   /** NULL until `confirmEmailVerification` succeeds (1.4.e). */
   readonly verifiedAt: Date | null;
-  /** An authenticator app added from a password-only session to an account with no factor. */
-  readonly bootstrapped: boolean;
+  /** `password` rows only: until when the account's factor window is open (see the migration). */
+  readonly factorsOpenUntil: Date | null;
 }
 
 export interface CredentialRepository {
@@ -88,11 +88,20 @@ export interface CredentialRepository {
     identifier: string;
     secretHash: string;
     verifiedAt: Date;
-    bootstrapped: boolean;
   }): Promise<boolean>;
 
   /** Whether any account has a verified credential of this kind (a boot check). */
   anyVerified(kind: string): Promise<boolean>;
+
+  /** Sets (a Date) or closes (null) the account's factor window, on its password row. */
+  setFactorsOpenUntil(userId: string, until: Date | null): Promise<void>;
+
+  /**
+   * Removes every passkey (the marker row, which cascades to the keys) and
+   * the authenticator app, and closes the factor window, in one transaction.
+   * Returns how many sign-in methods it removed.
+   */
+  removeAllFactors(userId: string): Promise<number>;
 
   /** Returns `false` when there was nothing to delete. */
   deleteByUserAndKind(userId: string, kind: string): Promise<boolean>;

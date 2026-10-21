@@ -12,7 +12,7 @@ import {
 import type { CredentialRepository } from "../persistence/credential.repository";
 import { ThrottleService } from "../throttle/throttle.service";
 import type { ThrottleLimits } from "../throttle/throttle.service";
-import { ENROLMENT_TTL_SECONDS, withinBootstrapWindow } from "./factor-settings";
+import { ENROLMENT_TTL_SECONDS } from "./factor-settings";
 import { FACTOR_STORE } from "./factor-store";
 import type { FactorStore } from "./factor-store";
 import type { FactorError } from "./factor.errors";
@@ -102,15 +102,9 @@ export class TotpService implements OnApplicationBootstrap {
 
   /**
    * Switches the app on with a first code, from the session that enrolled it
-   * and within `ENROLMENT_TTL_SECONDS`. `bootstrapped`: see the migration.
+   * and within `ENROLMENT_TTL_SECONDS`.
    */
-  async confirm(
-    userId: string,
-    sessionHash: string,
-    code: string,
-    now: Date,
-    bootstrapped: boolean,
-  ): Outcome<void> {
+  async confirm(userId: string, sessionHash: string, code: string, now: Date): Outcome<void> {
     const enrolment = await this.store.readEnrolment(sessionHash);
     if (enrolment?.userId !== userId) return err({ type: "factor_invalid" });
     if (await this.isEnabled(userId)) return err({ type: "totp_already_enabled" });
@@ -123,7 +117,6 @@ export class TotpService implements OnApplicationBootstrap {
       identifier: userId,
       secretHash: enrolment.sealedSeed,
       verifiedAt: now,
-      bootstrapped,
     });
     await this.store.dropEnrolment(sessionHash);
     return written ? ok(undefined) : err({ type: "totp_already_enabled" });
@@ -142,19 +135,6 @@ export class TotpService implements OnApplicationBootstrap {
   async remove(userId: string): Outcome<void> {
     const removed = await this.credentials.deleteByUserAndKind(userId, TOTP_CREDENTIAL_KIND);
     return removed ? ok(undefined) : err({ type: "totp_not_enabled" });
-  }
-
-  /**
-   * Removes the app when it was bootstrapped (added from a password alone to
-   * an account with no factor) less than 72 hours ago. A password reset calls
-   * this: the reset proves the email address, which outranks an app that a
-   * phished password could have planted. True when it removed one.
-   */
-  async removeIfBootstrappedRecently(userId: string, now: Date): Promise<boolean> {
-    const credential = await this.credentials.findByUserAndKind(userId, TOTP_CREDENTIAL_KIND);
-    if (credential === null || credential.verifiedAt === null) return false;
-    if (!withinBootstrapWindow(credential.bootstrapped, credential.verifiedAt, now)) return false;
-    return this.credentials.deleteByUserAndKind(userId, TOTP_CREDENTIAL_KIND);
   }
 
   private async check(userId: string, sealed: string, code: string, now: Date): Outcome<void> {

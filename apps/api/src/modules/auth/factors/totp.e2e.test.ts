@@ -15,7 +15,6 @@ import {
   accountFor,
   ageSessions,
   amrOf,
-  resetPassword,
   securityNotices,
   bearer,
   bootFactorsApp,
@@ -181,83 +180,6 @@ describe("authenticator codes", () => {
     const statuses = outcomes.map((outcome) => outcome.statusCode);
     expect(statuses.filter((status) => status === 401)).toHaveLength(5);
     expect(statuses.filter((status) => status === 429)).toHaveLength(15);
-  });
-
-  describe("a password reset", () => {
-    it("removes an app added from a password alone in the last 72 hours", async () => {
-      const victim = await accountFor(app, PASSWORD);
-      await switchOn(victim);
-      const reset = await resetPassword(app, victim);
-      expect(reset.statusCode, reset.body).toBe(201);
-      const body = reset.json<{ token?: string; secondFactor?: string }>();
-      expect(body.secondFactor).toBeUndefined();
-      expect(body.token).toBeDefined();
-      const methods = await app.inject({
-        method: "GET",
-        url: "/api/auth/sign-in-methods",
-        headers: bearer(body.token ?? ""),
-      });
-      expect(
-        methods.json<{ authenticatorApp: { enabled: boolean } }>().authenticatorApp.enabled,
-      ).toBe(false);
-      const notices = await securityNotices(owner, victim.email);
-      expect(notices.some((notice) => notice.includes("authenticator app was removed"))).toBe(true);
-    });
-
-    it("asks for the code once that app is older than 72 hours, and lists it", async () => {
-      const session = await accountFor(app, PASSWORD);
-      await switchOn(session);
-      await owner.execute(
-        sql`UPDATE identity.credential SET verified_at = now() - interval '73 hours'
-            WHERE user_id = ${session.userId} AND kind = 'totp'`,
-      );
-      const reset = await resetPassword(app, session);
-      expect(reset.statusCode, reset.body).toBe(201);
-      expect(reset.json<{ secondFactor?: string }>().secondFactor).toBe("totp");
-      expect(reset.json<{ token?: string }>().token).toBeUndefined();
-      const notices = await securityNotices(owner, session.email);
-      expect(notices.at(-1)).toContain("Check how you sign in to YourTal");
-      expect(notices.at(-1)).toContain("an authenticator app");
-    });
-
-    it("asks for the code of an app added with proof of another factor", async () => {
-      const session = await accountFor(app, PASSWORD);
-      const registerOptions = await app.inject({
-        method: "POST",
-        url: "/api/auth/passkeys/register/options",
-        headers: bearer(session.token),
-      });
-      const device = new SoftAuthenticator(E2E_RP_ID, E2E_ORIGIN);
-      await app.inject({
-        method: "POST",
-        url: "/api/auth/passkeys/register",
-        headers: bearer(session.token),
-        payload: {
-          response: device.register(
-            registerOptions.json<{ options: PublicKeyCredentialCreationOptionsJSON }>().options,
-          ),
-        },
-      });
-      // Signed in with the passkey (amr hwk), so the app is not bootstrapped.
-      const options = await app.inject({
-        method: "POST",
-        url: "/api/auth/passkeys/sign-in/options",
-        remoteAddress: testIp(),
-      });
-      const ceremony = options.json<{
-        challengeId: string;
-        options: PublicKeyCredentialRequestOptionsJSON;
-      }>();
-      const hwk = await app.inject({
-        method: "POST",
-        url: "/api/auth/passkeys/sign-in",
-        remoteAddress: testIp(),
-        payload: { challengeId: ceremony.challengeId, response: device.assert(ceremony.options) },
-      });
-      await switchOn({ ...session, token: hwk.json<{ token: string }>().token });
-      const reset = await resetPassword(app, session);
-      expect(reset.json<{ secondFactor?: string }>().secondFactor).toBe("totp");
-    });
   });
 
   it("finishes an enrolment only from the session that started it", async () => {

@@ -11,6 +11,7 @@ import { hashOpaqueToken } from "../crypto/opaque-token";
 import { SessionService } from "../session/session.service";
 import { TotpCodeDto, TotpDisableDto, TotpSignInDto } from "./dto/sign-in-methods.dto";
 import { FACTOR_NOTIFIER } from "./factor-notifier";
+import { FactorWindow } from "./factor-window";
 import type { FactorNotifications } from "./factor-notifier";
 import { PasskeyService } from "./passkey.service";
 import { proveFactor } from "./prove-factor";
@@ -34,6 +35,7 @@ export class TotpController {
     private readonly sessions: SessionService,
     private readonly caller: SignedInCaller,
     @Inject(FACTOR_NOTIFIER) private readonly notifier: FactorNotifications,
+    private readonly window: FactorWindow,
   ) {}
 
   @NotValueMoving(
@@ -65,15 +67,11 @@ export class TotpController {
     // cannot finish adding one either.
     const caller = await this.caller.resolve(request, now, "add_factor");
     if (caller.isErr()) throw mapFactorErrorToHttpException(caller.error);
-    const { userId, sessionToken, bootstrapping } = caller.value;
-    const result = await this.totp.confirm(
-      userId,
-      hashOpaqueToken(sessionToken),
-      body.code,
-      now,
-      bootstrapping,
-    );
+    const { userId, sessionToken, firstFactor } = caller.value;
+    const sessionHash = hashOpaqueToken(sessionToken);
+    const result = await this.totp.confirm(userId, sessionHash, body.code, now);
     if (result.isErr()) throw mapFactorErrorToHttpException(result.error);
+    if (firstFactor) await this.window.openForFirstFactor(userId, now);
     // Sessions signed in elsewhere with the password alone end here: from now
     // on a password sign-in also needs a code.
     await this.sessions.revokeOthers(userId, sessionToken, now);
@@ -89,7 +87,7 @@ export class TotpController {
     const now = new Date();
     const caller = await this.caller.resolve(request, now, "session");
     if (caller.isErr()) throw mapFactorErrorToHttpException(caller.error);
-    const { userId } = caller.value;
+    const { userId, sessionToken } = caller.value;
     if (!(await this.totp.isEnabled(userId))) {
       throw mapFactorErrorToHttpException({ type: "totp_not_enabled" });
     }
@@ -99,6 +97,9 @@ export class TotpController {
     if (proved.isErr()) throw mapFactorErrorToHttpException(proved.error);
     const removed = await this.totp.remove(userId);
     if (removed.isErr()) throw mapFactorErrorToHttpException(removed.error);
+    // Sessions elsewhere end too, so turning a planted app off is not raced.
+    await this.sessions.revokeOthers(userId, sessionToken, now);
+    await this.window.closeIfNoFactors(userId);
     await this.notifier.notify(userId, { kind: "authenticator_off" });
     return { enabled: false };
   }

@@ -16,6 +16,8 @@ import { Authorize } from "../../shared/authz/authorize.decorator";
 import { NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { StaffAction, setStaffAuditContext } from "../staff/staff-action.decorator";
 import { invoiceListQuerySchema } from "./invoice-list-query";
+import { APP_CONFIG } from "../../config/app-config.module";
+import type { AppConfig } from "../../config/app-config";
 import { renderInvoicePdf } from "./invoice-pdf";
 import { INVOICE_REPOSITORY, InvoiceRepository } from "./invoice.repository";
 import { sendInvoicePdf } from "./send-invoice-pdf";
@@ -28,7 +30,10 @@ import { sendInvoicePdf } from "./send-invoice-pdf";
  */
 @Controller("api/staff/invoices")
 export class StaffInvoicesController {
-  constructor(@Inject(INVOICE_REPOSITORY) private readonly invoices: InvoiceRepository) {}
+  constructor(
+    @Inject(INVOICE_REPOSITORY) private readonly invoices: InvoiceRepository,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+  ) {}
 
   @Authorize({
     kind: "billing",
@@ -77,6 +82,10 @@ export class StaffInvoicesController {
       region: invoice.region,
       detail: { number: invoice.number, businessId: invoice.businessId },
     });
-    return sendInvoicePdf(reply, invoice, await renderInvoicePdf(invoice));
+    return sendInvoicePdf(
+      reply,
+      invoice,
+      await renderInvoicePdf(invoice, { demo: this.config.appEnv !== "production" }),
+    );
   }
 }

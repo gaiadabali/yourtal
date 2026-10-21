@@ -45,9 +45,11 @@ describe("formatInvoiceMoney", () => {
   });
 });
 
+const PRODUCTION = { demo: false } as const;
+
 describe("renderInvoicePdf", () => {
   it("is a PDF whose text carries the title, number, ABNs, date and the GST lines", async () => {
-    const pdf = await renderInvoicePdf(BASE);
+    const pdf = await renderInvoicePdf(BASE, PRODUCTION);
     expect(pdf.subarray(0, 5).toString("latin1")).toBe("%PDF-");
     expect(pdf.subarray(-6).toString("latin1")).toContain("%%EOF");
 
@@ -77,7 +79,7 @@ describe("renderInvoicePdf", () => {
       isTaxInvoice: false,
       issuer: { ...BASE.issuer, abn: null },
     });
-    const text = pdfText(await renderInvoicePdf(plain));
+    const text = pdfText(await renderInvoicePdf(plain, PRODUCTION));
     expect(text).toContain("Invoice");
     expect(text).not.toContain("Tax invoice");
     expect(text).toContain("This document is not a tax invoice.");
@@ -87,9 +89,21 @@ describe("renderInvoicePdf", () => {
   });
 
   it("is identical every time it is rendered from the same snapshot", async () => {
-    const first = await renderInvoicePdf(BASE);
-    const second = await renderInvoicePdf(BASE);
+    const first = await renderInvoicePdf(BASE, PRODUCTION);
+    const second = await renderInvoicePdf(BASE, PRODUCTION);
     expect(second.equals(first)).toBe(true);
+  });
+
+  it("says on the page, outside production, that it is a demo document", async () => {
+    const demo = pdfText(await renderInvoicePdf(BASE, { demo: true }));
+    expect(demo).toContain("Tax invoice");
+    expect(demo).toContain("Demo document from a YourTal test environment");
+    expect(demo).toContain("Not valid for GST or any other tax purpose.");
+    expect(demo).toContain("DEMO");
+    // Everything a real one carries is still there.
+    expect(demo).toContain("ABN 51 824 753 556");
+    expect(demo).toContain("Total price includes GST of A$4,500.00.");
+    expect(pdfText(await renderInvoicePdf(BASE, PRODUCTION))).not.toContain("Demo document");
   });
 
   it("prints a character the standard fonts lack as a question mark, never garbage", async () => {
@@ -97,6 +111,6 @@ describe("renderInvoicePdf", () => {
       ...BASE,
       lines: [{ ...BASE.lines[0], description: "Boost for “Spring” \u{1F355}" }],
     });
-    expect(pdfText(await renderInvoicePdf(odd))).toContain("Boost for ?Spring? ?");
+    expect(pdfText(await renderInvoicePdf(odd, PRODUCTION))).toContain("Boost for ?Spring? ?");
   });
 });

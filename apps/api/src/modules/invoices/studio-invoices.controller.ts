@@ -11,6 +11,8 @@ import type { FastifyReply } from "fastify";
 import type { InvoiceList } from "@yourtal/contracts/invoice";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
+import { APP_CONFIG } from "../../config/app-config.module";
+import type { AppConfig } from "../../config/app-config";
 import { renderInvoicePdf } from "./invoice-pdf";
 import { INVOICE_REPOSITORY, InvoiceRepository } from "./invoice.repository";
 import { sendInvoicePdf } from "./send-invoice-pdf";
@@ -23,7 +25,10 @@ import { sendInvoicePdf } from "./send-invoice-pdf";
  */
 @Controller("api/:tenantId/studio/invoices")
 export class StudioInvoicesController {
-  constructor(@Inject(INVOICE_REPOSITORY) private readonly invoices: InvoiceRepository) {}
+  constructor(
+    @Inject(INVOICE_REPOSITORY) private readonly invoices: InvoiceRepository,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+  ) {}
 
   @Authorize({ kind: "billing", action: "view" })
   @NotValueMoving("A read.")
@@ -44,6 +49,10 @@ export class StudioInvoicesController {
     if (invoice === null) {
       throw new NotFoundException({ code: "invoice_not_found", message: "no such invoice" });
     }
-    return sendInvoicePdf(reply, invoice, await renderInvoicePdf(invoice));
+    return sendInvoicePdf(
+      reply,
+      invoice,
+      await renderInvoicePdf(invoice, { demo: this.config.appEnv !== "production" }),
+    );
   }
 }

@@ -8,7 +8,9 @@ import { formatAbn, invoiceTitle } from "@yourtal/contracts/invoice/rules";
  * pdfkit derives the file id from the document info). Standard fonts only: no
  * font files, no network. The wording follows the ATO's tax-invoice content;
  * while the issuer has no valid ABN the title is "Invoice" and the page says
- * it is not a tax invoice.
+ * it is not a tax invoice. Outside production (`demo`) every page also says it
+ * is a demo document: staging's issuer has a demo ABN (5.3), so its invoices
+ * are real-shaped tax invoices that must never pass for real ones.
  */
 const MARGIN = 50;
 const PAGE_RIGHT = 595.28 - MARGIN;
@@ -20,6 +22,12 @@ const COLUMNS = {
   amount: { x: 465, width: PAGE_RIGHT - 465 },
 } as const;
 const GREY = "#555555";
+const DEMO_RED = "#B00020";
+
+export interface InvoicePdfOptions {
+  /** True outside production: the page says it is a demo document. */
+  readonly demo: boolean;
+}
 
 const NUMBER_FORMAT = {
   AUD: new Intl.NumberFormat("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
@@ -51,7 +59,17 @@ function gstLabel(invoice: Invoice): string {
   return `GST (${Number.isInteger(percent) ? String(percent) : percent.toFixed(2)}%)`;
 }
 
-function drawHeader(doc: PDFKit.PDFDocument, invoice: Invoice): void {
+/** A large, faint "DEMO" across the page, under everything else. */
+function drawDemoWatermark(doc: PDFKit.PDFDocument): void {
+  doc.save();
+  doc.rotate(-30, { origin: [297.64, 420.94] });
+  doc.font("Helvetica-Bold").fontSize(120).fillColor(DEMO_RED).fillOpacity(0.08);
+  doc.text("DEMO", 0, 360, { width: 595.28, align: "center", lineBreak: false });
+  doc.restore();
+  doc.fillOpacity(1);
+}
+
+function drawHeader(doc: PDFKit.PDFDocument, invoice: Invoice, demo: boolean): void {
   doc.font("Helvetica-Bold").fontSize(24).fillColor("#000000");
   doc.text(invoiceTitle(invoice.isTaxInvoice), MARGIN, MARGIN);
   doc.font("Helvetica").fontSize(10).fillColor(GREY);
@@ -61,6 +79,15 @@ function drawHeader(doc: PDFKit.PDFDocument, invoice: Invoice): void {
   if (!invoice.isTaxInvoice) {
     doc.font("Helvetica-Oblique").fillColor("#000000");
     doc.text("This document is not a tax invoice.", MARGIN, doc.y + 4);
+  }
+  if (demo) {
+    doc.font("Helvetica-Bold").fontSize(10).fillColor(DEMO_RED);
+    doc.text(
+      "Demo document from a YourTal test environment: the company details are made up and no real money moved. Not valid for GST or any other tax purpose.",
+      MARGIN,
+      doc.y + 4,
+      { width: PAGE_RIGHT - MARGIN },
+    );
   }
 }
 
@@ -161,7 +188,7 @@ function drawTotals(doc: PDFKit.PDFDocument, invoice: Invoice, top: number): voi
   );
 }
 
-export function renderInvoicePdf(invoice: Invoice): Promise<Buffer> {
+export function renderInvoicePdf(invoice: Invoice, options: InvoicePdfOptions): Promise<Buffer> {
   const issued = new Date(invoice.issuedAt);
   const doc = new PDFDocument({
     size: "A4",
@@ -183,8 +210,10 @@ export function renderInvoicePdf(invoice: Invoice): Promise<Buffer> {
     });
     doc.on("error", reject);
 
-    drawHeader(doc, invoice);
-    const linesTop = drawParties(doc, invoice, 150);
+    if (options.demo) drawDemoWatermark(doc);
+    drawHeader(doc, invoice, options.demo);
+    // The demo line can push the header past 150; the parties then start below it. Production keeps 150.
+    const linesTop = drawParties(doc, invoice, options.demo ? Math.max(150, doc.y + 14) : 150);
     const totalsTop = drawLines(doc, invoice, linesTop + 20);
     drawTotals(doc, invoice, totalsTop);
     doc.end();

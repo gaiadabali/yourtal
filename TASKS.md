@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 12/19 | 55/70 | `████████░░`  79% |
-| **All** | | | **117/125** | **601/617** | `██████████`  97% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 12/20 | 58/74 | `████████░░`  78% |
+| **All** | | | **117/126** | **604/621** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1707,7 +1707,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.15.b `DELETE /api/me` reports `complete: true`: research_answers and support_cases get a table and handler, or their declarations go (group 1.24.b) → 0551286a
 - [ ] **14.16 Sign in with YourTal: YourTal is the OpenID Connect provider** (group 3.9, F99, docs/26) · A + B · needs: 14.4 — 🔄 2026-10-21 (slot g3)
   - [x] 14.16.a The provider at `/oidc` on `oidc-provider` 9.x: the `oidc` schema, discovery, authorize, token, JWKS, userinfo, pairwise `sub`, the client registry, the §1.5 checks and the interaction API (group 3.9.a, 3.9.d) → 5cb7f0b0 (group 3.9.a, 3.9.d)
-  - [ ] 14.16.b The `/connect/[uid]` sign-in, consent and refusal screens, en-AU and id-ID (group 3.9.b) → merged at 5cb7f0b0; screenshots once the provider is on staging
+  - [x] 14.16.b The `/connect/[uid]` sign-in, consent and refusal screens, en-AU and id-ID (group 3.9.b) → merged at 5cb7f0b0; screenshots once the provider is on staging → 5cb7f0b0 + 936d005a; staging QA 2026-10-21, axe-clean at 390/1280 light and dark (group 3.9.b)
   - [ ] 14.16.c Passkeys and authenticator-app codes on YourTal accounts, and `amr` in ID tokens (group 3.9.c)
   - [ ] 14.16.d Teens: every client refuses them except SnapApp by a guardian's invite; the teen invite API (group 3.9.e)
   - [ ] 14.16.e Deletion and ended access reach every app as signed events, with the `connected_apps` data domain (group 3.9.f)

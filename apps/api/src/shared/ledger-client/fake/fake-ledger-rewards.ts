@@ -128,18 +128,16 @@ export function grantReward(
   options: FakeLedgerOptions = DEFAULT_FAKE_LEDGER_OPTIONS,
 ): ResultAsync<Grant, LedgerError> {
   return new ResultAsync(
-    db.transaction((tx) =>
-      insertGrant(
-        tx,
-        "campaign",
-        request.campaignId,
-        request,
-        async (executor) =>
-          (options.receiptDraw
-            ? await receiptFundedCampaign(executor, request.campaignId)
-            : null) ?? admitCampaignGrant(executor, request),
-      ),
-    ),
+    db.transaction(async (tx): Promise<Result<Grant, LedgerError>> => {
+      // As Go's campaignGrant: refused before the replay and the earn caps.
+      const receiptFunded = options.receiptDraw
+        ? await receiptFundedCampaign(tx, request.campaignId)
+        : null;
+      if (receiptFunded !== null) return err(receiptFunded);
+      return insertGrant(tx, "campaign", request.campaignId, request, (executor) =>
+        admitCampaignGrant(executor, request),
+      );
+    }),
   );
 }
 

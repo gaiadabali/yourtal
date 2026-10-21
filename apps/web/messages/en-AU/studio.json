@@ -674,7 +674,7 @@
     "statementStatus": {
       "open": "Open",
       "disputed": "Disputed",
-      "paid": "Paid"
+      "paid": "Approved"
     },
     "statementPaid": "Paid to account ••{last4} on {date}",
     "statementAwaiting": "Waiting for payout details",
@@ -1033,7 +1033,7 @@
     "notLive": "Boost opens once this campaign is live.",
     "loading": "Loading boost…",
     "intro": "Bid cash to show this video in Home's top boosted slots. The highest bid wins each slot and pays just above the next bid, never more than your maximum. Boost is billed daily, separately from points, and never changes what viewers earn.",
-    "reserve": "The lowest bid that can win is {amount} {currency} per 1,000 impressions.",
+    "reserve": "The lowest bid that can win is {amount} per 1,000 impressions.",
     "dailyBudget": "Daily budget ({currency})",
     "maxBid": "Maximum bid per 1,000 impressions ({currency})",
     "startsAt": "Starts",

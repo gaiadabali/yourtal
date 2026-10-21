@@ -1,10 +1,9 @@
 import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
 import { Input } from "@yourtal/ui/input";
-import { MoneyAmount } from "@yourtal/ui/money-amount";
+import { MoneyAmount, formatMoneyAmount } from "@yourtal/ui/money-amount";
 import { PointsChip } from "@yourtal/ui/points-chip";
 import type { PointPackage } from "@yourtal/contracts/billing";
-import { asDisplayIdr, formatMoney } from "@yourtal/contracts/money/format";
 import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import { purchasePointsAction } from "./purchase-points-action";
 
@@ -70,29 +69,20 @@ export function BillingPackagePicker({
               key={pkg.tierKey}
               className={`${CARD} has-[:checked]:border-accent has-[:checked]:bg-accent-subtle has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus`}
             >
-              <div className="flex items-center gap-3">
-                {/* The Input primitive carries the accessible name (its label is hidden); the title beside it is the visible copy. */}
-                <Input
-                  type="radio"
-                  id={`package-${pkg.tierKey}`}
-                  name="tierKey"
-                  value={pkg.tierKey}
-                  defaultChecked={index === 0}
-                  required
-                  label={tierName(pkg.tierKey, t)}
-                  hideLabel
-                  aria-describedby={`package-${pkg.tierKey}-details`}
-                  className="h-4 w-4 shrink-0 rounded-none border-0 bg-transparent p-0 accent-primary"
-                />
-                <span aria-hidden="true" className={NAME}>
-                  {tierName(pkg.tierKey, t)}
-                </span>
-                {/* An empty label stretched over the card makes the whole card the click target. */}
-                <label
-                  htmlFor={`package-${pkg.tierKey}`}
-                  className="absolute inset-0 cursor-pointer"
-                />
-              </div>
+              {/* One label per radio: the Input's own, shown as the card's title. Its ::after is stretched over the card so the whole card is the click target. */}
+              <Input
+                type="radio"
+                id={`package-${pkg.tierKey}`}
+                name="tierKey"
+                value={pkg.tierKey}
+                defaultChecked={index === 0}
+                required
+                label={tierName(pkg.tierKey, t)}
+                aria-describedby={`package-${pkg.tierKey}-details`}
+                wrapperClassName="flex-row items-center gap-3"
+                labelClassName={`${NAME} order-2 cursor-pointer after:absolute after:inset-0 after:content-['']`}
+                className="order-1 h-4 w-4 shrink-0 rounded-none border-0 bg-transparent p-0 accent-primary"
+              />
               <PackageDetails pkg={pkg} locale={locale} />
             </div>
           ))}
@@ -112,7 +102,8 @@ function tierName(tierKey: string, t: ReturnType<typeof getStudioTranslator>): s
 function PackageDetails({ pkg, locale }: { pkg: PointPackage; locale: SupportedLocale }) {
   const t = getStudioTranslator(locale);
   const taxed = pkg.taxRateBps > 0;
-  const money = (amountMinor: number) => formatMoney(asDisplayIdr(amountMinor), pkg.currency);
+  // The viewer's locale, like the totals below: formatMoney keys off the currency alone and mixes "$45.00" into Indonesian prose.
+  const money = (amountMinor: number) => formatMoneyAmount(amountMinor, pkg.currency, locale);
   return (
     <>
       <div id={`package-${pkg.tierKey}-details`} className="flex flex-col gap-3">

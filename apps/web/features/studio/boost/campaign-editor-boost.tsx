@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { BoostView, SetBoostRequest } from "@yourtal/contracts/studio/boost";
 import { Button } from "@yourtal/ui/button";
 import Link from "next/link";
 import { Input } from "@yourtal/ui/input";
 import { Notice } from "@yourtal/ui/notice";
-import { MoneyAmount } from "@yourtal/ui/money-amount";
+import { MoneyAmount, formatMoneyAmount } from "@yourtal/ui/money-amount";
 import { Switch } from "@yourtal/ui/switch";
 import { loadBoost, saveBoost } from "./boost-actions";
 import { minorFromInput, inputFromMinor } from "./money-input";
@@ -32,6 +32,7 @@ const isoOf = (date: string) => new Date(`${date}T00:00:00.000Z`).toISOString();
  */
 export function CampaignEditorBoost(props: CampaignEditorBoostProps) {
   const t = useTranslations("studio");
+  const locale = useLocale();
   const [view, setView] = useState<BoostView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -117,7 +118,9 @@ export function CampaignEditorBoost(props: CampaignEditorBoostProps) {
       ) : null}
       <p className="text-body-sm font-sans text-fg-muted">
         {t("boost.intro")}{" "}
-        {t("boost.reserve", { amount: inputFromMinor(view.reserveCpmMinor, currency), currency })}
+        {t("boost.reserve", {
+          amount: formatMoneyAmount(view.reserveCpmMinor, currency, locale),
+        })}
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <Input
@@ -177,7 +180,7 @@ export function CampaignEditorBoost(props: CampaignEditorBoostProps) {
         <div>
           <dt className="text-xs font-sans text-fg-muted">{t("boost.spend")}</dt>
           <dd className="text-body font-sans text-fg">
-            <MoneyAmount amountMinor={view.spendMinor} currency={currency} />
+            <MoneyAmount amountMinor={view.spendMinor} currency={currency} locale={locale} />
           </dd>
         </div>
         <div>
@@ -186,7 +189,7 @@ export function CampaignEditorBoost(props: CampaignEditorBoostProps) {
             {view.averageCpmMinor === null ? (
               "—"
             ) : (
-              <MoneyAmount amountMinor={view.averageCpmMinor} currency={currency} />
+              <MoneyAmount amountMinor={view.averageCpmMinor} currency={currency} locale={locale} />
             )}
           </dd>
         </div>

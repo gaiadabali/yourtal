@@ -1,13 +1,9 @@
 import { useLocale, useTranslations } from "next-intl";
-import {
-  asDisplayIdr,
-  asDisplayPoints,
-  formatMoney,
-  formatPointsIn,
-} from "@yourtal/contracts/money/format";
+import { asDisplayPoints, formatPointsIn } from "@yourtal/contracts/money/format";
 import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
 import { Card, CardContent } from "@yourtal/ui/card";
+import { formatMoneyAmount } from "@yourtal/ui/money-amount";
 import { useRegion } from "@/features/region/use-region";
 import type { CampaignDraft } from "./campaign-draft";
 import { draftDurationSeconds, draftEstimatedDataMb, draftQuestionsAsked } from "./campaign-draft";
@@ -110,7 +106,7 @@ export function CampaignEntryPreview({ draft }: CampaignEntryPreviewProps) {
         <div className="flex items-start gap-2 rounded-md bg-surface-raised px-3 py-2">
           <Badge variant={assessment.meetsGuideline ? "success" : "warning"} className="shrink-0">
             {t("campaignBuilder.preview.dataCostBadge", {
-              amount: formatMoney(asDisplayIdr(assessment.dataCostMinorUnits), currency),
+              amount: formatMoneyAmount(assessment.dataCostMinorUnits, currency, locale),
             })}
           </Badge>
           <p className="text-xs font-sans text-fg-muted">

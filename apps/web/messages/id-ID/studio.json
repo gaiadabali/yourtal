@@ -674,7 +674,7 @@
     "statementStatus": {
       "open": "Terbuka",
       "disputed": "Disengketakan",
-      "paid": "Dibayar"
+      "paid": "Disetujui"
     },
     "statementPaid": "Dibayar ke rekening ••{last4} pada {date}",
     "statementAwaiting": "Menunggu detail pembayaran",
@@ -1033,7 +1033,7 @@
     "notLive": "Boost tersedia setelah kampanye ini tayang.",
     "loading": "Memuat boost…",
     "intro": "Tawar dengan uang tunai agar video ini tampil di slot boost teratas Beranda. Tawaran tertinggi memenangkan setiap slot dan membayar sedikit di atas tawaran berikutnya, tidak pernah lebih dari batas Anda. Boost ditagih harian, terpisah dari poin, dan tidak mengubah poin yang didapat penonton.",
-    "reserve": "Tawaran terendah yang bisa menang adalah {amount} {currency} per 1.000 tayangan.",
+    "reserve": "Tawaran terendah yang bisa menang adalah {amount} per 1.000 tayangan.",
     "dailyBudget": "Anggaran harian ({currency})",
     "maxBid": "Tawaran maksimum per 1.000 tayangan ({currency})",
     "startsAt": "Mulai",

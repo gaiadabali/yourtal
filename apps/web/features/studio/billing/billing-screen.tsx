@@ -91,21 +91,26 @@ export function BillingScreen({
               {purchases.map((purchase) => (
                 <li
                   key={purchase.allocationId}
-                  className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-body-sm text-fg"
+                  className="flex flex-col gap-1 text-body-sm text-fg sm:flex-row sm:items-center sm:justify-between sm:gap-x-4"
                 >
                   <span className="font-semibold">{date.format(new Date(purchase.createdAt))}</span>
-                  <span>
-                    {t("billing.historyBought", { formatted: number.format(purchase.totalPoints) })}
-                  </span>
-                  <span className="text-fg-muted">
-                    {t("billing.historyUsed", {
-                      formatted: number.format(purchase.totalPoints - purchase.remainingPoints),
-                    })}
-                  </span>
-                  <span>
-                    {t("billing.historyLeft", {
-                      formatted: number.format(purchase.remainingPoints),
-                    })}
+                  {/* The three figures wrap as one group under the date, so "left" never drops to a line of its own. */}
+                  <span className="flex flex-wrap gap-x-4 gap-y-0.5">
+                    <span>
+                      {t("billing.historyBought", {
+                        formatted: number.format(purchase.totalPoints),
+                      })}
+                    </span>
+                    <span className="text-fg-muted">
+                      {t("billing.historyUsed", {
+                        formatted: number.format(purchase.totalPoints - purchase.remainingPoints),
+                      })}
+                    </span>
+                    <span>
+                      {t("billing.historyLeft", {
+                        formatted: number.format(purchase.remainingPoints),
+                      })}
+                    </span>
                   </span>
                 </li>
               ))}

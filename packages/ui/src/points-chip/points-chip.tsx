@@ -42,8 +42,10 @@ export const PointsChip = React.forwardRef<HTMLSpanElement, PointsChipProps>((pr
   const { chip, coin } = SIZES[size];
 
   return (
+    // role="img": an aria-label on a role-less span is prohibited (axe aria-prohibited-attr) and ignored by some readers.
     <span
       ref={ref}
+      role="img"
       aria-label={label}
       className={cn(
         "inline-flex w-fit shrink-0 items-center rounded-pill bg-points font-sans font-bold text-fg-on-points",

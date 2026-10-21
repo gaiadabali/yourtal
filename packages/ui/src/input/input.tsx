@@ -11,6 +11,9 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   label: string;
   /** Visually hide the label while keeping it in the accessibility tree. */
   hideLabel?: boolean;
+  /** Layout hooks for a field that is not a plain stacked text box (a radio beside its title). */
+  wrapperClassName?: string;
+  labelClassName?: string;
   /** Short supporting text rendered under the field and wired via aria-describedby. */
   helpText?: string;
   /** Validation message. Rendered as a live region and marks the field aria-invalid. */
@@ -18,7 +21,20 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ label, hideLabel, helpText, errorMessage, id, className, ...props }, ref) => {
+  (
+    {
+      label,
+      hideLabel,
+      helpText,
+      errorMessage,
+      id,
+      className,
+      wrapperClassName,
+      labelClassName,
+      ...props
+    },
+    ref,
+  ) => {
     const generatedId = React.useId();
     const inputId = id ?? generatedId;
     const helpId = helpText ? `${inputId}-help` : undefined;
@@ -26,10 +42,10 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const describedBy = [helpId, errorId].filter(Boolean).join(" ") || undefined;
 
     return (
-      <div className="flex flex-col gap-1.5">
+      <div className={cn("flex flex-col gap-1.5", wrapperClassName)}>
         <label
           htmlFor={inputId}
-          className={cn("text-label font-sans text-fg", hideLabel && "sr-only")}
+          className={cn("text-label font-sans text-fg", hideLabel && "sr-only", labelClassName)}
         >
           {label}
         </label>

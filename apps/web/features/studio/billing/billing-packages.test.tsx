@@ -67,6 +67,22 @@ describe("BillingPackagePicker, Australia (F118/F122)", () => {
     expect(screen.getByRole("radio", { name: "Starter" })).toBeChecked();
   });
 
+  it("gives each radio exactly one label, and no aria-label on a role-less element", () => {
+    const { container } = picker(au);
+    for (const radio of screen.getAllByRole<HTMLInputElement>("radio")) {
+      expect(radio.labels).toHaveLength(1);
+    }
+    expect(container.querySelectorAll("span[aria-label]:not([role])")).toHaveLength(0);
+  });
+
+  it("writes every amount in the viewer's locale, not the currency's", () => {
+    picker(au, { locale: "id-ID" });
+    const grow = card("Tumbuh");
+    expect(grow.getByText(/Hemat AU\$22,50/)).toBeInTheDocument();
+    expect(grow.getByText(/AU\$42,75 per 1\.000 poin/)).toBeInTheDocument();
+    expect(grow.queryByText(/\$22\.50/)).not.toBeInTheDocument();
+  });
+
   it("posts the chosen package's tier key and the currency", async () => {
     picker(au);
     await userEvent.click(screen.getByRole("radio", { name: "Grow" }));

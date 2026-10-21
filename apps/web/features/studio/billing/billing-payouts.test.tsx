@@ -151,6 +151,19 @@ describe("BillingStatementsPanel", () => {
     expect(screen.getAllByRole("listitem")).toHaveLength(5);
   });
 
+  it("calls a statement the ledger marks paid 'Approved', so it never contradicts a payout that is waiting or failed", () => {
+    render(
+      <BillingStatementsPanel
+        statements={[{ ...statement("s1", "2026-09-01T00:00:00.000Z"), status: "paid" }]}
+        payouts={[payout("s1", "failed")]}
+        locale="en-AU"
+      />,
+    );
+    expect(screen.getByText("Approved")).toBeInTheDocument();
+    expect(screen.getByText("Payout failed")).toBeInTheDocument();
+    expect(screen.queryByText("Paid")).not.toBeInTheDocument();
+  });
+
   it("has an empty state", () => {
     render(<BillingStatementsPanel statements={[]} payouts={[]} locale="en-AU" />);
     expect(screen.getByText("No statements yet")).toBeInTheDocument();

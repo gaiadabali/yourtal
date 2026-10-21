@@ -6,6 +6,21 @@ export type Currency = "AUD" | "IDR";
 /** Minor-unit exponent per currency (K6): AUD has cents, IDR has none. */
 const EXPONENT: Record<Currency, number> = { AUD: 2, IDR: 0 };
 
+/** The string `MoneyAmount` renders, for prose that embeds an amount (the same locale, symbol and digits as everywhere else). */
+export function formatMoneyAmount(
+  amountMinor: number,
+  currency: Currency,
+  locale = "en-AU",
+): string {
+  const exponent = EXPONENT[currency];
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency,
+    minimumFractionDigits: exponent,
+    maximumFractionDigits: exponent,
+  }).format(amountMinor / 10 ** exponent);
+}
+
 export interface MoneyAmountProps extends Omit<React.HTMLAttributes<HTMLSpanElement>, "children"> {
   /** Integer minor units (cents for AUD, whole rupiah for IDR). Never a float. */
   amountMinor: number;
@@ -22,17 +37,9 @@ export interface MoneyAmountProps extends Omit<React.HTMLAttributes<HTMLSpanElem
  */
 export const MoneyAmount = React.forwardRef<HTMLSpanElement, MoneyAmountProps>(
   ({ amountMinor, currency, locale = "en-AU", className, ...props }, ref) => {
-    const exponent = EXPONENT[currency];
-    const value = amountMinor / 10 ** exponent;
     const formatted = React.useMemo(
-      () =>
-        new Intl.NumberFormat(locale, {
-          style: "currency",
-          currency,
-          minimumFractionDigits: exponent,
-          maximumFractionDigits: exponent,
-        }).format(value),
-      [locale, currency, exponent, value],
+      () => formatMoneyAmount(amountMinor, currency, locale),
+      [amountMinor, currency, locale],
     );
 
     return (

@@ -2,7 +2,7 @@
 
 import type { ChangeEvent } from "react";
 import { useId, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { UseFormReturn } from "react-hook-form";
 import type { BillingAllocation } from "@yourtal/contracts/billing";
 import { Badge } from "@yourtal/ui/badge";
@@ -58,6 +58,7 @@ export function CampaignEditorReward({
   allocations,
 }: CampaignEditorRewardProps) {
   const t = useTranslations("studio");
+  const locale = useLocale();
   const scoringRuleId = useId();
   const allocationSelectId = useId();
   const { currency } = useRegion();
@@ -200,6 +201,7 @@ export function CampaignEditorReward({
               <MoneyAmount
                 amountMinor={draft.rewardValueMinorUnits}
                 currency={draft.rewardCurrency as "AUD" | "IDR"}
+                locale={locale}
               />
             </p>
           ) : null}

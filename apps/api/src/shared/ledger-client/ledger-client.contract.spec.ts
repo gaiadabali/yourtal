@@ -12,6 +12,7 @@ import {
   signServiceRequest,
 } from "@yourtal/contracts/ledger-internal/service-signature";
 import { testDb } from "../testing/test-db";
+import { withEarnCaps } from "../testing/with-earn-caps";
 import { FakeLedgerClient } from "./fake-ledger-client";
 import { HttpLedgerClient } from "./http-ledger-client";
 import { generateStatementFake } from "./fake/fake-ledger-economy";
@@ -647,30 +648,92 @@ describe("earning and spending", () => {
       ).isOk(),
     ).toBe(true);
 
-    // 100 pts × 3¢ = 300¢, comfortably inside the 9,000¢ top-up above.
-    const withinFund = await client.grantAction({
-      kind: "goodwill",
-      userId: randomUUID(),
-      region: "AU",
-      points: toPoints(100),
-      trustTier: 3,
-      idempotencyKey: randomUUID(),
-      ageBand: "adult",
-    });
-    expect(withinFund.isOk()).toBe(true);
+    // The earn caps (F12) are checked BEFORE K6 on both ledgers, and F12's
+    // real AU cap (500 a day) is far below anything this file funds, so a
+    // grant only the fund can refuse needs the cap out of the way. Both
+    // ledgers read the caps per grant with no cache, so raise them for this
+    // test and restore them after; the cap's own refusal is pinned below.
+    await withEarnCaps(client, "AU", { daily: 2_000_000_000, monthly: 2_000_000_000 }, async () => {
+      // 100 pts × 3¢ = 300¢, comfortably inside the 9,000¢ top-up above.
+      const withinFund = await client.grantAction({
+        kind: "goodwill",
+        userId: randomUUID(),
+        region: "AU",
+        points: toPoints(100),
+        trustTier: 3,
+        idempotencyKey: randomUUID(),
+        ageBand: "adult",
+      });
+      expect(withinFund.isOk()).toBe(true);
 
-    // Far beyond anything this file funds anywhere, in either region:
-    // refused regardless of leftover state from earlier tests.
-    const tooMuch = await client.grantAction({
-      kind: "goodwill",
-      userId: randomUUID(),
-      region: "AU",
-      points: toPoints(1_000_000_000),
-      trustTier: 3,
-      idempotencyKey: randomUUID(),
-      ageBand: "adult",
+      // Far beyond anything this file funds anywhere, in either region:
+      // refused regardless of leftover state from earlier tests.
+      const tooMuch = await client.grantAction({
+        kind: "goodwill",
+        userId: randomUUID(),
+        region: "AU",
+        points: toPoints(1_000_000_000),
+        trustTier: 3,
+        idempotencyKey: randomUUID(),
+        ageBand: "adult",
+      });
+      expect(tooMuch._unsafeUnwrapErr().code).toBe("insufficient_available");
     });
-    expect(tooMuch._unsafeUnwrapErr().code).toBe("insufficient_available");
+  });
+
+  // 14.20.b: the adult daily and monthly earn caps (F12, 4.4.k) apply to every
+  // grant on both ledgers, "earned + this grant > limit", and refuse with
+  // velocity_capped. Caps are set explicitly, not read from the seed.
+  describe("adult earn caps (F12)", () => {
+    const goodwill = (userId: string, points: number, region: "AU" | "ID" = "AU") =>
+      client.grantAction({
+        kind: "goodwill",
+        userId,
+        region,
+        points: toPoints(points),
+        trustTier: 3,
+        idempotencyKey: randomUUID(),
+        ageBand: "adult",
+      });
+
+    it("a grant that would take a user over the daily cap is refused; one that reaches it exactly is not", async () => {
+      await withEarnCaps(client, "AU", { daily: 500, monthly: 100_000 }, async () => {
+        const userId = randomUUID();
+        expect((await goodwill(userId, 300)).isOk()).toBe(true);
+        const over = await goodwill(userId, 300);
+        expect(over._unsafeUnwrapErr().code).toBe("velocity_capped");
+        expect(over._unsafeUnwrapErr().message).toContain("day cap of 500");
+        // 300 + 200 = 500, which is not over the cap; a refusal wrote nothing.
+        expect((await goodwill(userId, 200)).isOk()).toBe(true);
+        expect((await goodwill(userId, 1))._unsafeUnwrapErr().code).toBe("velocity_capped");
+        // Another user's earnings are not this user's.
+        expect((await goodwill(randomUUID(), 500)).isOk()).toBe(true);
+      });
+    });
+
+    it("a grant that would take a user over the monthly cap is refused while the daily cap has room", async () => {
+      await withEarnCaps(client, "AU", { daily: 100_000, monthly: 500 }, async () => {
+        const userId = randomUUID();
+        expect((await goodwill(userId, 300)).isOk()).toBe(true);
+        const over = await goodwill(userId, 300);
+        expect(over._unsafeUnwrapErr().code).toBe("velocity_capped");
+        expect(over._unsafeUnwrapErr().message).toContain("month cap of 500");
+        expect((await goodwill(userId, 200)).isOk()).toBe(true);
+      });
+    });
+
+    it("the cap also binds a campaign reward, and a replay of an earlier grant is answered, not refused", async () => {
+      // ID's real daily cap is 5,000; a reward pays 500. Set it so the second reward does not fit.
+      await withEarnCaps(client, "ID", { daily: 800, monthly: 100_000 }, async () => {
+        const userId = randomUUID();
+        const first = reward(await rewardedCampaign(), userId, 3);
+        expect((await client.grantReward(first)).isOk()).toBe(true);
+        const over = await client.grantReward(reward(await rewardedCampaign(), userId, 3));
+        expect(over._unsafeUnwrapErr().code).toBe("velocity_capped");
+        // The first reward's own key replays its grant even though the user is now near the cap.
+        expect((await client.grantReward(first)).isOk()).toBe(true);
+      });
+    });
   });
 
   it("10.7.b: a burn in AU shows in AU's pointsRedeemed and never in ID's", async () => {

@@ -3,6 +3,8 @@ import { sql } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { toPoints } from "@yourtal/contracts/money";
 import { testDb } from "../../testing/test-db";
+import { withEarnCaps } from "../../testing/with-earn-caps";
+import { FakeLedgerClient } from "../fake-ledger-client";
 import { grantAction } from "./fake-ledger-rewards";
 
 /**
@@ -82,16 +84,23 @@ describe("grantAction debits the region's marketing fund by exactly its backing 
     // ANY plausible backing rate needs billions of minor units — vastly
     // beyond anything this whole test run funds for ID anywhere (tens of
     // millions at most), so this is refused regardless of how much other
-    // suites sharing this database have already funded or drawn down.
-    const refused = await grantAction(db, {
-      kind: "goodwill",
-      userId: randomUUID(),
+    // suites sharing this database have already funded or drawn down. The
+    // F12 earn caps come first, so they are raised out of the way (14.20.b).
+    const refused = await withEarnCaps(
+      new FakeLedgerClient(db),
       region,
-      points: toPoints(10_000_000_000),
-      trustTier: 3,
-      idempotencyKey: randomUUID(),
-      ageBand: "adult",
-    });
+      { daily: 10_000_000_000, monthly: 10_000_000_000 },
+      async () =>
+        await grantAction(db, {
+          kind: "goodwill",
+          userId: randomUUID(),
+          region,
+          points: toPoints(10_000_000_000),
+          trustTier: 3,
+          idempotencyKey: randomUUID(),
+          ageBand: "adult",
+        }),
+    );
     expect(refused.isErr() && refused.error.code).toBe("insufficient_available");
 
     const after = await backingTotal(region);

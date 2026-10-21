@@ -4,10 +4,12 @@ import {
   economyOverviewSchema,
   economyProposalSchema,
   rateScreenSchema,
+  receiptProgrammeRowsSchema,
   settingsScreenSchema,
   type EconomyOverview,
   type EconomyProposal,
   type RateScreen,
+  type ReceiptProgrammeRows,
   type SettingsScreen,
 } from "@yourtal/contracts/staff/economy";
 import {
@@ -71,6 +73,16 @@ export async function getKillSwitches(): Promise<readonly KillSwitch[]> {
   if (result.ok) return result.data;
   if (result.error.kind === "http" && result.error.status === 403) return [];
   throw new Error(`Could not load kill switches: ${result.error.message}`);
+}
+
+/** 2.9.c: SnapApp's receipt programme, for finance and ops. A 403 is a real 403. */
+export async function getReceiptProgrammes(region: "AU" | "ID"): Promise<ReceiptProgrammeRows> {
+  const result = await apiFetch(
+    `/api/staff/economy/${region}/receipt-programmes`,
+    receiptProgrammeRowsSchema,
+  );
+  if (!result.ok) throwOrForbid("load the receipt programmes", result.error);
+  return result.data;
 }
 
 export async function getSettingsScreen(region: "AU" | "ID"): Promise<SettingsScreen> {

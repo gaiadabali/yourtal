@@ -1532,3 +1532,35 @@ describe("the receipt draw (2.10.b T2b, F127)", () => {
     expect(await remaining(allocationId)).toBe(1_000);
   });
 });
+
+describe("receipt programme stats (2.9.c)", () => {
+  it("counts only a partner's receipt grants from its receipt packages, with the top earners", async () => {
+    const { partnerId, businessId } = await receiptFunder();
+    const allocationId = (await buyReceipts(businessId))._unsafeUnwrap().allocationId;
+    const ask = async (region: "AU" | "ID", ids: string[]) =>
+      (await client.receiptProgrammeStats({ region, allocationIds: ids }))._unsafeUnwrap();
+
+    expect(await ask("ID", [allocationId])).toEqual({
+      paidPoints: 0,
+      paidLast7Days: 0,
+      topEarners: [],
+    });
+
+    const heavy = receiptGrant(partnerId, 6);
+    const light = receiptGrant(partnerId, 2);
+    for (const grant of [heavy, { ...heavy, idempotencyKey: randomUUID() }, light]) {
+      expect((await client.grantAction(grant)).isOk()).toBe(true);
+    }
+
+    const stats = await ask("ID", [allocationId]);
+    expect(stats).toMatchObject({ paidPoints: 14, paidLast7Days: 14 });
+    expect(stats.topEarners).toEqual([
+      { userId: heavy.userId, points: 12, receipts: 2 },
+      { userId: light.userId, points: 2, receipts: 1 },
+    ]);
+    // Another region sees nothing of an ID package; an unknown allocation is nothing.
+    expect((await ask("AU", [allocationId])).paidPoints).toBe(0);
+    expect((await ask("ID", [randomUUID()])).topEarners).toEqual([]);
+    expect((await ask("ID", [])).paidPoints).toBe(0);
+  });
+});

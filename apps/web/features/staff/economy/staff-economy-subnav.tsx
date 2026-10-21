@@ -3,7 +3,7 @@ import type { Route } from "next";
 import { cn } from "@yourtal/ui/cn";
 
 export interface StaffEconomySubnavProps {
-  readonly active: "overview" | "rate" | "marketing" | "parked" | "settings";
+  readonly active: "overview" | "rate" | "marketing" | "receipts" | "parked" | "settings";
   readonly region: "AU" | "ID";
   readonly showRate: boolean;
   readonly t: (key: string) => string;
@@ -30,6 +30,11 @@ export function StaffEconomySubnav({ active, region, showRate, t }: StaffEconomy
       key: "marketing",
       href: `/staff/economy/marketing?region=${region}` as Route,
       label: t("economy.tabMarketing"),
+    },
+    {
+      key: "receipts",
+      href: `/staff/economy/receipts?region=${region}` as Route,
+      label: t("economy.tabReceipts"),
     },
     // Finance-only like the rate tab: refunding a card is a finance decision.
     ...(showRate

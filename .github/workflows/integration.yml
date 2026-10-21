@@ -465,9 +465,11 @@ jobs:
         run: |
           set -o pipefail
           pnpm test:ledger-live 2>&1 | tee /tmp/ledger-live.log
+          # vitest colours its summary even when piped; strip it to match.
+          sed -E 's/\[[0-9;]*m//g' /tmp/ledger-live.log > /tmp/ledger-live.plain.log
           echo "--- live leg summary ---"
-          grep -E "^ +(Test Files|Tests) " /tmp/ledger-live.log
-          if ! grep -qE "Tests +[0-9]+ passed" /tmp/ledger-live.log; then
+          grep -E "^ +(Test Files|Tests) " /tmp/ledger-live.plain.log
+          if ! grep -qE "Tests +[0-9]+ passed" /tmp/ledger-live.plain.log; then
             echo "::error::The live ledger leg reported no passing tests; it did not run."
             exit 1
           fi

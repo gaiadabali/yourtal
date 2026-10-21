@@ -18,8 +18,13 @@ const logger = new Logger("PartnersErrorMapper");
  */
 export type PartnersError = (PartnerActionError | LedgerError) & { readonly linkId?: string };
 
-function body(code: string, message: string, linkId: string | undefined) {
-  return linkId === undefined ? { code, message } : { code, message, linkId };
+function body(
+  code: string,
+  message: string,
+  linkId: string | undefined,
+  extra: Readonly<Record<string, unknown>> = {},
+) {
+  return linkId === undefined ? { code, message, ...extra } : { code, message, linkId, ...extra };
 }
 
 const FIXED_MESSAGES: Readonly<Partial<Record<LedgerError["code"], string>>> = {
@@ -57,6 +62,15 @@ export function mapPartnersErrorToHttpException(error: PartnersError): HttpExcep
     case "teen_not_allowed":
       return new ForbiddenException(
         body("teen_consent_not_allowed", "a teen account can't link a partner app", linkId),
+      );
+    case "identity_check_required":
+      return new ForbiddenException(
+        body(
+          "identity_check_required",
+          "the user must verify a permanent email address in YourTal before they can earn points",
+          linkId,
+          { missing: error.missing },
+        ),
       );
     case "persistence_failed":
       logger.error(error.cause);

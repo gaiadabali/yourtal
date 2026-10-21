@@ -96,6 +96,8 @@ const controller = new WatchController(
   "test-manifest-signing-secret-not-a-real-one",
   new StubDeliveryCoverageReader(),
   new NoopWatchCompletionHook(),
+  // The identity check (F126) is off here; auth/earning-check/earning-identity-check.e2e.test.ts covers it.
+  { verdictFor: () => Promise.resolve({ mayEarn: true }) },
 );
 
 let longFormId = "";
@@ -347,6 +349,7 @@ describe("12.2.b: a teen's quiet hours refuse a new reward session", () => {
     "test-manifest-signing-secret-not-a-real-one",
     new StubDeliveryCoverageReader(),
     new NoopWatchCompletionHook(),
+    { verdictFor: () => Promise.resolve({ mayEarn: true }) },
   );
 
   afterEach(() => {

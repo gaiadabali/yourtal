@@ -18,12 +18,13 @@ import (
 // checks if the ApiWatchSessionsPost201Response type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &ApiWatchSessionsPost201Response{}
 
-// ApiWatchSessionsPost201Response The session — reactivated if one was already open for this exact (user, campaign, terms version) tuple, parking whatever else was active, otherwise freshly created (5.1.b) — plus the campaign's duration, `alreadyEarned` (true when this user has already been granted this campaign's reward and the session is a non-earning replay), and a per-session manifest URL (5.1.d; unsigned until @yourtal/media exports mintSegmentUrl, 7.2.c).
+// ApiWatchSessionsPost201Response The session — reactivated if one was already open for this exact (user, campaign, terms version) tuple, parking whatever else was active, otherwise freshly created (5.1.b) — plus the campaign's duration, `alreadyEarned` (true when this user has already been granted this campaign's reward and the session is a non-earning replay), and a per-session manifest URL (5.1.d; unsigned until @yourtal/media exports mintSegmentUrl, 7.2.c). `identityCheck` is present only when the session is non-earning for `identity_check_required` (F126): the steps the viewer still has to take before a view earns.
 type ApiWatchSessionsPost201Response struct {
 	Session WatchSession `json:"session"`
 	DurationSeconds int32 `json:"durationSeconds"`
 	AlreadyEarned bool `json:"alreadyEarned"`
 	ManifestUrl NullableString `json:"manifestUrl"`
+	IdentityCheck *ApiWatchSessionsPost201ResponseIdentityCheck `json:"identityCheck,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -148,6 +149,38 @@ func (o *ApiWatchSessionsPost201Response) SetManifestUrl(v string) {
 	o.ManifestUrl.Set(&v)
 }
 
+// GetIdentityCheck returns the IdentityCheck field value if set, zero value otherwise.
+func (o *ApiWatchSessionsPost201Response) GetIdentityCheck() ApiWatchSessionsPost201ResponseIdentityCheck {
+	if o == nil || IsNil(o.IdentityCheck) {
+		var ret ApiWatchSessionsPost201ResponseIdentityCheck
+		return ret
+	}
+	return *o.IdentityCheck
+}
+
+// GetIdentityCheckOk returns a tuple with the IdentityCheck field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ApiWatchSessionsPost201Response) GetIdentityCheckOk() (*ApiWatchSessionsPost201ResponseIdentityCheck, bool) {
+	if o == nil || IsNil(o.IdentityCheck) {
+		return nil, false
+	}
+	return o.IdentityCheck, true
+}
+
+// HasIdentityCheck returns a boolean if a field has been set.
+func (o *ApiWatchSessionsPost201Response) HasIdentityCheck() bool {
+	if o != nil && !IsNil(o.IdentityCheck) {
+		return true
+	}
+
+	return false
+}
+
+// SetIdentityCheck gets a reference to the given ApiWatchSessionsPost201ResponseIdentityCheck and assigns it to the IdentityCheck field.
+func (o *ApiWatchSessionsPost201Response) SetIdentityCheck(v ApiWatchSessionsPost201ResponseIdentityCheck) {
+	o.IdentityCheck = &v
+}
+
 func (o ApiWatchSessionsPost201Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -162,6 +195,9 @@ func (o ApiWatchSessionsPost201Response) ToMap() (map[string]interface{}, error)
 	toSerialize["durationSeconds"] = o.DurationSeconds
 	toSerialize["alreadyEarned"] = o.AlreadyEarned
 	toSerialize["manifestUrl"] = o.ManifestUrl.Get()
+	if !IsNil(o.IdentityCheck) {
+		toSerialize["identityCheck"] = o.IdentityCheck
+	}
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -212,6 +248,7 @@ func (o *ApiWatchSessionsPost201Response) UnmarshalJSON(data []byte) (err error)
 		delete(additionalProperties, "durationSeconds")
 		delete(additionalProperties, "alreadyEarned")
 		delete(additionalProperties, "manifestUrl")
+		delete(additionalProperties, "identityCheck")
 		o.AdditionalProperties = additionalProperties
 	}
 

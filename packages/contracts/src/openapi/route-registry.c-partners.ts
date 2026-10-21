@@ -56,6 +56,16 @@ const RECEIPTS_PAUSED: RouteErrorResponse = {
   documented: true,
 };
 
+const IDENTITY_CHECK_REQUIRED: RouteErrorResponse = {
+  status: 403,
+  description:
+    "The account has not passed YourTal's identity check, so it earns nothing and the receipt is " +
+    "not recorded (identity_check_required). missing lists what the user still has to do " +
+    "(verify_email, use_permanent_email). The refusal is final: do not resend the receipt. The " +
+    "body carries the linkId to use next time.",
+  documented: true,
+};
+
 const LEDGER_REFUSED: RouteErrorResponse = {
   status: 409,
   description:
@@ -127,6 +137,7 @@ export const PARTNERS_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       INVALID_PARTNER_SIGNATURE,
       TEEN_NOT_ALLOWED,
       LINK_REVOKED,
+      IDENTITY_CHECK_REQUIRED,
       RECEIPTS_PAUSED,
       LEDGER_REFUSED,
       SERVICE_UNAVAILABLE,

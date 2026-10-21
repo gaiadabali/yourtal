@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { PdpClientModule } from "../../shared/pdp/pdp-client.module";
 import { RateLimitModule } from "../../shared/rate-limit/rate-limit.module";
+import { EarningCheckModule } from "../auth/earning-check/earning-check.module";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
@@ -28,7 +29,7 @@ const PARTNERS_DB = Symbol("PARTNERS_DB");
  * for the exact same choice.
  */
 @Module({
-  imports: [PdpClientModule, RateLimitModule],
+  imports: [PdpClientModule, RateLimitModule, EarningCheckModule],
   controllers: [PartnerActionsController],
   providers: [
     PartnerAuthGuard,

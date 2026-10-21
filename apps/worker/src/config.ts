@@ -53,6 +53,8 @@ const envSchema = z.object({
 
 export interface WorkerConfig {
   readonly nodeEnv: "development" | "test" | "production";
+  /** `dev`, `staging` or `production`; production forces the identity check before earning (F126). */
+  readonly appEnv: string;
   readonly databaseUrl: string;
   readonly ledger: {
     readonly baseUrl: string;
@@ -77,6 +79,7 @@ export function loadWorkerConfig(source: NodeJS.ProcessEnv = process.env): Worke
   const env = envSchema.parse(source);
   return {
     nodeEnv: env.NODE_ENV,
+    appEnv: env.APP_ENV,
     databaseUrl: env.DATABASE_URL,
     ledger: {
       baseUrl: env.LEDGER_BASE_URL,

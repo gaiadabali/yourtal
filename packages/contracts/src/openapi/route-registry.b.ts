@@ -11,6 +11,7 @@ import {
   type RoutePathParam,
   type RouteQueryParam,
 } from "./route-registry-shared";
+import { identityCheckSchema } from "../identity/earning-check";
 
 /**
  * Area B's routes (viewer app — `apps/api/src/modules/{watch,campaign,me}/**`,
@@ -191,12 +192,15 @@ const startWatchSessionResponseSchema: Record<string, unknown> = {
     "version) tuple, parking whatever else was active, otherwise freshly created (5.1.b) — plus " +
     "the campaign's duration, `alreadyEarned` (true when this user has already been granted this " +
     "campaign's reward and the session is a non-earning replay), and a per-session manifest URL " +
-    "(5.1.d; unsigned until @yourtal/media exports mintSegmentUrl, 7.2.c).",
+    "(5.1.d; unsigned until @yourtal/media exports mintSegmentUrl, 7.2.c). `identityCheck` is " +
+    "present only when the session is non-earning for `identity_check_required` (F126): the " +
+    "steps the viewer still has to take before a view earns.",
   properties: {
     session: ref("WatchSession"),
     durationSeconds: { type: "integer", minimum: 1 },
     alreadyEarned: { type: "boolean" },
     manifestUrl: { type: "string" },
+    identityCheck: inlineSchema(identityCheckSchema),
   },
   required: ["session", "durationSeconds", "alreadyEarned", "manifestUrl"],
   additionalProperties: false,
@@ -261,8 +265,8 @@ const completeSessionResponseSchema: Record<string, unknown> = {
   description:
     "`completed` is always true on success — a refusal throws instead (see the 403 below). " +
     "`granted` is false with `reason` set (never `pendingPoints`/`unlockAt`) when the session was " +
-    "non-earning (already_earned, no funding configured, the allocation hold failed, or the grant " +
-    "call itself failed after coverage completed) — 5.1.b/5.3.a. `deliveryCoverage` is the 10.4.c " +
+    "non-earning (already_earned, no funding configured, identity_check_required (F126), the " +
+    "allocation hold failed, or the grant call itself failed after coverage completed) — 5.1.b/5.3.a. `deliveryCoverage` is the 10.4.c " +
     'segment-log cross-check\'s verdict, `"unknown"` until that lands (5.1.d).',
   properties: {
     completed: { const: true },

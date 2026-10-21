@@ -29,6 +29,8 @@ class World implements LinkCodeLookup, AccountAgeLookup, PartnerLinkRepository {
   readonly receipts = new Map<string, string>();
   readonly grants = new Map<string, GrantActionRequest>();
   ledgerRefusal: LedgerError | null = null;
+  /** F126: accounts that have not passed the identity check. */
+  readonly unchecked = new Set<string>();
 
   claim(code: string): Promise<ClaimedLinkCode | null> {
     const found = this.codes.get(code) ?? null;
@@ -102,6 +104,12 @@ class World implements LinkCodeLookup, AccountAgeLookup, PartnerLinkRepository {
       links: this,
       ages: this,
       receiptPoints: (region) => Promise.resolve(region === "AU" ? 1 : 10),
+      identityVerdict: (userId) =>
+        Promise.resolve(
+          this.unchecked.has(userId)
+            ? { mayEarn: false, missing: ["verify_email"] as const }
+            : { mayEarn: true },
+        ),
     };
   }
 }
@@ -283,5 +291,35 @@ describe("revokePartnerLink", () => {
       externalRef: "b",
     });
     expect(refused._unsafeUnwrapErr()).toMatchObject({ type: "link_revoked" });
+  });
+});
+
+describe("grantPartnerAction: the identity check (F126)", () => {
+  it("refuses an account without the check with a stable code, records nothing and pays nothing", async () => {
+    const world = new World();
+    const { userId, code } = adultWithCode(world);
+    world.unchecked.add(userId);
+
+    const refused = await grantPartnerAction(world.deps(), {
+      partnerId: PARTNER,
+      linkCode: code,
+      externalRef: "r1",
+    });
+    const error = refused._unsafeUnwrapErr();
+    expect(error).toMatchObject({ type: "identity_check_required", missing: ["verify_email"] });
+    // The code is spent, so the partner is told the link to use next time.
+    expect(error.linkId).toBe(world.links[0]?.id);
+    expect(world.receipts.size).toBe(0);
+    expect(world.grants.size).toBe(0);
+
+    // Once the person passes the check, the same receipt earns once.
+    world.unchecked.delete(userId);
+    const paid = await grantPartnerAction(world.deps(), {
+      partnerId: PARTNER,
+      linkId: error.linkId ?? "",
+      externalRef: "r1",
+    });
+    expect(paid._unsafeUnwrap()).toMatchObject({ granted: true, points: 1, duplicate: false });
+    expect(world.grants.size).toBe(1);
   });
 });

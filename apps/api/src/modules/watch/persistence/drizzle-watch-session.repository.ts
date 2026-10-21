@@ -45,6 +45,12 @@ export interface WatchSessionRepository {
   startOrResume(input: StartOrResumeInput): Promise<{ session: WatchSession; resumed: boolean }>;
   /** Sets the real earning outcome on a freshly-created session. Never call this on a resumed one. */
   finalizeEarningOutcome(sessionId: string, outcome: EarningOutcome): Promise<void>;
+  /**
+   * F126: retires an open session that was refused for `reason`, so the next
+   * start makes a fresh attempt. `false` when it is no longer open or was not
+   * refused for that reason (another request got there first).
+   */
+  supersedeNonEarning(sessionId: string, reason: string): Promise<boolean>;
   findById(sessionId: string): Promise<WatchSession | null>;
   /** The viewer's unfinished sessions, most recently watched first (Continue watching, 11.4.c). */
   listActiveForUser(userId: string, limit: number): Promise<WatchSession[]>;
@@ -255,6 +261,22 @@ export class DrizzleWatchSessionRepository implements WatchSessionRepository {
         holdId: outcome.holdId,
       })
       .where(eq(watchSessions.id, sessionId));
+  }
+
+  async supersedeNonEarning(sessionId: string, reason: string): Promise<boolean> {
+    const rows = await this.db
+      .update(watchSessions)
+      .set({ state: "superseded" })
+      .where(
+        and(
+          eq(watchSessions.id, sessionId),
+          inArray(watchSessions.state, ["active", "parked"]),
+          eq(watchSessions.nonEarning, true),
+          eq(watchSessions.nonEarningReason, reason),
+        ),
+      )
+      .returning({ id: watchSessions.id });
+    return rows.length > 0;
   }
 
   async findById(sessionId: string): Promise<WatchSession | null> {

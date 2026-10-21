@@ -2328,7 +2328,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "description": "The session — reactivated if one was already open for this exact (user, campaign, terms version) tuple, parking whatever else was active, otherwise freshly created (5.1.b) — plus the campaign's duration, `alreadyEarned` (true when this user has already been granted this campaign's reward and the session is a non-earning replay), and a per-session manifest URL (5.1.d; unsigned until @yourtal/media exports mintSegmentUrl, 7.2.c).",
+                  "description": "The session — reactivated if one was already open for this exact (user, campaign, terms version) tuple, parking whatever else was active, otherwise freshly created (5.1.b) — plus the campaign's duration, `alreadyEarned` (true when this user has already been granted this campaign's reward and the session is a non-earning replay), and a per-session manifest URL (5.1.d; unsigned until @yourtal/media exports mintSegmentUrl, 7.2.c). `identityCheck` is present only when the session is non-earning for `identity_check_required` (F126): the steps the viewer still has to take before a view earns.",
                   "properties": {
                     "session": {
                       "$ref": "#/components/schemas/WatchSession"
@@ -2342,6 +2342,26 @@
                     },
                     "manifestUrl": {
                       "type": "string"
+                    },
+                    "identityCheck": {
+                      "type": "object",
+                      "properties": {
+                        "missing": {
+                          "minItems": 1,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "verify_email",
+                              "use_permanent_email"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "missing"
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
@@ -2861,7 +2881,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "description": "`completed` is always true on success — a refusal throws instead (see the 403 below). `granted` is false with `reason` set (never `pendingPoints`/`unlockAt`) when the session was non-earning (already_earned, no funding configured, the allocation hold failed, or the grant call itself failed after coverage completed) — 5.1.b/5.3.a. `deliveryCoverage` is the 10.4.c segment-log cross-check's verdict, `\"unknown\"` until that lands (5.1.d).",
+                  "description": "`completed` is always true on success — a refusal throws instead (see the 403 below). `granted` is false with `reason` set (never `pendingPoints`/`unlockAt`) when the session was non-earning (already_earned, no funding configured, identity_check_required (F126), the allocation hold failed, or the grant call itself failed after coverage completed) — 5.1.b/5.3.a. `deliveryCoverage` is the 10.4.c segment-log cross-check's verdict, `\"unknown\"` until that lands (5.1.d).",
                   "properties": {
                     "completed": {
                       "const": true
@@ -15212,7 +15232,7 @@
             }
           },
           "403": {
-            "description": "A teen account cannot link a partner app (teen_consent_not_allowed, F101/F105). OR: The user unlinked this app; the link earns nothing (link_revoked).",
+            "description": "A teen account cannot link a partner app (teen_consent_not_allowed, F101/F105). OR: The user unlinked this app; the link earns nothing (link_revoked). OR: The account has not passed YourTal's identity check, so it earns nothing and the receipt is not recorded (identity_check_required). missing lists what the user still has to do (verify_email, use_permanent_email). The refusal is final: do not resend the receipt. The body carries the linkId to use next time.",
             "content": {
               "application/json": {
                 "schema": {

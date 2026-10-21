@@ -9,6 +9,7 @@ import { CampaignModule, CAMPAIGN_DB } from "../campaign/campaign.module";
 import { IdentityModule } from "../identity/identity.module";
 import { WalletModule } from "../wallet/wallet.module";
 import { WatchCompletionHookModule } from "../me/watch-completion-hook.module";
+import { EarningCheckModule } from "../auth/earning-check/earning-check.module";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
 import {
   DrizzleWatchSessionRepository,
@@ -57,6 +58,8 @@ import {
     // no-op — see watch-completion-hook.module.ts's own header for why this
     // is imported rather than `MeModule` directly.
     WatchCompletionHookModule,
+    // F126: the identity check before a session may earn.
+    EarningCheckModule,
   ],
   controllers: [WatchController, OpenViewSessionController],
   providers: [

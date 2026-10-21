@@ -1,4 +1,4 @@
-h1:9Ek5cU2GGwY5efIjPBHOktowKIa8+pjZgMACbID2Zx8=
+h1:LQkawvjUZxU8SFJZqd7pydHlT4hAfotUXl+IQm1OkwA=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -141,3 +141,4 @@ h1:9Ek5cU2GGwY5efIjPBHOktowKIa8+pjZgMACbID2Zx8=
 20261021025420_oidc_provider.sql h1:Qysi9IdrOYlzXt7CPGj+ft4nWuLoL7rDSrFMYAjJCk8=
 20261021042150_receipt_packages.sql h1:lAybEv1F5m4GIXGv2lS8QIw2GKSdHYDJkHLH6Rkh+Ts=
 20261021062832_receipt_grant_from_package.sql h1:UkB6acNiIOoaIrkA2CPH5bv0/rGAdqCKRkqmFjElg/w=
+20261021150700_points_identity_check_setting.sql h1:GvNSVuSKZkgm6GoENUsv3fGnYI4pUVYm8pDjvxMPSa4=

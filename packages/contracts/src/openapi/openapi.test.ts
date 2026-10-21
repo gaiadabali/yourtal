@@ -104,6 +104,12 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   staffSessionSchema: "Same as staffRoleSchema above.",
   staffBusinessSummarySchema:
     "9.3.a's staff Businesses zone: GET /api/staff/businesses documents its list item inline in route-registry.c-staff-businesses.ts, same as staffSessionSchema above.",
+  pointsIdentityCheckSettingSchema:
+    "F126: the shape staff may propose for the points_identity_check region setting, checked server-side when proposed and approved. A value inside ProposeSettingBody.value, never a body of its own.",
+  identityCheckStepSchema:
+    "F126: one step of identityCheckSchema, nested inside POST /api/watch/sessions's inline identityCheck (route-registry.b.ts).",
+  identityCheckSchema:
+    "F126: POST /api/watch/sessions's identityCheck field, documented inline in route-registry.b.ts.",
   guardianConsentStatusSchema:
     "12.1.a: a leaf enum of guardianConsentViewSchema below, documented inline (inlineSchema, not a named component) in route-registry.a.ts's three /api/guardian/:token routes.",
   guardianConsentViewSchema:

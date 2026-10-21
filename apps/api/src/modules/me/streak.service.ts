@@ -15,6 +15,8 @@ import { STREAK_STATE_REPOSITORY } from "./persistence/streak-state.repository";
 import type { StreakStateRepository } from "./persistence/streak-state.repository";
 import { COMPLETED_WATCH_DAYS_READER } from "./persistence/completed-watch-days.reader";
 import type { CompletedWatchDaysReader } from "./persistence/completed-watch-days.reader";
+import { EARNING_IDENTITY_CHECK } from "../auth/earning-check/earning-identity-check";
+import type { EarningIdentityCheck } from "../auth/earning-check/earning-identity-check";
 
 export interface StreakSyncResult {
   readonly state: StreakState;
@@ -52,6 +54,7 @@ export class StreakService {
     @Inject(COMPLETED_WATCH_DAYS_READER) private readonly completedDays: CompletedWatchDaysReader,
     @Inject(LEDGER_INTERNAL_CLIENT) private readonly ledger: LedgerInternalClient,
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
+    @Inject(EARNING_IDENTITY_CHECK) private readonly identityCheck: EarningIdentityCheck,
   ) {}
 
   /**
@@ -82,6 +85,11 @@ export class StreakService {
       if (bonuses.length === 0 || isTeen) {
         // Teens get none (F12), permanently: `advanceStreak` already marked
         // each bonus granted, so it is never retried for this account.
+        return { next: advanced, result: { state: advanced, grantsIssued: [] } };
+      }
+      // F126: nor does an account without the identity check, and the same
+      // way: a streak built before the check never pays later.
+      if (!(await this.identityCheck.verdictFor(userId, region)).mayEarn) {
         return { next: advanced, result: { state: advanced, grantsIssued: [] } };
       }
 

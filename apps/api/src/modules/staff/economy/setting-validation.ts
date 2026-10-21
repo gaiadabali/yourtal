@@ -11,6 +11,10 @@ import {
   RECEIPT_FUNDER_KEY_PREFIX,
   receiptFunderValueSchema,
 } from "@yourtal/contracts/billing/receipt-funder";
+import {
+  POINTS_IDENTITY_CHECK_SETTING_KEY,
+  pointsIdentityCheckSettingSchema,
+} from "@yourtal/contracts/identity/earning-check";
 import type { Region } from "@yourtal/contracts/region";
 import type { ZodError } from "zod";
 import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-internal-client";
@@ -104,6 +108,12 @@ export async function assertSettingValue(
   }
   if (key === INVOICE_ISSUER_SETTING_KEY) {
     const parsed = invoiceIssuerSettingSchema.safeParse(value);
+    if (!parsed.success) throw invalid(key, parsed.error);
+    return;
+  }
+  // F126: on or off, nothing else; production requires the check whatever this says.
+  if (key === POINTS_IDENTITY_CHECK_SETTING_KEY) {
+    const parsed = pointsIdentityCheckSettingSchema.safeParse(value);
     if (!parsed.success) throw invalid(key, parsed.error);
     return;
   }

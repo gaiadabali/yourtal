@@ -211,7 +211,7 @@ export function StaffEconomySettingsScreen({
                 {
                   key: "proposedBy",
                   header: t("economy.proposedBy"),
-                  cell: (row) => row.proposedBy,
+                  cell: (row) => row.proposedByEmail ?? t("economy.staffUnknown"),
                 },
                 {
                   key: "action",

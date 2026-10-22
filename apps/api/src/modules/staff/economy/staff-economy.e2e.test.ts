@@ -311,6 +311,16 @@ describe("region settings (9.5.d) -- every F12 setting, per region", () => {
     expect(propose.statusCode).toBe(201);
     const proposal = propose.json<{ id: string }>();
 
+    // The settings screen names the proposer by sign-in email, not by id.
+    const screen = await app.inject({
+      method: "GET",
+      url: "/api/staff/economy/AU/settings",
+      headers: { cookie: ops.cookie },
+    });
+    expect(
+      screen.json<{ pending: { id: string; proposedByEmail: string | null }[] }>().pending,
+    ).toContainEqual(expect.objectContaining({ id: proposal.id, proposedByEmail: finance.email }));
+
     const selfApprove = await app.inject({
       method: "POST",
       url: `/api/staff/economy/AU/settings/proposals/${proposal.id}/approve`,

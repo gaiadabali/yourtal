@@ -1,4 +1,4 @@
-h1:LQkawvjUZxU8SFJZqd7pydHlT4hAfotUXl+IQm1OkwA=
+h1:g24lMLVt6PNCRC5OJ5KouEGMH6g73hi8U4L5VbcP5ck=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -142,3 +142,4 @@ h1:LQkawvjUZxU8SFJZqd7pydHlT4hAfotUXl+IQm1OkwA=
 20261021042150_receipt_packages.sql h1:lAybEv1F5m4GIXGv2lS8QIw2GKSdHYDJkHLH6Rkh+Ts=
 20261021062832_receipt_grant_from_package.sql h1:UkB6acNiIOoaIrkA2CPH5bv0/rGAdqCKRkqmFjElg/w=
 20261021150700_points_identity_check_setting.sql h1:GvNSVuSKZkgm6GoENUsv3fGnYI4pUVYm8pDjvxMPSa4=
+20261022090000_listing_redeem_partner.sql h1:yF3B9ZugvJ4S3vtn+YBG8dj51R2/aHZ2/+jNXqa35DI=

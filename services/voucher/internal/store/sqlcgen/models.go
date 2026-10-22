@@ -48,6 +48,7 @@ type StoreListing struct {
 	RejectionReason         *string
 	Tags                    []byte
 	CreatedAt               pgtype.Timestamptz
+	RedeemPartnerID         *string
 }
 
 type StoreListingLocation struct {

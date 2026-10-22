@@ -220,6 +220,8 @@ const MAPPINGS: readonly Mapping[] = [
 
       created_at:
         "13.12.b: the store's `newest` sort key (20260930030429). Ordering input only; no client reads it.",
+      redeem_partner_id:
+        "2.8 (20261022090000): binds a listing to a partner app so only that partner's linked account may redeem its vouchers. A server-side redemption rule, null for ordinary listings, with no client-facing field until the later 2.8 tickets decide how a bound listing is shown.",
     },
   },
   {

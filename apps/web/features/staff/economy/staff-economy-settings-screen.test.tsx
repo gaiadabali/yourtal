@@ -80,3 +80,51 @@ describe("F126: the staff console shows the identity check's effective state", (
     ).toBeInTheDocument();
   });
 });
+
+describe("the settings screen's pending proposals", () => {
+  const ID = "7d9b8a52-6c9a-4b3e-9d0e-0a2f5d3c1b10";
+  const pending = (email: string | null | undefined): SettingsScreen => ({
+    region: "AU",
+    current: [],
+    pending: [
+      {
+        id: "p1",
+        kind: "setting_change",
+        region: "AU",
+        summary: "Daily earn cap",
+        proposedBy: ID,
+        ...(email === undefined ? {} : { proposedByEmail: email }),
+        approvedBy: null,
+        status: "pending",
+        reason: null,
+        createdAt: "2026-10-20T14:30:00.000Z",
+        decidedAt: null,
+      },
+    ],
+  });
+  const show = (settings: SettingsScreen) =>
+    render(
+      <StaffEconomySettingsScreen
+        t={t}
+        appEnv="staging"
+        region="AU"
+        settings={settings}
+        canPropose={false}
+        currentStaffId="staff-me"
+        idempotencyKey="k"
+        flash={undefined}
+      />,
+    );
+
+  it("names the proposer by email, not by user id", () => {
+    show(pending("finance.one@example.test"));
+    expect(screen.getAllByText("finance.one@example.test").length).toBeGreaterThan(0);
+    expect(screen.queryByText(ID)).not.toBeInTheDocument();
+  });
+
+  it("says a staff member when there is no email, never the id", () => {
+    show(pending(null));
+    expect(screen.getAllByText("A staff member").length).toBeGreaterThan(0);
+    expect(screen.queryByText(ID)).not.toBeInTheDocument();
+  });
+});

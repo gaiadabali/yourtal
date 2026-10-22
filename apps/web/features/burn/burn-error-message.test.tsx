@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import type { ReactNode } from "react";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextIntlClientProvider } from "next-intl";
 import type { Region } from "@yourtal/contracts/region";
 import { RegionProvider } from "@/features/region/region-context";
@@ -16,8 +16,8 @@ import type { BurnError } from "./burn-errors";
  * (`useLocale()`/`useTranslations()`, 6.1.b), exactly as it does inside the
  * real app via `app/(app)/layout.tsx`'s `NextIntlClientProvider` — so every
  * render in this file needs that provider. `RegionProvider` is kept here
- * too even though this component no longer reads it, matching every other
- * burn test's `renderWithRegion` helper (see `burn-summary.test.tsx`).
+ * too: the unlock and expiry dates are written in the region's own zone
+ * (and every other burn test's `renderWithRegion` helper has it).
  */
 function renderWithRegion(ui: ReactNode, region: Region = "ID") {
   const { locale } = regionDisplayConfig(region);
@@ -157,5 +157,38 @@ describe("BurnErrorMessage (en-AU, YT-0405)", () => {
   it("tells the user a blocked purchase cannot go ahead, in English", () => {
     renderWithRegion(<BurnErrorMessage error={{ type: "checkout_blocked" }} />, "AU");
     expect(screen.getByRole("alert")).toHaveTextContent("can't go ahead");
+  });
+});
+
+describe("BurnErrorMessage dates are the region's own day (not UTC's)", () => {
+  // The machine's own zone must not decide the day: pin it to UTC.
+  beforeEach(() => vi.stubEnv("TZ", "UTC"));
+  afterEach(() => vi.unstubAllEnvs());
+
+  // 16:30 UTC on the 22nd is 02:30 on the 23rd in Sydney, 23:30 on the 22nd in Jakarta.
+  it("unlocks on Sydney's day for an AU wallet", () => {
+    renderWithRegion(
+      <BurnErrorMessage
+        error={{ type: "holdback_blocks", unlocksAt: "2026-09-22T16:30:00.000Z" }}
+      />,
+      "AU",
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(/23 September 2026/);
+  });
+
+  it("unlocks on Jakarta's day for an ID wallet", () => {
+    renderWithRegion(
+      <BurnErrorMessage
+        error={{ type: "holdback_blocks", unlocksAt: "2026-09-22T16:30:00.000Z" }}
+      />,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(/22 September 2026/);
+  });
+
+  it("dates an expired lock in the region's zone too", () => {
+    renderWithRegion(
+      <BurnErrorMessage error={{ type: "lock_expired", expiredAt: "2026-09-22T18:00:00.000Z" }} />,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(/23 September 2026/);
   });
 });

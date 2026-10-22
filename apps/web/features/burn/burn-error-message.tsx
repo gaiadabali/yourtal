@@ -1,8 +1,11 @@
 "use client";
 
-import { useLocale, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { asDisplayPoints, formatPointsIn } from "@yourtal/contracts/money/format";
 import type { DisplayLocale } from "@yourtal/contracts/identity/user-profile";
+import type { Region } from "@yourtal/contracts/region";
+import { REGION_TIME_ZONE } from "@/features/region/region-time-zone";
+import { useRegion } from "@/features/region/use-region";
 import type { BurnError } from "./burn-errors";
 
 export interface BurnErrorMessageProps {
@@ -12,10 +15,15 @@ export interface BurnErrorMessageProps {
 /** `Translator` for the `burn` namespace — see `next-intl`'s `useTranslations`. */
 type BurnTranslator = ReturnType<typeof useTranslations<"burn">>;
 
-function formatUnlockDateTime(iso: string, locale: "en-AU" | "id-ID"): string {
-  return new Intl.DateTimeFormat(locale, { dateStyle: "full", timeStyle: "short" }).format(
-    new Date(iso),
-  );
+type Formatter = ReturnType<typeof useFormatter>;
+
+/** In the region's own zone, so the server render and the browser agree and the day is the region's day. */
+function formatUnlockDateTime(format: Formatter, iso: string, region: Region): string {
+  return format.dateTime(new Date(iso), {
+    dateStyle: "full",
+    timeStyle: "short",
+    timeZone: REGION_TIME_ZONE[region],
+  });
 }
 
 interface ErrorCopy {
@@ -23,7 +31,13 @@ interface ErrorCopy {
   body: string;
 }
 
-function copyFor(error: BurnError, t: BurnTranslator, locale: "en-AU" | "id-ID"): ErrorCopy {
+function copyFor(
+  error: BurnError,
+  t: BurnTranslator,
+  format: Formatter,
+  locale: "en-AU" | "id-ID",
+  region: Region,
+): ErrorCopy {
   switch (error.type) {
     case "insufficient_points":
       return {
@@ -44,14 +58,14 @@ function copyFor(error: BurnError, t: BurnTranslator, locale: "en-AU" | "id-ID")
       return {
         heading: t("error.holdbackHeading"),
         body: t("error.holdbackBody", {
-          unlockDate: formatUnlockDateTime(error.unlocksAt, locale),
+          unlockDate: formatUnlockDateTime(format, error.unlocksAt, region),
         }),
       };
     case "lock_expired":
       return {
         heading: t("error.lockExpiredHeading"),
         body: t("error.lockExpiredBody", {
-          expiredDate: formatUnlockDateTime(error.expiredAt, locale),
+          expiredDate: formatUnlockDateTime(format, error.expiredAt, region),
         }),
       };
     case "insufficient_now":
@@ -100,7 +114,9 @@ function copyFor(error: BurnError, t: BurnTranslator, locale: "en-AU" | "id-ID")
 export function BurnErrorMessage({ error }: BurnErrorMessageProps) {
   const locale = useLocale() as DisplayLocale;
   const t = useTranslations("burn");
-  const { heading, body } = copyFor(error, t, locale);
+  const format = useFormatter();
+  const { region } = useRegion();
+  const { heading, body } = copyFor(error, t, format, locale, region);
   return (
     <div
       role="alert"

@@ -1710,7 +1710,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.14.d Receipts are left out of the risk gate’s user-velocity signal (group 2.10.d–e, founder 2026-10-21) → 7076c408
   - [x] 14.14.e Staff console: Receipt programmes (group 2.9.c) → 00d2946d
 - [ ] **14.23 The SnapApp scans voucher** (group 2.8, F128) · A + B + C · needs: 14.3 — 🔄 2026-10-22
-  - [ ] 14.23.a T1 partner-bound listings; T2 the holding read and code test vectors; T3 the merchant order lookup
+  - [ ] 14.23.a T1 partner-bound listings; T2 the holding read and code test vectors; T3 the merchant order lookup → T1 → ad0901b3
   - [ ] 14.23.b T4 the partner ownership read; T5 wallet copy for vouchers used in an app; T6 the checkout tier exemption
   - [ ] 14.23.c T7 the staging seed (200-point listing, stock, binding); the lead’s credential and secret steps
   - [ ] 14.23.d T8 the staging check: Phases A, B and C pass

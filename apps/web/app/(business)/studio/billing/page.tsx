@@ -69,7 +69,7 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
     );
   }
 
-  const { id: businessId, currency } = current.business;
+  const { id: businessId, currency, region } = current.business;
   const purchaseId = param(searchParams.purchase);
   const [balance, packages, alerts, card, purchase, payouts, statements, receiptProgramme] =
     await Promise.all([
@@ -122,6 +122,7 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
           canPurchase={canPurchase}
           idempotencyKey={idempotencyKey}
           locale={locale}
+          region={region}
         />
         <ReceiptProgrammePanel
           businessId={businessId}
@@ -142,7 +143,12 @@ export default async function StudioBillingPage(props: PageProps<"/studio/billin
           canEdit={canPurchase}
           locale={locale}
         />
-        <BillingStatementsPanel statements={statements} payouts={payouts.payouts} locale={locale} />
+        <BillingStatementsPanel
+          statements={statements}
+          payouts={payouts.payouts}
+          locale={locale}
+          region={region}
+        />
         <BoostChargesCard businessId={businessId} locale={locale} />
       </div>
     </StudioChrome>

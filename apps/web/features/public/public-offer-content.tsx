@@ -73,7 +73,7 @@ export function PublicOfferContent({ listing, locale, merchantHref }: PublicOffe
           />
           <PublicFact
             label={t("offer.expiryLabel")}
-            value={formatExpiryDate(listing.expiresAt, locale.intlLocale)}
+            value={formatExpiryDate(listing.expiresAt, locale.intlLocale, listing.region)}
           />
         </dl>
 

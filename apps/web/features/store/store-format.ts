@@ -1,6 +1,8 @@
 import type { MinorUnits, Points } from "@yourtal/contracts/money";
+import type { Region } from "@yourtal/contracts/region";
 import { formatPointsIn } from "@yourtal/contracts/money/format";
 import { formatMoneyAmount } from "@yourtal/ui/money-amount";
+import { REGION_TIME_ZONE } from "@/features/region/region-time-zone";
 
 /**
  * Price and date formatting for the Store (YT-0420/YT-0421). Uses
@@ -47,10 +49,20 @@ export function formatListingPrice(
   };
 }
 
-const EXPIRY_DATE_FORMATTERS: Record<SupportedLocale, Intl.DateTimeFormat> = {
-  "en-AU": new Intl.DateTimeFormat("en-AU", { dateStyle: "medium", timeStyle: "short" }),
-  "id-ID": new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }),
-};
+// One formatter per language and region zone: the expiry is the listing's own region's clock,
+// not the server's or the browser's, so the server render and the hydrated page agree.
+const EXPIRY_DATE_FORMATTERS = Object.fromEntries(
+  (["en-AU", "id-ID"] as const).flatMap((locale) =>
+    (["AU", "ID"] as const).map((region) => [
+      `${locale}/${region}`,
+      new Intl.DateTimeFormat(locale, {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: REGION_TIME_ZONE[region],
+      }),
+    ]),
+  ),
+) as Record<`${SupportedLocale}/${Region}`, Intl.DateTimeFormat>;
 
 /**
  * Formats an ISO expiry instant as an absolute date/time, e.g.
@@ -59,10 +71,15 @@ const EXPIRY_DATE_FORMATTERS: Record<SupportedLocale, Intl.DateTimeFormat> = {
  * relative label would need `Date.now()` at render time, which risks a
  * server/client mismatch for no real benefit — the listing's own `status`
  * field (docs/09, `listing.ts`) already carries the "expiring soon" signal
- * for the badge (see store-status.ts).
+ * for the badge (see store-status.ts). `region` is the listing's own, and its zone
+ * decides the day and hour shown.
  */
-export function formatExpiryDate(expiresAtIso: string, locale: SupportedLocale): string {
-  return EXPIRY_DATE_FORMATTERS[locale].format(new Date(expiresAtIso));
+export function formatExpiryDate(
+  expiresAtIso: string,
+  locale: SupportedLocale,
+  region: Region,
+): string {
+  return EXPIRY_DATE_FORMATTERS[`${locale}/${region}`].format(new Date(expiresAtIso));
 }
 
 const STOCK_NUMBER_FORMATTERS: Record<SupportedLocale, Intl.NumberFormat> = {

@@ -96,7 +96,7 @@ export function StoreOfferCard({ listing, balance, locale }: StoreOfferCardProps
           />
           <StoreOfferFact
             label={t("offer.expiresLabel")}
-            value={formatExpiryDate(listing.expiresAt, locale)}
+            value={formatExpiryDate(listing.expiresAt, locale, listing.region)}
           />
         </dl>
 

@@ -3,6 +3,8 @@ import { EmptyState } from "@yourtal/ui/empty-state";
 import { MoneyAmount } from "@yourtal/ui/money-amount";
 import type { BillingStatement } from "@yourtal/contracts/billing";
 import type { StatementPayout } from "@yourtal/contracts/billing/payouts";
+import type { Region } from "@yourtal/contracts/region";
+import { REGION_TIME_ZONE } from "@/features/region/region-time-zone";
 import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 
 /** Statements newest first, each with how its payout is going (joined by statement id). */
@@ -10,13 +12,18 @@ export function BillingStatementsPanel({
   statements,
   payouts,
   locale,
+  region,
 }: {
   statements: readonly BillingStatement[];
   payouts: readonly StatementPayout[];
   locale: SupportedLocale;
+  region: Region;
 }) {
   const t = getStudioTranslator(locale);
-  const date = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  const date = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeZone: REGION_TIME_ZONE[region],
+  });
   const payoutById = new Map(payouts.map((payout) => [payout.statementId, payout]));
   const rows = [...statements].sort((a, b) => b.periodFrom.localeCompare(a.periodFrom));
 

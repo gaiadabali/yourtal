@@ -2,6 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { PointsChip } from "@yourtal/ui/points-chip";
 import { EmptyState } from "@yourtal/ui/empty-state";
 import type { BudgetAlert, PointPackage } from "@yourtal/contracts/billing";
+import type { Region } from "@yourtal/contracts/region";
+import { REGION_TIME_ZONE } from "@/features/region/region-time-zone";
 import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import type { BillingBalance } from "./billing-data";
 import { BillingAlertsPanel } from "./billing-alerts-panel";
@@ -18,6 +20,8 @@ export interface BillingScreenProps {
   /** Minted once per render (`page.tsx`) and embedded per form, so a double-click of the same button reuses one idempotency key rather than minting a fresh one per submit. */
   idempotencyKey: string;
   locale: SupportedLocale;
+  /** The business's region: its dates are written in that region's zone, not the server's or the browser's. */
+  region: Region;
 }
 
 /**
@@ -36,13 +40,17 @@ export function BillingScreen({
   canPurchase,
   idempotencyKey,
   locale,
+  region,
 }: BillingScreenProps) {
   const t = getStudioTranslator(locale);
   // One allocation per purchase (FundReserve creates it), so it carries the drawdown too.
   const purchases = balance.allocations
     .filter((allocation) => allocation.funderType === "partner")
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  const date = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  const date = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeZone: REGION_TIME_ZONE[region],
+  });
   const number = new Intl.NumberFormat(locale);
   return (
     <div className="flex flex-col gap-6">
@@ -74,7 +82,7 @@ export function BillingScreen({
         </CardContent>
       </Card>
 
-      <BillingAlertsPanel alerts={alerts} locale={locale} />
+      <BillingAlertsPanel alerts={alerts} locale={locale} region={region} />
 
       <Card>
         <CardHeader>

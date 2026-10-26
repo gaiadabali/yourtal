@@ -7,6 +7,8 @@ export interface OnboardingProgressProps {
   /** The steps this run of the flow actually has — "interests" is left out entirely when ad-targeting consent was not granted, rather than shown and skipped. */
   steps: readonly OnboardingStepKey[];
   currentIndex: number;
+  /** Steps this person was never shown (interests, when targeting was not agreed to): a dash, not a check. */
+  skipped?: readonly OnboardingStepKey[];
 }
 
 /**
@@ -16,11 +18,15 @@ export interface OnboardingProgressProps {
  * label-plus-bar, and locale comes from next-intl rather than a `region`
  * prop (6.1.b: display language is independent of region).
  */
-export function OnboardingProgress({ steps, currentIndex }: OnboardingProgressProps) {
+export function OnboardingProgress({ steps, currentIndex, skipped = [] }: OnboardingProgressProps) {
   const t = useTranslations("onboarding.progress");
   return (
     <Stepper
-      steps={steps.map((key) => ({ key, label: t(key) }))}
+      steps={steps.map((key) => ({
+        key,
+        label: t(key),
+        ...(skipped.includes(key) ? { skipped: true, skippedLabel: t("skipped") } : {}),
+      }))}
       currentIndex={currentIndex}
       aria-label={t(steps[currentIndex] ?? "consent")}
     />

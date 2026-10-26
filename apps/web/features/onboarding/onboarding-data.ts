@@ -18,6 +18,19 @@ export function getOnboardingConsents(): Promise<ApiResult<ConsentsResponse>> {
   return apiFetch("/api/me/consents", consentsResponseSchema);
 }
 
+/**
+ * Whether the interests step was passed over: it is shown only to someone who agreed to
+ * interest targeting. A failed read proves nothing either way, so it claims no skip.
+ */
+export function interestsStepSkipped(consents: ApiResult<ConsentsResponse>): boolean {
+  return (
+    consents.ok &&
+    !consents.data.consents.some(
+      (entry) => entry.purpose === "declared_interest_targeting" && entry.state === "granted",
+    )
+  );
+}
+
 const followCandidateSchema = z.object({
   id: z.string(),
   displayName: z.string(),

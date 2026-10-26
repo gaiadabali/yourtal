@@ -7,6 +7,10 @@ import enOnboarding from "@/messages/en-AU/onboarding.json";
 
 const { getMeProfile } = vi.hoisted(() => ({ getMeProfile: vi.fn() }));
 vi.mock("@/features/me/me-data", () => ({ getMeProfile }));
+vi.mock("@/features/onboarding/onboarding-data", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/onboarding/onboarding-data")>()),
+  getOnboardingConsents: () => Promise.resolve({ ok: true, data: { consents: [] } }),
+}));
 vi.mock("@/features/player/identity-check-actions", () => ({
   requestEmailVerificationAction: vi.fn(),
 }));

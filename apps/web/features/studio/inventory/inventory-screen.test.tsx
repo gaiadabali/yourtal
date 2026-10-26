@@ -109,6 +109,18 @@ describe("InventoryScreen", () => {
     expect(screen.getByLabelText("1,234 points")).toBeInTheDocument();
   });
 
+  it("dates the expiry in the listing's own zone, not the server's", () => {
+    // 14:00 UTC is 01:00 on 1 Jan in Sydney but 21:00 on 31 Dec in Jakarta.
+    const at = "2026-12-31T14:00:00.000Z";
+    const { unmount } = renderScreen({
+      listings: [{ ...LISTING, expiresAt: at, region: "AU" } as Listing],
+    });
+    expect(screen.getByText(/1 Jan 2027/)).toBeInTheDocument();
+    unmount();
+    renderScreen({ listings: [{ ...LISTING, expiresAt: at, region: "ID" } as Listing] });
+    expect(screen.getByText(/31 Dec 2026/)).toBeInTheDocument();
+  });
+
   it("gives the second approver a button for someone else's request", () => {
     renderScreen({ currentUserId: OWNER });
     expect(

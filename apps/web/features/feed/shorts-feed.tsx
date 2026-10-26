@@ -58,17 +58,19 @@ export function ShortsFeed({ data, locale, publicBase }: ShortsFeedProps) {
           preloadSrc={(item) => (postersOnly ? undefined : item.teaserUrl)}
           className="h-full"
           endSlot={
-            <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
-              <p className="font-display text-headline text-fg">{t("end.caughtUp")}</p>
+            // The feed sits on black in both themes, so the card's text is fixed white: the theme's
+            // text colours turn dark grey on black in light mode (V10).
+            <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center text-white">
+              <p className="font-display text-headline">{t("end.caughtUp")}</p>
               {data.signedOut ? (
                 <>
-                  <p className="text-body font-sans text-fg-muted">{t("end.signUpBody")}</p>
+                  <p className="text-body font-sans text-white/80">{t("end.signUpBody")}</p>
                   <Button asChild size="lg">
                     <a href={SHORTS_SIGN_UP_HREF}>{t("item.signUpToEarn")}</a>
                   </Button>
                 </>
               ) : (
-                <p className="text-body font-sans text-fg-muted">
+                <p className="text-body font-sans text-white/80">
                   {t("end.earnedToday", { points: formatFeedPoints(locale, data.earnedToday) })}
                 </p>
               )}

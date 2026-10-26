@@ -9,7 +9,8 @@
     "consent": "Persetujuan",
     "interests": "Minat",
     "follow": "Ikuti",
-    "done": "Selesai"
+    "done": "Selesai",
+    "skipped": "dilewati"
   },
   "boundary": {
     "title": "Terjadi kesalahan",

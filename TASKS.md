@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | ✅ done | 23/23 | 105/105 | `██████████` 100% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 17/25 | 77/102 | `████████░░`  75% |
-| **All** | | | **123/131** | **624/649** | `██████████`  96% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 18/25 | 82/105 | `████████░░`  78% |
+| **All** | | | **124/131** | **629/652** | `██████████`  96% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1686,12 +1686,12 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.9.c Validate the `invoice_issuer` setting when staff propose it (group 5.3.c) → 033fae42
   - [ ] 14.9.d Real tax invoices once the AU company's details are approved in `invoice_issuer` (group 5.3.d, needs 6.1.a) — moved to group 6.10, a launch gate (founder, 2026-10-22)
   - [x] 14.9.e A demo AU company with a demo ABN on staging and dev, so the Tax invoice path runs end to end; documents outside production say they are demos (group 5.3.e) → e7538310 → checked on staging: YT-AU-000006 to 000008, issued after the deploy, are demo tax invoices with ABN 99000000032
-- [ ] **14.10 Identity check before real points** (group 5.9, F102) · A · needs: — — 🔄 g5 (simplified by the founder 2026-10-21 to a verified email; the passkey joins later, 14.10.d)
+- [x] **14.10 Identity check before real points** (group 5.9, F102) · A · needs: — — 🔄 g5 (simplified by the founder 2026-10-21 to a verified email; the passkey joins later, 14.10.d) — ✅ 2026-10-26 6716ddc3
   - [x] 14.10.a Before the first real points go to a real person (docs/16 N-5), an account needs a verified email and a passkey: no earning at all until then (F126) → simplified to a verified email from a permanent (not disposable) address, ef9fc40c; watch start and completion, partner receipts (403, final) and streak bonuses gated
   - [x] 14.10.b The fraud checks rest on that, plus the holdback by trust tier and the earn caps; record it in docs/16 → F126 in docs/16, ef9fc40c
   - [x] 14.10.c The staff economy settings show the check's effective state (Required in production, On, Off) (group 5.9.d) → ef9fc40c
-  - [ ] 14.10.d Add the passkey to the check once group 3.9.c is on main, as a second switch (group 5.9.e) — moved to group 6.11, a launch gate (founder, 2026-10-22)
-  - [ ] 14.10.e Loose ends: name what is missing in the completion response; the partner link made before a refused receipt (group 5.9.f)
+  - [ ] 14.10.d Add the passkey to the check once group 3.9.c is on main, as a second switch (group 5.9.e) — moved to group 6.11, a launch gate (founder, 2026-10-22) — ✂️ cut: moved to group 6.11
+  - [x] 14.10.e Loose ends: name what is missing in the completion response; the partner link made before a refused receipt (group 5.9.f) → 6716ddc3 (group 5.9.f: missing in the completion response; the partner link after a refused receipt stays, decided 2026-10-22)
 
 - [x] **14.11 Record the payment simulation** (group 0.7.g) · lead · needs: — — ✅ 2026-10-20 fbcd08d5
   - [x] 14.11.a F106 in `docs/16-decisions.md`: every payment is simulated until real Stripe (group 6.8), and going live is keys and an address, not new code
@@ -1748,16 +1748,20 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
 - [ ] **14.22 Fix what the founder walkthrough found** (group 5.13, from 13.6 / group 5.7) · A + B + C · needs: — — 🔄 g5
   - [x] 14.22.a Studio landing and Reports crash for finance and marketers: role-restricted reads throw into error.tsx (group 5.13.a) → fd8a68ad; on staging /studio and /studio/reports load for finance and marketers, AU and ID
   - [x] 14.22.b Staging's /api/dev/inbox is public, links included; the /dev/inbox page shows 404 (group 5.13.b, the lead) → 016591d4: a session outside dev; staff see all, others only their own mail; the page reads through apiFetch
-  - [ ] 14.22.c The player restarts after a checkpoint, the overlay is clipped at 390 px, already-earned videos show the wrong state, it sometimes never starts (group 5.13.c)
-  - [ ] 14.22.d Sign-up links go to log in, /signup is a 404, no verification state or resend on Me, no unlock notification (group 5.13.d)
+  - [x] 14.22.c The player restarts after a checkpoint, the overlay is clipped at 390 px, already-earned videos show the wrong state, it sometimes never starts (group 5.13.c) → 6716ddc3 (group 5.13.c; V12b not reproduced, 14.22.m)
+  - [x] 14.22.d Sign-up links go to log in, /signup is a 404, no verification state or resend on Me, no unlock notification (group 5.13.d) → 6716ddc3 (group 5.13.d)
   - [ ] 14.22.e The campaign editor: targeting not saved, reward save and ceiling errors, raw database error on submit, submit without budget, lost edits, placeholder as value (group 5.13.e)
-  - [ ] 14.22.f Boost: low-bid error in minor units; no way to switch a boost off (group 5.13.f)
+  - [x] 14.22.f Boost: low-bid error in minor units; no way to switch a boost off (group 5.13.f) → 6716ddc3 (group 5.13.f)
   - [ ] 14.22.g The store counter: pairing steps, amount in cents with one-click full redemption, device id shown, ID counter in English, raw order ids, no revoke confirmation (group 5.13.g)
   - [ ] 14.22.h Studio layout and copy, Reports without metrics, ID billing copy (group 5.13.h)
-  - [ ] 14.22.i Viewer copy and contrast, /review in Bahasa (group 5.13.i)
+  - [x] 14.22.i Viewer copy and contrast, /review in Bahasa (group 5.13.i) → 6716ddc3 (group 5.13.i)
   - [ ] 14.22.j Staging's demo data: test content on public pages, "new viewer" logins not new (group 5.13.j)
   - [ ] 14.22.k Gifts and auctions cannot be done from the app: no Gift control and no reason, no way to list a voucher for a charity, wallet history links to "Voucher not found", stale balance after redeeming (group 5.13.k)
   - [ ] 14.22.l Walk again the journeys the walkthrough could not finish (group 5.13.l)
+  - [ ] 14.22.m The player sometimes never starts on repeat visits (V12b): needs the founder's device and browser (group 5.13.m)
+  - [ ] 14.22.n On staging: a dev-clock release shows "points unlocked" at once (V26); the demo reset gives the seeded questions their new prompts (group 5.13.n)
+  - [ ] 14.22.o true_false and likert questions: render them or skip at once (group 5.13.o)
+  - [ ] 14.22.p The whole-video chapter keeps the upload-time title; chapter chips overlap at 390 px (group 5.13.p)
 - [x] **14.24 main is green and staging deploys again** (group 1.31) · A · needs: — — ✅ 2026-10-26 781f983a
   - [x] 14.24.a Quality and the Release gate had failed on every push since 2026-10-22 (an unneeded type assertion in the fake ledger, an unformatted docs/28), so staging stayed on ef9fc40c → 781f983a; Release green, staging /api/health reports 781f983a
 - [ ] **14.25 A patched Next.js** (group 1.32) · A + B · needs: 14.24

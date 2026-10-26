@@ -63,7 +63,7 @@ describe("ReceiptProgrammePanel (2.10.b, F127)", () => {
 
   it("shows no tax line in Indonesia", () => {
     panel(mockReceiptProgramme("IDR"), { locale: "id-ID" });
-    expect(screen.getByText("Hadiah struk")).toBeInTheDocument();
+    expect(screen.getByText("Reward struk")).toBeInTheDocument();
     expect(screen.getByText("10 poin per struk")).toBeInTheDocument();
     expect(screen.queryByText(/GST/)).not.toBeInTheDocument();
   });

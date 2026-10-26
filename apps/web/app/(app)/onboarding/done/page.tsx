@@ -8,6 +8,8 @@ import { OnboardingProgress } from "@/features/onboarding/onboarding-progress";
 import { ONBOARDING_STEPS, onboardingStepIndex } from "@/features/onboarding/onboarding-steps";
 import { OnboardingTimingMark } from "@/features/onboarding/onboarding-timing-mark";
 import { parseReturnTo } from "@/features/onboarding/onboarding-return-to";
+import { EmailVerificationReminder } from "@/features/me/email-verification";
+import { getMeProfile } from "@/features/me/me-data";
 
 export interface OnboardingDonePageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -27,6 +29,9 @@ export default async function OnboardingDonePage({ searchParams }: OnboardingDon
   const t = await getTranslations("onboarding.done");
   const returnTo = parseReturnTo((await searchParams).returnTo);
   const ctaHref = (returnTo ?? "/") as Route;
+  // A light nudge: points need a verified email (F126). Read failures just hide it.
+  const me = await getMeProfile();
+  const unverifiedEmail = me.ok && me.data.emailVerified === false ? (me.data.email ?? null) : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -38,6 +43,7 @@ export default async function OnboardingDonePage({ searchParams }: OnboardingDon
         </Heading>
         <Text tone="muted">{t("body")}</Text>
       </div>
+      {unverifiedEmail ? <EmailVerificationReminder email={unverifiedEmail} /> : null}
       <Button asChild>
         <Link href={ctaHref}>{t("cta")}</Link>
       </Button>

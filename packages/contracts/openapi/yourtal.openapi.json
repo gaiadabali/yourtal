@@ -320,13 +320,18 @@
                         "null"
                       ],
                       "description": "The sign-in email, for the account menu."
+                    },
+                    "emailVerified": {
+                      "type": "boolean",
+                      "description": "Whether the sign-in email is verified (F126); false when there is none."
                     }
                   },
                   "required": [
                     "profile",
                     "businessMemberships",
                     "staffRoles",
-                    "email"
+                    "email",
+                    "emailVerified"
                   ],
                   "additionalProperties": false
                 }
@@ -431,13 +436,18 @@
                         "null"
                       ],
                       "description": "The sign-in email, for the account menu."
+                    },
+                    "emailVerified": {
+                      "type": "boolean",
+                      "description": "Whether the sign-in email is verified (F126); false when there is none."
                     }
                   },
                   "required": [
                     "profile",
                     "businessMemberships",
                     "staffRoles",
-                    "email"
+                    "email",
+                    "emailVerified"
                   ],
                   "additionalProperties": false
                 }

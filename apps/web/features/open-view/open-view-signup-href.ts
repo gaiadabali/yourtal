@@ -13,5 +13,5 @@
  * before the video ended — the same position.
  */
 export function buildOpenViewSignupHref(campaignId: string): string {
-  return `/onboarding?returnTo=${encodeURIComponent(`/watch/${campaignId}`)}`;
+  return `/register?returnTo=${encodeURIComponent(`/watch/${campaignId}`)}`;
 }

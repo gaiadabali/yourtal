@@ -18,6 +18,19 @@
     "regionLabel": "Wilayah",
     "saveCta": "Simpan"
   },
+  "emailVerification": {
+    "heading": "Email",
+    "intro": "Poin hanya ditambahkan ke akun dengan email yang sudah terverifikasi.",
+    "statusVerified": "Terverifikasi",
+    "statusUnverified": "Belum terverifikasi",
+    "verifiedBody": "Emailmu sudah terverifikasi. Kamu bisa mengumpulkan poin.",
+    "unverifiedBody": "Buka tautan yang kami kirim ke emailmu untuk memverifikasinya. Sampai saat itu, kamu bisa menonton tetapi belum mendapat poin.",
+    "resendCta": "Kirim tautan lagi",
+    "sent": "Kami mengirim tautan baru ke {email}. Buka untuk menyelesaikan.",
+    "failed": "Email tidak dapat dikirim. Coba lagi sebentar lagi.",
+    "reminderTitle": "Verifikasi emailmu untuk mulai mengumpulkan poin",
+    "reminderBody": "Kami mengirim tautan ke {email}. Buka untuk memverifikasi alamatmu."
+  },
   "language": {
     "heading": "Bahasa",
     "intro": "Bahasa yang ditampilkan YourTal untukmu. Terpisah dari wilayahmu.",

@@ -106,7 +106,7 @@ function PublicCampaignLiveFacts({
   // 11.2.b: "sign-up returns to the same campaign" — the SAME returnTo
   // Open Viewing's own signup prompts build (`/watch/{campaignId}`, the
   // real in-app watch route since 11.5.a), reused for the PRIMARY sign-up
-  // CTA too rather than a bare `/onboarding` that lands nowhere in
+  // CTA too rather than a bare sign-up link that lands nowhere in
   // particular.
   const signupHref = buildOpenViewSignupHref(campaign.id);
 

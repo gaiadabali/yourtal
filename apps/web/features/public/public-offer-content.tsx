@@ -81,7 +81,7 @@ export function PublicOfferContent({ listing, locale, merchantHref }: PublicOffe
           {t("offer.ctaBody", { worth: facts.worthLabel, points: facts.pointsLabel })}
         </p>
 
-        <PublicCtaLink href="/onboarding">{t("offer.ctaButton")}</PublicCtaLink>
+        <PublicCtaLink href="/register">{t("offer.ctaButton")}</PublicCtaLink>
       </CardContent>
     </Card>
   );

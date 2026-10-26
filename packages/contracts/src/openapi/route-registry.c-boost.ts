@@ -45,6 +45,21 @@ export const BOOST_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     errors: [VALIDATION_400, FORBIDDEN, NOT_FOUND],
   },
   {
+    method: "post",
+    path: "/api/{tenantId}/studio/campaigns/{campaignId}/boost/stop",
+    summary: "Stop a campaign's boost now or at the end of today",
+    tags: ["studio", "boost"],
+    pathParams: [TENANT_ID_PARAM, CAMPAIGN_ID_PARAM],
+    requestBody: {
+      description: "When the boost stops. Days already served are still charged.",
+      schema: ref("StopBoostRequest"),
+    },
+    successStatus: 200,
+    successDescription: "The setting after the stop, with its report.",
+    successSchema: ref("BoostView"),
+    errors: [VALIDATION_400, FORBIDDEN, NOT_FOUND],
+  },
+  {
     method: "get",
     path: "/api/{tenantId}/studio/billing/boost-charges",
     summary: "The business's boost charges, one per campaign per closed day",

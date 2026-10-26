@@ -147,6 +147,27 @@ test("a live campaign's boost is set in Studio, and shows in Reports and Billing
     await page.goto("/studio/billing");
     await expect(page.getByRole("heading", { name: "Boost charges" })).toBeVisible();
     await capture(page, "billing");
+
+    // 5.13.f: a bid under the reserve is refused in dollars, not as the raw 100 minor units (B12);
+    // and the boost can be stopped (B15). One account serves both: sign-up is capped per IP.
+    await page.goto("/studio/campaigns");
+    await page.getByRole("button", { name: /Morning flat white/ }).click();
+    await page.getByRole("tab", { name: "Boost" }).click();
+    // The saved setting loads after the tab opens; typing before then would be overwritten.
+    await expect(page.getByLabel("Daily budget (AUD)")).toHaveValue("5.00");
+    await page.getByLabel("Maximum bid per 1,000 impressions (AUD)").fill("0.50");
+    await page.getByRole("button", { name: "Save boost" }).click();
+    const refusal = page.locator("p[role=alert]");
+    await expect(refusal).toContainText("at least $1.00 per 1,000 impressions");
+    await expect(refusal).not.toContainText("100");
+    await page.getByLabel("Maximum bid per 1,000 impressions (AUD)").fill("2.50");
+    await page.getByRole("button", { name: "Stop now" }).click();
+    await expect(page.getByText("This boost is off")).toBeVisible();
+    await capture(page, "stopped");
+    const stopped = await pool.query(`SELECT state FROM feed.boost WHERE campaign_id = $1`, [
+      owner.campaignId,
+    ]);
+    expect(stopped.rows).toEqual([{ state: "paused" }]);
   } finally {
     await pool.end();
   }

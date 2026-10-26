@@ -1073,7 +1073,15 @@
     "reportTitle": "Boost",
     "reportEmpty": "No campaign is boosted yet.",
     "cardRequired": "Boosts are charged to a saved card. Add one before you set or raise a budget.",
-    "addCard": "Add a card"
+    "addCard": "Add a card",
+    "bidBelowReserve": "The maximum bid must be at least {amount} per 1,000 impressions, the lowest bid that can win.",
+    "stopTitle": "Stop this boost",
+    "stopCharged": "Days already served are still charged.",
+    "stopNow": "Stop now",
+    "stopEndOfDay": "Stop at the end of today",
+    "stoppedTitle": "This boost is off",
+    "stoppedBody": "It isn't bidding for Home's boosted slots. To start again, turn on Bidding on and save.",
+    "endsAtNotice": "Bidding ends {when}."
   },
   "join": {
     "title": "Join a business",

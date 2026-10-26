@@ -11081,6 +11081,101 @@
         }
       }
     },
+    "/api/{tenantId}/studio/campaigns/{campaignId}/boost/stop": {
+      "post": {
+        "summary": "Stop a campaign's boost now or at the end of today",
+        "tags": [
+          "studio",
+          "boost"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "description": "The business's own campaign.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "When the boost stops. Days already served are still charged.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StopBoostRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The setting after the stop, with its report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoostView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No campaign with this id belongs to this business.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/{tenantId}/studio/billing/boost-charges": {
       "get": {
         "summary": "The business's boost charges, one per campaign per closed day",
@@ -31626,6 +31721,23 @@
           "bankLast4",
           "paidAt",
           "failureCode"
+        ],
+        "additionalProperties": false
+      },
+      "StopBoostRequest": {
+        "description": "Stop a boost now, or at the end of today on the region's clock. Days already served are still charged.",
+        "type": "object",
+        "properties": {
+          "effective": {
+            "type": "string",
+            "enum": [
+              "now",
+              "end_of_day"
+            ]
+          }
+        },
+        "required": [
+          "effective"
         ],
         "additionalProperties": false
       },

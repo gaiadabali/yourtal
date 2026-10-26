@@ -106,9 +106,7 @@ describe("BurnFlow", () => {
       />,
     );
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "Sebagian poin Anda masih ditahan sementara",
-    );
+    expect(screen.getByRole("alert")).toHaveTextContent("Sebagian poinmu masih ditahan sementara");
     expect(screen.queryByRole("button", { name: "Lanjutkan" })).not.toBeInTheDocument();
   });
 
@@ -179,7 +177,7 @@ describe("BurnFlow", () => {
     await user.click(screen.getByRole("button", { name: "Lanjutkan" }));
     await user.click(screen.getByRole("button", { name: "Tukar sekarang" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Saldo Anda berubah");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Saldomu berubah");
     expect(screen.queryByRole("button", { name: "Tukar sekarang" })).not.toBeInTheDocument();
   });
 

@@ -32,7 +32,7 @@ function renderWithRegion(ui: ReactNode, region: Region = "ID") {
 describe("BurnErrorMessage", () => {
   it("states the exact shortfall for insufficient_points", () => {
     renderWithRegion(<BurnErrorMessage error={{ type: "insufficient_points", short: 1_500 }} />);
-    expect(screen.getByRole("alert")).toHaveTextContent("Poin Anda belum cukup");
+    expect(screen.getByRole("alert")).toHaveTextContent("Poinmu belum cukup");
     expect(screen.getByRole("alert")).toHaveTextContent("1.500 poin");
   });
 
@@ -43,7 +43,7 @@ describe("BurnErrorMessage", () => {
       />,
     );
     const alert = screen.getByRole("alert");
-    expect(alert).toHaveTextContent("Sebagian poin Anda masih ditahan sementara");
+    expect(alert).toHaveTextContent("Sebagian poinmu masih ditahan sementara");
     expect(alert).toHaveTextContent("mencegah kecurangan");
     // No jargon: none of these words should leak into user-facing copy.
     const forbiddenJargon = ["holdback", "settlement", "authorize", "capture", "ledger"];
@@ -73,8 +73,8 @@ describe("BurnErrorMessage", () => {
 
   it("tells the user their balance changed and no longer covers the price, with no stale shortfall number", () => {
     renderWithRegion(<BurnErrorMessage error={{ type: "insufficient_now" }} />);
-    expect(screen.getByRole("alert")).toHaveTextContent("Poin Anda belum cukup");
-    expect(screen.getByRole("alert")).toHaveTextContent("Saldo Anda berubah");
+    expect(screen.getByRole("alert")).toHaveTextContent("Poinmu belum cukup");
+    expect(screen.getByRole("alert")).toHaveTextContent("Saldomu berubah");
   });
 
   it("tells the user a blocked purchase cannot go ahead", () => {

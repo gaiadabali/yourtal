@@ -11,9 +11,9 @@
   "currentBid": "Tawaran saat ini",
   "bidCount": "{count, plural, =0 {Belum ada tawaran} other {# tawaran}}",
   "standing": {
-    "leading": "Anda teratas",
+    "leading": "Kamu teratas",
     "outbid": "Terlampaui",
-    "won": "Anda menang",
+    "won": "Kamu menang",
     "lost": "Selesai"
   },
   "left": {
@@ -29,26 +29,26 @@
     "cancelled": "Dibatalkan"
   },
   "yourStanding": {
-    "leading": "Anda penawar tertinggi di {amount}.",
-    "outbid": "Tawaran Anda terlampaui. Tawaran tertinggi Anda {amount}.",
-    "won": "Anda menang dengan {amount}. Voucher ada di dompet Anda.",
-    "lost": "Lelang ini selesai. Tawaran tertinggi Anda {amount}, dan penahanan dana sudah dilepas.",
+    "leading": "Kamu penawar tertinggi di {amount}.",
+    "outbid": "Tawaranmu terlampaui. Tawaran tertinggimu {amount}.",
+    "won": "Kamu menang dengan {amount}. Voucher ada di dompetmu.",
+    "lost": "Lelang ini selesai. Tawaran tertinggimu {amount}, dan penahanan dana sudah dilepas.",
     "none": ""
   },
-  "yourListing": "Ini lelang Anda. Anda tidak bisa menawar.",
+  "yourListing": "Ini lelangmu. Kamu tidak bisa menawar.",
   "back": "Semua lelang",
   "bidPanelLabel": "Penawaran",
   "voucherFacts": "Berlaku sampai {date}.",
-  "moneyPath": "Tawaran pemenang dibayar ke rekening yayasan sendiri. Anda mendapat voucher; yayasan mendapat dananya.",
+  "moneyPath": "Tawaran pemenang dibayar ke rekening yayasan sendiri. Kamu mendapat voucher; yayasan mendapat dananya.",
   "rules": {
     "reserve": "Tawaran pertama minimal setengah nilai voucher.",
     "extension": "Tawaran di 2 menit terakhir menambah 2 menit, jadi tidak ada yang menang dengan tawaran di detik terakhir.",
     "private": "Hanya jumlah dan banyaknya tawaran yang ditampilkan, tidak pernah siapa penawarnya.",
-    "hold": "Tawaran Anda menahan dana di kartu. Hanya ditagih jika menang; jika tidak, dana dilepas saat lelang selesai."
+    "hold": "Tawaranmu menahan dana di kartu. Hanya ditagih jika menang; jika tidak, dana dilepas saat lelang selesai."
   },
   "error": {
     "title": "Lelang belum bisa dimuat",
-    "body": "Periksa koneksi Anda lalu coba lagi."
+    "body": "Periksa koneksimu lalu coba lagi."
   },
   "empty": {
     "title": "Belum ada lelang yang dibuka",
@@ -60,27 +60,27 @@
     "bids": "Tawaran saya",
     "listings": "Lelang saya",
     "empty": {
-      "bids": "Anda belum menawar apa pun.",
-      "listings": "Anda belum melelang voucher."
+      "bids": "Kamu belum menawar apa pun.",
+      "listings": "Kamu belum melelang voucher."
     }
   },
   "bid": {
-    "label": "Tawaran Anda ({currency})",
+    "label": "Tawaranmu ({currency})",
     "minimum": "Minimal {amount}",
     "submit": "Ajukan tawaran",
-    "placed": "Tawaran diajukan. Anda penawar tertinggi.",
+    "placed": "Tawaran diajukan. Kamu penawar tertinggi.",
     "invalidAud": "Masukkan jumlah dalam dolar, misalnya 21.50.",
     "invalidIdr": "Masukkan jumlah rupiah bulat, misalnya 25000.",
     "fineprint": "Tawaran dalam uang tunai dan mengikat. Pembayaran di situs ini disimulasikan.",
     "card": {
       "title": "Tambahkan kartu untuk menawar",
-      "why": "Tawaran Anda menahan dana sebesar jumlahnya di kartu ini. Hanya ditagih jika Anda menang; jika tidak, dana dilepas saat lelang selesai.",
+      "why": "Tawaranmu menahan dana sebesar jumlahnya di kartu ini. Hanya ditagih jika kamu menang; jika tidak, dana dilepas saat lelang selesai.",
       "add": "Tambahkan kartu untuk menawar",
       "replace": "Ganti kartu",
       "saved": "Tawaran memakai {brand} berakhiran {last4}, berlaku hingga {month}/{year}.",
-      "added": "Kartu tersimpan. Anda bisa menawar sekarang.",
-      "saving": "Menyimpan kartu Anda. Biasanya hanya beberapa detik.",
-      "stillSaving": "Kartu Anda belum terkonfirmasi. Muat ulang halaman ini semenit lagi untuk memeriksa.",
+      "added": "Kartu tersimpan. Kamu bisa menawar sekarang.",
+      "saving": "Menyimpan kartumu. Biasanya hanya beberapa detik.",
+      "stillSaving": "Kartumu belum terkonfirmasi. Muat ulang halaman ini semenit lagi untuk memeriksa.",
       "cancelled": "Tidak ada kartu yang disimpan.",
       "failed": "Halaman kartu belum bisa dibuka. Coba lagi."
     },
@@ -89,12 +89,12 @@
       "voucher_not_unused": "Hanya voucher yang belum dipakai yang bisa dilelang.",
       "voucher_not_transferable": "Voucher ini tidak bisa dialihkan.",
       "voucher_already_transferred": "Voucher ini sudah pernah dialihkan.",
-      "seller_ineligible": "Verifikasi email Anda sebelum melelang voucher.",
+      "seller_ineligible": "Verifikasi emailmu sebelum melelang voucher.",
       "bidder_ineligible": "Hanya anggota dewasa terverifikasi di wilayah ini yang bisa menawar.",
-      "own_auction": "Anda tidak bisa menawar lelang sendiri.",
+      "own_auction": "Kamu tidak bisa menawar lelang sendiri.",
       "auction_closed": "Lelang ini sudah selesai.",
       "bid_too_low": "Tawaran di bawah minimum. Tawar minimal sebesar jumlah yang tertera.",
-      "payment_declined": "Kartu Anda menolak penahanan dana. Coba kartu lain.",
+      "payment_declined": "Kartumu menolak penahanan dana. Coba kartu lain.",
       "failed": "Belum berhasil. Coba lagi.",
       "card_required": "Tambahkan kartu sebelum menawar.",
       "charity_not_ready": "Yayasan ini masih menyiapkan penerimaan pembayaran. Coba lagi nanti."
@@ -105,8 +105,8 @@
     "title": "Lelang voucher ini untuk amal",
     "intro": "Voucher dilelang selama 3 hari. Pemenang membayar langsung ke yayasan.",
     "pick": "Pilih yayasan",
-    "noCharities": "Belum ada yayasan di wilayah Anda yang menerima lelang.",
-    "ruleCode": "Kode Anda langsung tidak berlaku begitu dilelang.",
+    "noCharities": "Belum ada yayasan di wilayahmu yang menerima lelang.",
+    "ruleCode": "Kodemu langsung tidak berlaku begitu dilelang.",
     "ruleLength": "Lelang berjalan 3 hari dan dimulai dari setengah nilai voucher.",
     "ruleMoney": "Jika tidak ada penawar, yayasan mendapat vouchernya.",
     "cancel": "Batal",
@@ -117,12 +117,12 @@
       "voucher_not_unused": "Hanya voucher yang belum dipakai yang bisa dilelang.",
       "voucher_not_transferable": "Voucher ini tidak bisa dialihkan.",
       "voucher_already_transferred": "Voucher ini sudah pernah dialihkan.",
-      "seller_ineligible": "Verifikasi email Anda sebelum melelang voucher.",
+      "seller_ineligible": "Verifikasi emailmu sebelum melelang voucher.",
       "bidder_ineligible": "Hanya anggota dewasa terverifikasi di wilayah ini yang bisa menawar.",
-      "own_auction": "Anda tidak bisa menawar lelang sendiri.",
+      "own_auction": "Kamu tidak bisa menawar lelang sendiri.",
       "auction_closed": "Lelang ini sudah selesai.",
       "bid_too_low": "Sudah ada yang menawar lebih dulu. Tawar minimal jumlah terbaru.",
-      "payment_declined": "Kartu Anda menolak penahanan dana. Coba kartu lain.",
+      "payment_declined": "Kartumu menolak penahanan dana. Coba kartu lain.",
       "failed": "Belum berhasil. Coba lagi.",
       "charity_not_ready": "Yayasan ini masih menyiapkan penerimaan pembayaran. Pilih yayasan lain atau coba lagi nanti."
     }

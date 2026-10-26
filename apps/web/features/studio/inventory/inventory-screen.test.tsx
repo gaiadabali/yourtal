@@ -113,11 +113,11 @@ describe("InventoryScreen", () => {
     // 14:00 UTC is 01:00 on 1 Jan in Sydney but 21:00 on 31 Dec in Jakarta.
     const at = "2026-12-31T14:00:00.000Z";
     const { unmount } = renderScreen({
-      listings: [{ ...LISTING, expiresAt: at, region: "AU" } as Listing],
+      listings: [{ ...LISTING, expiresAt: at, region: "AU" }],
     });
     expect(screen.getByText(/1 Jan 2027/)).toBeInTheDocument();
     unmount();
-    renderScreen({ listings: [{ ...LISTING, expiresAt: at, region: "ID" } as Listing] });
+    renderScreen({ listings: [{ ...LISTING, expiresAt: at, region: "ID" }] });
     expect(screen.getByText(/31 Dec 2026/)).toBeInTheDocument();
   });
 

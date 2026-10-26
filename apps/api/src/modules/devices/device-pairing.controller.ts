@@ -6,6 +6,8 @@ import { Idempotent } from "../../shared/idempotency/idempotent.decorator";
 import { PAIR_DEVICE_RETENTION_MS } from "./retention";
 import { COUNTER_DEVICE_REPOSITORY } from "./persistence/counter-device.repository";
 import type { CounterDeviceRepository } from "./persistence/counter-device.repository";
+import { MERCHANT_LOCATION_LOOKUP } from "./persistence/merchant-location-lookup";
+import type { MerchantLocationLookup } from "./persistence/merchant-location-lookup";
 import { pairDevice } from "./use-cases/pair-device.use-case";
 import { mapDevicesErrorToHttpException } from "./to-http-exception";
 
@@ -21,6 +23,7 @@ import { mapDevicesErrorToHttpException } from "./to-http-exception";
 export class DevicePairingController {
   constructor(
     @Inject(COUNTER_DEVICE_REPOSITORY) private readonly devices: CounterDeviceRepository,
+    @Inject(MERCHANT_LOCATION_LOOKUP) private readonly locations: MerchantLocationLookup,
   ) {}
 
   @RateLimit({
@@ -34,6 +37,10 @@ export class DevicePairingController {
   async pair(@Body() body: PairDeviceDto) {
     const result = await pairDevice(this.devices, body.pairingCode, new Date());
     if (result.isErr()) throw mapDevicesErrorToHttpException(result.error);
-    return { deviceId: result.value.deviceId, credential: result.value.credential };
+    const { deviceId, credential, region, label, locationId } = result.value;
+    // Same display facts `unlock` returns, so a freshly paired counter already
+    // speaks its own language and names its own shop before any PIN is typed.
+    const locationName = await this.locations.nameOf(locationId);
+    return { deviceId, credential, region, label, locationName: locationName ?? locationId };
   }
 }

@@ -20,6 +20,7 @@ function toRow(row: typeof counterCaptureLog.$inferSelect): CaptureLogRow {
     currency: currencySchema.parse(row.currency),
     orderRef: row.orderRef,
     orderTotalMinor: row.orderTotalMinor,
+    offerTitle: row.offerTitle,
     authorizedAt: row.authorizedAt,
     capturedAt: row.capturedAt,
   };
@@ -35,14 +36,15 @@ export class DrizzleCaptureLogRepository implements CaptureLogRepository {
     await this.db.insert(counterCaptureLog).values(input).onConflictDoNothing();
   }
 
-  async listTodayForDevice(deviceId: string): Promise<readonly CaptureLogRow[]> {
+  async listTodayForDevice(deviceId: string, timeZone: string): Promise<readonly CaptureLogRow[]> {
     const rows = await this.db
       .select()
       .from(counterCaptureLog)
       .where(
         and(
           eq(counterCaptureLog.deviceId, deviceId),
-          sql`${counterCaptureLog.capturedAt} >= date_trunc('day', now())`,
+          // The start of the region's day, as an instant: truncate the wall clock there, then put the zone back.
+          sql`${counterCaptureLog.capturedAt} >= date_trunc('day', now() AT TIME ZONE ${timeZone}) AT TIME ZONE ${timeZone}`,
         ),
       )
       .orderBy(desc(counterCaptureLog.capturedAt));

@@ -12,6 +12,7 @@ export const counterCaptureLog = storePgSchema.table("counter_capture_log", {
   currency: text("currency").notNull(),
   orderRef: text("order_ref").notNull(),
   orderTotalMinor: bigint("order_total_minor", { mode: "number" }).notNull(),
+  offerTitle: text("offer_title"),
   authorizedAt: timestamp("authorized_at", { withTimezone: true }).notNull(),
   capturedAt: timestamp("captured_at", { withTimezone: true }).notNull().defaultNow(),
 });

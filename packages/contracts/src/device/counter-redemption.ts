@@ -59,6 +59,8 @@ export type CounterCapture = z.infer<typeof counterCaptureSchema>;
 /** `GET /api/counter/log` — today's captures at this device only (redemption.yaml's `logScope`). */
 export const counterLogEntrySchema = counterCaptureSchema.extend({
   authorizedAt: z.iso.datetime(),
+  /** The voucher's own title, for the cashier's log; `null` for a capture logged before titles were kept. */
+  offerTitle: z.string().min(1).nullable(),
 });
 export type CounterLogEntry = z.infer<typeof counterLogEntrySchema>;
 

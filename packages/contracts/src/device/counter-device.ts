@@ -60,6 +60,16 @@ export type PairDeviceRequest = z.infer<typeof pairDeviceRequestSchema>;
 export const pairDeviceResultSchema = z.object({
   deviceId: z.uuid(),
   credential: z.string().min(1),
+  /**
+   * What the counter shows and speaks from its very first screen: the
+   * device's own region (language, currency, time zone), the label the owner
+   * gave it and the shop it is at. Pairing marks the device unlocked without
+   * a PIN, so waiting for `unlock` to learn these left a freshly paired
+   * Indonesian counter in English until its first lock.
+   */
+  region: regionSchema,
+  label: z.string().min(1),
+  locationName: z.string().min(1),
 });
 export type PairDeviceResult = z.infer<typeof pairDeviceResultSchema>;
 

@@ -10,6 +10,8 @@ export interface CaptureLogRow {
   readonly currency: Currency;
   readonly orderRef: string;
   readonly orderTotalMinor: number;
+  /** The voucher's title at the time; `null` for rows logged before titles were kept. */
+  readonly offerTitle: string | null;
   readonly authorizedAt: Date;
   readonly capturedAt: Date;
 }
@@ -28,12 +30,11 @@ export interface CaptureLogRepository {
   record(input: RecordCaptureInput): Promise<void>;
   /**
    * Today's captures at one device, newest first — `redemption.yaml`'s
-   * `logScope: "today"`. UTC calendar day, not yet the region clock F16
-   * specifies for streaks — a known simplification, not a silent one: a
-   * device near a region's midnight sees today's log roll over at UTC
-   * midnight rather than its own local one.
+   * `logScope: "today"`. "Today" is a calendar day on the device's own
+   * region clock (F16, `timeZone`), so a Sydney counter's list rolls over
+   * at Sydney midnight, not at 11am when UTC does.
    */
-  listTodayForDevice(deviceId: string): Promise<readonly CaptureLogRow[]>;
+  listTodayForDevice(deviceId: string, timeZone: string): Promise<readonly CaptureLogRow[]>;
   listForBusiness(query: CaptureLogQuery): Promise<readonly CaptureLogRow[]>;
 }
 

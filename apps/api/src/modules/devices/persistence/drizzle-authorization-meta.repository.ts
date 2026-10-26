@@ -26,6 +26,7 @@ export class DrizzleAuthorizationMetaRepository implements AuthorizationMetaRepo
       locationId: row.locationId,
       orderRef: row.orderRef,
       orderTotalMinor: row.orderTotalMinor,
+      offerTitle: row.offerTitle,
     };
   }
 }

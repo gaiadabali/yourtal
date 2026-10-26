@@ -43,20 +43,35 @@ afterAll(async () => {
   await app.close();
 });
 
-async function seedBusinessAndLocation(): Promise<{ businessId: string; locationId: string }> {
+async function seedBusinessAndLocation(
+  region: "AU" | "ID" = "AU",
+): Promise<{ businessId: string; locationId: string }> {
   const businessId = randomUUID();
+  // A device's region must be its business's (counter_device_business_region_matches).
+  const local =
+    region === "AU"
+      ? {
+          taxIdKind: "ABN",
+          taxIdValue: "12345678901",
+          addressState: "NSW",
+          addressPostcode: "2000",
+          addressCity: null,
+        }
+      : {
+          taxIdKind: "NPWP",
+          taxIdValue: "1234567890123456",
+          addressState: null,
+          addressPostcode: null,
+          addressCity: "Jakarta",
+        };
   await db.insert(businessAccounts).values({
     id: businessId,
     legalName: "8.2.h Test Business Pty Ltd",
     displayName: "8.2.h Test Business",
-    taxIdKind: "ABN",
-    taxIdValue: "12345678901",
-    addressState: "NSW",
-    addressPostcode: "2000",
-    addressCity: null,
+    ...local,
     roles: ["redeemer"],
-    region: "AU",
-    currency: "AUD",
+    region,
+    currency: region === "AU" ? "AUD" : "IDR",
     handle: `biz-8-2-h-${randomUUID().slice(0, 8)}`,
   });
   const locationId = randomUUID();
@@ -74,28 +89,40 @@ async function provisionAndPairDevice(
   businessId: string,
   locationId: string,
 ): Promise<{ deviceId: string; secret: string }> {
-  const pinHash = await argon2Hash("1234");
-  const pairing = issuePairingCode();
-  const device = await devices.create({
-    businessId,
-    region: "AU",
-    locationId,
-    label: "Front counter",
-    pinHash,
-    pairingCodeHash: pairing.hash,
-    pairingExpiresAt: new Date(Date.now() + 15 * 60 * 1000),
-    createdBy: "test-owner",
-  });
+  const { device } = await provisionDevice(businessId, locationId, "AU", "Front counter");
   const credential = issueDeviceCredential();
   const paired = await devices.pair(device.id, credential.hash, new Date());
   if (paired === null) throw new Error("pairing failed in test setup");
   return { deviceId: device.id, secret: credential.secret };
 }
 
+/** A provisioned, not yet paired device and the code that pairs it. */
+async function provisionDevice(
+  businessId: string,
+  locationId: string,
+  region: "AU" | "ID",
+  label: string,
+) {
+  const pairing = issuePairingCode();
+  const device = await devices.create({
+    businessId,
+    region,
+    locationId,
+    label,
+    pinHash: await argon2Hash("1234"),
+    pairingCodeHash: pairing.hash,
+    pairingExpiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    createdBy: "test-owner",
+  });
+  return { device, pairingCode: pairing.secret };
+}
+
 /** A real `store.listings` row plus a matching `platform.voucher_fake_voucher`, code known to the test. */
 async function seedRedeemableVoucher(
   merchantId: string,
+  policy: "single_use_forfeit" | "balance_carrying" = "single_use_forfeit",
 ): Promise<{ listingId: string; code: string }> {
+  const partialRedemption = policy === "balance_carrying" ? "balance_carries" : "single_use";
   const listingId = randomUUID();
   const farFuture = new Date(Date.now() + 90 * 24 * 3600 * 1000).toISOString();
   await db.execute(sql`
@@ -107,9 +134,9 @@ async function seedRedeemableVoucher(
        content_category, image_url, channel, partial_redemption)
     VALUES (${listingId}, ${merchantId}, '8.2.h Test Merchant', '8.2.h Test Listing',
             'seeded for counter-idempotency.e2e.test.ts', 'food_beverage',
-            50000, 15000, 1000, 10, 10, false, 'single_use_forfeit',
+            50000, 15000, 1000, 10, 10, false, ${policy},
             NULL, ${farFuture}, 'available', 'AUD', 'AU', 'all_ages',
-            'food-and-drink', 'http://127.0.0.1:26900/yourtal-media/listings/placeholder.jpg', 'both', 'single_use')
+            'food-and-drink', 'http://127.0.0.1:26900/yourtal-media/listings/placeholder.jpg', 'both', ${partialRedemption})
   `);
 
   const voucherId = randomUUID();
@@ -227,5 +254,136 @@ describe("counter authorize/capture over real HTTP, real device credential (8.2.
     });
     expect(response.statusCode).toBe(401);
     expect(response.json<{ code: string }>().code).toBe("invalid_device_credential");
+  });
+});
+
+describe("POST /api/devices/pair names the device's own region, label and shop (Group 5.13.g)", () => {
+  it("so a freshly paired Indonesian counter speaks Indonesian before any PIN is typed", async () => {
+    const { businessId, locationId } = await seedBusinessAndLocation("ID");
+    const { pairingCode } = await provisionDevice(businessId, locationId, "ID", "Kemang kasir 2");
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/devices/pair",
+      headers: { "idempotency-key": randomUUID() },
+      payload: { pairingCode },
+    });
+    expect(response.statusCode, response.body).toBe(201);
+    expect(response.json()).toMatchObject({
+      region: "ID",
+      label: "Kemang kasir 2",
+      locationName: "8.2.h Test Store",
+    });
+  });
+});
+
+describe("counter authorize refuses an amount the voucher cannot give (Group 5.13.g)", () => {
+  async function authorize(secret: string, code: string, amountMinor?: number) {
+    return app.inject({
+      method: "POST",
+      url: "/api/counter/authorize",
+      headers: { authorization: `Bearer ${secret}`, "idempotency-key": randomUUID() },
+      payload: {
+        code,
+        currency: "AUD",
+        orderRef: `order-${randomUUID()}`,
+        orderTotalMinor: 5000,
+        ...(amountMinor === undefined ? {} : { amountMinor }),
+      },
+    });
+  }
+
+  it("redeems just the part asked for on a balance-carrying voucher, and the log names the voucher", async () => {
+    const { businessId, locationId } = await seedBusinessAndLocation();
+    const { secret } = await provisionAndPairDevice(businessId, locationId);
+    const { code } = await seedRedeemableVoucher(businessId, "balance_carrying");
+
+    const held = await authorize(secret, code, 450);
+    expect(held.statusCode, held.body).toBe(201);
+    expect(held.json<{ amountMinor: number }>().amountMinor).toBe(450);
+
+    const captured = await app.inject({
+      method: "POST",
+      url: "/api/counter/capture",
+      headers: { authorization: `Bearer ${secret}`, "idempotency-key": randomUUID() },
+      payload: { authorizationId: held.json<{ authorizationId: string }>().authorizationId },
+    });
+    expect(captured.statusCode, captured.body).toBe(201);
+    expect(captured.json<{ amountMinor: number }>().amountMinor).toBe(450);
+
+    const log = await app.inject({
+      method: "GET",
+      url: "/api/counter/log",
+      headers: { authorization: `Bearer ${secret}` },
+    });
+    expect(log.statusCode, log.body).toBe(200);
+    const [entry] = log.json<{ entries: { amountMinor: number; offerTitle: string | null }[] }>()
+      .entries;
+    expect(entry).toMatchObject({ amountMinor: 450, offerTitle: "8.2.h Test Listing" });
+  });
+
+  it("refuses more than the remaining value, naming what is left", async () => {
+    const { businessId, locationId } = await seedBusinessAndLocation();
+    const { secret } = await provisionAndPairDevice(businessId, locationId);
+    const { code } = await seedRedeemableVoucher(businessId, "balance_carrying");
+
+    const response = await authorize(secret, code, 50_001);
+    expect(response.statusCode, response.body).toBe(422);
+    expect(response.json()).toMatchObject({
+      code: "amount_exceeds_remaining_value",
+      remainingValueMinor: 50_000,
+    });
+  });
+
+  it("refuses an amount of nothing", async () => {
+    const { businessId, locationId } = await seedBusinessAndLocation();
+    const { secret } = await provisionAndPairDevice(businessId, locationId);
+    const { code } = await seedRedeemableVoucher(businessId, "balance_carrying");
+
+    const response = await authorize(secret, code, 0);
+    expect(response.statusCode, response.body).toBe(422);
+    expect(response.json<{ code: string }>().code).toBe("amount_not_positive");
+  });
+
+  it("still takes a part of a single-use voucher, as services/voucher always has", async () => {
+    const { businessId, locationId } = await seedBusinessAndLocation();
+    const { secret } = await provisionAndPairDevice(businessId, locationId);
+    const { code } = await seedRedeemableVoucher(businessId);
+
+    const partial = await authorize(secret, code, 450);
+    expect(partial.statusCode, partial.body).toBe(201);
+    expect(partial.json<{ amountMinor: number }>().amountMinor).toBe(450);
+  });
+});
+
+describe("GET /api/counter/log: today is the device region's day (Group 5.13.g)", () => {
+  it("rolls over at Sydney midnight, not at UTC midnight", async () => {
+    const { businessId, locationId } = await seedBusinessAndLocation();
+    const { deviceId, secret } = await provisionAndPairDevice(businessId, locationId);
+    const { rows } = await db.execute<{ start: Date }>(sql`
+      SELECT date_trunc('day', now() AT TIME ZONE 'Australia/Sydney') AT TIME ZONE 'Australia/Sydney' AS start
+    `);
+    const sydneyMidnight = new Date(rows[0]!.start).getTime();
+    const logRow = async (captureId: string, at: Date) =>
+      db.execute(sql`
+        INSERT INTO store.counter_capture_log
+          (capture_id, device_id, business_id, location_id, voucher_id, amount_minor, currency,
+           order_ref, order_total_minor, authorized_at, captured_at)
+        VALUES (${captureId}, ${deviceId}, ${businessId}, ${locationId}, ${randomUUID()}, 100, 'AUD',
+                'o', 100, ${at.toISOString()}, ${at.toISOString()})
+      `);
+    await logRow("just-after-midnight", new Date(sydneyMidnight + 60_000));
+    await logRow("just-before-midnight", new Date(sydneyMidnight - 60_000));
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/counter/log",
+      headers: { authorization: `Bearer ${secret}` },
+    });
+    expect(response.statusCode, response.body).toBe(200);
+    const ids = response
+      .json<{ entries: { captureId: string }[] }>()
+      .entries.map((e) => e.captureId);
+    expect(ids).toEqual(["just-after-midnight"]);
   });
 });

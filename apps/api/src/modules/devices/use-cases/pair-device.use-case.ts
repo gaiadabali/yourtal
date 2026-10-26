@@ -1,4 +1,5 @@
 import { errAsync, okAsync } from "neverthrow";
+import type { Region } from "@yourtal/contracts/region";
 import type { ResultAsync } from "neverthrow";
 import type { PairDeviceError } from "../devices.errors";
 import type { CounterDeviceRepository } from "../persistence/counter-device.repository";
@@ -8,6 +9,10 @@ import { wrapPersistence } from "../wrap-persistence";
 export interface PairDeviceOutcome {
   readonly deviceId: string;
   readonly credential: string;
+  /** What the counter needs to speak its own language from the first screen (see `pairDeviceResultSchema`). */
+  readonly region: Region;
+  readonly label: string;
+  readonly locationId: string;
 }
 
 /**
@@ -32,7 +37,13 @@ export function pairDevice(
     return wrapPersistence(devices.pair(found.id, credential.hash, now)).andThen((paired) =>
       paired === null
         ? errAsync<PairDeviceOutcome, PairDeviceError>({ type: "pairing_code_invalid" })
-        : okAsync({ deviceId: paired.id, credential: credential.secret }),
+        : okAsync({
+            deviceId: paired.id,
+            credential: credential.secret,
+            region: paired.region,
+            label: paired.label,
+            locationId: paired.locationId,
+          }),
     );
   });
 }

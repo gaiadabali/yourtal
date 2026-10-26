@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Inject, Post, Req } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  InternalServerErrorException,
+  Post,
+  Req,
+} from "@nestjs/common";
 import type { FastifyRequest } from "fastify";
 import type { Principal } from "@yourtal/authz/principal";
 import { Idempotent, NotValueMoving } from "../../../shared/idempotency/idempotent.decorator";
@@ -7,6 +15,8 @@ import { RateLimit } from "../../../shared/rate-limit/rate-limit.decorator";
 import { DeviceAuthorize, deviceIdOf } from "../device-authorize";
 import { AUTHORIZATION_META_REPOSITORY } from "../persistence/authorization-meta.repository";
 import type { AuthorizationMetaRepository } from "../persistence/authorization-meta.repository";
+import { COUNTER_DEVICE_REPOSITORY } from "../persistence/counter-device.repository";
+import type { CounterDeviceRepository } from "../persistence/counter-device.repository";
 import { CAPTURE_LOG_REPOSITORY } from "../persistence/capture-log.repository";
 import type { CaptureLogRepository } from "../persistence/capture-log.repository";
 import { VOUCHER_INTERNAL_CLIENT } from "../../../shared/voucher-client/voucher-internal-client";
@@ -46,6 +56,7 @@ export class CounterController {
     @Inject(VOUCHER_INTERNAL_CLIENT) private readonly vouchers: VoucherInternalClient,
     @Inject(AUTHORIZATION_META_REPOSITORY) private readonly authMeta: AuthorizationMetaRepository,
     @Inject(CAPTURE_LOG_REPOSITORY) private readonly captureLog: CaptureLogRepository,
+    @Inject(COUNTER_DEVICE_REPOSITORY) private readonly devices: CounterDeviceRepository,
   ) {}
 
   @NotValueMoving("a lookup is a read-only preview; no hold is placed (8.2.a)")
@@ -150,7 +161,12 @@ export class CounterController {
       }),
       "view_log",
     );
-    const result = await listTodayLog(this.captureLog, deviceIdOf(principal));
+    const device = await this.devices.findById(deviceIdOf(principal));
+    if (device === null) {
+      // Unreachable in practice: a valid store_device principal was just resolved from this exact row.
+      throw new InternalServerErrorException("device vanished after authentication");
+    }
+    const result = await listTodayLog(this.captureLog, device.id, device.region);
     if (result.isErr()) throw mapCounterErrorToHttpException(result.error);
     return { entries: result.value };
   }

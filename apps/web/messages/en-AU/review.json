@@ -73,5 +73,6 @@
       "Push notifications"
     ]
   },
-  "open": "Open"
+  "open": "Open",
+  "languageLabel": "Language"
 }

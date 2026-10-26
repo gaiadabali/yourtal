@@ -50,4 +50,8 @@ export const routeRedirects: readonly RouteRedirectRule[] = [
   { path: "/business/reports", resolve: movedToStudio("/studio/reports") },
   { path: "/business/team", resolve: movedToStudio("/studio/team") },
   { path: "/business/billing", resolve: movedToStudio("/studio/billing") },
+  // The reviewer's guide in either language, under the address people guess (V1). It is one page
+  // with `?lang=`; on production it is a 404 either way.
+  { path: "/au/review", resolve: () => "/review?lang=en" },
+  { path: "/id/review", resolve: () => "/review?lang=id" },
 ];

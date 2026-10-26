@@ -59,7 +59,23 @@
     "disputeSubmit": "Send report",
     "disputeReinstated": "Your points are back in your wallet.",
     "disputeQueued": "We've flagged this for review. We'll follow up if we need more from you.",
-    "disputeFailed": "That didn't go through. Check your connection and try again."
+    "disputeFailed": "That didn't go through. Check your connection and try again.",
+    "pass": {
+      "received_as_gift": "This voucher was given to you or won at a charity auction, so it can't be passed on again. A voucher can change hands once. Vouchers you buy in the Store can be gifted or listed.",
+      "not_transferable": "This voucher can't be gifted or listed for a charity. The business that issued it hasn't allowed it to be passed on.",
+      "not_unused": "A voucher can only be gifted or listed while it's unused, with its full value left.",
+      "teen": "Gifts and charity auctions are for members 18 and over.",
+      "unavailable": "This voucher can't be gifted or listed right now.",
+      "expires_soon": "This voucher expires too soon to list for a charity: a listing needs at least {days} days left. You can still gift it."
+    },
+    "archived": {
+      "redeemed": "Used. Its code can't be used again.",
+      "released": "This checkout was cancelled, so no voucher was issued.",
+      "transferred": "Passed on. This voucher was gifted or listed for a charity auction, so its code no longer works for you.",
+      "giftAccepted": "You gave this voucher as a gift on {date}, and it was accepted. Its code no longer works for you.",
+      "giftPending": "You gave this voucher as a gift on {date}. They have until {deadline} to accept. If they don't, it comes back to your wallet with a new code."
+    },
+    "giftFrom": "Gift from {name}"
   },
   "redemption": {
     "balanceCarrying": "If your purchase is less than the voucher's value, the remainder is kept for next time.",

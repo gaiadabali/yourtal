@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { MapPin, QrCode } from "lucide-react";
 import { StatusBadge } from "@yourtal/ui/status-badge";
 import { cn } from "@yourtal/ui/cn";
+import type { WalletGift } from "@yourtal/contracts/wallet/wallet-gift";
 import type { WalletVoucherDetail } from "./wallet-data";
 import { formatWalletDate, type SupportedLocale } from "./wallet-format";
 import { describeVoucherStatus, isVoucherEffectivelyExpired } from "./wallet-voucher-status-copy";
@@ -15,6 +16,8 @@ export interface WalletVouchersProps {
   tabHref: (tab: VoucherTab) => string;
   nowMs: number;
   locale: SupportedLocale;
+  /** Gifts, so a voucher that came as one says so: two "A free coffee" cards are not a duplicate. */
+  gifts?: readonly WalletGift[];
 }
 
 /**
@@ -27,8 +30,14 @@ export async function WalletVouchers({
   tabHref,
   nowMs,
   locale,
+  gifts = [],
 }: WalletVouchersProps) {
   const t = await getTranslations("wallet");
+  const receivedAs = new Map(
+    gifts
+      .filter((gift) => gift.direction === "received" && gift.status === "accepted")
+      .map((gift) => [gift.voucherId, gift.senderDisplayName ?? t("gift.someone")]),
+  );
   const described = vouchers.map((voucher) => ({
     voucher,
     status: describeVoucherStatus(
@@ -104,6 +113,11 @@ export async function WalletVouchers({
                   </StatusBadge>
                 </div>
                 <div className="flex flex-col gap-1 text-body-sm font-sans text-fg-muted">
+                  {receivedAs.has(voucher.voucherId) ? (
+                    <span>
+                      {t("voucher.giftFrom", { name: receivedAs.get(voucher.voucherId) ?? "" })}
+                    </span>
+                  ) : null}
                   {voucher.expiresAt ? (
                     <span>
                       {status.isArchived

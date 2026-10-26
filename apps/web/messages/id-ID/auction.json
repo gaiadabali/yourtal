@@ -14,7 +14,7 @@
     "leading": "Kamu teratas",
     "outbid": "Terlampaui",
     "won": "Kamu menang",
-    "lost": "Selesai"
+    "lost": "Tidak menang"
   },
   "left": {
     "ended": "Selesai",
@@ -52,7 +52,8 @@
   },
   "empty": {
     "title": "Belum ada lelang yang dibuka",
-    "body": "Saat seseorang melepas voucher untuk amal, lelangnya muncul di sini."
+    "body": "Saat seseorang melelang voucher untuk yayasan, voucher itu muncul di sini. Untuk melelang milikmu, buka voucher dari Toko yang belum dipakai di dompetmu dan pilih Lelang untuk amal.",
+    "action": "Buka dompet saya"
   },
   "mine": {
     "link": "Tawaran dan lelang saya",
@@ -114,7 +115,7 @@
     "close": "Tutup",
     "refusal": {
       "charity_unavailable": "Yayasan itu belum bisa menerima lelang.",
-      "voucher_not_unused": "Hanya voucher yang belum dipakai yang bisa dilelang.",
+      "voucher_not_unused": "Hanya voucher yang belum dipakai dan masih berlaku minimal 4 hari lagi yang bisa dilelang.",
       "voucher_not_transferable": "Voucher ini tidak bisa dialihkan.",
       "voucher_already_transferred": "Voucher ini sudah pernah dialihkan.",
       "seller_ineligible": "Verifikasi emailmu sebelum melelang voucher.",

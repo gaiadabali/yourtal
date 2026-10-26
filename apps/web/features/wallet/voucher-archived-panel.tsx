@@ -1,6 +1,6 @@
 export interface VoucherArchivedPanelProps {
-  statusLabel: string;
-  dateLabel: string;
+  /** Why the voucher has no code any more. The status badge beside the title already names the status. */
+  message: string;
 }
 
 /**
@@ -10,11 +10,10 @@ export interface VoucherArchivedPanelProps {
  * — nothing about the voucher disappears, only its ability to produce a
  * fresh redeemable code.
  */
-export function VoucherArchivedPanel({ statusLabel, dateLabel }: VoucherArchivedPanelProps) {
+export function VoucherArchivedPanel({ message }: VoucherArchivedPanelProps) {
   return (
-    <div className="flex h-60 w-60 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-border bg-surface p-4 text-center">
-      <p className="text-sm font-semibold text-fg-muted">{statusLabel}</p>
-      <p className="text-xs text-fg-subtle">{dateLabel}</p>
+    <div className="flex min-h-60 w-60 flex-col items-center justify-center rounded-lg border border-dashed border-border bg-surface p-4 text-center">
+      <p className="text-sm text-fg-muted">{message}</p>
     </div>
   );
 }

@@ -93,6 +93,8 @@ export const walletVoucherDetailSchema = z.object({
   location: merchantLocationDisplaySchema.optional(),
   /** 13.20: the voucher can be gifted now (holdback and caps are only known on trying). */
   giftable: z.boolean().optional(),
+  /** Which rule stops a gift or a charity listing; absent when `giftable` or from an older service. */
+  giftBlock: z.enum(["not_unused", "not_transferable", "received_as_gift"]).optional(),
 });
 export type WalletVoucherDetail = z.infer<typeof walletVoucherDetailSchema>;
 

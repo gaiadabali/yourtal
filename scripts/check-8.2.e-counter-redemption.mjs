@@ -44,7 +44,11 @@
 //                    https://yourtal.gaiada.com directly (no jump needed
 //                    for plain HTTP -- only :22/:8443 are IP-allowlisted).
 //   VIEWER_EMAIL / VIEWER_PASSWORD   a real signed-in viewer with enough
-//                    available points, or release-pending will be tried
+//                    available points (on staging adult.au@ or adult.id@
+//                    demo.yourtal.test, which the deploy seed tops up;
+//                    viewer.au@ and viewer.id@ are the NEW viewers and must
+//                    stay empty, so never point this Check at them), or
+//                    release-pending will be tried
 //                    once (staging only -- see RELEASE_PENDING below).
 //   OWNER_EMAIL / OWNER_PASSWORD     a real Studio owner/staff of the
 //                    business that owns LISTING_ID.

@@ -88,6 +88,8 @@ const ID_LOCATION_ID = "00000000-0000-4000-9000-000000000306";
 const DEMO_EMAILS = [
   "viewer.au@demo.yourtal.test",
   "viewer.id@demo.yourtal.test",
+  "adult.au@demo.yourtal.test",
+  "adult.id@demo.yourtal.test",
   "owner.au@demo.yourtal.test",
   "member.au@demo.yourtal.test",
   "owner.id@demo.yourtal.test",
@@ -542,7 +544,7 @@ describe("seedStaging", () => {
       expect(first.world).toBe("seeded");
       expect(first.businesses).toBe(2);
       expect(first.campaigns).toBe(4);
-      expect(first.accounts).toBe(11);
+      expect(first.accounts).toBe(13);
       expect(["funded", "already_funded"]).toContain(first.marketingFunding);
       expect(first.pendingGrant).toBe("granted");
       expect(first.pendingGrantDetail).toBeUndefined();
@@ -845,7 +847,7 @@ describe("seedStaging", () => {
         replayDetectionWindowMs: TEST_REPLAY_WINDOW_MS,
       });
       expect(first.world).toBe("seeded");
-      expect(first.accounts).toBe(11);
+      expect(first.accounts).toBe(13);
       expect(first.pendingGrant).toBe("failed");
       expect(first.pendingGrantDetail).toBe("insufficient_available");
 
@@ -929,7 +931,7 @@ describe("seedStaging", () => {
     // Everything else this seed writes is unaffected by the ledger/voucher
     // service being unreachable — only those two steps report the failure.
     expect(result.world).toBe("seeded");
-    expect(result.accounts).toBe(11);
+    expect(result.accounts).toBe(13);
     expect(["funded", "already_funded"]).toContain(result.marketingFunding);
     expect(result.pendingGrant).toBe("failed");
     expect(result.pendingGrantDetail).toBeDefined();
@@ -1067,6 +1069,39 @@ describe("seedStaging", () => {
     }
   });
 
+  it("never grants to the new viewers: viewer.au and viewer.id start at the beginning", async () => {
+    const ledger = new FakeLedger();
+    const baseUrl = await ledger.listen();
+    try {
+      await seedStaging(owner, {
+        demoPassword: DEMO_PASSWORD,
+        ledger: { baseUrl, serviceSecret: LEDGER_SECRET },
+        voucher: { baseUrl: voucherBaseUrl, serviceSecret: VOUCHER_SECRET },
+        log: () => undefined,
+        replayDetectionWindowMs: TEST_REPLAY_WINDOW_MS,
+      });
+      const ids = async (...emails: string[]) =>
+        (
+          await owner.query<{ user_id: string }>(
+            `SELECT user_id FROM identity.credential WHERE identifier = ANY($1)`,
+            [emails],
+          )
+        ).rows.map((row) => row.user_id);
+      const newViewers = await ids("viewer.au@demo.yourtal.test", "viewer.id@demo.yourtal.test");
+      const regular = await ids("adult.au@demo.yourtal.test", "adult.id@demo.yourtal.test");
+      expect(newViewers).toHaveLength(2);
+      expect(regular).toHaveLength(2);
+      const grantees = ledger
+        .allRequestsTo("/v1/actions/grants")
+        .map((entry) => (entry.body as { userId: string }).userId);
+      expect(grantees.length).toBeGreaterThan(0);
+      for (const id of newViewers) expect(grantees).not.toContain(id);
+      for (const id of regular) expect(grantees).toContain(id);
+    } finally {
+      await ledger.close();
+    }
+  });
+
   it("recovers a demo account that is missing from an already-seeded world (F74/8.2.i's real staging incident)", async () => {
     const ledger = new FakeLedger();
     const baseUrl = await ledger.listen();
@@ -1074,9 +1109,9 @@ describe("seedStaging", () => {
       // Simulates the OLD seed's world exactly, not a hand-written
       // approximation of it: run the CURRENT seed once (every account,
       // business and campaign real staging already had), then surgically
-      // remove `viewer.id` — the account `demoAccounts()` did not have YET
+      // remove `adult.id` — the account `demoAccounts()` did not have YET
       // when staging's own `identity.user_profile` was first populated,
-      // weeks before `viewer.id` was ever added to the code. That is
+      // weeks before `adult.id` was ever added to the code. That is
       // exactly what "the world already exists" meant on real staging: not
       // an empty table, but one this seed itself had already written to,
       // missing one row it did not know to check for individually.
@@ -1090,21 +1125,21 @@ describe("seedStaging", () => {
       expect(first.world).toBe("seeded");
 
       const before = await owner.query<{ user_id: string }>(
-        `SELECT user_id FROM identity.credential WHERE identifier = 'viewer.id@demo.yourtal.test'`,
+        `SELECT user_id FROM identity.credential WHERE identifier = 'adult.id@demo.yourtal.test'`,
       );
       const oldUserId = before.rows[0]?.user_id;
       expect(oldUserId).toBeDefined();
       await owner.query(`DELETE FROM identity.user_profile WHERE user_id = $1`, [oldUserId]);
       await owner.query(`DELETE FROM identity.credential WHERE user_id = $1`, [oldUserId]);
       const gone = await owner.query(
-        `SELECT 1 FROM identity.credential WHERE identifier = 'viewer.id@demo.yourtal.test'`,
+        `SELECT 1 FROM identity.credential WHERE identifier = 'adult.id@demo.yourtal.test'`,
       );
       expect(gone.rowCount).toBe(0);
 
       // The next deploy: `identity.user_profile` is still non-empty (every
       // OTHER account is there), so the world step used to stop right
       // there. Now it checks each account by email instead, finds
-      // viewer.id missing, and creates ONLY that one row — never resetting
+      // adult.id missing, and creates ONLY that one row — never resetting
       // anything that already existed.
       await sleep(TEST_REPLAY_WINDOW_MS + 20);
       const second = await seedStaging(owner, {
@@ -1118,7 +1153,7 @@ describe("seedStaging", () => {
 
       const recreated = await owner.query<{ user_id: string; secret_hash: string }>(
         `SELECT user_id, secret_hash FROM identity.credential
-          WHERE identifier = 'viewer.id@demo.yourtal.test'`,
+          WHERE identifier = 'adult.id@demo.yourtal.test'`,
       );
       expect(recreated.rows).toHaveLength(1);
       const newUserId = recreated.rows[0]?.user_id;
@@ -1141,7 +1176,7 @@ describe("seedStaging", () => {
       ).toBe(2);
 
       // Holds its balance on the SAME deploy — the existing wiring already
-      // does this once `viewerIdUserId` is non-null, regardless of
+      // does this once `regularIdUserId` is non-null, regardless of
       // `world.status`, so fixing account recovery alone is enough.
       const idBalance = second.redemptionBalance.find((b) => b.region === "ID");
       expect(idBalance?.status).toBe("topped_up");
@@ -1157,7 +1192,7 @@ describe("seedStaging", () => {
         replayDetectionWindowMs: TEST_REPLAY_WINDOW_MS,
       });
       const stillThere = await owner.query<{ user_id: string }>(
-        `SELECT user_id FROM identity.credential WHERE identifier = 'viewer.id@demo.yourtal.test'`,
+        `SELECT user_id FROM identity.credential WHERE identifier = 'adult.id@demo.yourtal.test'`,
       );
       expect(stillThere.rows[0]?.user_id).toBe(newUserId);
       expect(third.redemptionBalance.find((b) => b.region === "ID")?.status).toBe(

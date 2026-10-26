@@ -63,11 +63,9 @@ export async function WalletHistory({
     day: "numeric",
     month: "long",
   });
-  const time = new Intl.DateTimeFormat(locale, {
-    timeZone: zone,
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  // `timeStyle`, not `hour: "numeric"`: that prints a Jakarta midnight hour as "0.04", which
+  // reads as a number; this gives "00.04" and, in Australia, "12:04 am" (V25).
+  const time = new Intl.DateTimeFormat(locale, { timeZone: zone, timeStyle: "short" });
   const today = dayKey.format(new Date(nowMs));
   const yesterday = dayKey.format(new Date(nowMs - 86_400_000));
 

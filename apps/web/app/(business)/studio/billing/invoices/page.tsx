@@ -1,4 +1,5 @@
 import { getLocale } from "next-intl/server";
+import type { Region } from "@yourtal/contracts/region";
 import { Notice } from "@yourtal/ui/notice";
 import { PageHeader } from "@yourtal/ui/page-header";
 import { resolveStudioContext } from "@/features/studio/studio-context";
@@ -41,7 +42,11 @@ export default async function StudioInvoicesPage(props: PageProps<"/studio/billi
       header={<PageHeader title={t("zones.invoices")} />}
     >
       {allowed ? (
-        <StudioInvoicesData businessId={current.business.id} locale={locale} />
+        <StudioInvoicesData
+          businessId={current.business.id}
+          region={current.business.region}
+          locale={locale}
+        />
       ) : (
         <StudioAccessDenied zoneLabel={t("zones.invoices")} locale={locale} />
       )}
@@ -51,14 +56,23 @@ export default async function StudioInvoicesPage(props: PageProps<"/studio/billi
 
 async function StudioInvoicesData({
   businessId,
+  region,
   locale,
 }: {
   businessId: string;
+  region: Region;
   locale: SupportedLocale;
 }) {
   const result = await listInvoices(businessId);
   if (!result.ok) {
     return <Notice tone="danger">{getStudioTranslator(locale)("invoices.loadFailed")}</Notice>;
   }
-  return <InvoicesScreen businessId={businessId} invoices={result.data.invoices} locale={locale} />;
+  return (
+    <InvoicesScreen
+      businessId={businessId}
+      invoices={result.data.invoices}
+      locale={locale}
+      region={region}
+    />
+  );
 }

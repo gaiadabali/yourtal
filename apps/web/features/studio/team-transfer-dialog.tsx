@@ -127,7 +127,7 @@ export function TeamTransferDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent>
+      <DialogContent closeLabel={t("dialog.close")}>
         <DialogHeader>
           <DialogTitle>{t("team.transfer.title")}</DialogTitle>
           <DialogDescription>

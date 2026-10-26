@@ -79,7 +79,7 @@ export function TeamInviteDialog({ open, onOpenChange, onInvite }: TeamInviteDia
         onOpenChange(next);
       }}
     >
-      <DialogContent>
+      <DialogContent closeLabel={t("dialog.close")}>
         <DialogHeader>
           <DialogTitle>{t("team.invite.title")}</DialogTitle>
           <DialogDescription>{t("team.invite.description")}</DialogDescription>

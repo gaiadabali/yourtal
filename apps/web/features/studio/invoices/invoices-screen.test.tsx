@@ -95,6 +95,13 @@ describe("InvoicesScreen", () => {
     expect(screen.queryByRole("link", { hidden: true })).toBeNull();
   });
 
+  it("tells an Indonesian business that the demo issues no invoices, instead of promising one", () => {
+    render(<InvoicesScreen businessId={BUSINESS_ID} invoices={[]} locale="id-ID" region="ID" />);
+    expect(screen.getByText("Tidak ada faktur di demo")).toBeInTheDocument();
+    expect(screen.queryByText(/beberapa menit setelah dibayar/)).toBeNull();
+    expect(screen.getAllByText(/tidak ada faktur yang diterbitkan/).length).toBeGreaterThan(0);
+  });
+
   it("speaks Indonesian to an id-ID viewer", () => {
     render(<InvoicesScreen businessId={BUSINESS_ID} invoices={[invoice()]} locale="id-ID" />);
     expect(

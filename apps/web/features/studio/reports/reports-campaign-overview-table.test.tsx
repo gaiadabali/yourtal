@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import { toPoints } from "@yourtal/contracts/money";
 import { campaignSchema } from "@yourtal/contracts/campaign";
 import { ReportsCampaignOverviewTable } from "./reports-campaign-overview-table";
 
@@ -43,13 +44,52 @@ describe("ReportsCampaignOverviewTable", () => {
     render(<ReportsCampaignOverviewTable campaigns={[CAMPAIGN]} locale="en-AU" />);
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(screen.getByRole("row", { name: /Kenali Produk Baru/ })).toBeInTheDocument();
-    expect(screen.getAllByText("Active").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Live").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Base + accuracy bonus").length).toBeGreaterThan(0);
   });
 
   it("shows an honest empty state instead of a bare empty table when the business has no campaigns", () => {
     render(<ReportsCampaignOverviewTable campaigns={[]} locale="en-AU" />);
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
-    expect(screen.getByText("This business has no campaigns yet.")).toBeInTheDocument();
+    expect(
+      screen.getByText("This business has no live, paused or ended campaigns yet."),
+    ).toBeInTheDocument();
+  });
+
+  it("shows each campaign's views, completions and points spent, and says so when the cohort floor hides them", () => {
+    const other = { ...CAMPAIGN, id: "00000000-0000-4000-8000-000000000002", title: "Quiet one" };
+    const third = { ...CAMPAIGN, id: "00000000-0000-4000-8000-000000000003", title: "No report" };
+    const reports = {
+      [CAMPAIGN.id]: {
+        campaignId: CAMPAIGN.id,
+        suppressed: false as const,
+        rewardedViews: 1_240,
+        completions: 860,
+        completionRate: 860 / 1_240,
+        averageWatchTimeSeconds: 96,
+        questionAccuracy: 0.78,
+        pointsSpent: toPoints(42_000),
+        merchantVouchersRedeemed: 37,
+        openViews: null,
+      },
+      [other.id]: { campaignId: other.id, suppressed: true as const, floor: 10, openViews: null },
+      [third.id]: null,
+    };
+    render(
+      <ReportsCampaignOverviewTable
+        campaigns={[CAMPAIGN, other, third]}
+        reports={reports}
+        locale="en-AU"
+      />,
+    );
+    const busy = screen.getByRole("row", { name: /Kenali Produk Baru/ });
+    expect(within(busy).getByText("1,240")).toBeInTheDocument();
+    expect(within(busy).getByText("860")).toBeInTheDocument();
+    expect(within(busy).getByText("42,000")).toBeInTheDocument();
+    const quiet = screen.getByRole("row", { name: /Quiet one/ });
+    expect(within(quiet).getAllByText("Under 10 viewers so far")).toHaveLength(3);
+    const missing = screen.getByRole("row", { name: /No report/ });
+    expect(within(missing).getAllByText("—")).toHaveLength(3);
+    expect(screen.getByText("Measured")).toBeInTheDocument();
   });
 });

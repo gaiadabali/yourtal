@@ -58,7 +58,7 @@ export function TeamRemoveDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent>
+      <DialogContent closeLabel={t("dialog.close")}>
         <DialogHeader>
           <DialogTitle>
             {isSelf ? t("team.remove.titleSelf") : t("team.remove.title", { name: targetName })}

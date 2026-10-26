@@ -1,4 +1,5 @@
 import type { Invoice } from "@yourtal/contracts/invoice";
+import type { Region } from "@yourtal/contracts/region";
 import { Button } from "@yourtal/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { DataTable } from "@yourtal/ui/data-table";
@@ -10,6 +11,8 @@ export interface InvoicesScreenProps {
   businessId: string;
   invoices: readonly Invoice[];
   locale: SupportedLocale;
+  /** Indonesia is a demo on simulated payments and issues no invoices; its empty page says so rather than promising one. */
+  region?: Region;
 }
 
 const TIME_ZONE = { AU: "Australia/Sydney", ID: "Asia/Jakarta" } as const;
@@ -25,20 +28,23 @@ export function invoicePdfHref(businessId: string, invoiceId: string): string {
  * it was issued; otherwise it is an "Invoice" and the PDF says it is not a tax
  * invoice. Read-only: an issued invoice never changes.
  */
-export function InvoicesScreen({ businessId, invoices, locale }: InvoicesScreenProps) {
+export function InvoicesScreen({ businessId, invoices, locale, region }: InvoicesScreenProps) {
   const t = getStudioTranslator(locale);
+  const demo = region === "ID";
 
   return (
     <Card>
       <CardHeader>
         <CardTitle as="h2">{t("invoices.title")}</CardTitle>
-        <p className="text-body-sm font-sans text-fg-muted">{t("invoices.intro")}</p>
+        <p className="text-body-sm font-sans text-fg-muted">
+          {t(demo ? "invoices.introDemo" : "invoices.intro")}
+        </p>
       </CardHeader>
       <CardContent>
         {invoices.length === 0 ? (
           <EmptyState
-            title={t("invoices.emptyTitle")}
-            description={t("invoices.emptyDescription")}
+            title={t(demo ? "invoices.emptyTitleDemo" : "invoices.emptyTitle")}
+            description={t(demo ? "invoices.emptyDescriptionDemo" : "invoices.emptyDescription")}
           />
         ) : (
           <DataTable

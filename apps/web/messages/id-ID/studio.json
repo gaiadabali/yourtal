@@ -42,8 +42,8 @@
       "audienceParents": "Orang tua",
       "startsAtLabel": "Mulai",
       "endsAtLabel": "Berakhir",
-      "openViewingLabel": "Tontonan Terbuka (tidak perlu hadiah untuk menonton)",
-      "captionsUrlLabel": "URL Teks",
+      "openViewingLabel": "Tontonan Terbuka (tidak perlu reward untuk menonton)",
+      "captionsUrlLabel": "URL takarir",
       "captionsUrlPlaceholder": "https://…",
       "teaserStartLabel": "Teaser dimulai pada (detik)",
       "categoryStatusAdultOnly": "Kategori ini hanya untuk dewasa di {region} — audiens dikunci ke Dewasa.",
@@ -99,12 +99,12 @@
       "accuracyBonusLabel": "Bonus akurasi (poin)",
       "allocationLabel": "Didanai oleh",
       "allocationNone": "Tidak ada poin yang didanai — beli poin di Billing terlebih dahulu.",
-      "saveReward": "Simpan hadiah",
-      "rewardSaved": "Tersimpan — nilai hadiah sebenarnya ditampilkan di atas.",
+      "saveReward": "Simpan reward",
+      "rewardSaved": "Tersimpan — nilai reward sebenarnya ditampilkan di atas.",
       "rewardValueLabel": "Nilai yang dihitung server (satu penyelesaian)",
       "allocationOption": "{points} poin — {shortId}",
-      "allocationRequired": "Pilih poin berdana yang membayar hadiah ini.",
-      "allocationReceiptPackage": "Dana itu adalah paket struk. Paket ini hanya membayar hadiah struk, jadi tidak bisa mendanai kampanye. Pilih poin berdana lain."
+      "allocationRequired": "Pilih poin berdana yang membayar reward ini.",
+      "allocationReceiptPackage": "Dana itu adalah paket struk. Paket ini hanya membayar reward struk, jadi tidak bisa mendanai kampanye. Pilih poin berdana lain."
     },
     "sections": {
       "navLabel": "Bagian editor kampanye",
@@ -142,7 +142,7 @@
       "add": "Tambah",
       "removeTag": "Hapus {value}",
       "districtsHint": "Penonton hanya melihat kampanye ini jika mereka memilih salah satu area ini di Me, maksimal {max}. Pilih lokasi dan kode posnya ditambahkan. Penonton yang belum memilih area tidak akan melihat kampanye yang dibatasi area. Kosongkan agar kampanye tampil di mana saja.",
-      "districtsFull": "Kamu sudah menambahkan jumlah area maksimal ({max}). Hapus satu untuk menambah yang lain."
+      "districtsFull": "Anda sudah menambahkan jumlah area maksimal ({max}). Hapus satu untuk menambah yang lain."
     },
     "upload": {
       "statusIdle": "Belum ada video diunggah",
@@ -187,15 +187,15 @@
       "durationMinutes": "{value} mnt",
       "dataCostMb": "~{value} MB",
       "questionCount": "{count, plural, =0 {Tidak ada pertanyaan} other {# pertanyaan}}",
-      "scoringWithBonus": "Hadiah dasar untuk menyelesaikan, ditambah bonus akurasi",
-      "scoringFixed": "Hadiah tetap untuk menyelesaikan dan menjawab"
+      "scoringWithBonus": "Reward dasar untuk menyelesaikan, ditambah bonus akurasi",
+      "scoringFixed": "Reward tetap untuk menyelesaikan dan menjawab"
     },
     "captions": {
-      "label": "File teks (.vtt)",
-      "help": "Opsional. Dipakai jika video Anda tidak punya teks sendiri.",
-      "saved": "{name} tersimpan. Penonton mendapat teks ini jika video tidak punya.",
-      "invalid": "Itu bukan file WebVTT berisi teks. Pastikan diawali WEBVTT dan memiliki baris berwaktu.",
-      "tooLarge": "File terlalu besar. File teks maksimal 512 KB."
+      "label": "File takarir (.vtt)",
+      "help": "Opsional. Dipakai jika video Anda tidak punya takarir sendiri.",
+      "saved": "{name} tersimpan. Penonton mendapat takarir ini jika video tidak punya.",
+      "invalid": "Itu bukan file WebVTT berisi takarir. Pastikan diawali WEBVTT dan memiliki baris berwaktu.",
+      "tooLarge": "File terlalu besar. File takarir maksimal 512 KB."
     },
     "actionErrors": {
       "wrongStatus": "Kampanye ini sedang berstatus “{status}” — tindakan ini tidak tersedia dari status tersebut.",
@@ -208,7 +208,7 @@
       "titleTooLong": "Judul maksimal {max} karakter.",
       "synopsisRequired": "Tambahkan sinopsis singkat — ini yang dibaca penonton sebelum mulai.",
       "synopsisTooLong": "Sinopsis maksimal {max} karakter.",
-      "rewardNegative": "Hadiah tidak boleh negatif.",
+      "rewardNegative": "Reward tidak boleh negatif.",
       "budgetRequired": "Atur total anggaran lebih dari nol."
     },
     "newDraft": {
@@ -317,7 +317,7 @@
       },
       "govId": {
         "category": "nomor identitas resmi",
-        "reason": "Pertanyaan tidak boleh meminta nomor KTP, NPWP, atau paspor. Itu pengambilan identitas, yang tidak pernah diizinkan platform lewat gerbang hadiah."
+        "reason": "Pertanyaan tidak boleh meminta nomor KTP, NPWP, atau paspor. Itu pengambilan identitas, yang tidak pernah diizinkan platform lewat gerbang reward."
       },
       "income": {
         "category": "penghasilan",
@@ -370,7 +370,7 @@
       "title": "Performa kampanye",
       "notFound": "Belum ada laporan untuk kampanye ini.",
       "suppressed": "Penonton masih terlalu sedikit untuk ditampilkan secara jujur — angka muncul setelah setidaknya {floor} orang menontonnya.",
-      "rewardedViews": "Tontonan berhadiah",
+      "rewardedViews": "Tontonan dengan reward",
       "completions": "Penyelesaian",
       "completionRate": "Tingkat penyelesaian",
       "averageWatchTime": "Rata-rata waktu tonton",
@@ -386,22 +386,27 @@
       "allCampaigns": "Semua kampanye"
     },
     "overview": {
-      "empty": "Bisnis ini belum memiliki kampanye.",
-      "caption": "Kampanye bisnis ini, sebagaimana dikonfigurasi",
+      "empty": "Bisnis ini belum memiliki kampanye yang aktif, dijeda, atau berakhir.",
+      "caption": "Kampanye bisnis ini, beserta pengaturan dan hasilnya sejauh ini",
       "campaignHeader": "Kampanye",
       "statusHeader": "Status",
       "questionsHeader": "Pertanyaan",
       "scoringRuleHeader": "Aturan penilaian",
       "scoringRuleNotSet": "Belum diatur",
       "scoringRule": {
-        "base_only": "Hanya hadiah dasar",
+        "base_only": "Hanya reward dasar",
         "base_plus_accuracy_bonus": "Dasar + bonus akurasi"
       },
       "status": {
         "active": "Aktif",
         "paused": "Dijeda",
         "ended": "Berakhir"
-      }
+      },
+      "viewsHeader": "Tontonan dengan reward",
+      "completionsHeader": "Penyelesaian",
+      "spendHeader": "Poin terpakai",
+      "fewViewers": "Di bawah {floor} penonton sejauh ini",
+      "hiddenForRole": "Kampanye {business} dan hasilnya tidak ditampilkan untuk peran Anda ({role}). Pemilik, Admin, Pemasar, dan Analis dapat melihatnya di sini."
     },
     "legend": {
       "title": "Cara membaca angka-angka ini",
@@ -530,7 +535,7 @@
       "selfRemovedBody": "Anda tidak lagi memiliki akses ke konsol bisnis ini. Minta Pemilik atau Admin di sana untuk mengundang Anda kembali.",
       "title": "Tim",
       "inviteMember": "Undang anggota",
-      "helperText": "Undangan, perubahan peran, dan penghapusan di sini berlaku segera setelah dikonfirmasi oleh Pemilik atau Admin — mengalihkan kepemilikan juga memerlukan autentikasi ulang baru. Persetujuan dua orang (orang kedua yang mengonfirmasi permintaan orang lain) berlaku di bagian lain konsol — penerbitan voucher massal, penurunan nilai penyelesaian material, dan rotasi kredensial API — bukan untuk keanggotaan tim itu sendiri.",
+      "helperText": "Undangan, perubahan peran, dan penghapusan berlaku segera setelah dikonfirmasi oleh Pemilik atau Admin. Mengalihkan kepemilikan juga meminta Anda masuk ulang. Perubahan tim cukup disetujui satu orang. Beberapa tindakan lain memerlukan persetujuan orang kedua: penerbitan voucher massal, pemotongan besar nilai penyelesaian voucher, dan rotasi kredensial API.",
       "auditTrail": "Log aktivitas",
       "noOwner": "Bisnis ini tidak memiliki Pemilik yang tercatat — ini seharusnya tidak pernah terjadi; hubungi dukungan."
     },
@@ -635,12 +640,12 @@
     "alertsEmptyTitle": "Belum ada peringatan anggaran",
     "alertsEmptyDescription": "Catatan muncul di sini saat anggaran sebuah paket atau kampanye terpakai 50%, 80%, atau 100%.",
     "alertPackage": "Paket {formatted} poin: {pct}% terpakai",
-    "alertPackageStopped": "Paket {formatted} poin: {pct}% terpakai — kampanye yang didanai dari paket ini berhenti memberi hadiah sampai Anda membeli poin lagi",
+    "alertPackageStopped": "Paket {formatted} poin: {pct}% terpakai — kampanye yang didanai dari paket ini berhenti memberi reward sampai Anda membeli poin lagi",
     "alertReceiptPackage": "Paket struk {formatted} poin: {pct}% terpakai",
     "alertReceiptPackageStopped": "Paket struk {formatted} poin: {pct}% terpakai — poin struk dijeda jika tidak ada paket struk lain yang masih punya sisa",
     "alertReceiptLabel": "Paket struk",
-    "receiptTitle": "Hadiah struk",
-    "receiptIntro": "Orang mendapat poin dari struk lewat paket yang Anda beli di sini. Paket struk hanya membayar hadiah struk dan tidak bisa mendanai kampanye.",
+    "receiptTitle": "Reward struk",
+    "receiptIntro": "Orang mendapat poin dari struk lewat paket yang Anda beli di sini. Paket struk hanya membayar reward struk dan tidak bisa mendanai kampanye.",
     "receiptEarning": "Struk sedang memberi poin",
     "receiptPaused": "Poin struk dijeda",
     "receiptPausedHint": "Beli paket struk agar struk kembali memberi poin.",
@@ -648,14 +653,14 @@
     "receiptLeftSuffix": "poin tersisa",
     "receiptPerReceipt": "{count, plural, other {# poin}} per struk",
     "receiptPackagesTitle": "Paket struk",
-    "receiptPackagesNote": "Hanya untuk hadiah struk",
+    "receiptPackagesNote": "Hanya untuk reward struk",
     "receiptPackagesNone": "Belum ada paket struk yang dijual saat ini.",
     "receiptBuy": "Beli paket struk",
     "receiptBuyNamed": "Beli paket struk {tier}",
     "receiptPurchased": "Paket struk berhasil dibeli. Poin struk siap diberikan.",
     "receiptReturnReview": "Kami menerima pembayaran Anda dan sedang memeriksanya. Paket struk Anda akan segera ditambahkan.",
     "alertCampaign": "Kampanye “{title}”: anggaran {pct}% terpakai",
-    "alertCampaignStopped": "Kampanye “{title}”: anggaran {pct}% terpakai — hadiah telah berhenti",
+    "alertCampaignStopped": "Kampanye “{title}”: anggaran {pct}% terpakai — reward telah berhenti",
     "alertCampaignUntitled": "Tanpa judul",
     "alertUsage": "{used} dari {total} poin terpakai",
     "returnWaitingTitle": "Menunggu konfirmasi pembayaran",
@@ -666,7 +671,7 @@
     "returnRefunded": "Pembayaran ini sudah dikembalikan penuh ke kartu Anda. Anda bisa membeli lagi dengan harga hari ini.",
     "returnReview": "Pembayaran Anda sudah kami terima dan sedang diperiksa. Poin Anda akan segera ditambahkan.",
     "cardTitle": "Kartu untuk boost",
-    "cardIntro": "Boost ditagihkan ke kartu ini sekali sehari, terpisah dari poin.",
+    "cardIntro": "Boost ditagihkan ke kartu ini sekali sehari, terpisah dari poin yang Anda beli.",
     "cardNone": "Belum ada kartu tersimpan.",
     "cardSaved": "{brand} berakhiran {last4}, berlaku hingga {month}/{year}",
     "cardAdd": "Tambah kartu",
@@ -698,7 +703,20 @@
     "statementPaid": "Dibayar ke rekening ••{last4} pada {date}",
     "statementAwaiting": "Menunggu detail pembayaran",
     "statementFailed": "Pembayaran gagal",
-    "statementOnItsWay": "Pembayaran sedang diproses"
+    "statementOnItsWay": "Pembayaran sedang diproses",
+    "demoNote": "Indonesia adalah demo. Pembelian di sini disetujui seketika dan tidak ada uang sungguhan yang berpindah, jadi tidak ada halaman kartu dan tidak ada faktur yang diterbitkan.",
+    "statementDetails": "Rincian",
+    "statementOpening": "Terbawa dari laporan sebelumnya",
+    "statementCaptures": "Voucher yang ditukarkan di lokasi Anda",
+    "statementRefunds": "Pengembalian dana",
+    "statementRecoveries": "Pemulihan",
+    "statementClosing": "Dibayarkan kepada Anda",
+    "statementStatusHelp": {
+      "open": "Terbuka: masa sengketa berlangsung hingga {date}. Setelah itu laporan disetujui dan dibayarkan.",
+      "disputed": "Disengketakan: pembayaran ditahan sampai tim kami menyelesaikannya.",
+      "paid": "Disetujui: masa sengketa berakhir pada {date}."
+    },
+    "statementDisputeReason": "Alasan yang diberikan: {reason}"
   },
   "channel": {
     "saved": "Tersimpan.",
@@ -793,7 +811,7 @@
       "description": "Voucher yang dibeli penonton dengan poin. YourTal menghitung harga poin dari nilai penyelesaian yang Anda masukkan; Anda tidak dapat menetapkannya sendiri.",
       "titleLabel": "Judul",
       "descriptionLabel": "Deskripsi",
-      "categoryLabel": "Jenis hadiah",
+      "categoryLabel": "Jenis reward",
       "category": {
         "food_beverage": "Makanan dan minuman",
         "retail": "Ritel",
@@ -833,7 +851,7 @@
         "image": "Tambahkan gambar."
       },
       "imageLabel": "Gambar",
-      "imageHelp": "Gambar JPEG, PNG, atau WebP hingga {maxMb} MB, ditampilkan pada kartu hadiah.",
+      "imageHelp": "Gambar JPEG, PNG, atau WebP hingga {maxMb} MB, ditampilkan pada kartu reward.",
       "image": {
         "uploading": "Mengunggah gambar…",
         "ready": "Gambar ditambahkan.",
@@ -850,8 +868,8 @@
       "decrease_already_pending": "Listing ini sudah memiliki penurunan yang menunggu persetujuan.",
       "not_a_material_decrease": "Itu bukan penurunan.",
       "unchanged": "Itu adalah nilai saat ini.",
-      "prohibited_category": "Jenis hadiah itu tidak dapat ditawarkan di wilayah Anda.",
-      "audience_must_be_adult": "Jenis hadiah itu hanya untuk orang dewasa.",
+      "prohibited_category": "Jenis reward itu tidak dapat ditawarkan di wilayah Anda.",
+      "audience_must_be_adult": "Jenis reward itu hanya untuk orang dewasa.",
       "invalid_locations": "Salah satu lokasi itu bukan milik Anda.",
       "listing_pricing_unavailable": "Harga poin belum dapat dihitung saat ini. Coba lagi nanti.",
       "persistence_unavailable": "Belum dapat disimpan saat ini. Coba lagi nanti.",
@@ -931,16 +949,16 @@
         "description": "Beri penonton poin karena menonton video Anda."
       },
       "supplier": {
-        "title": "Menawarkan hadiah",
+        "title": "Menawarkan reward",
         "description": "Tampilkan voucher yang bisa ditukar dengan poin."
       },
       "redeemer": {
         "title": "Menerima voucher di toko",
-        "description": "Staf kasir Anda me-redeem voucher pelanggan."
+        "description": "Staf kasir Anda menukarkan voucher pelanggan."
       }
     },
     "title": "Daftarkan bisnis Anda",
-    "description": "Siapkan kanal Studio untuk menjalankan kampanye, menawarkan hadiah, atau menerima voucher.",
+    "description": "Siapkan kanal Studio untuk menjalankan kampanye, menawarkan reward, atau menerima voucher.",
     "joinInstead": "Diundang ke tim? Bergabung dengan kode undangan Anda"
   },
   "devices": {
@@ -975,9 +993,9 @@
     }
   },
   "redemptions": {
-    "title": "Redeem hari ini dan terbaru",
-    "empty": "Belum ada redeem.",
-    "caption": "Capture voucher terbaru, per lokasi dan perangkat",
+    "title": "Penukaran hari ini dan terbaru",
+    "empty": "Belum ada penukaran.",
+    "caption": "Penukaran voucher terbaru, per lokasi dan perangkat",
     "deviceHeader": "Perangkat",
     "locationHeader": "Lokasi",
     "orderRefHeader": "Pesanan",
@@ -1000,7 +1018,10 @@
     "invoice": "Faktur",
     "download": "Unduh PDF",
     "downloadLabel": "Unduh PDF faktur {number}",
-    "loadFailed": "Faktur Anda tidak dapat dimuat. Coba lagi sebentar lagi."
+    "loadFailed": "Faktur Anda tidak dapat dimuat. Coba lagi sebentar lagi.",
+    "introDemo": "Indonesia adalah demo dengan pembayaran simulasi, jadi tidak ada faktur yang diterbitkan di sini.",
+    "emptyTitleDemo": "Tidak ada faktur di demo",
+    "emptyDescriptionDemo": "Pembelian di Indonesia disimulasikan, jadi tidak ada uang yang berpindah dan tidak ada faktur yang diterbitkan."
   },
   "developers": {
     "credentials": {
@@ -1011,7 +1032,7 @@
       "sandboxLabel": "Kredensial sandbox",
       "issue": "Terbitkan kredensial",
       "sandbox": "Sandbox",
-      "live": "Live",
+      "live": "Produksi",
       "active": "Aktif",
       "revoked": "Dicabut",
       "rotate": "Rotasi",
@@ -1029,15 +1050,15 @@
       "baseUrlTitle": "URL dasar",
       "baseUrlBody": "Kirim setiap panggilan sebagai POST ke <code>{url}</code>, misalnya <code>{url}/authorize</code>.",
       "signingTitle": "Penandatanganan",
-      "signingBody": "Setiap permintaan membawa <code>X-YourTal-Signature: t=[unix seconds],k=[key id],v1=[hex hmac-sha256]</code>. Key id kamu adalah id kredensial, dan kuncinya adalah secret yang ditampilkan sekali saat diterbitkan, didekode dari hex menjadi byte. MAC mencakup string kanonis yang digabung baris baru: timestamp, key id kamu, metode HTTP, path dan query, header <code>Idempotency-Key</code> (atau string kosong), dan base64(sha256(body permintaan)). Gunakan <code>signRequest</code> dari <code>@yourtal/sdk-merchant</code> langsung, dengan secret sebagai <code>Buffer.from(secret, \"hex\")</code>. Identik byte-demi-byte dengan verifier server.",
+      "signingBody": "Setiap permintaan membawa <code>X-YourTal-Signature: t=[unix seconds],k=[key id],v1=[hex hmac-sha256]</code>. Key id Anda adalah id kredensial, dan kuncinya adalah secret yang ditampilkan sekali saat diterbitkan, didekode dari hex menjadi byte. MAC mencakup string kanonis yang digabung baris baru: timestamp, key id Anda, metode HTTP, path dan query, header <code>Idempotency-Key</code> (atau string kosong), dan base64(sha256(body permintaan)). Gunakan <code>signRequest</code> dari <code>@yourtal/sdk-merchant</code> langsung, dengan secret sebagai <code>Buffer.from(secret, \"hex\")</code>. Identik byte-demi-byte dengan verifier server.",
       "callsTitle": "Empat panggilan",
       "callAuthorize": "<code>authorize</code> — cari voucher berdasarkan kode dan tahan sejumlah nilai. Belum memindahkan nilai apa pun.",
       "callCapture": "<code>capture</code> — menyelesaikan otorisasi sebelumnya sesuai jumlah yang benar-benar dibebankan.",
       "callVoid": "<code>void</code> — membatalkan otorisasi yang belum pernah di-capture.",
-      "callRefund": "<code>refund</code> — mengembalikan sebagian atau seluruh capture, diidentifikasi dengan referensi kamu sendiri.",
+      "callRefund": "<code>refund</code> — mengembalikan sebagian atau seluruh capture, diidentifikasi dengan referensi Anda sendiri.",
       "callsDeviceNote": "Kredensial khusus perangkat (yang dipakai kasir yang terpasang) tidak pernah bisa void atau refund — hanya key milik merchant yang bisa.",
       "errorsTitle": "Error",
-      "errorsBody": "Setiap kegagalan berbentuk objek JSON dengan field <code>code</code> dan <code>message</code>. Cabang berdasarkan <code>code</code>, jangan pernah mem-parsing <code>message</code> — string itu untuk manusia, bukan integrasi kamu.",
+      "errorsBody": "Setiap kegagalan berbentuk objek JSON dengan field <code>code</code> dan <code>message</code>. Cabang berdasarkan <code>code</code>, jangan pernah mem-parsing <code>message</code> — string itu untuk manusia, bukan integrasi Anda.",
       "idempotencyTitle": "Idempotensi",
       "idempotencyBody": "Kirim satu <code>Idempotency-Key</code> per panggilan logis dan pakai ulang, dengan body yang identik, di setiap percobaan ulang. Key dan body yang sama akan mendapat jawaban yang sama, bukan redeem kedua."
     }
@@ -1132,5 +1153,8 @@
       "finance": "Mengelola tagihan dan melihat laporan. Tidak memiliki akses ke kampanye, inventaris, atau penukaran.",
       "analyst": "Hanya-baca untuk kampanye, inventaris, dan laporan."
     }
+  },
+  "dialog": {
+    "close": "Tutup"
   }
 }

@@ -53,22 +53,26 @@ export function CampaignDraftList({ drafts, onOpen, onCreate, canEdit }: Campaig
             <li key={draft.id}>
               <Card>
                 <CardContent className="flex flex-col gap-2 p-4">
+                  {/* The Button wraps its children in an inline-flex row and is nowrap: one column of
+                      spans inside it, with whitespace-normal, lets a long title wrap in its row. */}
                   <Button
                     type="button"
                     variant="ghost"
                     onClick={() => onOpen(draft.id)}
-                    className="h-auto justify-start p-0 flex-col items-start gap-1 text-left"
+                    className="h-auto w-full min-w-0 flex-col items-start justify-start gap-1 whitespace-normal p-0 text-left"
                   >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-sans font-semibold text-fg">
-                        {draft.title || t("campaignBuilder.list.untitled")}
+                    <span className="flex min-w-0 flex-col items-start gap-1 text-left">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="min-w-0 break-words text-sm font-sans font-semibold text-fg">
+                          {draft.title || t("campaignBuilder.list.untitled")}
+                        </span>
+                        <CampaignDraftStatusBadge status={draft.status} />
                       </span>
-                      <CampaignDraftStatusBadge status={draft.status} />
-                    </div>
-                    <p className="text-xs font-sans text-fg-muted">
-                      {formatMinutes(draftDurationSeconds(draft))} ·{" "}
-                      {t("campaignBuilder.list.rewardPoints", { points: draft.rewardPoints })}
-                    </p>
+                      <span className="text-xs font-sans text-fg-muted">
+                        {formatMinutes(draftDurationSeconds(draft))} ·{" "}
+                        {t("campaignBuilder.list.rewardPoints", { points: draft.rewardPoints })}
+                      </span>
+                    </span>
                   </Button>
                   <TagChips tags={draft.targeting.interests} />
                   {draft.status === "rejected" && draft.rejectionReason ? (

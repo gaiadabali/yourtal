@@ -2,6 +2,7 @@ import type { Listing } from "@yourtal/contracts/listing";
 import { Badge } from "@yourtal/ui/badge";
 import { MoneyAmount } from "@yourtal/ui/money-amount";
 import { PointsChip } from "@yourtal/ui/points-chip";
+import { REGION_TIME_ZONE } from "@/features/region/region-time-zone";
 import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 import { TagChips } from "../tag-picker";
 import type { VoucherBatchRequest } from "@yourtal/contracts/listing/voucher-batch-request";
@@ -37,9 +38,11 @@ export function InventoryListingRow({
   locale,
 }: InventoryListingRowProps) {
   const t = getStudioTranslator(locale);
-  const expires = new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
-    new Date(listing.expiresAt),
-  );
+  // The listing's own region's day, so the server render and the hydrated page agree.
+  const expires = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeZone: REGION_TIME_ZONE[listing.region],
+  }).format(new Date(listing.expiresAt));
   return (
     <li className="flex flex-col gap-3 rounded-control border border-border-subtle p-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -99,7 +102,9 @@ export function InventoryListingRow({
         · {t(`inventory.row.channel.${listing.channel}`)}
       </p>
       <TagChips tags={listing.tags} />
-      {canEdit ? <VoucherRequestsList requests={requests} locale={locale} /> : null}
+      {canEdit ? (
+        <VoucherRequestsList requests={requests} locale={locale} region={listing.region} />
+      ) : null}
       {canEdit ? (
         <div className="flex flex-wrap items-start gap-2">
           <EditListingDialog

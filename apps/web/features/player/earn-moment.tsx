@@ -2,11 +2,14 @@ import { PointsChip } from "@yourtal/ui/points-chip";
 import { nonEarningReasonKey } from "./non-earning-reason";
 import { IDENTITY_CHECK_REQUIRED } from "@yourtal/contracts/identity/earning-check";
 import { IdentityCheckPrompt } from "./identity-check-prompt";
+import { REGION_TIME_ZONE } from "@/features/region/region-time-zone";
 import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
 
 /** Plain `Intl`, not next-intl's `useFormatter` — this feature keeps zero next-intl calls (6.1.d). */
 function formatUnlockDate(locale: SupportedLocale, iso: string): string {
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(iso));
+  // A fixed zone per language (en-AU is Australia, id-ID is Indonesia), so server and browser agree.
+  const timeZone = locale === "id-ID" ? REGION_TIME_ZONE.ID : REGION_TIME_ZONE.AU;
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone }).format(new Date(iso));
 }
 
 export interface EarnMomentProps {

@@ -4,11 +4,12 @@ import { render, screen } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import enAU from "@/messages/en-AU/me.json";
 import enOnboarding from "@/messages/en-AU/onboarding.json";
+import type * as OnboardingData from "@/features/onboarding/onboarding-data";
 
 const { getMeProfile } = vi.hoisted(() => ({ getMeProfile: vi.fn() }));
 vi.mock("@/features/me/me-data", () => ({ getMeProfile }));
 vi.mock("@/features/onboarding/onboarding-data", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/features/onboarding/onboarding-data")>()),
+  ...(await importOriginal<typeof OnboardingData>()),
   getOnboardingConsents: () => Promise.resolve({ ok: true, data: { consents: [] } }),
 }));
 vi.mock("@/features/player/identity-check-actions", () => ({

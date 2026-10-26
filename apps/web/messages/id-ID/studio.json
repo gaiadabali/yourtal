@@ -42,7 +42,7 @@
       "audienceParents": "Orang tua",
       "startsAtLabel": "Mulai",
       "endsAtLabel": "Berakhir",
-      "openViewingLabel": "Tontonan Terbuka (tidak perlu hadiah untuk menonton)",
+      "openViewingLabel": "Tontonan Terbuka (tidak perlu reward untuk menonton)",
       "captionsUrlLabel": "URL Teks",
       "captionsUrlPlaceholder": "https://…",
       "teaserStartLabel": "Teaser dimulai pada (detik)",
@@ -104,7 +104,7 @@
       "rewardValueLabel": "Nilai yang dihitung server (satu penyelesaian)",
       "allocationOption": "{total} poin dibeli {date} · sisa {remaining}",
       "allocationRequired": "Pilih sumber dana reward ini di daftar “Didanai oleh”, lalu simpan.",
-      "allocationReceiptPackage": "Dana itu adalah paket struk. Paket ini hanya membayar hadiah struk, jadi tidak bisa mendanai kampanye. Pilih poin berdana lain.",
+      "allocationReceiptPackage": "Dana itu adalah paket struk. Paket ini hanya membayar reward struk, jadi tidak bisa mendanai kampanye. Pilih poin berdana lain.",
       "ratioNeedsVideo": "Perbandingan dengan biaya data penonton muncul setelah video Anda selesai diproses.",
       "ratioNeedsReward": "Tetapkan reward untuk melihat perbandingannya dengan biaya data penonton.",
       "ratioNeedsSave": "Simpan reward untuk melihat perbandingannya dengan biaya data penonton.",
@@ -198,8 +198,8 @@
       "durationMinutes": "{value} mnt",
       "dataCostMb": "~{value} MB",
       "questionCount": "{count, plural, =0 {Tidak ada pertanyaan} other {# pertanyaan}}",
-      "scoringWithBonus": "Hadiah dasar untuk menyelesaikan, ditambah bonus akurasi",
-      "scoringFixed": "Hadiah tetap untuk menyelesaikan dan menjawab",
+      "scoringWithBonus": "Reward dasar untuk menyelesaikan, ditambah bonus akurasi",
+      "scoringFixed": "Reward tetap untuk menyelesaikan dan menjawab",
       "pending": "Menunggu",
       "pendingNote": "Durasi, biaya data, dan pertanyaan ditentukan oleh video setelah selesai diproses.",
       "dataCostBadgePending": "Biaya data menunggu",
@@ -224,7 +224,7 @@
       "titleTooLong": "Judul maksimal {max} karakter.",
       "synopsisRequired": "Tambahkan sinopsis singkat — ini yang dibaca penonton sebelum mulai.",
       "synopsisTooLong": "Sinopsis maksimal {max} karakter.",
-      "rewardNegative": "Hadiah tidak boleh negatif.",
+      "rewardNegative": "Reward tidak boleh negatif.",
       "budgetRequired": "Atur total anggaran lebih dari nol."
     },
     "newDraft": {
@@ -353,7 +353,7 @@
       },
       "govId": {
         "category": "nomor identitas resmi",
-        "reason": "Pertanyaan tidak boleh meminta nomor KTP, NPWP, atau paspor. Itu pengambilan identitas, yang tidak pernah diizinkan platform lewat gerbang hadiah."
+        "reason": "Pertanyaan tidak boleh meminta nomor KTP, NPWP, atau paspor. Itu pengambilan identitas, yang tidak pernah diizinkan platform lewat gerbang reward."
       },
       "income": {
         "category": "penghasilan",
@@ -406,7 +406,7 @@
       "title": "Performa kampanye",
       "notFound": "Belum ada laporan untuk kampanye ini.",
       "suppressed": "Penonton masih terlalu sedikit untuk ditampilkan secara jujur — angka muncul setelah setidaknya {floor} orang menontonnya.",
-      "rewardedViews": "Tontonan berhadiah",
+      "rewardedViews": "Tontonan dengan reward",
       "completions": "Penyelesaian",
       "completionRate": "Tingkat penyelesaian",
       "averageWatchTime": "Rata-rata waktu tonton",
@@ -430,7 +430,7 @@
       "scoringRuleHeader": "Aturan penilaian",
       "scoringRuleNotSet": "Belum diatur",
       "scoringRule": {
-        "base_only": "Hanya hadiah dasar",
+        "base_only": "Hanya reward dasar",
         "base_plus_accuracy_bonus": "Dasar + bonus akurasi"
       },
       "status": {
@@ -671,12 +671,12 @@
     "alertsEmptyTitle": "Belum ada peringatan anggaran",
     "alertsEmptyDescription": "Catatan muncul di sini saat anggaran sebuah paket atau kampanye terpakai 50%, 80%, atau 100%.",
     "alertPackage": "Paket {formatted} poin: {pct}% terpakai",
-    "alertPackageStopped": "Paket {formatted} poin: {pct}% terpakai — kampanye yang didanai dari paket ini berhenti memberi hadiah sampai Anda membeli poin lagi",
+    "alertPackageStopped": "Paket {formatted} poin: {pct}% terpakai — kampanye yang didanai dari paket ini berhenti memberi reward sampai Anda membeli poin lagi",
     "alertReceiptPackage": "Paket struk {formatted} poin: {pct}% terpakai",
     "alertReceiptPackageStopped": "Paket struk {formatted} poin: {pct}% terpakai — poin struk dijeda jika tidak ada paket struk lain yang masih punya sisa",
     "alertReceiptLabel": "Paket struk",
-    "receiptTitle": "Hadiah struk",
-    "receiptIntro": "Orang mendapat poin dari struk lewat paket yang Anda beli di sini. Paket struk hanya membayar hadiah struk dan tidak bisa mendanai kampanye.",
+    "receiptTitle": "Reward struk",
+    "receiptIntro": "Orang mendapat poin dari struk lewat paket yang Anda beli di sini. Paket struk hanya membayar reward struk dan tidak bisa mendanai kampanye.",
     "receiptEarning": "Struk sedang memberi poin",
     "receiptPaused": "Poin struk dijeda",
     "receiptPausedHint": "Beli paket struk agar struk kembali memberi poin.",
@@ -684,14 +684,14 @@
     "receiptLeftSuffix": "poin tersisa",
     "receiptPerReceipt": "{count, plural, other {# poin}} per struk",
     "receiptPackagesTitle": "Paket struk",
-    "receiptPackagesNote": "Hanya untuk hadiah struk",
+    "receiptPackagesNote": "Hanya untuk reward struk",
     "receiptPackagesNone": "Belum ada paket struk yang dijual saat ini.",
     "receiptBuy": "Beli paket struk",
     "receiptBuyNamed": "Beli paket struk {tier}",
     "receiptPurchased": "Paket struk berhasil dibeli. Poin struk siap diberikan.",
     "receiptReturnReview": "Kami menerima pembayaran Anda dan sedang memeriksanya. Paket struk Anda akan segera ditambahkan.",
     "alertCampaign": "Kampanye “{title}”: anggaran {pct}% terpakai",
-    "alertCampaignStopped": "Kampanye “{title}”: anggaran {pct}% terpakai — hadiah telah berhenti",
+    "alertCampaignStopped": "Kampanye “{title}”: anggaran {pct}% terpakai — reward telah berhenti",
     "alertCampaignUntitled": "Tanpa judul",
     "alertUsage": "{used} dari {total} poin terpakai",
     "returnWaitingTitle": "Menunggu konfirmasi pembayaran",
@@ -829,7 +829,7 @@
       "description": "Voucher yang dibeli penonton dengan poin. YourTal menghitung harga poin dari nilai penyelesaian yang Anda masukkan; Anda tidak dapat menetapkannya sendiri.",
       "titleLabel": "Judul",
       "descriptionLabel": "Deskripsi",
-      "categoryLabel": "Jenis hadiah",
+      "categoryLabel": "Jenis reward",
       "category": {
         "food_beverage": "Makanan dan minuman",
         "retail": "Ritel",
@@ -869,7 +869,7 @@
         "image": "Tambahkan gambar."
       },
       "imageLabel": "Gambar",
-      "imageHelp": "Gambar JPEG, PNG, atau WebP hingga {maxMb} MB, ditampilkan pada kartu hadiah.",
+      "imageHelp": "Gambar JPEG, PNG, atau WebP hingga {maxMb} MB, ditampilkan pada kartu reward.",
       "image": {
         "uploading": "Mengunggah gambar…",
         "ready": "Gambar ditambahkan.",
@@ -886,8 +886,8 @@
       "decrease_already_pending": "Listing ini sudah memiliki penurunan yang menunggu persetujuan.",
       "not_a_material_decrease": "Itu bukan penurunan.",
       "unchanged": "Itu adalah nilai saat ini.",
-      "prohibited_category": "Jenis hadiah itu tidak dapat ditawarkan di wilayah Anda.",
-      "audience_must_be_adult": "Jenis hadiah itu hanya untuk orang dewasa.",
+      "prohibited_category": "Jenis reward itu tidak dapat ditawarkan di wilayah Anda.",
+      "audience_must_be_adult": "Jenis reward itu hanya untuk orang dewasa.",
       "invalid_locations": "Salah satu lokasi itu bukan milik Anda.",
       "listing_pricing_unavailable": "Harga poin belum dapat dihitung saat ini. Coba lagi nanti.",
       "persistence_unavailable": "Belum dapat disimpan saat ini. Coba lagi nanti.",
@@ -967,7 +967,7 @@
         "description": "Beri penonton poin karena menonton video Anda."
       },
       "supplier": {
-        "title": "Menawarkan hadiah",
+        "title": "Menawarkan reward",
         "description": "Tampilkan voucher yang bisa ditukar dengan poin."
       },
       "redeemer": {
@@ -976,7 +976,7 @@
       }
     },
     "title": "Daftarkan bisnis Anda",
-    "description": "Siapkan kanal Studio untuk menjalankan kampanye, menawarkan hadiah, atau menerima voucher.",
+    "description": "Siapkan kanal Studio untuk menjalankan kampanye, menawarkan reward, atau menerima voucher.",
     "joinInstead": "Diundang ke tim? Bergabung dengan kode undangan Anda"
   },
   "devices": {

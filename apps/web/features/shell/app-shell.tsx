@@ -47,8 +47,9 @@ export async function AppShell({ children }: AppShellProps) {
     apiFetch("/api/me/streak", streakResponseSchema),
   ]);
   // 13.13.d: the streak is a header badge; 12.2.b: teens get no streak anywhere.
+  // `null` hides the badge (a teen, or a read that failed); a real 0 shows before the first earn.
   const streakDays =
-    streak.ok && me.ok && me.data.profile.ageBand !== "teen" ? streak.data.currentLength : 0;
+    streak.ok && me.ok && me.data.profile.ageBand !== "teen" ? streak.data.currentLength : null;
   // 13.18.b: a failed profile read drops the avatar menu, never the shell.
   const account = me.ok
     ? {

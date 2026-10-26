@@ -35,8 +35,8 @@ export interface TopBarProps {
   /** 13.18.b: the signed-in account for the avatar menu. Omitted, no avatar shows. */
   account?: AccountSummary;
   theme?: ThemeSetting;
-  /** 13.13.d: 0 hides the badge. */
-  streakDays?: number;
+  /** 13.13.d: the streak badge. `null` (or omitted) hides it; 0 shows an empty streak, so a viewer sees it before their first earn. */
+  streakDays?: number | null;
 }
 
 /**
@@ -54,7 +54,7 @@ export function TopBar({
   signedOutCta,
   account,
   theme = "system",
-  streakDays = 0,
+  streakDays = null,
 }: TopBarProps) {
   const t = getNavTranslator(locale);
 
@@ -112,9 +112,9 @@ export function TopBar({
         </a>
       ) : (
         <>
-          {streakDays > 0 ? (
+          {streakDays !== null ? (
             <span
-              className="hidden h-8 shrink-0 items-center gap-1 rounded-pill bg-accent-subtle px-2.5 text-label font-sans font-bold text-fg sm:inline-flex"
+              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-pill bg-accent-subtle px-2 text-label font-sans font-bold text-fg sm:px-2.5"
               title={t("streak", { count: streakDays })}
             >
               <Flame aria-hidden="true" className="h-4 w-4 text-accent" />

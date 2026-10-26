@@ -31,12 +31,12 @@ const COPY: Record<
   },
   "id-ID": {
     gift_received: (name, title) => [
-      "Anda menerima hadiah",
-      `${name} mengirimi Anda ${title}. Terima di dompet Anda dalam 7 hari.`,
+      "Kamu menerima hadiah",
+      `${name} mengirimimu ${title}. Terima di dompetmu dalam 7 hari.`,
     ],
     gift_returned: (_name, title) => [
-      "Hadiah Anda kembali",
-      `${title} tidak diterima, jadi kembali ke dompet Anda dengan kode baru.`,
+      "Hadiahmu kembali",
+      `${title} tidak diterima, jadi kembali ke dompetmu dengan kode baru.`,
     ],
   },
 };

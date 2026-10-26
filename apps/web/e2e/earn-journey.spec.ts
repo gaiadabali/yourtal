@@ -175,7 +175,7 @@ test.describe("Earn journey", () => {
 
     await expect(page.getByRole("heading", { name: "Checkpoint selesai" })).toBeVisible();
     await expect(page.getByText("Reward dasar")).toBeVisible();
-    await expect(page.getByText("Dijamin karena Anda menonton dan menjawab")).toBeVisible();
+    await expect(page.getByText("Dijamin karena kamu menonton dan menjawab")).toBeVisible();
 
     // The whole point of using BONUS_ACCURACY_CAMPAIGN_ID: the result must
     // show a SEPARATE accuracy-bonus row, never folded into one number

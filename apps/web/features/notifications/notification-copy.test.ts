@@ -37,7 +37,7 @@ describe("notificationCopy", () => {
     });
     expect(notificationCopy(note({}), tools(idShell.notifications))).toEqual({
       title: "Voucher segera berakhir",
-      body: "Voucher Flat white Anda berakhir pada 2026-10-12.",
+      body: "Voucher Flat white milikmu berakhir pada 2026-10-12.",
     });
   });
 

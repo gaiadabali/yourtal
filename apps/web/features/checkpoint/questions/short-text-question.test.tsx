@@ -47,7 +47,7 @@ describe("ShortTextQuestionView", () => {
         onAnswerChange={vi.fn()}
       />,
     );
-    expect(screen.getByLabelText("Jawaban Anda (opsional)")).toBeInTheDocument();
+    expect(screen.getByLabelText("Jawabanmu (opsional)")).toBeInTheDocument();
   });
 
   it("enforces the question's maxLength", () => {
@@ -58,7 +58,7 @@ describe("ShortTextQuestionView", () => {
         onAnswerChange={vi.fn()}
       />,
     );
-    expect(screen.getByLabelText("Jawaban Anda (opsional)")).toHaveAttribute(
+    expect(screen.getByLabelText("Jawabanmu (opsional)")).toHaveAttribute(
       "maxlength",
       String(shortTextFixture.maxLength),
     );
@@ -67,7 +67,7 @@ describe("ShortTextQuestionView", () => {
   it("reports typed text as it is entered", async () => {
     const onAnswerChange = vi.fn();
     renderWithIntl(<ControlledWrapper onAnswerChange={onAnswerChange} />);
-    const field = screen.getByLabelText("Jawaban Anda (opsional)");
+    const field = screen.getByLabelText("Jawabanmu (opsional)");
 
     await userEvent.type(field, "Kesan saya bagus");
 

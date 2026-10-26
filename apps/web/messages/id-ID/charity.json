@@ -11,8 +11,8 @@
   },
   "list": {
     "title": "Lembaga amal",
-    "description": "Lembaga amal terdaftar di wilayah Anda. Saat Anda melelang voucher untuk amal, tawaran pemenang langsung masuk ke lembaga yang Anda pilih.",
-    "empty": "Belum ada lembaga amal di wilayah Anda.",
+    "description": "Lembaga amal terdaftar di wilayahmu. Saat kamu melelang voucher untuk amal, tawaran pemenang langsung masuk ke lembaga yang kamu pilih.",
+    "empty": "Belum ada lembaga amal di wilayahmu.",
     "applyLink": "Daftarkan lembaga amal Anda"
   },
   "apply": {
@@ -93,11 +93,11 @@
     "auctionsHeading": "Lelang yang dibuka",
     "noAuctions": {
       "title": "Belum ada lelang untuk yayasan ini",
-      "body": "Lelang voucher yang belum dipakai dari dompet Anda untuk memulainya."
+      "body": "Lelang voucher yang belum dipakai dari dompetmu untuk memulainya."
     },
     "error": {
       "title": "Yayasan belum bisa dimuat",
-      "body": "Periksa koneksi Anda lalu coba lagi."
+      "body": "Periksa koneksimu lalu coba lagi."
     },
     "empty": {
       "title": "Belum ada yayasan",

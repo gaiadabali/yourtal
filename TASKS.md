@@ -45,9 +45,9 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
-| **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 12/20 | 58/74 | `████████░░`  78% |
-| **All** | | | **117/126** | **604/621** | `██████████`  97% |
+| **Phase 13** Ready for live review | all | ✅ done | 23/23 | 105/105 | `██████████` 100% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 17/25 | 77/102 | `████████░░`  75% |
+| **All** | | | **123/131** | **624/649** | `██████████`  96% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -87,7 +87,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 9c | `yourtal-p9-c` | free | 2026-10-01 | A2 done: 13.10 ✅, 13.20 and 13.22 backends (closed ✅ 2026-10-01), 13.9.a/b. Db `yourtal_s9c` and ports 26480–26487 free for reuse. |
 | 4 | `yourtal-4` | **13** — viewer side (agent V), paused | 2026-10-02 | Branch `phase/13` (merged), db `yourtal_s4`, ports 26360–26369. Next for V: 13.15.d (store date without its year), 13.3.d (data export), the B half of 13.3.i. (13.4.a moved to the optimisation pass, F97.) |
 | 2b | `yourtal-p11` | free | 2026-09-29 | Phase 11 moved to slot 4. 11.3.a ✅ (d2ae6ab), 11.3.b merged except `VideoObject` (11fc23d). Worktree left detached |
-| g5 | `.claude/worktrees/g-phase5` | **14** — group Phase 5 on the payment simulation (F106) | 2026-10-21 | Done: 14.6 ✅, 14.7 ✅, 14.8 ✅, 14.11 ✅, 14.13 ✅, 13.6 ✅ (the walkthrough, in the founder's place); 14.9.a–c, e; 14.10.a–c (email-only); 14.19.a–e; 14.20.a–c; 14.22.a–b. Open: 14.22.c–l (the walkthrough's fixes; k and c first), 14.10.d (passkey, after group 3.9.c) and 14.10.e, 14.19.f, 14.20.d (god-99), 14.21 (first live boost charge), 14.9.d (needs the AU company). Nobody is working these now |
+| g5 | `.claude/worktrees/g-phase5` | **14** — group Phase 5 on the payment simulation (F106) | 2026-10-21 | Done: 14.6 ✅, 14.7 ✅, 14.8 ✅, 14.11 ✅, 14.13 ✅, 13.6 ✅ (the walkthrough, in the founder's place); 14.9.a–c, e; 14.10.a–c (email-only); 14.19.a–e; 14.20.a–c; 14.22.a–b. Open: 14.22.c–l (the walkthrough's fixes; k and c first), 14.10.d (passkey, after group 3.9.c) and 14.10.e, 14.19.f, 14.20.d (god-99), 14.21 (first live boost charge), 14.9.d (needs the AU company). **Resumed 2026-10-26 by a god lead session with two agents:** lane 1 on `g-phase5-video` (group/5-player: 14.22.c, 14.10.e), `g5-signup` (group/5-signup-boost: 14.22.d, f) and `g5-viewer-copy` (14.22.i); lane 4 on `g5-leftovers` (14.19.f) and `g5-demo-data` (14.22.j). The other g5 worktrees (`g-phase5`, `g-phase5-inv`, `g-phase5-sim`) still hold uncommitted work for 14.22.e, g, k: nobody is on them |
 | g3 | `.claude/worktrees/g3-oidc`, `g3-passkeys` | **14.16** — group Phase 3, Sign in with YourTal (god-ca) | 2026-10-21 | Branches `group/3.9-oidc` (the provider) and `group/3.9c-passkeys`. Next: the `/connect` screens, events and the teen invite API once the provider is on main; the lead does nginx and the keys on Helios |
 | 8 | free | **8** Voucher engine for clients — ✅ done | 2026-09-29 | Phase 8 done (all 4 tasks ✅). Helper worktrees `yourtal-p8`, `-p8-b`, `-p8-c` removed; databases `yourtal_s8`, `_s8b`, `_s8c` and ports 26371–26387, 26471–26477 kept for reuse |
 
@@ -1758,6 +1758,11 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
   - [ ] 14.22.j Staging's demo data: test content on public pages, "new viewer" logins not new (group 5.13.j)
   - [ ] 14.22.k Gifts and auctions cannot be done from the app: no Gift control and no reason, no way to list a voucher for a charity, wallet history links to "Voucher not found", stale balance after redeeming (group 5.13.k)
   - [ ] 14.22.l Walk again the journeys the walkthrough could not finish (group 5.13.l)
+- [x] **14.24 main is green and staging deploys again** (group 1.31) · A · needs: — — ✅ 2026-10-26 781f983a
+  - [x] 14.24.a Quality and the Release gate had failed on every push since 2026-10-22 (an unneeded type assertion in the fake ledger, an unformatted docs/28), so staging stayed on ef9fc40c → 781f983a; Release green, staging /api/health reports 781f983a
+- [ ] **14.25 A patched Next.js** (group 1.32) · A + B · needs: 14.24
+  - [ ] 14.25.a `next` 16.4.3 or later (the daily Security audit flags 16.3.8), zod ≥ 4.6.6 and undici, through pnpm; Security passes
+  - [ ] 14.25.b The Performance budget workflow is red on main (initial JS over 170 KB gz): find since when and why
 
 ## Not in this plan (deferred)
 

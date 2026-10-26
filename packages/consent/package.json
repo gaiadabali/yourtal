@@ -20,11 +20,11 @@
   },
   "dependencies": {
     "@yourtal/jurisdiction": "workspace:*",
-    "zod": "4.6.5"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@yourtal/tsconfig": "workspace:*",
     "typescript": "6.0.3",
-    "vitest": "5.0.1"
+    "vitest": "5.0.5"
   }
 }

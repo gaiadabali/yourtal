@@ -36,8 +36,8 @@ export interface ViewerShellProps {
    * colours come from `data-theme` on `<html>` (RootDocument).
    */
   theme?: ThemeSetting;
-  /** 13.13.d: the current streak for the header badge; 0 hides it. */
-  streakDays?: number;
+  /** 13.13.d: the current streak for the header badge; `null` hides it, 0 shows an empty streak. */
+  streakDays?: number | null;
   /** Pins one theme on this subtree only, for the gallery. */
   forceTheme?: "light" | "dark";
   /** 13.18.b: the signed-in account for the header's avatar menu. */
@@ -75,7 +75,7 @@ export function ViewerShell({
   notifications,
   theme = "system",
   forceTheme,
-  streakDays = 0,
+  streakDays = null,
   account,
   signedOut,
   children,
@@ -105,7 +105,7 @@ export function ViewerShell({
       // The rail is fixed; its colour and edge are also painted on the shell,
       // so it reads as full height however tall the page gets.
       className={cn(
-        "min-h-dvh bg-canvas text-fg",
+        "min-h-[calc(100dvh-var(--staging-banner-h,0px))] bg-canvas text-fg",
         "lg:bg-[linear-gradient(to_right,var(--color-surface)_calc(14rem-1px),var(--color-border-subtle)_calc(14rem-1px),var(--color-border-subtle)_14rem,var(--color-canvas)_14rem)]",
       )}
     >
@@ -113,7 +113,7 @@ export function ViewerShell({
         locale={locale}
         availablePoints={availablePoints}
         theme={theme}
-        streakDays={signedOut ? 0 : streakDays}
+        streakDays={signedOut ? null : streakDays}
         {...topBarSignedOutProps}
         {...topBarNotificationsProps}
         {...topBarAccountProps}
@@ -126,7 +126,8 @@ export function ViewerShell({
       <main
         className={cn(
           // A solid ground: the shell's rail gradient behind it stops a contrast check reading the page's colours.
-          "min-h-dvh bg-canvas pb-[calc(4rem+max(0px,env(safe-area-inset-bottom)))]",
+          // Fills what the top bar and the staging banner leave, so a short page does not scroll by their height.
+          "min-h-[calc(100dvh-3.5rem-var(--staging-banner-h,0px))] bg-canvas pb-[calc(4rem+max(0px,env(safe-area-inset-bottom)))]",
           "lg:pb-0 lg:pl-56",
         )}
       >

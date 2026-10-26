@@ -48,9 +48,11 @@ export function ShortsFeed({ data, locale, publicBase }: ShortsFeedProps) {
   const watchTimeReminder = useWatchTimeReminder(data.ageBand === "teen");
 
   return (
+    // The card is sized to what is left of the window after the top bar, the page's padding and,
+    // on staging, the banner (`--staging-banner-h`), so the Earn button never sits below the fold.
     <div className="mx-auto flex w-full max-w-[440px] flex-col gap-3">
       {watchTimeReminder.show ? <WatchTimeReminder onDismiss={watchTimeReminder.dismiss} /> : null}
-      <div className="h-[calc(100dvh-10rem)] w-full overflow-hidden rounded-card bg-black lg:h-[calc(100dvh-6rem)]">
+      <div className="h-[calc(100dvh-10rem-var(--staging-banner-h,0px))] w-full overflow-hidden rounded-card bg-black lg:h-[calc(100dvh-6rem-var(--staging-banner-h,0px))]">
         <VerticalFeed
           items={items.map((item) => ({ ...item, id: item.campaignId }))}
           mode="teaser"

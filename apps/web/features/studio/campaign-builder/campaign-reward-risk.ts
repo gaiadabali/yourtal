@@ -72,22 +72,64 @@ export function assessRewardToDataCost(
   };
 }
 
-/** Plain-language summary for the builder's risk banner — the ratio itself, not just a pass/fail badge. */
-export function describeRewardDataCostRatio(
-  assessment: RewardDataCostAssessment,
+/**
+ * What the ratio banner and the entry-card preview both say, from one place so the
+ * two can never disagree. Before there is a server-priced reward value (it arrives
+ * when the reward is saved), the ratio is not worked out: the author is told what
+ * is missing instead, and a draft with no reward yet is not scolded for it.
+ */
+export type RewardRatioNote =
+  "needsVideo" | "needsReward" | "needsSave" | "noDataCost" | "meetsGuideline" | "belowGuideline";
+
+export interface RewardRatioView {
+  note: RewardRatioNote;
+  /** Only for the two worked-out notes. */
+  ratio: number | null;
+}
+
+export function rewardRatioView(input: {
+  rewardPoints: number;
+  rewardValueMinorUnits: number | null;
+  estimatedDataMb: number;
+  currency: "IDR" | "AUD";
+  /** The video's real length is not known yet, so neither is its data cost. */
+  durationPending: boolean;
+  /** The reward on screen differs from the saved one, so the priced value no longer matches it. */
+  rewardUnsaved?: boolean;
+}): RewardRatioView {
+  if (input.durationPending) return { note: "needsVideo", ratio: null };
+  if (input.rewardPoints <= 0) return { note: "needsReward", ratio: null };
+  if (input.rewardUnsaved === true) return { note: "needsSave", ratio: null };
+  const assessment = assessRewardToDataCost(
+    input.rewardValueMinorUnits,
+    input.estimatedDataMb,
+    input.currency,
+  );
+  if (assessment.ratio === null) return { note: "needsSave", ratio: null };
+  if (!Number.isFinite(assessment.ratio)) return { note: "noDataCost", ratio: null };
+  return {
+    note: assessment.meetsGuideline ? "meetsGuideline" : "belowGuideline",
+    ratio: Math.round(assessment.ratio * 10) / 10,
+  };
+}
+
+/** Plain-language summary: the ratio itself when it is known, else what is still needed. */
+export function rewardRatioText(
+  view: RewardRatioView,
   t: ReturnType<typeof useTranslations>,
 ): string {
-  if (assessment.ratio === null) {
-    return t("campaignBuilder.reward.ratioUnavailable");
+  switch (view.note) {
+    case "needsVideo":
+      return t("campaignBuilder.reward.ratioNeedsVideo");
+    case "needsReward":
+      return t("campaignBuilder.reward.ratioNeedsReward");
+    case "needsSave":
+      return t("campaignBuilder.reward.ratioNeedsSave");
+    case "noDataCost":
+      return t("campaignBuilder.reward.ratioNoDataCost");
+    case "meetsGuideline":
+      return t("campaignBuilder.reward.ratioMeetsGuideline", { ratio: view.ratio ?? 0 });
+    case "belowGuideline":
+      return t("campaignBuilder.reward.ratioBelowGuideline", { ratio: view.ratio ?? 0 });
   }
-  if (!Number.isFinite(assessment.ratio)) {
-    return t("campaignBuilder.reward.ratioNoDataCost");
-  }
-  const roundedRatio = Math.round(assessment.ratio * 10) / 10;
-  return t(
-    assessment.meetsGuideline
-      ? "campaignBuilder.reward.ratioMeetsGuideline"
-      : "campaignBuilder.reward.ratioBelowGuideline",
-    { ratio: roundedRatio },
-  );
 }

@@ -14,12 +14,15 @@ import {
   oneCompletionPoints,
   rewardConfigPatchFor,
   rewardErrorText,
+  savedRewardPatch,
 } from "./campaign-reward-patch";
 
 export interface CampaignEditorBudgetProps {
   draft: CampaignDraft;
   form: UseFormReturn<CampaignDraftFormValues>;
   onChange: (draft: CampaignDraft) => void;
+  /** Applies a change on top of the latest draft, for results that arrive after a wait. */
+  onPatch: (patch: Partial<CampaignDraft>) => void;
   disabled?: boolean;
   isLiveMode: boolean;
   merchantName: string;
@@ -52,6 +55,7 @@ export function CampaignEditorBudget({
   draft,
   form,
   onChange,
+  onPatch,
   disabled,
   isLiveMode,
   merchantName,
@@ -79,8 +83,8 @@ export function CampaignEditorBudget({
       setSaveState({ status: "error", message: rewardErrorText(result, t) });
       return;
     }
-    // Keep the author's unsaved edits on other tabs; take the saved budget back.
-    onChange({ ...draft, budget: result.value.budget });
+    // Keep the author's unsaved edits, including any typed while this saved; take the saved reward and budget back.
+    onPatch(savedRewardPatch(result.value));
     setSaveState({ status: "saved" });
   }
 

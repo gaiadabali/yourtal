@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@yourtal/ui/button";
 import { Card, CardContent } from "@yourtal/ui/card";
@@ -16,10 +16,16 @@ import type { CampaignDraftActionError } from "./campaign-draft-actions";
 import type { CampaignDraft } from "./campaign-draft";
 import { CampaignDraftStatusBadge } from "./campaign-draft-status-badge";
 import { canPause, canResume, canSubmitForReview } from "./campaign-draft-status";
+import type { CampaignEditorSection } from "./campaign-editor-sections";
+import { submitGapsFromRefusal, submitReadiness } from "./campaign-submit-readiness";
+import type { SubmitReadiness } from "./campaign-submit-readiness";
 
 export interface CampaignEditorStatusPanelProps {
   draft: CampaignDraft;
   onChange: (draft: CampaignDraft) => void;
+  /** The tab on screen and how many edits have been made: a refusal is shown only while both still match the moment it was raised. */
+  section: CampaignEditorSection;
+  revision: number;
   /** Saves unsaved details before submitting (13.3.b: they used to be lost). */
   onSave?: () => Promise<string | null>;
   canEdit: boolean;
@@ -42,6 +48,8 @@ export interface CampaignEditorStatusPanelProps {
 export function CampaignEditorStatusPanel({
   draft,
   onChange,
+  section,
+  revision,
   onSave,
   canEdit,
   isVerified,
@@ -51,9 +59,20 @@ export function CampaignEditorStatusPanel({
   merchantName,
 }: CampaignEditorStatusPanelProps) {
   const t = useTranslations("studio");
+  const checklistId = useId();
   const [error, setError] = useState<CampaignDraftActionError | null>(null);
-  const [liveError, setLiveError] = useState<string | null>(null);
+  const [refusal, setRefusal] = useState<{
+    section: CampaignEditorSection;
+    revision: number;
+    message: string;
+    gaps: SubmitReadiness | null;
+  } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // A refusal belongs to the tab and the edits it was raised on; it does not follow the author around.
+  const shown = refusal?.section === section && refusal.revision === revision ? refusal : null;
+  // Live: what review needs, worked out before asking (the API checks the same list).
+  const readiness = isLiveMode ? submitReadiness(draft) : null;
+  const checklist = shown?.gaps ?? readiness;
 
   function run(action: (draft: CampaignDraft) => ReturnType<typeof submitForReview>) {
     const result = action(draft);
@@ -67,18 +86,19 @@ export function CampaignEditorStatusPanel({
 
   /** 7.3.d, wired for real (was left unwired -- see campaign-builder-actions.ts's own note). */
   async function submitLive() {
-    setLiveError(null);
+    setRefusal(null);
     setSubmitting(true);
+    const raisedOn = { section, revision };
     const saveError = onSave ? await onSave() : null;
     if (saveError !== null) {
       setSubmitting(false);
-      setLiveError(saveError);
+      setRefusal({ ...raisedOn, message: saveError, gaps: null });
       return;
     }
     const result = await submitCampaignDraftLive(businessId, campaignId, merchantName);
     setSubmitting(false);
     if (!result.ok) {
-      setLiveError(result.message);
+      setRefusal({ ...raisedOn, message: result.message, gaps: submitGapsFromRefusal(result) });
       return;
     }
     // The submit response has no reward config, question bank or upload state.
@@ -88,6 +108,7 @@ export function CampaignEditorStatusPanel({
       accuracyBonusPoints: draft.accuracyBonusPoints,
       rewardValueMinorUnits: draft.rewardValueMinorUnits,
       rewardCurrency: draft.rewardCurrency,
+      savedReward: draft.savedReward ?? null,
       questionBank: draft.questionBank,
       video: draft.video,
     });
@@ -118,10 +139,28 @@ export function CampaignEditorStatusPanel({
           </p>
         ) : null}
 
-        {liveError ? (
+        {shown && shown.gaps === null ? (
           <p role="alert" className="text-xs font-sans text-danger">
-            {liveError}
+            {shown.message}
           </p>
+        ) : null}
+
+        {canEdit && canSubmitForReview(draft.status) && checklist && checklist.gaps.length > 0 ? (
+          <div id={checklistId} role={shown ? "alert" : "status"} className="flex flex-col gap-1">
+            <p className="text-xs font-sans font-medium text-fg">
+              {t("campaignBuilder.submit.heading")}
+            </p>
+            <ul className="list-disc pl-4 text-xs font-sans text-fg-muted">
+              {checklist.gaps.map((gap) => (
+                <li key={gap}>
+                  {t(`campaignBuilder.submit.gap.${gap}`, {
+                    needed: checklist.questionsNeeded,
+                    have: checklist.questionsHave,
+                  })}
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : null}
 
         {!isVerified && canSubmitForReview(draft.status) ? (
@@ -146,7 +185,8 @@ export function CampaignEditorStatusPanel({
               <Button
                 type="button"
                 size="sm"
-                disabled={!isVerified || submitting}
+                disabled={!isVerified || submitting || (readiness?.gaps.length ?? 0) > 0}
+                aria-describedby={readiness && readiness.gaps.length > 0 ? checklistId : undefined}
                 loading={submitting}
                 title={isVerified ? undefined : t("campaignBuilder.status.verifyBeforeSubmitTitle")}
                 onClick={() => (isLiveMode ? void submitLive() : run(submitForReview))}

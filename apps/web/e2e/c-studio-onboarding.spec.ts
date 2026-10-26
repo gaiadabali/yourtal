@@ -179,10 +179,10 @@ test.describe
     await page.getByRole("button", { name: "Buy" }).first().click();
     await finishPurchase(page, "Points bought. They are ready to fund your campaigns.");
     // The real balance updates from the real ledger.
-    await expect(page.locator('[aria-label="50,000 points available"]')).toBeVisible();
+    await expect(page.locator('[aria-label="1,000 points available"]')).toBeVisible();
     // The purchase shows in the history, all of it still left (journey 2).
-    await expect(page.getByText("50,000 points bought")).toBeVisible();
-    await expect(page.getByText("50,000 left")).toBeVisible();
+    await expect(page.getByText("1,000 points bought")).toBeVisible();
+    await expect(page.getByText("1,000 left")).toBeVisible();
 
     await context.close();
   });
@@ -282,13 +282,13 @@ test.describe
     });
     await page.getByRole("button", { name: "Save reward" }).click();
 
-    const ceilingError = page.getByText(/exceeds the \d+-point ceiling/);
+    const ceilingError = page.getByText(/Lower the reward to \d+ or less/);
     await expect(ceilingError).toBeVisible();
     const ceilingText = await ceilingError.textContent();
-    const ceilingMatch = /exceeds the (\d+)-point ceiling/.exec(ceilingText ?? "");
+    const ceilingMatch = /Lower the reward to (\d+) or less/.exec(ceilingText ?? "");
     expect(
       ceilingMatch,
-      `expected a "N-point ceiling" refusal, got: ${ceilingText}`,
+      `expected a "lower the reward to N" refusal, got: ${ceilingText}`,
     ).not.toBeNull();
     const ceilingPoints = Number(ceilingMatch?.[1]);
 
@@ -296,7 +296,9 @@ test.describe
     await page.getByRole("button", { name: "Save reward" }).click();
     // The server's own priced value replaces "ratio pending" — 7.3.h.
     await expect(page.getByText("Server-priced value (one completion)")).toBeVisible();
-    await expect(page.getByText("Ratio pending")).toBeHidden();
+    // No video has been processed in this test, so the comparison with the viewer's data
+    // cost says what it is waiting for rather than guessing from a placeholder length (B9).
+    await expect(page.getByText(/once your video has finished processing/).first()).toBeVisible();
 
     // --- Question bank: 3 true/false questions (this campaign's real,
     // server-known duration is short enough that the server's own

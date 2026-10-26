@@ -1,6 +1,7 @@
 "use server";
 
 import { apiFetch } from "@/lib/api/api-fetch";
+import type { ApiError } from "@/lib/api/api-fetch";
 import type { CampaignDraft } from "./campaign-draft";
 import {
   apiCampaignDraftSchema,
@@ -22,7 +23,30 @@ import {
  * which fields do not round-trip yet).
  */
 export type CampaignBuilderActionResult<T> =
-  { ok: true; value: T } | { ok: false; message: string; code?: string };
+  | { ok: true; value: T }
+  | {
+      ok: false;
+      message: string;
+      code?: string;
+      /** The refusal's other fields (e.g. the reward limit in points), for wording it in the author's language. */
+      details?: Record<string, unknown>;
+    };
+
+/** A refusal with the API's own `code` and `details` kept, so the editor can word it itself. */
+function refusal(error: ApiError): {
+  ok: false;
+  message: string;
+  code?: string;
+  details?: Record<string, unknown>;
+} {
+  if (error.kind !== "http") return { ok: false, message: error.message };
+  return {
+    ok: false,
+    message: error.message,
+    code: error.code,
+    ...(error.details === undefined ? {} : { details: { ...error.details } }),
+  };
+}
 
 /** `POST /api/:tenantId/studio/campaigns` (7.3.a) with a safe, always-valid starting point — see `newCampaignDraftDefaults`'s own doc comment for why. */
 export async function createCampaignDraftLive(
@@ -70,22 +94,10 @@ export async function updateCampaignDraftDetailsLive(
     apiCampaignDraftSchema,
     { method: "PATCH", body: patch },
   );
-  if (!result.ok) return { ok: false, message: result.error.message };
+  if (!result.ok) return refusal(result.error);
   return { ok: true, value: apiDraftToWebDraft(result.data, merchantName) };
 }
 
-/**
- * `POST /api/:tenantId/studio/campaigns/:campaignId/submit` (7.3.d) —
- * wired for real but not yet called from `campaign-editor-status-panel.tsx`:
- * that panel already disables the Submit button whenever `!isVerified`
- * (the real, live `business.isVerified` flag, wired since 7.8.b), which is
- * exactly what 7.8.d's Check asks for ("ready to submit, blocked by the
- * verification banner") — the button being correctly disabled makes this
- * call unreachable from the UI today regardless, since a real business is
- * never verified except through staff KYB review (9.3.b, later phase).
- * Left real and ready for whoever wires the button itself as this
- * feature's own next slice.
- */
 export interface RewardConfigPatch {
   allocationId: string;
   rewardPointsPerCompletion: number;
@@ -116,12 +128,7 @@ export async function setRewardConfigLive(
     apiRewardConfigResultSchema,
     { method: "PUT", body: patch },
   );
-  if (!result.ok) {
-    const code = result.error.kind === "http" ? result.error.code : undefined;
-    return code === undefined
-      ? { ok: false, message: result.error.message }
-      : { ok: false, message: result.error.message, code };
-  }
+  if (!result.ok) return refusal(result.error);
   return {
     ok: true,
     value: apiRewardResultToWebDraft(
@@ -133,6 +140,7 @@ export async function setRewardConfigLive(
   };
 }
 
+/** `POST /api/:tenantId/studio/campaigns/:campaignId/submit` (7.3.d). A `campaign_not_ready` refusal lists what is missing in `details.missing`. */
 export async function submitCampaignDraftLive(
   businessId: string,
   campaignId: string,
@@ -143,6 +151,6 @@ export async function submitCampaignDraftLive(
     apiCampaignDraftSchema,
     { method: "POST" },
   );
-  if (!result.ok) return { ok: false, message: result.error.message };
+  if (!result.ok) return refusal(result.error);
   return { ok: true, value: apiDraftToWebDraft(result.data, merchantName) };
 }

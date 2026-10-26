@@ -1,10 +1,8 @@
 "use client";
 
-import { knownTags } from "../tag-picker";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { BillingAllocation } from "@yourtal/contracts/billing";
-import { draftDurationSeconds } from "./campaign-draft";
 import type { CampaignDraft } from "./campaign-draft";
 import { CampaignDraftList } from "./campaign-draft-list";
 import { createEmptyCampaignDraft } from "./campaign-draft-fixtures";
@@ -12,7 +10,10 @@ import {
   createCampaignDraftLive,
   updateCampaignDraftDetailsLive,
 } from "./campaign-builder-actions";
+import { detailsPatchFor, detailsSaveKey } from "./campaign-details-save";
+import type { DetailsSaveState } from "./campaign-save-bar";
 import { listQuestionsLive } from "../question-bank/question-live-actions";
+import { isDraftContentEditable } from "./campaign-draft-status";
 import dynamic from "next/dynamic";
 import { Skeleton } from "@yourtal/ui/skeleton";
 
@@ -23,6 +24,9 @@ const CampaignEditor = dynamic(
   () => import("./campaign-editor").then((editorModule) => editorModule.CampaignEditor),
   { loading: () => <Skeleton className="h-96 w-full rounded-lg" /> },
 );
+
+/** How long after the last edit the details and targeting save themselves. */
+export const AUTOSAVE_DELAY_MS = 1_000;
 
 export interface CampaignBuilderScreenProps {
   businessId: string;
@@ -41,9 +45,9 @@ export interface CampaignBuilderScreenProps {
  * The Campaigns zone (YT-0441): the campaign list and, once one is opened,
  * its full builder — the one client leaf for this whole zone, mirroring
  * `features/studio/team-screen.tsx`'s "one leaf owns the whole flow"
- * shape. No live campaign API exists yet (Phase U is mock-only), so every
- * edit lives in this component's own `useState` array; the moment a real
- * BFF exists, only this component's persistence calls change.
+ * shape. Every edit lives in this component's own `useState` array; in live
+ * mode the details and targeting are saved from here (see `saveDetails`), the
+ * reward, budget and questions from their own tabs.
  */
 export function CampaignBuilderScreen({
   businessId,
@@ -58,16 +62,42 @@ export function CampaignBuilderScreen({
   const [drafts, setDrafts] = useState<CampaignDraft[]>(initialDrafts);
   const [openDraftId, setOpenDraftId] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
+  /** The details as the server holds them, as a `detailsSaveKey`; what the screen compares the draft against to know it is not saved. */
+  const [savedKey, setSavedKey] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<{ key: string; message: string } | null>(null);
+
+  // The latest of each, for the saves below, which run on timers and after awaits and so
+  // must not read the render they were made in.
+  const latest = useRef({ drafts, openDraftId, savedKey });
+  useEffect(() => {
+    latest.current = { drafts, openDraftId, savedKey };
+  });
+  const inFlight = useRef<Promise<string | null> | null>(null);
+
+  const patchDraft = useCallback((draftId: string, patch: Partial<CampaignDraft>) => {
+    setDrafts((current) =>
+      current.map((draft) => (draft.id === draftId ? { ...draft, ...patch } : draft)),
+    );
+  }, []);
 
   function updateDraft(next: CampaignDraft) {
     setDrafts((current) => current.map((draft) => (draft.id === next.id ? next : draft)));
+  }
+
+  /** What the server holds for a draft this screen has just loaded or created. */
+  function markSaved(draft: CampaignDraft) {
+    latest.current.savedKey = detailsSaveKey(draft);
+    setSavedKey(detailsSaveKey(draft));
+    setSaveError(null);
   }
 
   async function createDraft() {
     if (isLiveMode) {
       const result = await createCampaignDraftLive(businessId, merchantName, {
         title: t("campaignBuilder.newDraft.title"),
-        synopsis: t("campaignBuilder.newDraft.synopsis"),
+        // Left empty: the editor shows its hint as a placeholder, never as the text itself.
+        synopsis: "",
       });
       if (!result.ok) {
         setCreateError(result.message);
@@ -75,6 +105,7 @@ export function CampaignBuilderScreen({
       }
       setCreateError(null);
       setDrafts((current) => [result.value, ...current]);
+      markSaved(result.value);
       setOpenDraftId(result.value.id);
       return;
     }
@@ -90,62 +121,103 @@ export function CampaignBuilderScreen({
    * embeds it.
    */
   async function openDraft(draftId: string) {
+    const opened = drafts.find((draft) => draft.id === draftId);
     if (isLiveMode) {
       const result = await listQuestionsLive(businessId, draftId);
-      if (result.ok) {
-        setDrafts((current) =>
-          current.map((draft) =>
-            draft.id === draftId ? { ...draft, questionBank: result.value } : draft,
-          ),
-        );
-      }
+      if (result.ok) patchDraft(draftId, { questionBank: result.value });
+      if (opened) markSaved(opened);
     }
     setOpenDraftId(draftId);
   }
 
   /**
-   * Flushes the details tab's fields to the real draft on the way out of
-   * the editor, rather than on every keystroke (`@NotValueMoving`, so a
-   * repeat is harmless, but a PATCH per character is still wasted work).
-   * Reward and questions save immediately from their own tabs instead (the
-   * author needs to see the server's refusal/priced value, or the PII
-   * guard's refusal, right there — see `campaign-editor-reward.tsx` and
-   * `question-bank-screen.tsx`). Districts save here; the budget saves
-   * with the reward (14.2).
+   * Saves the details and targeting (one `PATCH`) when they differ from what the server
+   * holds; the error message, or null once saved (or when there was nothing to save, or in
+   * mock mode). It runs a moment after the last edit, on leaving a tab, on Submit, on the
+   * Save button and on leaving the editor, so an edit is never left waiting on one
+   * particular gesture. One save at a time: a second call waits for the first, then
+   * saves whatever changed since. Reward, budget and questions save from their own tabs
+   * (the author needs the server's refusal, or the priced value, right there).
    */
-  /** Saves the details tab; the error message, or null once saved (or in mock mode). */
-  async function saveDetails(): Promise<string | null> {
-    const current = drafts.find((draft) => draft.id === openDraftId);
+  const saveDetails = useCallback(async (): Promise<string | null> => {
+    while (inFlight.current) await inFlight.current;
+    const { drafts: all, openDraftId: openId, savedKey: held } = latest.current;
+    const current = all.find((draft) => draft.id === openId);
     if (!isLiveMode || !current) return null;
-    const computedDuration = draftDurationSeconds(current);
-    const result = await updateCampaignDraftDetailsLive(businessId, current.id, merchantName, {
-      title: current.title,
-      synopsis: current.synopsis,
-      // Only a guess from local chapters, and only before a video exists: an
-      // uploaded video sets the real length server-side (13.3.b), and an
-      // empty chapter list computes to 0.
-      ...(computedDuration > 0 && current.video.status !== "ready"
-        ? { durationSeconds: computedDuration }
-        : {}),
-      contentCategory: current.contentCategory,
-      audience: current.audience,
-      startsAt: current.startsAt,
-      endsAt: current.endsAt,
-      openViewing: current.openViewing,
-      teaserStartSeconds: current.teaserStartSeconds,
-      captionsUrl: current.captionsUrl,
-      declaredInterests: knownTags(current.targeting.interests),
-      targetDistricts: current.targeting.districts,
-    });
-    if (result.ok) {
-      // The PATCH response has no question bank of its own (see
-      // campaign-builder-data.ts) — keep the one already fetched into
-      // local state rather than overwrite it with the mapper's `[]`.
-      updateDraft({ ...result.value, questionBank: current.questionBank });
-      return null;
+    const patch = detailsPatchFor(current);
+    const key = detailsSaveKey(current);
+    if (patch === null) {
+      const message = t("campaignBuilder.save.needsTitle");
+      setSaveError({ key, message });
+      return message;
     }
-    return result.message;
-  }
+    if (key === held) return null;
+
+    const run = (async (): Promise<string | null> => {
+      setSaving(true);
+      const result = await updateCampaignDraftDetailsLive(
+        businessId,
+        current.id,
+        merchantName,
+        patch,
+      ).catch(() => null);
+      setSaving(false);
+      if (result === null) {
+        const message = t("campaignBuilder.save.failed");
+        setSaveError({ key, message });
+        return message;
+      }
+      if (!result.ok) {
+        setSaveError({ key, message: result.message });
+        return result.message;
+      }
+      // Only what the server alone knows comes back. The PATCH response has no question
+      // bank, and its video, reward and everything typed since are not its to overwrite.
+      patchDraft(current.id, {
+        durationSeconds: result.value.durationSeconds,
+        questionsAsked: result.value.questionsAsked,
+      });
+      latest.current.savedKey = key;
+      setSavedKey(key);
+      setSaveError(null);
+      return null;
+    })();
+    inFlight.current = run;
+    try {
+      return await run;
+    } finally {
+      inFlight.current = null;
+    }
+  }, [businessId, isLiveMode, merchantName, patchDraft, t]);
+
+  const openDraftValue = drafts.find((draft) => draft.id === openDraftId);
+  const editable =
+    canEdit && openDraftValue !== undefined && isDraftContentEditable(openDraftValue.status);
+  const currentKey = openDraftValue ? detailsSaveKey(openDraftValue) : null;
+  const dirty = isLiveMode && editable && currentKey !== null && currentKey !== savedKey;
+
+  // Autosave: a moment after the last edit. An error is not retried by itself (the same
+  // edit would be refused the same way); the next edit, or the Save button, tries again.
+  const failedKey = saveError?.key ?? null;
+  useEffect(() => {
+    if (!dirty || currentKey === failedKey) return;
+    const timer = setTimeout(() => void saveDetails(), AUTOSAVE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [dirty, currentKey, failedKey, saveDetails]);
+
+  // Leaving the page (a reload, a close, another link) with edits waiting asks first, and
+  // leaving by a link inside the app saves them as the editor goes away.
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+  const flushOnUnmount = useRef(saveDetails);
+  useEffect(() => {
+    flushOnUnmount.current = saveDetails;
+  }, [saveDetails]);
+  useEffect(() => () => void flushOnUnmount.current(), []);
 
   async function closeEditor() {
     // A save hiccup on the way out is not worth trapping the author in the
@@ -154,15 +226,23 @@ export function CampaignBuilderScreen({
     setOpenDraftId(null);
   }
 
-  const openDraftValue = drafts.find((draft) => draft.id === openDraftId);
+  const detailsSave: DetailsSaveState = saving
+    ? { status: "saving" }
+    : saveError !== null && saveError.key === currentKey
+      ? { status: "error", message: saveError.message }
+      : dirty
+        ? { status: "dirty" }
+        : { status: "saved" };
 
   if (openDraftValue) {
     return (
       <CampaignEditor
         draft={openDraftValue}
         onChange={updateDraft}
+        onPatch={(patch) => patchDraft(openDraftValue.id, patch)}
         onBack={() => void closeEditor()}
         onSave={saveDetails}
+        detailsSave={detailsSave}
         canEdit={canEdit}
         isVerified={isVerified}
         isLiveMode={isLiveMode}

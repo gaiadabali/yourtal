@@ -139,7 +139,13 @@ export interface AllocationNotCampaignFundingError {
 /** F14: base + max accuracy bonus exceeds the region's reward_ceiling_points_per_minute, scaled to the campaign's duration. */
 export interface RewardExceedsCeilingError {
   readonly type: "reward_exceeds_ceiling";
-  readonly ceilingPoints: number;
+  /** The region's ceiling, in points PER MINUTE (not for this campaign's length). */
+  readonly ceilingPointsPerMinute: number;
+  readonly durationSeconds: number;
+  /** The most whole points one viewer may earn from this campaign's length, base and bonus together. */
+  readonly maxPoints: number;
+  /** Whether the refused config carried an accuracy bonus, so the message can leave the bonus out for a fixed reward. */
+  readonly hasBonus: boolean;
 }
 
 /** 7.3.c: the accuracy bonus exceeds 40% of the base reward. */
@@ -175,6 +181,15 @@ export interface CreativeBlockedError {
   readonly category: string;
 }
 
+/** The draft is missing something review needs (`campaignReadiness`); `missing` names each gap. */
+export interface CampaignNotReadyError {
+  readonly type: "campaign_not_ready";
+  readonly missing: readonly ("title" | "synopsis" | "video" | "reward" | "budget" | "questions")[];
+  readonly message: string;
+  readonly questionsNeeded: number;
+  readonly questionsHave: number;
+}
+
 export interface IllegalTransitionError {
   readonly type: "illegal_transition";
   readonly reason: string;
@@ -185,6 +200,7 @@ export type SubmitCampaignError =
   | BusinessNotFoundError
   | NotKybVerifiedError
   | CreativeBlockedError
+  | CampaignNotReadyError
   | IllegalTransitionError
   | PersistenceFailedError;
 

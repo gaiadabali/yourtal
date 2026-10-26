@@ -740,7 +740,8 @@ const REWARD_CONFIG_400: RouteErrorResponse = {
     "One of: allocation_not_owned (allocationId is not one of this business's own), " +
     "allocation_not_partner_funded (only a partner-funded allocation may fund a reward), " +
     "reward_exceeds_ceiling (F14: base plus the maximum accuracy bonus exceeds the region's " +
-    "reward_ceiling_points_per_minute, scaled to this campaign's duration), or " +
+    "reward_ceiling_points_per_minute, scaled to this campaign's duration; the body also carries " +
+    "maxPoints, durationSeconds and hasBonus), or " +
     "accuracy_bonus_too_high (the bonus exceeds 40% of the base reward), or 14.2's " +
     "budget_below_one_completion / daily_cap_below_one_completion / daily_cap_above_budget " +
     "(a total budget or daily cap that could never pay out as set) -- studio.errors.ts.",
@@ -755,12 +756,15 @@ const NOT_KYB_VERIFIED: RouteErrorResponse = {
   documented: true,
 };
 
-const ILLEGAL_TRANSITION: RouteErrorResponse = {
+const SUBMIT_400: RouteErrorResponse = {
   status: 400,
   description:
-    "The requested lifecycle move is not a legal transition from the campaign's current state " +
-    "(studio.errors.ts's illegal_transition; enforced twice over, by the use-case and by " +
-    "campaign.assert_lifecycle_transition()'s own database trigger).",
+    "One of: campaign_not_ready (the draft lacks something review needs; the body's `missing` " +
+    "lists title, synopsis, video, reward, budget and/or questions, with questionsNeeded and " +
+    "questionsHave), creative_blocked (the automated screen refused the title or synopsis), or " +
+    "illegal_transition (the move is not legal from the campaign's current state; enforced " +
+    "twice over, by the use-case and by campaign.assert_lifecycle_transition()'s own database " +
+    "trigger) -- studio.errors.ts.",
   documented: true,
 };
 
@@ -917,7 +921,7 @@ const createCampaignDraftRequestBodySchema: Record<string, unknown> = {
   properties: {
     kind: inlineSchema(campaignKindSchema),
     title: { type: "string", minLength: 1, maxLength: 140 },
-    synopsis: { type: "string", minLength: 1, maxLength: 500 },
+    synopsis: { type: "string", maxLength: 500 },
     durationSeconds: { type: "integer", minimum: 1, maximum: 3 * 60 * 60 },
     contentCategory: inlineSchema(contentCategorySchema),
     audience: inlineSchema(audienceSchema),
@@ -945,7 +949,7 @@ const updateCampaignDraftRequestBodySchema: Record<string, unknown> = {
   type: "object",
   properties: {
     title: { type: "string", minLength: 1, maxLength: 140 },
-    synopsis: { type: "string", minLength: 1, maxLength: 500 },
+    synopsis: { type: "string", maxLength: 500 },
     durationSeconds: { type: "integer", minimum: 1, maximum: 3 * 60 * 60 },
     contentCategory: inlineSchema(contentCategorySchema),
     audience: inlineSchema(audienceSchema),
@@ -1058,7 +1062,7 @@ export const STUDIO_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       FORBIDDEN,
       STUDIO_CAMPAIGN_NOT_FOUND,
       NOT_KYB_VERIFIED,
-      ILLEGAL_TRANSITION,
+      SUBMIT_400,
       SERVICE_UNAVAILABLE,
     ],
   },

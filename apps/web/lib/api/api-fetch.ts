@@ -17,6 +17,8 @@ export type ApiError =
       readonly status: number;
       readonly code: string;
       readonly message: string;
+      /** Any other fields of the error body (an API error may carry numbers for the console to word itself). */
+      readonly details?: Readonly<Record<string, unknown>>;
     }
   | { readonly kind: "network"; readonly message: string }
   | { readonly kind: "invalid_response"; readonly message: string };
@@ -144,7 +146,10 @@ export function httpErrorFrom(status: number, body: unknown): ApiError {
     typeof record["message"] === "string"
       ? record["message"]
       : `request failed with status ${status}`;
-  return { kind: "http", status, code, message };
+  const { code: _code, message: _message, ...rest } = record;
+  return Object.keys(rest).length === 0
+    ? { kind: "http", status, code, message }
+    : { kind: "http", status, code, message, details: rest };
 }
 
 export function networkErrorMessage(cause: unknown): string {

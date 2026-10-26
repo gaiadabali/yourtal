@@ -82,7 +82,8 @@
           "cosmetic-procedures": "Prosedur kosmetik",
           "energy-drinks": "Minuman berenergi"
         }
-      }
+      },
+      "synopsisPlaceholder": "Tambahkan sinopsis sebelum Anda mengirim untuk ditinjau."
     },
     "reward": {
       "scoringRuleBaseOnly": "Reward tetap — sama untuk setiap penonton yang menonton dan menjawab",
@@ -91,20 +92,30 @@
       "scoringRuleLabel": "Aturan penilaian",
       "ratioPending": "Rasio belum tersedia",
       "fairTrade": "Sepadan",
-      "rewardTooSmall": "Reward terlalu kecil",
-      "ratioUnavailable": "Rasio reward terhadap biaya data memerlukan nilai reward dari API kampanye dan belum tersedia.",
+      "rewardTooSmall": "Di bawah panduan",
       "ratioNoDataCost": "Kampanye ini tidak memiliki biaya data yang bisa diukur untuk dibandingkan.",
       "ratioMeetsGuideline": "Reward ini setara dengan sekitar {ratio}x perkiraan biaya data penonton — sudah memenuhi atau melampaui panduan 20x platform.",
-      "ratioBelowGuideline": "Reward ini hanya setara dengan sekitar {ratio}x perkiraan biaya data penonton — di bawah panduan 20x platform. Meminta perhatian sebesar ini untuk reward sekecil ini terasa tidak menghargai penonton, dan berisiko menurunkan tingkat penyelesaian serta ulasan.",
+      "ratioBelowGuideline": "Reward ini setara dengan sekitar {ratio}x perkiraan biaya data penonton, di bawah panduan 20x platform. Reward yang lebih besar membuat video layak ditonton dan membantu penyelesaian serta ulasan.",
       "accuracyBonusLabel": "Bonus akurasi (poin)",
       "allocationLabel": "Didanai oleh",
       "allocationNone": "Tidak ada poin yang didanai — beli poin di Billing terlebih dahulu.",
-      "saveReward": "Simpan hadiah",
-      "rewardSaved": "Tersimpan — nilai hadiah sebenarnya ditampilkan di atas.",
+      "saveReward": "Simpan reward",
+      "rewardSaved": "Reward tersimpan.",
       "rewardValueLabel": "Nilai yang dihitung server (satu penyelesaian)",
-      "allocationOption": "{points} poin — {shortId}",
-      "allocationRequired": "Pilih poin berdana yang membayar hadiah ini.",
-      "allocationReceiptPackage": "Dana itu adalah paket struk. Paket ini hanya membayar hadiah struk, jadi tidak bisa mendanai kampanye. Pilih poin berdana lain."
+      "allocationOption": "{total} poin dibeli {date} · sisa {remaining}",
+      "allocationRequired": "Pilih sumber dana reward ini di daftar “Didanai oleh”, lalu simpan.",
+      "allocationReceiptPackage": "Dana itu adalah paket struk. Paket ini hanya membayar hadiah struk, jadi tidak bisa mendanai kampanye. Pilih poin berdana lain.",
+      "ratioNeedsVideo": "Perbandingan dengan biaya data penonton muncul setelah video Anda selesai diproses.",
+      "ratioNeedsReward": "Tetapkan reward untuk melihat perbandingannya dengan biaya data penonton.",
+      "ratioNeedsSave": "Simpan reward untuk melihat perbandingannya dengan biaya data penonton.",
+      "unsavedNote": "Angka reward ini belum tersimpan. Tekan “Simpan reward” untuk menyimpannya.",
+      "limitPendingNote": "Jumlah yang bisa diperoleh penonton bergantung pada durasi video, yang diketahui setelah video selesai diproses.",
+      "errors": {
+        "ceilingFixed": "Video {seconds} detik paling banyak membayar {max} poin per penonton. Turunkan reward menjadi {max} atau kurang.",
+        "ceilingWithBonus": "Video {seconds} detik paling banyak membayar {max} poin per penonton, reward dan bonus akurasi digabung. Turunkan keduanya agar jumlahnya {max} atau kurang.",
+        "ceilingTooShort": "Video {seconds} detik terlalu pendek untuk membayar reward.",
+        "bonusTooHigh": "Bonus akurasi paling banyak 40% dari reward."
+      }
     },
     "sections": {
       "navLabel": "Bagian editor kampanye",
@@ -188,7 +199,12 @@
       "dataCostMb": "~{value} MB",
       "questionCount": "{count, plural, =0 {Tidak ada pertanyaan} other {# pertanyaan}}",
       "scoringWithBonus": "Hadiah dasar untuk menyelesaikan, ditambah bonus akurasi",
-      "scoringFixed": "Hadiah tetap untuk menyelesaikan dan menjawab"
+      "scoringFixed": "Hadiah tetap untuk menyelesaikan dan menjawab",
+      "pending": "Menunggu",
+      "pendingNote": "Durasi, biaya data, dan pertanyaan ditentukan oleh video setelah selesai diproses.",
+      "dataCostBadgePending": "Biaya data menunggu",
+      "unsaved": "belum tersimpan",
+      "unsavedNote": "Reward yang ditampilkan di sini belum tersimpan."
     },
     "captions": {
       "label": "File teks (.vtt)",
@@ -212,8 +228,28 @@
       "budgetRequired": "Atur total anggaran lebih dari nol."
     },
     "newDraft": {
-      "title": "Kampanye tanpa judul",
-      "synopsis": "Tambahkan sinopsis sebelum Anda mengirim untuk ditinjau."
+      "title": "Kampanye tanpa judul"
+    },
+    "save": {
+      "button": "Simpan perubahan",
+      "saved": "Semua perubahan tersimpan.",
+      "dirty": "Perubahan belum tersimpan. Akan tersimpan otomatis sebentar lagi.",
+      "saving": "Menyimpan…",
+      "needsTitle": "Beri kampanye judul agar perubahan Anda tersimpan.",
+      "failed": "Perubahan Anda tidak dapat disimpan. Periksa koneksi Anda lalu coba lagi."
+    },
+    "submit": {
+      "heading": "Sebelum dikirim, kampanye ini memerlukan:",
+      "gap": {
+        "title": "Judul (tab Detail).",
+        "synopsis": "Sinopsis (tab Detail).",
+        "videoMissing": "Video (tab Video & bab).",
+        "videoProcessing": "Video selesai diproses (tab Video & bab).",
+        "reward": "Reward yang tersimpan (tab Reward).",
+        "rewardUnsaved": "Perubahan reward Anda disimpan dengan “Simpan reward” (tab Reward).",
+        "budget": "Anggaran total yang mencakup minimal reward satu penonton (tab Anggaran).",
+        "questions": "Minimal {needed} pertanyaan; Anda punya {have} (tab Pertanyaan)."
+      }
     }
   },
   "questionBank": {

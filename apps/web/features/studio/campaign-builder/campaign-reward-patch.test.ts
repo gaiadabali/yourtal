@@ -2,13 +2,26 @@ import { describe, expect, it } from "vitest";
 import { apiDraftToWebDraft } from "./campaign-draft-live-mapping";
 import type { ApiCampaignDraft } from "./campaign-draft-live-response";
 import { createEmptyCampaignDraft } from "./campaign-draft-fixtures";
-import { draftBudgetIssue, rewardConfigPatchFor, rewardErrorText } from "./campaign-reward-patch";
+import {
+  draftBudgetIssue,
+  draftRewardConfigUnsaved,
+  draftRewardUnsaved,
+  rewardConfigPatchFor,
+  rewardErrorText,
+  savedRewardPatch,
+} from "./campaign-reward-patch";
 
 const BUSINESS_ID = "00000000-0000-4000-8000-000000000602";
 
 function draftWith(budget: { totalBudgetPoints: number; dailyCapPoints: number | null }) {
   const draft = createEmptyCampaignDraft(BUSINESS_ID, "Kopi Kenangan");
-  return { ...draft, rewardPoints: 100, accuracyBonusPoints: 20, budget };
+  return {
+    ...draft,
+    rewardPoints: 100,
+    accuracyBonusPoints: 20,
+    scoringRule: "base_plus_accuracy_bonus" as const,
+    budget,
+  };
 }
 
 describe("draftBudgetIssue (14.2)", () => {
@@ -47,6 +60,19 @@ describe("rewardConfigPatchFor (14.2)", () => {
       maxPointsForCampaign: 5_000,
       dailyCapPoints: 600,
     });
+  });
+
+  it("sends no accuracy bonus for a fixed reward, whatever number was left in the field", () => {
+    const draft = {
+      ...draftWith({ totalBudgetPoints: 5_000, dailyCapPoints: null }),
+      scoringRule: "base_only" as const,
+      allocationId: "alloc-1",
+    };
+    expect(rewardConfigPatchFor(draft)?.accuracyBonusPoints).toBe(0);
+    // And one completion is the base alone, so a budget of exactly that is enough.
+    expect(
+      draftBudgetIssue({ ...draft, budget: { totalBudgetPoints: 100, dailyCapPoints: null } }),
+    ).toBe(null);
   });
 
   it("is null until the funding is chosen", () => {
@@ -117,5 +143,103 @@ describe("rewardErrorText (2.10.b, F127)", () => {
       "reward too high",
     );
     expect(rewardErrorText({ message: "network error" }, t)).toBe("network error");
+  });
+});
+
+describe("rewardErrorText (B4: the F14 limit, in plain words)", () => {
+  const t = (key: string, values?: Record<string, number>) => `${key} ${JSON.stringify(values)}`;
+  it("uses the limit for this video's length from the refusal's details", () => {
+    expect(
+      rewardErrorText(
+        {
+          message: "server wording",
+          code: "reward_exceeds_ceiling",
+          details: { maxPoints: 2, durationSeconds: 20, hasBonus: false },
+        },
+        t,
+      ),
+    ).toBe('campaignBuilder.reward.errors.ceilingFixed {"max":2,"seconds":20}');
+  });
+  it("uses the bonus wording only when the refused config had a bonus", () => {
+    expect(
+      rewardErrorText(
+        {
+          message: "x",
+          code: "reward_exceeds_ceiling",
+          details: { maxPoints: 2, durationSeconds: 20, hasBonus: true },
+        },
+        t,
+      ),
+    ).toContain("ceilingWithBonus");
+  });
+  it("says a very short video cannot pay a reward at all", () => {
+    expect(
+      rewardErrorText(
+        {
+          message: "x",
+          code: "reward_exceeds_ceiling",
+          details: { maxPoints: 0, durationSeconds: 5, hasBonus: false },
+        },
+        t,
+      ),
+    ).toContain("ceilingTooShort");
+  });
+  it("falls back to the server's message when the refusal carries no numbers", () => {
+    expect(rewardErrorText({ message: "server wording", code: "reward_exceeds_ceiling" }, t)).toBe(
+      "server wording",
+    );
+  });
+});
+
+describe("what is saved (B3)", () => {
+  const saved = {
+    rewardPoints: 2,
+    accuracyBonusPoints: 0,
+    allocationId: "alloc-1",
+    totalBudgetPoints: 500,
+    dailyCapPoints: 50,
+  };
+  const base = createEmptyCampaignDraft(BUSINESS_ID, "Kopi Kenangan");
+
+  it("never calls anything unsaved in mock mode, where nothing is ever saved", () => {
+    expect(draftRewardUnsaved({ ...base, rewardPoints: 9 })).toBe(false);
+    expect(draftRewardConfigUnsaved({ ...base, rewardPoints: 9 })).toBe(false);
+  });
+
+  it("flags a reward that differs from the saved one, and a first reward when none is saved", () => {
+    const withSaved = {
+      ...base,
+      rewardPoints: 2,
+      allocationId: "alloc-1",
+      budget: { totalBudgetPoints: 500, dailyCapPoints: 50 },
+      savedReward: saved,
+    };
+    expect(draftRewardUnsaved(withSaved)).toBe(false);
+    expect(draftRewardConfigUnsaved(withSaved)).toBe(false);
+    expect(draftRewardUnsaved({ ...withSaved, rewardPoints: 5 })).toBe(true);
+    expect(draftRewardUnsaved({ ...base, rewardPoints: 5, savedReward: null })).toBe(true);
+    expect(draftRewardUnsaved({ ...base, rewardPoints: 0, savedReward: null })).toBe(false);
+    // Funding and budget count for the config, not for the reward numbers.
+    expect(draftRewardUnsaved({ ...withSaved, allocationId: "alloc-2" })).toBe(false);
+    expect(draftRewardConfigUnsaved({ ...withSaved, allocationId: "alloc-2" })).toBe(true);
+    expect(
+      draftRewardConfigUnsaved({
+        ...withSaved,
+        budget: { totalBudgetPoints: 9, dailyCapPoints: 50 },
+      }),
+    ).toBe(true);
+  });
+
+  it("hands back only the saved reward, funding and budget", () => {
+    const patch = savedRewardPatch({ ...base, rewardPoints: 2, savedReward: saved });
+    expect(Object.keys(patch).sort()).toEqual([
+      "accuracyBonusPoints",
+      "allocationId",
+      "budget",
+      "rewardCurrency",
+      "rewardPoints",
+      "rewardValueMinorUnits",
+      "savedReward",
+    ]);
   });
 });

@@ -21,6 +21,7 @@ import type {
   LedgerRefusedError,
   NotKybVerifiedError,
   CreativeBlockedError,
+  CampaignNotReadyError,
   OpenViewingRequiresAllAgesError,
   QuickTooLongError,
   UnknownDistrictError,
@@ -35,6 +36,24 @@ import type {
 } from "./studio.errors";
 
 const logger = new Logger("StudioErrorMapper");
+
+/**
+ * F14's limit is per minute, so say what THIS campaign's length allows. No code,
+ * and no accuracy bonus unless the config had one.
+ */
+function rewardCeilingMessage(error: RewardExceedsCeilingError): string {
+  const length =
+    error.durationSeconds < 120
+      ? `${String(error.durationSeconds)}-second`
+      : `${String(Math.round(error.durationSeconds / 60))}-minute`;
+  if (error.maxPoints === 0) {
+    return `A ${length} video is too short to pay a reward.`;
+  }
+  const points = `${String(error.maxPoints)} ${error.maxPoints === 1 ? "point" : "points"}`;
+  return error.hasBonus
+    ? `A ${length} video can pay at most ${points} to each viewer, reward and accuracy bonus together. Lower them so they add up to ${String(error.maxPoints)} or less.`
+    : `A ${length} video can pay at most ${points} to each viewer. Lower the reward to ${String(error.maxPoints)} or less.`;
+}
 
 /** The one adapter (docs/13b section 4) for this module's domain errors. */
 export type StudioDomainError =
@@ -58,6 +77,7 @@ export type StudioDomainError =
   | LedgerRefusedError
   | NotKybVerifiedError
   | CreativeBlockedError
+  | CampaignNotReadyError
   | IllegalTransitionError
   | OpenViewingRequiresAllAgesError
   | QuickTooLongError
@@ -132,9 +152,15 @@ export function mapStudioErrorToHttpException(error: StudioDomainError): HttpExc
         message: `allocation ${error.allocationId} is a receipt package and funds receipt points only, not a campaign`,
       });
     case "reward_exceeds_ceiling":
+      // The limit is per minute, so a short video's own limit is much lower than
+      // the figure in the setting; the structured fields let the console word it
+      // in the author's language.
       return new BadRequestException({
         code: "reward_exceeds_ceiling",
-        message: `base reward plus the maximum accuracy bonus exceeds the ${String(error.ceilingPoints)}-point ceiling for this campaign's duration (F14)`,
+        message: rewardCeilingMessage(error),
+        maxPoints: error.maxPoints,
+        durationSeconds: error.durationSeconds,
+        hasBonus: error.hasBonus,
       });
     case "accuracy_bonus_too_high":
       return new BadRequestException({
@@ -181,6 +207,14 @@ export function mapStudioErrorToHttpException(error: StudioDomainError): HttpExc
       return new BadRequestException({
         code: "creative_blocked",
         message: "The title or synopsis breaks the content rules. Change it and submit again.",
+      });
+    case "campaign_not_ready":
+      return new BadRequestException({
+        code: "campaign_not_ready",
+        message: error.message,
+        missing: error.missing,
+        questionsNeeded: error.questionsNeeded,
+        questionsHave: error.questionsHave,
       });
     case "illegal_transition":
       return new BadRequestException({ code: "illegal_transition", message: error.reason });

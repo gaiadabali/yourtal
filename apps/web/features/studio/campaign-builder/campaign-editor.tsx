@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import type { BillingAllocation } from "@yourtal/contracts/billing";
 import { Button } from "@yourtal/ui/button";
 import type { CampaignDraft, CampaignDraftFormValues } from "./campaign-draft";
-import { draftDurationSeconds, draftFormValues } from "./campaign-draft";
+import { draftDurationPending, draftDurationSeconds, draftFormValues } from "./campaign-draft";
 import { campaignDraftFormResolver } from "./campaign-draft-form";
 import { isDraftContentEditable } from "./campaign-draft-status";
 import { CampaignEditorBudget } from "./campaign-editor-budget";
@@ -16,6 +16,8 @@ import { CampaignEditorReward } from "./campaign-editor-reward";
 import type { CampaignEditorSection } from "./campaign-editor-sections";
 import { CampaignEditorSectionNav } from "./campaign-editor-section-nav";
 import { CampaignEditorStatusPanel } from "./campaign-editor-status-panel";
+import { CampaignSaveBar } from "./campaign-save-bar";
+import type { DetailsSaveState } from "./campaign-save-bar";
 import { CampaignEditorTargeting } from "./campaign-editor-targeting";
 import { CampaignEditorBoost } from "../boost/campaign-editor-boost";
 import { CampaignEditorUpload } from "./campaign-editor-upload";
@@ -25,9 +27,17 @@ import { QuestionBankScreen } from "../question-bank/question-bank-screen";
 export interface CampaignEditorProps {
   draft: CampaignDraft;
   onChange: (draft: CampaignDraft) => void;
+  /**
+   * Applies a change on top of the latest draft. For anything that arrives after a wait (a
+   * video's progress, a saved reward, a saved question): `draft` in this render may be older
+   * than the author's last edit, and writing it back would undo that edit.
+   */
+  onPatch: (patch: Partial<CampaignDraft>) => void;
   onBack: () => void;
-  /** Saves the details tab; Submit calls it first so review sees what the author sees. */
+  /** Saves the details and targeting now (a no-op when nothing is waiting); Submit and leaving a tab call it so nothing typed is lost. */
   onSave?: () => Promise<string | null>;
+  /** Live: whether the details and targeting are saved, shown beside a Save button on those tabs. */
+  detailsSave?: DetailsSaveState;
   canEdit: boolean;
   isVerified: boolean;
   isLiveMode: boolean;
@@ -59,9 +69,11 @@ export interface CampaignEditorProps {
  */
 export function CampaignEditor({
   draft,
-  onChange,
+  onChange: onChangeDraft,
+  onPatch,
   onBack,
   onSave,
+  detailsSave,
   canEdit,
   isVerified,
   isLiveMode,
@@ -69,6 +81,17 @@ export function CampaignEditor({
 }: CampaignEditorProps) {
   const t = useTranslations("studio");
   const [section, setSection] = useState<CampaignEditorSection>("details");
+  // Counts the author's own edits, so a refusal on screen can tell it no longer matches them.
+  const [revision, setRevision] = useState(0);
+  function onChange(next: CampaignDraft) {
+    setRevision((count) => count + 1);
+    onChangeDraft(next);
+  }
+  /** Leaving a tab saves what was typed on it, so nothing waits on the timer. */
+  function changeSection(next: CampaignEditorSection) {
+    if (next !== section) void onSave?.();
+    setSection(next);
+  }
   const editable = canEdit && isDraftContentEditable(draft.status);
   const form = useForm<CampaignDraftFormValues>({
     values: draftFormValues(draft),
@@ -84,7 +107,7 @@ export function CampaignEditor({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex flex-col gap-4">
-          <CampaignEditorSectionNav active={section} onChange={setSection} />
+          <CampaignEditorSectionNav active={section} onChange={changeSection} />
 
           <div
             role="tabpanel"
@@ -103,7 +126,7 @@ export function CampaignEditor({
               <div className="flex flex-col gap-6">
                 <CampaignEditorUpload
                   video={draft.video}
-                  onChange={(video) => onChange({ ...draft, video })}
+                  onChange={(video) => onPatch({ video })}
                   disabled={!editable}
                   businessId={draft.businessId}
                   campaignId={draft.id}
@@ -122,6 +145,7 @@ export function CampaignEditor({
                 draft={draft}
                 form={form}
                 onChange={onChange}
+                onPatch={onPatch}
                 disabled={!editable}
                 isLiveMode={isLiveMode}
                 merchantName={draft.merchantName}
@@ -140,6 +164,7 @@ export function CampaignEditor({
                 draft={draft}
                 form={form}
                 onChange={onChange}
+                onPatch={onPatch}
                 disabled={!editable}
                 isLiveMode={isLiveMode}
                 merchantName={draft.merchantName}
@@ -159,19 +184,28 @@ export function CampaignEditor({
                 campaignId={draft.id}
                 durationSeconds={draftDurationSeconds(draft)}
                 initialBank={draft.questionBank}
-                onBankChange={(questionBank) => onChange({ ...draft, questionBank })}
+                onBankChange={(questionBank) => onPatch({ questionBank })}
                 readOnly={!editable}
                 isLiveMode={isLiveMode}
                 audience={draft.audience}
               />
             ) : null}
           </div>
+
+          {isLiveMode &&
+          editable &&
+          detailsSave &&
+          (section === "details" || section === "targeting") ? (
+            <CampaignSaveBar state={detailsSave} onSave={() => void onSave?.()} />
+          ) : null}
         </div>
 
         <div className="flex flex-col gap-4">
           <CampaignEditorStatusPanel
             draft={draft}
             onChange={onChange}
+            section={section}
+            revision={revision}
             {...(onSave ? { onSave } : {})}
             canEdit={canEdit}
             isVerified={isVerified}
@@ -180,7 +214,10 @@ export function CampaignEditor({
             campaignId={draft.id}
             merchantName={draft.merchantName}
           />
-          <CampaignEntryPreview draft={draft} />
+          <CampaignEntryPreview
+            draft={draft}
+            durationPending={draftDurationPending(draft, isLiveMode)}
+          />
         </div>
       </div>
     </div>

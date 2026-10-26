@@ -5275,7 +5275,6 @@
                   },
                   "synopsis": {
                     "type": "string",
-                    "minLength": 1,
                     "maxLength": 500
                   },
                   "durationSeconds": {
@@ -6554,7 +6553,6 @@
                   },
                   "synopsis": {
                     "type": "string",
-                    "minLength": 1,
                     "maxLength": 500
                   },
                   "durationSeconds": {
@@ -7435,7 +7433,7 @@
             }
           },
           "400": {
-            "description": "The requested lifecycle move is not a legal transition from the campaign's current state (studio.errors.ts's illegal_transition; enforced twice over, by the use-case and by campaign.assert_lifecycle_transition()'s own database trigger).",
+            "description": "One of: campaign_not_ready (the draft lacks something review needs; the body's `missing` lists title, synopsis, video, reward, budget and/or questions, with questionsNeeded and questionsHave), creative_blocked (the automated screen refused the title or synopsis), or illegal_transition (the move is not legal from the campaign's current state; enforced twice over, by the use-case and by campaign.assert_lifecycle_transition()'s own database trigger) -- studio.errors.ts.",
             "content": {
               "application/json": {
                 "schema": {
@@ -10384,7 +10382,7 @@
             }
           },
           "400": {
-            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here. OR: This campaign has left draft; an advertiser edits freely only until submission (studio.errors.ts's campaign_not_draft). OR: One of: allocation_not_owned (allocationId is not one of this business's own), allocation_not_partner_funded (only a partner-funded allocation may fund a reward), reward_exceeds_ceiling (F14: base plus the maximum accuracy bonus exceeds the region's reward_ceiling_points_per_minute, scaled to this campaign's duration), or accuracy_bonus_too_high (the bonus exceeds 40% of the base reward), or 14.2's budget_below_one_completion / daily_cap_below_one_completion / daily_cap_above_budget (a total budget or daily cap that could never pay out as set) -- studio.errors.ts.",
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here. OR: This campaign has left draft; an advertiser edits freely only until submission (studio.errors.ts's campaign_not_draft). OR: One of: allocation_not_owned (allocationId is not one of this business's own), allocation_not_partner_funded (only a partner-funded allocation may fund a reward), reward_exceeds_ceiling (F14: base plus the maximum accuracy bonus exceeds the region's reward_ceiling_points_per_minute, scaled to this campaign's duration; the body also carries maxPoints, durationSeconds and hasBonus), or accuracy_bonus_too_high (the bonus exceeds 40% of the base reward), or 14.2's budget_below_one_completion / daily_cap_below_one_completion / daily_cap_above_budget (a total budget or daily cap that could never pay out as set) -- studio.errors.ts.",
             "content": {
               "application/json": {
                 "schema": {

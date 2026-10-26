@@ -4,6 +4,8 @@ import type { BusinessAccountRepository } from "../../business/persistence/busin
 import { transitionCampaignLifecycle } from "./transition-campaign-lifecycle.use-case";
 import type { CampaignPublishedPublisher } from "../campaign-published-publisher";
 import type { CampaignDraftRepository } from "../persistence/campaign-draft.repository";
+import type { QuestionBankRepository } from "../persistence/question-bank.repository";
+import { campaignReadiness, describeReadiness } from "./campaign-readiness";
 import type { RewardConfigRepository } from "../persistence/reward-config.repository";
 import type { TermsVersionRepository } from "../persistence/terms-version.repository";
 import type { ModerationDriver } from "@yourtal/drivers/moderation";
@@ -20,6 +22,7 @@ export function submitCampaign(
   deps: {
     readonly businesses: BusinessAccountRepository;
     readonly drafts: CampaignDraftRepository;
+    readonly bank: Pick<QuestionBankRepository, "listByCampaign">;
     readonly rewardConfigs: RewardConfigRepository;
     readonly termsVersions: TermsVersionRepository;
     readonly publisher: CampaignPublishedPublisher;
@@ -42,14 +45,51 @@ export function submitCampaign(
     if (!business.isVerified) {
       return errAsync<CampaignDraft, SubmitCampaignError>({ type: "not_kyb_verified" });
     }
-    return screenCreative(deps, businessId, campaignId).andThen(() =>
-      transitionCampaignLifecycle(deps, businessId, campaignId, "in_review").mapErr(
-        (error): SubmitCampaignError =>
-          error.type === "campaign_not_found"
-            ? { type: "campaign_not_found", campaignId: error.campaignId }
-            : error,
-      ),
-    );
+    return checkReadiness(deps, businessId, campaignId)
+      .andThen(() => screenCreative(deps, businessId, campaignId))
+      .andThen(() =>
+        transitionCampaignLifecycle(deps, businessId, campaignId, "in_review").mapErr(
+          (error): SubmitCampaignError =>
+            error.type === "campaign_not_found"
+              ? { type: "campaign_not_found", campaignId: error.campaignId }
+              : error,
+        ),
+      );
+  });
+}
+
+/**
+ * Refuses a draft that lacks something review needs, naming each gap, instead of
+ * letting the database refuse the transition with no reason. Only a `draft` is
+ * checked: any other state reaches the lifecycle's own refusal below.
+ */
+function checkReadiness(
+  deps: Pick<Parameters<typeof submitCampaign>[0], "drafts" | "bank">,
+  businessId: string,
+  campaignId: string,
+): ResultAsync<undefined, SubmitCampaignError> {
+  return ResultAsync.fromPromise(
+    (async () => {
+      const draft = await deps.drafts.findById(businessId, campaignId);
+      if (draft === null || draft.lifecycleState !== "draft") return { draft, bank: [] };
+      return { draft, bank: await deps.bank.listByCampaign(campaignId) };
+    })(),
+    (cause): SubmitCampaignError => ({ type: "persistence_failed", cause: String(cause) }),
+  ).andThen(({ draft, bank }) => {
+    if (draft === null) {
+      return errAsync<undefined, SubmitCampaignError>({ type: "campaign_not_found", campaignId });
+    }
+    if (draft.lifecycleState !== "draft") return okAsync<undefined, SubmitCampaignError>(undefined);
+    const readiness = campaignReadiness(draft, bank);
+    return readiness.gaps.length === 0
+      ? okAsync<undefined, SubmitCampaignError>(undefined)
+      : errAsync<undefined, SubmitCampaignError>({
+          type: "campaign_not_ready",
+          missing: readiness.gaps,
+          message: describeReadiness(readiness),
+          questionsNeeded: readiness.questionsNeeded,
+          questionsHave: readiness.questionsHave,
+        });
   });
 }
 

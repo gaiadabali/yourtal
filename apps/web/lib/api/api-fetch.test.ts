@@ -126,6 +126,31 @@ describe("apiFetch (1.7.a)", () => {
     });
   });
 
+  it("keeps the other fields of an error body as details, for a console that words the error itself", async () => {
+    global.fetch = vi.fn(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({ code: "reward_exceeds_ceiling", message: "too much", maxPoints: 2 }),
+          { status: 400 },
+        ),
+      ),
+    );
+
+    const { apiFetch } = await loadApiFetch({});
+    const result = await apiFetch("/api/x", echoSchema);
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        kind: "http",
+        status: 400,
+        code: "reward_exceeds_ceiling",
+        message: "too much",
+        details: { maxPoints: 2 },
+      },
+    });
+  });
+
   it("falls back to a generic code/message for a non-Nest error body", async () => {
     const fetchMock = vi.fn(() => Promise.resolve(new Response("Bad Gateway", { status: 502 })));
     global.fetch = fetchMock;

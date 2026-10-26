@@ -4,6 +4,7 @@ import {
   campaignBudgetRefusal,
   exceedsAccuracyBonusRatio,
   exceedsRewardCeiling,
+  maxRewardPointsFor,
 } from "@yourtal/contracts/campaign/reward-config";
 import { questionsAskedFor } from "@yourtal/contracts/question/bank";
 import type { Points } from "@yourtal/contracts/money";
@@ -139,7 +140,10 @@ export function setRewardConfig(
           if (exceedsRewardCeiling(input, draft.durationSeconds, ceiling)) {
             return errAsync<SetRewardConfigResult, SetRewardConfigError>({
               type: "reward_exceeds_ceiling",
-              ceilingPoints: ceiling,
+              ceilingPointsPerMinute: ceiling,
+              durationSeconds: draft.durationSeconds,
+              maxPoints: maxRewardPointsFor(draft.durationSeconds, ceiling),
+              hasBonus: input.accuracyBonusPoints > 0,
             });
           }
 

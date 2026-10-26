@@ -159,6 +159,19 @@ export function exceedsRewardCeiling(
   return config.rewardPointsPerCompletion + config.accuracyBonusPoints > ceiling;
 }
 
+/**
+ * The most whole points one viewer may earn from a campaign of this length,
+ * base and maximum bonus together: the F14 ceiling scaled to the duration and
+ * rounded down. The ceiling is per MINUTE, so a short video's limit is far
+ * below the per-minute figure (8 a minute is 2 points for 20 seconds).
+ */
+export function maxRewardPointsFor(
+  durationSeconds: number,
+  ceilingPointsPerMinute: number,
+): number {
+  return Math.floor((ceilingPointsPerMinute * durationSeconds) / 60);
+}
+
 /** TASKS.md 7.3.c: an accuracy bonus may never exceed 40% of the base reward. */
 export const MAX_ACCURACY_BONUS_RATIO = 0.4;
 

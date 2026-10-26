@@ -7,6 +7,7 @@ import {
   exceedsAccuracyBonusRatio,
   exceedsRewardCeiling,
   maxPointsPerViewer,
+  maxRewardPointsFor,
 } from "./campaign-reward-config";
 
 const baseConfig = {
@@ -105,5 +106,29 @@ describe("exceedsAccuracyBonusRatio (7.3.c: bonus <= 40% of base)", () => {
         accuracyBonusPoints: toPoints(41),
       }),
     ).toBe(true);
+  });
+});
+
+describe("maxRewardPointsFor (F14 limit in whole points)", () => {
+  it("scales the per-minute ceiling to the duration and rounds down", () => {
+    // AU: 8 points a minute. A 20-second video may pay 2 points (2.67 rounded down), not 8.
+    expect(maxRewardPointsFor(20, 8)).toBe(2);
+    expect(maxRewardPointsFor(60, 8)).toBe(8);
+    expect(maxRewardPointsFor(90, 8)).toBe(12);
+    expect(maxRewardPointsFor(5, 8)).toBe(0);
+  });
+
+  it("agrees with exceedsRewardCeiling for every whole total", () => {
+    for (const seconds of [7, 20, 45, 60, 150]) {
+      const limit = maxRewardPointsFor(seconds, 8);
+      const at = (total: number) =>
+        exceedsRewardCeiling(
+          { rewardPointsPerCompletion: toPoints(total), accuracyBonusPoints: toPoints(0) },
+          seconds,
+          8,
+        );
+      expect(at(limit)).toBe(false);
+      expect(at(limit + 1)).toBe(true);
+    }
   });
 });

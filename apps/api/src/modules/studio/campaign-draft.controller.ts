@@ -11,6 +11,8 @@ import { CAMPAIGN_DRAFT_REPOSITORY } from "./persistence/campaign-draft.reposito
 import type { CampaignDraftRepository } from "./persistence/campaign-draft.repository";
 import { REWARD_CONFIG_REPOSITORY } from "./persistence/reward-config.repository";
 import type { RewardConfigRepository } from "./persistence/reward-config.repository";
+import { QUESTION_BANK_REPOSITORY } from "./persistence/question-bank.repository";
+import type { QuestionBankRepository } from "./persistence/question-bank.repository";
 import { TERMS_VERSION_REPOSITORY } from "./persistence/terms-version.repository";
 import type { TermsVersionRepository } from "./persistence/terms-version.repository";
 import { CAMPAIGN_PUBLISHED_PUBLISHER } from "./campaign-published-publisher";
@@ -39,6 +41,7 @@ export class CampaignDraftController {
     @Inject(TERMS_VERSION_REPOSITORY) private readonly termsVersions: TermsVersionRepository,
     @Inject(CAMPAIGN_PUBLISHED_PUBLISHER) private readonly publisher: CampaignPublishedPublisher,
     @Inject(MODERATION_DRIVER) private readonly moderation: ModerationDriver,
+    @Inject(QUESTION_BANK_REPOSITORY) private readonly bank: QuestionBankRepository,
   ) {}
 
   @Idempotent({ retentionMs: ONBOARDING_RETENTION_MS })
@@ -120,6 +123,7 @@ export class CampaignDraftController {
       {
         businesses: this.businesses,
         drafts: this.drafts,
+        bank: this.bank,
         rewardConfigs: this.rewardConfigs,
         termsVersions: this.termsVersions,
         publisher: this.publisher,

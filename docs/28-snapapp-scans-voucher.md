@@ -8,12 +8,12 @@ A viewer spends points on a "50 SnapApp scans" voucher in YourTal's store and ty
 
 ## 1. Decisions (F128)
 
-| Question | Answer |
-| --- | --- |
-| The voucher | One listing, AU only: **A$5 face = 50 scans (10c a scan), settlement value S = A$5, priced at 200 points** (above the 3c backing, 167 points, so YourTal keeps A$1 of backing per voucher and the rate is not readable from the price). |
-| Who may redeem | Only the SnapApp account linked to the YourTal wallet that holds the voucher. Adults only (teens: F105, F112). |
-| Who may buy | Partner-bound listings skip the store's trust-tier-2 rule for online vouchers: the code works only in the holder's linked SnapApp account, so it cannot be resold. Teens are still refused. |
-| Money between the companies | None netted: YourTal's payouts to Snap App and Snap App's receipt-package purchases stay separate flows. |
+| Question                    | Answer                                                                                                                                                                                                                                  |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The voucher                 | One listing, AU only: **A$5 face = 50 scans (10c a scan), settlement value S = A$5, priced at 200 points** (above the 3c backing, 167 points, so YourTal keeps A$1 of backing per voucher and the rate is not readable from the price). |
+| Who may redeem              | Only the SnapApp account linked to the YourTal wallet that holds the voucher. Adults only (teens: F105, F112).                                                                                                                          |
+| Who may buy                 | Partner-bound listings skip the store's trust-tier-2 rule for online vouchers: the code works only in the holder's linked SnapApp account, so it cannot be resold. Teens are still refused.                                             |
+| Money between the companies | None netted: YourTal's payouts to Snap App and Snap App's receipt-package purchases stay separate flows.                                                                                                                                |
 
 Defaults taken by the lead (no founder input needed): ownership is checked by a new partner-API read before any hold (D1); a listing is bound to a partner by `store.listings.redeem_partner_id`, set by staff only (D2); a bound listing cannot be gifted or auctioned (D3); credits go to the workspace the person redeems in, owner or admin only (D4); buying needs no link, the listing text says how to use it (D5); SnapApp never stores the code, only its SHA-256, and never retries an authorize from the background (D6); a new merchant order lookup resolves every unknown outcome (D7); only AUD 500 maps to 50 scans (D8); redemption is offered to AU links only (D9).
 
@@ -96,23 +96,23 @@ Phase A: viewer.au sees the listing (A$5.00, online, 200 points, stock > 0); own
 
 ## 9. Tickets
 
-| Ticket | Owner | Owns | Needs |
-| --- | --- | --- | --- |
-| T1 Partner-bound listings | senior-db, Sonnet | migration + atlas.sum; voucher schema.sql; listing.table.ts; schema-drift test | — |
-| T2 Voucher service holding read + code test vectors | senior-be, Sonnet | `internal/api/holding_routes.go`; `db/query/issue.sql` + sqlc; `code_test.go` TestParseVectors; `contracts/src/voucher-internal/wallet.ts`; voucher-client (http, fake, spec) | T1 |
-| T3 Merchant order lookup (money read) | senior-be, Sonnet | `redeem/lookup.go`; routes, httpmap; `redeem.sql` + sqlc; authz test; `packages/sdk-merchant` | — |
-| T4 Partner ownership read | senior-be, Sonnet | `partners/partner-vouchers.controller.ts`; `voucher-owner.use-case.ts`; dto; e2e + live test; contracts `device/partner-action.ts`; registry + OpenAPI; `partner-api.md` | T2 live |
-| T5 Wallet: vouchers used in an app | medior, Sonnet | wallet controller + mapping; `contracts/src/wallet/wallet.ts`; `voucher-detail-view.tsx`, wallet data and cache; wallet.json en-AU, id-ID | T1 |
-| T6 Checkout tier exemption | junior, Haiku | `quote-checkout.ts`, `listing-for-checkout.ts`, tests | T1 |
-| T7 Staging and dev seed (incl. the 200-point price) | medior, Sonnet | `seed/demo-snapapp-scans.ts`; seed call sites; `staging.test.ts` | T1 |
-| T8 Staging check | qa, Sonnet | `scripts/check-2.8-scans-voucher.mjs` | all, plus L1–L3 |
-| S1 Redemption table (money core) | senior-db, Opus | `0041_yourtal_voucher_redemptions.sql`; `schema/yourtal.ts`; db test | — |
-| S2 Signers, code parser, clients | medior, Sonnet | `yourtal/{merchant-signing,voucher-code,merchant-client}.ts`; `client.ts` voucherOwner; `config.ts` | T2 vectors (shapes known) |
-| S3 Fake YourTal voucher service | medior, Sonnet | `test-support/fake-yourtal-vouchers.ts`; `fake-yourtal.ts` | S2 |
-| S4 Redemption core (money core) | senior-be, Opus | `yourtal/{redemptions.repo,redeem.service,redemption-drain,vouchers.controller}.ts`; `yourtal.controller.ts`; `worker.ts`; `app.module.ts`; api-contract; e2e | S1, S2, S3 |
-| S5 Web redeem card | medior, Sonnet | `points/YourtalVoucherCard.tsx`, view, page; `lib/yourtal-voucher.ts`; `yourtal-link.ts` hint; Credits tooltip | S4 contract |
-| S6 Phone redeem panel | medior, Sonnet | `components/YourtalVoucherPanel.tsx`; `app/points.tsx`; lib; api mock | S4 contract |
-| S7 Monitoring and docs | devops, Sonnet | `deploy/monitor/*`; DEPLOY.md; INTEGRATIONS.md; ECOSYSTEM.md | S4 |
+| Ticket                                              | Owner             | Owns                                                                                                                                                                          | Needs                     |
+| --------------------------------------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| T1 Partner-bound listings                           | senior-db, Sonnet | migration + atlas.sum; voucher schema.sql; listing.table.ts; schema-drift test                                                                                                | —                         |
+| T2 Voucher service holding read + code test vectors | senior-be, Sonnet | `internal/api/holding_routes.go`; `db/query/issue.sql` + sqlc; `code_test.go` TestParseVectors; `contracts/src/voucher-internal/wallet.ts`; voucher-client (http, fake, spec) | T1                        |
+| T3 Merchant order lookup (money read)               | senior-be, Sonnet | `redeem/lookup.go`; routes, httpmap; `redeem.sql` + sqlc; authz test; `packages/sdk-merchant`                                                                                 | —                         |
+| T4 Partner ownership read                           | senior-be, Sonnet | `partners/partner-vouchers.controller.ts`; `voucher-owner.use-case.ts`; dto; e2e + live test; contracts `device/partner-action.ts`; registry + OpenAPI; `partner-api.md`      | T2 live                   |
+| T5 Wallet: vouchers used in an app                  | medior, Sonnet    | wallet controller + mapping; `contracts/src/wallet/wallet.ts`; `voucher-detail-view.tsx`, wallet data and cache; wallet.json en-AU, id-ID                                     | T1                        |
+| T6 Checkout tier exemption                          | junior, Haiku     | `quote-checkout.ts`, `listing-for-checkout.ts`, tests                                                                                                                         | T1                        |
+| T7 Staging and dev seed (incl. the 200-point price) | medior, Sonnet    | `seed/demo-snapapp-scans.ts`; seed call sites; `staging.test.ts`                                                                                                              | T1                        |
+| T8 Staging check                                    | qa, Sonnet        | `scripts/check-2.8-scans-voucher.mjs`                                                                                                                                         | all, plus L1–L3           |
+| S1 Redemption table (money core)                    | senior-db, Opus   | `0041_yourtal_voucher_redemptions.sql`; `schema/yourtal.ts`; db test                                                                                                          | —                         |
+| S2 Signers, code parser, clients                    | medior, Sonnet    | `yourtal/{merchant-signing,voucher-code,merchant-client}.ts`; `client.ts` voucherOwner; `config.ts`                                                                           | T2 vectors (shapes known) |
+| S3 Fake YourTal voucher service                     | medior, Sonnet    | `test-support/fake-yourtal-vouchers.ts`; `fake-yourtal.ts`                                                                                                                    | S2                        |
+| S4 Redemption core (money core)                     | senior-be, Opus   | `yourtal/{redemptions.repo,redeem.service,redemption-drain,vouchers.controller}.ts`; `yourtal.controller.ts`; `worker.ts`; `app.module.ts`; api-contract; e2e                 | S1, S2, S3                |
+| S5 Web redeem card                                  | medior, Sonnet    | `points/YourtalVoucherCard.tsx`, view, page; `lib/yourtal-voucher.ts`; `yourtal-link.ts` hint; Credits tooltip                                                                | S4 contract               |
+| S6 Phone redeem panel                               | medior, Sonnet    | `components/YourtalVoucherPanel.tsx`; `app/points.tsx`; lib; api mock                                                                                                         | S4 contract               |
+| S7 Monitoring and docs                              | devops, Sonnet    | `deploy/monitor/*`; DEPLOY.md; INTEGRATIONS.md; ECOSYSTEM.md                                                                                                                  | S4                        |
 
 Shared files: `yourtal.openapi.json` (T4 and T5; whoever merges second regenerates), `packages/api-contract/src/index.ts` (S4 writes, S5 and S6 read), `yourtal/client.ts` (S2 then S4).
 

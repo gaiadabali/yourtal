@@ -1,4 +1,4 @@
-import { asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 // Read-only: C owns `business.business_accounts` and its repository
 // (`../business/persistence/...`). This is a narrow SELECT of our own over
@@ -30,8 +30,10 @@ export interface FollowableBusinessReader {
   /** Display fields for a caller-supplied id set, for the follow list (order not guaranteed). */
   summariesByIds(businessIds: readonly string[]): Promise<FollowableBusinessSummary[]>;
   /**
-   * Candidates for the onboarding "follow 3 channels" step: every business
-   * in `region`, minus `excludeIds` (already followed), ordered by name so
+   * Candidates for the onboarding "follow 3 channels" step: every verified,
+   * unsuspended business in `region` with a live campaign (a channel with
+   * nothing to watch is no suggestion, and a test business nobody verified
+   * can never show here), minus `excludeIds` (already followed), ordered by name so
    * the list is stable across a re-render rather than shuffling. No
    * discovery/ranking logic — that is Phase 11's feed, not this stopgap.
    */
@@ -87,7 +89,21 @@ export class DrizzleFollowableBusinessReader implements FollowableBusinessReader
         region: businessAccounts.region,
       })
       .from(businessAccounts)
-      .where(eq(businessAccounts.region, region))
+      .where(
+        and(
+          eq(businessAccounts.region, region),
+          eq(businessAccounts.isVerified, true),
+          isNull(businessAccounts.suspendedAt),
+          // Same live test the feed uses: live, and inside its own schedule.
+          sql`EXISTS (
+            SELECT 1 FROM campaign.campaigns c
+             WHERE c.business_id = ${businessAccounts.id}
+               AND c.lifecycle_state = 'live'
+               AND c.region = ${region}
+               AND (c.ends_at IS NULL OR c.ends_at > now())
+          )`,
+        ),
+      )
       .orderBy(asc(businessAccounts.displayName))
       .limit(limit + excludeIds.length);
     const excluded = new Set(excludeIds);

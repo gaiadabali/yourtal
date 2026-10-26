@@ -112,9 +112,10 @@ export function TopBar({
         </a>
       ) : (
         <>
+          {/* Below 380 px the bar has no room left for it (it would scroll the page sideways). */}
           {streakDays !== null ? (
             <span
-              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-pill bg-accent-subtle px-2 text-label font-sans font-bold text-fg sm:px-2.5"
+              className="hidden h-8 shrink-0 items-center gap-1 rounded-pill bg-accent-subtle px-2 text-label font-sans font-bold text-fg min-[380px]:inline-flex sm:px-2.5"
               title={t("streak", { count: streakDays })}
             >
               <Flame aria-hidden="true" className="h-4 w-4 text-accent" />

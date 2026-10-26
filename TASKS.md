@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | ✅ done | 23/23 | 105/105 | `██████████` 100% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 18/25 | 82/105 | `████████░░`  78% |
-| **All** | | | **124/131** | **629/652** | `██████████`  96% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 19/25 | 85/107 | `████████░░`  79% |
+| **All** | | | **125/131** | **632/654** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1724,13 +1724,13 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [ ] 14.16.d Teens: every client refuses them except SnapApp by a guardian's invite; the teen invite API (group 3.9.e)
   - [ ] 14.16.e Deletion and ended access reach every app as signed events, with the `connected_apps` data domain (group 3.9.f)
   - [ ] 14.16.f Rate limits, a sign-in log per client, an uptime check and one restore test (group 3.9.h)
-- [ ] **14.19 Phase 5's screens: evidence and fixes** (group 5.11) · B + C · needs: — — 🔄 g5
+- [x] **14.19 Phase 5's screens: evidence and fixes** (group 5.11) · B + C · needs: — — 🔄 g5 — ✅ 2026-10-26 6cd56c7f
   - [x] 14.19.a Screenshots and axe for every Phase 5 screen, both widths, themes and locales: no WCAG A/AA violations, no overflow (2026-10-21)
   - [x] 14.19.b The auction page crashed for bidders (a client-only helper called on the server) → edd733d6
   - [x] 14.19.c The other findings: parked-purchases hydration error, the statements badge, id-ID money formats, staff raw codes and ids, the simulation's id placeholder, axe's review items on the package picker → 6e7724cd
   - [x] 14.19.d Capture again: the auction states and signed-out Shorts with videos → the auction states locally after 6e7724cd; signed-out Shorts with videos on staging at 503feb89 (16 of 16, 0 WCAG violations)
   - [x] 14.19.e What the fixes found next to them (group 5.11.e): other staff screens still format dates with a bare toLocaleString(); redemptions and the reports ledger still use the currency-keyed formatMoney; the settlement retry line and the rate and settings tables print user ids; the auction page and Shorts at 1280 px need a labelled <aside> (axe landmark-unique); triage axe colour-contrast review items → 3c07b278
-  - [ ] 14.19.f Left by 14.19.e (group 5.11.f): the economy settings table's proposer id (fixed on the 14.10 branch); zone-less Intl.DateTimeFormat dates in Studio billing, billing alerts, store expiry, the earn moment, the burn error and the counter copy; 4 contrast review items needing a signed-in capture
+  - [x] 14.19.f Left by 14.19.e (group 5.11.f): the economy settings table's proposer id (fixed on the 14.10 branch); zone-less Intl.DateTimeFormat dates in Studio billing, billing alerts, store expiry, the earn moment, the burn error and the counter copy; 4 contrast review items needing a signed-in capture → 6cd56c7f (group 5.11.f; the counter's dates moved to 14.22.g; the 4 contrast items were false positives, the Shorts rail gradient is 14.22.q)
 Group 5.7, the founder's walkthrough, is 13.6 here.
 - [x] **14.17 The Security workflow is green again** (group 1.25) · A · needs: — — ✅ 2026-10-21 14c0259b
   - [x] 14.17.a vitest's vite lifted to 8.3.4 for GHSA-698v-4r3x-3vcv (a workspace override); pnpm audit passes (group 1.25.a) → 14c0259b
@@ -1752,16 +1752,18 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
   - [x] 14.22.d Sign-up links go to log in, /signup is a 404, no verification state or resend on Me, no unlock notification (group 5.13.d) → 6716ddc3 (group 5.13.d)
   - [ ] 14.22.e The campaign editor: targeting not saved, reward save and ceiling errors, raw database error on submit, submit without budget, lost edits, placeholder as value (group 5.13.e)
   - [x] 14.22.f Boost: low-bid error in minor units; no way to switch a boost off (group 5.13.f) → 6716ddc3 (group 5.13.f)
-  - [ ] 14.22.g The store counter: pairing steps, amount in cents with one-click full redemption, device id shown, ID counter in English, raw order ids, no revoke confirmation (group 5.13.g)
+  - [ ] 14.22.g The store counter: pairing steps, amount in cents with one-click full redemption, device id shown, ID counter in English, raw order ids, no revoke confirmation (group 5.13.g) → also the counter's zone-less dates (moved from 14.19.f)
   - [ ] 14.22.h Studio layout and copy, Reports without metrics, ID billing copy (group 5.13.h)
   - [x] 14.22.i Viewer copy and contrast, /review in Bahasa (group 5.13.i) → 6716ddc3 (group 5.13.i)
-  - [ ] 14.22.j Staging's demo data: test content on public pages, "new viewer" logins not new (group 5.13.j)
+  - [x] 14.22.j Staging's demo data: test content on public pages, "new viewer" logins not new (group 5.13.j) → 6cd56c7f (group 5.13.j; V5 is 14.22.r)
   - [ ] 14.22.k Gifts and auctions cannot be done from the app: no Gift control and no reason, no way to list a voucher for a charity, wallet history links to "Voucher not found", stale balance after redeeming (group 5.13.k)
   - [ ] 14.22.l Walk again the journeys the walkthrough could not finish (group 5.13.l)
   - [ ] 14.22.m The player sometimes never starts on repeat visits (V12b): needs the founder's device and browser (group 5.13.m)
-  - [ ] 14.22.n On staging: a dev-clock release shows "points unlocked" at once (V26); the demo reset gives the seeded questions their new prompts (group 5.13.n)
+  - [x] 14.22.n On staging: a dev-clock release shows "points unlocked" at once (V26); the demo reset gives the seeded questions their new prompts (group 5.13.n) → demo reset run 2026-10-26 (group 5.13.n; V26 live check in the re-walk)
   - [ ] 14.22.o true_false and likert questions: render them or skip at once (group 5.13.o)
   - [ ] 14.22.p The whole-video chapter keeps the upload-time title; chapter chips overlap at 390 px (group 5.13.p)
+  - [ ] 14.22.q Shorts: a bolder scrim behind the Share and Save rail, about 3.6:1 over a near-white frame (group 5.13.q)
+  - [ ] 14.22.r The first visitor after a release can get an empty public landing page: warm `/`, `/au`, `/id` after the reload, or render them dynamically (group 5.13.r, V5)
 - [x] **14.24 main is green and staging deploys again** (group 1.31) · A · needs: — — ✅ 2026-10-26 781f983a
   - [x] 14.24.a Quality and the Release gate had failed on every push since 2026-10-22 (an unneeded type assertion in the fake ledger, an unformatted docs/28), so staging stayed on ef9fc40c → 781f983a; Release green, staging /api/health reports 781f983a
 - [ ] **14.25 A patched Next.js** (group 1.32) · A + B · needs: 14.24

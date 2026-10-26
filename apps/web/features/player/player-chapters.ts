@@ -50,14 +50,22 @@ export interface PlayerChapter {
   readonly rewardPoints: number;
 }
 
-export type ChapterSourceCampaign = Pick<Campaign, "chapters" | "durationSeconds" | "rewardPoints">;
+export type ChapterSourceCampaign = Pick<
+  Campaign,
+  "chapters" | "durationSeconds" | "rewardPoints" | "title"
+>;
 
 export function playerChapters(campaign: ChapterSourceCampaign): PlayerChapter[] {
   const points = chapterRewardPoints(campaign.chapters, Number(campaign.rewardPoints));
 
+  // The one chapter a video gets when it is uploaded is named after the campaign as it was
+  // then ("Untitled campaign"), and a rename never reached it (V14). A single chapter is the
+  // whole video, so it carries the campaign's current title.
+  const wholeVideo = campaign.chapters.length === 1;
+
   return campaign.chapters.map((chapter, index) => ({
     index,
-    title: chapter.title,
+    title: wholeVideo ? campaign.title : chapter.title,
     startSeconds: chapter.startSeconds,
     endSeconds: chapterEndSeconds(campaign.chapters, index, campaign.durationSeconds),
     rewardPoints: points[index] ?? 0,

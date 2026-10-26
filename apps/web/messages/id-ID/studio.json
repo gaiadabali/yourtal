@@ -1073,7 +1073,15 @@
     "reportTitle": "Boost",
     "reportEmpty": "Belum ada kampanye yang di-boost.",
     "cardRequired": "Boost ditagihkan ke kartu tersimpan. Tambahkan kartu sebelum mengatur atau menaikkan anggaran.",
-    "addCard": "Tambah kartu"
+    "addCard": "Tambah kartu",
+    "bidBelowReserve": "Tawaran maksimum minimal {amount} per 1.000 tayangan, tawaran terendah yang bisa menang.",
+    "stopTitle": "Hentikan boost ini",
+    "stopCharged": "Hari yang sudah tayang tetap ditagih.",
+    "stopNow": "Hentikan sekarang",
+    "stopEndOfDay": "Hentikan di akhir hari ini",
+    "stoppedTitle": "Boost ini nonaktif",
+    "stoppedBody": "Boost ini tidak menawar slot boost di Beranda. Untuk memulai lagi, aktifkan Tawaran aktif lalu simpan.",
+    "endsAtNotice": "Penawaran berakhir {when}."
   },
   "join": {
     "title": "Bergabung dengan bisnis",

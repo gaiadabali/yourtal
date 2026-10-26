@@ -57,6 +57,32 @@ export class BoostRepository {
     return toSetting(rows[0] ?? {});
   }
 
+  /**
+   * Stops a boost. `now` holds it (state `paused`); `end_of_day` ends it at the next midnight on
+   * the region clock. A boost that has not started by then never served, so it is held instead
+   * (the window must stay `ends_at > starts_at`). The row stays: served days are still charged.
+   */
+  async stop(
+    campaignId: string,
+    region: Region,
+    effective: "now" | "end_of_day",
+  ): Promise<BoostSettingRow | null> {
+    const midnight = sql`(((now() AT TIME ZONE ${REGION_TZ[region]})::date + 1)::timestamp AT TIME ZONE ${REGION_TZ[region]})`;
+    const { rows } =
+      effective === "now"
+        ? await this.db.execute(sql`
+            UPDATE feed.boost SET state = 'paused', updated_at = now()
+             WHERE campaign_id = ${campaignId} RETURNING *`)
+        : await this.db.execute(sql`
+            UPDATE feed.boost SET
+              ends_at = CASE WHEN starts_at < ${midnight} THEN LEAST(ends_at, ${midnight}) ELSE ends_at END,
+              state = CASE WHEN starts_at < ${midnight} THEN state ELSE 'paused' END,
+              updated_at = now()
+             WHERE campaign_id = ${campaignId} RETURNING *`);
+    const row = rows[0];
+    return row === undefined ? null : toSetting(row);
+  }
+
   /** Active, in-window boosts among these campaigns, with today's spend on the region clock. */
   async bidsFor(region: Region, campaignIds: readonly string[]): Promise<BoostBid[]> {
     if (campaignIds.length === 0) return [];
@@ -82,7 +108,7 @@ export class BoostRepository {
   /**
    * Books one won impression if the day's budget still covers it, atomically:
    * the spend row only moves when the new total fits. `false` means another
-   * feed spent the last of the budget first.
+   * feed spent the last of the budget first, or the boost was stopped meanwhile.
    */
   async recordWin(
     region: Region,
@@ -96,6 +122,7 @@ export class BoostRepository {
         SELECT ${campaignId}, ${dayIn(region)}, 1, ${priceCpmMinor}
           FROM feed.boost b
          WHERE b.campaign_id = ${campaignId} AND ${priceCpmMinor} <= b.daily_budget_minor * 1000
+           AND b.state = 'active' AND b.starts_at <= now() AND b.ends_at > now()
         ON CONFLICT (campaign_id, day) DO UPDATE SET
           impressions = feed.boost_spend_day.impressions + 1,
           spent_milli = feed.boost_spend_day.spent_milli + EXCLUDED.spent_milli

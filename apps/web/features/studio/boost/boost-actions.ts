@@ -1,7 +1,12 @@
 "use server";
 
 import { boostChargeListSchema, boostViewSchema } from "@yourtal/contracts/studio/boost";
-import type { BoostCharge, BoostView, SetBoostRequest } from "@yourtal/contracts/studio/boost";
+import type {
+  BoostCharge,
+  BoostView,
+  SetBoostRequest,
+  StopBoostRequest,
+} from "@yourtal/contracts/studio/boost";
 import { apiFetch } from "@/lib/api/api-fetch";
 
 export type BoostResult =
@@ -32,6 +37,20 @@ export async function saveBoost(
     `/api/${businessId}/studio/campaigns/${encodeURIComponent(campaignId)}/boost`,
     boostViewSchema,
     { method: "PUT", body },
+  );
+  return result.ok ? { ok: true, view: result.data } : failure(result.error);
+}
+
+/** 14.22.f: `POST .../boost/stop`: stops bidding now or at the end of today; served days are still charged. */
+export async function stopBoost(
+  businessId: string,
+  campaignId: string,
+  effective: StopBoostRequest["effective"],
+): Promise<BoostResult> {
+  const result = await apiFetch(
+    `/api/${businessId}/studio/campaigns/${encodeURIComponent(campaignId)}/boost/stop`,
+    boostViewSchema,
+    { method: "POST", body: { effective } },
   );
   return result.ok ? { ok: true, view: result.data } : failure(result.error);
 }

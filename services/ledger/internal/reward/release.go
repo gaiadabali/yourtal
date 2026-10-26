@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -63,6 +64,33 @@ func ReleaseDue(ctx context.Context, pool ledgerPool, book *ledger.Ledger, limit
 		released++
 	}
 	return released, nil
+}
+
+// RunReleaser is what actually calls ReleaseDue: nothing else does, so without it
+// a grant's holdback passes and its points stay pending for good. It runs one pass
+// at once and then every interval until ctx ends, draining a backlog (a full page
+// means more are due) before it waits. after sees each pass's count and error;
+// an error never stops the loop, because the next pass retries what was left.
+func RunReleaser(
+	ctx context.Context, pool ledgerPool, book *ledger.Ledger, every time.Duration, limit int32,
+	after func(released int, err error),
+) {
+	ticker := time.NewTicker(every)
+	defer ticker.Stop()
+	for {
+		for {
+			released, err := ReleaseDue(ctx, pool, book, limit)
+			after(released, err)
+			if err != nil || released < int(limit) || ctx.Err() != nil {
+				break
+			}
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
 }
 
 // errEscrowHeld leaves a grant due while its user's escrow is held.

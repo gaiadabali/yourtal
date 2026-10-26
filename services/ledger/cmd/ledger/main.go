@@ -68,6 +68,10 @@ const (
 	// is a no-op for any region whose points_expiry setting is off (F2).
 	expirySweepInterval = time.Hour
 	expirySweepLimit    = 1000
+	// 4.4.g: a grant's holdback ends at its unlock_at; the loop that releases
+	// it to available runs this often, so points unlock within a minute.
+	holdbackReleaseInterval = time.Minute
+	holdbackReleaseLimit    = 100
 
 	defaultAddr     = "127.0.0.1:3010"
 	requestTimeout  = 10 * time.Second
@@ -161,6 +165,7 @@ func run(logger *slog.Logger) error {
 		go runChecker(ctx, logger, checker, sqlcgen.New(pool), pager, hb)
 		go runRepricer(ctx, logger, pricing.New(pool), hb)
 		go runExpirySweeper(ctx, logger, pool, book, hb)
+		go runHoldbackReleaser(ctx, logger, pool, book, hb)
 		go runProofVerifier(ctx, logger, checker, pager, hb)
 		go runHeartbeatCheck(ctx, logger, pager, hb)
 	} else {
@@ -450,6 +455,27 @@ func runExpirySweeper(ctx context.Context, logger *slog.Logger, pool *pgxpool.Po
 		case <-ticker.C:
 		}
 	}
+}
+
+// runHoldbackReleaser moves each grant whose holdback has passed from pending to
+// available (4.4.g). reward.ReleaseDue had no caller, so on a running ledger
+// every pending grant stayed pending past its unlock date. Errors are logged and
+// the loop continues, as runChecker does; the heartbeat pages if it stops.
+func runHoldbackReleaser(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, book *ledger.Ledger, hb *heartbeat.Recorder) {
+	const jobName = "ledger.holdback_releaser"
+	reward.RunReleaser(ctx, pool, book, holdbackReleaseInterval, holdbackReleaseLimit,
+		func(released int, err error) {
+			if err != nil {
+				logger.Error("releasing grants past their holdback failed", "error", err)
+				return
+			}
+			if released > 0 {
+				logger.Info("released grants past their holdback", "count", released)
+			}
+			if err := hb.Touch(ctx, jobName, holdbackReleaseInterval); err != nil {
+				logger.Error("touching this job's own heartbeat failed", "job", jobName, "error", err)
+			}
+		})
 }
 
 // runRepricer reprices every listing whose rate was superseded (4.9.a).

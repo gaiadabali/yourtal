@@ -13,6 +13,7 @@ import {
   one,
   requireBusinessEnv,
   staffCaller,
+  takeDownAtEnd,
   verifiedBusiness,
 } from "./business";
 
@@ -207,6 +208,7 @@ for (const r of REGIONS) {
          FROM store.listings WHERE merchant_id = $1 AND title = $2`,
       [businessId, title],
     );
+    takeDownAtEnd("listing", row.id);
     expect(row).toMatchObject({
       region: r.region,
       currency: r.region === "AU" ? "AUD" : "IDR",

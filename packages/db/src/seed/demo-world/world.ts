@@ -17,6 +17,7 @@ import type {
   DemoListingSpec,
   Region,
 } from "./catalogue";
+import { demoQuestionPrompt } from "./question-prompts";
 import { mintVouchers } from "./vouchers";
 
 /**
@@ -181,24 +182,25 @@ async function ensureCampaign(
      VALUES ($1, 0, $2, 0, 1) ON CONFLICT DO NOTHING`,
     [id, spec.title],
   );
-  await ensureQuestions(pool, id, brand.region, spec.seconds);
+  await ensureQuestions(pool, id, brand, spec.seconds);
 }
 
 /** A bank three times the questions asked, each about a fact already shown on screen. */
 async function ensureQuestions(
   pool: pg.Pool,
   campaignId: string,
-  region: Region,
+  brand: DemoBrandSpec,
   seconds: number,
 ): Promise<void> {
+  const region = brand.region;
   const facts = DEMO_FACTS[region];
-  const prompt = region === "AU" ? "What did the video say?" : "Apa yang dikatakan video tadi?";
   const bank = Math.max(facts.length, 3 * questionsAskedFor(seconds));
   for (let index = 0; index < bank; index += 1) {
     const factIndex = index % facts.length;
     const fact = facts[factIndex] ?? "";
     const questionId = stableId(`demo-world:question:${campaignId}:${String(index)}`);
     const answerableAfter = Math.round(((factIndex + 1) / (facts.length + 1)) * seconds);
+    const prompt = demoQuestionPrompt(region, factIndex, brand.name);
     const added = await pool.query(
       `INSERT INTO campaign.question
          (id, campaign_id, type, prompt, timer_seconds, status, pii_screen, answerable_after_seconds)

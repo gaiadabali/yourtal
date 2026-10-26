@@ -27,7 +27,9 @@ export async function retireLeakedFixtures(
                  AND business_id IN (SELECT id FROM business.business_accounts
                                       WHERE display_name LIKE 'Ledger contract test %'))
              OR title ~ '^Journey 3 (AU|ID) [0-9a-z]+( sim-block-me)?$')
-        AND lifecycle_state <> 'ended'`,
+        -- Only live and paused may end (campaign.assert_lifecycle_transition); a draft, one in
+        -- review or a rejected one never reaches a viewer, and ending it would fail the deploy.
+        AND lifecycle_state IN ('live', 'paused')`,
   );
   const listings = await pool.query(
     `UPDATE store.listings SET lifecycle_state = 'retired'

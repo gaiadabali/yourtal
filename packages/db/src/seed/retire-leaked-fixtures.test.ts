@@ -20,7 +20,7 @@ afterAll(async () => {
   await owner.end();
 });
 
-async function liveCampaign(title: string): Promise<string> {
+async function liveCampaign(title: string, state: "live" | "in_review" = "live"): Promise<string> {
   const id = randomUUID();
   campaignIds.push(id);
   await owner.query(
@@ -31,11 +31,11 @@ async function liveCampaign(title: string): Promise<string> {
         poster_url, teaser_url, hls_url, aspect, estimated_bytes,
         starts_at, ends_at, open_viewing, teaser_start_seconds)
      VALUES ($1, 'quick', $2, $3, 'Snap App', 'fixture', 30, 5, 100, 0, 'base_only',
-        'live', now(), $3, 'AU', 'all_ages', 'entertainment',
+        $4, CASE WHEN $4 = 'live' THEN now() END, $3, 'AU', 'all_ages', 'entertainment',
         'https://example.test/p.jpg', 'https://example.test/t.m3u8',
         'https://example.test/h.m3u8', '16:9', 1000000,
         now(), now() + interval '30 days', true, 0)`,
-    [id, title, randomUUID()],
+    [id, title, randomUUID(), state],
   );
   return id;
 }
@@ -82,6 +82,13 @@ describe("retireLeakedFixtures", () => {
     expect(await stateOf("campaign.campaigns", near)).toBe("live");
     expect(await stateOf("store.listings", journeyListing)).toBe("retired");
     expect(await stateOf("store.listings", realListing)).toBe("active");
+  });
+
+  it("leaves a journey's campaign that never went live, so the deploy does not fail", async () => {
+    // Staging, 2026-10-26: one in review made `in_review -> ended` fail the seed, and every deploy.
+    const inReview = await liveCampaign("Journey 3 AU q7x2", "in_review");
+    await expect(retireLeakedFixtures(owner, quiet)).resolves.toBeDefined();
+    expect(await stateOf("campaign.campaigns", inReview)).toBe("in_review");
   });
 
   it("is a no-op the second time", async () => {

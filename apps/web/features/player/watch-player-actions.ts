@@ -3,7 +3,10 @@
 import { randomUUID } from "node:crypto";
 import * as z from "zod";
 import type { PresentedQuestion } from "@yourtal/contracts/question/presented-question";
-import { identityCheckSchema } from "@yourtal/contracts/identity/earning-check";
+import {
+  identityCheckSchema,
+  identityCheckStepSchema,
+} from "@yourtal/contracts/identity/earning-check";
 import { apiFetch } from "@/lib/api/api-fetch";
 import type { ApiResult } from "@/lib/api/api-fetch";
 
@@ -89,6 +92,8 @@ const completeSchema = z.object({
   pendingPoints: z.number(),
   unlockAt: z.iso.datetime().optional(),
   reason: z.string().nullable().optional(),
+  /** 5.9.f: with `identity_check_required`, the steps still missing. */
+  missing: z.array(identityCheckStepSchema).min(1).optional(),
 });
 export type CompletedWatch = z.infer<typeof completeSchema>;
 

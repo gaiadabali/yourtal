@@ -9,7 +9,7 @@ import { Button } from "@yourtal/ui/button";
 import { AccrualIndicator } from "./accrual-indicator";
 import { ChapterTrack } from "./chapter-track";
 import { CaptionsToggle } from "./captions-toggle";
-import { CheckpointOverlay } from "./checkpoint-overlay";
+import { CheckpointOverlay, CheckpointStage, PLAYER_BOX_CLASS } from "./checkpoint-overlay";
 import { EarnMoment, NotEarningMoment } from "./earn-moment";
 import { identityCheckKey, nonEarningReasonKey } from "./non-earning-reason";
 import { IdentityCheckPrompt } from "./identity-check-prompt";
@@ -75,8 +75,16 @@ export function VideoPlayer({
   isTeen = false,
 }: VideoPlayerProps) {
   const t = getPlayerTranslator(locale);
-  const { phase, videoRef, start, watchWithoutEarning, chooseResume, answer, finish } =
-    useWatchEarnSession(campaign.id);
+  const {
+    phase,
+    questionTimedOut,
+    videoRef,
+    start,
+    watchWithoutEarning,
+    chooseResume,
+    answer,
+    finish,
+  } = useWatchEarnSession(campaign.id);
   const captions = useCaptions(videoRef, campaign.captionsUrl !== null);
   const [nativeHls, setNativeHls] = useState<boolean | null>(null);
   const [currentSeconds, setCurrentSeconds] = useState(0);
@@ -103,10 +111,20 @@ export function VideoPlayer({
   }, []);
 
   const isWatching = phase.kind === "watching" || phase.kind === "checkpoint";
+  // The source and the server's coverage live through a question: dropping
+  // them while the video is paused unmounted the player and, on resuming, it
+  // started again from 0:00 (V24).
+  const hasSource = phase.kind === "watching" || phase.kind === "checkpoint";
   const showStartOverlay =
     phase.kind === "idle" || phase.kind === "starting" || phase.kind === "failed";
-  const manifestUrl = phase.kind === "watching" ? phase.manifestUrl : null;
-  const coveredSeconds = phase.kind === "watching" ? phase.coveredSeconds : 0;
+  const manifestUrl = hasSource ? phase.manifestUrl : null;
+  const coveredSeconds = hasSource ? phase.coveredSeconds : 0;
+  const alreadyEarnedNotice =
+    (phase.kind === "watching" || phase.kind === "resume_prompt") &&
+    !phase.earning &&
+    phase.nonEarningReason === "already_earned";
+  const timedOutBonus =
+    terms.scoringRule === "base_plus_accuracy_bonus" && terms.accuracyBonusPoints > 0;
   // Chapters are a progress/navigation device, never an accrual one (O-1) —
   // "reached" comes from server-confirmed coverage, same figure
   // AccrualIndicator already uses, never the raw playhead.
@@ -128,95 +146,120 @@ export function VideoPlayer({
           </Button>
         </div>
       ) : null}
-      <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-fg">
-        <video
-          ref={videoRef}
-          className="h-full w-full"
-          playsInline
-          autoPlay={isWatching}
-          controls={isWatching}
-          poster={campaign.posterUrl}
-          aria-label={campaign.title}
-          src={manifestUrl !== null && nativeHls === true ? manifestUrl : undefined}
-          onEnded={() => void finish()}
-          onTimeUpdate={(event) => setCurrentSeconds(event.currentTarget.currentTime)}
-          onError={() => setVideoError(true)}
-        >
+      <CheckpointStage>
+        <div className={PLAYER_BOX_CLASS}>
+          <video
+            ref={videoRef}
+            className="h-full w-full"
+            playsInline
+            autoPlay={isWatching}
+            // Off while a question is up: the native bar would show through it.
+            controls={phase.kind === "watching"}
+            poster={campaign.posterUrl}
+            aria-label={campaign.title}
+            src={manifestUrl !== null && nativeHls === true ? manifestUrl : undefined}
+            onEnded={() => void finish()}
+            onTimeUpdate={(event) => setCurrentSeconds(event.currentTarget.currentTime)}
+            onError={() => setVideoError(true)}
+          >
+            {campaign.captionsUrl !== null ? (
+              <track
+                kind="captions"
+                src={campaign.captionsUrl}
+                srcLang={locale.slice(0, 2)}
+                label={t("controls.captions")}
+              />
+            ) : null}
+          </video>
+          {manifestUrl !== null && nativeHls === false ? (
+            <HlsAttacher videoRef={videoRef} src={manifestUrl} desiredHeight={HLS_HEIGHT} />
+          ) : null}
+
           {campaign.captionsUrl !== null ? (
-            <track
-              kind="captions"
-              src={campaign.captionsUrl}
-              srcLang={locale.slice(0, 2)}
+            <CaptionsToggle
+              on={captions.on}
+              onToggle={captions.toggle}
               label={t("controls.captions")}
             />
           ) : null}
-        </video>
-        {manifestUrl !== null && nativeHls === false ? (
-          <HlsAttacher videoRef={videoRef} src={manifestUrl} desiredHeight={HLS_HEIGHT} />
-        ) : null}
 
-        {campaign.captionsUrl !== null ? (
-          <CaptionsToggle
-            on={captions.on}
-            onToggle={captions.toggle}
-            label={t("controls.captions")}
-          />
-        ) : null}
-
-        {/* 12.4.d/#9: every long-form campaign is funded by a business, so
+          {/* 12.4.d/#9: every long-form campaign is funded by a business, so
             every player says so, plainly, in text -- never a colour alone.
             Always shown, not tied to any phase; a real (non-decorative)
             label, so it stays in the accessibility tree, not hidden from it. */}
-        <span className="pointer-events-none absolute top-2 left-2 z-10 rounded-control bg-overlay px-1.5 py-0.5 text-caption font-sans font-medium text-white">
-          {t("sponsoredLabel")}
-        </span>
+          <span className="pointer-events-none absolute top-2 left-2 z-10 rounded-control bg-overlay px-1.5 py-0.5 text-caption font-sans font-medium text-white">
+            {t("sponsoredLabel")}
+          </span>
 
-        {phase.kind === "resume_prompt" ? (
-          <ResumePrompt
-            positionSeconds={phase.resumeAtSeconds}
-            onChoose={chooseResume}
-            locale={locale}
-          />
-        ) : null}
+          {phase.kind === "resume_prompt" ? (
+            <ResumePrompt
+              positionSeconds={phase.resumeAtSeconds}
+              onChoose={chooseResume}
+              locale={locale}
+            />
+          ) : null}
 
-        {showStartOverlay ? (
-          // eslint-disable-next-line yt-b/prefer-primitives -- a full-bleed absolute hit target over the video itself, not a styled control (see video-player's prior version of this same element).
-          <button
-            type="button"
-            onClick={() => void start()}
-            disabled={phase.kind === "starting"}
-            aria-label={t("controls.playCampaign", { title: campaign.title })}
-            className="absolute inset-0 flex items-center justify-center bg-fg/40 text-primary-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-70"
-          >
-            <PlayIcon className="h-14 w-14" />
-          </button>
-        ) : null}
+          {showStartOverlay ? (
+            // eslint-disable-next-line yt-b/prefer-primitives -- a full-bleed absolute hit target over the video itself, not a styled control (see video-player's prior version of this same element).
+            <button
+              type="button"
+              onClick={() => void start()}
+              disabled={phase.kind === "starting"}
+              aria-label={t("controls.playCampaign", { title: campaign.title })}
+              className="absolute inset-0 flex items-center justify-center bg-fg/40 text-primary-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-70"
+            >
+              <PlayIcon className="h-14 w-14" />
+            </button>
+          ) : null}
 
-        {/* 1.6.l: a refused reward is told BEFORE any video plays. */}
-        {phase.kind === "refused" ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 overflow-y-auto bg-fg/85 p-4 text-center text-primary-fg">
-            <p role="status" className="text-base font-sans font-semibold">
-              {t("refusal.title")}
-            </p>
-            <p className="text-sm font-sans">
-              {t(
-                `refusal.reasons.${
-                  phase.reason === IDENTITY_CHECK_REQUIRED
-                    ? identityCheckKey(phase.identityCheck)
-                    : nonEarningReasonKey(phase.reason)
-                }`,
+          {/* 1.6.l: a refused reward is told BEFORE any video plays. */}
+          {phase.kind === "refused" ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 overflow-y-auto bg-fg/85 p-4 text-center text-primary-fg">
+              <p role="status" className="text-base font-sans font-semibold">
+                {t("refusal.title")}
+              </p>
+              <p className="text-sm font-sans">
+                {t(
+                  `refusal.reasons.${
+                    phase.reason === IDENTITY_CHECK_REQUIRED
+                      ? identityCheckKey(phase.identityCheck)
+                      : nonEarningReasonKey(phase.reason)
+                  }`,
+                )}
+              </p>
+              {phase.reason === IDENTITY_CHECK_REQUIRED ? (
+                <IdentityCheckPrompt missing={phase.identityCheck ?? []} locale={locale} />
+              ) : (
+                <p className="text-sm font-sans">{t("refusal.noPoints")}</p>
               )}
-            </p>
-            {phase.reason === IDENTITY_CHECK_REQUIRED ? (
-              <IdentityCheckPrompt missing={phase.identityCheck ?? []} locale={locale} />
-            ) : (
-              <p className="text-sm font-sans">{t("refusal.noPoints")}</p>
-            )}
-            <Button type="button" size="sm" onClick={() => void watchWithoutEarning()}>
-              {t("refusal.watchAnyway")}
-            </Button>
-          </div>
-        ) : null}
+              <Button type="button" size="sm" onClick={() => void watchWithoutEarning()}>
+                {t("refusal.watchAnyway")}
+              </Button>
+            </div>
+          ) : null}
+
+          {videoError && isWatching ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-fg/70 p-4 text-center text-primary-fg">
+              <p role="alert" className="text-sm font-sans">
+                {t("errors.playbackFailed")}
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  setVideoError(false);
+                  videoRef.current?.load();
+                  videoRef.current?.play().then(
+                    () => undefined,
+                    () => undefined,
+                  );
+                }}
+              >
+                {t("errors.retry")}
+              </Button>
+            </div>
+          ) : null}
+        </div>
 
         {phase.kind === "checkpoint" ? (
           <CheckpointOverlay
@@ -225,33 +268,23 @@ export function VideoPlayer({
             questionNumber={phase.checkpointIndex + 1}
             totalQuestions={phase.totalQuestions}
             answerTimerMs={phase.answerTimerMs}
-            onAnswer={(selectedOptionId) => void answer(selectedOptionId)}
+            onAnswer={(selectedOptionId, timedOut) => void answer(selectedOptionId, timedOut)}
             locale={locale}
           />
         ) : null}
+      </CheckpointStage>
 
-        {videoError && isWatching ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-fg/70 p-4 text-center text-primary-fg">
-            <p role="alert" className="text-sm font-sans">
-              {t("errors.playbackFailed")}
-            </p>
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => {
-                setVideoError(false);
-                videoRef.current?.load();
-                videoRef.current?.play().then(
-                  () => undefined,
-                  () => undefined,
-                );
-              }}
-            >
-              {t("errors.retry")}
-            </Button>
-          </div>
-        ) : null}
-      </div>
+      {alreadyEarnedNotice ? (
+        <p role="status" className="text-sm font-sans text-fg-muted">
+          {t("earn.alreadyEarnedNotice")}
+        </p>
+      ) : null}
+
+      {questionTimedOut && (phase.kind === "watching" || phase.kind === "claiming") ? (
+        <p role="status" className="text-sm font-sans text-fg-muted">
+          {t(timedOutBonus ? "checkpoint.timedOutBonus" : "checkpoint.timedOut")}
+        </p>
+      ) : null}
 
       {phase.kind === "failed" ? (
         <p role="alert" className="text-sm font-sans text-danger">
@@ -307,7 +340,11 @@ export function VideoPlayer({
         <EarnMoment points={phase.points} unlockAt={phase.unlockAt} locale={locale} />
       ) : null}
       {phase.kind === "not_earning" ? (
-        <NotEarningMoment reason={phase.reason} locale={locale} />
+        <NotEarningMoment
+          reason={phase.reason}
+          {...(phase.identityCheck === undefined ? {} : { identityCheck: phase.identityCheck })}
+          locale={locale}
+        />
       ) : null}
 
       {notEarning ? null : <TermsCard terms={terms} locale={locale} />}

@@ -1,8 +1,21 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import type { PresentedQuestion } from "@yourtal/contracts/question/presented-question";
 import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
+
+/** The video box. Only ~220px tall on a phone, which is why a question sits under it there. */
+export const PLAYER_BOX_CLASS = "relative aspect-video w-full overflow-hidden rounded-lg bg-fg";
+
+/**
+ * The video box and its question as one unit: the question covers the box from
+ * `sm` up and sits under it below that (see `CheckpointOverlay`). Shared with
+ * the rendered-layout lab page so the browser test measures the real classes.
+ */
+export function CheckpointStage({ children }: { children: ReactNode }) {
+  return <div className="relative flex flex-col gap-2">{children}</div>;
+}
 
 export interface CheckpointOverlayProps {
   question: PresentedQuestion;
@@ -10,7 +23,8 @@ export interface CheckpointOverlayProps {
   totalQuestions: number;
   /** From the server's own present response — F10's 30s answer window. */
   answerTimerMs: number;
-  onAnswer: (selectedOptionId: string | null) => void;
+  /** `timedOut` is true only when the timer ran out on a question the viewer could have answered. */
+  onAnswer: (selectedOptionId: string | null, timedOut: boolean) => void;
   locale: SupportedLocale;
 }
 
@@ -42,12 +56,20 @@ export function CheckpointOverlay({
   const selectedRef = useRef<string | null>(null);
   const submittedRef = useRef(false);
 
-  const submit = (optionId: string | null) => {
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  const submit = (optionId: string | null, timedOut = false) => {
     if (submittedRef.current) return;
     submittedRef.current = true;
     setSubmitting(true);
-    onAnswer(optionId);
+    onAnswer(optionId, timedOut);
   };
+
+  // Below `sm` the question sits under the video, not on it: bring it into
+  // view and give it focus so a phone viewer never has to hunt for it.
+  useEffect(() => {
+    rootRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -55,7 +77,7 @@ export function CheckpointOverlay({
         const next = current - 1;
         if (next <= 0) {
           window.clearInterval(interval);
-          submit(selectedRef.current);
+          submit(selectedRef.current, question.type === "multiple_choice");
           return 0;
         }
         return next;
@@ -73,41 +95,57 @@ export function CheckpointOverlay({
   }
 
   return (
+    // Under the video below `sm` (the video box is only ~220px tall on a
+    // phone, too short for a question with long options), over it from `sm`
+    // up. The body scrolls, the header stays put, and `my-auto` (not
+    // `justify-center`) centres short content without clipping tall content.
     <div
+      ref={rootRef}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-labelledby="checkpoint-prompt"
-      className="absolute inset-0 z-20 flex flex-col justify-center gap-4 bg-fg/90 p-6 text-primary-fg"
+      className="z-20 flex flex-col gap-3 rounded-lg bg-fg p-4 text-primary-fg focus-visible:outline-none sm:absolute sm:inset-0 sm:bg-fg/90 sm:p-6"
     >
-      <div className="flex items-center justify-between text-sm font-sans">
+      <div className="flex shrink-0 items-center justify-between gap-3 text-sm font-sans">
         <span>{t("checkpoint.progress", { current: questionNumber, total: totalQuestions })}</span>
         <span role="timer" aria-live="off" className="tabular-nums">
           {t("checkpoint.timeRemaining", { seconds: remainingSeconds })}
         </span>
       </div>
-      <h2 id="checkpoint-prompt" className="text-lg font-sans font-semibold">
-        {question.prompt}
-      </h2>
-      {question.type === "multiple_choice" ? (
-        <div className="flex flex-col gap-2" role="radiogroup" aria-labelledby="checkpoint-prompt">
-          {question.options.map((option) => (
-            // eslint-disable-next-line yt-b/prefer-primitives -- a `role="radio"` option in a custom radiogroup, not a standalone action button; @yourtal/ui/button has no radio variant and Radix's own RadioGroup would add a dependency for one already-simple, fully-custom-styled control.
-            <button
-              key={option.id}
-              type="button"
-              role="radio"
-              aria-checked={selected === option.id}
-              disabled={submitting}
-              onClick={() => choose(option.id)}
-              className="rounded-control border border-white/30 bg-white/10 px-4 py-3 text-left text-body font-sans text-primary-fg disabled:opacity-60 aria-checked:border-white aria-checked:bg-white/25"
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <div className="my-auto flex flex-col gap-3">
+          <h2 id="checkpoint-prompt" className="text-lg font-sans font-semibold break-words">
+            {question.prompt}
+          </h2>
+          {question.type === "multiple_choice" ? (
+            <div
+              className="flex flex-col gap-2"
+              role="radiogroup"
+              aria-labelledby="checkpoint-prompt"
             >
-              {option.label}
-            </button>
-          ))}
+              {question.options.map((option) => (
+                // eslint-disable-next-line yt-b/prefer-primitives -- a `role="radio"` option in a custom radiogroup, not a standalone action button; @yourtal/ui/button has no radio variant and Radix's own RadioGroup would add a dependency for one already-simple, fully-custom-styled control.
+                <button
+                  key={option.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected === option.id}
+                  disabled={submitting}
+                  onClick={() => choose(option.id)}
+                  className="rounded-control border border-white/30 bg-white/10 px-4 py-3 text-left text-body font-sans break-words text-primary-fg disabled:opacity-60 aria-checked:border-white aria-checked:bg-white/25"
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-body-sm font-sans text-primary-fg/80">
+              {t("checkpoint.unsupported")}
+            </p>
+          )}
         </div>
-      ) : (
-        <p className="text-body-sm font-sans text-primary-fg/80">{t("checkpoint.unsupported")}</p>
-      )}
+      </div>
       <p role="status" aria-live="polite" className="sr-only">
         {submitting ? t("checkpoint.submitting") : ""}
       </p>

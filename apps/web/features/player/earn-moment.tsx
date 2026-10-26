@@ -1,6 +1,7 @@
 import { PointsChip } from "@yourtal/ui/points-chip";
-import { nonEarningReasonKey } from "./non-earning-reason";
+import { identityCheckKey, nonEarningReasonKey } from "./non-earning-reason";
 import { IDENTITY_CHECK_REQUIRED } from "@yourtal/contracts/identity/earning-check";
+import type { IdentityCheckStep } from "@yourtal/contracts/identity/earning-check";
 import { IdentityCheckPrompt } from "./identity-check-prompt";
 import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
 
@@ -48,11 +49,13 @@ export function EarnMoment({ points, unlockAt, locale }: EarnMomentProps) {
 
 export interface NotEarningMomentProps {
   reason: string | null;
+  /** 5.9.f: what the server says is still missing; unknown (empty) asks to verify the email. */
+  identityCheck?: readonly IdentityCheckStep[];
   locale: SupportedLocale;
 }
 
 /** Shown when the session completed but nothing was granted (already earned, an unfunded campaign, or a ledger refusal). */
-export function NotEarningMoment({ reason, locale }: NotEarningMomentProps) {
+export function NotEarningMoment({ reason, identityCheck, locale }: NotEarningMomentProps) {
   const t = getPlayerTranslator(locale);
   return (
     <div
@@ -62,10 +65,16 @@ export function NotEarningMoment({ reason, locale }: NotEarningMomentProps) {
       <p className="text-sm font-sans text-fg-muted">
         {reason === null
           ? t("earn.notEarningGeneric")
-          : t(`refusal.reasons.${nonEarningReasonKey(reason)}`)}
+          : t(
+              `refusal.reasons.${
+                reason === IDENTITY_CHECK_REQUIRED
+                  ? identityCheckKey(identityCheck)
+                  : nonEarningReasonKey(reason)
+              }`,
+            )}
       </p>
       {reason === IDENTITY_CHECK_REQUIRED ? (
-        <IdentityCheckPrompt missing={[]} locale={locale} />
+        <IdentityCheckPrompt missing={identityCheck ?? []} locale={locale} />
       ) : null}
     </div>
   );

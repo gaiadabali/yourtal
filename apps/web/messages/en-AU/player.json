@@ -46,7 +46,9 @@
     "progress": "Question {current} of {total}",
     "timeRemaining": "{seconds}s left",
     "unsupported": "This question type isn't ready yet — it will be skipped.",
-    "submitting": "Submitting your answer…"
+    "submitting": "Submitting your answer…",
+    "timedOut": "Time ran out on the question, so it counts as unanswered. You still earn your reward when you finish the video.",
+    "timedOutBonus": "Time ran out on the question, so it counts as unanswered. You still earn your reward when you finish the video, but not the accuracy bonus."
   },
   "errors": {
     "startFailed": "This video couldn't start. Check your connection and try again.",
@@ -70,7 +72,8 @@
     "claiming": "Checking your answers…",
     "earnedAriaLabel": "Plus {points} points",
     "unlocks": "Unlocks {date}",
-    "notEarningGeneric": "This watch didn't earn points."
+    "notEarningGeneric": "This watch didn't earn points.",
+    "alreadyEarnedNotice": "You've already earned the points for this video. You can watch it again, but it won't earn more."
   },
   "terms": {
     "ariaLabel": "Reward terms",

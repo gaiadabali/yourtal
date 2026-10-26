@@ -46,7 +46,9 @@
     "progress": "Pertanyaan {current} dari {total}",
     "timeRemaining": "Sisa {seconds} dtk",
     "unsupported": "Jenis pertanyaan ini belum didukung — akan dilewati.",
-    "submitting": "Mengirim jawabanmu…"
+    "submitting": "Mengirim jawabanmu…",
+    "timedOut": "Waktu untuk pertanyaan habis, jadi dihitung tidak dijawab. Kamu tetap mendapat reward saat video selesai.",
+    "timedOutBonus": "Waktu untuk pertanyaan habis, jadi dihitung tidak dijawab. Kamu tetap mendapat reward saat video selesai, tetapi tanpa bonus akurasi."
   },
   "errors": {
     "startFailed": "Video ini gagal dimulai. Periksa koneksimu dan coba lagi.",
@@ -70,7 +72,8 @@
     "claiming": "Memeriksa jawabanmu…",
     "earnedAriaLabel": "Plus {points} poin",
     "unlocks": "Terbuka {date}",
-    "notEarningGeneric": "Tontonan ini tidak menghasilkan poin."
+    "notEarningGeneric": "Tontonan ini tidak menghasilkan poin.",
+    "alreadyEarnedNotice": "Kamu sudah mendapat poin dari video ini. Kamu boleh menontonnya lagi, tetapi tidak menambah poin."
   },
   "terms": {
     "ariaLabel": "Syarat reward",

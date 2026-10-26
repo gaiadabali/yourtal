@@ -395,12 +395,21 @@ export class WatchController {
     }
     // F126 again at the grant: a session that started earning before the
     // check was switched on pays nothing.
-    if (!(await this.identityCheck.verdictFor(session.userId, profile.region)).mayEarn) {
+    const identityVerdict = await this.identityCheck.verdictFor(session.userId, profile.region);
+    if (!identityVerdict.mayEarn) {
       if (session.holdId !== null) {
         const released = await this.ledger.release(session.holdId);
         if (released.isErr()) this.logger.warn(`hold release failed: ${released.error.code}`);
       }
-      return { completed: true, granted: false, reason: IDENTITY_CHECK_REQUIRED, pendingPoints: 0 };
+      // 5.9.f: say what is missing, so a verified person on a disposable
+      // address is not asked to verify an email again.
+      return {
+        completed: true,
+        granted: false,
+        reason: IDENTITY_CHECK_REQUIRED,
+        pendingPoints: 0,
+        missing: [...identityVerdict.missing],
+      };
     }
 
     const points = pointsForCompletion(

@@ -19,13 +19,14 @@ import (
 // checks if the ApiWatchSessionsSessionIdCompletePost201Response type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &ApiWatchSessionsSessionIdCompletePost201Response{}
 
-// ApiWatchSessionsSessionIdCompletePost201Response `completed` is always true on success — a refusal throws instead (see the 403 below). `granted` is false with `reason` set (never `pendingPoints`/`unlockAt`) when the session was non-earning (already_earned, no funding configured, identity_check_required (F126), the allocation hold failed, or the grant call itself failed after coverage completed) — 5.1.b/5.3.a. `deliveryCoverage` is the 10.4.c segment-log cross-check's verdict, `\"unknown\"` until that lands (5.1.d).
+// ApiWatchSessionsSessionIdCompletePost201Response `completed` is always true on success — a refusal throws instead (see the 403 below). `granted` is false with `reason` set (never `pendingPoints`/`unlockAt`) when the session was non-earning (already_earned, no funding configured, identity_check_required (F126), the allocation hold failed, or the grant call itself failed after coverage completed) — 5.1.b/5.3.a. `missing` is present only with `reason: identity_check_required` (5.9.f): the steps the viewer still has to take, so the player offers the right one. `deliveryCoverage` is the 10.4.c segment-log cross-check's verdict, `\"unknown\"` until that lands (5.1.d).
 type ApiWatchSessionsSessionIdCompletePost201Response struct {
 	Completed interface{} `json:"completed"`
 	Granted bool `json:"granted"`
 	PendingPoints NullableInt32 `json:"pendingPoints"`
 	UnlockAt *time.Time `json:"unlockAt,omitempty"`
 	Reason NullableString `json:"reason,omitempty"`
+	Missing []string `json:"missing,omitempty"`
 	DeliveryCoverage *string `json:"deliveryCoverage,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
@@ -202,6 +203,38 @@ func (o *ApiWatchSessionsSessionIdCompletePost201Response) UnsetReason() {
 	o.Reason.Unset()
 }
 
+// GetMissing returns the Missing field value if set, zero value otherwise.
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) GetMissing() []string {
+	if o == nil || IsNil(o.Missing) {
+		var ret []string
+		return ret
+	}
+	return o.Missing
+}
+
+// GetMissingOk returns a tuple with the Missing field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) GetMissingOk() ([]string, bool) {
+	if o == nil || IsNil(o.Missing) {
+		return nil, false
+	}
+	return o.Missing, true
+}
+
+// HasMissing returns a boolean if a field has been set.
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) HasMissing() bool {
+	if o != nil && !IsNil(o.Missing) {
+		return true
+	}
+
+	return false
+}
+
+// SetMissing gets a reference to the given []string and assigns it to the Missing field.
+func (o *ApiWatchSessionsSessionIdCompletePost201Response) SetMissing(v []string) {
+	o.Missing = v
+}
+
 // GetDeliveryCoverage returns the DeliveryCoverage field value if set, zero value otherwise.
 func (o *ApiWatchSessionsSessionIdCompletePost201Response) GetDeliveryCoverage() string {
 	if o == nil || IsNil(o.DeliveryCoverage) {
@@ -254,6 +287,9 @@ func (o ApiWatchSessionsSessionIdCompletePost201Response) ToMap() (map[string]in
 	}
 	if o.Reason.IsSet() {
 		toSerialize["reason"] = o.Reason.Get()
+	}
+	if !IsNil(o.Missing) {
+		toSerialize["missing"] = o.Missing
 	}
 	if !IsNil(o.DeliveryCoverage) {
 		toSerialize["deliveryCoverage"] = o.DeliveryCoverage
@@ -308,6 +344,7 @@ func (o *ApiWatchSessionsSessionIdCompletePost201Response) UnmarshalJSON(data []
 		delete(additionalProperties, "pendingPoints")
 		delete(additionalProperties, "unlockAt")
 		delete(additionalProperties, "reason")
+		delete(additionalProperties, "missing")
 		delete(additionalProperties, "deliveryCoverage")
 		o.AdditionalProperties = additionalProperties
 	}

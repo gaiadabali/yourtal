@@ -139,6 +139,24 @@ async function buyOne(api: DemoApi, viewer: Viewer): Promise<string | null> {
   return null;
 }
 
+/** Unused vouchers a member must keep so a gift and a charity listing are always possible: one past the holdback, one fresh. */
+export const KEEP_GIFTABLE = 2;
+
+/**
+ * The one voucher to redeem today. A voucher this member cannot pass on (won at
+ * an auction, or received) is the one to spend; a giftable one is spent only
+ * when more than `KEEP_GIFTABLE` would stay.
+ */
+export function pickToRedeem<T extends { status?: string; giftable?: boolean }>(
+  vouchers: readonly T[],
+): T[] {
+  const active = vouchers.filter((v) => v.status === "active");
+  const spendable = active.find((v) => v.giftable !== true);
+  if (spendable !== undefined) return [spendable];
+  const giftable = active.filter((v) => v.giftable === true);
+  return giftable.length > KEEP_GIFTABLE ? giftable.slice(0, 1) : [];
+}
+
 /** The owner pairs a till at the brand and redeems every unused demo voucher bought there. */
 async function redeemAtCounter(
   pool: pg.Pool,
@@ -148,10 +166,11 @@ async function redeemAtCounter(
   region: Region,
 ): Promise<number> {
   const vouchers = (field(ok(await buyer.get("/api/wallet/vouchers"), "vouchers"), "vouchers") ??
-    []) as { voucherId: string; status?: string }[];
+    []) as { voucherId: string; status?: string; giftable?: boolean }[];
   let redeemed = 0;
-  // One a day: the rest stay unused for gifts and charity auctions.
-  for (const voucher of vouchers.filter((v) => v.status === "active").slice(0, 1)) {
+  // One a day, and never the last unused ones: the guide's gift and charity-auction
+  // journeys need vouchers this account may still pass on.
+  for (const voucher of pickToRedeem(vouchers)) {
     const row = await pool.query<{ merchant_id: string; location_id: string }>(
       "SELECT merchant_id::text, location_id::text FROM voucher.vouchers WHERE id = $1",
       [voucher.voucherId],

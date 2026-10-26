@@ -32419,6 +32419,14 @@
           },
           "giftable": {
             "type": "boolean"
+          },
+          "giftBlock": {
+            "type": "string",
+            "enum": [
+              "not_unused",
+              "not_transferable",
+              "received_as_gift"
+            ]
           }
         },
         "required": [
@@ -32498,6 +32506,14 @@
           },
           "giftable": {
             "type": "boolean"
+          },
+          "giftBlock": {
+            "type": "string",
+            "enum": [
+              "not_unused",
+              "not_transferable",
+              "received_as_gift"
+            ]
           },
           "code": {
             "type": "string",

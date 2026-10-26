@@ -309,6 +309,10 @@ type walletVoucherView struct {
 	// Giftable (13.20): the voucher's own rules allow a gift now, holdback
 	// and velocity aside, which only an attempt can answer.
 	Giftable bool `json:"giftable"`
+	// GiftBlock says which rule stops a gift or a charity listing, when one
+	// does: "not_unused", "not_transferable" or "received_as_gift". Empty
+	// when Giftable. The same order Gift checks them in.
+	GiftBlock string `json:"giftBlock,omitempty"`
 }
 
 // walletVoucherSource is the common shape `GetOwnedVoucherRow` and
@@ -335,6 +339,21 @@ type walletVoucherSource struct {
 	ReceivedAsGift          bool
 }
 
+// giftBlockOf names the first rule that keeps a voucher from changing hands
+// (gift.go's checkGiftable order), or "" when none does.
+func giftBlockOf(row walletVoucherSource, now time.Time) string {
+	switch {
+	case row.State != string(lifecycle.Active) || row.RemainingValueMinor != row.FaceValueMinor ||
+		!row.ExpiresAt.Time.After(now):
+		return "not_unused"
+	case !row.Transferable:
+		return "not_transferable"
+	case row.ReceivedAsGift:
+		return "received_as_gift"
+	}
+	return ""
+}
+
 func toWalletVoucherView(row walletVoucherSource) walletVoucherView {
 	var location *walletLocationView
 	if row.LocationName != nil && row.LocationAddress != nil && row.LocationDistrict != nil {
@@ -342,6 +361,7 @@ func toWalletVoucherView(row walletVoucherSource) walletVoucherView {
 			Name: *row.LocationName, Address: *row.LocationAddress, District: *row.LocationDistrict,
 		}
 	}
+	block := giftBlockOf(row, time.Now())
 	return walletVoucherView{
 		VoucherID: asUUID(row.ID).String(), ListingID: asUUID(row.ListingID).String(),
 		SagaID: sagaOrVoucherID(row.SagaID, row.ID), State: contractState(row.State),
@@ -349,9 +369,9 @@ func toWalletVoucherView(row walletVoucherSource) walletVoucherView {
 		MerchantName: row.MerchantName, Title: row.Title, Currency: row.Currency,
 		FaceValueMinor: row.FaceValueMinor, RemainingValueMinor: row.RemainingValueMinor,
 		PartialRedemptionPolicy: row.PartialRedemptionPolicy, ExpiresAt: iso(row.ExpiresAt.Time),
-		Location: location,
-		Giftable: row.Transferable && !row.ReceivedAsGift && row.State == string(lifecycle.Active) &&
-			row.RemainingValueMinor == row.FaceValueMinor && row.ExpiresAt.Time.After(time.Now()),
+		Location:  location,
+		Giftable:  block == "",
+		GiftBlock: block,
 	}
 }
 

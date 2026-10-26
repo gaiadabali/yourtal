@@ -4,6 +4,7 @@ import { currencySchema } from "../money/money-value";
 import { regionSchema } from "../region/region";
 import { partialRedemptionPolicySchema } from "../listing/listing";
 import { voucherStatusSchema } from "../voucher/voucher";
+import { voucherGiftBlockSchema } from "../voucher-internal/wallet";
 import { qrTokenWindowSchema } from "../voucher-internal/lifecycle";
 import { walletHistoryEntrySchema } from "./wallet-history";
 
@@ -89,6 +90,8 @@ export const walletVoucherSchema = z.object({
   partialRedemptionPolicy: partialRedemptionPolicySchema.optional(),
   /** 13.20: the voucher can be gifted now (holdback and caps are only known on trying). */
   giftable: z.boolean().optional(),
+  /** Which rule stops a gift or a charity listing; absent when `giftable`. */
+  giftBlock: voucherGiftBlockSchema.optional(),
 });
 export type WalletVoucher = z.infer<typeof walletVoucherSchema>;
 

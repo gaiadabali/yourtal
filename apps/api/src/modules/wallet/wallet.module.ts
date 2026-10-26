@@ -12,6 +12,7 @@ import { IdentityModule } from "../identity/identity.module";
 import { WalletAttributeLoader } from "./wallet-attribute-loader";
 import { WalletController } from "./wallet.controller";
 import { WalletGiftController } from "./wallet-gift.controller";
+import { BURN_VOUCHER_READER, BurnVoucherReader } from "./burn-voucher-reader";
 import { GIFT_PARTY_READER, GiftPartyReader } from "./gift-party-reader";
 import { GIFT_NOTIFIER_DB, GiftNotifier } from "./gift-notifier";
 
@@ -45,6 +46,11 @@ export const WALLET_DB = Symbol("WALLET_DB");
     {
       provide: GIFT_PARTY_READER,
       useFactory: (db: AppDb) => new GiftPartyReader(db),
+      inject: [WALLET_DB],
+    },
+    {
+      provide: BURN_VOUCHER_READER,
+      useFactory: (db: AppDb) => new BurnVoucherReader(db),
       inject: [WALLET_DB],
     },
     { provide: GIFT_NOTIFIER_DB, useExisting: WALLET_DB },

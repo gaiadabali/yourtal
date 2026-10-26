@@ -948,7 +948,11 @@
       "title": "Devices",
       "provision": "Provision device",
       "empty": "No devices provisioned yet.",
-      "revoke": "Revoke"
+      "revoke": "Revoke",
+      "revokeTitle": "Revoke {label}?",
+      "revokeBody": "This counter stops working straight away and can't take any more redemptions. This can't be undone. To use the tablet again, add it as a new device with a new pairing code.",
+      "revokeConfirm": "Revoke device",
+      "revokeCancel": "Keep device"
     },
     "state": {
       "pending": "Pending",
@@ -957,11 +961,12 @@
     },
     "provision": {
       "title": "Provision a counter device",
-      "description": "Set the till's shift PIN here — the device itself only ever asks for the pairing code.",
+      "description": "Choose the counter's shift PIN here. The device is paired with a one-time code and opens straight away; after that it asks for this PIN each time it is locked (Lock now, or when left idle). Staff share it, so it is not a personal login.",
       "labelField": "Label",
       "labelPlaceholder": "e.g. Kemang counter 2",
       "locationField": "Location",
-      "pinField": "PIN (4–8 digits)",
+      "pinField": "Shift PIN (4–8 digits)",
+      "pinHelp": "Staff type this PIN to unlock the counter after it locks. It does not pair the device.",
       "confirmPinField": "Confirm PIN",
       "errorPinInvalid": "PIN must be 4–8 digits.",
       "errorPinMismatch": "The two PINs don't match.",

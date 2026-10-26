@@ -40,7 +40,7 @@
         "try": "Studio billing and statements."
       }
     },
-    "counter": "Store counter: sign in as the business owner, open Studio › Team, add a device and copy its pairing code. Open {pairUrl} on another device, enter the code, then the PIN {pin}.",
+    "counter": "Store counter: sign in as the business owner, open Studio › Team, add a device, choose a shift PIN for it (the guide uses {pin}) and copy its pairing code. Open {pairUrl} on another device and enter the code: the counter opens straight away. Choose Lock now and it asks for that PIN.",
     "staffNote": "Staff console logins are not listed here; the founder has them."
   },
   "journeys": {

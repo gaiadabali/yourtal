@@ -948,7 +948,11 @@
       "title": "Perangkat",
       "provision": "Siapkan perangkat",
       "empty": "Belum ada perangkat yang disiapkan.",
-      "revoke": "Cabut"
+      "revoke": "Cabut",
+      "revokeTitle": "Cabut {label}?",
+      "revokeBody": "Kasir ini langsung berhenti berfungsi dan tidak bisa lagi menerima redeem. Tindakan ini tidak bisa dibatalkan. Untuk memakai tablet itu lagi, tambahkan sebagai perangkat baru dengan kode pemasangan baru.",
+      "revokeConfirm": "Cabut perangkat",
+      "revokeCancel": "Pertahankan perangkat"
     },
     "state": {
       "pending": "Menunggu",
@@ -957,11 +961,12 @@
     },
     "provision": {
       "title": "Siapkan perangkat kasir",
-      "description": "Atur PIN shift kasir di sini — perangkat itu sendiri hanya akan meminta kode pemasangan.",
+      "description": "Pilih PIN shift kasir di sini. Perangkat dipasangkan dengan kode sekali pakai dan langsung terbuka; setelah itu perangkat meminta PIN ini setiap kali terkunci (Kunci sekarang, atau saat dibiarkan menganggur). Staf berbagi PIN ini, jadi bukan login pribadi.",
       "labelField": "Label",
       "labelPlaceholder": "mis. Kemang kasir 2",
       "locationField": "Lokasi",
-      "pinField": "PIN (4–8 digit)",
+      "pinField": "PIN shift (4–8 digit)",
+      "pinHelp": "Staf mengetik PIN ini untuk membuka kunci kasir setelah terkunci. PIN ini tidak memasangkan perangkat.",
       "confirmPinField": "Konfirmasi PIN",
       "errorPinInvalid": "PIN harus 4–8 digit.",
       "errorPinMismatch": "Kedua PIN tidak cocok.",

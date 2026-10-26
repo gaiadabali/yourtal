@@ -148,6 +148,7 @@ export function TeamProvisionDeviceDialog({
               </NativeSelect>
               <Input
                 label={t("devices.provision.pinField")}
+                helpText={t("devices.provision.pinHelp")}
                 type="password"
                 inputMode="numeric"
                 pattern="\d{4,8}"

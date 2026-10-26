@@ -10,6 +10,14 @@ import type { MerchantLocation } from "@yourtal/contracts/listing/merchant-locat
 import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@yourtal/ui/dialog";
 import { provisionDeviceLive, revokeDeviceLive } from "./devices-data";
 import { TeamProvisionDeviceDialog } from "./team-provision-device-dialog";
 
@@ -39,6 +47,8 @@ export function TeamDevicesPanel({ businessId, initialDevices, locations }: Team
   const [devices, setDevices] = useState<readonly CounterDevice[]>(initialDevices);
   const [provisionOpen, setProvisionOpen] = useState(false);
   const [revokingId, setRevokingId] = useState<string | null>(null);
+  /** The device whose revoke is waiting on a confirmation: revoking is immediate and cannot be undone. */
+  const [confirming, setConfirming] = useState<CounterDevice | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleProvision(input: {
@@ -55,6 +65,7 @@ export function TeamDevicesPanel({ businessId, initialDevices, locations }: Team
   }
 
   async function handleRevoke(deviceId: string) {
+    setConfirming(null);
     setRevokingId(deviceId);
     const result = await revokeDeviceLive(businessId, deviceId);
     setRevokingId(null);
@@ -110,7 +121,7 @@ export function TeamDevicesPanel({ businessId, initialDevices, locations }: Team
                       variant="destructive"
                       size="sm"
                       disabled={revokingId === device.id}
-                      onClick={() => void handleRevoke(device.id)}
+                      onClick={() => setConfirming(device)}
                     >
                       {t("devices.panel.revoke")}
                     </Button>
@@ -121,6 +132,31 @@ export function TeamDevicesPanel({ businessId, initialDevices, locations }: Team
           </ul>
         )}
       </CardContent>
+      <Dialog
+        open={confirming !== null}
+        onOpenChange={(open) => (open ? null : setConfirming(null))}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {t("devices.panel.revokeTitle", { label: confirming?.label ?? "" })}
+            </DialogTitle>
+            <DialogDescription>{t("devices.panel.revokeBody")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="secondary" onClick={() => setConfirming(null)}>
+              {t("devices.panel.revokeCancel")}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => (confirming ? void handleRevoke(confirming.id) : undefined)}
+            >
+              {t("devices.panel.revokeConfirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <TeamProvisionDeviceDialog
         open={provisionOpen}
         locations={locations}

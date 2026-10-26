@@ -54,4 +54,23 @@ describe("TeamProvisionDeviceDialog", () => {
     await provisioned("id-ID");
     expect(await screen.findByText(/20 Okt 2026, 15\.30/)).toBeInTheDocument();
   });
+
+  it("says what the PIN is for, so an owner does not take it for the pairing code (Group 5.13.g, B13)", () => {
+    render(
+      <NextIntlClientProvider locale="en-AU" messages={{ studio: enStudio }}>
+        <TeamProvisionDeviceDialog
+          open
+          locations={locations}
+          onOpenChange={vi.fn()}
+          onProvision={vi.fn()}
+        />
+      </NextIntlClientProvider>,
+    );
+    expect(screen.getByLabelText("Shift PIN (4–8 digits)")).toHaveAccessibleDescription(
+      /unlock the counter after it locks/,
+    );
+    expect(
+      screen.getByText(/opens straight away; after that it asks for this PIN/),
+    ).toBeInTheDocument();
+  });
 });

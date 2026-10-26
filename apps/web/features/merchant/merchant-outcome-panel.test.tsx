@@ -22,6 +22,7 @@ function renderOutcome(
       outcome={outcome}
       locale="en-AU"
       currency="AUD"
+      region="AU"
       copy={copy}
       onRetry={handlers.onRetry ?? vi.fn()}
       onEditAmount={handlers.onEditAmount ?? vi.fn()}

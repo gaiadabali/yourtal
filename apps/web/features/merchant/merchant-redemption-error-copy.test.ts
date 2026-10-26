@@ -3,14 +3,16 @@ import { errorCopyFor } from "./merchant-redemption-error-copy";
 
 describe("errorCopyFor", () => {
   it("resolves each known code, in the given locale", () => {
-    expect(errorCopyFor({ code: "voucher_not_found" }, "en-AU", "AUD").heading).toMatch(
+    expect(errorCopyFor({ code: "voucher_not_found" }, "en-AU", "AUD", "AU").heading).toMatch(
       /not found/i,
     );
-    expect(errorCopyFor({ code: "voucher_not_found" }, "id-ID", "AUD").heading).toMatch(
+    expect(errorCopyFor({ code: "voucher_not_found" }, "id-ID", "AUD", "ID").heading).toMatch(
       /tidak ditemukan/i,
     );
-    expect(errorCopyFor({ code: "already_redeemed" }, "en-AU", "AUD").heading).toMatch(/already/i);
-    expect(errorCopyFor({ code: "amount_not_positive" }, "en-AU", "AUD").body).toMatch(
+    expect(errorCopyFor({ code: "already_redeemed" }, "en-AU", "AUD", "AU").heading).toMatch(
+      /already/i,
+    );
+    expect(errorCopyFor({ code: "amount_not_positive" }, "en-AU", "AUD", "AU").body).toMatch(
       /greater than zero/i,
     );
   });
@@ -20,6 +22,7 @@ describe("errorCopyFor", () => {
       { code: "amount_exceeds_remaining_value", remainingValueMinor: 500 },
       "en-AU",
       "AUD",
+      "AU",
     );
     expect(copy.body).toContain("$5.00");
   });
@@ -29,9 +32,10 @@ describe("errorCopyFor", () => {
       { code: "expired", expiresAt: "2026-01-01T00:00:00.000Z" },
       "en-AU",
       "AUD",
+      "AU",
     );
     expect(withDate.body).toMatch(/2026/);
-    expect(() => errorCopyFor({ code: "expired" }, "en-AU", "AUD")).not.toThrow();
+    expect(() => errorCopyFor({ code: "expired" }, "en-AU", "AUD", "AU")).not.toThrow();
   });
 
   it("falls back to the server's own message for an unmapped code", () => {
@@ -39,12 +43,23 @@ describe("errorCopyFor", () => {
       { code: "some_future_server_code", fallbackMessage: "a brand-new refusal" },
       "en-AU",
       "AUD",
+      "AU",
     );
     expect(copy.body).toBe("a brand-new refusal");
   });
 
   it("falls back to a generic network-error message when there is no server message either", () => {
-    const copy = errorCopyFor({ code: "some_future_server_code" }, "en-AU", "AUD");
+    const copy = errorCopyFor({ code: "some_future_server_code" }, "en-AU", "AUD", "AU");
     expect(copy.body.length).toBeGreaterThan(0);
+  });
+
+  it("names the expiry day in the shop's own zone, not the UTC day (14:30 UTC is already tomorrow in Sydney)", () => {
+    const expiresAt = "2026-12-31T14:30:00.000Z";
+    expect(errorCopyFor({ code: "expired", expiresAt }, "en-AU", "AUD", "AU").body).toContain(
+      "1 January 2027",
+    );
+    expect(errorCopyFor({ code: "expired", expiresAt }, "id-ID", "IDR", "ID").body).toContain(
+      "31 Desember 2026",
+    );
   });
 });

@@ -54,7 +54,6 @@ export interface MerchantCopy {
   unreadableHeading: string;
   unreadableBody: string;
   tryAgainButton: string;
-  amountLabel: string;
   amountHelp: string;
   confirmButton: string;
   backButton: string;
@@ -70,6 +69,9 @@ export interface MerchantCopy {
   todayHeading: string;
   todayTotalLabel: string;
   todayEmpty: string;
+  /** A log row from before voucher titles were kept. */
+  todayUnnamedVoucher: string;
+  continueButton: string;
   /** YT-0583 follow-up: the outcome panel's "remaining voucher value" prefix — previously a hardcoded `locale === "id-ID" ? … : …` ternary in `merchant-outcome-panel.tsx`. */
   remainingValueLabel: string;
 }
@@ -95,7 +97,6 @@ export function getMerchantCopy(locale: MerchantLocale): MerchantCopy {
     unreadableHeading: t("portal.unreadableHeading"),
     unreadableBody: t("portal.unreadableBody"),
     tryAgainButton: t("portal.tryAgainButton"),
-    amountLabel: t("portal.amountLabel"),
     amountHelp: t("portal.amountHelp"),
     confirmButton: t("portal.confirmButton"),
     backButton: t("portal.backButton"),
@@ -109,6 +110,8 @@ export function getMerchantCopy(locale: MerchantLocale): MerchantCopy {
     todayHeading: t("portal.todayHeading"),
     todayTotalLabel: t("portal.todayTotalLabel"),
     todayEmpty: t("portal.todayEmpty"),
+    todayUnnamedVoucher: t("portal.todayUnnamedVoucher"),
+    continueButton: t("portal.continueButton"),
     remainingValueLabel: t("portal.remainingValueLabel"),
   };
 }

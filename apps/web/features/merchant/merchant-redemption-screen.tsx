@@ -74,14 +74,37 @@ export function MerchantRedemptionScreen({ device }: MerchantRedemptionScreenPro
       setStep({ step: "not_found", reason: notFoundReason });
       return;
     }
-    setStep({
-      step: "reviewing",
+    const reviewed = {
       code,
       orderRef: newOrderRef(),
       preview: result.data,
-      amountMinor: result.data.remainingValueMinor,
       effectiveRemainingMinor: result.data.remainingValueMinor,
-    });
+    };
+    // A single-use voucher has no amount to choose: it goes straight to the
+    // confirm step for its whole value. A balance-carrying one asks first.
+    // Nothing is prefilled either way, and nothing is committed before a confirm.
+    if (result.data.partialRedemptionPolicy === "single_use") {
+      setStep({ step: "confirming", ...reviewed, amountMinor: result.data.remainingValueMinor });
+    } else {
+      setStep({ step: "reviewing", ...reviewed, amountMinor: null });
+    }
+  }
+
+  function handleContinue(amountMinor: number) {
+    if (step.step === "reviewing") {
+      setStep({ ...step, step: "confirming", amountMinor });
+    }
+  }
+
+  function handleBackFromConfirm() {
+    if (step.step !== "confirming") {
+      return;
+    }
+    if (step.preview.partialRedemptionPolicy === "single_use") {
+      resetToIdentify();
+      return;
+    }
+    setStep({ ...step, step: "reviewing" });
   }
 
   function handleSubmitCode(code: string) {
@@ -114,7 +137,7 @@ export function MerchantRedemptionScreen({ device }: MerchantRedemptionScreenPro
   }
 
   async function handleConfirm() {
-    if (step.step !== "reviewing" && step.step !== "failed") {
+    if (step.step !== "confirming" && step.step !== "failed" && step.step !== "offline") {
       return;
     }
     const { code, orderRef, preview, amountMinor, effectiveRemainingMinor } = step;
@@ -172,16 +195,21 @@ export function MerchantRedemptionScreen({ device }: MerchantRedemptionScreenPro
         idempotencyKey: authorizeIdempotencyKey,
       });
       if (!authResult.ok) {
-        failWith(fromApiError(authResult.error), {
-          code,
-          orderRef,
-          preview,
-          amountMinor,
-          effectiveRemainingMinor,
-          authorizeIdempotencyKey,
-          captureIdempotencyKey,
-          authorizationId: null,
-        });
+        // The server names what is left in its refusal's body, which `apiFetch`
+        // does not carry; the screen already knows it from the lookup.
+        failWith(
+          { ...fromApiError(authResult.error), remainingValueMinor: preview.remainingValueMinor },
+          {
+            code,
+            orderRef,
+            preview,
+            amountMinor,
+            effectiveRemainingMinor,
+            authorizeIdempotencyKey,
+            captureIdempotencyKey,
+            authorizationId: null,
+          },
+        );
         return;
       }
       authorizationId = authResult.data.authorizationId;
@@ -225,16 +253,29 @@ export function MerchantRedemptionScreen({ device }: MerchantRedemptionScreenPro
   }
 
   function backToReviewing() {
-    if (step.step === "failed" || step.step === "offline") {
+    if (step.step !== "failed" && step.step !== "offline") {
+      return;
+    }
+    if (step.preview.partialRedemptionPolicy === "single_use") {
+      // Nothing to edit on a whole-voucher redemption: back to the confirm step.
       setStep({
-        step: "reviewing",
+        step: "confirming",
         code: step.code,
         orderRef: step.orderRef,
         preview: step.preview,
         amountMinor: step.amountMinor,
         effectiveRemainingMinor: step.effectiveRemainingMinor,
       });
+      return;
     }
+    setStep({
+      step: "reviewing",
+      code: step.code,
+      orderRef: step.orderRef,
+      preview: step.preview,
+      amountMinor: step.amountMinor,
+      effectiveRemainingMinor: step.effectiveRemainingMinor,
+    });
   }
 
   return (
@@ -246,10 +287,9 @@ export function MerchantRedemptionScreen({ device }: MerchantRedemptionScreenPro
       logEntries={logEntries}
       onSubmitCode={handleSubmitCode}
       onScanDetect={handleScanDetect}
-      onAmountChange={(amountMinor) =>
-        step.step === "reviewing" ? setStep({ ...step, amountMinor }) : undefined
-      }
+      onContinue={handleContinue}
       onConfirm={() => void handleConfirm()}
+      onBackFromConfirm={handleBackFromConfirm}
       onCancel={resetToIdentify}
       onRetry={() => void handleConfirm()}
       onEditAmount={backToReviewing}

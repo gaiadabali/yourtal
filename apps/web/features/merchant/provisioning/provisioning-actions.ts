@@ -60,6 +60,9 @@ export async function submitPairingCode(formData: FormData): Promise<void> {
     deviceId: result.data.deviceId,
     credential: result.data.credential,
     pairedAt: new Date().toISOString(),
+    region: result.data.region,
+    label: result.data.label,
+    locationName: result.data.locationName,
   });
   // Pairing this device is also, reasonably, its first unlock — staff who
   // just typed the code should not have to immediately set a PIN too (the
@@ -110,7 +113,12 @@ export async function unlockWithPin(formData: FormData): Promise<void> {
   // own doc comment) — re-write the LONG-LIVED binding, not just the 5-minute
   // unlock cookie, so the chrome's locale stays correct across "Lock now"
   // and auto-lock too, not only until this unlock cookie expires.
-  await writeDeviceBinding({ ...binding, region: result.data.region });
+  await writeDeviceBinding({
+    ...binding,
+    region: result.data.region,
+    label: result.data.label,
+    locationName: result.data.locationName,
+  });
   await markUnlocked();
   redirect("/merchant");
 }

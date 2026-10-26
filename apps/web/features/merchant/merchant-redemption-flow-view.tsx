@@ -6,6 +6,7 @@ import type { MerchantRedemptionStep } from "./merchant-redemption-state";
 import type { MerchantOutcome } from "./merchant-outcome-panel";
 import { MerchantIdentifyPanel } from "./merchant-identify-panel";
 import { MerchantReviewForm } from "./merchant-review-form";
+import { MerchantConfirmPanel } from "./merchant-confirm-panel";
 import { MerchantOutcomePanel } from "./merchant-outcome-panel";
 import { MerchantConnectivityBanner } from "./merchant-connectivity-banner";
 import { MerchantTodayLogPanel } from "./merchant-today-log-panel";
@@ -18,8 +19,9 @@ export interface MerchantRedemptionFlowViewProps {
   logEntries: readonly CounterLogEntry[];
   onSubmitCode: (code: string) => void;
   onScanDetect: (payload: string) => void;
-  onAmountChange: (amountMinor: number) => void;
+  onContinue: (amountMinor: number) => void;
   onConfirm: () => void;
+  onBackFromConfirm: () => void;
   onCancel: () => void;
   onRetry: () => void;
   onEditAmount: () => void;
@@ -45,9 +47,9 @@ function outcomeFor(step: MerchantRedemptionStep): MerchantOutcome | null {
  * state machine, effects and handlers) purely to stay under the 300-line
  * file limit. This component holds no state of its own.
  *
- * TASKS.md 8.1's device-info gap (`merchant-i18n.ts`'s doc comment) means
- * there is no device label or location to show in the header yet — only a
- * generic device badge.
+ * The header names the counter by what its owner called it, and the shop it
+ * is at, falling back to the short device id only for a device paired before
+ * those were kept.
  */
 export function MerchantRedemptionFlowView({
   step,
@@ -57,8 +59,9 @@ export function MerchantRedemptionFlowView({
   logEntries,
   onSubmitCode,
   onScanDetect,
-  onAmountChange,
+  onContinue,
   onConfirm,
+  onBackFromConfirm,
   onCancel,
   onRetry,
   onEditAmount,
@@ -71,7 +74,7 @@ export function MerchantRedemptionFlowView({
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-sans font-semibold text-fg">{copy.portalHeading}</h1>
         <p className="text-sm font-sans text-fg-muted">
-          {copy.deviceBadgePrefix}: {device.id.slice(0, 8)}
+          {device.locationName ?? `${copy.deviceBadgePrefix}: ${device.id.slice(0, 8)}`}
         </p>
       </header>
       <MerchantConnectivityBanner isOnline={isOnline} copy={copy} />
@@ -114,9 +117,19 @@ export function MerchantRedemptionFlowView({
           effectiveRemainingMinor={step.effectiveRemainingMinor}
           copy={copy}
           locale={device.locale}
-          onAmountChange={onAmountChange}
-          onConfirm={onConfirm}
+          onContinue={onContinue}
           onCancel={onCancel}
+        />
+      ) : null}
+      {step.step === "confirming" ? (
+        <MerchantConfirmPanel
+          preview={step.preview}
+          amountMinor={step.amountMinor}
+          effectiveRemainingMinor={step.effectiveRemainingMinor}
+          copy={copy}
+          locale={device.locale}
+          onConfirm={onConfirm}
+          onBack={onBackFromConfirm}
         />
       ) : null}
       {step.step === "processing" ? (
@@ -132,12 +145,13 @@ export function MerchantRedemptionFlowView({
         <MerchantOutcomePanel
           outcome={outcome}
           locale={device.locale}
+          region={device.region}
           currency={
             step.step === "success"
               ? step.capture.currency
               : step.step === "offline" || step.step === "failed"
                 ? step.preview.currency
-                : "AUD"
+                : device.currency
           }
           copy={copy}
           onRetry={onRetry}
@@ -145,7 +159,13 @@ export function MerchantRedemptionFlowView({
           onNewRedemption={onNewRedemption}
         />
       ) : null}
-      <MerchantTodayLogPanel entries={logEntries} locale={device.locale} copy={copy} />
+      <MerchantTodayLogPanel
+        entries={logEntries}
+        locale={device.locale}
+        currency={device.currency}
+        region={device.region}
+        copy={copy}
+      />
     </main>
   );
 }

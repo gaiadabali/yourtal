@@ -27,9 +27,25 @@ export type MerchantRedemptionStep =
    * ("unreadable", caught client-side before any server round trip).
    */
   | { step: "not_found"; reason: "no_match" | "unreadable" }
-  /** Voucher found; staff reviews it and sets the amount before confirming. */
+  /**
+   * Voucher found; staff types the amount to take (a balance-carrying voucher
+   * only: a single-use one skips straight to `confirming` for its whole value).
+   * `amountMinor` is what was typed before, so "Back" and "edit amount" show it again.
+   */
   | {
       step: "reviewing";
+      code: string;
+      orderRef: string;
+      preview: CounterVoucherPreview;
+      amountMinor: number | null;
+      effectiveRemainingMinor: number;
+    }
+  /**
+   * "Redeem $4.50 of $10.00?": the amount is settled and shown back, and
+   * nothing is committed until staff confirm. Every redemption passes here.
+   */
+  | {
+      step: "confirming";
       code: string;
       orderRef: string;
       preview: CounterVoucherPreview;

@@ -43,9 +43,6 @@ export function MerchantVoucherSummary({
             {formatMerchantMoney(effectiveRemainingMinor, preview.currency, locale)}
           </span>
         </div>
-        {preview.partialRedemptionPolicy === "single_use" ? (
-          <p className="text-xs font-sans text-fg-subtle">{copy.amountHelp}</p>
-        ) : null}
       </CardContent>
     </Card>
   );

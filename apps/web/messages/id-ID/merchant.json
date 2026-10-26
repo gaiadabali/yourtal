@@ -18,8 +18,19 @@
     "unreadableHeading": "Kode QR tidak terbaca",
     "unreadableBody": "Kode ini tidak bisa diverifikasi — mungkin layar bergerak atau kode sudah berganti. Minta pelanggan menahan layar tetap diam dan coba pindai lagi, atau masukkan kode secara manual.",
     "tryAgainButton": "Coba lagi",
-    "amountLabel": "Jumlah yang dipakai",
+    "amountLabel": "Jumlah yang dipakai ({currency})",
     "amountHelp": "Nilai belanja pelanggan yang akan dipotong dari voucher ini.",
+    "useFullBalance": "Pakai seluruh sisa ({amount})",
+    "continueButton": "Tinjau",
+    "amountErrorEmpty": "Masukkan jumlah yang akan dipakai.",
+    "amountErrorInvalid": "Itu bukan jumlah yang valid. Tulis seperti {example}.",
+    "amountErrorTooPrecise": "Paling banyak {places, plural, =0 {tanpa desimal} other {# desimal}}.",
+    "amountErrorZero": "Masukkan jumlah di atas nol.",
+    "amountErrorOver": "Voucher ini hanya tersisa {remaining}. Masukkan {remaining} atau kurang.",
+    "confirmHeading": "Pakai {amount} dari {remaining}?",
+    "confirmBodyPartial": "{left} tetap tersisa di voucher. Belum ada yang dipotong sampai Anda konfirmasi.",
+    "confirmBodyFull": "Voucher habis terpakai setelahnya. Belum ada yang dipotong sampai Anda konfirmasi.",
+    "confirmSingleUse": "Voucher ini hanya bisa dipakai penuh.",
     "confirmButton": "Konfirmasi redeem",
     "backButton": "Kembali",
     "processingAuthorize": "Memverifikasi voucher…",
@@ -32,6 +43,7 @@
     "todayHeading": "Redeem hari ini",
     "todayTotalLabel": "Total terkonfirmasi",
     "todayEmpty": "Belum ada redeem hari ini.",
+    "todayUnnamedVoucher": "Voucher",
     "remainingValueLabel": "Sisa nilai voucher: ",
     "expiresInMinutes": "Kedaluwarsa dalam {minutes} menit"
   },
@@ -76,12 +88,12 @@
     "errorTooManyAttempts": "Terlalu banyak percobaan salah. Tunggu sebentar lalu coba lagi.",
     "form": {
       "heading": "Pasangkan perangkat ini",
-      "intro": "Minta kode pemasangan dari Admin bisnis kamu — kode ini dibuat dari Studio → Tim → Perangkat dan mengikat perangkat ini ke satu lokasi toko. Admin kamu juga mengatur PIN perangkat ini di sana.",
+      "intro": "Minta kode pemasangan dari Admin bisnis Anda — kode ini dibuat dari Studio → Tim → Perangkat dan mengikat perangkat ini ke satu lokasi toko. Admin Anda juga mengatur PIN perangkat ini di sana.",
       "codeLabel": "Kode pemasangan",
       "submitButton": "Pasangkan perangkat ini",
       "errors": {
         "invalidCode": "Kode tidak dikenali. Periksa kembali dengan Admin.",
-        "revoked": "Admin bisnis kamu telah mencabut akses perangkat ini. Minta kode pemasangan baru."
+        "revoked": "Admin bisnis Anda telah mencabut akses perangkat ini. Minta kode pemasangan baru."
       }
     }
   }

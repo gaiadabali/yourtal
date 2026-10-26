@@ -111,8 +111,12 @@ const meResponseSchema: Record<string, unknown> = {
     businessMemberships: { type: "array", items: businessMembershipSchema },
     staffRoles: { type: "array", items: { type: "string" } },
     email: { type: ["string", "null"], description: "The sign-in email, for the account menu." },
+    emailVerified: {
+      type: "boolean",
+      description: "Whether the sign-in email is verified (F126); false when there is none.",
+    },
   },
-  required: ["profile", "businessMemberships", "staffRoles", "email"],
+  required: ["profile", "businessMemberships", "staffRoles", "email", "emailVerified"],
   additionalProperties: false,
 };
 

@@ -84,7 +84,7 @@ export function PublicHeader({ locale, homeHref, currentPublicLocale }: PublicHe
         <a href="/au" className="text-label font-sans font-medium text-fg-muted hover:text-fg">
           {t("header.logIn")}
         </a>
-        <PublicCtaLink href="/onboarding">{t("header.signUp")}</PublicCtaLink>
+        <PublicCtaLink href="/register">{t("header.signUp")}</PublicCtaLink>
       </div>
     </header>
   );

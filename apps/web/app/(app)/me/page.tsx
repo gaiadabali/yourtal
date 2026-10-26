@@ -14,6 +14,7 @@ import {
 import { earnedToday, getWalletBalance } from "@/features/wallet/wallet-data";
 import { LogoutButton } from "@/features/me/logout-button";
 import { MeProfileSection } from "@/features/me/me-profile-section";
+import { MeEmailVerificationSection } from "@/features/me/email-verification";
 import { MeLanguageSection } from "@/features/me/me-language-section";
 import { MeAutoplaySection } from "@/features/me/me-autoplay-section";
 import { MeAreaSection } from "@/features/me/me-area-section";
@@ -80,6 +81,12 @@ export default async function MePage() {
         {profile.ok ? (
           <>
             <MeProfileSection profile={profile.data.profile} />
+            {profile.data.email && profile.data.emailVerified !== undefined ? (
+              <MeEmailVerificationSection
+                email={profile.data.email}
+                verified={profile.data.emailVerified}
+              />
+            ) : null}
             <MeLanguageSection displayLocale={profile.data.profile.displayLocale} />
           </>
         ) : (

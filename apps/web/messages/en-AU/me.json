@@ -18,6 +18,19 @@
     "regionLabel": "Region",
     "saveCta": "Save"
   },
+  "emailVerification": {
+    "heading": "Email",
+    "intro": "Points are added to accounts with a verified email.",
+    "statusVerified": "Verified",
+    "statusUnverified": "Not verified",
+    "verifiedBody": "Your email is verified. You can earn points.",
+    "unverifiedBody": "Open the link we emailed you to verify it. Until then, you can watch but won't earn points.",
+    "resendCta": "Send the link again",
+    "sent": "We sent a new link to {email}. Open it to finish.",
+    "failed": "The email couldn't be sent. Try again in a minute.",
+    "reminderTitle": "Verify your email to start earning points",
+    "reminderBody": "We sent a link to {email}. Open it to verify your address."
+  },
   "language": {
     "heading": "Language",
     "intro": "The language YourTal shows you. Independent of your region.",

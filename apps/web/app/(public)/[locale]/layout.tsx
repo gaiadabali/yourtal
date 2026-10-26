@@ -102,7 +102,7 @@ export default async function PublicLocaleLayout({ children, params }: PublicLoc
             wallet: `/login?returnTo=${encodeURIComponent("/wallet")}`,
             me: `/login?returnTo=${encodeURIComponent("/me")}`,
           },
-          signUpHref: "/onboarding",
+          signUpHref: "/register",
           signUpLabel: navT("signUpToEarn"),
         }}
       >

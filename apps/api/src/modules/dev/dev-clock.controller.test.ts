@@ -70,6 +70,13 @@ async function grantUnlockAt(id: string): Promise<Date> {
   return new Date(row.unlock_at);
 }
 
+async function releaseNoticeJobs(): Promise<number> {
+  const result = await db.execute<{ n: number }>(
+    sql`SELECT count(*)::int AS n FROM pgboss.job WHERE name = 'ledger.release_notices'`,
+  );
+  return result.rows[0]?.n ?? 0;
+}
+
 async function latestAuditRow(
   userId: string,
 ): Promise<{ action: string; detail: Record<string, unknown> } | undefined> {
@@ -127,6 +134,33 @@ describe("POST /api/dev/clock/release-pending", () => {
     expect(audit?.detail).toMatchObject({ released: 1 });
   });
 
+  it("announces the release at once, as the scheduled tick would, only when something was released", async () => {
+    const session = await sessionFor(app);
+    const before = await releaseNoticeJobs();
+
+    // Nothing pending: no announcement run is queued.
+    const none = await app.inject({
+      method: "POST",
+      url: "/api/dev/clock/release-pending",
+      headers: { cookie: session.cookie },
+      payload: {},
+    });
+    expect(none.statusCode).toBe(200);
+    expect(await releaseNoticeJobs()).toBe(before);
+
+    // A pending grant released now queues the same job the worker runs every minute, which sends
+    // "points unlocked" (a release by this tool is listed by the ledger like any due release).
+    await seedPendingGrant(session.userId, 48);
+    const released = await app.inject({
+      method: "POST",
+      url: "/api/dev/clock/release-pending",
+      headers: { cookie: session.cookie },
+      payload: {},
+    });
+    expect(released.json()).toMatchObject({ released: 1 });
+    expect(await releaseNoticeJobs()).toBe(before + 1);
+  });
+
   it("refuses an anonymous caller with 401, not 403 (F30)", async () => {
     const response = await app.inject({
       method: "POST",
@@ -177,6 +211,21 @@ describe("POST /api/dev/clock/advance-days", () => {
     expect(response.statusCode).toBe(200);
     expect((rawJson(response) as { shifted: number }).shifted).toBe(1);
     expect((await grantUnlockAt(grantId)).getTime()).toBeLessThanOrEqual(Date.now());
+  });
+
+  it("announces the release when the days pass a grant's unlock time", async () => {
+    const session = await sessionFor(app);
+    await seedPendingGrant(session.userId, 2);
+    const before = await releaseNoticeJobs();
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/dev/clock/advance-days",
+      headers: { cookie: session.cookie },
+      payload: { days: 1 },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(await releaseNoticeJobs()).toBe(before + 1);
   });
 
   it("rejects a non-positive day count as a 400, not a silent no-op", async () => {

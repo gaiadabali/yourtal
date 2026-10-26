@@ -4,6 +4,7 @@ import { getNotifications } from "@/features/notifications/notifications-data";
 import { RumReporterLoader } from "@/features/rum/rum-reporter-loader";
 import { getDisplayLocale } from "@/i18n/get-locale";
 import { getMeProfile } from "@/features/me/me-data";
+import { getRegion } from "@/features/region/get-region";
 import * as z from "zod";
 import { apiFetch } from "@/lib/api/api-fetch";
 import { readThemeCookie } from "@/lib/api/session-cookies";
@@ -16,6 +17,7 @@ const STAFF_CONSOLE_ROLES: ReadonlySet<string> = new Set([
   "ops",
 ]);
 const streakResponseSchema = z.object({ currentLength: z.number().int().min(0) });
+import { getNavTranslator } from "./nav-i18n";
 import { ViewerShell } from "./viewer-shell";
 
 export interface AppShellProps {
@@ -60,6 +62,38 @@ export async function AppShell({ children }: AppShellProps) {
         hasStaff: me.data.staffRoles.some((role) => STAFF_CONSOLE_ROLES.has(role)),
       }
     : undefined;
+  // A visitor on a public `(app)` page (Shorts, search) has no session: the notifications read is a
+  // 401. They get the signed-out shell, as on the public pages: a sign-up button in place of a
+  // points chip that reads 0 and a bell that opens "Nothing yet" with no way to sign in.
+  const signedOut =
+    !notifications.ok && notifications.error.kind === "http" && notifications.error.status === 401;
+  if (signedOut) {
+    const home = `/${(await getRegion()).toLowerCase()}`;
+    return (
+      <>
+        <RumReporterLoader />
+        <ViewerShell
+          locale={locale}
+          availablePoints={0}
+          theme={theme}
+          signedOut={{
+            homeHref: home,
+            hrefs: {
+              home,
+              shorts: "/shorts",
+              store: `${home}/rewards`,
+              wallet: `/login?returnTo=${encodeURIComponent("/wallet")}`,
+              me: `/login?returnTo=${encodeURIComponent("/me")}`,
+            },
+            signUpHref: "/register",
+            signUpLabel: getNavTranslator(locale)("signUpToEarn"),
+          }}
+        >
+          {children}
+        </ViewerShell>
+      </>
+    );
+  }
   return (
     <>
       <RumReporterLoader />

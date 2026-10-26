@@ -53,7 +53,7 @@ export class MeController {
       new Date(),
     );
     if (result.isErr()) throw mapMeErrorToHttpException(result.error);
-    return { ...result.value, email: await this.emails.emailFor(userId) };
+    return { ...result.value, ...(await this.emailFields(userId)) };
   }
 
   @NotValueMoving(
@@ -81,6 +81,14 @@ export class MeController {
       new Date(),
     );
     if (refreshed.isErr()) throw mapMeErrorToHttpException(refreshed.error);
-    return { ...refreshed.value, email: await this.emails.emailFor(userId) };
+    return { ...refreshed.value, ...(await this.emailFields(userId)) };
+  }
+
+  /** The sign-in email and whether it is verified (F126: points need a verified email). */
+  private async emailFields(
+    userId: string,
+  ): Promise<{ email: string | null; emailVerified: boolean }> {
+    const state = await this.emails.stateFor(userId);
+    return { email: state?.email ?? null, emailVerified: state?.verified ?? false };
   }
 }

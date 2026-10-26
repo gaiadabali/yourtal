@@ -21,6 +21,8 @@ export const meResponseSchema = z.object({
   staffRoles: z.array(z.string()),
   /** 13.18.b: the sign-in email for the account menu. Optional so older fixtures still parse. */
   email: z.string().nullable().optional(),
+  /** F126: whether the sign-in email is verified. Optional so older fixtures still parse. */
+  emailVerified: z.boolean().optional(),
 });
 
 export type MeResponse = z.infer<typeof meResponseSchema>;

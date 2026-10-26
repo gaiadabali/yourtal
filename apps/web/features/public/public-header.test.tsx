@@ -8,7 +8,7 @@ describe("PublicHeader", () => {
     render(<PublicHeader locale="id-ID" homeHref="/id" currentPublicLocale="id" />);
     expect(screen.getByRole("link", { name: "YourTal" })).toHaveAttribute("href", "/id");
     const signUp = screen.getByRole("link", { name: "Daftar gratis" });
-    expect(signUp).toHaveAttribute("href", "/onboarding");
+    expect(signUp).toHaveAttribute("href", "/register");
   });
 
   it("offers a log-in link, pointed at /au until /login exists (task 3.5.c)", () => {

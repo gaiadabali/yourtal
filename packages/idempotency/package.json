@@ -20,12 +20,12 @@
   },
   "dependencies": {
     "pg": "8.23.0",
-    "zod": "4.6.5"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/pg": "8.23.1",
     "@yourtal/tsconfig": "workspace:*",
     "typescript": "6.0.3",
-    "vitest": "5.0.1"
+    "vitest": "5.0.5"
   }
 }

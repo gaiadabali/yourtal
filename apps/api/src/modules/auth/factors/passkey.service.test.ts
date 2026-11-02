@@ -40,7 +40,13 @@ async function registered(userId: string): Promise<SoftAuthenticator> {
   const device = new SoftAuthenticator(TEST_RP_ID, TEST_ORIGIN);
   const options = await service.registrationOptions(userId);
   if (options.isErr()) throw new Error(options.error.type);
-  const done = await service.register(userId, device.register(options.value), "Phone", NOW);
+  const done = await service.register(
+    userId,
+    device.register(options.value),
+    "Phone",
+    NOW,
+    "session-hash",
+  );
   if (done.isErr()) throw new Error(done.error.type);
   return device;
 }
@@ -67,7 +73,13 @@ describe("registering a passkey", () => {
     });
 
     const device = new SoftAuthenticator(TEST_RP_ID, TEST_ORIGIN);
-    const done = await service.register(ANA, device.register(options.value), "Phone", NOW);
+    const done = await service.register(
+      ANA,
+      device.register(options.value),
+      "Phone",
+      NOW,
+      "session-hash",
+    );
     expect(done.isOk()).toBe(true);
     const [stored] = await passkeys.listForUser(ANA);
     expect(stored).toMatchObject({
@@ -77,15 +89,43 @@ describe("registering a passkey", () => {
     });
   });
 
+  it("stores nothing for a session a reset ended meanwhile", async () => {
+    const options = await service.registrationOptions(ANA);
+    if (options.isErr()) throw new Error(options.error.type);
+    credentials.endedSessions.add("ended-session");
+    const device = new SoftAuthenticator(TEST_RP_ID, TEST_ORIGIN);
+    const done = await service.register(
+      ANA,
+      device.register(options.value),
+      "Phone",
+      NOW,
+      "ended-session",
+    );
+    expect(done.isErr() && done.error.type).toBe("session_invalid");
+    expect(await passkeys.listForUser(ANA)).toEqual([]);
+  });
+
   it("refuses an answer from another origin, and the challenge is then spent", async () => {
     const options = await service.registrationOptions(ANA);
     if (options.isErr()) throw new Error(options.error.type);
     const phishing = new SoftAuthenticator(TEST_RP_ID, "https://yourtal.test.evil.example");
-    const refused = await service.register(ANA, phishing.register(options.value), undefined, NOW);
+    const refused = await service.register(
+      ANA,
+      phishing.register(options.value),
+      undefined,
+      NOW,
+      "session-hash",
+    );
     expect(refused.isErr() && refused.error.type).toBe("factor_invalid");
 
     const honest = new SoftAuthenticator(TEST_RP_ID, TEST_ORIGIN);
-    const late = await service.register(ANA, honest.register(options.value), undefined, NOW);
+    const late = await service.register(
+      ANA,
+      honest.register(options.value),
+      undefined,
+      NOW,
+      "session-hash",
+    );
     expect(late.isErr() && late.error.type).toBe("factor_invalid");
     expect(await passkeys.listForUser(ANA)).toHaveLength(0);
   });

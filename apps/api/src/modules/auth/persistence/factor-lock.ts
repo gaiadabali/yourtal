@@ -1,8 +1,9 @@
-import { and, eq, isNotNull } from "drizzle-orm";
+import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import { PASSWORD_CREDENTIAL_KIND, TOTP_CREDENTIAL_KIND } from "./credential.repository";
 import { credentials } from "./schema/credential.table";
 import { passkeys } from "./schema/passkey.table";
+import { sessions } from "./schema/session.table";
 
 /**
  * The account's sign-in methods change under one lock: its `password`
@@ -21,6 +22,24 @@ export async function lockAccount(tx: Tx, userId: string, mode: "update" | "shar
     .from(credentials)
     .where(and(eq(credentials.userId, userId), eq(credentials.kind, PASSWORD_CREDENTIAL_KIND)))
     .for(mode);
+}
+
+/**
+ * Whether the session adding a factor is still live, read under the account
+ * lock: a reset revokes sessions under the same lock, so a factor checked
+ * against a session before the reset cannot be stored after it.
+ */
+export async function sessionStillLive(
+  tx: Tx,
+  userId: string,
+  sessionId: string,
+): Promise<boolean> {
+  const [row] = await tx
+    .select({ id: sessions.id })
+    .from(sessions)
+    .where(and(eq(sessions.id, sessionId), eq(sessions.userId, userId), isNull(sessions.revokedAt)))
+    .for("share");
+  return row !== undefined;
 }
 
 /** Any passkey, or a switched-on authenticator app. */

@@ -8,6 +8,9 @@ export const TOTP_CREDENTIAL_KIND = "totp";
 /** Marks an account that has passkeys; the keys are in `identity.passkey`. */
 export const PASSKEY_CREDENTIAL_KIND = "passkey";
 
+/** What storing a factor came to; `session_ended`: the adding session was revoked. */
+export type StoreFactorOutcome = "stored" | "refused" | "session_ended";
+
 export interface Credential {
   readonly userId: string;
   readonly kind: string;
@@ -79,10 +82,12 @@ export interface CredentialRepository {
 
   /**
    * Writes a credential that is already confirmed (an authenticator app after
-   * its first code). Returns `false`, changing nothing, when one of this kind
-   * is already verified (switched on). Like a passkey's `create`, it opens the
-   * factor window (to `windowUntil`) when the account had no factor, decided
-   * under the account lock in the same transaction.
+   * its first code). `refused`, changing nothing, when one of this kind is
+   * already verified (switched on); `session_ended` when the adding session
+   * (`sessionId`, its hash) was revoked meanwhile, e.g. by a password reset.
+   * Like a passkey's `create`, it opens the factor window (to `windowUntil`)
+   * when the account had no factor, decided under the account lock in the
+   * same transaction.
    */
   putVerified(
     input: {
@@ -93,19 +98,20 @@ export interface CredentialRepository {
       verifiedAt: Date;
     },
     windowUntil: Date,
-  ): Promise<boolean>;
+    sessionId: string,
+  ): Promise<StoreFactorOutcome>;
 
   /** Whether any account has a verified credential of this kind (a boot check). */
   anyVerified(kind: string): Promise<boolean>;
 
   /**
-   * Under the account lock, in one transaction: removes every passkey (the
-   * marker row, which cascades to the keys) and the authenticator app, closes
-   * the factor window, and ends every session. Returns how many sign-in
-   * methods it removed.
+   * Only while the factor window is open (read under the account lock), in
+   * one transaction: removes every passkey (the marker row, which cascades to
+   * the keys) and the authenticator app, closes the window, and ends every
+   * session. Returns how many sign-in methods it removed; 0 when closed.
    */
   removeAllFactors(userId: string, now: Date): Promise<number>;
 
-  /** Returns `false` when there was nothing to delete. */
+  /** Returns `false` when there was nothing to delete. Under the account lock. */
   deleteByUserAndKind(userId: string, kind: string): Promise<boolean>;
 }

@@ -172,6 +172,15 @@ describe("enrolment", () => {
     expect(row?.secretHash).not.toContain(enrolled.value.secret);
   });
 
+  it("is not switched on for a session a reset ended meanwhile", async () => {
+    const enrolled = await totp.enrol(USER, SESSION);
+    if (enrolled.isErr()) throw new Error(enrolled.error.type);
+    credentials.endedSessions.add(SESSION);
+    const confirmed = await totp.confirm(USER, SESSION, totpCodeAt(enrolled.value.secret, T0), T0);
+    expect(confirmed.isErr() && confirmed.error.type).toBe("session_invalid");
+    expect(await totp.isEnabled(USER)).toBe(false);
+  });
+
   it("will not replace an app that is switched on", async () => {
     await switchOnTotp();
     const again = await totp.enrol(USER, SESSION);
@@ -279,6 +288,7 @@ describe("the account's factor window and a password reset", () => {
       },
       "handle",
       later(HOUR),
+      SESSION,
     );
     expect((await credentials.findByUserAndKind(USER, "password"))?.factorsOpenUntil).toEqual(
       opened,
@@ -300,13 +310,14 @@ describe("the account's factor window and a password reset", () => {
       },
       "handle",
       later(60),
+      SESSION,
     );
     const signIn = await gate.afterPasswordReset(USER, later(71 * HOUR));
     expect(signIn.kind).toBe("session");
     expect(issuer.issued.at(-1)).toEqual({ userId: USER, amr: ["pwd"] });
     expect(await totp.isEnabled(USER)).toBe(false);
     expect(await passkeys.listForUser(USER)).toEqual([]);
-    expect(await window.isOpen(USER, later(71 * HOUR))).toBe(false);
+    expect((await credentials.findByUserAndKind(USER, "password"))?.factorsOpenUntil).toBeNull();
     expect(notifier.sent.map((sent) => sent.notice)).toEqual([
       { kind: "factors_removed_after_reset" },
       "reset_summary",

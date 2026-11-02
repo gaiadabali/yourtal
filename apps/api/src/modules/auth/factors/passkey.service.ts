@@ -106,6 +106,7 @@ export class PasskeyService {
     response: RegistrationResponseJSON,
     name: string | undefined,
     now: Date,
+    sessionHash: string,
   ): Outcome<StoredPasskey> {
     const settings = this.config.authFactors;
     if (settings === undefined) return err({ type: "factors_unavailable" });
@@ -135,9 +136,9 @@ export class PasskeyService {
     };
     // Registered already, to this account or another: refused, never moved.
     const windowUntil = new Date(now.getTime() + FACTOR_WINDOW_MS);
-    if (!(await this.passkeys.create(passkey, pending.handle, windowUntil))) {
-      return err({ type: "factor_invalid" });
-    }
+    const outcome = await this.passkeys.create(passkey, pending.handle, windowUntil, sessionHash);
+    if (outcome === "session_ended") return err({ type: "session_invalid" });
+    if (outcome === "refused") return err({ type: "factor_invalid" });
     const stored = await this.passkeys.findByCredentialId(passkey.credentialId);
     return stored === null ? err({ type: "factor_invalid" }) : ok(stored);
   }

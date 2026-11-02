@@ -9,6 +9,7 @@ import {
   RateLimit,
   SIGN_IN_METHOD_CHANGE_RATE_LIMIT,
 } from "../../../shared/rate-limit/rate-limit.decorator";
+import { hashOpaqueToken } from "../crypto/opaque-token";
 import { PASSKEY_AMR } from "../session/amr";
 import { SessionIssuer } from "../session/session-issuer";
 import { SessionService } from "../session/session.service";
@@ -95,9 +96,15 @@ export class PasskeyController {
     const now = new Date();
     const caller = await this.caller.resolve(request, now, "add_factor");
     if (caller.isErr()) throw mapFactorErrorToHttpException(caller.error);
-    const { userId } = caller.value;
+    const { userId, sessionToken } = caller.value;
     const response = body.response as RegistrationResponseJSON;
-    const result = await this.passkeys.register(userId, response, body.name, now);
+    const result = await this.passkeys.register(
+      userId,
+      response,
+      body.name,
+      now,
+      hashOpaqueToken(sessionToken),
+    );
     if (result.isErr()) throw mapFactorErrorToHttpException(result.error);
     await this.notifier.notify(userId, { kind: "passkey_added", name: result.value.name });
     return passkeySummary(result.value);

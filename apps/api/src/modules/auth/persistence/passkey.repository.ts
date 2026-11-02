@@ -1,3 +1,5 @@
+import type { StoreFactorOutcome } from "./credential.repository";
+
 export const PASSKEY_REPOSITORY = Symbol("PASSKEY_REPOSITORY");
 
 export interface StoredPasskey {
@@ -29,14 +31,20 @@ export interface PasskeyRepository {
   listForUser(userId: string): Promise<readonly StoredPasskey[]>;
   /**
    * Stores a passkey made for `userHandle`, writing the account's marker row
-   * (with that handle) if this is its first. `false`, storing nothing, when
+   * (with that handle) if this is its first. `refused`, storing nothing, when
    * the credential id is already registered (to anyone) or the account
    * already has a different handle (a concurrent first registration won).
-   * If the account had no factor when it was stored (decided under the
-   * account lock, see `factor-lock.ts`), its factor window is set to
-   * `windowUntil` in the same transaction.
+   * `session_ended` when the adding session (`sessionId`, its hash) was
+   * revoked meanwhile. If the account had no factor when it was stored
+   * (decided under the account lock, see `factor-lock.ts`), its factor window
+   * is set to `windowUntil` in the same transaction.
    */
-  create(passkey: NewPasskey, userHandle: string, windowUntil: Date): Promise<boolean>;
+  create(
+    passkey: NewPasskey,
+    userHandle: string,
+    windowUntil: Date,
+    sessionId: string,
+  ): Promise<StoreFactorOutcome>;
   /**
    * Moves the signature counter forward. `false` when another sign-in already
    * moved it as far: a non-zero counter must grow, so two sign-ins racing

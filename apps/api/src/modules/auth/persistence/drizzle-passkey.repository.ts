@@ -1,18 +1,23 @@
 import { and, asc, count, eq, lt, ne } from "drizzle-orm";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import { PASSKEY_CREDENTIAL_KIND, PASSWORD_CREDENTIAL_KIND } from "./credential.repository";
+import type { StoreFactorOutcome } from "./credential.repository";
 import type {
   NewPasskey,
   PasskeyRepository,
   RemovePasskeyOutcome,
   StoredPasskey,
 } from "./passkey.repository";
-import { hasAnyFactor, lockAccount, openFactorWindow } from "./factor-lock";
+import { hasAnyFactor, lockAccount, openFactorWindow, sessionStillLive } from "./factor-lock";
 import { credentials } from "./schema/credential.table";
 import { passkeys } from "./schema/passkey.table";
 
 /** Thrown inside `create`'s transaction to roll it back. */
-class NotStored extends Error {}
+class NotStored extends Error {
+  constructor(readonly outcome: StoreFactorOutcome) {
+    super(outcome);
+  }
+}
 
 export class DrizzlePasskeyRepository implements PasskeyRepository {
   constructor(private readonly db: AppDb) {}
@@ -52,10 +57,16 @@ export class DrizzlePasskeyRepository implements PasskeyRepository {
     return rows.map(toStored);
   }
 
-  async create(passkey: NewPasskey, userHandle: string, windowUntil: Date): Promise<boolean> {
+  async create(
+    passkey: NewPasskey,
+    userHandle: string,
+    windowUntil: Date,
+    sessionId: string,
+  ): Promise<StoreFactorOutcome> {
     return this.db
-      .transaction(async (tx) => {
+      .transaction(async (tx): Promise<StoreFactorOutcome> => {
         await lockAccount(tx, passkey.userId, "update");
+        if (!(await sessionStillLive(tx, passkey.userId, sessionId))) return "session_ended";
         const firstFactor = !(await hasAnyFactor(tx, passkey.userId));
         // The marker row arrives with the first passkey, never before.
         await tx
@@ -78,7 +89,7 @@ export class DrizzlePasskeyRepository implements PasskeyRepository {
           )
           .for("update");
         // Made for another handle: signing in with it would never match.
-        if (marker?.identifier !== userHandle) throw new NotStored();
+        if (marker?.identifier !== userHandle) throw new NotStored("refused");
         const inserted = await tx
           .insert(passkeys)
           .values({
@@ -94,12 +105,12 @@ export class DrizzlePasskeyRepository implements PasskeyRepository {
           .onConflictDoNothing({ target: passkeys.credentialId })
           .returning({ credentialId: passkeys.credentialId });
         // A duplicate credential id must not leave a fresh marker row behind.
-        if (inserted.length === 0) throw new NotStored();
+        if (inserted.length === 0) throw new NotStored("refused");
         if (firstFactor) await openFactorWindow(tx, passkey.userId, windowUntil);
-        return true;
+        return "stored";
       })
       .catch((cause: unknown) => {
-        if (cause instanceof NotStored) return false;
+        if (cause instanceof NotStored) return cause.outcome;
         throw cause;
       });
   }
@@ -121,8 +132,10 @@ export class DrizzlePasskeyRepository implements PasskeyRepository {
 
   async remove(userId: string, credentialId: string): Promise<RemovePasskeyOutcome> {
     return this.db.transaction(async (tx) => {
-      // Lock the account's credential rows so two removals cannot each see
-      // "another way in remains" and together leave none.
+      // The account lock first, in the order `create` takes it, then every
+      // credential row (a passkey-only account has no password row to lock)
+      // so two removals cannot each see "another way in remains".
+      await lockAccount(tx, userId, "update");
       const methods = await tx
         .select({ kind: credentials.kind })
         .from(credentials)

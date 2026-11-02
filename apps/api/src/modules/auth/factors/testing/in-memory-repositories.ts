@@ -3,7 +3,11 @@ import {
   PASSWORD_CREDENTIAL_KIND,
   TOTP_CREDENTIAL_KIND,
 } from "../../persistence/credential.repository";
-import type { Credential, CredentialRepository } from "../../persistence/credential.repository";
+import type {
+  Credential,
+  CredentialRepository,
+  StoreFactorOutcome,
+} from "../../persistence/credential.repository";
 import type {
   NewPasskey,
   PasskeyRepository,
@@ -14,6 +18,8 @@ import type {
 /** `identity.credential` in memory, for unit tests. */
 export class InMemoryCredentialRepository implements CredentialRepository {
   readonly rows = new Map<string, Credential>();
+  /** Session hashes a test has revoked; storing a factor for one is refused. */
+  readonly endedSessions = new Set<string>();
 
   private key(userId: string, kind: string): string {
     return `${userId}|${kind}`;
@@ -77,9 +83,11 @@ export class InMemoryCredentialRepository implements CredentialRepository {
       verifiedAt: Date;
     },
     windowUntil: Date,
-  ): Promise<boolean> {
+    sessionId: string,
+  ): Promise<StoreFactorOutcome> {
+    if (this.endedSessions.has(sessionId)) return Promise.resolve("session_ended");
     const row = this.rows.get(this.key(input.userId, input.kind));
-    if (row !== undefined && row.verifiedAt !== null) return Promise.resolve(false);
+    if (row !== undefined && row.verifiedAt !== null) return Promise.resolve("refused");
     const firstFactor = !this.hasFactor(input.userId);
     this.rows.set(this.key(input.userId, input.kind), {
       ...input,
@@ -87,7 +95,7 @@ export class InMemoryCredentialRepository implements CredentialRepository {
       factorsOpenUntil: null,
     });
     if (firstFactor) void this.setFactorsOpenUntil(input.userId, windowUntil);
-    return Promise.resolve(true);
+    return Promise.resolve("stored");
   }
 
   setFactorsOpenUntil(userId: string, until: Date | null): Promise<void> {
@@ -104,7 +112,10 @@ export class InMemoryCredentialRepository implements CredentialRepository {
   /** Also drops the in-memory passkeys when a `passkeys` fake is attached (the cascade). */
   onFactorsRemoved: ((userId: string) => void) | null = null;
 
-  async removeAllFactors(userId: string, _now: Date): Promise<number> {
+  async removeAllFactors(userId: string, now: Date): Promise<number> {
+    const until =
+      this.rows.get(this.key(userId, PASSWORD_CREDENTIAL_KIND))?.factorsOpenUntil ?? null;
+    if (until === null || until.getTime() <= now.getTime()) return 0;
     let removed = 0;
     for (const kind of [PASSKEY_CREDENTIAL_KIND, TOTP_CREDENTIAL_KIND]) {
       if (await this.deleteByUserAndKind(userId, kind)) removed += 1;
@@ -155,8 +166,14 @@ export class InMemoryPasskeyRepository implements PasskeyRepository {
     return Promise.resolve([...this.rows.values()].filter((row) => row.userId === userId));
   }
 
-  async create(passkey: NewPasskey, userHandle: string, windowUntil: Date): Promise<boolean> {
-    if (this.rows.has(passkey.credentialId)) return false;
+  async create(
+    passkey: NewPasskey,
+    userHandle: string,
+    windowUntil: Date,
+    sessionId: string,
+  ): Promise<StoreFactorOutcome> {
+    if (this.credentials.endedSessions.has(sessionId)) return "session_ended";
+    if (this.rows.has(passkey.credentialId)) return "refused";
     const firstFactor = !this.credentials.hasFactor(passkey.userId);
     await this.credentials.create({
       userId: passkey.userId,
@@ -164,10 +181,10 @@ export class InMemoryPasskeyRepository implements PasskeyRepository {
       identifier: userHandle,
       secretHash: "",
     });
-    if ((await this.userHandleOf(passkey.userId)) !== userHandle) return false;
+    if ((await this.userHandleOf(passkey.userId)) !== userHandle) return "refused";
     this.rows.set(passkey.credentialId, { ...passkey, createdAt: new Date(), lastUsedAt: null });
     if (firstFactor) await this.credentials.setFactorsOpenUntil(passkey.userId, windowUntil);
-    return true;
+    return "stored";
   }
 
   recordUse(credentialId: string, signCount: number, usedAt: Date): Promise<boolean> {

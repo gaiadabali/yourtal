@@ -1,6 +1,6 @@
 import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
-import { hasAnyFactor, lockAccount, openFactorWindow } from "./factor-lock";
+import { hasAnyFactor, lockAccount, openFactorWindow, sessionStillLive } from "./factor-lock";
 import { credentials } from "./schema/credential.table";
 import { sessions } from "./schema/session.table";
 import {
@@ -8,7 +8,7 @@ import {
   PASSWORD_CREDENTIAL_KIND,
   TOTP_CREDENTIAL_KIND,
 } from "./credential.repository";
-import type { Credential, CredentialRepository } from "./credential.repository";
+import type { Credential, CredentialRepository, StoreFactorOutcome } from "./credential.repository";
 
 export class DrizzleCredentialRepository implements CredentialRepository {
   constructor(private readonly db: AppDb) {}
@@ -80,9 +80,11 @@ export class DrizzleCredentialRepository implements CredentialRepository {
       verifiedAt: Date;
     },
     windowUntil: Date,
-  ): Promise<boolean> {
+    sessionId: string,
+  ): Promise<StoreFactorOutcome> {
     return this.db.transaction(async (tx) => {
       await lockAccount(tx, input.userId, "update");
+      if (!(await sessionStillLive(tx, input.userId, sessionId))) return "session_ended";
       const firstFactor = !(await hasAnyFactor(tx, input.userId));
       const written = await tx
         .insert(credentials)
@@ -98,9 +100,9 @@ export class DrizzleCredentialRepository implements CredentialRepository {
           setWhere: isNull(credentials.verifiedAt),
         })
         .returning({ userId: credentials.userId });
-      if (written.length === 0) return false;
+      if (written.length === 0) return "refused";
       if (firstFactor) await openFactorWindow(tx, input.userId, windowUntil);
-      return true;
+      return "stored";
     });
   }
 
@@ -109,6 +111,13 @@ export class DrizzleCredentialRepository implements CredentialRepository {
       // FOR UPDATE: a passkey or code sign-in holds FOR SHARE while it checks
       // its factor and writes its session, so none slips in around this.
       await lockAccount(tx, userId, "update");
+      // The window is read under the lock, so a reset never acts on a stale one.
+      const [password] = await tx
+        .select({ until: credentials.factorsOpenUntil })
+        .from(credentials)
+        .where(and(eq(credentials.userId, userId), eq(credentials.kind, PASSWORD_CREDENTIAL_KIND)));
+      const until = password?.until ?? null;
+      if (until === null || until.getTime() <= now.getTime()) return 0;
       const removed = await tx
         .delete(credentials)
         .where(
@@ -140,11 +149,16 @@ export class DrizzleCredentialRepository implements CredentialRepository {
   }
 
   async deleteByUserAndKind(userId: string, kind: string): Promise<boolean> {
-    const deleted = await this.db
-      .delete(credentials)
-      .where(and(eq(credentials.userId, userId), eq(credentials.kind, kind)))
-      .returning({ userId: credentials.userId });
-    return deleted.length > 0;
+    // Under the account lock, so a code sign-in checking the app (FOR SHARE)
+    // either finishes first or sees it gone.
+    return this.db.transaction(async (tx) => {
+      await lockAccount(tx, userId, "update");
+      const deleted = await tx
+        .delete(credentials)
+        .where(and(eq(credentials.userId, userId), eq(credentials.kind, kind)))
+        .returning({ userId: credentials.userId });
+      return deleted.length > 0;
+    });
   }
 
   async markVerified(userId: string, kind: string, verifiedAt: Date): Promise<boolean> {

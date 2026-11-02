@@ -1,9 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import {
-  CREDENTIAL_REPOSITORY,
-  PASSWORD_CREDENTIAL_KIND,
-  TOTP_CREDENTIAL_KIND,
-} from "../persistence/credential.repository";
+import { CREDENTIAL_REPOSITORY, TOTP_CREDENTIAL_KIND } from "../persistence/credential.repository";
 import type { CredentialRepository } from "../persistence/credential.repository";
 import { PASSKEY_REPOSITORY } from "../persistence/passkey.repository";
 import type { PasskeyRepository } from "../persistence/passkey.repository";
@@ -30,16 +26,11 @@ export class FactorWindow {
     @Inject(PASSKEY_REPOSITORY) private readonly passkeys: PasskeyRepository,
   ) {}
 
-  async isOpen(userId: string, now: Date): Promise<boolean> {
-    const password = await this.credentials.findByUserAndKind(userId, PASSWORD_CREDENTIAL_KIND);
-    const until = password?.factorsOpenUntil ?? null;
-    return until !== null && until.getTime() > now.getTime();
-  }
-
   /**
-   * The mailbox proof (a password reset) inside the window: every passkey and
+   * The mailbox proof (a password reset): inside the window, every passkey and
    * app goes, with every session (a planted passkey's included), in one
-   * transaction under the account lock. True when it removed anything.
+   * transaction under the account lock, which is also where the window is
+   * read. True when it removed anything.
    */
   async removeEverything(userId: string, now: Date): Promise<boolean> {
     return (await this.credentials.removeAllFactors(userId, now)) > 0;

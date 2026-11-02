@@ -72,10 +72,8 @@ export class SecondFactorGate {
    * sent the list of what can still sign them in.
    */
   async afterPasswordReset(userId: string, now: Date): Promise<PasswordSignIn> {
-    if (await this.window.isOpen(userId, now)) {
-      if (await this.window.removeEverything(userId, now)) {
-        await this.notifier.notify(userId, { kind: "factors_removed_after_reset" });
-      }
+    if (await this.window.removeEverything(userId, now)) {
+      await this.notifier.notify(userId, { kind: "factors_removed_after_reset" });
     }
     await this.notifier.afterPasswordReset(userId);
     return this.afterPassword(userId, now);

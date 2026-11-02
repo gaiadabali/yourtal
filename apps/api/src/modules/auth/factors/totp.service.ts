@@ -120,9 +120,11 @@ export class TotpService implements OnApplicationBootstrap {
         verifiedAt: now,
       },
       new Date(now.getTime() + FACTOR_WINDOW_MS),
+      sessionHash,
     );
     await this.store.dropEnrolment(sessionHash);
-    return written ? ok(undefined) : err({ type: "totp_already_enabled" });
+    if (written === "session_ended") return err({ type: "session_invalid" });
+    return written === "stored" ? ok(undefined) : err({ type: "totp_already_enabled" });
   }
 
   /** Checks a code against a switched-on authenticator app. */

@@ -1,5 +1,6 @@
 import { and, eq, isNull, lt, ne } from "drizzle-orm";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
+import { lockAccount } from "./factor-lock";
 import { sessions } from "./schema/session.table";
 import type { SessionRepository, StoredSession } from "./session.repository";
 
@@ -42,10 +43,15 @@ export class DrizzleSessionRepository implements SessionRepository {
   }
 
   async revokeAllForUser(userId: string, now: Date): Promise<void> {
-    await this.db
-      .update(sessions)
-      .set({ revokedAt: now })
-      .where(and(eq(sessions.userId, userId), isNull(sessions.revokedAt)));
+    // Under the account lock, so a factor being stored for one of these
+    // sessions (which re-checks it under that lock) is saved before or refused.
+    await this.db.transaction(async (tx) => {
+      await lockAccount(tx, userId, "update");
+      await tx
+        .update(sessions)
+        .set({ revokedAt: now })
+        .where(and(eq(sessions.userId, userId), isNull(sessions.revokedAt)));
+    });
   }
 
   async revokeOthers(userId: string, keepId: string, now: Date): Promise<void> {

@@ -47,9 +47,14 @@ export class SecondFactorGate {
       // any account has an app (TotpService.onApplicationBootstrap).
       this.logger.warn(`authenticator app on for ${userId} but codes are unavailable here`);
     }
-    if (!totpOn || !this.totp.available()) {
+    if (!this.totp.available()) {
       const token = await this.sessions.issue(userId, now, PASSWORD_AMR);
       return { kind: "session", token, userId };
+    }
+    if (!totpOn) {
+      // Null when the app was switched on since the read above: ask for a code.
+      const token = await this.sessions.issueUnlessAppOn(userId, now, PASSWORD_AMR);
+      if (token !== null) return { kind: "session", token, userId };
     }
     const { token, hash } = issueOpaqueToken();
     await this.store.putPending(hash, { userId, amr: PASSWORD_AMR }, CEREMONY_TTL_SECONDS);

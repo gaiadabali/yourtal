@@ -28,6 +28,11 @@ export class RecordingSessionIssuer {
     return Promise.resolve(`session-${String(this.issued.length)}`);
   }
 
+  /** Like `issueWhileFactorRemains`, the lock is the database's job. */
+  issueUnlessAppOn(userId: string, now: Date, amr: readonly AuthMethod[]): Promise<string> {
+    return this.issue(userId, now, amr);
+  }
+
   /** Factor presence is the repositories' job; the fake records like `issue`. */
   issueWhileFactorRemains(
     userId: string,

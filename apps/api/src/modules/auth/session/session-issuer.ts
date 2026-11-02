@@ -37,6 +37,27 @@ export class SessionIssuer {
   }
 
   /**
+   * For a password sign-in on an account without an authenticator app:
+   * writes the session only if the app is still off, under the account lock
+   * `FOR SHARE`. Switching the app on holds it `FOR UPDATE` and then ends
+   * other sessions, so a password-only session cannot appear after that.
+   * Null: the app is on now, and a code is needed.
+   */
+  async issueUnlessAppOn(
+    userId: string,
+    now: Date,
+    amr: readonly AuthMethod[],
+  ): Promise<string | null> {
+    const roles = await this.staffRoles.listForUser(userId);
+    const kind = roles.length > 0 ? "staff" : "consumer";
+    return this.db.transaction(async (tx) => {
+      await lockAccount(tx, userId, "share");
+      if (await factorStillPresent(tx, userId, { kind: "totp" })) return null;
+      return this.sessions.issue(userId, now, kind, amr, now, tx);
+    });
+  }
+
+  /**
    * For a passkey or code sign-in: writes the session only if the factor it
    * used still exists, holding the account lock `FOR SHARE` meanwhile. A
    * password reset removing every factor holds it `FOR UPDATE`, so a sign-in

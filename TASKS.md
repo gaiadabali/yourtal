@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | ✅ done | 23/23 | 105/105 | `██████████` 100% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 19/25 | 85/107 | `████████░░`  79% |
-| **All** | | | **125/131** | **632/654** | `██████████`  97% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 20/25 | 87/107 | `████████░░`  81% |
+| **All** | | | **126/131** | **634/654** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1766,9 +1766,9 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
   - [ ] 14.22.r The first visitor after a release can get an empty public landing page: warm `/`, `/au`, `/id` after the reload, or render them dynamically (group 5.13.r, V5)
 - [x] **14.24 main is green and staging deploys again** (group 1.31) · A · needs: — — ✅ 2026-10-26 781f983a
   - [x] 14.24.a Quality and the Release gate had failed on every push since 2026-10-22 (an unneeded type assertion in the fake ledger, an unformatted docs/28), so staging stayed on ef9fc40c → 781f983a; Release green, staging /api/health reports 781f983a
-- [ ] **14.25 A patched Next.js** (group 1.32) · A + B · needs: 14.24
-  - [ ] 14.25.a `next` 16.4.3 or later (the daily Security audit flags 16.3.8), zod ≥ 4.6.6 and undici, through pnpm; Security passes
-  - [ ] 14.25.b The Performance budget workflow is red on main (initial JS over 170 KB gz): find since when and why
+- [x] **14.25 A patched Next.js** (group 1.32) · A + B · needs: 14.24 — 🔄 2026-11-02 — ✅ 2026-11-02 136b2b50
+  - [x] 14.25.a `next` 16.4.3 or later (the daily Security audit flags 16.3.8), zod ≥ 4.6.6 and undici, through pnpm; Security passes → 7574bd07
+  - [x] 14.25.b The Performance budget workflow is red on main (initial JS over 170 KB gz): find since when and why → 098a89ff: since ef9fc40c (F126) zod reached the player; fixed, /watch/[campaignId] 195.9 KB gz
 
 ## Not in this plan (deferred)
 
@@ -1859,6 +1859,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-11-02 · group · **14.25** (group 1.32): Next 16.4.3, zod 4.6.7, undici 8.12.3 and transitive patches, audit clean (deepmerge low ignored, no fix); the player's first-load JS back under the 200 KB gate (zod kept out of the watch route) · 136b2b50
 - 2026-10-21 · g5 · **14.13** (group 5.10): point packages in tiers priced by the ledger (never below B, F122), bought in Studio with GST on top; 50/80/100% alerts for packages and campaign budgets by email and in Studio, rewards stopping at 100%; checked on staging · ee8c91e2
 - 2026-10-21 · 14.18 (group 1.26) done: invitation erasure matches only the password credential’s email (8ccab08c).
 - 2026-10-21 · g5 · **14.8** (group 5.2): Stripe Connect payouts in AU on the payment simulation: brands and charities onboard, the weekly statement job (14.8.d, with a ledger fix so statements stop re-claiming each other's money), transfer and payout once per approved statement, read-back and two-person staff retry; a demo brand was paid on staging · 033fae42

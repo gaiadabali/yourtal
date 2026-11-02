@@ -13,7 +13,7 @@ import { CheckpointOverlay, CheckpointStage, PLAYER_BOX_CLASS } from "./checkpoi
 import { EarnMoment, NotEarningMoment } from "./earn-moment";
 import { identityCheckKey, nonEarningReasonKey } from "./non-earning-reason";
 import { IdentityCheckPrompt } from "./identity-check-prompt";
-import { IDENTITY_CHECK_REQUIRED } from "@yourtal/contracts/identity/earning-check";
+import { IDENTITY_CHECK_REQUIRED } from "@yourtal/contracts/identity/identity-check-code";
 import { playerChapters } from "./player-chapters";
 import { PlayIcon } from "./player-icons";
 import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";

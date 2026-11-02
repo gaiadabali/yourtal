@@ -39,6 +39,23 @@ SELECT id, voucher_id, merchant_id, amount_minor, currency, merchant_order_ref,
        state, expires_at, created_at, resolved_at, order_total_minor, device_id
 FROM voucher.authorization WHERE merchant_id = $1 AND merchant_order_ref = $2;
 
+-- name: LookupOrderForMerchant :one
+-- 2.8 T3, the merchant's order lookup: a pure read by (merchant_id,
+-- merchant_order_ref). Both predicates are in the WHERE, so another
+-- merchant's order and an unknown reference are the same `pgx.ErrNoRows`.
+-- `state` is computed the way ResolveAuthorization decides it: a hold past
+-- its expires_at reads as 'expired' even while its row still says 'held',
+-- because the sweeper is tidying, not policy. The capture is LEFT-joined
+-- through the UNIQUE authorization_id, so at most one row comes back.
+SELECT a.id,
+       (CASE WHEN a.state = 'held' AND a.expires_at <= now() THEN 'expired'
+             ELSE a.state END)::text AS state,
+       a.amount_minor, a.expires_at,
+       c.receipt_id, c.amount_minor AS captured_minor
+FROM voucher.authorization a
+LEFT JOIN voucher.capture c ON c.authorization_id = a.id
+WHERE a.merchant_id = $1 AND a.merchant_order_ref = $2;
+
 -- name: ResolveAuthorization :one
 -- `state = 'held' AND expires_at > now()` is the whole expiry policy, applied
 -- at the moment of use rather than trusted to a sweeper. A sweeper that

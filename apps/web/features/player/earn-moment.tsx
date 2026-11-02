@@ -1,6 +1,6 @@
 import { PointsChip } from "@yourtal/ui/points-chip";
 import { identityCheckKey, nonEarningReasonKey } from "./non-earning-reason";
-import { IDENTITY_CHECK_REQUIRED } from "@yourtal/contracts/identity/earning-check";
+import { IDENTITY_CHECK_REQUIRED } from "@yourtal/contracts/identity/identity-check-code";
 import type { IdentityCheckStep } from "@yourtal/contracts/identity/earning-check";
 import { IdentityCheckPrompt } from "./identity-check-prompt";
 import { REGION_TIME_ZONE } from "@/features/region/region-time-zone";

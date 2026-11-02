@@ -28,6 +28,17 @@ overrides:
   # that skips % escaping on Windows. vite comes in only through vitest (dev-only).
   # Drop this once vitest itself resolves vite >= 8.3.3.
   "vite@>=8.3.0 <8.3.3": "8.3.4"
+  # 1.32: advisories on transitive pins whose parents have not moved yet
+  # (serwist, nestjs, vitest, jsdom, ajv, eslint). Drop each once its parent resolves a patched version.
+  "next@>=16.0.0 <16.4.1": "16.4.3"
+  "zod@<4.6.6": "4.6.7"
+  "undici@<8.12.2": "8.12.3"
+  "fastify@<5.12.6": "5.12.7"
+  "@vitest/mocker@<5.0.3": "5.0.5"
+  "fast-uri@>=3.0.0 <3.1.9": "3.1.9"
+  "fast-uri@>=4.0.0 <4.2.3": "4.2.3"
+  "minimatch@<11.0.1": "11.0.3"
+  "glob@>=9.0.0 <14.0.2": "14.0.3"
 auditConfig:
   ignoreGhsas:
     # GHSA-vfj7-8cjw-p6xm (high): braces <=3.0.3 stack exhaustion on deeply
@@ -35,3 +46,8 @@ auditConfig:
     # as a dev-time dep (@next/eslint-plugin-next > fast-glob > micromatch),
     # never on untrusted input. Remove once a fixed braces ships.
     - GHSA-vfj7-8cjw-p6xm
+    # GHSA-gcqx-w48m-w2h4 (low): deepmerge <=4.3.1 prototype poisoning in
+    # mergeObject(); no patched release (2026-11-02). Reached only through
+    # nestjs-zod, merging our own schema objects, never request input.
+    # Remove once a fixed deepmerge ships.
+    - GHSA-gcqx-w48m-w2h4

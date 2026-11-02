@@ -1,4 +1,4 @@
-h1:009VzCgo2CY3MaCQ/acCoo59YVu4kZRjtvTErLsP8Yk=
+h1:qjzLKYzltVMHI14xwjQRL9wUCPN+S1HV1R4AMmat/uY=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -140,4 +140,7 @@ h1:009VzCgo2CY3MaCQ/acCoo59YVu4kZRjtvTErLsP8Yk=
 20261020210034_disbursement_staff_retry.sql h1:7jWoamEk0M/2sdYnV+ibQNhVlDkfC+QS3XB0QgnOB/0=
 20261021025420_oidc_provider.sql h1:Qysi9IdrOYlzXt7CPGj+ft4nWuLoL7rDSrFMYAjJCk8=
 20261021042150_receipt_packages.sql h1:lAybEv1F5m4GIXGv2lS8QIw2GKSdHYDJkHLH6Rkh+Ts=
-20261021042347_identity_passkey_totp_amr.sql h1:97LcHp4xYc27Klg5dPO7g4rGovSTH8QQ+y6njflSb9M=
+20261021062832_receipt_grant_from_package.sql h1:UkB6acNiIOoaIrkA2CPH5bv0/rGAdqCKRkqmFjElg/w=
+20261021150700_points_identity_check_setting.sql h1:GvNSVuSKZkgm6GoENUsv3fGnYI4pUVYm8pDjvxMPSa4=
+20261022090000_listing_redeem_partner.sql h1:yF3B9ZugvJ4S3vtn+YBG8dj51R2/aHZ2/+jNXqa35DI=
+20261102090000_identity_passkey_totp_amr.sql h1:p2/puMm72DqZPoYHCU016rQH4tc9Q6WdLUXLgFdzlgE=

@@ -74,9 +74,9 @@ ALTER TABLE identity.session
 -- The account's factor window (on its 'password' row, one per account). When
 -- an account with no passkey and no authenticator app gets its first one
 -- from a session signed in with a password alone, this is set to 72 hours
--- later; more factors added meanwhile do not move it, and it is cleared when
--- the account has no factor left. While it is open, a password reset (which
--- proves the mailbox) removes every passkey and app and ends every session,
+-- later; more factors added meanwhile do not move it, and removing a factor
+-- does not clear it. While it is open, a password reset (which proves the
+-- mailbox) removes every passkey and app, ends every session and clears it,
 -- so a factor planted with a phished password, and anything added with it,
 -- comes off. NULL: closed.
 ALTER TABLE identity.credential ADD COLUMN factors_open_until timestamptz;

@@ -5,6 +5,9 @@ import type { ReactNode } from "react";
 import type { PresentedQuestion } from "@yourtal/contracts/question/presented-question";
 import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
 
+/** Past the server's 700 ms minimum read time, so a skip is not flagged as implausible timing. */
+const SKIP_AFTER_MS = 800;
+
 /** The video box. Only ~220px tall on a phone, which is why a question sits under it there. */
 export const PLAYER_BOX_CLASS = "relative aspect-video w-full overflow-hidden rounded-lg bg-fg";
 
@@ -24,7 +27,7 @@ export interface CheckpointOverlayProps {
   /** From the server's own present response — F10's 30s answer window. */
   answerTimerMs: number;
   /** `timedOut` is true only when the timer ran out on a question the viewer could have answered. */
-  onAnswer: (selectedOptionId: string | null, timedOut: boolean) => void;
+  onAnswer: (selectedOptionId: string | null, timedOut: boolean, answeredBool?: boolean) => void;
   locale: SupportedLocale;
 }
 
@@ -35,11 +38,11 @@ export interface CheckpointOverlayProps {
  * nothing) the moment it reaches zero, rather than blocking playback
  * indefinitely.
  *
- * Every demo campaign's bank is `multiple_choice` only
- * (`packages/media/src/demo-media.ts`); the other four question types render
- * a plain wait-out-the-timer fallback rather than dead-ending the session —
- * building their full UI here belongs with 6.x's checkpoint survey work,
- * which already has one, in a different namespace.
+ * `multiple_choice` and `true_false` render here. Any other type (none is served
+ * today) is skipped with no notice: the answer goes in as "no selection, not timed out",
+ * which the server must still count to let the session complete (it is
+ * unanswered, so no accuracy bonus for that session). Their UI belongs with
+ * 6.x's checkpoint survey work.
  */
 export function CheckpointOverlay({
   question,
@@ -54,15 +57,18 @@ export function CheckpointOverlay({
   const [submitting, setSubmitting] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(Math.ceil(answerTimerMs / 1000));
   const selectedRef = useRef<string | null>(null);
+  const selectedBoolRef = useRef<boolean | null>(null);
   const submittedRef = useRef(false);
 
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const supported = question.type === "multiple_choice" || question.type === "true_false";
 
-  const submit = (optionId: string | null, timedOut = false) => {
+  const submit = (optionId: string | null, timedOut = false, answeredBool?: boolean) => {
     if (submittedRef.current) return;
     submittedRef.current = true;
     setSubmitting(true);
-    onAnswer(optionId, timedOut);
+    if (answeredBool === undefined) onAnswer(optionId, timedOut);
+    else onAnswer(optionId, timedOut, answeredBool);
   };
 
   // Below `sm` the question sits under the video, not on it: bring it into
@@ -71,13 +77,27 @@ export function CheckpointOverlay({
     rootRef.current?.focus();
   }, []);
 
+  // Any other type is skipped, not timed out. Held past the server's minimum
+  // read time so an instant empty answer is not flagged as implausible timing.
   useEffect(() => {
+    if (supported) return;
+    const id = window.setTimeout(() => submit(null), SKIP_AFTER_MS);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per question; `submit` is guarded by submittedRef.
+  }, []);
+
+  useEffect(() => {
+    if (!supported) return;
     const interval = window.setInterval(() => {
       setRemainingSeconds((current) => {
         const next = current - 1;
         if (next <= 0) {
           window.clearInterval(interval);
-          submit(selectedRef.current, question.type === "multiple_choice");
+          if (question.type === "true_false") {
+            submit(null, true, selectedBoolRef.current ?? undefined);
+          } else {
+            submit(selectedRef.current, true);
+          }
           return 0;
         }
         return next;
@@ -87,12 +107,21 @@ export function CheckpointOverlay({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one timer per question, keyed by the parent's `key={question.id}`; re-running on every render would restart the countdown.
   }, []);
 
+  function chooseBool(value: boolean) {
+    if (submitting) return;
+    selectedBoolRef.current = value;
+    setSelected(String(value));
+    submit(null, false, value);
+  }
+
   function choose(optionId: string) {
     if (submitting) return;
     selectedRef.current = optionId;
     setSelected(optionId);
     submit(optionId);
   }
+
+  if (!supported) return null;
 
   return (
     // Under the video below `sm` (the video box is only ~220px tall on a
@@ -118,32 +147,41 @@ export function CheckpointOverlay({
           <h2 id="checkpoint-prompt" className="text-lg font-sans font-semibold break-words">
             {question.prompt}
           </h2>
-          {question.type === "multiple_choice" ? (
-            <div
-              className="flex flex-col gap-2"
-              role="radiogroup"
-              aria-labelledby="checkpoint-prompt"
-            >
-              {question.options.map((option) => (
-                // eslint-disable-next-line yt-b/prefer-primitives -- a `role="radio"` option in a custom radiogroup, not a standalone action button; @yourtal/ui/button has no radio variant and Radix's own RadioGroup would add a dependency for one already-simple, fully-custom-styled control.
-                <button
-                  key={option.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected === option.id}
-                  disabled={submitting}
-                  onClick={() => choose(option.id)}
-                  className="rounded-control border border-white/30 bg-white/10 px-4 py-3 text-left text-body font-sans break-words text-primary-fg disabled:opacity-60 aria-checked:border-white aria-checked:bg-white/25"
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <p className="text-body-sm font-sans text-primary-fg/80">
-              {t("checkpoint.unsupported")}
-            </p>
-          )}
+          <div
+            className="flex flex-col gap-2"
+            role="radiogroup"
+            aria-labelledby="checkpoint-prompt"
+          >
+            {question.type === "true_false"
+              ? [true, false].map((value) => (
+                  // eslint-disable-next-line yt-b/prefer-primitives -- same custom radiogroup option as below.
+                  <button
+                    key={String(value)}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected === String(value)}
+                    disabled={submitting}
+                    onClick={() => chooseBool(value)}
+                    className="rounded-control border border-white/30 bg-white/10 px-4 py-3 text-left text-body font-sans break-words text-primary-fg disabled:opacity-60 aria-checked:border-white aria-checked:bg-white/25"
+                  >
+                    {t(value ? "checkpoint.true" : "checkpoint.false")}
+                  </button>
+                ))
+              : question.options.map((option) => (
+                  // eslint-disable-next-line yt-b/prefer-primitives -- a `role="radio"` option in a custom radiogroup, not a standalone action button; @yourtal/ui/button has no radio variant and Radix's own RadioGroup would add a dependency for one already-simple, fully-custom-styled control.
+                  <button
+                    key={option.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected === option.id}
+                    disabled={submitting}
+                    onClick={() => choose(option.id)}
+                    className="rounded-control border border-white/30 bg-white/10 px-4 py-3 text-left text-body font-sans break-words text-primary-fg disabled:opacity-60 aria-checked:border-white aria-checked:bg-white/25"
+                  >
+                    {option.label}
+                  </button>
+                ))}
+          </div>
         </div>
       </div>
       <p role="status" aria-live="polite" className="sr-only">

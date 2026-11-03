@@ -74,4 +74,14 @@ describe("watch-player-actions", () => {
     const [, , init] = apiFetchMock.mock.calls[0]!;
     expect(init.body).toEqual({ token: "tok123" });
   });
+
+  it("sends answeredBool for a true/false answer", async () => {
+    apiFetchMock.mockResolvedValue({ ok: true, data: {} });
+    const { answerCheckpointAction } = await import("./watch-player-actions");
+
+    await answerCheckpointAction("session-1", 0, "tok123", null, false);
+
+    const [, , init] = apiFetchMock.mock.calls[0]!;
+    expect(init.body).toEqual({ token: "tok123", answeredBool: false });
+  });
 });

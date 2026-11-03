@@ -81,3 +81,29 @@ describe("ChapterTrack", () => {
     expect(screen.queryByText(/point|poin/i)).not.toBeInTheDocument();
   });
 });
+
+describe("ChapterTrack narrow screens", () => {
+  it("keeps every chapter a readable width and wraps its text, so chips never overlap", () => {
+    const five = Array.from({ length: 5 }, (_, index) => ({
+      index,
+      title: `A rather long chapter title number ${String(index + 1)}`,
+      startSeconds: index * 60,
+      endSeconds: (index + 1) * 60,
+      rewardPoints: 1,
+    }));
+    render(
+      <ChapterTrack
+        chapters={five}
+        reachedChapterIndex={0}
+        currentSeconds={0}
+        onSelectChapter={() => undefined}
+        locale="en-AU"
+      />,
+    );
+    for (const item of screen.getAllByRole("listitem")) {
+      expect(item.className).toContain("min-w-32");
+      expect(item.className).not.toContain("min-w-0");
+    }
+    expect(screen.getByText(five[0]!.title).className).toContain("break-words");
+  });
+});

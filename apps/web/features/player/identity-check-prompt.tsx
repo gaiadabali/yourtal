@@ -47,7 +47,7 @@ export function IdentityCheckPrompt({ missing, locale }: IdentityCheckPromptProp
         ) : null}
         {steps.includes("add_passkey") ? (
           <Button asChild size="sm">
-            <Link href={{ pathname: "/passkey", query: { returnTo: here } }}>
+            <Link href={{ pathname: "/passkey", query: { returnTo: here, reason: "earn" } }}>
               {t("identityCheck.addPasskeyCta")}
             </Link>
           </Button>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   browserSupportsWebAuthn,
+  platformAuthenticatorIsAvailable,
   startAuthentication,
   startRegistration,
 } from "@simplewebauthn/browser";
@@ -27,6 +28,22 @@ const subscribeToNothing = () => () => undefined;
 /** False on the server and on the first client render, so hydration agrees; then the browser's real answer. */
 export function useBrowserSupportsWebAuthn(): boolean {
   return useSyncExternalStore(subscribeToNothing, browserSupportsWebAuthn, () => false);
+}
+
+/** Whether this device holds passkeys itself; null until the browser answers. False still allows a phone or security key. */
+export function usePlatformAuthenticator(): boolean | null {
+  const [available, setAvailable] = useState<boolean | null>(null);
+  useEffect(() => {
+    let live = true;
+    platformAuthenticatorIsAvailable().then(
+      (ok) => live && setAvailable(ok),
+      () => live && setAvailable(false),
+    );
+    return () => {
+      live = false;
+    };
+  }, []);
+  return available;
 }
 
 /** After the browser step, the API turns a bad assertion into `factor_invalid`, which reads as a code error elsewhere. */

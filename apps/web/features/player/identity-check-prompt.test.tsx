@@ -64,7 +64,7 @@ describe("IdentityCheckPrompt (F126)", () => {
     render(<IdentityCheckPrompt missing={["add_passkey"]} locale="en-AU" />);
     expect(screen.getByRole("link", { name: "Add a passkey" })).toHaveAttribute(
       "href",
-      "/passkey?returnTo=%2F",
+      "/passkey?returnTo=%2F&reason=earn",
     );
     expect(
       screen.queryByRole("button", { name: "Send me the verification email" }),

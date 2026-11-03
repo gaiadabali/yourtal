@@ -16,14 +16,20 @@ export interface PasskeyPromptPageProps {
  */
 export default async function PasskeyPromptPage({ searchParams }: PasskeyPromptPageProps) {
   const params = await searchParams;
-  const returnTo = parseReturnTo(params["returnTo"]) ?? "/";
+  const parsed = parseReturnTo(params["returnTo"]);
+  const returnTo = parsed ?? "/";
+  // Only the earning prompt sends `reason=earn`, and only with a return path to go back to.
+  const earn = params["reason"] === "earn" && parsed !== null;
 
   if ((await readSessionToken()) === null) redirect("/login");
 
   const t = await getTranslations("auth.passkeyPrompt");
   return (
-    <AuthCard title={t("heading")} description={t("body")}>
-      <PasskeyPrompt returnTo={returnTo} />
+    <AuthCard
+      title={t(earn ? "earnHeading" : "heading")}
+      description={t(earn ? "earnBody" : "body")}
+    >
+      <PasskeyPrompt returnTo={returnTo} reason={earn ? "earn" : undefined} />
     </AuthCard>
   );
 }

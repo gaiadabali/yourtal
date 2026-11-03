@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | ✅ done | 23/23 | 105/105 | `██████████` 100% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 20/25 | 87/107 | `████████░░`  81% |
-| **All** | | | **126/131** | **634/654** | `██████████`  97% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 20/25 | 88/107 | `████████░░`  82% |
+| **All** | | | **126/131** | **635/654** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1753,7 +1753,7 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
   - [ ] 14.22.e The campaign editor: targeting not saved, reward save and ceiling errors, raw database error on submit, submit without budget, lost edits, placeholder as value (group 5.13.e)
   - [x] 14.22.f Boost: low-bid error in minor units; no way to switch a boost off (group 5.13.f) → 6716ddc3 (group 5.13.f)
   - [ ] 14.22.g The store counter: pairing steps, amount in cents with one-click full redemption, device id shown, ID counter in English, raw order ids, no revoke confirmation (group 5.13.g) → also the counter's zone-less dates (moved from 14.19.f)
-  - [ ] 14.22.h Studio layout and copy, Reports without metrics, ID billing copy (group 5.13.h)
+  - [x] 14.22.h Studio layout and copy, Reports without metrics, ID billing copy (group 5.13.h) → b89f21e6 (group 5.13.h, PR #34)
   - [x] 14.22.i Viewer copy and contrast, /review in Bahasa (group 5.13.i) → 6716ddc3 (group 5.13.i)
   - [x] 14.22.j Staging's demo data: test content on public pages, "new viewer" logins not new (group 5.13.j) → 6cd56c7f (group 5.13.j; V5 is 14.22.r)
   - [ ] 14.22.k Gifts and auctions cannot be done from the app: no Gift control and no reason, no way to list a voucher for a charity, wallet history links to "Voucher not found", stale balance after redeeming (group 5.13.k)

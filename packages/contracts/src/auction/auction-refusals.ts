@@ -1,4 +1,6 @@
 // 13.4.d: zod-free, so client components can import these without pulling zod.
+/** How long a listed voucher is up for auction (see `auction.ts` for the lifecycle). */
+export const AUCTION_DURATION_HOURS = 72;
 export const AUCTION_REFUSALS = [
   "charity_unavailable",
   "voucher_not_unused",

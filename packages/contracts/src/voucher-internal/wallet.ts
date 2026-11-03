@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { VOUCHER_GIFT_BLOCKS } from "./gift-block";
 import { minorUnitsSchema } from "../money/money";
 import { currencySchema } from "../money/money-value";
 import { partialRedemptionPolicySchema } from "../listing/listing";
@@ -27,11 +28,7 @@ import { voucherLifecycleStateSchema, voucherVoidReasonSchema } from "../voucher
  * mid-redemption (`not_unused`), a listing that forbids it (`not_transferable`),
  * or already passed on once, by a gift or an auction win (`received_as_gift`).
  */
-export const voucherGiftBlockSchema = z.enum([
-  "not_unused",
-  "not_transferable",
-  "received_as_gift",
-]);
+export const voucherGiftBlockSchema = z.enum(VOUCHER_GIFT_BLOCKS);
 export type VoucherGiftBlock = z.infer<typeof voucherGiftBlockSchema>;
 
 export const walletVoucherRowSchema = z.object({

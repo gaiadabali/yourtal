@@ -1,4 +1,4 @@
-import { AUCTION_DURATION_HOURS } from "@yourtal/contracts/auction/auction";
+import { AUCTION_DURATION_HOURS } from "@yourtal/contracts/auction/auction-refusals";
 import type { VoucherGiftBlock } from "@yourtal/contracts/voucher-internal/wallet";
 
 /** apps/api refuses to list a voucher that would expire within the auction plus a day to use it. */

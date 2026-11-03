@@ -20,6 +20,7 @@ import { counterDevices } from "../../devices/persistence/schema/counter-device.
 // counter-idempotency.e2e.test.ts, 8.2.h) leaves a row here the
 // counterDevices delete below then violates. Found live: this file's own
 // FK-graph comment predates 8.2.h's first real capture in a shared test DB.
+import { counterAuthorizationMeta } from "../../devices/persistence/schema/counter-authorization-meta.table";
 import { counterCaptureLog } from "../../devices/persistence/schema/counter-capture-log.table";
 
 /**
@@ -112,6 +113,8 @@ export async function clearStoreTables(db: AppDb): Promise<void> {
   // Child-first ahead of counter_device itself (see the import's own
   // comment): also owner-only, no DELETE grant for yourtal_app.
   await owner.delete(counterCaptureLog);
+  // An authorization's bookkeeping row also references the device and now outlives its capture.
+  await db.delete(counterAuthorizationMeta);
   // `store.counter_device` (8.1.a) only grants yourtal_app SELECT/INSERT/
   // UPDATE -- no DELETE (20260927140000_counter_devices.sql) -- so this one
   // needs the owner connection too, same reason every voucher.* line above

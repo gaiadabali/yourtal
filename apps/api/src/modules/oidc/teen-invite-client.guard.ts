@@ -35,7 +35,8 @@ export class TeenInviteClientGuard implements CanActivate {
     const header = request.headers.authorization ?? "";
     const token = /^Bearer ([A-Za-z0-9._~+/-]+=*)$/.exec(header)?.[1];
     const found = token === undefined ? undefined : await provider.ClientCredentials.find(token);
-    const client = found === undefined ? undefined : clientById(this.runtime.clients, found.clientId ?? "");
+    const client =
+      found === undefined ? undefined : clientById(this.runtime.clients, found.clientId ?? "");
     if (found === undefined || client?.kind !== "machine") {
       throw new UnauthorizedException({
         code: "invalid_token",
@@ -43,7 +44,10 @@ export class TeenInviteClientGuard implements CanActivate {
       });
     }
     const scopes = (found.scope ?? "").split(" ");
-    if (!scopes.includes(TEEN_INVITES_SCOPE) || !client.allowedScopes.includes(TEEN_INVITES_SCOPE)) {
+    if (
+      !scopes.includes(TEEN_INVITES_SCOPE) ||
+      !client.allowedScopes.includes(TEEN_INVITES_SCOPE)
+    ) {
       throw new ForbiddenException({
         code: "insufficient_scope",
         message: "the token lacks the teen_invites scope",

@@ -64,7 +64,10 @@ export class TeenInvitesController {
   @PublicRoute(PUBLIC_REASON)
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() body: ParentDto, @Req() request: FastifyRequest): Promise<TeenInviteCreated> {
+  async create(
+    @Body() body: ParentDto,
+    @Req() request: FastifyRequest,
+  ): Promise<TeenInviteCreated> {
     const client = verifiedClient(request, this.runtime);
     const made = await this.store().create({
       sector: client.sector,

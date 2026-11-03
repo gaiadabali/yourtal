@@ -117,7 +117,10 @@ async function view(db: Query, row: InviteRow, now: Date): Promise<TeenInvite> {
 }
 
 /** The approved guardian's email, or null while the guardian's consent is not `granted`. */
-async function approvedGuardian(pool: Pool, teenUserId: string): Promise<{ email: string | null } | null> {
+async function approvedGuardian(
+  pool: Pool,
+  teenUserId: string,
+): Promise<{ email: string | null } | null> {
   const result = await pool.query<{ guardian_email: string | null }>(
     `SELECT g.guardian_email
        FROM identity.guardian_consent g

@@ -139,7 +139,11 @@ describe("the docs/26 §1.5 checks", () => {
   });
 
   it("5. a teen agrees on the consent screen for a pending invite, then only continues under it", async () => {
-    const teenConsent: AppConsent = { ...CONSENTED, grantedVia: "guardian_invite", inviteId: "inv-1" };
+    const teenConsent: AppConsent = {
+      ...CONSENTED,
+      grantedVia: "guardian_invite",
+      inviteId: "inv-1",
+    };
     const teen = { account: TEEN, consent: teenConsent };
     expect(await screen({ ...teen, teenInvites: invites(PENDING) })).toBe("consent");
     expect(await screen({ ...teen, teenInvites: invites(STANDING) })).toBe("continue");

@@ -151,8 +151,10 @@ export async function signInBlock(
   teenInviteCode: string | undefined,
   now: Date,
 ): Promise<SignInCheck> {
-  const refuse = (block: "verify_email" | SignInRefusal, inviteProblem: TeenInviteProblem | null = null) =>
-    ({ ok: false, block, inviteProblem }) as const;
+  const refuse = (
+    block: "verify_email" | SignInRefusal,
+    inviteProblem: TeenInviteProblem | null = null,
+  ) => ({ ok: false, block, inviteProblem }) as const;
   if (!account.emailVerified || account.email === null) return refuse("verify_email");
   if (account.suspended) return refuse("account_on_hold");
   if (!client.regions.includes(account.region)) return refuse("region_not_supported");

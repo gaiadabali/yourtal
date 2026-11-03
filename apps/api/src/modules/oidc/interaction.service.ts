@@ -102,9 +102,7 @@ export class InteractionService {
       refusal: state.screen === "refused" ? state.refusal : null,
       inviteProblem: state.screen === "refused" ? state.inviteProblem : null,
       teenInvite:
-        "invite" in state && state.invite !== null
-          ? { parentName: state.invite.parentName }
-          : null,
+        "invite" in state && state.invite !== null ? { parentName: state.invite.parentName } : null,
       uiLocales: words(loaded.params["ui_locales"]),
     };
   }
@@ -148,7 +146,11 @@ export class InteractionService {
         ...(invite === null ? {} : { invite: { id: invite.inviteId, accept: invite.pending } }),
       });
       if (!granted) {
-        await loaded.store.logSignIn(account.userId, loaded.client.clientId, "teen_invite_required");
+        await loaded.store.logSignIn(
+          account.userId,
+          loaded.client.clientId,
+          "teen_invite_required",
+        );
         throw new InteractionError("sign_in_refused", "teen_invite_required");
       }
     }

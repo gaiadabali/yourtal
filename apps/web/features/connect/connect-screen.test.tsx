@@ -361,7 +361,11 @@ describe("refused", () => {
 });
 
 describe("a teen at SnapApp", () => {
-  const teen = { claims: ["name", "email", "age_band", "region"], ageBand: "teen", region: "AU" } as const;
+  const teen: InteractionDetails["sharing"] = {
+    claims: ["name", "email", "age_band", "region"],
+    ageBand: "teen",
+    region: "AU",
+  };
 
   it("with the guardian's invite: who can see what, and Continue records consent", async () => {
     consentContinueAction.mockResolvedValueOnce({
@@ -373,8 +377,9 @@ describe("a teen at SnapApp", () => {
       screen.getByRole("heading", { level: 1, name: "Join SnapApp with Pat's invite" }),
     ).toBeInTheDocument();
     expect(screen.getByText(/Pat can see everything you add to SnapApp/)).toBeInTheDocument();
-    expect(screen.getByText(/that you're under 18, and that your YourTal account is for Australia/))
-      .toBeInTheDocument();
+    expect(
+      screen.getByText(/that you're under 18, and that your YourTal account is for Australia/),
+    ).toBeInTheDocument();
     expect(screen.getByText("You won't earn YourTal points for receipts.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     await waitFor(() => expect(navigateTo).toHaveBeenCalledWith("https://y.test/oidc/auth/t"));

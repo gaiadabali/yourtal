@@ -195,10 +195,11 @@ export function MerchantRedemptionScreen({ device }: MerchantRedemptionScreenPro
         idempotencyKey: authorizeIdempotencyKey,
       });
       if (!authResult.ok) {
-        // The server names what is left in its refusal's body, which `apiFetch`
-        // does not carry; the screen already knows it from the lookup.
+        // The server's own figure for what is left rides on its refusal; the
+        // lookup's is only the fallback for a body that names none.
+        const refusal = fromApiError(authResult.error);
         failWith(
-          { ...fromApiError(authResult.error), remainingValueMinor: preview.remainingValueMinor },
+          { remainingValueMinor: preview.remainingValueMinor, ...refusal },
           {
             code,
             orderRef,

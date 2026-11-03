@@ -77,7 +77,13 @@ export function classifyAmount(
  */
 export function fromApiError(error: ApiError): MerchantRedemptionError {
   if (error.kind === "http") {
-    return { code: error.code, fallbackMessage: error.message };
+    return {
+      code: error.code,
+      fallbackMessage: error.message,
+      ...(error.remainingValueMinor === undefined
+        ? {}
+        : { remainingValueMinor: error.remainingValueMinor }),
+    };
   }
   return { code: "network_error", fallbackMessage: error.message };
 }

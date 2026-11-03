@@ -353,6 +353,8 @@ describe("MerchantRedemptionScreen", () => {
           status: 422,
           code: "amount_exceeds_remaining_value",
           message: "this amount cannot be redeemed against this voucher",
+          // Differs from the lookup's $50.00: the voucher was partly used since.
+          remainingValueMinor: 3_000,
         },
       });
       const user = userEvent.setup();
@@ -362,7 +364,7 @@ describe("MerchantRedemptionScreen", () => {
       await user.click(screen.getByRole("button", { name: "Review" }));
       await user.click(await screen.findByRole("button", { name: "Confirm redemption" }));
 
-      expect(await screen.findByText(/only has \$50\.00 remaining/u)).toBeInTheDocument();
+      expect(await screen.findByText(/only has \$30\.00 remaining/u)).toBeInTheDocument();
     });
   });
 });

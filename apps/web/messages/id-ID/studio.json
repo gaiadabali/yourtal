@@ -114,7 +114,8 @@
         "ceilingFixed": "Video {seconds} detik paling banyak membayar {max} poin per penonton. Turunkan reward menjadi {max} atau kurang.",
         "ceilingWithBonus": "Video {seconds} detik paling banyak membayar {max} poin per penonton, reward dan bonus akurasi digabung. Turunkan keduanya agar jumlahnya {max} atau kurang.",
         "ceilingTooShort": "Video {seconds} detik terlalu pendek untuk membayar reward.",
-        "bonusTooHigh": "Bonus akurasi paling banyak 40% dari reward."
+        "bonusTooHigh": "Bonus akurasi paling banyak 40% dari reward.",
+        "budgetNeeded": "Atur total anggaran di tab Anggaran terlebih dahulu. Anggaran harus mencukupi setidaknya reward penuh satu penonton."
       }
     },
     "sections": {
@@ -239,6 +240,13 @@
       "failed": "Perubahan Anda tidak dapat disimpan. Periksa koneksi Anda lalu coba lagi."
     },
     "submit": {
+      "refusal": {
+        "illegalTransition": "Kampanye ini tidak dapat dikirim untuk ditinjau dari statusnya saat ini. Muat ulang halaman dan periksa statusnya.",
+        "creativeBlocked": "Judul atau sinopsis melanggar aturan konten. Ubah lalu kirim lagi.",
+        "notVerified": "Verifikasi bisnis Anda di halaman ringkasan sebelum dapat mengirim.",
+        "notFound": "Kampanye ini tidak ditemukan. Muat ulang halaman.",
+        "generic": "Kampanye tidak dapat dikirim. Coba lagi sebentar lagi."
+      },
       "heading": "Sebelum dikirim, kampanye ini memerlukan:",
       "gap": {
         "title": "Judul (tab Detail).",

@@ -75,6 +75,14 @@ describe("rewardConfigPatchFor (14.2)", () => {
     ).toBe(null);
   });
 
+  it("sends a budget never set as 0, never raised to one completion", () => {
+    const draft = {
+      ...draftWith({ totalBudgetPoints: 0, dailyCapPoints: null }),
+      allocationId: "alloc-1",
+    };
+    expect(rewardConfigPatchFor(draft)?.maxPointsForCampaign).toBe(0);
+  });
+
   it("is null until the funding is chosen", () => {
     expect(
       rewardConfigPatchFor(draftWith({ totalBudgetPoints: 5_000, dailyCapPoints: null })),
@@ -137,6 +145,11 @@ describe("rewardErrorText (2.10.b, F127)", () => {
         t,
       ),
     ).toBe("That funding is a receipt package.");
+  });
+  it("words a missing budget from the catalogue", () => {
+    expect(rewardErrorText({ message: "english", code: "budget_below_one_completion" }, t)).toBe(
+      "That funding is a receipt package.",
+    );
   });
   it("keeps the server's message for any other refusal", () => {
     expect(rewardErrorText({ message: "reward too high", code: "reward_exceeds_ceiling" }, t)).toBe(

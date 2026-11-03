@@ -215,6 +215,33 @@ describe("CampaignEditorReward live (B3, B4)", () => {
     );
   });
 
+  it("sends a budget never set as 0 and words the server's refusal, without raising it to one completion", async () => {
+    vi.mocked(setRewardConfigLive).mockResolvedValue({
+      ok: false,
+      code: "budget_below_one_completion",
+      message: "the total budget must cover at least one completion (reward plus bonus)",
+    });
+    const allocation = liveAllocation();
+    render(
+      <StatefulReward
+        initial={twentySecondDraft({ allocationId: allocation.allocationId, rewardPoints: 2 })}
+        live
+        allocations={[allocation]}
+      />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Save reward" }));
+
+    expect(setRewardConfigLive).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(String),
+      "Kopi Kenangan",
+      expect.objectContaining({ maxPointsForCampaign: 0 }),
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Set the total budget on the Budget tab first.",
+    );
+  });
+
   it("clears a refusal as soon as the reward is changed, and says Saved after a good save", async () => {
     vi.mocked(setRewardConfigLive)
       .mockResolvedValueOnce({

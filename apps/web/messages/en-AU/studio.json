@@ -114,7 +114,8 @@
         "ceilingFixed": "A {seconds}-second video can pay at most {max, plural, one {# point} other {# points}} to each viewer. Lower the reward to {max} or less.",
         "ceilingWithBonus": "A {seconds}-second video can pay at most {max, plural, one {# point} other {# points}} to each viewer, reward and accuracy bonus together. Lower them so they add up to {max} or less.",
         "ceilingTooShort": "A {seconds}-second video is too short to pay a reward.",
-        "bonusTooHigh": "The accuracy bonus can be at most 40% of the reward."
+        "bonusTooHigh": "The accuracy bonus can be at most 40% of the reward.",
+        "budgetNeeded": "Set the total budget on the Budget tab first. It must cover at least one viewer's full reward."
       }
     },
     "sections": {
@@ -239,6 +240,13 @@
       "failed": "Your changes could not be saved. Check your connection and try again."
     },
     "submit": {
+      "refusal": {
+        "illegalTransition": "This campaign can't move to review from its current state. Refresh the page and check its status.",
+        "creativeBlocked": "The title or synopsis breaks the content rules. Change it and submit again.",
+        "notVerified": "Verify your business on the overview page before you can submit.",
+        "notFound": "This campaign could not be found. Refresh the page.",
+        "generic": "The campaign could not be submitted. Try again in a moment."
+      },
       "heading": "Before you submit, this campaign needs:",
       "gap": {
         "title": "A title (Details tab).",

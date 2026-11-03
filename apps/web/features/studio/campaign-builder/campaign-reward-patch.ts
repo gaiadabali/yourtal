@@ -52,8 +52,8 @@ export function draftBudgetIssue(draft: CampaignDraft): CampaignBudgetIssue | nu
 /**
  * The full `PUT .../reward` body for this draft: the reward and its budget
  * save together. Null until the author has chosen which funded points pay.
- * A budget never set (0) is raised to one completion, so saving the reward
- * first never fails on a Budget tab the author has not visited yet.
+ * The budget goes as the author set it: one never set (0) is refused by the
+ * server, never raised to one completion, so it cannot reach review unseen.
  */
 export function rewardConfigPatchFor(draft: CampaignDraft): RewardConfigPatch | null {
   if (!draft.allocationId) return null;
@@ -61,7 +61,7 @@ export function rewardConfigPatchFor(draft: CampaignDraft): RewardConfigPatch | 
     allocationId: draft.allocationId,
     rewardPointsPerCompletion: draft.rewardPoints,
     accuracyBonusPoints: effectiveBonusPoints(draft),
-    maxPointsForCampaign: Math.max(draft.budget.totalBudgetPoints, oneCompletionPoints(draft)),
+    maxPointsForCampaign: draft.budget.totalBudgetPoints,
     dailyCapPoints: draft.budget.dailyCapPoints,
   };
 }
@@ -71,7 +71,8 @@ type RewardErrorKey =
   | "campaignBuilder.reward.errors.ceilingFixed"
   | "campaignBuilder.reward.errors.ceilingWithBonus"
   | "campaignBuilder.reward.errors.ceilingTooShort"
-  | "campaignBuilder.reward.errors.bonusTooHigh";
+  | "campaignBuilder.reward.errors.bonusTooHigh"
+  | "campaignBuilder.reward.errors.budgetNeeded";
 
 const asNumber = (value: unknown): number | null =>
   typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -93,6 +94,8 @@ export function rewardErrorText(
   }
   if (failure.code === "accuracy_bonus_too_high")
     return t("campaignBuilder.reward.errors.bonusTooHigh");
+  if (failure.code === "budget_below_one_completion")
+    return t("campaignBuilder.reward.errors.budgetNeeded");
   if (failure.code === "reward_exceeds_ceiling") {
     const max = asNumber(failure.details?.["maxPoints"]);
     const seconds = asNumber(failure.details?.["durationSeconds"]);

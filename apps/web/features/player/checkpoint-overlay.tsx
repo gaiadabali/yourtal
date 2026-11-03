@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { MINIMUM_READ_MS } from "@yourtal/contracts/question/question-response-signals";
 import type { PresentedQuestion } from "@yourtal/contracts/question/presented-question";
 import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
+
+/** Past the server's 700 ms minimum read time, so a skip is not flagged as implausible timing. */
+const SKIP_AFTER_MS = 800;
 
 /** The video box. Only ~220px tall on a phone, which is why a question sits under it there. */
 export const PLAYER_BOX_CLASS = "relative aspect-video w-full overflow-hidden rounded-lg bg-fg";
@@ -79,7 +81,7 @@ export function CheckpointOverlay({
   // read time so an instant empty answer is not flagged as implausible timing.
   useEffect(() => {
     if (supported) return;
-    const id = window.setTimeout(() => submit(null), MINIMUM_READ_MS + 100);
+    const id = window.setTimeout(() => submit(null), SKIP_AFTER_MS);
     return () => window.clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per question; `submit` is guarded by submittedRef.
   }, []);
@@ -165,22 +167,20 @@ export function CheckpointOverlay({
                     {t(value ? "checkpoint.true" : "checkpoint.false")}
                   </button>
                 ))
-              : question.type === "multiple_choice"
-                ? question.options.map((option) => (
-                    // eslint-disable-next-line yt-b/prefer-primitives -- a `role="radio"` option in a custom radiogroup, not a standalone action button; @yourtal/ui/button has no radio variant and Radix's own RadioGroup would add a dependency for one already-simple, fully-custom-styled control.
-                    <button
-                      key={option.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={selected === option.id}
-                      disabled={submitting}
-                      onClick={() => choose(option.id)}
-                      className="rounded-control border border-white/30 bg-white/10 px-4 py-3 text-left text-body font-sans break-words text-primary-fg disabled:opacity-60 aria-checked:border-white aria-checked:bg-white/25"
-                    >
-                      {option.label}
-                    </button>
-                  ))
-                : null}
+              : question.options.map((option) => (
+                  // eslint-disable-next-line yt-b/prefer-primitives -- a `role="radio"` option in a custom radiogroup, not a standalone action button; @yourtal/ui/button has no radio variant and Radix's own RadioGroup would add a dependency for one already-simple, fully-custom-styled control.
+                  <button
+                    key={option.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected === option.id}
+                    disabled={submitting}
+                    onClick={() => choose(option.id)}
+                    className="rounded-control border border-white/30 bg-white/10 px-4 py-3 text-left text-body font-sans break-words text-primary-fg disabled:opacity-60 aria-checked:border-white aria-checked:bg-white/25"
+                  >
+                    {option.label}
+                  </button>
+                ))}
           </div>
         </div>
       </div>

@@ -30,6 +30,7 @@ This resolves the SEO-vs-reward-economy tension before anything else, because ev
 
 - **Every public page's primary content must be in the initial HTML.** RSC by default; `'use client'` only for the voucher redeem button, filters and the player. Google renders JS but [treats it as added complexity](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide), and the non-Google answer engines' crawlers are materially worse at it. A client-fetched catalogue is invisible to Perplexity.
 - **ISR over SSR** for catalogue pages: `export const revalidate = 3600`, plus on-demand `revalidateTag('offer:<id>')` when a merchant changes stock. Keeps TTFB at CDN latency, which matters because [INP was confirmed in March 2026 as a primary ranking signal with weight equal to LCP and CLS](https://www.corewebvitals.io/core-web-vitals) — our budgets in [`08`](08-web-app-and-performance.md) §3.1 already clear this; do not regress them.
+- **Exception (5.13.r):** the landing pages `/` and `/[locale]` render dynamically (their data is cached 60 s), because a release has no post-reload warm hook and a prerendered copy built without the API served an empty page to the first visitor. Revert them to ISR once the deploy has a post-reload warm step.
 - CWV is a **tiebreaker, not a lever**. Hitting "good" is worth it; going from good to excellent buys nothing in ranking (it buys conversion).
 
 ### 2.2 Metadata, canonicals, sitemaps, robots

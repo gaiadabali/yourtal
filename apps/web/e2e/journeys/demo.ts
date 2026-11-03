@@ -63,6 +63,11 @@ export async function signIn(page: Page, email: string, password = DEMO_PASSWORD
   await page.getByLabel(/^(Password|Kata sandi)$/).fill(password);
   await page.getByRole("button", { name: /^(Sign in|Masuk)$/ }).click();
   await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 60_000 });
+  // The one-time offer to add a passkey, made after a password sign-in.
+  if (new URL(page.url()).pathname === "/passkey") {
+    await page.getByRole("button", { name: /^(Not now|Nanti saja)$/ }).click();
+    await page.waitForURL((url) => url.pathname !== "/passkey", { timeout: 60_000 });
+  }
 }
 
 /** The newest simulated email of a kind (the dev inbox), for its token. */

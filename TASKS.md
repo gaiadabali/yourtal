@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | ✅ done | 23/23 | 105/105 | `██████████` 100% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 20/25 | 91/107 | `█████████░`  85% |
-| **All** | | | **126/131** | **638/654** | `██████████`  98% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 20/25 | 96/107 | `█████████░`  90% |
+| **All** | | | **126/131** | **643/654** | `██████████`  98% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1720,7 +1720,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
 - [ ] **14.16 Sign in with YourTal: YourTal is the OpenID Connect provider** (group 3.9, F99, docs/26) · A + B · needs: 14.4 — 🔄 2026-10-21 (slot g3)
   - [x] 14.16.a The provider at `/oidc` on `oidc-provider` 9.x: the `oidc` schema, discovery, authorize, token, JWKS, userinfo, pairwise `sub`, the client registry, the §1.5 checks and the interaction API (group 3.9.a, 3.9.d) → 5cb7f0b0 (group 3.9.a, 3.9.d)
   - [x] 14.16.b The `/connect/[uid]` sign-in, consent and refusal screens, en-AU and id-ID (group 3.9.b) → merged at 5cb7f0b0; screenshots once the provider is on staging → 5cb7f0b0 + 936d005a; staging QA 2026-10-21, axe-clean at 390/1280 light and dark (group 3.9.b)
-  - [ ] 14.16.c Passkeys and authenticator-app codes on YourTal accounts, and `amr` in ID tokens (group 3.9.c)
+  - [x] 14.16.c Passkeys and authenticator-app codes on YourTal accounts, and `amr` in ID tokens (group 3.9.c) → d4687ad5 (PR #28)
   - [ ] 14.16.d Teens: every client refuses them except SnapApp by a guardian's invite; the teen invite API (group 3.9.e)
   - [ ] 14.16.e Deletion and ended access reach every app as signed events, with the `connected_apps` data domain (group 3.9.f)
   - [ ] 14.16.f Rate limits, a sign-in log per client, an uptime check and one restore test (group 3.9.h)
@@ -1760,10 +1760,10 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
   - [ ] 14.22.l Walk again the journeys the walkthrough could not finish (group 5.13.l)
   - [ ] 14.22.m The player sometimes never starts on repeat visits (V12b): needs the founder's device and browser (group 5.13.m)
   - [x] 14.22.n On staging: a dev-clock release shows "points unlocked" at once (V26); the demo reset gives the seeded questions their new prompts (group 5.13.n) → demo reset run 2026-10-26 (group 5.13.n; V26 live check in the re-walk)
-  - [ ] 14.22.o true_false and likert questions: render them or skip at once (group 5.13.o)
-  - [ ] 14.22.p The whole-video chapter keeps the upload-time title; chapter chips overlap at 390 px (group 5.13.p)
-  - [ ] 14.22.q Shorts: a bolder scrim behind the Share and Save rail, about 3.6:1 over a near-white frame (group 5.13.q)
-  - [ ] 14.22.r The first visitor after a release can get an empty public landing page: warm `/`, `/au`, `/id` after the reload, or render them dynamically (group 5.13.r, V5)
+  - [x] 14.22.o true_false and likert questions: render them or skip at once (group 5.13.o) → e852a44e (group 5.13.o, PR #38)
+  - [x] 14.22.p The whole-video chapter keeps the upload-time title; chapter chips overlap at 390 px (group 5.13.p) → e852a44e (group 5.13.p, PR #38)
+  - [x] 14.22.q Shorts: a bolder scrim behind the Share and Save rail, about 3.6:1 over a near-white frame (group 5.13.q) → e852a44e (group 5.13.q, PR #38)
+  - [x] 14.22.r The first visitor after a release can get an empty public landing page: warm `/`, `/au`, `/id` after the reload, or render them dynamically (group 5.13.r, V5) → e852a44e (group 5.13.r, PR #38)
 - [x] **14.24 main is green and staging deploys again** (group 1.31) · A · needs: — — ✅ 2026-10-26 781f983a
   - [x] 14.24.a Quality and the Release gate had failed on every push since 2026-10-22 (an unneeded type assertion in the fake ledger, an unformatted docs/28), so staging stayed on ef9fc40c → 781f983a; Release green, staging /api/health reports 781f983a
 - [x] **14.25 A patched Next.js** (group 1.32) · A + B · needs: 14.24 — 🔄 2026-11-02 — ✅ 2026-11-02 136b2b50

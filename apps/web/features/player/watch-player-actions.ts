@@ -183,13 +183,18 @@ export async function answerCheckpointAction(
   checkpointIndex: number,
   token: string,
   selectedOptionId: string | null,
+  answeredBool?: boolean,
 ): Promise<ApiResult<{ answered: boolean; wasCorrect: boolean }>> {
   return apiFetch(
     `/api/watch/sessions/${sessionId}/checkpoints/${String(checkpointIndex)}/answer`,
     answerSchema,
     {
       method: "POST",
-      body: { token, ...(selectedOptionId === null ? {} : { selectedOptionId }) },
+      body: {
+        token,
+        ...(selectedOptionId === null ? {} : { selectedOptionId }),
+        ...(answeredBool === undefined ? {} : { answeredBool }),
+      },
     },
   );
 }

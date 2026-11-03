@@ -140,3 +140,13 @@ describe("FeedItem: signed out", () => {
     expect(screen.getByRole("button", { name: /^Save/ })).toBeInTheDocument();
   });
 });
+
+// 5.13.q: the rail's labels sit on a solid scrim, not on the thin end of the gradient.
+describe("FeedItem: action rail scrim", () => {
+  it("gives Share and Save their own overlay background", () => {
+    renderItem(baseItem());
+    for (const name of ["Share", "Save"]) {
+      expect(screen.getByRole("button", { name }).className).toContain("bg-overlay");
+    }
+  });
+});

@@ -19,13 +19,12 @@ export function generateStaticParams() {
 export const dynamicParams = false;
 
 /**
- * 11.2.a: revalidate this page on a timer rather than per request — the
- * page stays statically generated (`generateStaticParams`/`dynamicParams`
- * above), but a build older than this many seconds gets a fresh copy from
- * `GET /api/feed` on the next visit instead of serving forever. Matches
- * `public-feed-data.ts`'s own `FEED_REVALIDATE_SECONDS`.
+ * Rendered per request, not prerendered. The release build has no API, so a
+ * prerendered copy is an empty feed that the first visitor after every release
+ * would be served (5.13.r). The feed fetch itself is still cached for 60 s
+ * (`public-feed-data.ts`), so the API sees at most one read a minute.
  */
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 interface PublicHomePageProps {
   params: Promise<{ locale: string }>;

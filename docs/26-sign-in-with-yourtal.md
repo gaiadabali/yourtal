@@ -81,6 +81,14 @@ Every app may rely on these, and on nothing else.
 
 The ID token also carries `iss`, `aud`, `azp`, `exp`, `iat`, `auth_time`, `nonce` (when the app sent one) and `amr`. `amr` says how the person signed in: `pwd` for a password, `hwk` for a passkey, `otp` for an authenticator code, and `mfa` when two were used. Apps may require `hwk` or `mfa` for staff (§1.10).
 
+What `amr` does and does not promise (group 3.9.c):
+
+- **Any passkey counts as `hwk`**, synced ones (iCloud Keychain, Google Password Manager, 1Password) included. RFC 8176 reserves `hwk` for a hardware-bound key; YourTal uses it for every passkey because what the staff rule needs is phishing resistance, which a synced passkey has too. YourTal accepts attestation `none`, so it cannot tell a device-bound key from a synced one, and does not try.
+- **A password can add an account's first factor, and for 72 hours the mailbox can take it away.** A recent password sign-in may add a passkey or an authenticator app to an account that has none, so someone holding a phished password can plant one and use it to add more. Once the account has a factor, adding another needs a session signed in with one (`hwk` or `mfa`) or a fresh step-up with one, and every addition and removal is emailed. For 72 hours after the account's first factor, whoever holds the mailbox can remove every passkey and app with a password reset, which also ends every session, including any opened with a planted passkey; adding more factors meanwhile does not extend the 72 hours, and an account left with no factor starts again. After that, factors protect the account against a mailbox compromise: a reset keeps them and asks for the app's code. Accepted trade-off: for those 72 hours a mailbox compromise defeats the account's factors, and an app's "hwk or mfa" rule cannot tell a first factor planted with a phished password from the owner's own, so staff accounts in other apps should get their first passkey in a deliberate setup with the person.
+- **A password reset** emails the list of passkeys and apps that can still sign in.
+- **`auth_time` is the last real sign-in.** A session minted to replace another (a password change) keeps the original's `auth_time` and `amr`.
+- **Accepted for now:** someone who holds the password can spend the account's five wrong-code attempts per 15 minutes and so keep the real person from finishing a password-and-code sign-in for that time. A passkey sign-in is not affected.
+
 **Never shared:** the date of birth, the guardian's email or identity, password and passkey data, the points balance, the trust tier, watch history and YourTal's user id.
 
 An ID token for SnapApp's website, decoded:

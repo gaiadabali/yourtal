@@ -78,6 +78,43 @@ export const LOGIN_RATE_LIMIT: RateLimitOptions = {
 };
 
 /**
+ * Signing in with a passkey: asking for a challenge, and answering it. A
+ * passkey cannot be guessed, so these bound cost and challenge churn per
+ * address, like `LOGIN_RATE_LIMIT`.
+ */
+export const PASSKEY_SIGN_IN_OPTIONS_RATE_LIMIT: RateLimitOptions = {
+  routeId: "auth.passkey.sign_in.options",
+  ip: { max: 60, windowSeconds: 15 * 60 },
+  route: { max: 4000, windowSeconds: 15 * 60 },
+};
+export const PASSKEY_SIGN_IN_VERIFY_RATE_LIMIT: RateLimitOptions = {
+  routeId: "auth.passkey.sign_in.verify",
+  ip: { max: 30, windowSeconds: 15 * 60 },
+  route: { max: 2000, windowSeconds: 15 * 60 },
+};
+
+/**
+ * The authenticator code after a password. `TotpService` also counts wrong
+ * codes per account, which is the limit that stops guessing; this one bounds
+ * one address spreading guesses across many accounts.
+ */
+export const TOTP_SIGN_IN_RATE_LIMIT: RateLimitOptions = {
+  routeId: "auth.totp.sign_in",
+  ip: { max: 30, windowSeconds: 15 * 60 },
+  route: { max: 2000, windowSeconds: 15 * 60 },
+};
+
+/**
+ * Signed-in changes to how an account signs in: adding a passkey, setting up
+ * or turning off an authenticator app, proving a passkey again.
+ */
+export const SIGN_IN_METHOD_CHANGE_RATE_LIMIT: RateLimitOptions = {
+  routeId: "auth.sign_in_methods.change",
+  identity: { max: 30, windowSeconds: 15 * 60 },
+  ip: { max: 60, windowSeconds: 15 * 60 },
+};
+
+/**
  * Password reset request. The tightest limit in this file, and the route
  * that most needs one: every call succeeds and every call sends an email,
  * so `ThrottleService`'s failure counter bounds it not at all. Limited on

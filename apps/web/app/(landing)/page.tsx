@@ -11,15 +11,15 @@ import { LandingForBusiness } from "@/features/landing/landing-for-business";
  * `/` — the public landing page (TASKS.md 11.1.a). Signed-in visitors never
  * reach this: `route-redirects.ts`'s `/` rule sends them to `/home` at the
  * edge, before this page ever renders; the redirect check itself lives
- * there, not here, so this page stays free of `cookies()`/`headers()` and
- * comes out static/ISR like the rest of the public surface
+ * there, not here, so this page stays free of `cookies()`/`headers()`
  * (`(public)/[locale]/layout.tsx`'s own header explains why that matters).
  *
- * `revalidate` (not fully static): the hero's featured video is a REAL,
- * currently live campaign (`getPublicFeed`), so this page needs to notice
- * when that changes — same cadence `public-feed-data.ts` itself uses.
+ * Rendered per request, not prerendered: the hero's featured video is a REAL,
+ * currently live campaign (`getPublicFeed`), and the release build has no API,
+ * so a prerendered copy would show no video to the first visitor after every
+ * release (5.13.r). The feed fetch is still cached for 60 s.
  */
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "YourTal — Watch, learn, earn",

@@ -50,6 +50,13 @@ description: |-
   `APP_ENV` gate is what keeps the route itself out of production, not this
   policy).
 
+  Passkeys and authenticator codes: `create_with_passkey` (signing in with
+  a passkey) and `complete_second_factor` (the code after a password) are
+  signed-out actions exactly like `create`. `view_sign_in_methods` and
+  `manage_sign_in_methods` are the caller's own passkeys and authenticator
+  app, the same "caller IS the resource" shape as `change_password`; the
+  routes take the account from the session, never from the request.
+
   `admin` is deliberately absent from every rule in this file, even
   `change_password`/`delete` for the admin's own account. docs/17 section 5
   and `policies/README.md` fix admin's ENTIRE surface as role grants,
@@ -72,7 +79,7 @@ resourcePolicy:
       ref: cerbos:///resource/session.json
   rules:
     - name: signed-out-is-the-only-way-to-start-authenticating
-      actions: ["register", "create"]
+      actions: ["register", "create", "create_with_passkey", "complete_second_factor"]
       effect: EFFECT_ALLOW
       roles: ["anonymous"]
 
@@ -103,6 +110,8 @@ resourcePolicy:
           "dev_clock_release_pending",
           "dev_clock_run_job",
           "dev_clock_advance_days",
+          "view_sign_in_methods",
+          "manage_sign_in_methods",
         ]
       effect: EFFECT_ALLOW
       roles:
@@ -128,6 +137,8 @@ resourcePolicy:
           "dev_clock_release_pending",
           "dev_clock_run_job",
           "dev_clock_advance_days",
+          "view_sign_in_methods",
+          "manage_sign_in_methods",
         ]
       effect: EFFECT_DENY
       roles: ["anonymous"]

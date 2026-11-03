@@ -4,6 +4,9 @@ import type { AppConfig } from "../../../config/app-config";
 import { hashOpaqueToken, issueOpaqueToken } from "../crypto/opaque-token";
 import { SESSION_REPOSITORY } from "../persistence/session.repository";
 import type { SessionRepository, StoredSession } from "../persistence/session.repository";
+import type { AppDb } from "../../../shared/persistence/drizzle-client";
+import { parseAmr } from "./amr";
+import type { AuthMethod } from "./amr";
 
 /**
  * Which lifetime regime a session was issued under. 1.5.e, F12 "Sessions":
@@ -16,12 +19,24 @@ import type { SessionRepository, StoredSession } from "../persistence/session.re
  */
 export type SessionKind = "consumer" | "staff";
 
-export type SessionValidation =
-  | { readonly valid: true; readonly userId: string }
+export type SessionValidation = { readonly valid: true; readonly userId: string } | SessionRefusal;
+
+export interface SessionRefusal {
+  readonly valid: false;
+  readonly reason: "not_found" | "revoked" | "expired" | "idle_timeout";
+}
+
+/** `SessionValidation` plus how and when the person signed in. */
+export type SessionSignIn =
   | {
-      readonly valid: false;
-      readonly reason: "not_found" | "revoked" | "expired" | "idle_timeout";
-    };
+      readonly valid: true;
+      readonly userId: string;
+      /** OIDC `amr`: how this session was signed in to. */
+      readonly amr: readonly AuthMethod[];
+      /** OIDC `auth_time`: when the person last proved who they are, never extended by use. */
+      readonly authTime: Date;
+    }
+  | SessionRefusal;
 
 @Injectable()
 export class SessionService {
@@ -40,17 +55,29 @@ export class SessionService {
    * separately-configured staff IDLE window would be a number that can
    * never matter, not a real knob — see `env.schema.ts`'s own note.
    */
-  async issue(userId: string, now: Date, kind: SessionKind = "consumer"): Promise<string> {
+  async issue(
+    userId: string,
+    now: Date,
+    kind: SessionKind,
+    amr: readonly AuthMethod[],
+    signedInAt: Date = now,
+    tx?: AppDb,
+  ): Promise<string> {
     const { token, hash } = issueOpaqueToken();
     const absoluteTtlMs =
       kind === "staff"
         ? this.config.session.staffAbsoluteTtlMs
         : this.config.session.consumerAbsoluteTtlMs;
-    await this.sessions.create({
-      id: hash,
-      userId,
-      absoluteExpiresAt: new Date(now.getTime() + absoluteTtlMs),
-    });
+    await this.sessions.create(
+      {
+        id: hash,
+        userId,
+        absoluteExpiresAt: new Date(now.getTime() + absoluteTtlMs),
+        amr,
+        signedInAt,
+      },
+      tx,
+    );
     return token;
   }
 
@@ -61,6 +88,15 @@ export class SessionService {
    * would let idle expiry go stale.
    */
   async validateAndTouch(token: string, now: Date): Promise<SessionValidation> {
+    return this.validateWithSignIn(token, now);
+  }
+
+  /**
+   * `validateAndTouch`, also returning how and when the person signed in —
+   * what an ID token's `amr` and `auth_time` come from, and what a step-up
+   * check (a fresh sign-in before adding a passkey) reads.
+   */
+  async validateWithSignIn(token: string, now: Date): Promise<SessionSignIn> {
     const record = await this.lookup(token);
     if (record === null) {
       return { valid: false, reason: "not_found" };
@@ -75,7 +111,12 @@ export class SessionService {
       return { valid: false, reason: "idle_timeout" };
     }
     await this.sessions.touch(record.id, now);
-    return { valid: true, userId: record.userId };
+    return {
+      valid: true,
+      userId: record.userId,
+      amr: parseAmr(record.amr),
+      authTime: record.signedInAt,
+    };
   }
 
   /** Idempotent — revoking an already-revoked or unknown session is a no-op. */
@@ -94,6 +135,11 @@ export class SessionService {
    */
   async revokeAllForUser(userId: string, now: Date): Promise<void> {
     await this.sessions.revokeAllForUser(userId, now);
+  }
+
+  /** Ends every other session of this user, keeping the caller's (`token`). */
+  async revokeOthers(userId: string, token: string, now: Date): Promise<void> {
+    await this.sessions.revokeOthers(userId, hashOpaqueToken(token), now);
   }
 
   private async lookup(token: string): Promise<StoredSession | null> {

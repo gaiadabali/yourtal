@@ -71,7 +71,11 @@ export function BillingScreen({
         <CardHeader>
           <CardTitle as="h2">{t("billing.buyPointsTitle")}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-3">
+          {region === "ID" ? (
+            // F104: Indonesia is a demo on simulated payments, so say what a purchase does.
+            <p className="text-body-sm font-sans text-fg-muted">{t("billing.demoNote")}</p>
+          ) : null}
           <BillingPackagePicker
             businessId={businessId}
             packages={packages}

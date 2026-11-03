@@ -17,3 +17,5 @@ eec197b0e4ec9fb2130dab0686cdf5b7f208cd5c:packages/sdk-merchant/src/signing.test.
 eec197b0e4ec9fb2130dab0686cdf5b7f208cd5c:packages/sdk-merchant/src/signing.test.ts:generic-api-key:73
 eec197b0e4ec9fb2130dab0686cdf5b7f208cd5c:packages/sdk-merchant/src/signing.test.ts:generic-api-key:83
 eec197b0e4ec9fb2130dab0686cdf5b7f208cd5c:packages/sdk-merchant/src/signing.test.ts:generic-api-key:93
+# a deliberately wrong test key in the Stripe simulator test, on the old reference branch group/5-sim (main later renamed it so it no longer matches)
+eb48faf93e84f295d9c8258974fd9dd1c514f373:packages/paysim/src/api-core.test.ts:stripe-access-token:16

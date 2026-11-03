@@ -39,7 +39,8 @@ export default async function WalletVoucherDetailPage(
   const voucher = voucherResult.data;
 
   const isRedeemable = isVoucherRedeemable(voucher, Date.now());
-  const qrResult = isRedeemable ? await getWalletVoucherQr(voucherId) : null;
+  // A voucher redeemed in a partner's app has no QR: its code is typed there.
+  const qrResult = isRedeemable && !voucher.redeemIn ? await getWalletVoucherQr(voucherId) : null;
 
   // The server's `giftable` decides gifting and listing alike: transferable, unused, one hop.
   // When it says no, the page says which rule it was.
@@ -65,6 +66,7 @@ export default async function WalletVoucherDetailPage(
         initialDetail={initialDetail}
         initialQr={qrResult?.ok ? qrResult.data : null}
         giftable={pass.canGift}
+        {...(voucher.redeemIn ? { redeemIn: voucher.redeemIn } : {})}
         {...(pass.notice ? { passNotice: pass.notice } : {})}
         {...(passedOn ? { passedOn } : {})}
         {...(charities ? { charities } : {})}

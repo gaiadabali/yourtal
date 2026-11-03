@@ -76,7 +76,11 @@
       "giftPending": "Kamu menghadiahkan voucher ini pada {date}. Penerima punya waktu sampai {deadline} untuk menerima. Kalau tidak, voucher kembali ke dompetmu dengan kode baru."
     },
     "giftFrom": "Hadiah dari {name}",
-    "shortRef": "Ref. {code}"
+    "shortRef": "Ref. {code}",
+    "appInstructions": "Buka SnapApp, masuk ke Poin, pilih Gunakan voucher YourTal, lalu masukkan kode ini. Hanya akun SnapApp yang tertaut ke akun YourTal-mu yang dapat memakainya.",
+    "appCodeCopy": "Salin kode",
+    "appCodeCopied": "Tersalin",
+    "appCodeUnavailable": "Kodemu belum bisa ditampilkan. Sambungkan kembali lalu buka ulang voucher ini."
   },
   "redemption": {
     "balanceCarrying": "Kalau belanjamu kurang dari nilai voucher, sisanya tetap tersimpan untuk dipakai lain kali.",

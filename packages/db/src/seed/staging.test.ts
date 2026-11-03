@@ -6,6 +6,7 @@ import { verify as verifyPassword } from "@node-rs/argon2";
 import pg from "pg";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { OWNER_URL } from "../database-urls";
+import { ensureSnapAppScansListing } from "./demo-snapapp-scans";
 import { seedStaging } from "./staging";
 
 /**
@@ -85,6 +86,9 @@ const AU_AFFORDABLE_LISTING_ID = "00000000-0000-4000-9000-000000000303";
 const AU_AFFORDABLE_LOCATION_ID = "00000000-0000-4000-9000-000000000304";
 const ID_LISTING_ID = "00000000-0000-4000-9000-000000000305";
 const ID_LOCATION_ID = "00000000-0000-4000-9000-000000000306";
+/** 2.8 T7 — the ids `demo-snapapp-scans.ts` uses. */
+const SCANS_LISTING_ID = "00000000-0000-4000-9000-000000000401";
+const SCANS_LOCATION_ID = "00000000-0000-4000-9000-000000000402";
 const DEMO_EMAILS = [
   "viewer.au@demo.yourtal.test",
   "viewer.id@demo.yourtal.test",
@@ -133,6 +137,7 @@ async function cleanStagingRows(): Promise<void> {
     [LISTING_ID, LOCATION_ID],
     [AU_AFFORDABLE_LISTING_ID, AU_AFFORDABLE_LOCATION_ID],
     [ID_LISTING_ID, ID_LOCATION_ID],
+    [SCANS_LISTING_ID, SCANS_LOCATION_ID],
   ]) {
     await owner.query(`DELETE FROM voucher.vouchers WHERE listing_id = $1`, [listingId]);
     await owner.query(`DELETE FROM store.listing_location WHERE listing_id = $1`, [listingId]);
@@ -345,6 +350,7 @@ const LOCATION_ID_BY_LISTING: Record<string, string> = {
   [LISTING_ID]: LOCATION_ID,
   [AU_AFFORDABLE_LISTING_ID]: AU_AFFORDABLE_LOCATION_ID,
   [ID_LISTING_ID]: ID_LOCATION_ID,
+  [SCANS_LISTING_ID]: SCANS_LOCATION_ID,
 };
 
 /** A stand-in for the voucher service's `/internal/v1/batches` and
@@ -1198,6 +1204,99 @@ describe("seedStaging", () => {
       expect(third.redemptionBalance.find((b) => b.region === "ID")?.status).toBe(
         "already_sufficient",
       );
+    } finally {
+      await ledger.close();
+    }
+  });
+});
+
+describe("ensureSnapAppScansListing (2.8 T7)", () => {
+  async function listing() {
+    const { rows } = await owner.query(`SELECT * FROM store.listings WHERE id = $1`, [
+      SCANS_LISTING_ID,
+    ]);
+    return rows[0] as Record<string, unknown> | undefined;
+  }
+  const voucherCount = async () =>
+    Number(
+      (
+        await owner.query<{ n: string }>(
+          `SELECT count(*)::text AS n FROM voucher.vouchers WHERE listing_id = $1`,
+          [SCANS_LISTING_ID],
+        )
+      ).rows[0]?.n,
+    );
+
+  it("does nothing, and calls no service, where Snap App's AU business does not exist", async () => {
+    const quiet = () => undefined;
+    const result = await ensureSnapAppScansListing(
+      owner,
+      { baseUrl: "http://127.0.0.1:1", serviceSecret: LEDGER_SECRET },
+      { baseUrl: voucherBaseUrl, serviceSecret: VOUCHER_SECRET },
+      quiet,
+    );
+    expect(result.status).toBe("skipped");
+    expect(await listing()).toBeUndefined();
+    expect(voucherService.received).toEqual([]);
+  });
+
+  it("creates the bound, online, adult listing with 50 vouchers once, and a rerun changes nothing", async () => {
+    const ledger = new FakeLedger();
+    const baseUrl = await ledger.listen();
+    try {
+      await seedStaging(owner, {
+        demoPassword: DEMO_PASSWORD,
+        ledger: { baseUrl, serviceSecret: LEDGER_SECRET },
+        voucher: { baseUrl: voucherBaseUrl, serviceSecret: VOUCHER_SECRET },
+        log: () => undefined,
+        replayDetectionWindowMs: TEST_REPLAY_WINDOW_MS,
+      });
+      const ledgerConfig = { baseUrl, serviceSecret: LEDGER_SECRET };
+      const voucherConfig = { baseUrl: voucherBaseUrl, serviceSecret: VOUCHER_SECRET };
+
+      const first = await ensureSnapAppScansListing(
+        owner,
+        ledgerConfig,
+        voucherConfig,
+        () => undefined,
+      );
+      expect(first).toEqual({ status: "created", detail: expect.any(String) });
+      const row = await listing();
+      expect(row).toMatchObject({
+        title: "50 SnapApp scans",
+        merchant_id: BUSINESS_IDS[0],
+        region: "AU",
+        currency: "AUD",
+        channel: "online",
+        audience: "adult",
+        partial_redemption_policy: "single_use_forfeit",
+        partial_redemption: "single_use",
+        transferable: false,
+        redeem_partner_id: "snap-app",
+      });
+      expect(Number(row?.face_value_minor)).toBe(500);
+      expect(Number(row?.settlement_value_minor)).toBe(500);
+      expect(await voucherCount()).toBe(50);
+      const pricing = ledger.received.filter((r) => r.path === "/v1/pricing/listing");
+      expect(pricing.length).toBeGreaterThan(0);
+
+      const before = await listing();
+      const second = await ensureSnapAppScansListing(
+        owner,
+        ledgerConfig,
+        voucherConfig,
+        () => undefined,
+      );
+      expect(second.status).toBe("already_present");
+      expect(await listing()).toEqual(before);
+      expect(await voucherCount()).toBe(50);
+
+      // A binding lost (or never set) is restored, and the rest is left alone.
+      await owner.query(`UPDATE store.listings SET redeem_partner_id = NULL WHERE id = $1`, [
+        SCANS_LISTING_ID,
+      ]);
+      await ensureSnapAppScansListing(owner, ledgerConfig, voucherConfig, () => undefined);
+      expect((await listing())?.redeem_partner_id).toBe("snap-app");
     } finally {
       await ledger.close();
     }

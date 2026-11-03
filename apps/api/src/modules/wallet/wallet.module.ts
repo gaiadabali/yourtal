@@ -14,6 +14,7 @@ import { WalletAttributeLoader } from "./wallet-attribute-loader";
 import { WalletController } from "./wallet.controller";
 import { WalletGiftController } from "./wallet-gift.controller";
 import { CheckoutModule } from "../checkout/checkout.module";
+import { LISTING_PARTNER_READER, ListingPartnerReader } from "./listing-partner-reader";
 import { GIFT_PARTY_READER, GiftPartyReader } from "./gift-party-reader";
 import { GIFT_NOTIFIER_DB, GiftNotifier } from "./gift-notifier";
 
@@ -52,6 +53,11 @@ export const WALLET_DB = Symbol("WALLET_DB");
     {
       provide: GIFT_PARTY_READER,
       useFactory: (db: AppDb) => new GiftPartyReader(db),
+      inject: [WALLET_DB],
+    },
+    {
+      provide: LISTING_PARTNER_READER,
+      useFactory: (db: AppDb) => new ListingPartnerReader(db),
       inject: [WALLET_DB],
     },
     { provide: GIFT_NOTIFIER_DB, useExisting: WALLET_DB },

@@ -34539,6 +34539,19 @@
           "code": {
             "type": "string",
             "minLength": 1
+          },
+          "redeemIn": {
+            "type": "object",
+            "properties": {
+              "partnerId": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "partnerId"
+            ],
+            "additionalProperties": false
           }
         },
         "required": [

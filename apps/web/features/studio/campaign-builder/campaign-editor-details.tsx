@@ -207,6 +207,7 @@ export function CampaignEditorDetails({
           disabled={disabled}
           maxLength={MAX_SYNOPSIS_LENGTH}
           rows={3}
+          placeholder={t("campaignBuilder.details.synopsisPlaceholder")}
           aria-describedby={synopsisError ? synopsisErrorId : synopsisHelpId}
           aria-invalid={synopsisError ? true : undefined}
           {...form.register("synopsis", {
@@ -294,9 +295,12 @@ export function CampaignEditorDetails({
             type="date"
             disabled={disabled}
             value={toDateInputValue(draft.startsAt)}
-            onChange={(event) =>
-              onChange({ ...draft, startsAt: fromDateInputValue(event.target.value) })
-            }
+            onChange={(event) => {
+              // A cleared date is not a date: keep the last one.
+              if (event.target.value) {
+                onChange({ ...draft, startsAt: fromDateInputValue(event.target.value) });
+              }
+            }}
           />
         </div>
         <div className="flex-1">
@@ -305,9 +309,11 @@ export function CampaignEditorDetails({
             type="date"
             disabled={disabled}
             value={toDateInputValue(draft.endsAt)}
-            onChange={(event) =>
-              onChange({ ...draft, endsAt: fromDateInputValue(event.target.value) })
-            }
+            onChange={(event) => {
+              if (event.target.value) {
+                onChange({ ...draft, endsAt: fromDateInputValue(event.target.value) });
+              }
+            }}
           />
         </div>
       </div>

@@ -83,6 +83,32 @@ async function fundedAllocationId(cookie: string, businessId: string): Promise<s
   return response.json<{ allocation: { allocationId: string } }>().allocation.allocationId;
 }
 
+/** A 20-minute campaign asks 4 questions (F10), so review needs a bank of 12 (3x). */
+async function addQuestions(cookie: string, businessId: string, campaignId: string, count = 12) {
+  for (let n = 1; n <= count; n += 1) {
+    const correctOptionId = randomUUID();
+    const question = await app.inject({
+      method: "POST",
+      url: `/api/${businessId}/studio/campaigns/${campaignId}/questions`,
+      headers: { cookie, "idempotency-key": `test-${randomUUID()}` },
+      payload: {
+        id: randomUUID(),
+        campaignId,
+        type: "multiple_choice",
+        prompt: `Which discount did the video mention? (${n})`,
+        options: [
+          { id: correctOptionId, label: "10% off" },
+          { id: randomUUID(), label: "20% off" },
+        ],
+        correctOptionId,
+        answerableAfterSeconds: 10,
+        timerSeconds: 15,
+      },
+    });
+    expect(question.statusCode).toBe(201);
+  }
+}
+
 async function createDraftCampaign(cookie: string, businessId: string): Promise<string> {
   const now = Date.now();
   const response = await app.inject({
@@ -120,26 +146,7 @@ describe("7.3.e Check: studio campaign authoring, end to end", () => {
     const allocationId = await fundedAllocationId(cookie, businessId);
     const campaignId = await createDraftCampaign(cookie, businessId);
 
-    const correctOptionId = randomUUID();
-    const question = await app.inject({
-      method: "POST",
-      url: `/api/${businessId}/studio/campaigns/${campaignId}/questions`,
-      headers: { cookie, "idempotency-key": `test-${randomUUID()}` },
-      payload: {
-        id: randomUUID(),
-        campaignId,
-        type: "multiple_choice",
-        prompt: "Which discount did the video mention?",
-        options: [
-          { id: correctOptionId, label: "10% off" },
-          { id: randomUUID(), label: "20% off" },
-        ],
-        correctOptionId,
-        answerableAfterSeconds: 10,
-        timerSeconds: 15,
-      },
-    });
-    expect(question.statusCode).toBe(201);
+    await addQuestions(cookie, businessId, campaignId);
 
     const questionsList = await app.inject({
       method: "GET",
@@ -147,7 +154,7 @@ describe("7.3.e Check: studio campaign authoring, end to end", () => {
       headers: { cookie },
     });
     expect(questionsList.statusCode).toBe(200);
-    expect(questionsList.json<unknown[]>()).toHaveLength(1);
+    expect(questionsList.json<unknown[]>()).toHaveLength(12);
 
     // 20 minutes at AU's 8 pts/min ceiling (platform_region_setting.sql) = 160
     // points. Base 115 + a 45-point bonus (<= 40% of 115 = 46) lands exactly
@@ -186,6 +193,11 @@ describe("7.3.e Check: studio campaign authoring, end to end", () => {
     });
     expect(aboveCeiling.statusCode).toBe(400);
     expect(aboveCeiling.json<{ code: string }>().code).toBe("reward_exceeds_ceiling");
+    // B4: the per-minute setting is scaled to this campaign's length, in plain words.
+    const refusal = aboveCeiling.json<{ message: string; maxPoints: number }>();
+    expect(refusal.maxPoints).toBe(160);
+    expect(refusal.message).toMatch(/^A 20-minute video can pay at most 160 points/);
+    expect(refusal.message).not.toMatch(/F14|ceiling/);
 
     await fillMedia(campaignId);
 
@@ -197,6 +209,39 @@ describe("7.3.e Check: studio campaign authoring, end to end", () => {
     // Nest's default POST status (submit.controller has no @HttpCode override).
     expect(submit.statusCode).toBe(201);
     expect(submit.json<{ lifecycleState: string }>().lifecycleState).toBe("in_review");
+  });
+
+  it("B6, B7: submitting a draft that is not ready names each thing it lacks, and changes nothing", async () => {
+    const { cookie, businessId } = await ownerAt();
+    await markKybVerified(businessId);
+    const campaignId = await createDraftCampaign(cookie, businessId);
+    // A new draft may have no synopsis yet; submitting needs one.
+    const emptied = await app.inject({
+      method: "PATCH",
+      url: `/api/${businessId}/studio/campaigns/${campaignId}`,
+      headers: { cookie },
+      payload: { synopsis: "" },
+    });
+    expect(emptied.statusCode, emptied.body).toBe(200);
+
+    const submit = await app.inject({
+      method: "POST",
+      url: `/api/${businessId}/studio/campaigns/${campaignId}/submit`,
+      headers: { cookie },
+    });
+
+    expect(submit.statusCode).toBe(400);
+    expect(submit.json()).toMatchObject({
+      code: "campaign_not_ready",
+      missing: ["synopsis", "video", "reward", "questions"],
+      questionsNeeded: 12,
+      questionsHave: 0,
+    });
+    const [row] = await db
+      .select({ state: campaigns.lifecycleState })
+      .from(campaigns)
+      .where(eq(campaigns.id, campaignId));
+    expect(row?.state).toBe("draft");
   });
 
   it("refuses submission for a business that is not yet KYB-verified", async () => {
@@ -217,7 +262,21 @@ describe("7.3.e Check: studio campaign authoring, end to end", () => {
   it("13.3.b: the automated screen refuses a blocked title, and the campaign stays a draft", async () => {
     const { cookie, businessId } = await ownerAt();
     await markKybVerified(businessId);
+    const allocationId = await fundedAllocationId(cookie, businessId);
     const campaignId = await createDraftCampaign(cookie, businessId);
+    await addQuestions(cookie, businessId, campaignId);
+    const reward = await app.inject({
+      method: "PUT",
+      url: `/api/${businessId}/studio/campaigns/${campaignId}/reward`,
+      headers: { cookie },
+      payload: {
+        allocationId,
+        rewardPointsPerCompletion: 5,
+        accuracyBonusPoints: 0,
+        maxPointsForCampaign: 100,
+      },
+    });
+    expect(reward.statusCode, reward.body).toBe(200);
     await fillMedia(campaignId);
     const renamed = await app.inject({
       method: "PATCH",

@@ -58,12 +58,21 @@ function toDraftStatus(lifecycleState: string): CampaignDraftStatus {
     : "paused";
 }
 
+/**
+ * Drafts created before a new draft's synopsis was left empty carry the old hint as
+ * their real text. It is shown as the placeholder it always was, not as a synopsis.
+ */
+const LEGACY_SYNOPSIS_PLACEHOLDERS = new Set([
+  "Add a synopsis before you submit for review.",
+  "Tambahkan sinopsis sebelum Anda mengirim untuk ditinjau.",
+]);
+
 export function apiDraftToWebDraft(api: ApiCampaignDraft, merchantName: string): CampaignDraft {
   return {
     id: api.id,
     businessId: api.businessId,
     title: api.title,
-    synopsis: api.synopsis,
+    synopsis: LEGACY_SYNOPSIS_PLACEHOLDERS.has(api.synopsis) ? "" : api.synopsis,
     merchantName,
     kind: api.kind,
     video: {
@@ -103,6 +112,15 @@ export function apiDraftToWebDraft(api: ApiCampaignDraft, merchantName: string):
     captionsUrl: api.captionsUrl,
     allocationId: api.rewardConfig?.allocationId ?? null,
     accuracyBonusPoints: api.rewardConfig?.accuracyBonusPoints ?? 0,
+    savedReward: api.rewardConfig
+      ? {
+          rewardPoints: api.rewardConfig.rewardPointsPerCompletion,
+          accuracyBonusPoints: api.rewardConfig.accuracyBonusPoints,
+          allocationId: api.rewardConfig.allocationId,
+          totalBudgetPoints: api.rewardConfig.maxPointsForCampaign,
+          dailyCapPoints: api.rewardConfig.dailyCapPoints,
+        }
+      : null,
     rewardValueMinorUnits: null,
     rewardCurrency: null,
     durationSeconds: api.durationSeconds > 0 ? api.durationSeconds : null,

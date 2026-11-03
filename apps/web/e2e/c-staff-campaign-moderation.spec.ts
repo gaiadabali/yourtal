@@ -221,27 +221,30 @@ async function createSubmittedCampaign(
   const campaignId = ((await created.json()) as { id: string }).id;
   fillCampaignMedia(campaignId);
 
-  const correctOptionId = crypto.randomUUID();
-  const question = await request.post(
-    `${apiBaseUrl()}/api/${businessId}/studio/campaigns/${campaignId}/questions`,
-    {
-      headers: { cookie: owner.cookie, "idempotency-key": crypto.randomUUID() },
-      data: {
-        id: crypto.randomUUID(),
-        campaignId,
-        type: "multiple_choice",
-        prompt: "Which discount did the video mention?",
-        options: [
-          { id: correctOptionId, label: "10% off" },
-          { id: crypto.randomUUID(), label: "20% off" },
-        ],
-        correctOptionId,
-        answerableAfterSeconds: 5,
-        timerSeconds: 10,
+  // A 60s campaign asks one question (F10), so review needs a bank of three (3x).
+  for (let n = 1; n <= 3; n += 1) {
+    const correctOptionId = crypto.randomUUID();
+    const question = await request.post(
+      `${apiBaseUrl()}/api/${businessId}/studio/campaigns/${campaignId}/questions`,
+      {
+        headers: { cookie: owner.cookie, "idempotency-key": crypto.randomUUID() },
+        data: {
+          id: crypto.randomUUID(),
+          campaignId,
+          type: "multiple_choice",
+          prompt: `Which discount did the video mention? (${n})`,
+          options: [
+            { id: correctOptionId, label: "10% off" },
+            { id: crypto.randomUUID(), label: "20% off" },
+          ],
+          correctOptionId,
+          answerableAfterSeconds: 5,
+          timerSeconds: 10,
+        },
       },
-    },
-  );
-  expect(question.ok(), await question.text()).toBeTruthy();
+    );
+    expect(question.ok(), await question.text()).toBeTruthy();
+  }
 
   const purchase = await request.post(
     `${apiBaseUrl()}/api/${businessId}/studio/billing/purchases`,

@@ -218,6 +218,8 @@ test.describe.serial("9.3.b: approving KYB unblocks submit, through the real Stu
     await page.getByRole("button", { name: "New campaign" }).click();
     campaignTitle = `Staff KYB Submit E2E ${uniqueSuffix()}`;
     await page.getByLabel("Campaign title").fill(campaignTitle);
+    // Review needs words to read; a new draft starts with none.
+    await page.getByLabel("Synopsis").fill("Exercises KYB approval and submit end to end.");
     await page.getByRole("button", { name: "Back to campaigns" }).click();
     await page.reload();
     await expect(page.getByText(campaignTitle)).toBeVisible();
@@ -252,25 +254,23 @@ test.describe.serial("9.3.b: approving KYB unblocks submit, through the real Stu
       .getByLabel("Funded by")
       .selectOption({ value: balance.allocations[0]?.allocationId as string });
     await page.getByRole("button", { name: "Save reward" }).click();
-    const ceilingText = await page.getByText(/exceeds the \d+-point ceiling/).textContent();
-    const ceilingPoints = Number(/exceeds the (\d+)-point ceiling/.exec(ceilingText ?? "")?.[1]);
+    const ceilingText = await page.getByText(/Lower the reward to \d+ or less/).textContent();
+    const ceilingPoints = Number(/Lower the reward to (\d+) or less/.exec(ceilingText ?? "")?.[1]);
     expect(ceilingPoints).toBeGreaterThan(0);
     await page.getByLabel("Reward (points)").fill(String(ceilingPoints));
     await page.getByRole("button", { name: "Save reward" }).click();
     await expect(page.getByText("Server-priced value (one completion)")).toBeVisible();
 
-    // A one-question bank -- enough to be a real question bank; 7.3's own
-    // legality check for draft -> in_review is the lifecycle state machine
-    // only (transition-campaign-lifecycle.use-case.ts), not question-bank
-    // content, so this is about a faithful advertiser flow, not a submit
-    // precondition.
+    // A bank of three: a 60 s campaign asks one question and review needs 3x that (F10).
     await page.getByRole("tab", { name: "Questions" }).click();
-    await page.getByRole("button", { name: "Add question" }).click();
-    await page.getByRole("button", { name: "Add true / false" }).click();
-    await page.getByLabel("Question prompt").fill("Is this fact true?");
-    await page.getByRole("radio", { name: "True", exact: true }).check();
-    await page.getByRole("button", { name: "Save question" }).click();
-    await expect(page.getByRole("dialog")).toBeHidden();
+    for (let n = 1; n <= 3; n += 1) {
+      await page.getByRole("button", { name: "Add question" }).click();
+      await page.getByRole("button", { name: "Add true / false" }).click();
+      await page.getByLabel("Question prompt").fill(`Is this fact ${String(n)} true?`);
+      await page.getByRole("radio", { name: "True", exact: true }).check();
+      await page.getByRole("button", { name: "Save question" }).click();
+      await expect(page.getByRole("dialog")).toBeHidden();
+    }
 
     // Still blocked -- the verification banner, not content completeness.
     const submitButton = page.getByRole("button", { name: "Submit for review" });

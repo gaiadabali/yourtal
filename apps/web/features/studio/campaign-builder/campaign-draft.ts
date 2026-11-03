@@ -45,6 +45,15 @@ export interface CampaignBudget {
   dailyCapPoints: number | null;
 }
 
+/** The reward and budget as the server holds them, so the editor can tell what is not saved yet. */
+export interface SavedRewardConfig {
+  rewardPoints: number;
+  accuracyBonusPoints: number;
+  allocationId: string;
+  totalBudgetPoints: number;
+  dailyCapPoints: number | null;
+}
+
 export interface CampaignDraft {
   id: string;
   businessId: string;
@@ -81,6 +90,11 @@ export interface CampaignDraft {
   /** The server's own priced value for one completion (base + bonus), in the business's own currency — 7.3.h. `null` until a real `PUT .../reward` has returned one this session. */
   rewardValueMinorUnits: number | null;
   rewardCurrency: string | null;
+  /**
+   * Live mode only: the reward config the server holds (`null` when none is saved yet).
+   * Left out in mock mode, where nothing is ever saved or "not saved".
+   */
+  savedReward?: SavedRewardConfig | null;
   /** The campaign's real length and asked-question count as the API holds them (`null` in mock mode, or before the server knows). Chapters alone cannot give these: a campaign with a ready video often has none. */
   durationSeconds: number | null;
   questionsAsked: number | null;
@@ -96,6 +110,15 @@ export function draftDurationSeconds(draft: CampaignDraft): number {
   if (draft.video.status === "ready" && known > 0) return known;
   const fromChapters = totalDurationSeconds(draft.chapters);
   return fromChapters > 0 ? fromChapters : known;
+}
+
+/**
+ * Live mode: the video's real length is only known once it has been processed. Before
+ * that the length on file is a placeholder, and chapters laid out meanwhile are not a
+ * length either, so the preview says "pending" rather than a figure that then changes.
+ */
+export function draftDurationPending(draft: CampaignDraft, isLiveMode: boolean): boolean {
+  return isLiveMode && draft.video.status !== "ready";
 }
 
 /** How many questions a viewer will actually be asked: the server's count when live, else the F10 formula on the length. Not the size of the question bank, which only has to be big enough to draw from. */

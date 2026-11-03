@@ -81,4 +81,21 @@ describe("CampaignEditorDetails", () => {
     const gamblingOption = screen.getByRole<HTMLOptionElement>("option", { name: /gambling/i });
     expect(gamblingOption).toBeDisabled();
   });
+
+  // B8: the hint used to be saved into a new draft as its real synopsis (456 characters left).
+  it("shows the synopsis hint as a placeholder, with the whole 500 characters free", () => {
+    render(<StatefulDetails initial={baseDraft()} />);
+    const synopsis = screen.getByRole("textbox", { name: "Synopsis" });
+    expect(synopsis).toHaveValue("");
+    expect(synopsis).toHaveAttribute("placeholder", "Add a synopsis before you submit for review.");
+    expect(screen.getByText(/500 characters left/)).toBeInTheDocument();
+  });
+
+  it("does not take the hint for text a draft already has", () => {
+    const draft = baseDraft();
+    draft.synopsis = "Two coffees for one, all week.";
+    render(<StatefulDetails initial={draft} />);
+    expect(screen.getByRole("textbox", { name: "Synopsis" })).toHaveValue(draft.synopsis);
+    expect(screen.getByText(/470 characters left/)).toBeInTheDocument();
+  });
 });

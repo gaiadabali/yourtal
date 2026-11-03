@@ -43,6 +43,8 @@ export function ChapterTrack({
   locale,
 }: ChapterTrackProps) {
   const t = getPlayerTranslator(locale);
+  // A chapter never shrinks below `min-w-32`, so on a phone the row scrolls
+  // sideways rather than squeezing five chips until their text overlaps.
   return (
     <ol
       className="flex w-full list-none gap-1.5 overflow-x-auto p-0"
@@ -59,7 +61,7 @@ export function ChapterTrack({
             : t("chapters.upcoming");
 
         return (
-          <li key={chapter.index} className="min-w-0 flex-1">
+          <li key={chapter.index} className="min-w-32 flex-1">
             <Button
               type="button"
               variant={isCurrent ? "default" : isReached ? "secondary" : "outline"}
@@ -68,8 +70,8 @@ export function ChapterTrack({
               aria-current={isCurrent ? "step" : undefined}
               onClick={() => onSelectChapter(chapter.startSeconds)}
             >
-              <span className="text-xs font-semibold">{chapter.title}</span>
-              <span className="text-caption font-normal">
+              <span className="text-xs font-semibold break-words">{chapter.title}</span>
+              <span className="text-caption font-normal break-words">
                 {formatClock(chapter.startSeconds)}–{formatClock(chapter.endSeconds)} · {status}
               </span>
             </Button>

@@ -268,7 +268,9 @@ export function VideoPlayer({
             questionNumber={phase.checkpointIndex + 1}
             totalQuestions={phase.totalQuestions}
             answerTimerMs={phase.answerTimerMs}
-            onAnswer={(selectedOptionId, timedOut) => void answer(selectedOptionId, timedOut)}
+            onAnswer={(selectedOptionId, timedOut, answeredBool) =>
+              void answer(selectedOptionId, timedOut, answeredBool)
+            }
             locale={locale}
           />
         ) : null}

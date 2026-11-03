@@ -45,7 +45,8 @@
   "checkpoint": {
     "progress": "Pertanyaan {current} dari {total}",
     "timeRemaining": "Sisa {seconds} dtk",
-    "unsupported": "Jenis pertanyaan ini belum didukung — akan dilewati.",
+    "true": "Benar",
+    "false": "Salah",
     "submitting": "Mengirim jawabanmu…",
     "timedOut": "Waktu untuk pertanyaan habis, jadi dihitung tidak dijawab. Kamu tetap mendapat reward saat video selesai.",
     "timedOutBonus": "Waktu untuk pertanyaan habis, jadi dihitung tidak dijawab. Kamu tetap mendapat reward saat video selesai, tetapi tanpa bonus akurasi."

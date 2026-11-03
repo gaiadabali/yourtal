@@ -111,6 +111,25 @@ func TestLookupReadsACapturedOrderWithItsReceipt(t *testing.T) {
 	}
 }
 
+// Authorize stores the ref exactly as sent, so a ref with spaces must be found by its own spaces.
+func TestLookupFindsAnOrderByItsRefAsAuthorized(t *testing.T) {
+	f := newFixture(t)
+	handler, cred := f.httpFixture(t)
+	_, plaintext := f.mintOne(t, "balance_carrying", 50_000, nil)
+	order := orderRef() + " "
+	authorization, err := f.network.Authorize(context.Background(), redeem.AuthorizeRequest{
+		Code: plaintext, MerchantID: f.merchantID, AmountMinor: 10_000, Currency: "IDR", OrderRef: order,
+	})
+	if err != nil {
+		t.Fatalf("Authorize: %v", err)
+	}
+
+	status, answer, body := lookupOverHTTP(t, handler, cred, order)
+	if status != http.StatusOK || answer.AuthorizationID != authorization.ID.String() {
+		t.Fatalf("status = %d, answer = %+v (%s), want the held order %s", status, answer, body, authorization.ID)
+	}
+}
+
 func TestLookupReadsAVoidedOrder(t *testing.T) {
 	f := newFixture(t)
 	handler, cred := f.httpFixture(t)

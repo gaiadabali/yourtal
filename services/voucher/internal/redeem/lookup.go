@@ -59,11 +59,11 @@ type OrderStatus struct {
 // expires_at reads as expired even before the sweep, the same rule capture
 // and void already apply at the moment of use.
 func (n *Network) LookupOrder(ctx context.Context, merchantID uuid.UUID, orderRef string) (OrderStatus, error) {
-	orderRef = strings.TrimSpace(orderRef)
-	if orderRef == "" {
+	if strings.TrimSpace(orderRef) == "" {
 		return OrderStatus{}, ErrOrderRefRequired
 	}
 
+	// Query the ref as authorized: Authorize stores it untrimmed, so trimming here would miss it.
 	row, err := sqlcgen.New(n.pool).LookupOrderForMerchant(ctx, sqlcgen.LookupOrderForMerchantParams{
 		MerchantID: pgUUID(merchantID), MerchantOrderRef: orderRef,
 	})

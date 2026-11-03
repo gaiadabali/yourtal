@@ -15,6 +15,7 @@ import { readVoucherDetailCache, writeVoucherDetailCache } from "./voucher-detai
 import type { WalletQrDetail } from "./wallet-data";
 import { useVoucherCode } from "./use-voucher-code";
 import { useVoucherQrRotation } from "./use-voucher-qr-rotation";
+import { VoucherAppCode } from "./voucher-app-code";
 import { VoucherQrCode } from "./voucher-qr-code";
 import { VoucherValidityCountdown } from "./voucher-validity-countdown";
 import { VoucherArchivedPanel } from "./voucher-archived-panel";
@@ -47,6 +48,8 @@ export interface VoucherDetailViewProps {
   passNotice?: PassNotice;
   /** For a transferred voucher: the gift that gave it away, when there is one. */
   passedOn?: PassedOn;
+  /** Docs/28 4.4: the voucher is redeemed inside a partner's app, so the page shows the code, not a QR or a branch. */
+  redeemIn?: { partnerId: string };
 }
 
 /** True while the browser reports itself offline — 6.5.c: "shows with the network off". */
@@ -119,6 +122,7 @@ export function VoucherDetailView({
   charities,
   passNotice,
   passedOn,
+  redeemIn,
 }: VoucherDetailViewProps) {
   const { locale } = useRegion();
   const t = useTranslations("wallet");
@@ -181,7 +185,9 @@ export function VoucherDetailView({
           <StatusBadge status={statusCopy.badgeStatus}>{statusCopy.label}</StatusBadge>
         </div>
 
-        {isRedeemable && initialQr ? (
+        {isRedeemable && redeemIn ? (
+          <VoucherAppCode code={code} />
+        ) : isRedeemable && initialQr ? (
           <>
             {rotation.current ? (
               <>
@@ -261,7 +267,7 @@ export function VoucherDetailView({
               ) : null;
             })()}
 
-        {detail.location && !isVoid ? (
+        {detail.location && !isVoid && !redeemIn ? (
           <div className="w-full border-t border-border pt-4">
             <h2 className="text-caption text-fg-subtle">{t("voucher.redeemAtLabel")}</h2>
             <p className="font-sans text-body font-medium text-fg">{detail.location.name}</p>
@@ -278,9 +284,15 @@ export function VoucherDetailView({
             {t("voucher.howToRedeem")}
           </Heading>
           <Text tone="muted">
-            {detail.merchantName && detail.partialRedemptionPolicy
-              ? buildRedemptionInstructions(detail.merchantName, detail.partialRedemptionPolicy, t)
-              : t("voucher.genericInstructions")}
+            {redeemIn
+              ? t("voucher.appInstructions")
+              : detail.merchantName && detail.partialRedemptionPolicy
+                ? buildRedemptionInstructions(
+                    detail.merchantName,
+                    detail.partialRedemptionPolicy,
+                    t,
+                  )
+                : t("voucher.genericInstructions")}
           </Text>
         </div>
       )}

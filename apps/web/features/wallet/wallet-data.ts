@@ -83,6 +83,8 @@ export const walletVoucherDetailSchema = z.object({
   title: z.string().optional(),
   /** Never cached (docs/15 rule 7: a plaintext redemption code is never persisted client-side) — see `voucher-detail-cache.ts`. */
   code: z.string().optional(),
+  /** Docs/28 4.4: set with `code` when the voucher is redeemed in a partner's app. */
+  redeemIn: z.object({ partnerId: z.string().min(1) }).optional(),
   currency: z.enum(["AUD", "IDR"]).optional(),
   faceValueMinor: z.number().optional(),
   remainingValueMinor: z.number().optional(),

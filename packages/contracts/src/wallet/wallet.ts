@@ -105,6 +105,12 @@ export type WalletVoucher = z.infer<typeof walletVoucherSchema>;
  */
 export const walletVoucherDetailSchema = walletVoucherSchema.extend({
   code: z.string().min(1).optional(),
+  /**
+   * 2.8 (docs/28 4.4): present only with `code`, when the voucher is bound to a
+   * partner's app. The page then shows the code and how to use it there, with
+   * no QR and no branch.
+   */
+  redeemIn: z.object({ partnerId: z.string().min(1) }).optional(),
 });
 export type WalletVoucherDetail = z.infer<typeof walletVoucherDetailSchema>;
 

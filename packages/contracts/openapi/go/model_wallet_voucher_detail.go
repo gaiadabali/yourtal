@@ -38,6 +38,7 @@ type WalletVoucherDetail struct {
 	Giftable *bool `json:"giftable,omitempty"`
 	GiftBlock *string `json:"giftBlock,omitempty"`
 	Code *string `json:"code,omitempty"`
+	RedeemIn *WalletVoucherDetailRedeemIn `json:"redeemIn,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -543,6 +544,38 @@ func (o *WalletVoucherDetail) SetCode(v string) {
 	o.Code = &v
 }
 
+// GetRedeemIn returns the RedeemIn field value if set, zero value otherwise.
+func (o *WalletVoucherDetail) GetRedeemIn() WalletVoucherDetailRedeemIn {
+	if o == nil || IsNil(o.RedeemIn) {
+		var ret WalletVoucherDetailRedeemIn
+		return ret
+	}
+	return *o.RedeemIn
+}
+
+// GetRedeemInOk returns a tuple with the RedeemIn field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *WalletVoucherDetail) GetRedeemInOk() (*WalletVoucherDetailRedeemIn, bool) {
+	if o == nil || IsNil(o.RedeemIn) {
+		return nil, false
+	}
+	return o.RedeemIn, true
+}
+
+// HasRedeemIn returns a boolean if a field has been set.
+func (o *WalletVoucherDetail) HasRedeemIn() bool {
+	if o != nil && !IsNil(o.RedeemIn) {
+		return true
+	}
+
+	return false
+}
+
+// SetRedeemIn gets a reference to the given WalletVoucherDetailRedeemIn and assigns it to the RedeemIn field.
+func (o *WalletVoucherDetail) SetRedeemIn(v WalletVoucherDetailRedeemIn) {
+	o.RedeemIn = &v
+}
+
 func (o WalletVoucherDetail) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -591,6 +624,9 @@ func (o WalletVoucherDetail) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.Code) {
 		toSerialize["code"] = o.Code
+	}
+	if !IsNil(o.RedeemIn) {
+		toSerialize["redeemIn"] = o.RedeemIn
 	}
 
 	for key, value := range o.AdditionalProperties {
@@ -652,6 +688,7 @@ func (o *WalletVoucherDetail) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "giftable")
 		delete(additionalProperties, "giftBlock")
 		delete(additionalProperties, "code")
+		delete(additionalProperties, "redeemIn")
 		o.AdditionalProperties = additionalProperties
 	}
 

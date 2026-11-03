@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   BadGatewayException,
   ConflictException,
@@ -172,7 +173,8 @@ export class WalletController {
    * voucher service's own owner-scoped `reveal`. The code is sent only while
    * the voucher can still be redeemed, and `no-store` keeps it out of any
    * cache between here and the screen. A failed reveal drops the code and
-   * keeps the voucher: the QR still works. Never log the code or this body.
+   * keeps the voucher: the QR still works. `redeemIn` rides with the code only.
+   * Never log the code or this body.
    */
   @Authorize({ kind: "wallet", action: "view" })
   @Header("Cache-Control", "no-store")
@@ -186,7 +188,22 @@ export class WalletController {
     const voucher = toWalletVoucher(row, await this.namesOf([row]));
     if (!isCodeUsable(row, Date.now())) return voucher;
     const revealed = await this.vouchers.reveal({ voucherId, ownerId });
-    return revealed.isOk() ? { ...voucher, code: revealed.value.code } : voucher;
+    if (revealed.isErr()) return voucher;
+    const { code } = revealed.value;
+    return { ...voucher, code, ...(await this.redeemIn(code, ownerId)) };
+  }
+
+  /** Docs/28 4.4: the partner a bound voucher is redeemed in. Unbound, or unreadable, adds nothing. */
+  private async redeemIn(
+    code: string,
+    ownerId: string,
+  ): Promise<{ redeemIn?: { partnerId: string } }> {
+    const codeSha256 = createHash("sha256").update(code).digest("hex");
+    const holding = await this.vouchers.holding({ codeSha256, ownerId });
+    if (holding.isErr() || !holding.value.held || holding.value.redeemPartnerId === undefined) {
+      return {};
+    }
+    return { redeemIn: { partnerId: holding.value.redeemPartnerId } };
   }
 
   @Authorize({ kind: "wallet", action: "view" })

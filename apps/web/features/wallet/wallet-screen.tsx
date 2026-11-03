@@ -84,6 +84,7 @@ export async function WalletScreen({
           tabHref: (tab) => walletHref({ ...view, tab }),
           nowMs,
           locale,
+          gifts,
         }),
     empty && history.length === 0
       ? null

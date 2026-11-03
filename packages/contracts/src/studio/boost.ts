@@ -32,6 +32,14 @@ export const setBoostRequestSchema = z
   });
 export type SetBoostRequest = z.infer<typeof setBoostRequestSchema>;
 
+/**
+ * `POST /api/{tenantId}/studio/campaigns/{campaignId}/boost/stop`: stop bidding. `now` holds the
+ * boost at once; `end_of_day` lets it run to the end of today on the region's clock. Days already
+ * served are still charged either way.
+ */
+export const stopBoostRequestSchema = z.object({ effective: z.enum(["now", "end_of_day"]) });
+export type StopBoostRequest = z.infer<typeof stopBoostRequestSchema>;
+
 /** One day's boost delivery, on the region's own clock (F16). */
 export const boostDaySchema = z.object({
   day: z.iso.date(),

@@ -266,7 +266,9 @@ const completeSessionResponseSchema: Record<string, unknown> = {
     "`completed` is always true on success — a refusal throws instead (see the 403 below). " +
     "`granted` is false with `reason` set (never `pendingPoints`/`unlockAt`) when the session was " +
     "non-earning (already_earned, no funding configured, identity_check_required (F126), the " +
-    "allocation hold failed, or the grant call itself failed after coverage completed) — 5.1.b/5.3.a. `deliveryCoverage` is the 10.4.c " +
+    "allocation hold failed, or the grant call itself failed after coverage completed) — 5.1.b/5.3.a. " +
+    "`missing` is present only with `reason: identity_check_required` (5.9.f): the steps the viewer " +
+    "still has to take, so the player offers the right one. `deliveryCoverage` is the 10.4.c " +
     'segment-log cross-check\'s verdict, `"unknown"` until that lands (5.1.d).',
   properties: {
     completed: { const: true },
@@ -274,6 +276,7 @@ const completeSessionResponseSchema: Record<string, unknown> = {
     pendingPoints: { type: "integer", minimum: 0 },
     unlockAt: { type: "string", format: "date-time" },
     reason: { type: "string" },
+    missing: inlineSchema(identityCheckSchema.shape.missing),
     deliveryCoverage: { type: "string", enum: ["matches", "gap_detected", "unknown"] },
   },
   required: ["completed", "granted", "pendingPoints"],

@@ -82,7 +82,8 @@
           "cosmetic-procedures": "Cosmetic procedures",
           "energy-drinks": "Energy drinks"
         }
-      }
+      },
+      "synopsisPlaceholder": "Add a synopsis before you submit for review."
     },
     "reward": {
       "scoringRuleBaseOnly": "Fixed reward — same for every viewer who watches and answers",
@@ -91,20 +92,31 @@
       "scoringRuleLabel": "Scoring rule",
       "ratioPending": "Ratio pending",
       "fairTrade": "Fair trade",
-      "rewardTooSmall": "Reward too small",
-      "ratioUnavailable": "The reward-to-data-cost ratio needs the campaign API's own reward value and isn't available yet.",
+      "rewardTooSmall": "Below guideline",
       "ratioNoDataCost": "This campaign has no measurable data cost to compare against.",
       "ratioMeetsGuideline": "The reward is worth about {ratio}x the viewer's estimated data cost — at or above the platform's 20x guideline.",
-      "ratioBelowGuideline": "The reward is worth only about {ratio}x the viewer's estimated data cost — below the platform's 20x guideline. Asking for this much attention for this little reward reads as insulting to the viewer, and risks low completion and poor reviews.",
+      "ratioBelowGuideline": "The reward is worth about {ratio}x the viewer's estimated data cost, below the platform's 20x guideline. A higher reward makes the video worth viewers' time and helps completion and reviews.",
       "accuracyBonusLabel": "Accuracy bonus (points)",
       "allocationLabel": "Funded by",
       "allocationNone": "No funded points available — buy points in Billing first.",
       "saveReward": "Save reward",
-      "rewardSaved": "Saved — the real reward value is shown above.",
+      "rewardSaved": "Reward saved.",
       "rewardValueLabel": "Server-priced value (one completion)",
-      "allocationOption": "{points} pts — {shortId}",
-      "allocationRequired": "Choose which funded points pay for this reward.",
-      "allocationReceiptPackage": "That funding is a receipt package. It pays for receipt rewards only, so it can't fund a campaign. Choose other funded points."
+      "allocationOption": "{total} points bought {date} · {remaining} left",
+      "allocationRequired": "Choose what funds this reward in the “Funded by” list, then save.",
+      "allocationReceiptPackage": "That funding is a receipt package. It pays for receipt rewards only, so it can't fund a campaign. Choose other funded points.",
+      "ratioNeedsVideo": "The comparison with the viewer's data cost appears once your video has finished processing.",
+      "ratioNeedsReward": "Set a reward to see how it compares with the viewer's data cost.",
+      "ratioNeedsSave": "Save the reward to see how it compares with the viewer's data cost.",
+      "unsavedNote": "These reward numbers are not saved yet. Press “Save reward” to keep them.",
+      "limitPendingNote": "How much a viewer can earn depends on the video's length, which is known once the video has been processed.",
+      "errors": {
+        "ceilingFixed": "A {seconds}-second video can pay at most {max, plural, one {# point} other {# points}} to each viewer. Lower the reward to {max} or less.",
+        "ceilingWithBonus": "A {seconds}-second video can pay at most {max, plural, one {# point} other {# points}} to each viewer, reward and accuracy bonus together. Lower them so they add up to {max} or less.",
+        "ceilingTooShort": "A {seconds}-second video is too short to pay a reward.",
+        "bonusTooHigh": "The accuracy bonus can be at most 40% of the reward.",
+        "budgetNeeded": "Set the total budget on the Budget tab first. It must cover at least one viewer's full reward."
+      }
     },
     "sections": {
       "navLabel": "Campaign editor sections",
@@ -188,7 +200,12 @@
       "dataCostMb": "~{value} MB",
       "questionCount": "{count, plural, =0 {No questions} one {# question} other {# questions}}",
       "scoringWithBonus": "Base reward for completing, plus an accuracy bonus",
-      "scoringFixed": "Fixed reward for completing and answering"
+      "scoringFixed": "Fixed reward for completing and answering",
+      "pending": "Pending",
+      "pendingNote": "Length, data cost and questions are set by the video once it has been processed.",
+      "dataCostBadgePending": "Data cost pending",
+      "unsaved": "not saved",
+      "unsavedNote": "The reward shown here is not saved yet."
     },
     "captions": {
       "label": "Captions file (.vtt)",
@@ -212,8 +229,35 @@
       "budgetRequired": "Set a total budget greater than zero."
     },
     "newDraft": {
-      "title": "Untitled campaign",
-      "synopsis": "Add a synopsis before you submit for review."
+      "title": "Untitled campaign"
+    },
+    "save": {
+      "button": "Save changes",
+      "saved": "All changes saved.",
+      "dirty": "Unsaved changes. They save automatically in a moment.",
+      "saving": "Saving…",
+      "needsTitle": "Give the campaign a title to save your changes.",
+      "failed": "Your changes could not be saved. Check your connection and try again."
+    },
+    "submit": {
+      "refusal": {
+        "illegalTransition": "This campaign can't move to review from its current state. Refresh the page and check its status.",
+        "creativeBlocked": "The title or synopsis breaks the content rules. Change it and submit again.",
+        "notVerified": "Verify your business on the overview page before you can submit.",
+        "notFound": "This campaign could not be found. Refresh the page.",
+        "generic": "The campaign could not be submitted. Try again in a moment."
+      },
+      "heading": "Before you submit, this campaign needs:",
+      "gap": {
+        "title": "A title (Details tab).",
+        "synopsis": "A synopsis (Details tab).",
+        "videoMissing": "A video (Video & chapters tab).",
+        "videoProcessing": "The video to finish processing (Video & chapters tab).",
+        "reward": "A saved reward (Reward tab).",
+        "rewardUnsaved": "Your reward changes saved with “Save reward” (Reward tab).",
+        "budget": "A total budget that covers at least one viewer's reward (Budget tab).",
+        "questions": "At least {needed} questions; you have {have} (Questions tab)."
+      }
     }
   },
   "questionBank": {
@@ -386,8 +430,8 @@
       "allCampaigns": "All campaigns"
     },
     "overview": {
-      "empty": "This business has no campaigns yet.",
-      "caption": "This business's campaigns, as configured",
+      "empty": "This business has no live, paused or ended campaigns yet.",
+      "caption": "This business's campaigns, with their set-up and results so far",
       "campaignHeader": "Campaign",
       "statusHeader": "Status",
       "questionsHeader": "Questions",
@@ -398,10 +442,15 @@
         "base_plus_accuracy_bonus": "Base + accuracy bonus"
       },
       "status": {
-        "active": "Active",
+        "active": "Live",
         "paused": "Paused",
         "ended": "Ended"
-      }
+      },
+      "viewsHeader": "Rewarded views",
+      "completionsHeader": "Completions",
+      "spendHeader": "Points spent",
+      "fewViewers": "Under {floor} viewers so far",
+      "hiddenForRole": "{business}'s campaigns and their results are not shown to your role ({role}). Owners, Admins, Marketers and Analysts can see them here."
     },
     "legend": {
       "title": "How to read these numbers",
@@ -530,7 +579,7 @@
       "selfRemovedBody": "You no longer have access to this business console. Ask an Owner or Admin there to invite you back.",
       "title": "Team",
       "inviteMember": "Invite member",
-      "helperText": "Invites, role changes and removals here take effect immediately once an Owner or Admin confirms them — transferring ownership additionally needs a fresh re-authentication. Two-person approval (a second person confirming a different person's request) applies elsewhere in the console — bulk voucher issuance, a material settlement-value cut, and API credential rotation — not to team membership itself.",
+      "helperText": "Invites, role changes and removals take effect as soon as an Owner or Admin confirms them. Transferring ownership also asks you to sign in again. Team changes need one person's approval. Some other actions need a second person to approve: bulk voucher issuance, a large cut to a voucher's settlement value, and rotating API credentials.",
       "auditTrail": "Audit trail",
       "noOwner": "This business has no recorded Owner — this should never happen; contact support."
     },
@@ -666,7 +715,7 @@
     "returnRefunded": "This payment was refunded to your card in full. You can buy again at today's price.",
     "returnReview": "We received your payment and are checking it. Your points will be added shortly.",
     "cardTitle": "Card for boosts",
-    "cardIntro": "Boosts are charged to this card once a day, apart from points.",
+    "cardIntro": "Boosts are charged to this card once a day, separately from the points you buy.",
     "cardNone": "No card saved yet.",
     "cardSaved": "{brand} ending in {last4}, expires {month}/{year}",
     "cardAdd": "Add a card",
@@ -698,7 +747,20 @@
     "statementPaid": "Paid to account ••{last4} on {date}",
     "statementAwaiting": "Waiting for payout details",
     "statementFailed": "Payout failed",
-    "statementOnItsWay": "Payout on its way"
+    "statementOnItsWay": "Payout on its way",
+    "demoNote": "Indonesia is a demo. A purchase here is approved at once and no real money moves, so no card page opens and no invoice is issued.",
+    "statementDetails": "Details",
+    "statementOpening": "Carried over from the last statement",
+    "statementCaptures": "Vouchers redeemed at your locations",
+    "statementRefunds": "Refunds",
+    "statementRecoveries": "Recoveries",
+    "statementClosing": "Payable to you",
+    "statementStatusHelp": {
+      "open": "Open: the dispute window runs until {date}. After that the statement is approved and paid out.",
+      "disputed": "Disputed: the payout is on hold until our team resolves it.",
+      "paid": "Approved: the dispute window closed on {date}."
+    },
+    "statementDisputeReason": "Reason given: {reason}"
   },
   "channel": {
     "saved": "Saved.",
@@ -948,7 +1010,11 @@
       "title": "Devices",
       "provision": "Provision device",
       "empty": "No devices provisioned yet.",
-      "revoke": "Revoke"
+      "revoke": "Revoke",
+      "revokeTitle": "Revoke {label}?",
+      "revokeBody": "This counter stops working straight away and can't take any more redemptions. This can't be undone. To use the tablet again, add it as a new device with a new pairing code.",
+      "revokeConfirm": "Revoke device",
+      "revokeCancel": "Keep device"
     },
     "state": {
       "pending": "Pending",
@@ -957,11 +1023,12 @@
     },
     "provision": {
       "title": "Provision a counter device",
-      "description": "Set the till's shift PIN here — the device itself only ever asks for the pairing code.",
+      "description": "Choose the counter's shift PIN here. The device is paired with a one-time code and opens straight away; after that it asks for this PIN each time it is locked (Lock now, or when left idle). Staff share it, so it is not a personal login.",
       "labelField": "Label",
       "labelPlaceholder": "e.g. Kemang counter 2",
       "locationField": "Location",
-      "pinField": "PIN (4–8 digits)",
+      "pinField": "Shift PIN (4–8 digits)",
+      "pinHelp": "Staff type this PIN to unlock the counter after it locks. It does not pair the device.",
       "confirmPinField": "Confirm PIN",
       "errorPinInvalid": "PIN must be 4–8 digits.",
       "errorPinMismatch": "The two PINs don't match.",
@@ -1000,7 +1067,10 @@
     "invoice": "Invoice",
     "download": "Download PDF",
     "downloadLabel": "Download the PDF for invoice {number}",
-    "loadFailed": "We couldn't load your invoices. Try again in a moment."
+    "loadFailed": "We couldn't load your invoices. Try again in a moment.",
+    "introDemo": "Indonesia is a demo on simulated payments, so no invoices are issued here.",
+    "emptyTitleDemo": "No invoices in the demo",
+    "emptyDescriptionDemo": "Purchases in Indonesia are simulated, so no money moves and no invoice is issued."
   },
   "developers": {
     "credentials": {
@@ -1073,7 +1143,15 @@
     "reportTitle": "Boost",
     "reportEmpty": "No campaign is boosted yet.",
     "cardRequired": "Boosts are charged to a saved card. Add one before you set or raise a budget.",
-    "addCard": "Add a card"
+    "addCard": "Add a card",
+    "bidBelowReserve": "The maximum bid must be at least {amount} per 1,000 impressions, the lowest bid that can win.",
+    "stopTitle": "Stop this boost",
+    "stopCharged": "Days already served are still charged.",
+    "stopNow": "Stop now",
+    "stopEndOfDay": "Stop at the end of today",
+    "stoppedTitle": "This boost is off",
+    "stoppedBody": "It isn't bidding for Home's boosted slots. To start again, turn on Bidding on and save.",
+    "endsAtNotice": "Bidding ends {when}."
   },
   "join": {
     "title": "Join a business",
@@ -1124,5 +1202,8 @@
       "finance": "Manages billing and views reports. No access to campaigns, inventory or redemption.",
       "analyst": "Read-only across campaigns, inventory and reports."
     }
+  },
+  "dialog": {
+    "close": "Close"
   }
 }

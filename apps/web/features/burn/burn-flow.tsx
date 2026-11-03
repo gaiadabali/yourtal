@@ -14,6 +14,7 @@ import { PriceLockCountdown } from "./price-lock-countdown";
 import { BurnSummary } from "./burn-summary";
 import { BurnErrorMessage } from "./burn-error-message";
 import { classifyBalanceEligibility, recoveryForError, burnErrorFromApiError } from "./burn-errors";
+import { useAdoptShellBalance } from "@/features/shell/shell-balance";
 import { confirmCheckoutAction } from "./confirm-checkout-action";
 import type { BurnFlowState } from "./burn-flow-state";
 
@@ -45,6 +46,7 @@ export function BurnFlow({
   lockExpiresAt,
 }: BurnFlowProps) {
   const router = useRouter();
+  const adoptShellBalance = useAdoptShellBalance();
   const [state, setState] = useState<BurnFlowState>(() => {
     const initialError = classifyBalanceEligibility(pricePoints, balance);
     return initialError ? { step: "failed", error: initialError } : { step: "reviewing" };
@@ -68,6 +70,12 @@ export function BurnFlow({
     // the caller's actual balance server-side (4.7.a's saga), regardless of
     // what this render last showed — see `confirm-checkout-action.ts`.
     const outcome = await confirmCheckoutAction(checkoutId);
+    // The header chip was drawn before this burn: give it the balance now.
+    if (outcome.ok) {
+      adoptShellBalance(
+        outcome.availablePoints ?? Math.max(0, balance.availablePoints - pricePoints),
+      );
+    }
     setState(
       outcome.ok
         ? { step: "success", voucherId: outcome.result.voucherId }

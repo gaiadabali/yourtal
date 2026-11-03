@@ -33,7 +33,33 @@ export function db(): Pool {
   pool ??= new Pool({ connectionString: process.env["DATABASE_OWNER_URL"], max: 2 });
   return pool;
 }
+/** What a journey published on the site it ran against, to take down when the file finishes. */
+const published = { campaigns: [] as string[], listings: [] as string[] };
+/**
+ * A journey's campaign or listing goes live on the real site (staging included), where the
+ * landing page, Home and the Store would show it to every visitor. Record it here and
+ * `closeDb` ends it, so a run leaves nothing public behind.
+ */
+export function takeDownAtEnd(kind: "campaign" | "listing", id: string): void {
+  (kind === "campaign" ? published.campaigns : published.listings).push(id);
+}
+
 export async function closeDb(): Promise<void> {
+  if (pool) {
+    if (published.campaigns.length > 0) {
+      await pool.query(
+        `UPDATE campaign.campaigns SET lifecycle_state = 'ended' WHERE id = ANY($1)`,
+        [published.campaigns],
+      );
+    }
+    if (published.listings.length > 0) {
+      await pool.query(`UPDATE store.listings SET lifecycle_state = 'retired' WHERE id = ANY($1)`, [
+        published.listings,
+      ]);
+    }
+  }
+  published.campaigns.length = 0;
+  published.listings.length = 0;
   await pool?.end();
   pool = undefined;
 }

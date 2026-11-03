@@ -25,6 +25,8 @@ export type WatchEarnPhase =
       totalQuestions: number;
       /** `false` for a repeat visit (already earned) or an unfunded campaign — the video still plays, nothing is tracked toward a reward. */
       earning: boolean;
+      /** Why it is not earning, for the finish screen (`null` while earning). */
+      nonEarningReason: string | null;
       /** Server-confirmed coverage (EW-15) — never the raw playhead. */
       coveredSeconds: number;
     }
@@ -35,12 +37,16 @@ export type WatchEarnPhase =
       durationSeconds: number;
       totalQuestions: number;
       earning: boolean;
+      nonEarningReason: string | null;
       /** The first uncovered gap's start (server coverage, 11.5.b) — never a client-remembered playhead. */
       resumeAtSeconds: number;
     }
   | {
       kind: "checkpoint";
       sessionId: string;
+      /** Kept through the question: the player's video must not lose its source (and with it the playhead) while paused. */
+      manifestUrl: string;
+      coveredSeconds: number;
       checkpointIndex: number;
       totalQuestions: number;
       question: PresentedQuestion;
@@ -56,7 +62,12 @@ export type WatchEarnPhase =
     }
   | { kind: "claiming" }
   | { kind: "earned"; points: number; unlockAt: string | null }
-  | { kind: "not_earning"; reason: string | null }
+  | {
+      kind: "not_earning";
+      reason: string | null;
+      /** 5.9.f: the identity-check steps still missing, when that is why. */
+      identityCheck?: readonly IdentityCheckStep[];
+    }
   /** 12.2.e: a teen's own quiet hours (21:00-07:00) refused a NEW reward
    * session -- the long-form mirror of `use-quick-earn.ts`'s same phase.
    * Kind, not a generic failure, and never a retry loop. */
@@ -81,6 +92,8 @@ const REPORT_EVERY_MS = 4_000;
  */
 export function useWatchEarnSession(campaignId: string) {
   const [phase, setPhase] = useState<WatchEarnPhase>({ kind: "idle" });
+  /** V7: the last question ran out of time. Cleared when a session starts again. */
+  const [questionTimedOut, setQuestionTimedOut] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   // Session-lifetime facts, read from inside the polling interval and the
@@ -90,6 +103,9 @@ export function useWatchEarnSession(campaignId: string) {
   const durationRef = useRef(0);
   const totalQuestionsRef = useRef(0);
   const earningRef = useRef(true);
+  const nonEarningReasonRef = useRef<string | null>(null);
+  const identityCheckRef = useRef<readonly IdentityCheckStep[] | undefined>(undefined);
+  const coveredRef = useRef(0);
   const reportedTo = useRef(0);
   const questionsAsked = useRef(0);
   const checkpointBusy = useRef(false);
@@ -106,6 +122,7 @@ export function useWatchEarnSession(campaignId: string) {
       const detail = await getWatchSessionAction(sessionId);
       const coveredSoFar = detail.ok ? detail.data.coveredSeconds : 0;
       reportedTo.current = coveredSoFar;
+      coveredRef.current = coveredSoFar;
       const firstGap = detail.ok ? detail.data.gaps[0] : undefined;
 
       if (coveredSoFar >= MIN_RESUMABLE_SECONDS && firstGap !== undefined) {
@@ -116,6 +133,7 @@ export function useWatchEarnSession(campaignId: string) {
           durationSeconds,
           totalQuestions: totalQuestionsRef.current,
           earning,
+          nonEarningReason: nonEarningReasonRef.current,
           resumeAtSeconds: firstGap.fromSecond,
         });
         return;
@@ -128,6 +146,7 @@ export function useWatchEarnSession(campaignId: string) {
         durationSeconds,
         totalQuestions: totalQuestionsRef.current,
         earning,
+        nonEarningReason: nonEarningReasonRef.current,
         coveredSeconds: coveredSoFar,
       });
     },
@@ -152,6 +171,9 @@ export function useWatchEarnSession(campaignId: string) {
     questionsAsked.current = session.questionsAsked;
     const earning = !session.nonEarning;
     earningRef.current = earning;
+    nonEarningReasonRef.current = session.nonEarningReason;
+    identityCheckRef.current = identityCheck?.missing;
+    setQuestionTimedOut(false);
     totalQuestionsRef.current = earning ? questionsAskedFor(durationSeconds) : 0;
 
     // A repeat visit (already earned) just plays; any other refusal is told to
@@ -187,6 +209,7 @@ export function useWatchEarnSession(campaignId: string) {
         durationSeconds: phase.durationSeconds,
         totalQuestions: phase.totalQuestions,
         earning: phase.earning,
+        nonEarningReason: phase.nonEarningReason,
         coveredSeconds: reportedTo.current,
       });
     },
@@ -203,7 +226,8 @@ export function useWatchEarnSession(campaignId: string) {
       durationSeconds: durationRef.current,
       totalQuestions: totalQuestionsRef.current,
       earning: earningRef.current,
-      coveredSeconds: reportedTo.current,
+      nonEarningReason: nonEarningReasonRef.current,
+      coveredSeconds: coveredRef.current,
     });
   }, []);
 
@@ -232,6 +256,8 @@ export function useWatchEarnSession(campaignId: string) {
       setPhase({
         kind: "checkpoint",
         sessionId,
+        manifestUrl: manifestUrlRef.current,
+        coveredSeconds: coveredRef.current,
         checkpointIndex: index,
         totalQuestions: totalQuestionsRef.current,
         question: result.data.question,
@@ -252,6 +278,7 @@ export function useWatchEarnSession(campaignId: string) {
     void pending.then((result) => {
       if (result.ok && result.data.accepted) {
         reportedTo.current = to;
+        coveredRef.current = result.data.coveredSeconds;
         setPhase((current) =>
           current.kind === "watching"
             ? { ...current, coveredSeconds: result.data.coveredSeconds }
@@ -298,11 +325,23 @@ export function useWatchEarnSession(campaignId: string) {
     if (seekTo === null) return;
     pendingSeekRef.current = null;
     const video = videoRef.current;
-    if (video) video.currentTime = seekTo;
+    if (!video) return;
+    video.currentTime = seekTo;
+    // The element has no source yet when hls.js attaches after this runs, and
+    // a browser may drop a seek made before the stream's metadata is in.
+    if (video.readyState < 1) {
+      video.addEventListener(
+        "loadedmetadata",
+        () => {
+          if (Math.abs(video.currentTime - seekTo) > 1) video.currentTime = seekTo;
+        },
+        { once: true },
+      );
+    }
   }, [phase.kind]);
 
   const answer = useCallback(
-    async (selectedOptionId: string | null) => {
+    async (selectedOptionId: string | null, timedOut = false) => {
       if (phase.kind !== "checkpoint") return;
       const { sessionId, checkpointIndex, token } = phase;
       const result = await answerCheckpointAction(
@@ -313,6 +352,9 @@ export function useWatchEarnSession(campaignId: string) {
       );
       if (result.ok) {
         questionsAsked.current = checkpointIndex + 1;
+        // V7: a question that ran out of time is said so; the server
+        // recorded it as unanswered.
+        if (timedOut) setQuestionTimedOut(true);
       }
       // Whether the answer succeeded or the token had already expired, the
       // honest move is to resume — a stuck overlay would be worse than a
@@ -330,17 +372,30 @@ export function useWatchEarnSession(campaignId: string) {
 
   const finish = useCallback(async () => {
     if (sessionIdRef.current === null) return;
-    await pendingReport.current;
-    if (earningRef.current) {
-      report(durationRef.current);
-      await pendingReport.current;
+    // A view that was never going to earn (already earned, refused) has
+    // nothing to claim, and the player reports no coverage for it, so the
+    // server would refuse the claim and the viewer would read "this video
+    // failed to start" (V12). Say why it did not earn instead.
+    if (!earningRef.current) {
+      setPhase({
+        kind: "not_earning",
+        reason: nonEarningReasonRef.current,
+        ...(identityCheckRef.current === undefined
+          ? {}
+          : { identityCheck: identityCheckRef.current }),
+      });
+      return;
     }
+    await pendingReport.current;
+    report(durationRef.current);
+    await pendingReport.current;
     setPhase({ kind: "claiming" });
     const completed = await completeWatchSessionAction(sessionIdRef.current);
     if (!completed.ok) {
       setPhase({ kind: "failed" });
       return;
     }
+    const missing = completed.data.missing ?? identityCheckRef.current;
     setPhase(
       completed.data.granted
         ? {
@@ -348,11 +403,24 @@ export function useWatchEarnSession(campaignId: string) {
             points: completed.data.pendingPoints,
             unlockAt: completed.data.unlockAt ?? null,
           }
-        : { kind: "not_earning", reason: completed.data.reason ?? null },
+        : {
+            kind: "not_earning",
+            reason: completed.data.reason ?? null,
+            ...(missing === undefined ? {} : { identityCheck: missing }),
+          },
     );
   }, [report]);
 
-  return { phase, videoRef, start, watchWithoutEarning, chooseResume, answer, finish };
+  return {
+    phase,
+    questionTimedOut,
+    videoRef,
+    start,
+    watchWithoutEarning,
+    chooseResume,
+    answer,
+    finish,
+  };
 }
 
 export type UseWatchEarnSession = ReturnType<typeof useWatchEarnSession>;

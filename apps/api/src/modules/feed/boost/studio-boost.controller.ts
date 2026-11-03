@@ -3,15 +3,17 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   HttpException,
   HttpStatus,
   Inject,
   NotFoundException,
   Param,
+  Post,
   Put,
 } from "@nestjs/common";
 import { sql } from "drizzle-orm";
-import { setBoostRequestSchema } from "@yourtal/contracts/studio/boost";
+import { setBoostRequestSchema, stopBoostRequestSchema } from "@yourtal/contracts/studio/boost";
 import type { BoostView } from "@yourtal/contracts/studio/boost";
 import type { Region } from "@yourtal/contracts/region";
 import { toMinorUnits } from "@yourtal/contracts/money";
@@ -81,7 +83,8 @@ export class StudioBoostController {
     if (parsed.data.maxBidCpmMinor < reserve) {
       throw new BadRequestException({
         code: "bid_below_reserve",
-        message: `The maximum bid must be at least the reserve of ${String(reserve)}.`,
+        message: "The maximum bid is below the lowest bid that can win.",
+        reserveCpmMinor: reserve,
       });
     }
     // 5.1.a: where boosts charge a saved card (Stripe), a new or larger budget needs one first.
@@ -103,6 +106,30 @@ export class StudioBoostController {
       currency: campaign.currency,
       ...parsed.data,
     });
+    return this.view(tenantId, campaignId, campaign);
+  }
+
+  @Authorize({ kind: "billing", action: "purchase_points" })
+  @NotValueMoving(
+    "Stopping twice ends in the same state, and nothing is charged here; days already served " +
+      "are billed by the boost-settle job.",
+  )
+  @HttpCode(HttpStatus.OK)
+  @Post("campaigns/:campaignId/boost/stop")
+  async stop(
+    @Param("tenantId") tenantId: string,
+    @Param("campaignId") campaignId: string,
+    @Body() body: unknown,
+  ) {
+    const parsed = stopBoostRequestSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new BadRequestException({ code: "invalid_boost", message: parsed.error.message });
+    }
+    const campaign = await this.owned(tenantId, campaignId);
+    const stopped = await this.boosts.stop(campaignId, campaign.region, parsed.data.effective);
+    if (stopped === null) {
+      throw new NotFoundException({ code: "no_boost", message: "This campaign has no boost." });
+    }
     return this.view(tenantId, campaignId, campaign);
   }
 

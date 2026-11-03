@@ -87,16 +87,16 @@ const INPUT: SetRewardConfigInput = {
 };
 
 /** A drafts stub whose `patchRewardMirror` is the save's second half — its own call is asserted via the CampaignDraft it returns. */
-function draftsStub(): CampaignDraftRepository {
+function draftsStub(draft: CampaignDraft = DRAFT): CampaignDraftRepository {
   return {
     create: () => Promise.reject(new Error("not used")),
-    findById: () => Promise.resolve(DRAFT),
+    findById: () => Promise.resolve(draft),
     listByBusiness: () => Promise.reject(new Error("not used")),
     findByIdAnyBusiness: () => Promise.reject(new Error("not used")),
     listInReview: () => Promise.reject(new Error("not used")),
     update: () => Promise.reject(new Error("not used")),
     patchRewardMirror: (_businessId, _campaignId, mirror) =>
-      Promise.resolve({ ...DRAFT, ...mirror }),
+      Promise.resolve({ ...draft, ...mirror }),
     transitionLifecycle: () => Promise.reject(new Error("not used")),
   };
 }
@@ -219,5 +219,49 @@ describe("setRewardConfig (7.3.c/7.3.h)", () => {
       maxPointsForCampaign: 1_000,
       dailyCapPoints: 320,
     });
+  });
+});
+
+/**
+ * B4 (founder walkthrough): on a 20-second video the F14 ceiling of 8 points a MINUTE is
+ * 2.67 points, so 1 and 2 save and 3 is refused. The rule was right; the message said
+ * "8-point ceiling", which read as if 3 were within it.
+ */
+describe("setRewardConfig on a 20-second video (F14 is per minute)", () => {
+  const SHORT: CampaignDraft = { ...DRAFT, durationSeconds: 20 };
+  const ledger: Pick<LedgerInternalClient, "listAllocations" | "getSettings" | "valuePoints"> = {
+    listAllocations: () => okAsync([ALLOCATION]),
+    getSettings: () => Promise.resolve([CEILING_SETTING]),
+    valuePoints: () => okAsync({ totalMinor: toMinorUnits(9), currency: "AUD" }),
+  };
+  const run = (points: number, bonus = 0) =>
+    setRewardConfig(
+      { drafts: draftsStub(SHORT), rewardConfigs: rewardConfigsStub(), ledger },
+      {
+        ...INPUT,
+        rewardPointsPerCompletion: toPoints(points),
+        accuracyBonusPoints: toPoints(bonus),
+        maxPointsForCampaign: toPoints(100),
+      },
+    );
+
+  it.each([1, 2])("saves %i points", async (points) => {
+    expect((await run(points)).isOk()).toBe(true);
+  });
+
+  it.each([3, 5])("refuses %i points, naming this video's limit of 2", async (points) => {
+    expect((await run(points))._unsafeUnwrapErr()).toEqual({
+      type: "reward_exceeds_ceiling",
+      ceilingPointsPerMinute: 8,
+      durationSeconds: 20,
+      maxPoints: 2,
+      hasBonus: false,
+    });
+  });
+
+  it("counts the bonus in, and says so only then", async () => {
+    // A bonus is at most 40% of the base, so 3 + 1 is the smallest pair with one.
+    const refused = (await run(3, 1))._unsafeUnwrapErr();
+    expect(refused).toMatchObject({ type: "reward_exceeds_ceiling", maxPoints: 2, hasBonus: true });
   });
 });

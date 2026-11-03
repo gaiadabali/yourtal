@@ -5,6 +5,8 @@ export interface AuthorizationMeta {
   readonly locationId: string;
   readonly orderRef: string;
   readonly orderTotalMinor: number;
+  /** The voucher's own title, for the cashier's log; `null` only for a hold placed before titles were kept. */
+  readonly offerTitle: string | null;
 }
 
 export interface AuthorizationMetaRepository {

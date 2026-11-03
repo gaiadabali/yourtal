@@ -28,6 +28,7 @@ function StatefulEditor({
         <CampaignEditor
           draft={draft}
           onChange={setDraft}
+          onPatch={(patch) => setDraft((current) => ({ ...current, ...patch }))}
           onBack={vi.fn()}
           canEdit={canEdit}
           isVerified={isVerified}

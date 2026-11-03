@@ -3,7 +3,7 @@
     "title": "Checkpoint selesai",
     "subtitle": "Berikut rincian reward untuk video ini.",
     "baseReward": "Reward dasar",
-    "baseGuaranteed": "Dijamin karena Anda menonton dan menjawab",
+    "baseGuaranteed": "Dijamin karena kamu menonton dan menjawab",
     "accuracyBonus": "Bonus akurasi",
     "accuracyDetail": "{correct} dari {total} jawaban bernilai benar · {percent}% akurasi",
     "noBonus": "Campaign ini tidak memiliki bonus akurasi.",
@@ -15,7 +15,7 @@
   },
   "timer": {
     "remainingLabel": "Sisa waktu: {clock}",
-    "startAnnouncement": "Anda memiliki {seconds} detik untuk menjawab pertanyaan ini.",
+    "startAnnouncement": "Kamu punya {seconds} detik untuk menjawab pertanyaan ini.",
     "expiredAnnouncement": "Waktu untuk pertanyaan ini habis.",
     "remainingAnnouncement": "{seconds} detik tersisa."
   },
@@ -36,7 +36,7 @@
       "movedAnnouncement": "{label} dipindahkan ke posisi {position} dari {total}."
     },
     "shortText": {
-      "label": "Jawaban Anda (opsional)",
+      "label": "Jawabanmu (opsional)",
       "remaining": "{count} karakter tersisa"
     }
   }

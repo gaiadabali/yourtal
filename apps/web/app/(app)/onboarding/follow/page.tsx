@@ -3,7 +3,11 @@ import { OnboardingLoadError } from "@/features/onboarding/onboarding-load-error
 import { OnboardingProgress } from "@/features/onboarding/onboarding-progress";
 import { ONBOARDING_STEPS, onboardingStepIndex } from "@/features/onboarding/onboarding-steps";
 import { parseReturnTo, withReturnTo } from "@/features/onboarding/onboarding-return-to";
-import { getFollowCandidates } from "@/features/onboarding/onboarding-data";
+import {
+  getFollowCandidates,
+  getOnboardingConsents,
+  interestsStepSkipped,
+} from "@/features/onboarding/onboarding-data";
 
 export interface OnboardingFollowPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -12,11 +16,18 @@ export interface OnboardingFollowPageProps {
 /** `/onboarding/follow` — "follow 3 channels" (6.2.b): real businesses in the caller's own region. */
 export default async function OnboardingFollowPage({ searchParams }: OnboardingFollowPageProps) {
   const returnTo = parseReturnTo((await searchParams).returnTo);
-  const candidates = await getFollowCandidates();
+  const [candidates, consents] = await Promise.all([
+    getFollowCandidates(),
+    getOnboardingConsents(),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
-      <OnboardingProgress steps={ONBOARDING_STEPS} currentIndex={onboardingStepIndex("follow")} />
+      <OnboardingProgress
+        steps={ONBOARDING_STEPS}
+        currentIndex={onboardingStepIndex("follow")}
+        skipped={interestsStepSkipped(consents) ? ["interests"] : []}
+      />
       {candidates.ok ? (
         <OnboardingFollowStep candidates={candidates.data.candidates} returnTo={returnTo} />
       ) : (

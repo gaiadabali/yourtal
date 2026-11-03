@@ -8,6 +8,7 @@ import { APP_CONFIG } from "../../config/app-config.module";
 import { loadAppConfig } from "../../config/app-config";
 import type { AppConfig } from "../../config/app-config";
 import { sessionFor } from "../../shared/testing/session-for";
+import { DevTokenAccess } from "../auth/dev-token-access";
 
 /**
  * `GET`/`PATCH /api/me` (1.4.d), end to end against the real app, real
@@ -67,7 +68,30 @@ describe("GET /api/me", () => {
       businessMemberships: [],
       staffRoles: [],
       email: expect.stringContaining("@"),
+      emailVerified: false,
     });
+  });
+
+  it("reports the sign-in email as verified once the verification link has been used", async () => {
+    const session = await sessionFor(app, { jurisdiction: "AU" });
+    const read = async () =>
+      (
+        await app.inject({ method: "GET", url: "/api/me", headers: { cookie: session.cookie } })
+      ).json<{ emailVerified: boolean }>().emailVerified;
+    expect(await read()).toBe(false);
+
+    const token = app
+      .get(DevTokenAccess)
+      .peekToken("email_verification", session.userId, Date.now());
+    const confirm = await app.inject({
+      method: "POST",
+      url: "/api/auth/email/verify/confirm",
+      headers: { "idempotency-key": randomUUID() },
+      payload: { token },
+    });
+    expect(confirm.statusCode, confirm.body).toBe(201);
+
+    expect(await read()).toBe(true);
   });
 
   it("returns the profile an ID adult registered with, region and locale together", async () => {

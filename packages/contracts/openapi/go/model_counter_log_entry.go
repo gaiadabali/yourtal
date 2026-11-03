@@ -30,6 +30,7 @@ type CounterLogEntry struct {
 	CapturedAt time.Time `json:"capturedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
 	OrderRef string `json:"orderRef"`
 	AuthorizedAt time.Time `json:"authorizedAt" validate:"regexp=^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"`
+	OfferTitle NullableString `json:"offerTitle"`
 }
 
 type _CounterLogEntry CounterLogEntry
@@ -38,7 +39,7 @@ type _CounterLogEntry CounterLogEntry
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCounterLogEntry(captureId string, voucherId string, amountMinor int64, currency Currency, capturedAt time.Time, orderRef string, authorizedAt time.Time) *CounterLogEntry {
+func NewCounterLogEntry(captureId string, voucherId string, amountMinor int64, currency Currency, capturedAt time.Time, orderRef string, authorizedAt time.Time, offerTitle NullableString) *CounterLogEntry {
 	this := CounterLogEntry{}
 	this.CaptureId = captureId
 	this.VoucherId = voucherId
@@ -47,6 +48,7 @@ func NewCounterLogEntry(captureId string, voucherId string, amountMinor int64, c
 	this.CapturedAt = capturedAt
 	this.OrderRef = orderRef
 	this.AuthorizedAt = authorizedAt
+	this.OfferTitle = offerTitle
 	return &this
 }
 
@@ -226,6 +228,32 @@ func (o *CounterLogEntry) SetAuthorizedAt(v time.Time) {
 	o.AuthorizedAt = v
 }
 
+// GetOfferTitle returns the OfferTitle field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *CounterLogEntry) GetOfferTitle() string {
+	if o == nil || o.OfferTitle.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.OfferTitle.Get()
+}
+
+// GetOfferTitleOk returns a tuple with the OfferTitle field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *CounterLogEntry) GetOfferTitleOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.OfferTitle.Get(), o.OfferTitle.IsSet()
+}
+
+// SetOfferTitle sets field value
+func (o *CounterLogEntry) SetOfferTitle(v string) {
+	o.OfferTitle.Set(&v)
+}
+
 func (o CounterLogEntry) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -243,6 +271,7 @@ func (o CounterLogEntry) ToMap() (map[string]interface{}, error) {
 	toSerialize["capturedAt"] = o.CapturedAt
 	toSerialize["orderRef"] = o.OrderRef
 	toSerialize["authorizedAt"] = o.AuthorizedAt
+	toSerialize["offerTitle"] = o.OfferTitle.Get()
 	return toSerialize, nil
 }
 
@@ -258,6 +287,7 @@ func (o *CounterLogEntry) UnmarshalJSON(data []byte) (err error) {
 		"capturedAt",
 		"orderRef",
 		"authorizedAt",
+		"offerTitle",
 	}
 
 	allProperties := make(map[string]interface{})

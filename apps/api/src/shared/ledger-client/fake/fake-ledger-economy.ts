@@ -87,7 +87,7 @@ export function economyDaily(
       // A day is the REGION's calendar day, as services/ledger buckets it
       // (chart.go TimeZone), not the database session's. Found by the live
       // contract leg in CI (1.28.d): UTC and Sydney disagree for ~11h a day.
-      const tz = REGION_TIMEZONE[request.region as keyof typeof REGION_TIMEZONE];
+      const tz = REGION_TIMEZONE[request.region];
       const issuedRows = await db.execute<{ day: string; issued: string }>(sql`
         SELECT to_char(granted_at AT TIME ZONE ${tz}, 'YYYY-MM-DD') AS day, SUM(points) AS issued
           FROM platform.ledger_fake_grant

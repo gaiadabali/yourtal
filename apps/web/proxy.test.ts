@@ -73,6 +73,17 @@ describe("proxy (1.7.c)", () => {
     expect(new URL(signedIn.headers.get("location") ?? "").pathname).toBe("/home");
   });
 
+  // V1: the reviewer's guide in either language, under the address people guess.
+  it.each([
+    ["/id/review", "/review", "?lang=id"],
+    ["/au/review", "/review", "?lang=en"],
+  ])("sends %s to the one reviewer's guide in that language", (path, to, search) => {
+    const response = proxy(requestFor(path));
+    expect(response.status).toBe(307);
+    const location = new URL(response.headers.get("location") ?? "");
+    expect([location.pathname, location.search]).toEqual([to, search]);
+  });
+
   it("redirects an unpaired /merchant route to /merchant/pair", () => {
     const response = proxy(requestFor("/merchant/devices"));
     expect(response.status).toBe(307);

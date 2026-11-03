@@ -11,8 +11,8 @@ export interface PublicCtaLinkProps {
  * that component is a `"use client"` leaf (it wraps Radix `Slot` for
  * `asChild`), and this ticket's routes are RSC-only with zero client
  * components by design (see this ticket's report on the bundle budget).
- * Plain anchor, not `next/link`: this always navigates to `/onboarding`
- * (outside the `(public)` group, inside the dynamic `(app)` shell), a real
+ * Plain anchor, not `next/link`: this always navigates to `/register`
+ * (outside the `(public)` group), a real
  * full navigation this route should not speculatively prefetch — the same
  * reasoning `campaign-entry-card.tsx`'s watch link and
  * `store-offer-card.tsx`'s redeem link already give for their own

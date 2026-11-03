@@ -5,6 +5,7 @@ import {
   boostStateSchema,
   boostViewSchema,
   setBoostRequestSchema,
+  stopBoostRequestSchema,
 } from "../studio/boost";
 import type { ContractComponent } from "./schema-registry";
 
@@ -22,6 +23,13 @@ export const BOOST_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     description:
       "A live campaign's boost: a daily cash budget and a maximum bid per 1,000 boosted impressions, in the business's own currency's minor units.",
     crossFieldRules: ["endsAt must be after startsAt."],
+  },
+  {
+    id: "StopBoostRequest",
+    schema: stopBoostRequestSchema,
+    description:
+      "Stop a boost now, or at the end of today on the region's clock. Days already served are still charged.",
+    crossFieldRules: [],
   },
   {
     id: "BoostDay",

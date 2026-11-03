@@ -108,7 +108,7 @@
     "close": "Tutup",
     "sort": "Urutkan",
     "sorts": {
-      "for_you": "Untuk Anda",
+      "for_you": "Untukmu",
       "newest": "Terbaru",
       "most_points": "Poin terbanyak",
       "ending_soon": "Segera berakhir"
@@ -125,7 +125,7 @@
     "noneBody": "Coba kurangi topik, atau pilih kategori lain.",
     "clear": "Hapus filter",
     "featured": "Pilihan",
-    "forYou": "Untuk Anda",
+    "forYou": "Untukmu",
     "seeAll": "Lihat semua",
     "seeAllIn": "Lihat semua di {name}"
   },

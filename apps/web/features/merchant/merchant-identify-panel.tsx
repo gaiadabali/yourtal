@@ -66,11 +66,12 @@ export function MerchantIdentifyPanel({
 
   return (
     <Tabs value={tab} onValueChange={(value) => setTab(value as IdentifyTab)}>
+      {/* h-14 only wins over the list's own h-control-compact because `cn` knows that token (packages/ui/src/cn.ts); the 44px pills fit its 46px inside. */}
       <TabsList className="grid h-14 w-full grid-cols-2">
-        <TabsTrigger value="scan" className="h-12 text-base">
+        <TabsTrigger value="scan" className="h-11 text-base">
           {copy.tabScan}
         </TabsTrigger>
-        <TabsTrigger value="manual" className="h-12 text-base">
+        <TabsTrigger value="manual" className="h-11 text-base">
           {copy.tabManual}
         </TabsTrigger>
       </TabsList>

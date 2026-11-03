@@ -285,7 +285,7 @@ const ID_LOCATION_ID = "00000000-0000-4000-9000-000000000306";
 
 /** The LIVE quote (points) each region's cheap listing is derived to land
  * at, at creation time — see `deriveAffordableSettlementMinor`. Small on
- * purpose: AU's is sized against `viewer.au`'s own EXISTING ~600-point
+ * purpose: AU's is sized against the regular viewer's own EXISTING ~600-point
  * balance (the exact number the reopened 8.2.e Check reported), so the
  * loop works on the very next deploy, not after days of top-ups; ID's
  * matches the same ratio against its own daily-cap-affordable target
@@ -304,22 +304,33 @@ interface DemoAccountSpec {
 /** Every demo login this seed creates, one per role TASKS.md 2.3.e names. */
 function demoAccounts(): readonly DemoAccountSpec[] {
   return [
-    // The tier-0 viewer (default trust_tier, identity.user_profile's own
-    // DEFAULT 0) that also serves as "one demo login for the viewer role" —
-    // TASKS.md 2.3.e names both a plain viewer and a tier-0 pending-grant
-    // viewer; a fresh account already IS tier 0, so one account is both.
+    // The new viewer (default trust_tier 0): created and then left alone. Nothing here grants
+    // to it, so a reviewer who signs in as it starts at the beginning.
     {
       email: "viewer.au@demo.yourtal.test",
       region: "AU",
       displayName: "Viewer Demo",
       timezone: TIMEZONE_AU,
     },
-    // F74/8.2.i: the redemption-loop Check needs a viewer in EACH region,
-    // not only AU — same tier-0-by-default reasoning as viewer.au above.
     {
       email: "viewer.id@demo.yourtal.test",
       region: "ID",
       displayName: "Viewer Demo (ID)",
+      timezone: TIMEZONE_ID,
+    },
+    // The "regular viewer" the review guide promises points and vouchers for: the pending
+    // grant, the voucher and the redemption balance below all go to these two, never to
+    // viewer.*, which stays the new viewer (nothing granted, nothing pending).
+    {
+      email: "adult.au@demo.yourtal.test",
+      region: "AU",
+      displayName: "Alex Viewer",
+      timezone: TIMEZONE_AU,
+    },
+    {
+      email: "adult.id@demo.yourtal.test",
+      region: "ID",
+      displayName: "Ayu Penonton",
       timezone: TIMEZONE_ID,
     },
     {
@@ -628,12 +639,12 @@ interface WorldResult {
   readonly campaigns: number;
   readonly accounts: number;
   /** `null` only when `identity.user_profile` is non-empty from something
-   * other than this seed's own accounts (no `viewer.au@…` credential row
+   * other than this seed's own accounts (no `adult.au@…` credential row
    * to look up) — a world this seed did not create and should not touch
    * further than it already has. */
-  readonly viewerUserId: string | null;
-  /** F74/8.2.i: the ID region's own demo viewer, same nullability reasoning as `viewerUserId`. */
-  readonly viewerIdUserId: string | null;
+  readonly regularAuUserId: string | null;
+  /** F74/8.2.i: the ID region's own regular demo viewer, same nullability reasoning as `regularAuUserId`. */
+  readonly regularIdUserId: string | null;
 }
 
 async function lookupUserId(pool: pg.Pool, email: string): Promise<string | null> {
@@ -677,7 +688,7 @@ async function ensureAllDemoAccountsExist(
   pool: pg.Pool,
   demoPassword: string,
   log: (message: string) => void,
-): Promise<{ viewerUserId: string | null; viewerIdUserId: string | null }> {
+): Promise<{ regularAuUserId: string | null; regularIdUserId: string | null }> {
   const idByEmail = new Map<string, string>();
   const justCreated = new Set<string>();
   for (const spec of demoAccounts()) {
@@ -737,8 +748,8 @@ async function ensureAllDemoAccountsExist(
   }
 
   return {
-    viewerUserId: idByEmail.get("viewer.au@demo.yourtal.test") ?? null,
-    viewerIdUserId: idByEmail.get("viewer.id@demo.yourtal.test") ?? null,
+    regularAuUserId: idByEmail.get("adult.au@demo.yourtal.test") ?? null,
+    regularIdUserId: idByEmail.get("adult.id@demo.yourtal.test") ?? null,
   };
 }
 
@@ -755,7 +766,7 @@ async function seedWorldIfEmpty(
   );
   if (Number(existing.rows[0]?.count ?? "0") > 0) {
     log("[seed:staging] identity.user_profile is not empty — the world is already seeded.");
-    const { viewerUserId, viewerIdUserId } = await ensureAllDemoAccountsExist(
+    const { regularAuUserId, regularIdUserId } = await ensureAllDemoAccountsExist(
       pool,
       demoPassword,
       log,
@@ -765,8 +776,8 @@ async function seedWorldIfEmpty(
       businesses: 0,
       campaigns: 0,
       accounts: 0,
-      viewerUserId,
-      viewerIdUserId,
+      regularAuUserId,
+      regularIdUserId,
     };
   }
 
@@ -835,8 +846,8 @@ async function seedWorldIfEmpty(
     businesses: 2,
     campaigns: campaigns.length,
     accounts: userIdByEmail.size,
-    viewerUserId: idOf("viewer.au@demo.yourtal.test"),
-    viewerIdUserId: idOf("viewer.id@demo.yourtal.test"),
+    regularAuUserId: idOf("adult.au@demo.yourtal.test"),
+    regularIdUserId: idOf("adult.id@demo.yourtal.test"),
   };
 }
 
@@ -1765,9 +1776,9 @@ export async function seedStaging(
     marketingFunding,
   } as const;
 
-  if (world.viewerUserId === null) {
+  if (world.regularAuUserId === null) {
     log(
-      "[seed:staging] no viewer.au@demo.yourtal.test account exists (a non-empty " +
+      "[seed:staging] no adult.au@demo.yourtal.test account exists (a non-empty " +
         "identity.user_profile this seed did not create) — skipping the pending grant, " +
         "the demo voucher, the affordable listings and the redemption balance top-up.",
     );
@@ -1782,7 +1793,7 @@ export async function seedStaging(
 
   const grant = await ensureTierZeroPendingGrant(
     options.ledger,
-    world.viewerUserId,
+    world.regularAuUserId,
     log,
     options.replayDetectionWindowMs ?? REPLAY_DETECTION_WINDOW_MS,
   );
@@ -1864,7 +1875,7 @@ export async function seedStaging(
     redemptionBalance.push(
       await ensureDemoRedemptionBalance(
         options.ledger,
-        world.viewerUserId,
+        world.regularAuUserId,
         "AU",
         auTargetPoints,
         AU_TOPUP_CHUNK_POINTS,
@@ -1872,7 +1883,7 @@ export async function seedStaging(
       ),
     );
   }
-  if (world.viewerIdUserId !== null) {
+  if (world.regularIdUserId !== null) {
     const idQuote = await quoteExistingListing(pool, options.ledger, ID_LISTING_ID, "ID");
     if (!idQuote.ok) {
       log(
@@ -1885,7 +1896,7 @@ export async function seedStaging(
       redemptionBalance.push(
         await ensureDemoRedemptionBalance(
           options.ledger,
-          world.viewerIdUserId,
+          world.regularIdUserId,
           "ID",
           idTargetPoints,
           ID_TOPUP_CHUNK_POINTS,

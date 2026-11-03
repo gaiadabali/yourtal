@@ -109,7 +109,7 @@ describe("ViewerShell", () => {
         wallet: "/login?returnTo=%2Fwallet",
         me: "/login?returnTo=%2Fme",
       },
-      signUpHref: "/onboarding",
+      signUpHref: "/register",
       signUpLabel: "Sign up to earn",
     };
 
@@ -121,7 +121,7 @@ describe("ViewerShell", () => {
       );
       expect(screen.getByRole("link", { name: "Sign up to earn" })).toHaveAttribute(
         "href",
-        "/onboarding",
+        "/register",
       );
       expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
       expect(screen.queryByLabelText(/points available/)).not.toBeInTheDocument();

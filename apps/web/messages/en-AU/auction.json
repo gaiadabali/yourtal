@@ -14,7 +14,7 @@
     "leading": "You're leading",
     "outbid": "Outbid",
     "won": "You won",
-    "lost": "Ended"
+    "lost": "Not won"
   },
   "left": {
     "ended": "Ended",
@@ -52,7 +52,8 @@
   },
   "empty": {
     "title": "No auctions open right now",
-    "body": "When someone lists a voucher for a charity, it shows up here."
+    "body": "When someone lists a voucher for a charity, it shows up here. To list one of yours, open an unused voucher from the Store in your wallet and choose List for charity.",
+    "action": "Open my wallet"
   },
   "mine": {
     "link": "My bids and listings",
@@ -87,6 +88,7 @@
     "refusal": {
       "charity_unavailable": "That charity can't take auctions right now.",
       "voucher_not_unused": "Only an unused voucher can be listed.",
+      "voucher_holdback": "This voucher is too new to list. You can list it once its holding period ends, usually in a day or two.",
       "voucher_not_transferable": "This voucher can't be passed on.",
       "voucher_already_transferred": "This voucher has already been passed on once.",
       "seller_ineligible": "Verify your email before listing a voucher.",
@@ -114,7 +116,8 @@
     "close": "Close",
     "refusal": {
       "charity_unavailable": "That charity can't take auctions right now.",
-      "voucher_not_unused": "Only an unused voucher can be listed.",
+      "voucher_not_unused": "Only an unused voucher with at least {days} days left before it expires can be listed.",
+      "voucher_holdback": "This voucher is too new to list. You can list it once its holding period ends, usually in a day or two.",
       "voucher_not_transferable": "This voucher can't be passed on.",
       "voucher_already_transferred": "This voucher has already been passed on once.",
       "seller_ineligible": "Verify your email before listing a voucher.",

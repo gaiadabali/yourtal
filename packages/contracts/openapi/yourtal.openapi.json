@@ -320,13 +320,18 @@
                         "null"
                       ],
                       "description": "The sign-in email, for the account menu."
+                    },
+                    "emailVerified": {
+                      "type": "boolean",
+                      "description": "Whether the sign-in email is verified (F126); false when there is none."
                     }
                   },
                   "required": [
                     "profile",
                     "businessMemberships",
                     "staffRoles",
-                    "email"
+                    "email",
+                    "emailVerified"
                   ],
                   "additionalProperties": false
                 }
@@ -431,13 +436,18 @@
                         "null"
                       ],
                       "description": "The sign-in email, for the account menu."
+                    },
+                    "emailVerified": {
+                      "type": "boolean",
+                      "description": "Whether the sign-in email is verified (F126); false when there is none."
                     }
                   },
                   "required": [
                     "profile",
                     "businessMemberships",
                     "staffRoles",
-                    "email"
+                    "email",
+                    "emailVerified"
                   ],
                   "additionalProperties": false
                 }
@@ -2881,7 +2891,7 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "description": "`completed` is always true on success — a refusal throws instead (see the 403 below). `granted` is false with `reason` set (never `pendingPoints`/`unlockAt`) when the session was non-earning (already_earned, no funding configured, identity_check_required (F126), the allocation hold failed, or the grant call itself failed after coverage completed) — 5.1.b/5.3.a. `deliveryCoverage` is the 10.4.c segment-log cross-check's verdict, `\"unknown\"` until that lands (5.1.d).",
+                  "description": "`completed` is always true on success — a refusal throws instead (see the 403 below). `granted` is false with `reason` set (never `pendingPoints`/`unlockAt`) when the session was non-earning (already_earned, no funding configured, identity_check_required (F126), the allocation hold failed, or the grant call itself failed after coverage completed) — 5.1.b/5.3.a. `missing` is present only with `reason: identity_check_required` (5.9.f): the steps the viewer still has to take, so the player offers the right one. `deliveryCoverage` is the 10.4.c segment-log cross-check's verdict, `\"unknown\"` until that lands (5.1.d).",
                   "properties": {
                     "completed": {
                       "const": true
@@ -2899,6 +2909,17 @@
                     },
                     "reason": {
                       "type": "string"
+                    },
+                    "missing": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "verify_email",
+                          "use_permanent_email"
+                        ]
+                      }
                     },
                     "deliveryCoverage": {
                       "type": "string",
@@ -5080,11 +5101,29 @@
                     },
                     "credential": {
                       "type": "string"
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "AU",
+                        "ID"
+                      ]
+                    },
+                    "label": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "locationName": {
+                      "type": "string",
+                      "minLength": 1
                     }
                   },
                   "required": [
                     "deviceId",
-                    "credential"
+                    "credential",
+                    "region",
+                    "label",
+                    "locationName"
                   ],
                   "additionalProperties": false
                 }
@@ -5254,7 +5293,6 @@
                   },
                   "synopsis": {
                     "type": "string",
-                    "minLength": 1,
                     "maxLength": 500
                   },
                   "durationSeconds": {
@@ -6533,7 +6571,6 @@
                   },
                   "synopsis": {
                     "type": "string",
-                    "minLength": 1,
                     "maxLength": 500
                   },
                   "durationSeconds": {
@@ -7414,7 +7451,7 @@
             }
           },
           "400": {
-            "description": "The requested lifecycle move is not a legal transition from the campaign's current state (studio.errors.ts's illegal_transition; enforced twice over, by the use-case and by campaign.assert_lifecycle_transition()'s own database trigger).",
+            "description": "One of: campaign_not_ready (the draft lacks something review needs; the body's `missing` lists title, synopsis, video, reward, budget and/or questions, with questionsNeeded and questionsHave), creative_blocked (the automated screen refused the title or synopsis), or illegal_transition (the move is not legal from the campaign's current state; enforced twice over, by the use-case and by campaign.assert_lifecycle_transition()'s own database trigger) -- studio.errors.ts.",
             "content": {
               "application/json": {
                 "schema": {
@@ -10363,7 +10400,7 @@
             }
           },
           "400": {
-            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here. OR: This campaign has left draft; an advertiser edits freely only until submission (studio.errors.ts's campaign_not_draft). OR: One of: allocation_not_owned (allocationId is not one of this business's own), allocation_not_partner_funded (only a partner-funded allocation may fund a reward), reward_exceeds_ceiling (F14: base plus the maximum accuracy bonus exceeds the region's reward_ceiling_points_per_minute, scaled to this campaign's duration), or accuracy_bonus_too_high (the bonus exceeds 40% of the base reward), or 14.2's budget_below_one_completion / daily_cap_below_one_completion / daily_cap_above_budget (a total budget or daily cap that could never pay out as set) -- studio.errors.ts.",
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here. OR: This campaign has left draft; an advertiser edits freely only until submission (studio.errors.ts's campaign_not_draft). OR: One of: allocation_not_owned (allocationId is not one of this business's own), allocation_not_partner_funded (only a partner-funded allocation may fund a reward), reward_exceeds_ceiling (F14: base plus the maximum accuracy bonus exceeds the region's reward_ceiling_points_per_minute, scaled to this campaign's duration; the body also carries maxPoints, durationSeconds and hasBonus), or accuracy_bonus_too_high (the bonus exceeds 40% of the base reward), or 14.2's budget_below_one_completion / daily_cap_below_one_completion / daily_cap_above_budget (a total budget or daily cap that could never pay out as set) -- studio.errors.ts.",
             "content": {
               "application/json": {
                 "schema": {
@@ -11008,6 +11045,101 @@
         "responses": {
           "200": {
             "description": "The saved setting with its report.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoostView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No campaign with this id belongs to this business.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/{tenantId}/studio/campaigns/{campaignId}/boost/stop": {
+      "post": {
+        "summary": "Stop a campaign's boost now or at the end of today",
+        "tags": [
+          "studio",
+          "boost"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "description": "The business this route is scoped to (docs/13a's /api/:tenantId/* convention).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "description": "The business's own campaign.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "When the boost stops. Days already served are still charged.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StopBoostRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The setting after the stop, with its report.",
             "content": {
               "application/json": {
                 "schema": {
@@ -25940,6 +26072,7 @@
         "enum": [
           "charity_unavailable",
           "voucher_not_unused",
+          "voucher_holdback",
           "voucher_not_transferable",
           "voucher_already_transferred",
           "seller_ineligible",
@@ -28331,6 +28464,17 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "offerTitle": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -28340,7 +28484,8 @@
           "currency",
           "capturedAt",
           "orderRef",
-          "authorizedAt"
+          "authorizedAt",
+          "offerTitle"
         ],
         "additionalProperties": false
       },
@@ -31608,6 +31753,23 @@
         ],
         "additionalProperties": false
       },
+      "StopBoostRequest": {
+        "description": "Stop a boost now, or at the end of today on the region's clock. Days already served are still charged.",
+        "type": "object",
+        "properties": {
+          "effective": {
+            "type": "string",
+            "enum": [
+              "now",
+              "end_of_day"
+            ]
+          }
+        },
+        "required": [
+          "effective"
+        ],
+        "additionalProperties": false
+      },
       "StudioPayouts": {
         "description": "Studio's payouts panel: the account, whether a payout failed or waits for the account, and each approved statement's payout.",
         "type": "object",
@@ -32286,6 +32448,14 @@
           },
           "giftable": {
             "type": "boolean"
+          },
+          "giftBlock": {
+            "type": "string",
+            "enum": [
+              "not_unused",
+              "not_transferable",
+              "received_as_gift"
+            ]
           }
         },
         "required": [
@@ -32365,6 +32535,14 @@
           },
           "giftable": {
             "type": "boolean"
+          },
+          "giftBlock": {
+            "type": "string",
+            "enum": [
+              "not_unused",
+              "not_transferable",
+              "received_as_gift"
+            ]
           },
           "code": {
             "type": "string",

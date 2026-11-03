@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Figtree, JetBrains_Mono } from "next/font/google";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { isStaging } from "@/features/shell/app-env";
 import { StagingBanner } from "@/features/shell/staging-banner";
 
@@ -82,6 +82,7 @@ export interface RootDocumentProps {
 }
 
 export function RootDocument({ lang, theme = "system", children }: RootDocumentProps) {
+  // The staging banner is a fixed 2rem; layouts that fill the window subtract `--staging-banner-h`.
   return (
     <html
       lang={lang}
@@ -89,7 +90,7 @@ export function RootDocument({ lang, theme = "system", children }: RootDocumentP
       className={fontVariables}
       data-theme={theme === "system" ? undefined : theme}
     >
-      <body>
+      <body style={isStaging() ? ({ "--staging-banner-h": "2rem" } as CSSProperties) : undefined}>
         {isStaging() ? <StagingBanner lang={lang} /> : null}
         {children}
       </body>

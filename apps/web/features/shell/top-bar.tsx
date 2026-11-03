@@ -9,6 +9,7 @@ import type { Notification } from "@yourtal/contracts/me/notification";
 import { NotificationsBell } from "../notifications/notifications-bell";
 import { getNavTranslator, type SupportedLocale } from "./nav-i18n";
 import { AccountMenu, type AccountSummary } from "./account-menu";
+import { useShellBalance } from "./shell-balance";
 import { Wordmark } from "./wordmark";
 
 export interface TopBarProps {
@@ -35,8 +36,8 @@ export interface TopBarProps {
   /** 13.18.b: the signed-in account for the avatar menu. Omitted, no avatar shows. */
   account?: AccountSummary;
   theme?: ThemeSetting;
-  /** 13.13.d: 0 hides the badge. */
-  streakDays?: number;
+  /** 13.13.d: the streak badge. `null` (or omitted) hides it; 0 shows an empty streak, so a viewer sees it before their first earn. */
+  streakDays?: number | null;
 }
 
 /**
@@ -54,9 +55,10 @@ export function TopBar({
   signedOutCta,
   account,
   theme = "system",
-  streakDays = 0,
+  streakDays = null,
 }: TopBarProps) {
   const t = getNavTranslator(locale);
+  const points = useShellBalance(availablePoints);
 
   return (
     <header className="sticky top-0 z-(--z-nav) flex h-14 items-center gap-1 border-b border-border-subtle bg-surface/95 px-gutter-sm backdrop-blur min-[360px]:gap-2 md:gap-3 md:px-gutter-md lg:pl-[calc(14rem+var(--spacing-gutter-md))]">
@@ -112,9 +114,10 @@ export function TopBar({
         </a>
       ) : (
         <>
-          {streakDays > 0 ? (
+          {/* Below 380 px the bar has no room left for it (it would scroll the page sideways). */}
+          {streakDays !== null ? (
             <span
-              className="hidden h-8 shrink-0 items-center gap-1 rounded-pill bg-accent-subtle px-2.5 text-label font-sans font-bold text-fg sm:inline-flex"
+              className="hidden h-8 shrink-0 items-center gap-1 rounded-pill bg-accent-subtle px-2 text-label font-sans font-bold text-fg min-[380px]:inline-flex sm:px-2.5"
               title={t("streak", { count: streakDays })}
             >
               <Flame aria-hidden="true" className="h-4 w-4 text-accent" />
@@ -127,7 +130,7 @@ export function TopBar({
           {notifications ? <NotificationsBell initialNotifications={notifications} /> : null}
           <Link href="/wallet" className="shrink-0 rounded-pill">
             <PointsChip
-              value={availablePoints}
+              value={points}
               size="sm"
               locale={locale}
               formatLabel={(formatted) => t("pointsAvailable", { points: formatted })}

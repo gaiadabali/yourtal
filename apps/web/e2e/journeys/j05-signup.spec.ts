@@ -25,15 +25,9 @@ for (const r of REGIONS) {
     const signUp = page.getByRole("link", { name: /Sign up to start earning|Daftar untuk mulai/ });
     await expect(signUp).toBeVisible();
     await signUp.click();
-    if (page.url().includes("/login")) {
-      await page
-        .getByRole("link", { name: /create an account|buat akun|register|daftar/i })
-        .first()
-        .click();
-    }
+    // Straight to the sign-up form (14.22.d), not Log in.
     await expect(page).toHaveURL(/\/register/);
-    // returnTo nests once per hop (register → onboarding → watch).
-    expect(decodeURIComponent(decodeURIComponent(page.url()))).toContain(`/watch/${campaignId}`);
+    expect(decodeURIComponent(page.url())).toContain(`/watch/${campaignId}`);
 
     const account = freshAccount(`j5-${r.slug}`);
     await page.getByLabel("Email").fill(account.email);

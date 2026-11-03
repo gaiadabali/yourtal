@@ -13,7 +13,8 @@ import {
 /** TASKS.md 7.3.a: a patch. Every field optional; `chapters`/`declaredInterests` replace the whole set when present. */
 export const updateCampaignDraftSchema = z.object({
   title: z.string().min(1).max(140).optional(),
-  synopsis: z.string().min(1).max(500).optional(),
+  /** May be emptied while drafting; submitting for review requires one. */
+  synopsis: z.string().max(500).optional(),
   durationSeconds: z
     .number()
     .int()

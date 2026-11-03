@@ -26,9 +26,13 @@ import {
   describeVoucherStatus,
   isVoucherEffectivelyExpired,
   isVoucherRedeemable,
+  type Translator,
+  type VoucherStatusKind,
 } from "./wallet-voucher-status-copy";
 import { buildRedemptionInstructions } from "./wallet-redemption-copy";
-import { formatWalletDate } from "./wallet-format";
+import { LISTING_MIN_LIFE_DAYS, type PassNotice } from "./voucher-pass-rules";
+import type { PassedOn } from "./voucher-passed-on";
+import { formatWalletDate, type SupportedLocale } from "./wallet-format";
 
 export interface VoucherDetailViewProps {
   voucherId: string;
@@ -39,6 +43,10 @@ export interface VoucherDetailViewProps {
   giftable?: boolean;
   /** 13.22.d: charities to list this voucher for; omitted, no auction action. */
   charities?: readonly PublicCharity[];
+  /** Why Gift and List for charity are missing (or only the listing is); shown under the actions. */
+  passNotice?: PassNotice;
+  /** For a transferred voucher: the gift that gave it away, when there is one. */
+  passedOn?: PassedOn;
 }
 
 /** True while the browser reports itself offline — 6.5.c: "shows with the network off". */
@@ -58,6 +66,43 @@ function useIsOffline(): boolean {
 }
 
 /**
+ * What an archived voucher's panel says. The badge above already names the
+ * status, so the panel explains it instead of repeating it.
+ */
+function archivedMessage(
+  kind: VoucherStatusKind,
+  ctx: {
+    t: Translator;
+    locale: SupportedLocale;
+    expiresAt: string | undefined;
+    passedOn: PassedOn | undefined;
+    fallback: string;
+  },
+): string {
+  const { t, locale, expiresAt, passedOn } = ctx;
+  switch (kind) {
+    case "void":
+      return t("voucher.voidHint");
+    case "expired":
+      return expiresAt ? t("voucher.expiresOn", { date: formatWalletDate(expiresAt, locale) }) : "";
+    case "redeemed":
+      return t("voucher.archived.redeemed");
+    case "released":
+      return t("voucher.archived.released");
+    case "transferred":
+      if (passedOn === undefined) return t("voucher.archived.transferred");
+      return passedOn.status === "pending"
+        ? t("voucher.archived.giftPending", {
+            date: formatWalletDate(passedOn.sentAt, locale),
+            deadline: formatWalletDate(passedOn.acceptBy, locale),
+          })
+        : t("voucher.archived.giftAccepted", { date: formatWalletDate(passedOn.sentAt, locale) });
+    default:
+      return ctx.fallback;
+  }
+}
+
+/**
  * Client leaf for `/wallet/voucher/[voucherId]` (6.5.b). Cache-first by
  * design: on mount it prefers whatever is already in localStorage for this
  * voucher id over the freshly server-rendered `initialDetail` prop, so the
@@ -72,6 +117,8 @@ export function VoucherDetailView({
   initialQr,
   giftable = false,
   charities,
+  passNotice,
+  passedOn,
 }: VoucherDetailViewProps) {
   const { locale } = useRegion();
   const t = useTranslations("wallet");
@@ -162,17 +209,21 @@ export function VoucherDetailView({
               ) : null}
               <VoucherDisputeButton voucherId={voucherId} onResolved={setDisputeOutcome} />
             </div>
+            {passNotice ? (
+              <Notice tone="info" className="w-full">
+                {t(`voucher.pass.${passNotice}`, { days: LISTING_MIN_LIFE_DAYS })}
+              </Notice>
+            ) : null}
           </>
         ) : (
           <VoucherArchivedPanel
-            statusLabel={statusCopy.label}
-            dateLabel={
-              isVoid
-                ? t("voucher.voidHint")
-                : statusCopy.kind === "expired" && detail.expiresAt
-                  ? t("voucher.expiresOn", { date: formatWalletDate(detail.expiresAt, locale) })
-                  : ""
-            }
+            message={archivedMessage(statusCopy.kind, {
+              t,
+              locale,
+              expiresAt: detail.expiresAt,
+              passedOn,
+              fallback: statusCopy.label,
+            })}
           />
         )}
 

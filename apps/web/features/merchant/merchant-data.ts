@@ -1,5 +1,4 @@
-import { regionDisplayConfig } from "@/features/region/region-config";
-import type { MerchantDevice } from "./merchant-device";
+import { buildMerchantDevice, type MerchantDevice } from "./merchant-device";
 import { readDeviceBinding } from "./provisioning/device-session-cookie";
 
 /**
@@ -26,10 +25,12 @@ export async function getMerchantDevice(): Promise<MerchantDevice | null> {
   if (!binding) {
     return null;
   }
-  // Locale follows the region learned at this device's first real
-  // unlock-with-PIN call (device-binding-schema.ts's own doc comment);
-  // falls back to "en-AU" only until that has happened once. Never
-  // affects a redemption's currency.
-  const locale = binding.region ? regionDisplayConfig(binding.region).locale : "en-AU";
-  return { id: binding.deviceId, locale };
+  // Language, currency and zone follow the region the API named at pairing
+  // (and names again at every unlock); AU only for a binding saved before that.
+  return buildMerchantDevice({
+    id: binding.deviceId,
+    region: binding.region,
+    label: binding.label,
+    locationName: binding.locationName,
+  });
 }

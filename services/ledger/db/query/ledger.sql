@@ -305,8 +305,8 @@ WHERE g.unlock_at IS NOT NULL AND g.unlock_at <= now() AND r.grant_id IS NULL
     LEFT JOIN ledger.escrow_release er ON er.escrow_id = e.id
     WHERE e.user_id = g.user_id AND er.escrow_id IS NULL
   )
-ORDER BY g.unlock_at
-LIMIT $1;
+ORDER BY g.unlock_at, g.id
+LIMIT $1 OFFSET $2;
 
 -- name: InsertGrantRelease :execrows
 INSERT INTO ledger.grant_release (grant_id, transfer_id) VALUES ($1, $2) ON CONFLICT DO NOTHING;

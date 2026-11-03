@@ -9,7 +9,8 @@
     "consent": "Consent",
     "interests": "Interests",
     "follow": "Follow",
-    "done": "Done"
+    "done": "Done",
+    "skipped": "skipped"
   },
   "boundary": {
     "title": "Something went wrong",

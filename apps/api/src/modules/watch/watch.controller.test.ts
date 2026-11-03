@@ -3,6 +3,8 @@ import type { FastifyRequest } from "fastify";
 import type { Principal } from "@yourtal/authz/principal";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { coveredSeconds } from "@yourtal/contracts/watch/coverage";
+import { questionsAskedFor } from "@yourtal/contracts/question/question-bank";
+import type { EarningVerdict } from "@yourtal/contracts/identity/earning-check";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { FakeLedgerClient } from "../../shared/ledger-client/fake-ledger-client";
 import type {
@@ -405,5 +407,69 @@ describe("a session belongs to one user", () => {
     await expect(controller.resume(request, started.session.id)).rejects.toThrow(
       /No such watch session/,
     );
+  });
+});
+
+/**
+ * 5.9.f: when the identity check refuses at the grant, the completion response
+ * says what is missing, so the player offers the right step (a verified person
+ * on a disposable address is not asked to verify an email again).
+ */
+describe("the identity check at completion says what is missing", () => {
+  function controllerWith(verdict: EarningVerdict) {
+    return new WatchController(
+      principals,
+      sessions,
+      campaigns,
+      new FakeLedgerClient(db),
+      new FakeProfiles(),
+      "test-attestation-secret-not-a-real-one",
+      "test-checkpoint-secret-not-a-real-one",
+      "test-manifest-signing-secret-not-a-real-one",
+      new StubDeliveryCoverageReader(),
+      new NoopWatchCompletionHook(),
+      { verdictFor: () => Promise.resolve(verdict) },
+    );
+  }
+
+  /** A fully watched, fully answered session, started while the check passed. */
+  async function finishedSession(): Promise<string> {
+    const started = await controller.start(request, { campaignId: longFormId });
+    await owner.execute(
+      `UPDATE watch.session SET non_earning = false, non_earning_reason = NULL, started_at = now() - interval '${String(durationSeconds + 5)} seconds', questions_asked = ${String(questionsAskedFor(durationSeconds))} WHERE id = '${started.session.id}'`,
+    );
+    await controller.progress(request, started.session.id, {
+      fromSeconds: 0,
+      toSeconds: durationSeconds,
+      reportedAt: new Date().toISOString(),
+    });
+    return started.session.id;
+  }
+
+  it("names the one step a disposable-address account still needs", async () => {
+    const sessionId = await finishedSession();
+    const done = await controllerWith({
+      mayEarn: false,
+      missing: ["use_permanent_email"],
+    }).complete(request, sessionId);
+    expect(done).toStrictEqual({
+      completed: true,
+      granted: false,
+      reason: "identity_check_required",
+      pendingPoints: 0,
+      missing: ["use_permanent_email"],
+    });
+  });
+
+  it("names both steps, in the order the player asks", async () => {
+    const sessionId = await finishedSession();
+    const done = await controllerWith({
+      mayEarn: false,
+      missing: ["verify_email", "use_permanent_email"],
+    }).complete(request, sessionId);
+    expect(done).toMatchObject({
+      granted: false,
+      missing: ["verify_email", "use_permanent_email"],
+    });
   });
 });

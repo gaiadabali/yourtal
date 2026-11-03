@@ -98,7 +98,7 @@ describe("the auction page", () => {
 
   it("writes the viewer's own bid and the minimum bid in the viewer's language, in the auction's currency", async () => {
     await show("id-ID");
-    expect(screen.getByText("Anda penawar tertinggi di AU$30,00.")).toBeInTheDocument();
+    expect(screen.getByText("Kamu penawar tertinggi di AU$30,00.")).toBeInTheDocument();
     expect(screen.getByTestId("minimum")).toHaveTextContent("AU$31,50");
   });
 });

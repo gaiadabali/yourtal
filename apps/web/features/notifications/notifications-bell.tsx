@@ -9,6 +9,7 @@ import { EmptyState } from "@yourtal/ui/empty-state";
 import { ListRow } from "@yourtal/ui/list-row";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@yourtal/ui/sheet";
 import type { Notification } from "@yourtal/contracts/me/notification";
+import { REGION_TIME_ZONE } from "@/features/region/region-time-zone";
 import { notificationCopy } from "./notification-copy";
 import { markNotificationReadAction } from "./notifications-actions";
 
@@ -97,12 +98,27 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
                       if (notification.readAt === null) markRead(notification.id);
                     }}
                     trailing={
-                      notification.readAt === null ? (
-                        <span
-                          aria-label={t("markRead")}
-                          className="block size-2 shrink-0 rounded-full bg-accent"
-                        />
-                      ) : null
+                      <span className="flex flex-col items-end gap-1">
+                        {/* The notification's own region's clock, so the server and the browser agree. */}
+                        <time
+                          dateTime={notification.createdAt}
+                          className="text-caption font-sans text-fg-muted"
+                        >
+                          {format.dateTime(new Date(notification.createdAt), {
+                            day: "numeric",
+                            month: "short",
+                            hour: "numeric",
+                            minute: "2-digit",
+                            timeZone: REGION_TIME_ZONE[notification.region],
+                          })}
+                        </time>
+                        {notification.readAt === null ? (
+                          <span
+                            aria-label={t("markRead")}
+                            className="block size-2 shrink-0 rounded-full bg-accent"
+                          />
+                        ) : null}
+                      </span>
                     }
                     {...(notification.readAt === null ? { className: "bg-surface-sunken" } : {})}
                   />

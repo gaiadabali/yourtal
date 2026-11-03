@@ -45,9 +45,9 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 10** Settlement, lifecycle & risk | A + C | ✅ done | 7/7 | 27/27 | `██████████` 100% |
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
-| **Phase 13** Ready for live review | all | 🔄 in progress | 22/23 | 104/105 | `██████████`  99% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 12/20 | 58/74 | `████████░░`  78% |
-| **All** | | | **117/126** | **604/621** | `██████████`  97% |
+| **Phase 13** Ready for live review | all | ✅ done | 23/23 | 105/105 | `██████████` 100% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 20/25 | 91/107 | `█████████░`  85% |
+| **All** | | | **126/131** | **638/654** | `██████████`  98% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -87,7 +87,7 @@ One row per slot. The session in a slot updates its row when it starts, when it 
 | 9c | `yourtal-p9-c` | free | 2026-10-01 | A2 done: 13.10 ✅, 13.20 and 13.22 backends (closed ✅ 2026-10-01), 13.9.a/b. Db `yourtal_s9c` and ports 26480–26487 free for reuse. |
 | 4 | `yourtal-4` | **13** — viewer side (agent V), paused | 2026-10-02 | Branch `phase/13` (merged), db `yourtal_s4`, ports 26360–26369. Next for V: 13.15.d (store date without its year), 13.3.d (data export), the B half of 13.3.i. (13.4.a moved to the optimisation pass, F97.) |
 | 2b | `yourtal-p11` | free | 2026-09-29 | Phase 11 moved to slot 4. 11.3.a ✅ (d2ae6ab), 11.3.b merged except `VideoObject` (11fc23d). Worktree left detached |
-| g5 | `.claude/worktrees/g-phase5` | **14** — group Phase 5 on the payment simulation (F106) | 2026-10-21 | Done: 14.6 ✅, 14.7 ✅, 14.8 ✅, 14.11 ✅, 14.13 ✅, 13.6 ✅ (the walkthrough, in the founder's place); 14.9.a–c, e; 14.10.a–c (email-only); 14.19.a–e; 14.20.a–c; 14.22.a–b. Open: 14.22.c–l (the walkthrough's fixes; k and c first), 14.10.d (passkey, after group 3.9.c) and 14.10.e, 14.19.f, 14.20.d (god-99), 14.21 (first live boost charge), 14.9.d (needs the AU company). Nobody is working these now |
+| g5 | `.claude/worktrees/g-phase5` | **14** — group Phase 5 on the payment simulation (F106) | 2026-10-26 | Done: 14.6, 14.7, 14.8, 14.10, 14.11, 14.13, 14.19 ✅, 13.6 ✅; 14.22.a–d, f, i, j, n (2026-10-26, two god lanes, merged through 6cd56c7f; demo world reset that day). **In progress since 2026-10-26 (two god lanes):** lane 2 on `g-phase5` (group/5-campaign-editor: 14.22.e) then `g5-studio-copy` (14.22.h); lane 3 on `g-phase5-sim` (group/5-gifts-auctions: 14.22.k, incl. the ledger release loop) then `g-phase5-inv` (group/5-counter: 14.22.g; its migration is being renamed off 20261022090000). Still open after them: 14.22.l (re-walk), m (needs the founder's device), o, p, q, r; 14.21 (first live boost charge); 14.9.d (AU company) |
 | g3 | `.claude/worktrees/g3-oidc`, `g3-passkeys` | **14.16** — group Phase 3, Sign in with YourTal (god-ca) | 2026-10-21 | Branches `group/3.9-oidc` (the provider) and `group/3.9c-passkeys`. Next: the `/connect` screens, events and the teen invite API once the provider is on main; the lead does nginx and the keys on Helios |
 | 8 | free | **8** Voucher engine for clients — ✅ done | 2026-09-29 | Phase 8 done (all 4 tasks ✅). Helper worktrees `yourtal-p8`, `-p8-b`, `-p8-c` removed; databases `yourtal_s8`, `_s8b`, `_s8c` and ports 26371–26387, 26471–26477 kept for reuse |
 
@@ -227,6 +227,7 @@ The founder's answers to Phase 0 of the cross-app plan, `god/TASKS.md` (its IDs 
 | **F125** | Company names on the consent screens until F114’s legal names arrive | **Brand names for now** (“SnapApp”, “Free Tax Returns”), from one setting, so the legal names drop in with no code change. Offered: hold the consent screens until the legal names are in. |
 | **F126** | What an account without the identity check gets (group 5.9) | **No earning before the check**: until an account has a verified email and a passkey, watching and receipts earn nothing, and the player asks for them first. Required in production; on staging and dev a region setting turns it on so it can be tried without blocking the demo world. Offered: earn but spend only after the check (recommended); check only at the first spend. |
 | **F127** | SnapApp’s receipt package (group 2.10.b, 14.14) | **The tier sizes at exactly B, no volume discount** (A$30 / A$300 / A$1,500 ex-GST; ID demo IDR 6,000 / 60,000 / 300,000), bought only by the business named in `receipt_funder.<partner>` and funding only receipt points. **The funder’s owner and finance may see the at-cost price** (an exception to “B never reaches a client” and F54, for the receipt funder only; no API field names the rate). **The 10-receipts-a-person-a-day limit is removed** (F119: no per-person cap). **Receipts reported while every package is used up never earn** (the partner treats `allocation_exhausted` as final). Supersedes F101 and the F12 row “Marketing budget … funds streaks, receipts and goodwill” for receipts. Design: [`docs/27`](docs/27-receipt-packages.md). Offered: the same prices as any business; at cost in any multiple of 1,000; staff buying for SnapApp; keep 10 or 50 a day; re-send once refilled; auto top-up at 80%. |
+| **F128** | The SnapApp scans voucher (group 2.8) | **One listing, AU: A$5 face = 50 scans, S = A$5, priced at 200 points** (above the 3c backing; YourTal keeps A$1 of backing per voucher; the rate is not readable from the price). **Only the SnapApp account linked to the holding wallet may redeem it, adults only.** **Partner-bound listings skip the online trust-tier-2 rule** (the code can’t be resold). **No netting** of payouts against receipt-package purchases. Design: [`docs/28`](docs/28-snapapp-scans-voucher.md). Offered: 167 points at backing; 150 points with S = A$4.50; keep tier 2; bearer codes; netted statements. | founder, 2026-10-21/22 |
 | **F118** | GST in AU (group 5.3) | **AU prices are ex-GST, and GST is added on top**: a brand pays A$49.50 for 1,000 points (A$45.00 + A$4.50 GST) and claims the GST back; boost spend is charged the same way. The spread and the reserve stay as F12 set them: the ledger records the ex-GST amount, and the GST is recorded on the tax invoice. The rate and the issuer's details are settings. ID adds no tax while it stays a demo (F104). Offered: prices include GST; ask the accountant first. |
 | **F106** | Stripe for now (group 0.7.f) | **Every payment is simulated; no Stripe account for now.** The real Stripe driver runs on staging against YourTal's own payment simulation, which speaks Stripe's API: a checkout page that takes only Stripe's test cards, signed and retried webhooks, refunds, and Connect onboarding, transfers and payouts. A production host refuses to start the simulation. Going live (group 6.8) is keys and an address, not new code. |
 | **F107** | Brand refunds (group 5.1) | **None: a brand's points purchase is final.** The Stripe driver and the simulation keep refunds for later; the staging check has no refund step. Offered: a full refund while unused (recommended), refunds of unused packs. |
@@ -1685,12 +1686,12 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.9.c Validate the `invoice_issuer` setting when staff propose it (group 5.3.c) → 033fae42
   - [ ] 14.9.d Real tax invoices once the AU company's details are approved in `invoice_issuer` (group 5.3.d, needs 6.1.a) — moved to group 6.10, a launch gate (founder, 2026-10-22)
   - [x] 14.9.e A demo AU company with a demo ABN on staging and dev, so the Tax invoice path runs end to end; documents outside production say they are demos (group 5.3.e) → e7538310 → checked on staging: YT-AU-000006 to 000008, issued after the deploy, are demo tax invoices with ABN 99000000032
-- [ ] **14.10 Identity check before real points** (group 5.9, F102) · A · needs: — — 🔄 g5 (simplified by the founder 2026-10-21 to a verified email; the passkey joins later, 14.10.d)
+- [x] **14.10 Identity check before real points** (group 5.9, F102) · A · needs: — — 🔄 g5 (simplified by the founder 2026-10-21 to a verified email; the passkey joins later, 14.10.d) — ✅ 2026-10-26 6716ddc3
   - [x] 14.10.a Before the first real points go to a real person (docs/16 N-5), an account needs a verified email and a passkey: no earning at all until then (F126) → simplified to a verified email from a permanent (not disposable) address, ef9fc40c; watch start and completion, partner receipts (403, final) and streak bonuses gated
   - [x] 14.10.b The fraud checks rest on that, plus the holdback by trust tier and the earn caps; record it in docs/16 → F126 in docs/16, ef9fc40c
   - [x] 14.10.c The staff economy settings show the check's effective state (Required in production, On, Off) (group 5.9.d) → ef9fc40c
-  - [ ] 14.10.d Add the passkey to the check once group 3.9.c is on main, as a second switch (group 5.9.e) — moved to group 6.11, a launch gate (founder, 2026-10-22)
-  - [ ] 14.10.e Loose ends: name what is missing in the completion response; the partner link made before a refused receipt (group 5.9.f)
+  - [ ] 14.10.d Add the passkey to the check once group 3.9.c is on main, as a second switch (group 5.9.e) — moved to group 6.11, a launch gate (founder, 2026-10-22) — ✂️ cut: moved to group 6.11
+  - [x] 14.10.e Loose ends: name what is missing in the completion response; the partner link made before a refused receipt (group 5.9.f) → 6716ddc3 (group 5.9.f: missing in the completion response; the partner link after a refused receipt stays, decided 2026-10-22)
 
 - [x] **14.11 Record the payment simulation** (group 0.7.g) · lead · needs: — — ✅ 2026-10-20 fbcd08d5
   - [x] 14.11.a F106 in `docs/16-decisions.md`: every payment is simulated until real Stripe (group 6.8), and going live is keys and an address, not new code
@@ -1708,6 +1709,11 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.14.c When that package is spent, receipts stop earning and the partner API says so → designed 2026-10-21 (`docs/27`): tickets T4, T6, T7, and the staging check T9 → done 2026-10-21: T4 d51203ea (409 allocation_exhausted “receipt points are paused”, POST /api/partners/receipts/status), T6 c7e1a756 (50/80/100% receipt alerts), T7 eeda760a (Studio Receipt rewards panel); on staging the alerts fired once each, were emailed to owner and finance, receipts paused when empty and resumed after a refill
   - [x] 14.14.d Receipts are left out of the risk gate’s user-velocity signal (group 2.10.d–e, founder 2026-10-21) → 7076c408
   - [x] 14.14.e Staff console: Receipt programmes (group 2.9.c) → 00d2946d
+- [ ] **14.23 The SnapApp scans voucher** (group 2.8, F128) · A + B + C · needs: 14.3 — 🔄 2026-10-22
+  - [ ] 14.23.a T1 partner-bound listings; T2 the holding read and code test vectors; T3 the merchant order lookup → T1 → ad0901b3
+  - [ ] 14.23.b T4 the partner ownership read; T5 wallet copy for vouchers used in an app; T6 the checkout tier exemption
+  - [ ] 14.23.c T7 the staging seed (200-point listing, stock, binding); the lead’s credential and secret steps
+  - [ ] 14.23.d T8 the staging check: Phases A, B and C pass
 - [x] **14.15 Account deletion: the last gaps** (group 1.24) · A · needs: — — ✅ 2026-10-21 0551286a
   - [x] 14.15.a Pending team invitations to an erased email are removed inside the identity domain, before the address goes (group 1.24.a) → 0551286a
   - [x] 14.15.b `DELETE /api/me` reports `complete: true`: research_answers and support_cases get a table and handler, or their declarations go (group 1.24.b) → 0551286a
@@ -1718,13 +1724,13 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [ ] 14.16.d Teens: every client refuses them except SnapApp by a guardian's invite; the teen invite API (group 3.9.e)
   - [ ] 14.16.e Deletion and ended access reach every app as signed events, with the `connected_apps` data domain (group 3.9.f)
   - [ ] 14.16.f Rate limits, a sign-in log per client, an uptime check and one restore test (group 3.9.h)
-- [ ] **14.19 Phase 5's screens: evidence and fixes** (group 5.11) · B + C · needs: — — 🔄 g5
+- [x] **14.19 Phase 5's screens: evidence and fixes** (group 5.11) · B + C · needs: — — 🔄 g5 — ✅ 2026-10-26 6cd56c7f
   - [x] 14.19.a Screenshots and axe for every Phase 5 screen, both widths, themes and locales: no WCAG A/AA violations, no overflow (2026-10-21)
   - [x] 14.19.b The auction page crashed for bidders (a client-only helper called on the server) → edd733d6
   - [x] 14.19.c The other findings: parked-purchases hydration error, the statements badge, id-ID money formats, staff raw codes and ids, the simulation's id placeholder, axe's review items on the package picker → 6e7724cd
   - [x] 14.19.d Capture again: the auction states and signed-out Shorts with videos → the auction states locally after 6e7724cd; signed-out Shorts with videos on staging at 503feb89 (16 of 16, 0 WCAG violations)
   - [x] 14.19.e What the fixes found next to them (group 5.11.e): other staff screens still format dates with a bare toLocaleString(); redemptions and the reports ledger still use the currency-keyed formatMoney; the settlement retry line and the rate and settings tables print user ids; the auction page and Shorts at 1280 px need a labelled <aside> (axe landmark-unique); triage axe colour-contrast review items → 3c07b278
-  - [ ] 14.19.f Left by 14.19.e (group 5.11.f): the economy settings table's proposer id (fixed on the 14.10 branch); zone-less Intl.DateTimeFormat dates in Studio billing, billing alerts, store expiry, the earn moment, the burn error and the counter copy; 4 contrast review items needing a signed-in capture
+  - [x] 14.19.f Left by 14.19.e (group 5.11.f): the economy settings table's proposer id (fixed on the 14.10 branch); zone-less Intl.DateTimeFormat dates in Studio billing, billing alerts, store expiry, the earn moment, the burn error and the counter copy; 4 contrast review items needing a signed-in capture → 6cd56c7f (group 5.11.f; the counter's dates moved to 14.22.g; the 4 contrast items were false positives, the Shorts rail gradient is 14.22.q)
 Group 5.7, the founder's walkthrough, is 13.6 here.
 - [x] **14.17 The Security workflow is green again** (group 1.25) · A · needs: — — ✅ 2026-10-21 14c0259b
   - [x] 14.17.a vitest's vite lifted to 8.3.4 for GHSA-698v-4r3x-3vcv (a workspace override); pnpm audit passes (group 1.25.a) → 14c0259b
@@ -1732,26 +1738,37 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
 - [x] **14.18 Invitation erasure keys only on the email** (group 1.26) · A · needs: — — ✅ 2026-10-21 8ccab08c
   - [x] 14.18.a `eraseInvitationsToSubject` matches only `kind = 'password'` credentials; a totp or passkey identifier erases nothing (group 1.26.a) → 8ccab08c
 
-- [ ] **14.20 The ledger contract spec passes against the real ledger** (group 1.28) · A · needs: — — 🔄 g5
+- [x] **14.20 The ledger contract spec passes against the real ledger** (group 1.28) · A · needs: — — ✅ 2026-10-22 167508c0
   - [x] 14.20.a The holdback cases fund the fake ledger they run on (group 1.28.a) → 7a71d896
   - [x] 14.20.b The fake applies the adult daily and monthly earn caps like the Go ledger (4.4.k); 10.7.a checks K6 under the cap (group 1.28.b; after 2.10.b T3b) → 692421d7; ledger-live 45 passed, 5 fake-only skipped
   - [x] 14.20.c The package-tiers case gets `pricing: "tier"` from the Go ledger (group 1.28.c) → 7eb85011
-  - [ ] 14.20.d CI runs `pnpm test:ledger-live` (group 1.28.d, god-99)
+  - [x] 14.20.d CI runs `pnpm test:ledger-live` (group 1.28.d, god-99) → 167508c0: integration.yml runs it against the real Go ledger (50 passed)
 - [ ] **14.21 Watch: the first live boost charge through Stripe on staging** (group 5.12) · A · needs: — — 🔄 g5
   - [ ] 14.21.a A boosted AU campaign's closed days reach A$0.50 and boost-settle charges them through the Stripe driver on the simulation, once, with GST and a demo Tax invoice; the 5.1.f `boost` step passes
 - [ ] **14.22 Fix what the founder walkthrough found** (group 5.13, from 13.6 / group 5.7) · A + B + C · needs: — — 🔄 g5
   - [x] 14.22.a Studio landing and Reports crash for finance and marketers: role-restricted reads throw into error.tsx (group 5.13.a) → fd8a68ad; on staging /studio and /studio/reports load for finance and marketers, AU and ID
   - [x] 14.22.b Staging's /api/dev/inbox is public, links included; the /dev/inbox page shows 404 (group 5.13.b, the lead) → 016591d4: a session outside dev; staff see all, others only their own mail; the page reads through apiFetch
-  - [ ] 14.22.c The player restarts after a checkpoint, the overlay is clipped at 390 px, already-earned videos show the wrong state, it sometimes never starts (group 5.13.c)
-  - [ ] 14.22.d Sign-up links go to log in, /signup is a 404, no verification state or resend on Me, no unlock notification (group 5.13.d)
-  - [ ] 14.22.e The campaign editor: targeting not saved, reward save and ceiling errors, raw database error on submit, submit without budget, lost edits, placeholder as value (group 5.13.e)
-  - [ ] 14.22.f Boost: low-bid error in minor units; no way to switch a boost off (group 5.13.f)
-  - [ ] 14.22.g The store counter: pairing steps, amount in cents with one-click full redemption, device id shown, ID counter in English, raw order ids, no revoke confirmation (group 5.13.g)
-  - [ ] 14.22.h Studio layout and copy, Reports without metrics, ID billing copy (group 5.13.h)
-  - [ ] 14.22.i Viewer copy and contrast, /review in Bahasa (group 5.13.i)
-  - [ ] 14.22.j Staging's demo data: test content on public pages, "new viewer" logins not new (group 5.13.j)
-  - [ ] 14.22.k Gifts and auctions cannot be done from the app: no Gift control and no reason, no way to list a voucher for a charity, wallet history links to "Voucher not found", stale balance after redeeming (group 5.13.k)
+  - [x] 14.22.c The player restarts after a checkpoint, the overlay is clipped at 390 px, already-earned videos show the wrong state, it sometimes never starts (group 5.13.c) → 6716ddc3 (group 5.13.c; V12b not reproduced, 14.22.m)
+  - [x] 14.22.d Sign-up links go to log in, /signup is a 404, no verification state or resend on Me, no unlock notification (group 5.13.d) → 6716ddc3 (group 5.13.d)
+  - [x] 14.22.e The campaign editor: targeting not saved, reward save and ceiling errors, raw database error on submit, submit without budget, lost edits, placeholder as value (group 5.13.e) → b51e0688 (group 5.13.e, PR #35)
+  - [x] 14.22.f Boost: low-bid error in minor units; no way to switch a boost off (group 5.13.f) → 6716ddc3 (group 5.13.f)
+  - [x] 14.22.g The store counter: pairing steps, amount in cents with one-click full redemption, device id shown, ID counter in English, raw order ids, no revoke confirmation (group 5.13.g) → also the counter's zone-less dates (moved from 14.19.f) → 38f08c00 (group 5.13.g, PR #36)
+  - [x] 14.22.h Studio layout and copy, Reports without metrics, ID billing copy (group 5.13.h) → b89f21e6 (group 5.13.h, PR #34)
+  - [x] 14.22.i Viewer copy and contrast, /review in Bahasa (group 5.13.i) → 6716ddc3 (group 5.13.i)
+  - [x] 14.22.j Staging's demo data: test content on public pages, "new viewer" logins not new (group 5.13.j) → 6cd56c7f (group 5.13.j; V5 is 14.22.r)
+  - [x] 14.22.k Gifts and auctions cannot be done from the app: no Gift control and no reason, no way to list a voucher for a charity, wallet history links to "Voucher not found", stale balance after redeeming (group 5.13.k) → 916799ce (group 5.13.k, PR #37; N3, N4 partly and M6 moved to group 5.13.s)
   - [ ] 14.22.l Walk again the journeys the walkthrough could not finish (group 5.13.l)
+  - [ ] 14.22.m The player sometimes never starts on repeat visits (V12b): needs the founder's device and browser (group 5.13.m)
+  - [x] 14.22.n On staging: a dev-clock release shows "points unlocked" at once (V26); the demo reset gives the seeded questions their new prompts (group 5.13.n) → demo reset run 2026-10-26 (group 5.13.n; V26 live check in the re-walk)
+  - [ ] 14.22.o true_false and likert questions: render them or skip at once (group 5.13.o)
+  - [ ] 14.22.p The whole-video chapter keeps the upload-time title; chapter chips overlap at 390 px (group 5.13.p)
+  - [ ] 14.22.q Shorts: a bolder scrim behind the Share and Save rail, about 3.6:1 over a near-white frame (group 5.13.q)
+  - [ ] 14.22.r The first visitor after a release can get an empty public landing page: warm `/`, `/au`, `/id` after the reload, or render them dynamically (group 5.13.r, V5)
+- [x] **14.24 main is green and staging deploys again** (group 1.31) · A · needs: — — ✅ 2026-10-26 781f983a
+  - [x] 14.24.a Quality and the Release gate had failed on every push since 2026-10-22 (an unneeded type assertion in the fake ledger, an unformatted docs/28), so staging stayed on ef9fc40c → 781f983a; Release green, staging /api/health reports 781f983a
+- [x] **14.25 A patched Next.js** (group 1.32) · A + B · needs: 14.24 — 🔄 2026-11-02 — ✅ 2026-11-02 136b2b50
+  - [x] 14.25.a `next` 16.4.3 or later (the daily Security audit flags 16.3.8), zod ≥ 4.6.6 and undici, through pnpm; Security passes → 7574bd07
+  - [x] 14.25.b The Performance budget workflow is red on main (initial JS over 170 KB gz): find since when and why → 098a89ff: since ef9fc40c (F126) zod reached the player; fixed, /watch/[campaignId] 195.9 KB gz
 
 ## Not in this plan (deferred)
 
@@ -1842,6 +1859,7 @@ These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` 
 
 Newest first. One line per finished task: `2026-09-25 · A · 0.1 Land the plan · 1a2b3c4`.
 
+- 2026-11-02 · group · **14.25** (group 1.32): Next 16.4.3, zod 4.6.7, undici 8.12.3 and transitive patches, audit clean (deepmerge low ignored, no fix); the player's first-load JS back under the 200 KB gate (zod kept out of the watch route) · 136b2b50
 - 2026-10-21 · g5 · **14.13** (group 5.10): point packages in tiers priced by the ledger (never below B, F122), bought in Studio with GST on top; 50/80/100% alerts for packages and campaign budgets by email and in Studio, rewards stopping at 100%; checked on staging · ee8c91e2
 - 2026-10-21 · 14.18 (group 1.26) done: invitation erasure matches only the password credential’s email (8ccab08c).
 - 2026-10-21 · g5 · **14.8** (group 5.2): Stripe Connect payouts in AU on the payment simulation: brands and charities onboard, the weekly statement job (14.8.d, with a ledger fix so statements stop re-claiming each other's money), transfer and payout once per approved statement, read-back and two-person staff retry; a demo brand was paid on staging · 033fae42

@@ -95,7 +95,7 @@
     "pageTitleGeneric": "Tukar Poin",
     "loadingAnnouncement": "Memuat penukaran…",
     "errorHeading": "Halaman penukaran tidak dapat dimuat",
-    "errorDescription": "Terjadi kesalahan saat memuat halaman ini. Poin Anda belum dipotong — silakan coba lagi.",
+    "errorDescription": "Terjadi kesalahan saat memuat halaman ini. Poinmu belum dipotong — silakan coba lagi.",
     "errorRetryLabel": "Coba lagi"
   },
   "shop": {
@@ -139,6 +139,6 @@
     "nextPage": "Halaman berikutnya",
     "ends": "Berakhir {date}",
     "backToStore": "Kembali ke Toko",
-    "brandIntro": "Semua reward dari merek ini di wilayah Anda."
+    "brandIntro": "Semua reward dari merek ini di wilayahmu."
   }
 }

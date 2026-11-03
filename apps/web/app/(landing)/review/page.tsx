@@ -1,15 +1,31 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getLocale, getTranslations } from "next-intl/server";
+import type { DisplayLocale } from "@yourtal/contracts/identity/user-profile";
+import { getLocale } from "next-intl/server";
 import { feedResponseSchema } from "@yourtal/contracts/feed";
 import { isStaging } from "@/features/shell/app-env";
+import { getReviewTranslator, reviewLocaleFromParam } from "@/features/review/review-i18n";
 import { apiFetch } from "@/lib/api/api-fetch";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = {
-  title: "Review YourTal",
-  robots: { index: false, follow: false },
-};
+
+export interface ReviewPageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+/** `?lang=` wins; without it the viewer's own display language decides. */
+async function guideLocale(searchParams: ReviewPageProps["searchParams"]) {
+  return (
+    reviewLocaleFromParam((await searchParams)["lang"]) ?? ((await getLocale()) as DisplayLocale)
+  );
+}
+
+export async function generateMetadata({ searchParams }: ReviewPageProps): Promise<Metadata> {
+  return {
+    title: getReviewTranslator(await guideLocale(searchParams))("title"),
+    robots: { index: false, follow: false },
+  };
+}
 
 const PEOPLE = ["viewer", "adult", "teen", "guardian", "owner", "member", "finance"] as const;
 const COUNTER_PIN = "2468";
@@ -29,14 +45,14 @@ async function openViewingHref(region: "AU" | "ID"): Promise<string | null> {
  * simulated. The shared demo password covers staff too, so it is never shown;
  * a separate review password is, once A provides it (F95, 13.2.b).
  */
-export default async function ReviewPage() {
+export default async function ReviewPage({ searchParams }: ReviewPageProps) {
   if (!isStaging()) notFound();
-  const [t, locale, openAu, openId] = await Promise.all([
-    getTranslations("review"),
-    getLocale(),
+  const [locale, openAu, openId] = await Promise.all([
+    guideLocale(searchParams),
     openViewingHref("AU"),
     openViewingHref("ID"),
   ]);
+  const t = getReviewTranslator(locale);
   const password = process.env["STAGING_REVIEW_PASSWORD"];
   const journeys: { key: string; href: string | null }[] = [
     { key: "home", href: "/home" },
@@ -55,8 +71,28 @@ export default async function ReviewPage() {
   return (
     <main
       data-surface="viewer"
+      // The page's <html> says en-AU; this keeps a Bahasa guide read aloud as Bahasa.
+      lang={locale === "id-ID" ? "id" : "en-AU"}
       className="mx-auto flex min-h-dvh w-full max-w-4xl flex-col gap-10 bg-canvas px-4 py-10 text-fg sm:px-6"
     >
+      <nav aria-label={t("languageLabel")} className="flex gap-4 text-body-sm font-sans">
+        {(
+          [
+            { lang: "en", name: "English", current: locale === "en-AU" },
+            { lang: "id", name: "Bahasa Indonesia", current: locale === "id-ID" },
+          ] as const
+        ).map(({ lang, name, current }) => (
+          <a
+            key={lang}
+            href={`/review?lang=${lang}`}
+            lang={lang}
+            aria-current={current ? "true" : undefined}
+            className={current ? "font-bold text-fg" : link}
+          >
+            {name}
+          </a>
+        ))}
+      </nav>
       <header className="flex flex-col gap-3">
         <h1 className="font-display text-headline font-bold">{t("title")}</h1>
         <p className="max-w-prose text-body font-sans text-fg-muted">{t("intro")}</p>

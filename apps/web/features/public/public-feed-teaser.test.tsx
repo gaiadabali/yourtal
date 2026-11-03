@@ -46,7 +46,7 @@ describe("PublicFeedTeaser (11.1.b)", () => {
         endHeading="You're all caught up"
         playLabel="Play video"
         pauseLabel="Pause video"
-        signUpHref="/onboarding"
+        signUpHref="/register"
         signUpCta="Sign up to earn"
       />,
     );
@@ -60,7 +60,7 @@ describe("PublicFeedTeaser (11.1.b)", () => {
     const signUpLinks = screen.getAllByRole("link", { name: "Sign up to earn" });
     expect(signUpLinks.length).toBeGreaterThan(0);
     for (const link of signUpLinks) {
-      expect(link).toHaveAttribute("href", "/onboarding");
+      expect(link).toHaveAttribute("href", "/register");
     }
   });
 
@@ -72,7 +72,7 @@ describe("PublicFeedTeaser (11.1.b)", () => {
         endHeading="You're all caught up"
         playLabel="Play video"
         pauseLabel="Pause video"
-        signUpHref="/onboarding"
+        signUpHref="/register"
         signUpCta="Sign up to earn"
       />,
     );
@@ -89,7 +89,7 @@ describe("PublicFeedTeaser (11.1.b)", () => {
         endHeading="You're all caught up"
         playLabel="Play video"
         pauseLabel="Pause video"
-        signUpHref="/onboarding"
+        signUpHref="/register"
         signUpCta="Sign up to earn"
       />,
     );

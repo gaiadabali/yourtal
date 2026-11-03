@@ -86,26 +86,29 @@ async function takeLive(cookie: string, businessId: string, campaignId: string) 
     payload: { chapters: [{ title: "Intro", startSeconds: 0, rewardWeight: 1 }] },
   });
   expect(chapters.statusCode).toBe(200);
-  const correct = randomUUID();
-  const question = await app.inject({
-    method: "POST",
-    url: `/api/${businessId}/studio/campaigns/${campaignId}/questions`,
-    headers: { cookie, ...key() },
-    payload: {
-      id: randomUUID(),
-      campaignId,
-      type: "multiple_choice",
-      prompt: "Which city did the video start in?",
-      options: [
-        { id: correct, label: "Hobart" },
-        { id: randomUUID(), label: "Darwin" },
-      ],
-      correctOptionId: correct,
-      answerableAfterSeconds: 10,
-      timerSeconds: 15,
-    },
-  });
-  expect(question.statusCode).toBe(201);
+  // A 20-minute campaign asks 4 questions (F10), so review needs a bank of 12 (3x).
+  for (let n = 1; n <= 12; n += 1) {
+    const correct = randomUUID();
+    const question = await app.inject({
+      method: "POST",
+      url: `/api/${businessId}/studio/campaigns/${campaignId}/questions`,
+      headers: { cookie, ...key() },
+      payload: {
+        id: randomUUID(),
+        campaignId,
+        type: "multiple_choice",
+        prompt: `Which city did the video start in? (${n})`,
+        options: [
+          { id: correct, label: "Hobart" },
+          { id: randomUUID(), label: "Darwin" },
+        ],
+        correctOptionId: correct,
+        answerableAfterSeconds: 10,
+        timerSeconds: 15,
+      },
+    });
+    expect(question.statusCode).toBe(201);
+  }
   const reward = await app.inject({
     method: "PUT",
     url: `/api/${businessId}/studio/campaigns/${campaignId}/reward`,

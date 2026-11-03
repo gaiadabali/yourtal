@@ -1,5 +1,6 @@
 import type { CounterCapture } from "@yourtal/contracts/device/counter-redemption";
 import type { Currency } from "@yourtal/contracts/money/currency";
+import type { Region } from "@yourtal/contracts/region";
 import { formatMerchantMoney } from "./merchant-money";
 import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
@@ -18,6 +19,8 @@ export interface MerchantOutcomePanelProps {
   outcome: MerchantOutcome;
   locale: MerchantLocale;
   currency: Currency;
+  /** The device's region: its clock dates an expiry in the error copy. */
+  region: Region;
   copy: MerchantCopy;
   onRetry: () => void;
   onEditAmount: () => void;
@@ -36,6 +39,7 @@ export function MerchantOutcomePanel({
   outcome,
   locale,
   currency,
+  region,
   copy,
   onRetry,
   onEditAmount,
@@ -77,7 +81,7 @@ export function MerchantOutcomePanel({
     );
   }
 
-  const { heading, body } = errorCopyFor(outcome.error, locale, currency);
+  const { heading, body } = errorCopyFor(outcome.error, locale, currency, region);
   const recovery = recoveryForRedemptionError(outcome.error);
   return (
     <div

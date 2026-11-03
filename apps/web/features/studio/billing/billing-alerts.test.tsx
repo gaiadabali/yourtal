@@ -1,9 +1,13 @@
 import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BudgetAlert } from "@yourtal/contracts/billing";
 import { toPoints } from "@yourtal/contracts/money";
 import { BillingAlertsPanel } from "./billing-alerts-panel";
+
+// The machine's own zone must not decide the day: pin it to UTC, where the region zone is what makes these pass.
+beforeEach(() => vi.stubEnv("TZ", "UTC"));
+afterEach(() => vi.unstubAllEnvs());
 
 const alert = (over: Partial<BudgetAlert>): BudgetAlert => ({
   id: "7d9b8a52-6c9a-4b3e-9d0e-0a2f5d3c1b10",
@@ -20,7 +24,7 @@ const alert = (over: Partial<BudgetAlert>): BudgetAlert => ({
 
 describe("BillingAlertsPanel (14.13.b)", () => {
   it("says what package reached what", () => {
-    render(<BillingAlertsPanel alerts={[alert({})]} locale="en-AU" />);
+    render(<BillingAlertsPanel alerts={[alert({})]} locale="en-AU" region="AU" />);
     expect(screen.getByText("Budget alerts")).toBeInTheDocument();
     expect(screen.getByText("Package of 10,000 points: 80% used")).toBeInTheDocument();
     expect(screen.getByText(/8,000 of 10,000 points used/)).toBeInTheDocument();
@@ -28,7 +32,9 @@ describe("BillingAlertsPanel (14.13.b)", () => {
   });
 
   it("says rewards have stopped when a package is fully used", () => {
-    render(<BillingAlertsPanel alerts={[alert({ thresholdPct: 100 })]} locale="en-AU" />);
+    render(
+      <BillingAlertsPanel alerts={[alert({ thresholdPct: 100 })]} locale="en-AU" region="AU" />,
+    );
     expect(
       screen.getByText(
         "Package of 10,000 points: 100% used — campaigns funded from it have stopped earning rewards until you buy more points",
@@ -54,6 +60,7 @@ describe("BillingAlertsPanel (14.13.b)", () => {
           }),
         ]}
         locale="en-AU"
+        region="AU"
       />,
     );
     expect(
@@ -63,12 +70,12 @@ describe("BillingAlertsPanel (14.13.b)", () => {
   });
 
   it("shows an empty state when there are none", () => {
-    render(<BillingAlertsPanel alerts={[]} locale="en-AU" />);
+    render(<BillingAlertsPanel alerts={[]} locale="en-AU" region="AU" />);
     expect(screen.getByText("No budget alerts")).toBeInTheDocument();
   });
 
   it("speaks Indonesian for an Indonesian business", () => {
-    render(<BillingAlertsPanel alerts={[alert({})]} locale="id-ID" />);
+    render(<BillingAlertsPanel alerts={[alert({})]} locale="id-ID" region="ID" />);
     expect(screen.getByText("Peringatan anggaran")).toBeInTheDocument();
     expect(screen.getByText("Paket 10.000 poin: 80% terpakai")).toBeInTheDocument();
   });
@@ -78,6 +85,7 @@ describe("BillingAlertsPanel (14.13.b)", () => {
       <BillingAlertsPanel
         alerts={[alert({ programme: "receipts", thresholdPct: 50 })]}
         locale="en-AU"
+        region="AU"
       />,
     );
     expect(screen.getByText("Receipt package")).toBeInTheDocument();
@@ -90,6 +98,7 @@ describe("BillingAlertsPanel (14.13.b)", () => {
       <BillingAlertsPanel
         alerts={[alert({ programme: "receipts", thresholdPct: 100 })]}
         locale="en-AU"
+        region="AU"
       />,
     );
     expect(
@@ -100,7 +109,18 @@ describe("BillingAlertsPanel (14.13.b)", () => {
   });
 
   it("does not label an ordinary package", () => {
-    render(<BillingAlertsPanel alerts={[alert({})]} locale="en-AU" />);
+    render(<BillingAlertsPanel alerts={[alert({})]} locale="en-AU" region="AU" />);
     expect(screen.queryByText("Receipt package")).not.toBeInTheDocument();
+  });
+
+  // 16:30 UTC on the 20th is already the 21st in Sydney but still the 20th in Jakarta,
+  // and 18:00 UTC is the 21st in Jakarta: each is the wrong day when formatted in UTC.
+  it.each([
+    ["AU", "2026-10-20T16:30:00.000Z", "21 Oct 2026"],
+    ["ID", "2026-10-20T16:30:00.000Z", "20 Oct 2026"],
+    ["ID", "2026-10-20T18:00:00.000Z", "21 Oct 2026"],
+  ] as const)("dates an alert on the day it was in %s (%s)", (region, createdAt, day) => {
+    render(<BillingAlertsPanel alerts={[alert({ createdAt })]} locale="en-AU" region={region} />);
+    expect(screen.getByText(day)).toBeInTheDocument();
   });
 });

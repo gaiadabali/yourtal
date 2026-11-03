@@ -59,7 +59,23 @@
     "disputeSubmit": "Kirim laporan",
     "disputeReinstated": "Poinmu sudah kembali ke wallet.",
     "disputeQueued": "Kami sudah mencatat ini untuk ditinjau. Kami akan menghubungimu kalau butuh info lagi.",
-    "disputeFailed": "Gagal terkirim. Periksa koneksimu dan coba lagi."
+    "disputeFailed": "Gagal terkirim. Periksa koneksimu dan coba lagi.",
+    "pass": {
+      "received_as_gift": "Voucher ini diberikan kepadamu atau dimenangkan di lelang amal, jadi tidak bisa diteruskan lagi. Voucher hanya bisa berpindah tangan sekali. Voucher yang kamu beli di Toko bisa dihadiahkan atau dilelang.",
+      "not_transferable": "Voucher ini tidak bisa dihadiahkan atau dilelang untuk amal. Bisnis yang menerbitkannya tidak mengizinkan voucher ini diteruskan.",
+      "not_unused": "Voucher hanya bisa dihadiahkan atau dilelang selama belum dipakai dan nilainya masih utuh.",
+      "teen": "Hadiah dan lelang amal hanya untuk anggota berusia 18 tahun ke atas.",
+      "unavailable": "Voucher ini tidak bisa dihadiahkan atau dilelang saat ini.",
+      "expires_soon": "Voucher ini terlalu dekat masa berlakunya untuk dilelang amal: lelang butuh sisa waktu minimal {days} hari. Kamu masih bisa menghadiahkannya."
+    },
+    "archived": {
+      "redeemed": "Sudah dipakai. Kodenya tidak bisa dipakai lagi.",
+      "released": "Pembayaran ini dibatalkan, jadi tidak ada voucher yang diterbitkan.",
+      "transferred": "Sudah diteruskan. Voucher ini dihadiahkan atau dilelang untuk amal, jadi kodenya tidak lagi berlaku untukmu.",
+      "giftAccepted": "Kamu menghadiahkan voucher ini pada {date}, dan hadiahnya diterima. Kodenya tidak lagi berlaku untukmu.",
+      "giftPending": "Kamu menghadiahkan voucher ini pada {date}. Penerima punya waktu sampai {deadline} untuk menerima. Kalau tidak, voucher kembali ke dompetmu dengan kode baru."
+    },
+    "giftFrom": "Hadiah dari {name}"
   },
   "redemption": {
     "balanceCarrying": "Kalau belanjamu kurang dari nilai voucher, sisanya tetap tersimpan untuk dipakai lain kali.",
@@ -82,13 +98,13 @@
     "errorBody": "Voucher ini gagal dimuat. Periksa koneksi kamu dan coba lagi."
   },
   "emptyState": {
-    "heading": "Dompet Anda sudah siap",
-    "body": "Poin yang Anda dapat masuk ke sini, begitu juga voucher hasil penukarannya.",
+    "heading": "Dompetmu sudah siap",
+    "body": "Poin yang kamu dapat masuk ke sini, begitu juga voucher hasil penukarannya.",
     "step": "Langkah {number}",
     "watchTitle": "Tonton",
     "watchBody": "Pilih video dari sebuah brand di Beranda dan tonton sampai selesai.",
     "earnTitle": "Dapatkan",
-    "earnBody": "Jawab pertanyaannya untuk mendapat poin, yang ditampilkan sebelum Anda mulai.",
+    "earnBody": "Jawab pertanyaannya untuk mendapat poin, yang ditampilkan sebelum kamu mulai.",
     "redeemTitle": "Tukarkan",
     "redeemBody": "Tukar poin dengan voucher di Toko dan tunjukkan di kasir.",
     "cta": "Cari video di Beranda"
@@ -106,13 +122,13 @@
     "nextReward": "Reward berikutnya",
     "toGo": "{points} lagi untuk {title}",
     "progressLabel": "{have} dari {need}",
-    "vouchers": "Voucher Anda",
+    "vouchers": "Vouchermu",
     "tabActive": "Aktif ({count})",
     "tabPast": "Terpakai & kedaluwarsa ({count})",
     "noActive": "Belum ada voucher aktif. Tukarkan poin di Toko untuk mendapatkannya.",
     "noPast": "Belum ada yang terpakai atau kedaluwarsa.",
     "showQr": "Tampilkan QR",
-    "affordable": "Bisa Anda dapatkan sekarang",
+    "affordable": "Bisa kamu dapatkan sekarang",
     "seeAllAffordable": "Lihat semua",
     "historyFilters": "Filter riwayat poin",
     "filter": {
@@ -128,20 +144,20 @@
   "gift": {
     "cta": "Hadiahkan",
     "title": "Hadiahkan voucher ini",
-    "intro": "Berikan ke anggota YourTal lain di wilayah Anda. Mereka hanya melihat nama tampilan Anda.",
+    "intro": "Berikan ke anggota YourTal lain di wilayahmu. Mereka hanya melihat nama tampilanmu.",
     "emailLabel": "Email YourTal penerima",
     "emailHelp": "Email yang mereka pakai untuk masuk.",
-    "ruleCode": "Kode Anda langsung tidak berlaku begitu hadiah dikirim.",
-    "ruleWindow": "Penerima punya 7 hari untuk menerima. Jika tidak, voucher kembali ke Anda.",
+    "ruleCode": "Kodemu langsung tidak berlaku begitu hadiah dikirim.",
+    "ruleWindow": "Penerima punya 7 hari untuk menerima. Jika tidak, voucher kembali kepadamu.",
     "ruleOnce": "Voucher hanya bisa dihadiahkan sekali dan tidak bisa diteruskan lagi.",
     "cancel": "Batal",
     "send": "Kirim hadiah",
     "close": "Tutup",
     "sentTitle": "Hadiah terkirim",
-    "sentBody": "Penerima punya waktu sampai {date} untuk menerima. Jika tidak, voucher kembali ke dompet Anda dengan kode baru.",
+    "sentBody": "Penerima punya waktu sampai {date} untuk menerima. Jika tidak, voucher kembali ke dompetmu dengan kode baru.",
     "backToWallet": "Kembali ke Dompet",
-    "inboxHeading": "Hadiah untuk Anda",
-    "receivedFrom": "{name} mengirimi Anda {title}",
+    "inboxHeading": "Hadiah untukmu",
+    "receivedFrom": "{name} mengirimimu {title}",
     "someone": "Seorang anggota YourTal",
     "acceptBy": "terima sebelum {date}",
     "accept": "Terima",
@@ -163,14 +179,14 @@
       "returned": "Kembali"
     },
     "refusal": {
-      "gift_recipient_ineligible": "Email itu tidak bisa menerima hadiah ini. Periksa emailnya, dan pastikan penerima anggota YourTal dewasa di wilayah Anda.",
-      "gift_sender_ineligible": "Verifikasi email Anda sebelum mengirim hadiah.",
-      "gift_to_self": "Itu email Anda sendiri.",
+      "gift_recipient_ineligible": "Email itu tidak bisa menerima hadiah ini. Periksa emailnya, dan pastikan penerima anggota YourTal dewasa di wilayahmu.",
+      "gift_sender_ineligible": "Verifikasi emailmu sebelum mengirim hadiah.",
+      "gift_to_self": "Itu emailmu sendiri.",
       "gift_not_transferable": "Voucher ini tidak bisa dihadiahkan.",
       "gift_already_gifted": "Voucher ini sudah pernah dihadiahkan.",
       "gift_not_unused": "Hanya voucher yang belum dipakai yang bisa dihadiahkan.",
       "gift_holdback": "Voucher ini terlalu baru untuk dihadiahkan. Coba lagi dalam satu atau dua hari.",
-      "gift_velocity_capped": "Anda sudah banyak mengirim hadiah akhir-akhir ini. Coba lagi nanti.",
+      "gift_velocity_capped": "Kamu sudah banyak mengirim hadiah akhir-akhir ini. Coba lagi nanti.",
       "gift_not_pending": "Hadiah ini sudah dijawab.",
       "gift_window_closed": "Batas 7 hari untuk menerima hadiah ini sudah lewat.",
       "failed": "Hadiah belum terkirim. Coba lagi."

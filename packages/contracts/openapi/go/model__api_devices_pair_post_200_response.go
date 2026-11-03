@@ -22,6 +22,9 @@ var _ MappedNullable = &ApiDevicesPairPost200Response{}
 type ApiDevicesPairPost200Response struct {
 	DeviceId string `json:"deviceId"`
 	Credential NullableString `json:"credential"`
+	Region NullableString `json:"region"`
+	Label string `json:"label"`
+	LocationName string `json:"locationName"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -31,10 +34,13 @@ type _ApiDevicesPairPost200Response ApiDevicesPairPost200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiDevicesPairPost200Response(deviceId string, credential NullableString) *ApiDevicesPairPost200Response {
+func NewApiDevicesPairPost200Response(deviceId string, credential NullableString, region NullableString, label string, locationName string) *ApiDevicesPairPost200Response {
 	this := ApiDevicesPairPost200Response{}
 	this.DeviceId = deviceId
 	this.Credential = credential
+	this.Region = region
+	this.Label = label
+	this.LocationName = locationName
 	return &this
 }
 
@@ -96,6 +102,80 @@ func (o *ApiDevicesPairPost200Response) SetCredential(v string) {
 	o.Credential.Set(&v)
 }
 
+// GetRegion returns the Region field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *ApiDevicesPairPost200Response) GetRegion() string {
+	if o == nil || o.Region.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.Region.Get()
+}
+
+// GetRegionOk returns a tuple with the Region field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiDevicesPairPost200Response) GetRegionOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.Region.Get(), o.Region.IsSet()
+}
+
+// SetRegion sets field value
+func (o *ApiDevicesPairPost200Response) SetRegion(v string) {
+	o.Region.Set(&v)
+}
+
+// GetLabel returns the Label field value
+func (o *ApiDevicesPairPost200Response) GetLabel() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Label
+}
+
+// GetLabelOk returns a tuple with the Label field value
+// and a boolean to check if the value has been set.
+func (o *ApiDevicesPairPost200Response) GetLabelOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Label, true
+}
+
+// SetLabel sets field value
+func (o *ApiDevicesPairPost200Response) SetLabel(v string) {
+	o.Label = v
+}
+
+// GetLocationName returns the LocationName field value
+func (o *ApiDevicesPairPost200Response) GetLocationName() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.LocationName
+}
+
+// GetLocationNameOk returns a tuple with the LocationName field value
+// and a boolean to check if the value has been set.
+func (o *ApiDevicesPairPost200Response) GetLocationNameOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.LocationName, true
+}
+
+// SetLocationName sets field value
+func (o *ApiDevicesPairPost200Response) SetLocationName(v string) {
+	o.LocationName = v
+}
+
 func (o ApiDevicesPairPost200Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -108,6 +188,9 @@ func (o ApiDevicesPairPost200Response) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["deviceId"] = o.DeviceId
 	toSerialize["credential"] = o.Credential.Get()
+	toSerialize["region"] = o.Region.Get()
+	toSerialize["label"] = o.Label
+	toSerialize["locationName"] = o.LocationName
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -123,6 +206,9 @@ func (o *ApiDevicesPairPost200Response) UnmarshalJSON(data []byte) (err error) {
 	requiredProperties := []string{
 		"deviceId",
 		"credential",
+		"region",
+		"label",
+		"locationName",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -154,6 +240,9 @@ func (o *ApiDevicesPairPost200Response) UnmarshalJSON(data []byte) (err error) {
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
 		delete(additionalProperties, "deviceId")
 		delete(additionalProperties, "credential")
+		delete(additionalProperties, "region")
+		delete(additionalProperties, "label")
+		delete(additionalProperties, "locationName")
 		o.AdditionalProperties = additionalProperties
 	}
 

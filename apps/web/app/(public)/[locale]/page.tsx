@@ -83,7 +83,7 @@ export default async function PublicHomePage({ params }: PublicHomePageProps) {
             endHeading={t("feed.endOfFeed")}
             playLabel={t("feed.playLabel")}
             pauseLabel={t("feed.pauseLabel")}
-            signUpHref="/onboarding"
+            signUpHref="/register"
             signUpCta={t("feed.signUpCta")}
           />
         </div>

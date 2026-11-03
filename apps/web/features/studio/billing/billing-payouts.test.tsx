@@ -142,6 +142,7 @@ describe("BillingStatementsPanel", () => {
           payout("s4", "transferred"),
         ]}
         locale="en-AU"
+        region="AU"
       />,
     );
     expect(screen.getByText(/^Paid to account ••3456 on /)).toBeInTheDocument();
@@ -157,6 +158,7 @@ describe("BillingStatementsPanel", () => {
         statements={[{ ...statement("s1", "2026-09-01T00:00:00.000Z"), status: "paid" }]}
         payouts={[payout("s1", "failed")]}
         locale="en-AU"
+        region="AU"
       />,
     );
     expect(screen.getByText("Approved")).toBeInTheDocument();
@@ -165,7 +167,23 @@ describe("BillingStatementsPanel", () => {
   });
 
   it("has an empty state", () => {
-    render(<BillingStatementsPanel statements={[]} payouts={[]} locale="en-AU" />);
+    render(<BillingStatementsPanel statements={[]} payouts={[]} locale="en-AU" region="AU" />);
     expect(screen.getByText("No statements yet")).toBeInTheDocument();
+  });
+
+  it("dates a payout on the business's own day, not UTC's", () => {
+    vi.stubEnv("TZ", "UTC");
+    // 16:30 UTC on the 10th is the 11th in Sydney.
+    const paid = { ...payout("s1", "paid"), paidAt: "2026-10-10T16:30:00.000Z" };
+    render(
+      <BillingStatementsPanel
+        statements={[statement("s1", "2026-09-01T00:00:00.000Z")]}
+        payouts={[paid]}
+        locale="en-AU"
+        region="AU"
+      />,
+    );
+    expect(screen.getByText("Paid to account ••3456 on 11 Oct 2026")).toBeInTheDocument();
+    vi.unstubAllEnvs();
   });
 });

@@ -1567,9 +1567,14 @@ WHERE g.unlock_at IS NOT NULL AND g.unlock_at <= now() AND r.grant_id IS NULL
     LEFT JOIN ledger.escrow_release er ON er.escrow_id = e.id
     WHERE e.user_id = g.user_id AND er.escrow_id IS NULL
   )
-ORDER BY g.unlock_at
-LIMIT $1
+ORDER BY g.unlock_at, g.id
+LIMIT $1 OFFSET $2
 `
+
+type ListUnlockedGrantsParams struct {
+	Limit  int32
+	Offset int32
+}
 
 type ListUnlockedGrantsRow struct {
 	ID     string
@@ -1579,8 +1584,8 @@ type ListUnlockedGrantsRow struct {
 
 // 4.4.g: grants whose holdback has passed and that are not yet released,
 // skipping users with a held escrow: their pending stays pending until then.
-func (q *Queries) ListUnlockedGrants(ctx context.Context, limit int32) ([]ListUnlockedGrantsRow, error) {
-	rows, err := q.db.Query(ctx, listUnlockedGrants, limit)
+func (q *Queries) ListUnlockedGrants(ctx context.Context, arg ListUnlockedGrantsParams) ([]ListUnlockedGrantsRow, error) {
+	rows, err := q.db.Query(ctx, listUnlockedGrants, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}

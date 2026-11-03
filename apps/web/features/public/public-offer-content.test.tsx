@@ -33,7 +33,7 @@ describe("PublicOfferContent", () => {
     );
     expect(screen.getByText(/Rp30\.000/)).toBeInTheDocument();
     const cta = screen.getByRole("link", { name: /daftar/i });
-    expect(cta).toHaveAttribute("href", "/onboarding");
+    expect(cta).toHaveAttribute("href", "/register");
   });
 
   it("badges a sold-out listing", () => {

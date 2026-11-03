@@ -9,7 +9,8 @@ export const createCampaignDraftSchema = z
   .object({
     kind: campaignKindSchema,
     title: z.string().min(1).max(140),
-    synopsis: z.string().min(1).max(500),
+    /** A new draft may have no synopsis yet; submitting for review requires one (`campaignReadiness`). */
+    synopsis: z.string().max(500),
     durationSeconds: z
       .number()
       .int()

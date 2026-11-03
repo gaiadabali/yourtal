@@ -20,7 +20,7 @@ export function StagingBanner({ lang }: StagingBannerProps) {
   return (
     <aside
       aria-label={t("stagingBannerLabel")}
-      className="bg-warning text-warning-fg px-4 py-1.5 text-center text-sm font-semibold"
+      className="bg-warning text-warning-fg flex h-8 items-center justify-center px-4 text-center text-sm font-semibold"
     >
       {t("stagingBanner")}
     </aside>

@@ -9,5 +9,6 @@ export const counterAuthorizationMeta = storePgSchema.table("counter_authorizati
   locationId: uuid("location_id").notNull(),
   orderRef: text("order_ref").notNull(),
   orderTotalMinor: bigint("order_total_minor", { mode: "number" }).notNull(),
+  offerTitle: text("offer_title"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

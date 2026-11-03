@@ -192,7 +192,7 @@ export function QuestionBankScreen({
       )}
 
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl" closeLabel={t("dialog.close")}>
           <DialogHeader>
             <DialogTitle>{t("questionBank.chooseType")}</DialogTitle>
           </DialogHeader>
@@ -201,7 +201,7 @@ export function QuestionBankScreen({
       </Dialog>
 
       <Dialog open={editor.open} onOpenChange={(open) => !open && setEditor({ open: false })}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg" closeLabel={t("dialog.close")}>
           <DialogHeader>
             <DialogTitle>
               {editor.open && editor.isNew

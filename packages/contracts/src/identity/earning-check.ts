@@ -15,8 +15,7 @@ export const POINTS_IDENTITY_CHECK_SETTING_KEY = "points_identity_check";
 export const pointsIdentityCheckSettingSchema = z.strictObject({ enabled: z.boolean() });
 export type PointsIdentityCheckSetting = z.infer<typeof pointsIdentityCheckSettingSchema>;
 
-/** The stable code a refused earning carries: a watch session's `nonEarningReason`, a partner's error code. */
-export const IDENTITY_CHECK_REQUIRED = "identity_check_required";
+export { IDENTITY_CHECK_REQUIRED } from "./identity-check-code";
 
 export const identityCheckStepSchema = z.enum(["verify_email", "use_permanent_email"]);
 export type IdentityCheckStep = z.infer<typeof identityCheckStepSchema>;

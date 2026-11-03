@@ -3,10 +3,17 @@ import { formatMerchantMoney } from "./merchant-money";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import type { MerchantCopy } from "./merchant-i18n";
 import type { MerchantLocale } from "./merchant-device";
+import { formatMerchantTime } from "./merchant-time";
+import type { Currency } from "@yourtal/contracts/money/currency";
+import type { Region } from "@yourtal/contracts/region";
 
 export interface MerchantTodayLogPanelProps {
   entries: readonly CounterLogEntry[];
   locale: MerchantLocale;
+  /** The device region's own currency, for an empty log's total. */
+  currency: Currency;
+  /** The device's region, whose clock the times are shown on. */
+  region: Region;
   copy: MerchantCopy;
 }
 
@@ -18,10 +25,16 @@ export interface MerchantTodayLogPanelProps {
  * confirmed capture — there is no "pending" or "failed" status left to
  * show (those never made it into the server's log at all).
  */
-export function MerchantTodayLogPanel({ entries, locale, copy }: MerchantTodayLogPanelProps) {
+export function MerchantTodayLogPanel({
+  entries,
+  locale,
+  currency: deviceCurrency,
+  region,
+  copy,
+}: MerchantTodayLogPanelProps) {
   const total = entries.reduce((sum, entry) => sum + entry.amountMinor, 0);
   const sorted = [...entries].sort((a, b) => b.capturedAt.localeCompare(a.capturedAt));
-  const currency = entries[0]?.currency ?? "AUD";
+  const currency = entries[0]?.currency ?? deviceCurrency;
 
   return (
     <Card>
@@ -44,9 +57,9 @@ export function MerchantTodayLogPanel({ entries, locale, copy }: MerchantTodayLo
                 className="flex items-center justify-between border-b border-border pb-2 text-sm last:border-b-0"
               >
                 <div className="flex flex-col">
-                  <span className="font-mono text-fg">{entry.orderRef}</span>
+                  <span className="text-fg">{entry.offerTitle ?? copy.todayUnnamedVoucher}</span>
                   <span className="text-xs text-fg-muted">
-                    {formatEntryTime(entry.capturedAt, locale)}
+                    {formatMerchantTime(entry.capturedAt, locale, region)}
                   </span>
                 </div>
                 <span className="tabular-nums text-fg">
@@ -59,8 +72,4 @@ export function MerchantTodayLogPanel({ entries, locale, copy }: MerchantTodayLo
       </CardContent>
     </Card>
   );
-}
-
-function formatEntryTime(iso: string, locale: MerchantLocale): string {
-  return new Intl.DateTimeFormat(locale, { timeStyle: "short" }).format(new Date(iso));
 }

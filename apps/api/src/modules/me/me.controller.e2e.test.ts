@@ -111,7 +111,10 @@ describe("GET/PUT /api/me/interests", () => {
 });
 
 /** No business is seeded (`src/seed.ts` never inserts `business.business_accounts`) — this suite owns its own fixture row. */
-async function seedBusiness(region: "AU" | "ID"): Promise<string> {
+async function seedBusiness(
+  region: "AU" | "ID",
+  { verified = false }: { verified?: boolean } = {},
+): Promise<string> {
   const id = randomUUID();
   const handle = `me-e2e-${id.slice(0, 8)}`;
   // TASKS.md 7.1.a replaced `district` with a region-specific tax ID and
@@ -122,12 +125,12 @@ async function seedBusiness(region: "AU" | "ID"): Promise<string> {
   await db.execute(sql`
     INSERT INTO business.business_accounts
       (id, legal_name, display_name, tax_id_kind, tax_id_value,
-       address_state, address_postcode, address_city, roles, region, currency, handle)
+       address_state, address_postcode, address_city, roles, is_verified, region, currency, handle)
     VALUES (${id}, 'Me E2E Pty Ltd', '0 Me E2E',
             ${region === "AU" ? "ABN" : "NPWP"}, ${region === "AU" ? "12345678901" : "1234567890123456"},
             ${region === "AU" ? "NSW" : null}, ${region === "AU" ? "2000" : null},
             ${region === "AU" ? null : "Jakarta"},
-            '["advertiser"]'::jsonb, ${region}, ${region === "AU" ? "AUD" : "IDR"}, ${handle})
+            '["advertiser"]'::jsonb, ${verified}, ${region}, ${region === "AU" ? "AUD" : "IDR"}, ${handle})
   `);
   return id;
 }
@@ -146,6 +149,7 @@ const seededCampaignIds: string[] = [];
  */
 async function seedCampaign(
   region: "AU" | "ID",
+  businessId: string = randomUUID(),
 ): Promise<{ campaignId: string; termsVersion: number }> {
   const campaignId = randomUUID();
   await db.execute(sql`
@@ -158,7 +162,7 @@ async function seedCampaign(
     VALUES
       (${campaignId}, 'quick', 'me e2e fixture', ${randomUUID()}, 'me e2e merchant',
        'fixture', 30, 5, 100, 0, 'base_only',
-       'live', now(), ${randomUUID()}, ${region}, 'all_ages', 'entertainment',
+       'live', now(), ${businessId}, ${region}, 'all_ages', 'entertainment',
        'https://example.test/poster.jpg', 'https://example.test/teaser.m3u8',
        'https://example.test/hls.m3u8', '16:9', 1000000,
        now(), now() + interval '30 days', false, 0)
@@ -235,12 +239,31 @@ describe("GET/PUT/DELETE /api/me/follows/:businessId", () => {
   });
 });
 
+/** A business the picker may offer: verified, with a live campaign to watch. */
+async function seedFollowable(region: "AU" | "ID"): Promise<string> {
+  const businessId = await seedBusiness(region, { verified: true });
+  await seedCampaign(region, businessId);
+  return businessId;
+}
+
 describe("GET /api/me/follows/candidates", () => {
+  async function candidateIds(cookie: string): Promise<string[]> {
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/me/follows/candidates",
+      headers: { cookie },
+    });
+    expect(response.statusCode).toBe(200);
+    return response
+      .json<{ candidates: { id: string }[] }>()
+      .candidates.map((candidate) => candidate.id);
+  }
+
   it("offers only the caller's own region, and never one already followed", async () => {
     const session = await sessionFor(app, { jurisdiction: "AU" });
-    const auBusinessId = await seedBusiness("AU");
-    const idBusinessId = await seedBusiness("ID");
-    const alreadyFollowedId = await seedBusiness("AU");
+    const auBusinessId = await seedFollowable("AU");
+    const idBusinessId = await seedFollowable("ID");
+    const alreadyFollowedId = await seedFollowable("AU");
 
     await app.inject({
       method: "PUT",
@@ -248,18 +271,29 @@ describe("GET /api/me/follows/candidates", () => {
       headers: { cookie: session.cookie },
     });
 
-    const response = await app.inject({
-      method: "GET",
-      url: "/api/me/follows/candidates",
-      headers: { cookie: session.cookie },
-    });
-    expect(response.statusCode).toBe(200);
-    const ids = response
-      .json<{ candidates: { id: string }[] }>()
-      .candidates.map((candidate) => candidate.id);
+    const ids = await candidateIds(session.cookie);
     expect(ids).toContain(auBusinessId);
     expect(ids).not.toContain(idBusinessId);
     expect(ids).not.toContain(alreadyFollowedId);
+  });
+
+  it("never offers a business nobody verified, a suspended one, or one with nothing live", async () => {
+    const session = await sessionFor(app, { jurisdiction: "AU" });
+    const unverified = await seedBusiness("AU");
+    await seedCampaign("AU", unverified);
+    const suspended = await seedFollowable("AU");
+    await owner.execute(sql`
+      UPDATE business.business_accounts
+         SET suspended_at = now(), suspended_by_user_id = 'e2e', suspended_reason = 'e2e'
+       WHERE id = ${suspended}`);
+    const nothingLive = await seedBusiness("AU", { verified: true });
+    const offered = await seedFollowable("AU");
+
+    const ids = await candidateIds(session.cookie);
+    expect(ids).toContain(offered);
+    expect(ids).not.toContain(unverified);
+    expect(ids).not.toContain(suspended);
+    expect(ids).not.toContain(nothingLive);
   });
 });
 

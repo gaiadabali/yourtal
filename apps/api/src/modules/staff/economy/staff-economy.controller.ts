@@ -531,7 +531,18 @@ export class StaffEconomyController {
     const region = parseRegion(regionParam);
     const current = await this.ledger.getSettings(region);
     const pending = await this.proposals.listPending(region, "setting_change");
-    return { region, current: [...current], pending: pending.map(toEconomyProposal) };
+    // The screen names the proposer by email; one lookup per distinct staff member.
+    const emails = await emailsOf(
+      this.directory,
+      pending.map((row) => row.proposedBy),
+    );
+    return {
+      region,
+      current: [...current],
+      pending: pending.map((row) =>
+        toEconomyProposalWithEmail(row, emails.get(row.proposedBy) ?? null),
+      ),
+    };
   }
 
   @Authorize({

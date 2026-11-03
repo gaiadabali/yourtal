@@ -121,6 +121,26 @@ async function saveCard(businessId: string) {
 }
 
 describe("boost-settle job", () => {
+  it("a stopped boost still pays for the days it served, once, and a later run adds nothing", async () => {
+    // Served three and two days ago, stopped a day ago (14.22.f: stopping keeps the row, so the
+    // served days are billed; days after the stop have no spend row because nothing was served).
+    const { campaignId } = await seedSpend({ 3: 30_000, 2: 30_000 });
+    await pool.query(
+      `UPDATE feed.boost SET state = 'paused', ends_at = now() - interval '1 day' WHERE campaign_id = $1`,
+      [campaignId],
+    );
+    const sim = providers(createSimulatedPayments());
+
+    await runBoostSettle(pool, sim);
+    await runBoostSettle(pool, sim);
+
+    const rows = await charges(campaignId);
+    expect(rows.map((r) => [r.day_ago, r.subtotal_minor])).toEqual([
+      [3, "30"],
+      [2, "30"],
+    ]);
+  });
+
   it("charges each closed day once with GST on top, and never today (simulated driver)", async () => {
     const { campaignId } = await seedSpend({ 1: 21_070, 0: 602 });
     const sim = providers(createSimulatedPayments());

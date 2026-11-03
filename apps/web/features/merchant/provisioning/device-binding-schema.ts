@@ -17,20 +17,14 @@ import { regionSchema } from "@yourtal/contracts/region";
  * (Studio-side) doesn't require decoding the credential to know which
  * device just failed to unlock.
  *
- * `region` closes TASKS.md 8.1's device-info gap (`(requested by B)`):
- * `POST /api/devices/unlock` now returns the device's own `region`
- * alongside `{label, locationId, locationName}` (it already loaded that
- * row to check the PIN). `region` is `undefined` from pairing until the
- * FIRST real unlock-with-PIN call succeeds — `submitPairingCode` marks a
- * freshly-paired device unlocked WITHOUT calling the unlock endpoint (no
- * PIN was ever entered to pair, only the code), so region genuinely isn't
- * known yet at that moment. `unlockWithPin` re-writes this binding with
- * the learned region on every real unlock, both filling the gap the first
- * time and keeping it correct if the device is ever re-provisioned to a
- * different region. Until it is known, the portal's chrome falls back to
- * `en-AU` (`merchant-data.ts`'s `getMerchantDevice()`) — never affects a
- * redemption's currency, which always comes fresh off that voucher's own
- * lookup response.
+ * `region`, `label` and `locationName` are what the counter shows and speaks
+ * from: `POST /api/devices/pair` returns them with the credential (so a
+ * freshly paired Indonesian counter is Indonesian from its first screen),
+ * and `POST /api/devices/unlock` returns them again, which keeps them
+ * correct if the device is ever re-provisioned. They are optional only for
+ * a binding saved before they were kept: that one falls back to AU chrome
+ * and the device id until its next PIN unlock. None of them ever decides a
+ * redemption's currency, which always comes off that voucher's own lookup.
  */
 export const deviceBindingSchema = z.object({
   deviceId: z.string().min(1),
@@ -38,6 +32,9 @@ export const deviceBindingSchema = z.object({
   credential: z.string().min(1),
   pairedAt: z.iso.datetime(),
   region: regionSchema.optional(),
+  /** The owner's name for this counter and the shop it is at, shown instead of the id. Optional: absent from a binding saved before they were kept. */
+  label: z.string().min(1).optional(),
+  locationName: z.string().min(1).optional(),
 });
 
 export type DeviceBinding = z.infer<typeof deviceBindingSchema>;

@@ -1,6 +1,6 @@
 import * as z from "zod";
 import { AUCTION_REFUSALS } from "./auction-refusals";
-export { AUCTION_REFUSALS } from "./auction-refusals";
+export { AUCTION_DURATION_HOURS, AUCTION_REFUSALS } from "./auction-refusals";
 import { charityCauseSchema } from "../charity/charity";
 import { minorUnitsSchema } from "../money/money";
 import { currencySchema } from "../money/money-value";
@@ -20,7 +20,6 @@ import { regionSchema } from "../region/region";
  * `POST /api/auctions/{auctionId}/bids` → `Auction` (201)
  * `GET /api/auctions/mine/bids` and `/api/auctions/mine/listings` → `AuctionList`
  */
-export const AUCTION_DURATION_HOURS = 72;
 /** A bid in the last 2 minutes pushes the close out to 2 minutes from that bid. */
 export const AUCTION_EXTENSION_SECONDS = 120;
 

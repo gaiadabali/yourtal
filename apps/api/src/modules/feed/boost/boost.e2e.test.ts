@@ -8,6 +8,7 @@ import { AppModule } from "../../../app.module";
 import { createAppDb } from "../../../shared/persistence/drizzle-client";
 import { sessionFor } from "../../../shared/testing/session-for";
 import { seedBusinessMembership } from "../../../shared/testing/seed-business-membership";
+import { BoostRepository } from "./boost.repository";
 
 /**
  * 13.23.e Check: two boosted campaigns over HTTP. The higher bid wins the
@@ -155,5 +156,108 @@ describe("13.23.e: business boost bids", () => {
       reserveCpmMinor: 100,
     });
     expect([await rewardRow(high.id), await rewardRow(low.id)]).toEqual(rewardsBefore);
+  });
+});
+
+/** 14.22.f: a boost can be stopped, and nothing is served or billed from then on. */
+describe("stopping a boost", () => {
+  type Owned = { id: string; businessId: string; cookie: string };
+  const stop = (c: Owned, body: unknown) =>
+    app.inject({
+      method: "POST",
+      url: `/api/${c.businessId}/studio/campaigns/${c.id}/boost/stop`,
+      headers: { cookie: c.cookie },
+      payload: body as object,
+    });
+  const spendOf = async (id: string) =>
+    (
+      await db.execute(sql`SELECT coalesce(sum(impressions), 0)::int AS n,
+        coalesce(sum(spent_milli), 0)::int AS milli FROM feed.boost_spend_day WHERE campaign_id = ${id}`)
+    ).rows[0];
+  const boostedNow = async (id: string) =>
+    (await homeFeed()).find((item) => item.campaignId === id)?.boosted === true;
+
+  it("stop now: nothing is served or spent afterwards, and the setting reads paused", async () => {
+    const c = await liveCampaign();
+    // A bid far above every other test's, so it takes the slot.
+    expect((await setBoost(c, 10_000, 4_000)).statusCode).toBe(200);
+    expect(await boostedNow(c.id)).toBe(true);
+    const served = await spendOf(c.id);
+    expect(served?.n).toBeGreaterThan(0);
+
+    const stopped = await stop(c, { effective: "now" });
+    expect(stopped.statusCode).toBe(200);
+    expect(stopped.json()).toMatchObject({ setting: { state: "paused" } });
+
+    expect(await boostedNow(c.id)).toBe(false);
+    expect(await boostedNow(c.id)).toBe(false);
+    // A feed that fetched its bids just before the stop cannot book a win either.
+    expect(await new BoostRepository(db).recordWin("AU", c.id, 0, 4_000)).toBe(false);
+    expect(await spendOf(c.id)).toEqual(served);
+
+    // The days already served stay on the report, so they are still charged.
+    const view = await app.inject({
+      method: "GET",
+      url: `/api/${c.businessId}/studio/campaigns/${c.id}/boost`,
+      headers: { cookie: c.cookie },
+    });
+    expect(view.json()).toMatchObject({ impressions: served?.n, spendMinor: expect.any(Number) });
+
+    // Turning it on again is an ordinary save.
+    expect((await setBoost(c, 10_000, 4_000)).statusCode).toBe(200);
+    expect(await boostedNow(c.id)).toBe(true);
+  });
+
+  it("stop at the end of the day: still serves today, ends at the region's next midnight", async () => {
+    const c = await liveCampaign();
+    expect((await setBoost(c, 10_000, 4_000)).statusCode).toBe(200);
+
+    const stopped = await stop(c, { effective: "end_of_day" });
+    expect(stopped.statusCode).toBe(200);
+    const midnight = (
+      await db.execute(sql`SELECT (((now() AT TIME ZONE 'Australia/Sydney')::date + 1)::timestamp
+        AT TIME ZONE 'Australia/Sydney') AS at`)
+    ).rows[0]?.["at"];
+    const body = stopped.json<{ setting: { state: string; endsAt: string } }>();
+    expect(body.setting.state).toBe("active");
+    expect(new Date(body.setting.endsAt).getTime()).toBe(new Date(String(midnight)).getTime());
+    expect(await boostedNow(c.id)).toBe(true);
+
+    // Midnight passes: the window is over, so nothing more is served or booked.
+    await db.execute(
+      sql`UPDATE feed.boost SET ends_at = now() - interval '1 second' WHERE campaign_id = ${c.id}`,
+    );
+    const served = await spendOf(c.id);
+    expect(await boostedNow(c.id)).toBe(false);
+    expect(await spendOf(c.id)).toEqual(served);
+  });
+
+  it("a boost that has not started is held, not given an end before its start", async () => {
+    const c = await liveCampaign();
+    const later = {
+      dailyBudgetMinor: 100,
+      maxBidCpmMinor: 500,
+      startsAt: new Date(Date.now() + 3 * 86_400_000).toISOString(),
+      endsAt: new Date(Date.now() + 9 * 86_400_000).toISOString(),
+    };
+    const put = await app.inject({
+      method: "PUT",
+      url: `/api/${c.businessId}/studio/campaigns/${c.id}/boost`,
+      headers: { cookie: c.cookie },
+      payload: later,
+    });
+    expect(put.statusCode).toBe(200);
+    const stopped = await stop(c, { effective: "end_of_day" });
+    expect(stopped.statusCode).toBe(200);
+    expect(stopped.json()).toMatchObject({ setting: { state: "paused", endsAt: later.endsAt } });
+  });
+
+  it("refuses a campaign with no boost, a bad body, and another business's campaign", async () => {
+    const c = await liveCampaign();
+    expect((await stop(c, { effective: "now" })).json<{ code: string }>().code).toBe("no_boost");
+    expect((await stop(c, { effective: "someday" })).statusCode).toBe(400);
+    const stranger = await liveCampaign();
+    const cross = await stop({ ...c, businessId: stranger.businessId }, { effective: "now" });
+    expect([403, 404]).toContain(cross.statusCode);
   });
 });

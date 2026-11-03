@@ -2,12 +2,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { Badge } from "@yourtal/ui/badge";
 import { EmptyState } from "@yourtal/ui/empty-state";
 import type { BudgetAlert } from "@yourtal/contracts/billing";
+import type { Region } from "@yourtal/contracts/region";
+import { REGION_TIME_ZONE } from "@/features/region/region-time-zone";
 import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
 
 export interface BillingAlertsPanelProps {
   /** Newest first, as the API returns them. */
   alerts: readonly BudgetAlert[];
   locale: SupportedLocale;
+  /** The business's region: the alert's day is its day in that zone. */
+  region: Region;
 }
 
 /**
@@ -15,9 +19,12 @@ export interface BillingAlertsPanelProps {
  * are emailed too). Studio has no notifications surface, so they list here.
  * At 100% rewards have stopped, so that row says so and reads as a warning.
  */
-export function BillingAlertsPanel({ alerts, locale }: BillingAlertsPanelProps) {
+export function BillingAlertsPanel({ alerts, locale, region }: BillingAlertsPanelProps) {
   const t = getStudioTranslator(locale);
-  const date = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  const date = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeZone: REGION_TIME_ZONE[region],
+  });
   const number = new Intl.NumberFormat(locale);
   return (
     <Card>

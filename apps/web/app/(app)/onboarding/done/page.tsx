@@ -8,6 +8,9 @@ import { OnboardingProgress } from "@/features/onboarding/onboarding-progress";
 import { ONBOARDING_STEPS, onboardingStepIndex } from "@/features/onboarding/onboarding-steps";
 import { OnboardingTimingMark } from "@/features/onboarding/onboarding-timing-mark";
 import { parseReturnTo } from "@/features/onboarding/onboarding-return-to";
+import { getOnboardingConsents, interestsStepSkipped } from "@/features/onboarding/onboarding-data";
+import { EmailVerificationReminder } from "@/features/me/email-verification";
+import { getMeProfile } from "@/features/me/me-data";
 
 export interface OnboardingDonePageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -27,17 +30,25 @@ export default async function OnboardingDonePage({ searchParams }: OnboardingDon
   const t = await getTranslations("onboarding.done");
   const returnTo = parseReturnTo((await searchParams).returnTo);
   const ctaHref = (returnTo ?? "/") as Route;
+  const [consents, me] = await Promise.all([getOnboardingConsents(), getMeProfile()]);
+  // A light nudge: points need a verified email (F126). Read failures just hide it.
+  const unverifiedEmail = me.ok && me.data.emailVerified === false ? (me.data.email ?? null) : null;
 
   return (
     <div className="flex flex-col gap-6">
       <OnboardingTimingMark mark="signup-complete" />
-      <OnboardingProgress steps={ONBOARDING_STEPS} currentIndex={onboardingStepIndex("done")} />
+      <OnboardingProgress
+        steps={ONBOARDING_STEPS}
+        currentIndex={onboardingStepIndex("done")}
+        skipped={interestsStepSkipped(consents) ? ["interests"] : []}
+      />
       <div className="flex flex-col gap-3 text-center">
         <Heading level={1} size="headline">
           {t("heading")}
         </Heading>
         <Text tone="muted">{t("body")}</Text>
       </div>
+      {unverifiedEmail ? <EmailVerificationReminder email={unverifiedEmail} /> : null}
       <Button asChild>
         <Link href={ctaHref}>{t("cta")}</Link>
       </Button>

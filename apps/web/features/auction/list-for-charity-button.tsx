@@ -19,6 +19,7 @@ import { Heading } from "@yourtal/ui/heading";
 import { Notice } from "@yourtal/ui/notice";
 import { Text } from "@yourtal/ui/text";
 import { CharityLogo } from "@/features/charity/charity-logo";
+import { LISTING_MIN_LIFE_DAYS } from "@/features/wallet/voucher-pass-rules";
 import { listVoucherAction } from "./auction-actions";
 
 export interface ListForCharityButtonProps {
@@ -49,7 +50,11 @@ export function ListForCharityButton({ voucherId, charities }: ListForCharityBut
         router.push(`/auctions/${result.auction.auctionId}`);
         return;
       }
-      setError(KNOWN.has(result.code) ? t(`refusal.${result.code}`) : t("refusal.failed"));
+      setError(
+        KNOWN.has(result.code)
+          ? t(`refusal.${result.code}`, { days: LISTING_MIN_LIFE_DAYS })
+          : t("refusal.failed"),
+      );
     });
   }
 

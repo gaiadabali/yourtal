@@ -246,7 +246,10 @@ CREATE TABLE store.listings (
   rejection_reason          text,
   -- Added by 20260930024731 and 20260930030429 (13.11/13.12), mirrored for the drift guard only.
   tags                      jsonb       NOT NULL DEFAULT '[]',
-  created_at                timestamptz NOT NULL DEFAULT now()
+  created_at                timestamptz NOT NULL DEFAULT now(),
+  -- Added by 20261022090000 (group 2.8 T1), mirrored for the drift guard only. The
+  -- FK to platform.partner_credential and the bound-listing CHECK are not mirrored.
+  redeem_partner_id         text
 );
 
 CREATE TABLE store.listing_location (

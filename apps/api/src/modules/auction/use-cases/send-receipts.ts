@@ -44,21 +44,18 @@ const COPY: Record<
     seller: (amount, outcome) =>
       outcome === "sold"
         ? [
-            "Lelang amal Anda telah ditutup",
-            `Voucher Anda menghasilkan ${amount ?? ""}, dibayarkan langsung ke lembaga amal.`,
+            "Lelang amalmu telah ditutup",
+            `Vouchermu menghasilkan ${amount ?? ""}, dibayarkan langsung ke lembaga amal.`,
           ]
         : outcome === "unsold"
           ? [
-              "Lelang amal Anda telah ditutup",
+              "Lelang amalmu telah ditutup",
               "Tidak ada penawaran, jadi voucher diberikan kepada lembaga amal.",
             ]
-          : [
-              "Lelang amal Anda dibatalkan",
-              "Voucher Anda kembali ke dompet Anda dengan kode baru.",
-            ],
+          : ["Lelang amalmu dibatalkan", "Vouchermu kembali ke dompetmu dengan kode baru."],
     winner: (amount) => [
-      "Anda memenangkan lelang amal",
-      `Pembayaran Anda sebesar ${amount ?? ""} langsung masuk ke lembaga amal. Voucher ada di dompet Anda.`,
+      "Kamu memenangkan lelang amal",
+      `Pembayaranmu sebesar ${amount ?? ""} langsung masuk ke lembaga amal. Voucher ada di dompetmu.`,
     ],
     charity: (amount, outcome) =>
       outcome === "sold"

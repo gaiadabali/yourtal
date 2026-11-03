@@ -51,7 +51,7 @@ describe("WalletScreen (id-ID)", () => {
     render(
       await WalletScreen({ ...baseProps, balance: zeroBalance, vouchers: [], locale: "id-ID" }),
     );
-    expect(screen.getByText("Dompet Anda sudah siap")).toBeInTheDocument();
+    expect(screen.getByText("Dompetmu sudah siap")).toBeInTheDocument();
     expect(screen.getByText("Tonton")).toBeInTheDocument();
     expect(screen.getByText("Tukarkan")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Cari video di Beranda" })).toHaveAttribute(
@@ -72,7 +72,7 @@ describe("WalletScreen (id-ID)", () => {
       }),
     );
     expect(screen.getByText("Bisa dipakai")).toBeInTheDocument();
-    expect(screen.queryByText("Dompet Anda sudah siap")).not.toBeInTheDocument();
+    expect(screen.queryByText("Dompetmu sudah siap")).not.toBeInTheDocument();
   });
 
   it("shows pending points with when they land (13.19.a)", async () => {

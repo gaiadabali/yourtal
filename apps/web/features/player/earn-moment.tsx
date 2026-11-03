@@ -1,12 +1,16 @@
 import { PointsChip } from "@yourtal/ui/points-chip";
-import { nonEarningReasonKey } from "./non-earning-reason";
-import { IDENTITY_CHECK_REQUIRED } from "@yourtal/contracts/identity/earning-check";
+import { identityCheckKey, nonEarningReasonKey } from "./non-earning-reason";
+import { IDENTITY_CHECK_REQUIRED } from "@yourtal/contracts/identity/identity-check-code";
+import type { IdentityCheckStep } from "@yourtal/contracts/identity/earning-check";
 import { IdentityCheckPrompt } from "./identity-check-prompt";
+import { REGION_TIME_ZONE } from "@/features/region/region-time-zone";
 import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
 
 /** Plain `Intl`, not next-intl's `useFormatter` — this feature keeps zero next-intl calls (6.1.d). */
 function formatUnlockDate(locale: SupportedLocale, iso: string): string {
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(iso));
+  // A fixed zone per language (en-AU is Australia, id-ID is Indonesia), so server and browser agree.
+  const timeZone = locale === "id-ID" ? REGION_TIME_ZONE.ID : REGION_TIME_ZONE.AU;
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone }).format(new Date(iso));
 }
 
 export interface EarnMomentProps {
@@ -48,11 +52,13 @@ export function EarnMoment({ points, unlockAt, locale }: EarnMomentProps) {
 
 export interface NotEarningMomentProps {
   reason: string | null;
+  /** 5.9.f: what the server says is still missing; unknown (empty) asks to verify the email. */
+  identityCheck?: readonly IdentityCheckStep[];
   locale: SupportedLocale;
 }
 
 /** Shown when the session completed but nothing was granted (already earned, an unfunded campaign, or a ledger refusal). */
-export function NotEarningMoment({ reason, locale }: NotEarningMomentProps) {
+export function NotEarningMoment({ reason, identityCheck, locale }: NotEarningMomentProps) {
   const t = getPlayerTranslator(locale);
   return (
     <div
@@ -62,10 +68,16 @@ export function NotEarningMoment({ reason, locale }: NotEarningMomentProps) {
       <p className="text-sm font-sans text-fg-muted">
         {reason === null
           ? t("earn.notEarningGeneric")
-          : t(`refusal.reasons.${nonEarningReasonKey(reason)}`)}
+          : t(
+              `refusal.reasons.${
+                reason === IDENTITY_CHECK_REQUIRED
+                  ? identityCheckKey(identityCheck)
+                  : nonEarningReasonKey(reason)
+              }`,
+            )}
       </p>
       {reason === IDENTITY_CHECK_REQUIRED ? (
-        <IdentityCheckPrompt missing={[]} locale={locale} />
+        <IdentityCheckPrompt missing={identityCheck ?? []} locale={locale} />
       ) : null}
     </div>
   );

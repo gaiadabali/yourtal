@@ -1,4 +1,4 @@
-import { Injectable, Module, type OnApplicationShutdown } from "@nestjs/common";
+import { forwardRef, Injectable, Module, type OnApplicationShutdown } from "@nestjs/common";
 import type { PgBoss } from "pg-boss";
 import { createApiQueueClient } from "../../shared/queue/create-api-queue-client";
 import { PdpClientModule } from "../../shared/pdp/pdp-client.module";
@@ -8,6 +8,7 @@ import type { AppConfig } from "../../config/app-config";
 import type { AppDb } from "../../shared/persistence/drizzle-client";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { BUSINESS_REGION_LOOKUP } from "../store/persistence/business-region-lookup";
+import { BusinessModule } from "../business/business.module";
 import { StudioDevicesController } from "./studio-devices.controller";
 import { DevicePairingController } from "./device-pairing.controller";
 import { DeviceUnlockController } from "./device-unlock.controller";
@@ -77,11 +78,15 @@ class DevicesQueueShutdown implements OnApplicationShutdown {
  *     (`DrizzleMerchantLocationLookup` — a plain table read, not a
  *     `StoreModule` service).
  *
+ * The one exception is `BusinessModule`, imported (forwardRef, it closes the
+ * same loop through `AuthzModule`) for its exported `BUSINESS_ACCOUNT_REPOSITORY`:
+ * the counter names the shop by the business's own display name.
+ *
  * `CounterDeviceCredentialVerifier` is exported so `authz.module.ts` can
  * bind it in place of `NoDeviceCredentialVerifier`.
  */
 @Module({
-  imports: [PdpClientModule, RateLimitModule],
+  imports: [PdpClientModule, RateLimitModule, forwardRef(() => BusinessModule)],
   controllers: [
     StudioDevicesController,
     DevicePairingController,

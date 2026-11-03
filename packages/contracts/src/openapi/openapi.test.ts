@@ -99,6 +99,7 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   resolveGiftRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   walletGiftStatusSchema: "13.20: a leaf enum of WalletGift, inlined there.",
   walletGiftDirectionSchema: "13.20: a leaf enum of WalletGift, inlined there.",
+  voucherGiftBlockSchema: "A leaf enum of WalletVoucher, inlined there.",
   staffRoleSchema:
     "9.1's staff console session, read only by apps/web's own /staff shell; GET /api/staff/me documents it inline in route-registry.c-staff.ts.",
   staffSessionSchema: "Same as staffRoleSchema above.",

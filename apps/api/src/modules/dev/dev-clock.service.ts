@@ -82,6 +82,7 @@ export class DevClockService {
     const { released } = result.value;
     const note = this.escrowNote(result.value);
     await this.audit(userId, "release_pending", { ledgerMode, released });
+    await this.announceReleases(released);
     return { ledgerMode, released, note };
   }
 
@@ -103,7 +104,26 @@ export class DevClockService {
     const { shifted } = result.value;
     const note = this.escrowNote(result.value);
     await this.audit(userId, "advance_days", { ledgerMode, days, shifted });
+    await this.announceReleases(result.value.released);
     return { ledgerMode, days, shifted, note };
+  }
+
+  /**
+   * The ledger lists a release as announced-or-not the same way for a due grant and for one this
+   * tool released early, and the worker's `ledger.release_notices` job sends the "points unlocked"
+   * notification for either. That job only runs on its minute tick, though, so a tester who
+   * releases and looks at the bell straight away saw nothing (founder walkthrough, 2026-10-21).
+   * Run it now. Best effort: the release is already done, and the minute tick still covers a
+   * failed enqueue. (In `fake` mode no worker can list releases, so nothing is announced there.)
+   */
+  private async announceReleases(released: number): Promise<void> {
+    if (released === 0) return;
+    try {
+      await defineQueue(this.boss, RELEASE_NOTICES_QUEUE);
+      await this.boss.send(RELEASE_NOTICES_QUEUE, {});
+    } catch {
+      // The scheduled tick announces it within a minute.
+    }
   }
 
   /**

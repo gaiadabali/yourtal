@@ -12,6 +12,7 @@ import { Switch } from "@yourtal/ui/switch";
 import { loadBoost, saveBoost } from "./boost-actions";
 import { minorFromInput, inputFromMinor } from "./money-input";
 import { cardPanelHref } from "../billing/billing-anchors";
+import { BoostStop } from "./boost-stop";
 
 export interface CampaignEditorBoostProps {
   businessId: string;
@@ -74,11 +75,25 @@ export function CampaignEditorBoost(props: CampaignEditorBoostProps) {
   }
 
   const currency = view.currency;
+  const reserveCpmMinor = view.reserveCpmMinor;
+  const reserveText = formatMoneyAmount(reserveCpmMinor, currency, locale);
+  function applySetting(next: BoostView) {
+    setView(next);
+    if (next.setting !== null) {
+      setActive(next.setting.state === "active");
+      setEndsAt(dateOf(next.setting.endsAt));
+    }
+  }
   function save() {
     const dailyBudgetMinor = minorFromInput(budget, currency);
     const maxBidCpmMinor = minorFromInput(bid, currency);
     if (dailyBudgetMinor === null || maxBidCpmMinor === null) {
       setError(t("boost.invalidAmount"));
+      return;
+    }
+    // Said in the currency, before a round trip: a bid under the reserve can never win.
+    if (maxBidCpmMinor < reserveCpmMinor) {
+      setError(t("boost.bidBelowReserve", { amount: reserveText }));
       return;
     }
     setError(null);
@@ -92,9 +107,15 @@ export function CampaignEditorBoost(props: CampaignEditorBoostProps) {
         state: active ? "active" : "paused",
       });
       if (!result.ok) {
-        return setError(result.code === "card_required" ? t("boost.cardRequired") : result.message);
+        return setError(
+          result.code === "card_required"
+            ? t("boost.cardRequired")
+            : result.code === "bid_below_reserve"
+              ? t("boost.bidBelowReserve", { amount: reserveText })
+              : result.message,
+        );
       }
-      setView(result.view);
+      applySetting(result.view);
       setSaved(true);
     });
   }
@@ -117,10 +138,7 @@ export function CampaignEditorBoost(props: CampaignEditorBoostProps) {
         </Notice>
       ) : null}
       <p className="text-body-sm font-sans text-fg-muted">
-        {t("boost.intro")}{" "}
-        {t("boost.reserve", {
-          amount: formatMoneyAmount(view.reserveCpmMinor, currency, locale),
-        })}
+        {t("boost.intro")} {t("boost.reserve", { amount: reserveText })}
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <Input
@@ -172,6 +190,14 @@ export function CampaignEditorBoost(props: CampaignEditorBoostProps) {
           </p>
         ) : null}
       </div>
+      {view.setting !== null ? (
+        <BoostStop
+          businessId={props.businessId}
+          campaignId={props.campaignId}
+          setting={view.setting}
+          onStopped={applySetting}
+        />
+      ) : null}
       <dl className="grid grid-cols-3 gap-3 rounded-control border border-border-subtle p-3">
         <div>
           <dt className="text-xs font-sans text-fg-muted">{t("boost.impressions")}</dt>

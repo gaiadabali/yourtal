@@ -14,6 +14,7 @@ import {
   one,
   requireBusinessEnv,
   staffCaller,
+  takeDownAtEnd,
 } from "./business";
 
 const STAFF = REGIONS[0];
@@ -109,6 +110,7 @@ for (const r of REGIONS) {
     ).filter((c) => !existing.has(c.id));
     expect(created).toHaveLength(1);
     const campaignId = created[0]!.id;
+    takeDownAtEnd("campaign", campaignId);
 
     // Details: a title the automated screen will block, schedule, audience, Open View.
     await page.getByLabel(t("details.titleLabel"), { exact: true }).fill(`${title} sim-block-me`);

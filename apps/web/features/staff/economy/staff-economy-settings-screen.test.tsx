@@ -67,7 +67,9 @@ describe("F126: the staff console shows the identity check's effective state", (
     const card = identityCard("production", { enabled: false });
     expect(card.getByText("Required (production)")).toBeInTheDocument();
     expect(card.getByText('{"enabled":false}')).toBeInTheDocument();
-    expect(card.getByText(/Production always requires it, whatever/)).toBeInTheDocument();
+    expect(
+      card.getByText(/Production always requires the email check, whatever/),
+    ).toBeInTheDocument();
   });
 
   it("follows the setting on staging", () => {

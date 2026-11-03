@@ -4,7 +4,7 @@
 -- `requirePasskey: false`, so `enabled` stays whatever it was. A region whose
 -- current value already carries the key is skipped. Data only, no DDL.
 INSERT INTO platform.region_setting (region, key, value, set_by, approved_by, effective_from)
-SELECT region, key, value || '{"requirePasskey": false}'::jsonb, 'founder', 'plan-f126', now()
+SELECT region, key, value || '{"requirePasskey": false}'::jsonb, 'migration', 'group-6.11a', now()
   FROM (
     SELECT DISTINCT ON (region) region, key, value
       FROM platform.region_setting

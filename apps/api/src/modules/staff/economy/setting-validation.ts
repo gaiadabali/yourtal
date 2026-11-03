@@ -111,10 +111,17 @@ export async function assertSettingValue(
     if (!parsed.success) throw invalid(key, parsed.error);
     return;
   }
-  // F126: on or off, nothing else; production requires the check whatever this says.
+  // F126: both switches, stated every time: an omitted `requirePasskey` reads as off, so a
+  // proposal of `{enabled}` alone would silently switch a live passkey requirement off.
   if (key === POINTS_IDENTITY_CHECK_SETTING_KEY) {
     const parsed = pointsIdentityCheckSettingSchema.safeParse(value);
     if (!parsed.success) throw invalid(key, parsed.error);
+    if (typeof value !== "object" || value === null || !("requirePasskey" in value)) {
+      throw new BadRequestException({
+        code: "invalid_setting",
+        message: `${key}: state requirePasskey as well as enabled`,
+      });
+    }
     return;
   }
   if (key !== PACKAGE_TIERS_SETTING_KEY) return;

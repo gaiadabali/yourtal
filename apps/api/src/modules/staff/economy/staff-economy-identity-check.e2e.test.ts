@@ -77,7 +77,7 @@ describe("points_identity_check (F126)", () => {
     expect(await current(first.cookie)).toEqual({ enabled: false, requirePasskey: false });
   });
 
-  it("refuses anything but {enabled: boolean} when proposed, and stores nothing", async () => {
+  it("refuses anything but {enabled, requirePasskey} booleans when proposed, and stores nothing", async () => {
     for (const value of [
       true,
       "on",
@@ -86,6 +86,7 @@ describe("points_identity_check (F126)", () => {
       { enabled: true, regions: ["ID"] },
       { enabled: true, requirePasskey: "yes" },
       { requirePasskey: true },
+      { enabled: true },
     ]) {
       const refused = await propose(first.cookie, value);
       expect(refused.statusCode).toBe(400);
@@ -102,7 +103,7 @@ describe("points_identity_check (F126)", () => {
   });
 
   it("checks again at approval, and a second person switches it on", async () => {
-    const slipped = await propose(first.cookie, { enabled: true });
+    const slipped = await propose(first.cookie, { enabled: true, requirePasskey: false });
     expect(slipped.statusCode).toBe(201);
     const id = slipped.json<{ id: string }>().id;
     await owner.query(
@@ -114,12 +115,12 @@ describe("points_identity_check (F126)", () => {
     expect(refused.statusCode).toBe(400);
     expect(refused.json<{ code: string }>().code).toBe("invalid_setting");
 
-    const on = await propose(first.cookie, { enabled: true });
+    const on = await propose(first.cookie, { enabled: true, requirePasskey: false });
     expect(on.statusCode).toBe(201);
     const onId = on.json<{ id: string }>().id;
     expect((await approve(first.cookie, onId)).statusCode).toBe(403);
     expect((await approve(second.cookie, onId)).statusCode).toBe(201);
-    expect(await current(first.cookie)).toEqual({ enabled: true });
+    expect(await current(first.cookie)).toEqual({ enabled: true, requirePasskey: false });
   });
 
   it("the passkey switch is proposed and approved the same two-person way", async () => {
@@ -127,7 +128,7 @@ describe("points_identity_check (F126)", () => {
     expect(proposed.statusCode).toBe(201);
     const id = proposed.json<{ id: string }>().id;
     expect((await approve(first.cookie, id)).statusCode).toBe(403);
-    expect(await current(first.cookie)).toEqual({ enabled: true });
+    expect(await current(first.cookie)).toEqual({ enabled: true, requirePasskey: false });
     expect((await approve(second.cookie, id)).statusCode).toBe(201);
     expect(await current(first.cookie)).toEqual({ enabled: true, requirePasskey: true });
   });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { KEEP_GIFTABLE, pickToRedeem } from "./activity";
+import { KEEP_GIFTABLE, pickToAuction, pickToRedeem } from "./activity";
 
 const active = (id: string, giftable: boolean) => ({ id, status: "active", giftable });
 
@@ -18,5 +18,18 @@ describe("pickToRedeem: what the daily counter visit spends", () => {
   it("ignores vouchers that are not active, and an account with none", () => {
     expect(pickToRedeem([{ status: "redeemed", giftable: false }])).toEqual([]);
     expect(pickToRedeem([])).toEqual([]);
+  });
+});
+
+describe("pickToAuction: the voucher put up for a charity when no auction is open", () => {
+  it("takes an unused voucher the member can pass on", () => {
+    const keep = active("a", true);
+    expect(pickToAuction([active("won", false), keep])).toBe(keep);
+  });
+
+  it("takes nothing when none can be passed on", () => {
+    expect(
+      pickToAuction([active("won", false), { status: "redeemed", giftable: true }]),
+    ).toBeUndefined();
   });
 });

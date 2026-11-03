@@ -341,7 +341,7 @@ export function useWatchEarnSession(campaignId: string) {
   }, [phase.kind]);
 
   const answer = useCallback(
-    async (selectedOptionId: string | null, timedOut = false) => {
+    async (selectedOptionId: string | null, timedOut = false, answeredBool?: boolean) => {
       if (phase.kind !== "checkpoint") return;
       const { sessionId, checkpointIndex, token } = phase;
       const result = await answerCheckpointAction(
@@ -349,6 +349,7 @@ export function useWatchEarnSession(campaignId: string) {
         checkpointIndex,
         token,
         selectedOptionId,
+        ...(answeredBool === undefined ? [] : [answeredBool]),
       );
       if (result.ok) {
         questionsAsked.current = checkpointIndex + 1;

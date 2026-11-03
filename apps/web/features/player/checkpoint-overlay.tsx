@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { MINIMUM_READ_MS } from "@yourtal/contracts/question/question-response-signals";
 import type { PresentedQuestion } from "@yourtal/contracts/question/presented-question";
 import { getPlayerTranslator, type SupportedLocale } from "./player-i18n";
 
@@ -24,7 +25,7 @@ export interface CheckpointOverlayProps {
   /** From the server's own present response — F10's 30s answer window. */
   answerTimerMs: number;
   /** `timedOut` is true only when the timer ran out on a question the viewer could have answered. */
-  onAnswer: (selectedOptionId: string | null, timedOut: boolean) => void;
+  onAnswer: (selectedOptionId: string | null, timedOut: boolean, answeredBool?: boolean) => void;
   locale: SupportedLocale;
 }
 
@@ -35,8 +36,8 @@ export interface CheckpointOverlayProps {
  * nothing) the moment it reaches zero, rather than blocking playback
  * indefinitely.
  *
- * Only `multiple_choice` renders here. Any other type is skipped at once, with
- * no notice and no wait: the answer goes in as "no selection, not timed out",
+ * `multiple_choice` and `true_false` render here. Any other type (none is served
+ * today) is skipped with no notice: the answer goes in as "no selection, not timed out",
  * which the server must still count to let the session complete (it is
  * unanswered, so no accuracy bonus for that session). Their UI belongs with
  * 6.x's checkpoint survey work.
@@ -54,16 +55,18 @@ export function CheckpointOverlay({
   const [submitting, setSubmitting] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(Math.ceil(answerTimerMs / 1000));
   const selectedRef = useRef<string | null>(null);
+  const selectedBoolRef = useRef<boolean | null>(null);
   const submittedRef = useRef(false);
 
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const supported = question.type === "multiple_choice";
+  const supported = question.type === "multiple_choice" || question.type === "true_false";
 
-  const submit = (optionId: string | null, timedOut = false) => {
+  const submit = (optionId: string | null, timedOut = false, answeredBool?: boolean) => {
     if (submittedRef.current) return;
     submittedRef.current = true;
     setSubmitting(true);
-    onAnswer(optionId, timedOut);
+    if (answeredBool === undefined) onAnswer(optionId, timedOut);
+    else onAnswer(optionId, timedOut, answeredBool);
   };
 
   // Below `sm` the question sits under the video, not on it: bring it into
@@ -72,9 +75,12 @@ export function CheckpointOverlay({
     rootRef.current?.focus();
   }, []);
 
-  // An unsupported type is skipped on mount, not timed out.
+  // Any other type is skipped, not timed out. Held past the server's minimum
+  // read time so an instant empty answer is not flagged as implausible timing.
   useEffect(() => {
-    if (!supported) submit(null);
+    if (supported) return;
+    const id = window.setTimeout(() => submit(null), MINIMUM_READ_MS + 100);
+    return () => window.clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per question; `submit` is guarded by submittedRef.
   }, []);
 
@@ -85,7 +91,11 @@ export function CheckpointOverlay({
         const next = current - 1;
         if (next <= 0) {
           window.clearInterval(interval);
-          submit(selectedRef.current, true);
+          if (question.type === "true_false") {
+            submit(null, true, selectedBoolRef.current ?? undefined);
+          } else {
+            submit(selectedRef.current, true);
+          }
           return 0;
         }
         return next;
@@ -94,6 +104,13 @@ export function CheckpointOverlay({
     return () => window.clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one timer per question, keyed by the parent's `key={question.id}`; re-running on every render would restart the countdown.
   }, []);
+
+  function chooseBool(value: boolean) {
+    if (submitting) return;
+    selectedBoolRef.current = value;
+    setSelected(String(value));
+    submit(null, false, value);
+  }
 
   function choose(optionId: string) {
     if (submitting) return;
@@ -133,20 +150,37 @@ export function CheckpointOverlay({
             role="radiogroup"
             aria-labelledby="checkpoint-prompt"
           >
-            {question.options.map((option) => (
-              // eslint-disable-next-line yt-b/prefer-primitives -- a `role="radio"` option in a custom radiogroup, not a standalone action button; @yourtal/ui/button has no radio variant and Radix's own RadioGroup would add a dependency for one already-simple, fully-custom-styled control.
-              <button
-                key={option.id}
-                type="button"
-                role="radio"
-                aria-checked={selected === option.id}
-                disabled={submitting}
-                onClick={() => choose(option.id)}
-                className="rounded-control border border-white/30 bg-white/10 px-4 py-3 text-left text-body font-sans break-words text-primary-fg disabled:opacity-60 aria-checked:border-white aria-checked:bg-white/25"
-              >
-                {option.label}
-              </button>
-            ))}
+            {question.type === "true_false"
+              ? [true, false].map((value) => (
+                  // eslint-disable-next-line yt-b/prefer-primitives -- same custom radiogroup option as below.
+                  <button
+                    key={String(value)}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected === String(value)}
+                    disabled={submitting}
+                    onClick={() => chooseBool(value)}
+                    className="rounded-control border border-white/30 bg-white/10 px-4 py-3 text-left text-body font-sans break-words text-primary-fg disabled:opacity-60 aria-checked:border-white aria-checked:bg-white/25"
+                  >
+                    {t(value ? "checkpoint.true" : "checkpoint.false")}
+                  </button>
+                ))
+              : question.type === "multiple_choice"
+                ? question.options.map((option) => (
+                    // eslint-disable-next-line yt-b/prefer-primitives -- a `role="radio"` option in a custom radiogroup, not a standalone action button; @yourtal/ui/button has no radio variant and Radix's own RadioGroup would add a dependency for one already-simple, fully-custom-styled control.
+                    <button
+                      key={option.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected === option.id}
+                      disabled={submitting}
+                      onClick={() => choose(option.id)}
+                      className="rounded-control border border-white/30 bg-white/10 px-4 py-3 text-left text-body font-sans break-words text-primary-fg disabled:opacity-60 aria-checked:border-white aria-checked:bg-white/25"
+                    >
+                      {option.label}
+                    </button>
+                  ))
+                : null}
           </div>
         </div>
       </div>

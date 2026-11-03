@@ -100,7 +100,7 @@ describe("CheckpointOverlay answers", () => {
     expect(onAnswer).toHaveBeenCalledExactlyOnceWith(null, true);
   });
 
-  it("does not call a question type it cannot show a timeout", async () => {
+  it("reports an unanswered true/false question as timed out", async () => {
     vi.useFakeTimers();
     const onAnswer = vi.fn();
     render(
@@ -122,16 +122,17 @@ describe("CheckpointOverlay answers", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(10_000);
     });
-    expect(onAnswer).toHaveBeenCalledExactlyOnceWith(null, false);
+    expect(onAnswer).toHaveBeenCalledExactlyOnceWith(null, true);
   });
 });
 
-describe("CheckpointOverlay unsupported types", () => {
-  it("skips a true/false question at once: no notice, no timer, one untimed empty answer", () => {
-    const onAnswer = vi.fn();
-    const { container } = render(
+describe("CheckpointOverlay true/false and the fallback", () => {
+  const tf = { ...question, type: "true_false" } as unknown as PresentedQuestion;
+  const likert = { ...question, type: "likert" } as unknown as PresentedQuestion;
+  const mount = (q: PresentedQuestion, onAnswer = vi.fn()) =>
+    render(
       <CheckpointOverlay
-        question={{ ...question, type: "true_false", options: undefined } as PresentedQuestion}
+        question={q}
         questionNumber={1}
         totalQuestions={1}
         answerTimerMs={30_000}
@@ -139,7 +140,26 @@ describe("CheckpointOverlay unsupported types", () => {
         locale="en-AU"
       />,
     );
-    expect(onAnswer).toHaveBeenCalledExactlyOnceWith(null, false);
+
+  it("renders True and False as radios and sends answeredBool", () => {
+    const onAnswer = vi.fn();
+    mount(tf, onAnswer);
+    expect(screen.getAllByRole("radio").map((r) => r.textContent)).toEqual(["True", "False"]);
+    const falseRadio = screen.getByRole("radio", { name: "False" });
+    falseRadio.focus();
+    fireEvent.click(falseRadio); // a keyboard Enter/Space on a button is a click
+    expect(onAnswer).toHaveBeenCalledExactlyOnceWith(null, false, false);
+  });
+
+  it("skips any other type after the minimum read time, untimed, with no notice", () => {
+    vi.useFakeTimers();
+    const onAnswer = vi.fn();
+    const { container } = mount(likert, onAnswer);
     expect(container).toBeEmptyDOMElement();
+    expect(onAnswer).not.toHaveBeenCalled();
+    act(() => {
+      vi.advanceTimersByTime(900);
+    });
+    expect(onAnswer).toHaveBeenCalledExactlyOnceWith(null, false);
   });
 });

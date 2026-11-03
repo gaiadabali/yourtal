@@ -125,3 +125,21 @@ describe("CheckpointOverlay answers", () => {
     expect(onAnswer).toHaveBeenCalledExactlyOnceWith(null, false);
   });
 });
+
+describe("CheckpointOverlay unsupported types", () => {
+  it("skips a true/false question at once: no notice, no timer, one untimed empty answer", () => {
+    const onAnswer = vi.fn();
+    const { container } = render(
+      <CheckpointOverlay
+        question={{ ...question, type: "true_false", options: undefined } as PresentedQuestion}
+        questionNumber={1}
+        totalQuestions={1}
+        answerTimerMs={30_000}
+        onAnswer={onAnswer}
+        locale="en-AU"
+      />,
+    );
+    expect(onAnswer).toHaveBeenCalledExactlyOnceWith(null, false);
+    expect(container).toBeEmptyDOMElement();
+  });
+});

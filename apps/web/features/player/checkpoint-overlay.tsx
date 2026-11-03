@@ -35,11 +35,11 @@ export interface CheckpointOverlayProps {
  * nothing) the moment it reaches zero, rather than blocking playback
  * indefinitely.
  *
- * Every demo campaign's bank is `multiple_choice` only
- * (`packages/media/src/demo-media.ts`); the other four question types render
- * a plain wait-out-the-timer fallback rather than dead-ending the session —
- * building their full UI here belongs with 6.x's checkpoint survey work,
- * which already has one, in a different namespace.
+ * Only `multiple_choice` renders here. Any other type is skipped at once, with
+ * no notice and no wait: the answer goes in as "no selection, not timed out",
+ * which the server must still count to let the session complete (it is
+ * unanswered, so no accuracy bonus for that session). Their UI belongs with
+ * 6.x's checkpoint survey work.
  */
 export function CheckpointOverlay({
   question,
@@ -57,6 +57,7 @@ export function CheckpointOverlay({
   const submittedRef = useRef(false);
 
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const supported = question.type === "multiple_choice";
 
   const submit = (optionId: string | null, timedOut = false) => {
     if (submittedRef.current) return;
@@ -71,13 +72,20 @@ export function CheckpointOverlay({
     rootRef.current?.focus();
   }, []);
 
+  // An unsupported type is skipped on mount, not timed out.
   useEffect(() => {
+    if (!supported) submit(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per question; `submit` is guarded by submittedRef.
+  }, []);
+
+  useEffect(() => {
+    if (!supported) return;
     const interval = window.setInterval(() => {
       setRemainingSeconds((current) => {
         const next = current - 1;
         if (next <= 0) {
           window.clearInterval(interval);
-          submit(selectedRef.current, question.type === "multiple_choice");
+          submit(selectedRef.current, true);
           return 0;
         }
         return next;
@@ -93,6 +101,8 @@ export function CheckpointOverlay({
     setSelected(optionId);
     submit(optionId);
   }
+
+  if (!supported) return null;
 
   return (
     // Under the video below `sm` (the video box is only ~220px tall on a
@@ -139,11 +149,7 @@ export function CheckpointOverlay({
                 </button>
               ))}
             </div>
-          ) : (
-            <p className="text-body-sm font-sans text-primary-fg/80">
-              {t("checkpoint.unsupported")}
-            </p>
-          )}
+          ) : null}
         </div>
       </div>
       <p role="status" aria-live="polite" className="sr-only">

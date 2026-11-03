@@ -45,7 +45,6 @@
   "checkpoint": {
     "progress": "Question {current} of {total}",
     "timeRemaining": "{seconds}s left",
-    "unsupported": "This question type isn't ready yet — it will be skipped.",
     "submitting": "Submitting your answer…",
     "timedOut": "Time ran out on the question, so it counts as unanswered. You still earn your reward when you finish the video.",
     "timedOutBonus": "Time ran out on the question, so it counts as unanswered. You still earn your reward when you finish the video, but not the accuracy bonus."

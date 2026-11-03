@@ -13,7 +13,7 @@ import type { ConsentEntry } from "@/features/me/me-schemas";
 import { useMeActionStatus } from "@/features/me/use-me-action-status";
 import { recordOnboardingConsentAction } from "./onboarding-actions";
 import { recordOnboardingMark } from "./onboarding-timing";
-import { withReturnTo } from "./onboarding-return-to";
+import { isAppSignUpReturn, withReturnTo } from "./onboarding-return-to";
 
 export interface OnboardingConsentStepProps {
   initialConsents: readonly ConsentEntry[];
@@ -53,6 +53,11 @@ export function OnboardingConsentStep({ initialConsents, returnTo }: OnboardingC
   }
 
   function handleContinue() {
+    // Interests and follows are optional and wait: the app is the next stop.
+    if (isAppSignUpReturn(returnTo)) {
+      router.push(returnTo as Route);
+      return;
+    }
     recordOnboardingMark("interests-start");
     const adTargeting = grantedFor(consents, "declared_interest_targeting");
     const next = adTargeting ? "/onboarding/interests" : "/onboarding/follow";

@@ -1,4 +1,5 @@
 import { internalReturnPath } from "@/lib/api/return-to";
+import { isInteractionUid } from "@/features/connect/connect-uid";
 
 /**
  * Optional post-signup redirect target (YT-0432's "returns the user to
@@ -25,4 +26,15 @@ export function parseReturnTo(raw: string | string[] | undefined): string | null
 /** Appends `returnTo` (already validated by `parseReturnTo`) to an onboarding step's own path, if present. */
 export function withReturnTo(path: string, returnTo: string | null): string {
   return returnTo ? `${path}?returnTo=${encodeURIComponent(returnTo)}` : path;
+}
+
+/**
+ * A sign-up that an app started (`prompt=create`, docs/26 §1.7) comes back
+ * here as `/connect/<uid>` (`connectPath`). That person is on their way to the
+ * app, so onboarding ends after its consent step and `/connect` carries on
+ * with what YourTal needs before it issues a code (email, region, teen rules).
+ */
+export function isAppSignUpReturn(returnTo: string | null): returnTo is string {
+  const [, root, uid, ...rest] = returnTo?.split("/") ?? [];
+  return root === "connect" && uid !== undefined && isInteractionUid(uid) && rest.length === 0;
 }

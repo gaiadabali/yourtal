@@ -5,6 +5,7 @@ import {
   Get,
   Header,
   Inject,
+  Logger,
   NotFoundException,
   Param,
   Query,
@@ -63,6 +64,8 @@ function isCodeUsable(row: WalletVoucherRow, nowMs: number): boolean {
  */
 @Controller("api/wallet")
 export class WalletController {
+  private readonly logger = new Logger(WalletController.name);
+
   constructor(
     private readonly principals: PrincipalService,
     @Inject(LEDGER_INTERNAL_CLIENT) private readonly ledger: LedgerInternalClient,
@@ -79,7 +82,18 @@ export class WalletController {
     const found = await Promise.all(
       ids.map(
         async (id) =>
-          [id, (await this.businesses.findById(id).catch(() => null))?.displayName] as const,
+          [
+            id,
+            (
+              await this.businesses.findById(id).catch((error: unknown) => {
+                // Ids only, no names: the listing's own name stands in.
+                this.logger.warn(
+                  `business ${id} name lookup failed: ${error instanceof Error ? error.message : "unknown"}`,
+                );
+                return null;
+              })
+            )?.displayName,
+          ] as const,
       ),
     );
     return new Map(found.filter((pair): pair is [string, string] => pair[1] !== undefined));

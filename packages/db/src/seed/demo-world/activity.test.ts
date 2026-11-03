@@ -22,9 +22,11 @@ describe("pickToRedeem: what the daily counter visit spends", () => {
 });
 
 describe("pickToAuction: the voucher put up for a charity when no auction is open", () => {
-  it("takes an unused voucher the member can pass on", () => {
-    const keep = active("a", true);
-    expect(pickToAuction([active("won", false), keep])).toBe(keep);
+  it("takes a giftable voucher only while more than KEEP_GIFTABLE would remain", () => {
+    const stock = Array.from({ length: KEEP_GIFTABLE }, (_, i) => active(`g${String(i)}`, true));
+    expect(pickToAuction([active("won", false), ...stock])).toBeUndefined();
+    const extra = active("extra", true);
+    expect(pickToAuction([active("won", false), extra, ...stock])).toBe(extra);
   });
 
   it("takes nothing when none can be passed on", () => {

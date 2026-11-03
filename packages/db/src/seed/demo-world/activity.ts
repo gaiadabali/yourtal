@@ -157,11 +157,13 @@ export function pickToRedeem<T extends { status?: string; giftable?: boolean }>(
   return giftable.length > KEEP_GIFTABLE ? giftable.slice(0, 1) : [];
 }
 
-/** The voucher to put up for a charity: one this member may still pass on. */
+/** The voucher to put up for a charity: a giftable one, only while more than KEEP_GIFTABLE remain. */
 export function pickToAuction<T extends { status?: string; giftable?: boolean }>(
   vouchers: readonly T[],
 ): T | undefined {
-  return vouchers.find((v) => v.status === "active" && v.giftable === true);
+  // Same keep rule as pickToRedeem: the guide's gift and auction journeys need KEEP_GIFTABLE left.
+  const giftable = vouchers.filter((v) => v.status === "active" && v.giftable === true);
+  return giftable.length > KEEP_GIFTABLE ? giftable[0] : undefined;
 }
 
 /**

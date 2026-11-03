@@ -9,6 +9,9 @@ import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { createLedgerClient } from "../../shared/ledger-client/create-ledger-client";
 import { LEDGER_INTERNAL_CLIENT } from "../../shared/ledger-client/ledger-internal-client";
 import { PartnerActionsController } from "./partner-actions.controller";
+import { PartnerVouchersController } from "./partner-vouchers.controller";
+import { createVoucherClient } from "../../shared/voucher-client/create-voucher-client";
+import { VOUCHER_INTERNAL_CLIENT } from "../../shared/voucher-client/voucher-internal-client";
 import { PartnerAuthGuard } from "./partner-auth.guard";
 import { PARTNER_CREDENTIAL_REPOSITORY } from "./persistence/partner-credential.repository";
 import { DrizzlePartnerCredentialRepository } from "./persistence/drizzle-partner-credential.repository";
@@ -30,7 +33,7 @@ const PARTNERS_DB = Symbol("PARTNERS_DB");
  */
 @Module({
   imports: [PdpClientModule, RateLimitModule, EarningCheckModule],
-  controllers: [PartnerActionsController],
+  controllers: [PartnerActionsController, PartnerVouchersController],
   providers: [
     PartnerAuthGuard,
     {
@@ -41,6 +44,12 @@ const PARTNERS_DB = Symbol("PARTNERS_DB");
     {
       provide: LEDGER_INTERNAL_CLIENT,
       useFactory: (config: AppConfig, db: AppDb) => createLedgerClient(config, db),
+      inject: [APP_CONFIG, PARTNERS_DB],
+    },
+    {
+      // 2.8 T4: the holding read. Its own client, like devices.module.ts's.
+      provide: VOUCHER_INTERNAL_CLIENT,
+      useFactory: (config: AppConfig, db: AppDb) => createVoucherClient(config, db),
       inject: [APP_CONFIG, PARTNERS_DB],
     },
     {

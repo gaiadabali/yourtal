@@ -48,7 +48,7 @@ import type { EarningIdentityCheck } from "../auth/earning-check/earning-identit
 
 const PARTNER_RETENTION_MS = 24 * 60 * 60 * 1000;
 const linkIdParam = z.uuid();
-const PUBLIC_REASON =
+export const PUBLIC_REASON =
   "partner-HMAC authenticated; verified by PartnerAuthGuard, never a session or Cerbos principal";
 
 /**
@@ -159,7 +159,7 @@ export class PartnerActionsController {
   }
 }
 
-function requirePartnerId(request: FastifyRequest): string {
+export function requirePartnerId(request: FastifyRequest): string {
   // Unreachable: PartnerAuthGuard already refused an unverified request
   // (401) before this handler, or every interceptor ahead of it, ever ran.
   const partnerId = verifiedPartnerIdOf(request);

@@ -28,6 +28,16 @@ export interface ReportsScreenProps {
   businessQuery: string;
   /** The selected campaign's real 7.6.a report, fetched by `page.tsx` — `undefined` (the default, so existing tests need not pass it) when no campaign is selected, `null` when the API has nothing for it. */
   campaignReport?: CampaignReportResult | null | undefined;
+  /** Every listed campaign's own report by id (7.6.a), for the overview table's views, completions and spend. */
+  campaignReports?: Readonly<Record<string, CampaignReportResult | null>> | undefined;
+  /**
+   * Whether this person's role may see the business's campaigns (Owner, Admin, Marketer,
+   * Analyst). False reads as "not yours to see", never as "this business has none".
+   */
+  campaignsVisible?: boolean;
+  /** For saying whose campaigns these are, and which role is looking. */
+  businessName?: string;
+  roleLabel?: string;
   locale: SupportedLocale;
 }
 
@@ -57,6 +67,10 @@ export function ReportsScreen({
   selectedCampaignId,
   businessQuery,
   campaignReport,
+  campaignReports,
+  campaignsVisible = true,
+  businessName = "",
+  roleLabel = "",
   locale,
 }: ReportsScreenProps) {
   const t = getStudioTranslator(locale);
@@ -105,8 +119,18 @@ export function ReportsScreen({
             <CardTitle as="h2">{t("reports.screen.campaignsTitle")}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <ReportsCampaignOverviewTable campaigns={bundle.campaigns} locale={locale} />
-            {bundle.campaigns.length > 0 ? (
+            {campaignsVisible ? (
+              <ReportsCampaignOverviewTable
+                campaigns={bundle.campaigns}
+                reports={campaignReports}
+                locale={locale}
+              />
+            ) : (
+              <p className="text-sm font-sans text-fg-muted">
+                {t("reports.overview.hiddenForRole", { business: businessName, role: roleLabel })}
+              </p>
+            )}
+            {campaignsVisible && bundle.campaigns.length > 0 ? (
               <ReportsCampaignFilter
                 options={bundle.campaigns.map((campaign) => ({
                   id: campaign.id,
@@ -121,11 +145,11 @@ export function ReportsScreen({
         </Card>
       ) : null}
 
-      {isAdvertiser ? (
+      {isAdvertiser && campaignsVisible ? (
         <ReportsCampaignMetricsPanel report={campaignReport} locale={locale} />
       ) : null}
 
-      {isAdvertiser ? (
+      {isAdvertiser && campaignsVisible ? (
         <ReportsQuestionBankPanel scopeLabel={scopeLabel} typeCounts={typeCounts} locale={locale} />
       ) : null}
 

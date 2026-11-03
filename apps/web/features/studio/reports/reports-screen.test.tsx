@@ -94,6 +94,30 @@ describe("ReportsScreen", () => {
     ).toHaveTextContent(target.title);
   });
 
+  it("says whose campaigns these are, not that there are none, when the role cannot see them (finance)", () => {
+    render(
+      <ReportsScreen
+        bundle={{ ...buildBundle(), campaigns: [], questionsByCampaignId: {} }}
+        relationships={["advertiser"]}
+        selectedCampaignId={undefined}
+        businessQuery=""
+        campaignsVisible={false}
+        businessName="Kopi Kenangan Test"
+        roleLabel="Finance"
+        locale="en-AU"
+      />,
+    );
+    expect(
+      screen.getByText(
+        /Kopi Kenangan Test's campaigns and their results are not shown to your role \(Finance\)/,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/has no live, paused or ended campaigns/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Question bank composition" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("shows an honest message rather than empty sections when the business holds neither relationship", () => {
     render(
       <ReportsScreen

@@ -73,7 +73,7 @@ export function TeamChangeRoleDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent>
+      <DialogContent closeLabel={t("dialog.close")}>
         <DialogHeader>
           <DialogTitle>{t("team.changeRole.title", { name: targetName })}</DialogTitle>
           <DialogDescription>{t("team.changeRole.description")}</DialogDescription>

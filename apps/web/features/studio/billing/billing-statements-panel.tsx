@@ -1,3 +1,4 @@
+import { Badge } from "@yourtal/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { EmptyState } from "@yourtal/ui/empty-state";
 import { MoneyAmount } from "@yourtal/ui/money-amount";
@@ -6,6 +7,56 @@ import type { StatementPayout } from "@yourtal/contracts/billing/payouts";
 import type { Region } from "@yourtal/contracts/region";
 import { REGION_TIME_ZONE } from "@/features/region/region-time-zone";
 import { getStudioTranslator, type SupportedLocale } from "../studio-i18n";
+
+const STATEMENT_BADGE = { open: "secondary", disputed: "warning", paid: "success" } as const;
+
+/** What the statement is made of, from the figures it already carries, so a row is never a bare status. */
+function StatementDetails({
+  statement,
+  locale,
+  region,
+}: {
+  statement: BillingStatement;
+  locale: SupportedLocale;
+  region: Region;
+}) {
+  const t = getStudioTranslator(locale);
+  const when = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: REGION_TIME_ZONE[region],
+  });
+  const money = (amountMinor: number) => (
+    <MoneyAmount amountMinor={amountMinor} currency={statement.currency} locale={locale} />
+  );
+  return (
+    <details className="text-body-sm font-sans text-fg-muted">
+      <summary className="cursor-pointer text-fg">{t("billing.statementDetails")}</summary>
+      <dl className="mt-2 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1">
+        <dt>{t("billing.statementOpening")}</dt>
+        <dd className="text-right text-fg">{money(statement.openingPayableMinor)}</dd>
+        <dt>{t("billing.statementCaptures")}</dt>
+        <dd className="text-right text-fg">{money(statement.capturesMinor)}</dd>
+        <dt>{t("billing.statementRefunds")}</dt>
+        <dd className="text-right text-fg">{money(statement.refundsMinor)}</dd>
+        <dt>{t("billing.statementRecoveries")}</dt>
+        <dd className="text-right text-fg">{money(statement.recoveriesMinor)}</dd>
+        <dt className="font-semibold text-fg">{t("billing.statementClosing")}</dt>
+        <dd className="text-right font-semibold text-fg">{money(statement.closingPayableMinor)}</dd>
+      </dl>
+      <p className="mt-2">
+        {t(`billing.statementStatusHelp.${statement.status}`, {
+          date: when.format(new Date(statement.disputeWindowEndsAt)),
+        })}
+      </p>
+      {statement.status === "disputed" && statement.disputeReason !== null ? (
+        <p className="mt-1">
+          {t("billing.statementDisputeReason", { reason: statement.disputeReason })}
+        </p>
+      ) : null}
+    </details>
+  );
+}
 
 /** Statements newest first, each with how its payout is going (joined by statement id). */
 export function BillingStatementsPanel({
@@ -76,13 +127,14 @@ export function BillingStatementsPanel({
                       currency={statement.currency}
                       locale={locale}
                     />
-                    <span className="text-fg-muted">
+                    <Badge variant={STATEMENT_BADGE[statement.status]}>
                       {t(`billing.statementStatus.${statement.status}`)}
-                    </span>
+                    </Badge>
                   </div>
                   {line === null ? null : (
                     <p className="text-body-sm font-sans text-fg-muted">{line}</p>
                   )}
+                  <StatementDetails statement={statement} locale={locale} region={region} />
                 </li>
               );
             })}

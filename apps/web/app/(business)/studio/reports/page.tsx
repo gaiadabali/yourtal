@@ -38,13 +38,31 @@ export default async function StudioReportsPage(props: PageProps<"/studio/report
     typeof searchParams.campaign === "string" ? searchParams.campaign : undefined;
   const businessQuery =
     current.business.id === defaultBusinessId ? "" : `?business=${current.business.id}`;
+  const campaignsVisible = current.myRole
+    ? canViewZone("campaigns", current.myRole, current.business.roles)
+    : false;
   const bundle =
     allowed && current.myRole
       ? await getReportsBundle(current.business.id, current.business.displayName, {
-          campaigns: canViewZone("campaigns", current.myRole, current.business.roles),
+          campaigns: campaignsVisible,
           inventory: canViewZone("inventory", current.myRole, current.business.roles),
         })
       : undefined;
+  // Each listed campaign's own numbers for the overview table. One that cannot be read
+  // degrades to "no report" (a dash) rather than failing the page.
+  const campaignReports = bundle
+    ? Object.fromEntries(
+        await Promise.all(
+          bundle.campaigns.map(
+            async (campaign) =>
+              [
+                campaign.id,
+                await getCampaignReport(current.business.id, campaign.id).catch(() => null),
+              ] as const,
+          ),
+        ),
+      )
+    : undefined;
   // Real (7.6.a) when a campaign is selected; `undefined` (no panel) when
   // "All campaigns" is selected. A network/server error degrades to `null`
   // (an honest "no report" gap) rather than failing the whole page for one
@@ -72,6 +90,10 @@ export default async function StudioReportsPage(props: PageProps<"/studio/report
             selectedCampaignId={selectedCampaignId}
             businessQuery={businessQuery}
             campaignReport={campaignReport}
+            campaignReports={campaignReports}
+            campaignsVisible={campaignsVisible}
+            businessName={current.business.displayName}
+            roleLabel={current.myRole ? t(`roles.label.${current.myRole}`) : ""}
             locale={locale}
           />
           <BoostReportCard businessId={current.business.id} locale={locale} />

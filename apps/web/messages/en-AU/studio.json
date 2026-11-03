@@ -386,8 +386,8 @@
       "allCampaigns": "All campaigns"
     },
     "overview": {
-      "empty": "This business has no campaigns yet.",
-      "caption": "This business's campaigns, as configured",
+      "empty": "This business has no live, paused or ended campaigns yet.",
+      "caption": "This business's campaigns, with their set-up and results so far",
       "campaignHeader": "Campaign",
       "statusHeader": "Status",
       "questionsHeader": "Questions",
@@ -398,10 +398,15 @@
         "base_plus_accuracy_bonus": "Base + accuracy bonus"
       },
       "status": {
-        "active": "Active",
+        "active": "Live",
         "paused": "Paused",
         "ended": "Ended"
-      }
+      },
+      "viewsHeader": "Rewarded views",
+      "completionsHeader": "Completions",
+      "spendHeader": "Points spent",
+      "fewViewers": "Under {floor} viewers so far",
+      "hiddenForRole": "{business}'s campaigns and their results are not shown to your role ({role}). Owners, Admins, Marketers and Analysts can see them here."
     },
     "legend": {
       "title": "How to read these numbers",
@@ -530,7 +535,7 @@
       "selfRemovedBody": "You no longer have access to this business console. Ask an Owner or Admin there to invite you back.",
       "title": "Team",
       "inviteMember": "Invite member",
-      "helperText": "Invites, role changes and removals here take effect immediately once an Owner or Admin confirms them — transferring ownership additionally needs a fresh re-authentication. Two-person approval (a second person confirming a different person's request) applies elsewhere in the console — bulk voucher issuance, a material settlement-value cut, and API credential rotation — not to team membership itself.",
+      "helperText": "Invites, role changes and removals take effect as soon as an Owner or Admin confirms them. Transferring ownership also asks you to sign in again. Team changes need one person's approval. Some other actions need a second person to approve: bulk voucher issuance, a large cut to a voucher's settlement value, and rotating API credentials.",
       "auditTrail": "Audit trail",
       "noOwner": "This business has no recorded Owner — this should never happen; contact support."
     },
@@ -666,7 +671,7 @@
     "returnRefunded": "This payment was refunded to your card in full. You can buy again at today's price.",
     "returnReview": "We received your payment and are checking it. Your points will be added shortly.",
     "cardTitle": "Card for boosts",
-    "cardIntro": "Boosts are charged to this card once a day, apart from points.",
+    "cardIntro": "Boosts are charged to this card once a day, separately from the points you buy.",
     "cardNone": "No card saved yet.",
     "cardSaved": "{brand} ending in {last4}, expires {month}/{year}",
     "cardAdd": "Add a card",
@@ -698,7 +703,20 @@
     "statementPaid": "Paid to account ••{last4} on {date}",
     "statementAwaiting": "Waiting for payout details",
     "statementFailed": "Payout failed",
-    "statementOnItsWay": "Payout on its way"
+    "statementOnItsWay": "Payout on its way",
+    "demoNote": "Indonesia is a demo. A purchase here is approved at once and no real money moves, so no card page opens and no invoice is issued.",
+    "statementDetails": "Details",
+    "statementOpening": "Carried over from the last statement",
+    "statementCaptures": "Vouchers redeemed at your locations",
+    "statementRefunds": "Refunds",
+    "statementRecoveries": "Recoveries",
+    "statementClosing": "Payable to you",
+    "statementStatusHelp": {
+      "open": "Open: the dispute window runs until {date}. After that the statement is approved and paid out.",
+      "disputed": "Disputed: the payout is on hold until our team resolves it.",
+      "paid": "Approved: the dispute window closed on {date}."
+    },
+    "statementDisputeReason": "Reason given: {reason}"
   },
   "channel": {
     "saved": "Saved.",
@@ -1000,7 +1018,10 @@
     "invoice": "Invoice",
     "download": "Download PDF",
     "downloadLabel": "Download the PDF for invoice {number}",
-    "loadFailed": "We couldn't load your invoices. Try again in a moment."
+    "loadFailed": "We couldn't load your invoices. Try again in a moment.",
+    "introDemo": "Indonesia is a demo on simulated payments, so no invoices are issued here.",
+    "emptyTitleDemo": "No invoices in the demo",
+    "emptyDescriptionDemo": "Purchases in Indonesia are simulated, so no money moves and no invoice is issued."
   },
   "developers": {
     "credentials": {
@@ -1132,5 +1153,8 @@
       "finance": "Manages billing and views reports. No access to campaigns, inventory or redemption.",
       "analyst": "Read-only across campaigns, inventory and reports."
     }
+  },
+  "dialog": {
+    "close": "Close"
   }
 }

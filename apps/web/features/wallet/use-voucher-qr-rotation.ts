@@ -34,6 +34,8 @@ export function useVoucherQrRotation(
   voucherId: string,
   initialQr: WalletQrDetail,
   nowProvider: () => number = Date.now,
+  /** False for a voucher with no QR (archived, or redeemed in an app): nothing is cached, ticked or refreshed. */
+  enabled = true,
 ): VoucherQrRotationState {
   const [windows, setWindows] = useState<QrWindow[]>(() => windowsOf(initialQr));
   const [nowMs, setNowMs] = useState(nowProvider);
@@ -43,6 +45,7 @@ export function useVoucherQrRotation(
   // Cache-first on mount: a fresher (or equal) cached batch beats the
   // server-rendered prop, and a first-ever visit seeds the cache from it.
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
     void readCachedQrWindows(voucherId).then((cached) => {
       if (cancelled) return;
@@ -78,14 +81,15 @@ export function useVoucherQrRotation(
     // Only re-runs for a different voucher; `initialQr` is a fresh object
     // reference every render but must not restart this cache read.
     // (`initialQr` is intentionally excluded from the dependency array.)
-  }, [voucherId]);
+  }, [voucherId, enabled]);
 
   // Re-arms a fresh setTimeout every tick — same pattern as
   // checkpoint/use-question-timer.ts and this feature's old rotation hook.
   useEffect(() => {
+    if (!enabled) return;
     const timeoutId = window.setTimeout(() => setNowMs(nowProvider()), 1000);
     return () => window.clearTimeout(timeoutId);
-  }, [nowMs, nowProvider]);
+  }, [nowMs, nowProvider, enabled]);
 
   const state = selectQrWindow(windows, nowMs);
 
@@ -93,7 +97,7 @@ export function useVoucherQrRotation(
   // that fails (still offline, or the wallet API is down), stay exhausted
   // and let the caller fall back to the static code.
   useEffect(() => {
-    if (!state.exhausted || refreshAttempted.current) return;
+    if (!enabled || !state.exhausted || refreshAttempted.current) return;
     refreshAttempted.current = true;
     void refreshVoucherQrAction(voucherId).then((result) => {
       if (result.ok) {
@@ -110,7 +114,7 @@ export function useVoucherQrRotation(
         setRefreshFailed(true);
       }
     });
-  }, [state.exhausted, voucherId]);
+  }, [state.exhausted, voucherId, enabled]);
 
   return { ...state, refreshFailed };
 }

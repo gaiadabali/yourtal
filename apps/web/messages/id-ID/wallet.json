@@ -77,10 +77,10 @@
     },
     "giftFrom": "Hadiah dari {name}",
     "shortRef": "Ref. {code}",
-    "appInstructions": "Buka SnapApp, masuk ke Poin, pilih Gunakan voucher YourTal, lalu masukkan kode ini. Hanya akun SnapApp yang tertaut ke akun YourTal Anda yang dapat memakainya.",
+    "appInstructions": "Buka SnapApp, masuk ke Poin, pilih Gunakan voucher YourTal, lalu masukkan kode ini. Hanya akun SnapApp yang tertaut ke akun YourTal-mu yang dapat memakainya.",
     "appCodeCopy": "Salin kode",
     "appCodeCopied": "Tersalin",
-    "appCodeUnavailable": "Kode Anda belum bisa ditampilkan. Sambungkan kembali lalu buka ulang voucher ini."
+    "appCodeUnavailable": "Kodemu belum bisa ditampilkan. Sambungkan kembali lalu buka ulang voucher ini."
   },
   "redemption": {
     "balanceCarrying": "Kalau belanjamu kurang dari nilai voucher, sisanya tetap tersimpan untuk dipakai lain kali.",

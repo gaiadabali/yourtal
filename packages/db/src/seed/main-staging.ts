@@ -295,6 +295,21 @@ async function main(): Promise<void> {
         `[seed:staging] demo media vouchers threw rather than returning results: ${detail}`,
       );
     }
+    // The SnapApp scans voucher (docs/28). Never fails the deploy: a staging check covers it. Before the image repair, so its poster is fixed on the first deploy.
+    let snapAppScansSummary: string;
+    try {
+      const scans = await ensureSnapAppScansListing(
+        pool,
+        { baseUrl: ledgerBaseUrl, serviceSecret: ledgerServiceSecret },
+        { baseUrl: voucherBaseUrl, serviceSecret: voucherServiceSecret },
+        console.log,
+      );
+      snapAppScansSummary = `snapapp scans voucher: ${scans.status}`;
+    } catch (error) {
+      const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+      snapAppScansSummary = `snapapp scans voucher: FAILED (${detail}) — not failing the deploy over it`;
+    }
+
     // After the vouchers' listings exist: give any placeholder image a real poster.
     await repairDemoListingImages(pool, console.log);
     await repairDemoListingCopy(pool, console.log);
@@ -365,21 +380,6 @@ async function main(): Promise<void> {
     } catch (error) {
       const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
       demoSuppliersSummary = `demo suppliers: FAILED (${detail}) — not failing the deploy over it`;
-    }
-
-    // The SnapApp scans voucher (docs/28). Never fails the deploy: a staging check covers it.
-    let snapAppScansSummary: string;
-    try {
-      const scans = await ensureSnapAppScansListing(
-        pool,
-        { baseUrl: ledgerBaseUrl, serviceSecret: ledgerServiceSecret },
-        { baseUrl: voucherBaseUrl, serviceSecret: voucherServiceSecret },
-        console.log,
-      );
-      snapAppScansSummary = `snapapp scans voucher: ${scans.status}`;
-    } catch (error) {
-      const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
-      snapAppScansSummary = `snapapp scans voucher: FAILED (${detail}) — not failing the deploy over it`;
     }
 
     console.log(

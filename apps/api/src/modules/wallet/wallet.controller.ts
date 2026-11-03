@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import {
   BadGatewayException,
   ConflictException,
@@ -44,6 +43,7 @@ import {
 } from "../business/persistence/business-account.repository";
 import { SAGA_VOUCHER_READER } from "../checkout/checkout.tokens";
 import type { SagaVoucherReader } from "../checkout/persistence/saga-voucher-reader";
+import { LISTING_PARTNER_READER, type ListingPartnerReader } from "./listing-partner-reader";
 import { toWalletHistoryEntry, toWalletSummary, toWalletVoucher } from "./wallet-mapping";
 
 /** F12's key in `platform.region_setting` for a teen's own daily earn cap. */
@@ -75,6 +75,7 @@ export class WalletController {
     @Inject(REGION_SETTINGS_READER) private readonly settings: RegionSettingsReader,
     @Inject(SAGA_VOUCHER_READER) private readonly burns: SagaVoucherReader,
     @Inject(BUSINESS_ACCOUNT_REPOSITORY) private readonly businesses: BusinessAccountRepository,
+    @Inject(LISTING_PARTNER_READER) private readonly listingPartners: ListingPartnerReader,
   ) {}
 
   /** The owning businesses' own display names; a business that cannot be read falls back to the listing's copy. */
@@ -173,7 +174,7 @@ export class WalletController {
    * voucher service's own owner-scoped `reveal`. The code is sent only while
    * the voucher can still be redeemed, and `no-store` keeps it out of any
    * cache between here and the screen. A failed reveal drops the code and
-   * keeps the voucher: the QR still works. `redeemIn` rides with the code only.
+   * keeps the voucher: the QR still works. `redeemIn` comes from the listing's binding, after the same ownership check.
    * Never log the code or this body.
    */
   @Authorize({ kind: "wallet", action: "view" })
@@ -185,25 +186,14 @@ export class WalletController {
   ): Promise<WalletVoucherDetail> {
     const ownerId = (await this.principals.resolve(request)).id;
     const row = await unwrap(this.vouchers.get({ voucherId, ownerId }));
-    const voucher = toWalletVoucher(row, await this.namesOf([row]));
+    const partnerId = await this.listingPartners.partnerOf(row.listingId);
+    const voucher = {
+      ...toWalletVoucher(row, await this.namesOf([row])),
+      ...(partnerId === null ? {} : { redeemIn: { partnerId } }),
+    };
     if (!isCodeUsable(row, Date.now())) return voucher;
     const revealed = await this.vouchers.reveal({ voucherId, ownerId });
-    if (revealed.isErr()) return voucher;
-    const { code } = revealed.value;
-    return { ...voucher, code, ...(await this.redeemIn(code, ownerId)) };
-  }
-
-  /** Docs/28 4.4: the partner a bound voucher is redeemed in. Unbound, or unreadable, adds nothing. */
-  private async redeemIn(
-    code: string,
-    ownerId: string,
-  ): Promise<{ redeemIn?: { partnerId: string } }> {
-    const codeSha256 = createHash("sha256").update(code).digest("hex");
-    const holding = await this.vouchers.holding({ codeSha256, ownerId });
-    if (holding.isErr() || !holding.value.held || holding.value.redeemPartnerId === undefined) {
-      return {};
-    }
-    return { redeemIn: { partnerId: holding.value.redeemPartnerId } };
+    return revealed.isOk() ? { ...voucher, code: revealed.value.code } : voucher;
   }
 
   @Authorize({ kind: "wallet", action: "view" })

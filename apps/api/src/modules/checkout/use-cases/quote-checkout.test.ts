@@ -58,4 +58,12 @@ describe("quoteCheckout: online trust tier", () => {
     expect(result._unsafeUnwrapErr()).toMatchObject({ code: "audience_blocked" });
     expect(quoteSpy).not.toHaveBeenCalled();
   });
+
+  it("refuses a teen a bound listing even when its audience says all ages", async () => {
+    const deps = makeDeps();
+    const open = { ...listing("snap-app"), audience: "all_ages" as const };
+    const result = await quoteCheckout(deps, buyer("2012-01-01", 3), open);
+    expect(result._unsafeUnwrapErr()).toMatchObject({ code: "audience_blocked" });
+    expect(quoteSpy).not.toHaveBeenCalled();
+  });
 });

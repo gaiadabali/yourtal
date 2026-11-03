@@ -45,6 +45,10 @@ export async function quoteCheckout(
     return err(ledgerError("audience_blocked", "this reward is not available for your account"));
   }
   // F128: a partner-bound code only works in the holder's linked app account, so it cannot be resold.
+  // A partner-bound code is adults-only whatever the (editable) listing audience says.
+  if (listing.redeemPartnerId !== null && ageBand !== "adult") {
+    return err(ledgerError("audience_blocked", "this reward is not available for your account"));
+  }
   if (
     listing.channel === "online" &&
     listing.redeemPartnerId === null &&

@@ -8,13 +8,21 @@ import { Notice } from "@yourtal/ui/notice";
 /**
  * The code of a voucher redeemed inside a partner's app (docs/28 4.4): shown
  * to type or paste there, with Copy and no QR. `code` is undefined while it is
- * being fetched, offline or unreadable.
+ * loading and null once it is known to be unavailable (offline or unreadable).
  */
-export function VoucherAppCode({ code }: { code: string | undefined }) {
+export function VoucherAppCode({ code }: { code: string | null | undefined }) {
   const t = useTranslations("wallet");
   const [copied, setCopied] = useState(false);
 
-  if (code === undefined) return <Notice tone="info">{t("voucher.appCodeUnavailable")}</Notice>;
+  if (code === undefined) {
+    return (
+      <div
+        aria-busy="true"
+        className="h-control-compact w-48 animate-pulse rounded-control bg-surface-sunken"
+      />
+    );
+  }
+  if (code === null) return <Notice tone="info">{t("voucher.appCodeUnavailable")}</Notice>;
 
   const copy = async () => {
     try {

@@ -19,9 +19,10 @@ import {
  * minted vouchers.
  *
  * Idempotent: an existing listing is never rewritten except to set a missing
- * binding, and stock is only topped up to the target. It reads nothing from and
- * writes nothing to production, which has no seed: it needs Snap App's AU
- * business and the `snap-app` partner row, and does nothing without them.
+ * binding, and stock is only topped up to the target. Production is kept out by
+ * where this runs (the staging deploy seed and the local dev seed only) and by
+ * the demo Snap App AU business it needs: it does nothing without that. The
+ * `snap-app` partner row exists everywhere, so it is no guard.
  */
 const PARTNER_ID = "snap-app";
 const LISTING_ID = "00000000-0000-4000-9000-000000000401";
@@ -44,6 +45,14 @@ async function prerequisitesMet(pool: pg.Pool): Promise<boolean> {
     [SNAP_APP_AU_ID, PARTNER_ID],
   );
   return rows.length === 1;
+}
+
+/** Staff-only binding (docs/28 D2); a no-op once set, and it never rebinds another partner's listing. */
+async function bindToPartner(pool: pg.Pool): Promise<void> {
+  await pool.query(
+    `UPDATE store.listings SET redeem_partner_id = $2 WHERE id = $1 AND redeem_partner_id IS NULL`,
+    [LISTING_ID, PARTNER_ID],
+  );
 }
 
 export async function ensureSnapAppScansListing(
@@ -105,6 +114,8 @@ export async function ensureSnapAppScansListing(
           partialRedemption: "single_use",
         });
         await insertListing(pool, listing);
+        // Bound at once, so a failure further on never leaves a live unbound online listing.
+        await bindToPartner(pool);
         return {
           ok: true,
           facts: {
@@ -119,10 +130,6 @@ export async function ensureSnapAppScansListing(
     log,
   );
 
-  // Staff-only binding (docs/28 D2); a no-op once set, and it never rebinds another partner's listing.
-  await pool.query(
-    `UPDATE store.listings SET redeem_partner_id = $2 WHERE id = $1 AND redeem_partner_id IS NULL`,
-    [LISTING_ID, PARTNER_ID],
-  );
+  await bindToPartner(pool); // repairs a listing whose binding was lost
   return outcome;
 }

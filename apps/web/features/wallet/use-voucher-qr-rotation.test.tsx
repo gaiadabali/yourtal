@@ -131,4 +131,16 @@ describe("useVoucherQrRotation", () => {
     expect(result.current.exhausted).toBe(true);
     expect(result.current.refreshFailed).toBe(true);
   });
+
+  it("does nothing at all when disabled: no tick, no cache write, no live refresh", async () => {
+    const exhausted: WalletQrDetail = {
+      voucherId: "voucher-1",
+      token: "",
+      expiresAt: new Date(0).toISOString(),
+    };
+    renderHook(() => useVoucherQrRotation("voucher-1", exhausted, Date.now, false));
+    await act(async () => {});
+    advanceSeconds(3);
+    expect(refreshVoucherQrActionMock).not.toHaveBeenCalled();
+  });
 });

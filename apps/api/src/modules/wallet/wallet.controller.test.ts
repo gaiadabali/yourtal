@@ -231,42 +231,66 @@ describe("GET /api/wallet/vouchers/:voucherId redeemIn", () => {
     await admin.execute(
       sql`INSERT INTO platform.partner_credential (partner_id, secret_env_var) VALUES (${partnerId}, 'PROBE_T5')`,
     );
+    // A probe copy of a seeded listing, bound here and removed below: never a shared row.
     const bound = (
       await admin.execute<{ id: string }>(sql`
-        UPDATE store.listings SET channel = 'online', transferable = false,
-               partial_redemption_policy = 'single_use_forfeit', partial_redemption = 'single_use',
-               minimum_spend_minor = NULL, redeem_partner_id = ${partnerId}
-         WHERE id = (SELECT id FROM store.listings WHERE region = 'ID' ORDER BY random() LIMIT 1)
+        INSERT INTO store.listings
+        SELECT (jsonb_populate_record(NULL::store.listings, to_jsonb(l)
+                 || jsonb_build_object('id', gen_random_uuid(), 'channel', 'online',
+                      'transferable', false, 'partial_redemption_policy', 'single_use_forfeit',
+                      'partial_redemption', 'single_use', 'minimum_spend_minor', NULL,
+                      'expires_at', to_jsonb(now() + interval '30 days'), 'stock_remaining', stock_total, 'status', 'available',
+                      'redeem_partner_id', ${partnerId}::text))).*
+          FROM store.listings l WHERE region = 'ID' LIMIT 1
         RETURNING id::text`)
     ).rows[0]?.id;
     if (bound === undefined) throw new Error("no seeded listing");
 
-    async function issue(listingId: string): Promise<string> {
+    async function issue(listingId: string, valued = true): Promise<string> {
       const sagaId = `saga_${randomUUID()}`;
       const reserved = await vouchers.reserve({ listingId, sagaId });
       expect((await vouchers.activate({ sagaId, ownerId: owner.userId })).isOk()).toBe(true);
       const voucherId = reserved._unsafeUnwrap().voucherId;
-      await giveValue(voucherId);
+      if (valued) await giveValue(voucherId);
       return voucherId;
     }
-    const boundVoucher = await issue(bound);
-    const plainVoucher = await issue(randomUUID());
+    try {
+      const boundVoucher = await issue(bound);
+      const plainVoucher = await issue(randomUUID());
 
-    const one = await get(`/api/wallet/vouchers/${boundVoucher}`, { cookie: owner.cookie });
-    const detail = walletVoucherDetailSchema.parse(one.json());
-    expect(detail.redeemIn).toEqual({ partnerId });
-    expect(detail.code).toBeDefined();
+      const one = await get(`/api/wallet/vouchers/${boundVoucher}`, { cookie: owner.cookie });
+      const detail = walletVoucherDetailSchema.parse(one.json());
+      expect(detail.redeemIn).toEqual({ partnerId });
+      expect(detail.code).toBeDefined();
 
-    const plain = await get(`/api/wallet/vouchers/${plainVoucher}`, { cookie: owner.cookie });
-    expect(plain.json()).not.toHaveProperty("redeemIn");
+      // A spent bound voucher keeps its partner, with no code.
+      const spentId = await issue(bound, false);
+      await admin.execute(
+        sql`UPDATE platform.voucher_fake_voucher SET remaining_value_minor = 0 WHERE id = ${spentId}`,
+      );
+      const spent = await get(`/api/wallet/vouchers/${spentId}`, { cookie: owner.cookie });
+      expect(spent.json()).toMatchObject({ redeemIn: { partnerId }, status: "redeemed" });
+      expect(spent.json()).not.toHaveProperty("code");
 
-    // Not the owner: a 404, no code and no partner.
-    const stranger = await sessionFor(app, { jurisdiction: "ID", dateOfBirth: "1990-01-01" });
-    const hidden = await get(`/api/wallet/vouchers/${boundVoucher}`, { cookie: stranger.cookie });
-    expect(hidden.statusCode).toBe(404);
-    expect(hidden.body).not.toContain(partnerId);
-    expect((await get("/api/wallet/vouchers", { cookie: owner.cookie })).body).not.toContain(
-      partnerId,
-    );
+      const plain = await get(`/api/wallet/vouchers/${plainVoucher}`, { cookie: owner.cookie });
+      expect(plain.json()).not.toHaveProperty("redeemIn");
+
+      // Not the owner: a 404, no code and no partner.
+      const stranger = await sessionFor(app, { jurisdiction: "ID", dateOfBirth: "1990-01-01" });
+      const hidden = await get(`/api/wallet/vouchers/${boundVoucher}`, { cookie: stranger.cookie });
+      expect(hidden.statusCode).toBe(404);
+      expect(hidden.body).not.toContain(partnerId);
+      expect((await get("/api/wallet/vouchers", { cookie: owner.cookie })).body).not.toContain(
+        partnerId,
+      );
+    } finally {
+      await admin.execute(
+        sql`DELETE FROM platform.voucher_fake_voucher WHERE listing_id = ${bound}::uuid`,
+      );
+      await admin.execute(sql`DELETE FROM store.listings WHERE id = ${bound}::uuid`);
+      await admin.execute(
+        sql`DELETE FROM platform.partner_credential WHERE partner_id = ${partnerId}`,
+      );
+    }
   });
 });

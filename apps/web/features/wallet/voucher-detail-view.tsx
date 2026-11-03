@@ -155,6 +155,8 @@ export function VoucherDetailView({
   const rotation = useVoucherQrRotation(
     voucherId,
     initialQr ?? { voucherId, token: "", expiresAt: new Date(0).toISOString() },
+    Date.now,
+    isRedeemable && !redeemIn && initialQr !== null,
   );
 
   return (

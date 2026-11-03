@@ -44,7 +44,12 @@ export async function quoteCheckout(
   if (!reachesAudience(listing.audience, { ageBand })) {
     return err(ledgerError("audience_blocked", "this reward is not available for your account"));
   }
-  if (listing.channel === "online" && buyer.trustTier < ONLINE_MIN_TRUST_TIER) {
+  // F128: a partner-bound code only works in the holder's linked app account, so it cannot be resold.
+  if (
+    listing.channel === "online" &&
+    listing.redeemPartnerId === null &&
+    buyer.trustTier < ONLINE_MIN_TRUST_TIER
+  ) {
     return err(
       ledgerError("audience_blocked", "online rewards unlock as your account builds history"),
     );

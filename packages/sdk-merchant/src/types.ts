@@ -87,6 +87,23 @@ export interface RefundResult {
   refunded: boolean;
 }
 
+/** What an order is, as the voucher service sees it. A hold past `expiresAt` reads `expired` even before the sweep. */
+export type OrderState = "held" | "captured" | "voided" | "expired";
+
+/**
+ * `lookupResponse` (`services/voucher/internal/redeem/lookup.go`). `receiptId`
+ * and `amountCaptured` are present only when `state` is `captured`.
+ */
+export interface OrderLookup {
+  authorizationId: string;
+  state: OrderState;
+  amountAuthorized: number;
+  /** RFC 3339, UTC. */
+  expiresAt: string;
+  receiptId?: string;
+  amountCaptured?: number;
+}
+
 /**
  * The one error envelope every endpoint uses, >= HTTP 400
  * (`services/voucher/internal/httpx/json.go`, `ErrorEnvelope`).

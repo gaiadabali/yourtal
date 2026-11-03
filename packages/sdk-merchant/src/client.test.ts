@@ -39,6 +39,16 @@ function refundResponseBody(overrides: Partial<Record<string, unknown>> = {}) {
   return { receipt_id: "rcpt_1", refunded: true, ...overrides };
 }
 
+function lookupResponseBody(overrides: Partial<Record<string, unknown>> = {}) {
+  return {
+    authorization_id: "auth_1",
+    state: "held",
+    amount_authorized: 500,
+    expires_at: "2026-09-27T00:05:00Z",
+    ...overrides,
+  };
+}
+
 const NOOP_SLEEP = () => Promise.resolve();
 
 describe("createMerchantClient", () => {
@@ -318,6 +328,130 @@ describe("createMerchantClient", () => {
     });
     await client.authorize({ code: "ABC", amountMinor: 1, currency: "AUD" });
     expect(sleep).toHaveBeenCalledWith(7000);
+  });
+
+  it("lookup posts the order reference and maps a held order", async () => {
+    const fetchMock = vi.fn<FetchLike>(() =>
+      Promise.resolve(jsonResponse(200, lookupResponseBody())),
+    );
+    const client = createMerchantClient({
+      baseUrl: "https://voucher.example",
+      keyId: "k",
+      secret: "s",
+      fetch: fetchMock,
+    });
+
+    const result = await client.lookup("ORDER-1");
+
+    expect(result).toEqual({
+      authorizationId: "auth_1",
+      state: "held",
+      amountAuthorized: 500,
+      expiresAt: "2026-09-27T00:05:00Z",
+    });
+    expect(result).not.toHaveProperty("receiptId");
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe("https://voucher.example/v1/vouchers/lookup");
+    expect(init.method).toBe("POST");
+    expect(init.headers[SIGNATURE_HEADER]).toMatch(/^t=\d+,k=k,v1=[0-9a-f]{64}$/);
+    expect(init.headers[IDEMPOTENCY_HEADER]).toMatch(/^[0-9a-f-]{36}$/);
+    expect(JSON.parse(init.body)).toEqual({ merchant_order_ref: "ORDER-1" });
+  });
+
+  it("lookup maps a captured order with its receipt and captured amount", async () => {
+    const fetchMock = vi.fn<FetchLike>(() =>
+      Promise.resolve(
+        jsonResponse(
+          200,
+          lookupResponseBody({ state: "captured", receipt_id: "rcpt_9", amount_captured: 400 }),
+        ),
+      ),
+    );
+    const client = createMerchantClient({
+      baseUrl: "https://v.example",
+      keyId: "k",
+      secret: "s",
+      fetch: fetchMock,
+    });
+    expect(await client.lookup("ORDER-1")).toEqual({
+      authorizationId: "auth_1",
+      state: "captured",
+      amountAuthorized: 500,
+      expiresAt: "2026-09-27T00:05:00Z",
+      receiptId: "rcpt_9",
+      amountCaptured: 400,
+    });
+  });
+
+  it("lookup rejects a captured answer with no receipt, and an unknown state", async () => {
+    const clientFor = (body: unknown) =>
+      createMerchantClient({
+        baseUrl: "https://v.example",
+        keyId: "k",
+        secret: "s",
+        fetch: () => Promise.resolve(jsonResponse(200, body)),
+      });
+    await expect(clientFor(lookupResponseBody({ state: "captured" })).lookup("O")).rejects.toThrow(
+      /receipt_id/,
+    );
+    await expect(clientFor(lookupResponseBody({ state: "refunded" })).lookup("O")).rejects.toThrow(
+      /unknown order state/,
+    );
+  });
+
+  it("lookup surfaces an unknown reference as a typed order_not_found, without retrying", async () => {
+    const fetchMock = vi.fn<FetchLike>(() =>
+      Promise.resolve(
+        jsonResponse(404, {
+          error: {
+            type: "invalid_request_error",
+            code: "order_not_found",
+            message: "no order with that reference",
+          },
+        }),
+      ),
+    );
+    const client = createMerchantClient({
+      baseUrl: "https://v.example",
+      keyId: "k",
+      secret: "s",
+      fetch: fetchMock,
+      retry: { sleep: NOOP_SLEEP },
+    });
+    await expect(client.lookup("NOPE")).rejects.toMatchObject({
+      httpStatus: 404,
+      code: "order_not_found",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("lookup uses a FRESH Idempotency-Key per call and per retry, never a replayed one", async () => {
+    let attempt = 0;
+    const fetchMock = vi.fn<FetchLike>(() => {
+      attempt += 1;
+      if (attempt === 1) {
+        return Promise.resolve(
+          jsonResponse(503, {
+            error: { type: "api_error", code: "internal_error", message: "boom" },
+          }),
+        );
+      }
+      return Promise.resolve(jsonResponse(200, lookupResponseBody()));
+    });
+    const client = createMerchantClient({
+      baseUrl: "https://v.example",
+      keyId: "k",
+      secret: "s",
+      fetch: fetchMock,
+      retry: { sleep: NOOP_SLEEP },
+    });
+
+    await client.lookup("ORDER-1");
+    await client.lookup("ORDER-1");
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const keys = fetchMock.mock.calls.map(([, init]) => init.headers[IDEMPOTENCY_HEADER]);
+    expect(new Set(keys).size).toBe(3);
   });
 
   it("throws when no fetch is injected and none is ambient", () => {

@@ -178,3 +178,19 @@ func writeRefundError(w http.ResponseWriter, logger *slog.Logger, err error) {
 		internalError(w, logger)
 	}
 }
+
+func writeLookupError(w http.ResponseWriter, logger *slog.Logger, err error) {
+	switch {
+	case errors.Is(err, ErrOrderRefRequired):
+		httpx.WriteError(w, logger, http.StatusBadRequest,
+			"invalid_request_error", "merchant_order_ref_required", err.Error())
+	case errors.Is(err, ErrOrderNotFound):
+		// An unknown reference and another merchant's reference answer the
+		// same, and the wrapped detail stays out of the body.
+		httpx.WriteError(w, logger, http.StatusNotFound,
+			"invalid_request_error", "order_not_found", "no order with that reference")
+	default:
+		logger.Error("order lookup failed", "error", err)
+		internalError(w, logger)
+	}
+}

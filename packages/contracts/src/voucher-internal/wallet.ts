@@ -2,6 +2,7 @@ import * as z from "zod";
 import { VOUCHER_GIFT_BLOCKS } from "./gift-block";
 import { minorUnitsSchema } from "../money/money";
 import { currencySchema } from "../money/money-value";
+import { regionSchema } from "../region/region";
 import { partialRedemptionPolicySchema } from "../listing/listing";
 import { voucherLifecycleStateSchema, voucherVoidReasonSchema } from "../voucher/voucher-lifecycle";
 
@@ -76,3 +77,33 @@ export const getVoucherRequestSchema = z.object({
   ownerId: z.uuid(),
 });
 export type GetVoucherRequest = z.infer<typeof getVoucherRequestSchema>;
+
+/**
+ * 2.8 T2 (docs/28 4.2): "is this code in this owner's wallet?", asked with the
+ * SHA-256 of the canonical code (lower-case hex), never the code. The service
+ * answers facts only when `owner_id` matches; another person's code, an unknown
+ * code and a voided voucher all answer the identical `{ held: false }`.
+ * `redeemPartnerId` and `region` are for the BFF to compare against the calling
+ * partner and the link; it never forwards them to a partner. No ids are returned.
+ */
+export const holdingRequestSchema = z.object({
+  codeSha256: z.string().regex(/^[0-9a-f]{64}$/),
+  ownerId: z.uuid(),
+});
+export type HoldingRequest = z.infer<typeof holdingRequestSchema>;
+
+export const holdingSchema = z.discriminatedUnion("held", [
+  z.object({ held: z.literal(false) }),
+  z.object({
+    held: z.literal(true),
+    /** An active or held voucher past its expiry reads `expired` before the sweep. */
+    status: z.enum(["active", "held", "redeemed", "expired"]),
+    faceValueMinor: minorUnitsSchema,
+    currency: currencySchema,
+    expiresAt: z.iso.datetime(),
+    region: regionSchema,
+    /** The partner the listing is bound to (`store.listings.redeem_partner_id`); absent when unbound. */
+    redeemPartnerId: z.string().min(1).optional(),
+  }),
+]);
+export type Holding = z.infer<typeof holdingSchema>;

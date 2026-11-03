@@ -3,6 +3,8 @@ import { ResultAsync, ok } from "neverthrow";
 import type { Result } from "neverthrow";
 import type {
   GetVoucherRequest,
+  Holding,
+  HoldingRequest,
   ListForUserRequest,
   ListForUserResult,
   WalletVoucherRow,
@@ -170,6 +172,44 @@ export function get(
       if (row === undefined)
         throw new Error(`no voucher ${request.voucherId} owned by ${request.ownerId} exists`);
       return ok(toWalletVoucherRow(row));
+    })(),
+  );
+}
+
+/**
+ * 2.8 T2: the live engine's holding read over the fake's tables. The fake keeps
+ * the plain code, so it is hashed here the way the engine's custody row is
+ * (SHA-256 of the canonical code). The fake has no region of its own: the
+ * listing's, or ID for a synthetic listing id with no listing row.
+ */
+export function holding(db: AppDb, request: HoldingRequest): ResultAsync<Holding, VoucherError> {
+  return new ResultAsync(
+    (async (): Promise<Result<Holding, VoucherError>> => {
+      const found = await db.execute<{
+        readonly id: string;
+        readonly region: string | null;
+        readonly redeem_partner_id: string | null;
+      }>(sql`
+        SELECT v.id, l.region, l.redeem_partner_id
+          FROM platform.voucher_fake_voucher v
+          LEFT JOIN store.listings l ON l.id = v.listing_id
+         WHERE encode(sha256(convert_to(v.code, 'UTF8')), 'hex') = ${request.codeSha256}
+           AND v.owner_id = ${request.ownerId}
+      `);
+      const hit = found.rows[0];
+      if (hit === undefined) return ok({ held: false });
+      const row = await get(db, { voucherId: hit.id, ownerId: request.ownerId });
+      const voucher = row._unsafeUnwrap();
+      if (voucher.lifecycleState === "voided") return ok({ held: false });
+      return ok({
+        held: true,
+        status: voucher.lifecycleState as "active" | "held" | "redeemed" | "expired",
+        faceValueMinor: voucher.faceValueMinor,
+        currency: voucher.currency,
+        expiresAt: voucher.expiresAt,
+        region: hit.region === "AU" ? "AU" : "ID",
+        ...(hit.redeem_partner_id === null ? {} : { redeemPartnerId: hit.redeem_partner_id }),
+      });
     })(),
   );
 }

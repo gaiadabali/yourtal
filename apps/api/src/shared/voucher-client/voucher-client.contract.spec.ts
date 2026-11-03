@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { toMinorUnits } from "@yourtal/contracts/money";
@@ -209,6 +209,34 @@ describe("wallet", () => {
 
     const fetched = await client.get({ voucherId, ownerId });
     expect(fetched._unsafeUnwrap().voucherId).toBe(voucherId);
+  });
+
+  // 2.8 T2: the ownership read a partner's voucher redemption starts with.
+  it("holding answers facts for the owner's own code and nothing for anyone else's", async () => {
+    const { voucherId, ownerId } = await activeVoucher("AUD", "AU");
+    const { code } = (await client.reveal({ voucherId, ownerId }))._unsafeUnwrap();
+    const codeSha256 = createHash("sha256").update(code).digest("hex");
+
+    const mine = (await client.holding({ codeSha256, ownerId }))._unsafeUnwrap();
+    expect(mine).toEqual({
+      held: true,
+      status: "active",
+      faceValueMinor: 50_000,
+      currency: "AUD",
+      expiresAt: expect.any(String),
+      region: "AU",
+    });
+
+    const someoneElse = await client.holding({ codeSha256, ownerId: randomUUID() });
+    expect(someoneElse._unsafeUnwrap()).toEqual({ held: false });
+    const unknown = await client.holding({ codeSha256: "0".repeat(64), ownerId });
+    expect(unknown._unsafeUnwrap()).toEqual({ held: false });
+
+    // A voided voucher is nothing to redeem, so it reads like an unknown code.
+    expect((await client.voidVoucher({ voucherId, ownerId, reason: "test" })).isOk()).toBe(true);
+    expect((await client.holding({ codeSha256, ownerId }))._unsafeUnwrap()).toEqual({
+      held: false,
+    });
   });
 
   // TASKS.md 4.8.c (found by 8.2.e running on staging: the wallet read

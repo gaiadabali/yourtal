@@ -128,28 +128,26 @@ export function CheckpointOverlay({
           <h2 id="checkpoint-prompt" className="text-lg font-sans font-semibold break-words">
             {question.prompt}
           </h2>
-          {question.type === "multiple_choice" ? (
-            <div
-              className="flex flex-col gap-2"
-              role="radiogroup"
-              aria-labelledby="checkpoint-prompt"
-            >
-              {question.options.map((option) => (
-                // eslint-disable-next-line yt-b/prefer-primitives -- a `role="radio"` option in a custom radiogroup, not a standalone action button; @yourtal/ui/button has no radio variant and Radix's own RadioGroup would add a dependency for one already-simple, fully-custom-styled control.
-                <button
-                  key={option.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected === option.id}
-                  disabled={submitting}
-                  onClick={() => choose(option.id)}
-                  className="rounded-control border border-white/30 bg-white/10 px-4 py-3 text-left text-body font-sans break-words text-primary-fg disabled:opacity-60 aria-checked:border-white aria-checked:bg-white/25"
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          ) : null}
+          <div
+            className="flex flex-col gap-2"
+            role="radiogroup"
+            aria-labelledby="checkpoint-prompt"
+          >
+            {question.options.map((option) => (
+              // eslint-disable-next-line yt-b/prefer-primitives -- a `role="radio"` option in a custom radiogroup, not a standalone action button; @yourtal/ui/button has no radio variant and Radix's own RadioGroup would add a dependency for one already-simple, fully-custom-styled control.
+              <button
+                key={option.id}
+                type="button"
+                role="radio"
+                aria-checked={selected === option.id}
+                disabled={submitting}
+                onClick={() => choose(option.id)}
+                className="rounded-control border border-white/30 bg-white/10 px-4 py-3 text-left text-body font-sans break-words text-primary-fg disabled:opacity-60 aria-checked:border-white aria-checked:bg-white/25"
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       <p role="status" aria-live="polite" className="sr-only">

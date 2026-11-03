@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -62,7 +63,7 @@ func TestReleasedGrantsAreListedUntilAcknowledged(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(pool.Close)
-	if _, err := reward.ReleaseDue(ctx, pool, ledger.New(pool), 500); err != nil {
+	if _, err := reward.ReleaseDue(ctx, pool, ledger.New(pool), 500, slog.Default()); err != nil {
 		t.Fatal(err)
 	}
 

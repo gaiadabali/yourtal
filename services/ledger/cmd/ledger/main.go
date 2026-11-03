@@ -463,7 +463,7 @@ func runExpirySweeper(ctx context.Context, logger *slog.Logger, pool *pgxpool.Po
 // the loop continues, as runChecker does; the heartbeat pages if it stops.
 func runHoldbackReleaser(ctx context.Context, logger *slog.Logger, pool *pgxpool.Pool, book *ledger.Ledger, hb *heartbeat.Recorder) {
 	const jobName = "ledger.holdback_releaser"
-	reward.RunReleaser(ctx, pool, book, holdbackReleaseInterval, holdbackReleaseLimit,
+	reward.RunReleaser(ctx, pool, book, holdbackReleaseInterval, holdbackReleaseLimit, logger,
 		func(released int, err error) {
 			if err != nil {
 				logger.Error("releasing grants past their holdback failed", "error", err)

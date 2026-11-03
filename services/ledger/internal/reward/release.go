@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -39,29 +40,42 @@ func (e *Engine) releaseInTx(ctx context.Context, tx pgx.Tx, q *sqlcgen.Queries,
 // A user with a held escrow is skipped (4.4.g): their pending stays pending,
 // with its unlock times, until the escrow is released. The list query skips
 // them, and the transaction re-checks so an escrow that lands in between wins.
-func ReleaseDue(ctx context.Context, pool ledgerPool, book *ledger.Ledger, limit int32) (int, error) {
-	due, err := sqlcgen.New(pool).ListUnlockedGrants(ctx, limit)
-	if err != nil {
-		return 0, fmt.Errorf("listing grants due for release: %w", err)
-	}
+// A grant that fails is logged with its id (an escrow that landed in between is
+// not an error) and stays due. The next page starts past the ones that stayed,
+// so grants that always fail cannot fill the first page and starve the rest.
+func ReleaseDue(ctx context.Context, pool ledgerPool, book *ledger.Ledger, limit int32, logger *slog.Logger) (int, error) {
 	released := 0
 	engine := &Engine{ledger: book}
-	for _, grant := range due {
-		err := pgx.BeginTxFunc(ctx, pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
-			q := sqlcgen.New(tx)
-			held, err := q.UserHasHeldEscrow(ctx, grant.UserID)
-			if err != nil {
-				return err
-			}
-			if held {
-				return errEscrowHeld
-			}
-			return engine.releaseInTx(ctx, tx, q, grant.ID, grant.UserID, grant.Points)
-		})
+	var stayed int32
+	for released < int(limit) {
+		due, err := sqlcgen.New(pool).ListUnlockedGrants(ctx, sqlcgen.ListUnlockedGrantsParams{Limit: limit, Offset: stayed})
 		if err != nil {
-			continue // left due; the next run retries it
+			return released, fmt.Errorf("listing grants due for release: %w", err)
 		}
-		released++
+		for _, grant := range due {
+			err := pgx.BeginTxFunc(ctx, pool, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pgx.Tx) error {
+				q := sqlcgen.New(tx)
+				held, err := q.UserHasHeldEscrow(ctx, grant.UserID)
+				if err != nil {
+					return err
+				}
+				if held {
+					return errEscrowHeld
+				}
+				return engine.releaseInTx(ctx, tx, q, grant.ID, grant.UserID, grant.Points)
+			})
+			if err != nil {
+				if !errors.Is(err, errEscrowHeld) {
+					logger.Error("releasing a grant past its holdback failed", "grant_id", grant.ID, "error", err)
+				}
+				stayed++ // left due; the next run retries it
+				continue
+			}
+			released++
+		}
+		if len(due) < int(limit) || ctx.Err() != nil {
+			break
+		}
 	}
 	return released, nil
 }
@@ -72,14 +86,14 @@ func ReleaseDue(ctx context.Context, pool ledgerPool, book *ledger.Ledger, limit
 // means more are due) before it waits. after sees each pass's count and error;
 // an error never stops the loop, because the next pass retries what was left.
 func RunReleaser(
-	ctx context.Context, pool ledgerPool, book *ledger.Ledger, every time.Duration, limit int32,
+	ctx context.Context, pool ledgerPool, book *ledger.Ledger, every time.Duration, limit int32, logger *slog.Logger,
 	after func(released int, err error),
 ) {
 	ticker := time.NewTicker(every)
 	defer ticker.Stop()
 	for {
 		for {
-			released, err := ReleaseDue(ctx, pool, book, limit)
+			released, err := ReleaseDue(ctx, pool, book, limit, logger)
 			after(released, err)
 			if err != nil || released < int(limit) || ctx.Err() != nil {
 				break

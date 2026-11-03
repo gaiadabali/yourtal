@@ -1,7 +1,10 @@
 package reward_test
 
 import (
+	"bytes"
 	"context"
+	"log/slog"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -47,7 +50,7 @@ func TestRunReleaserReleasesAnOverdueGrantOnceWithoutBeingAsked(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			reward.RunReleaser(loopCtx, pool, ledger.New(pool), 10*time.Millisecond, 100, func(int, error) {})
+			reward.RunReleaser(loopCtx, pool, ledger.New(pool), 10*time.Millisecond, 100, slog.Default(), func(int, error) {})
 		}()
 	}
 	stopped := false
@@ -158,4 +161,52 @@ func sameTotals(a, b map[string][2]int64) bool {
 		}
 	}
 	return true
+}
+
+// A grant that always fails to release stays due and is logged with its id, and
+// it does not starve the grants behind it: with a page of one, the stuck grant
+// fills the first page and the good one is still released.
+func TestReleaseDueSkipsAStuckGrantAndLogsIt(t *testing.T) {
+	engine, pool := rewardEngine(t)
+	owner := ownerPool(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	book := ledger.New(pool)
+	campaign := newLiveCampaign(t, engine, 100, 0, 1_000_000)
+
+	stuck, good := freshUser(), freshUser()
+	stuckGrant, err := engine.GrantReward(ctx, campaign.reward(stuck, 100, 0, 0, 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	goodGrant, err := engine.GrantReward(ctx, campaign.reward(good, 100, 0, 0, 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The stuck grant claims more than its user's pending holds, so releasing it
+	// is refused every time; it is also the older one, so it sorts first.
+	if _, err := owner.Exec(ctx, `UPDATE ledger.grant SET points = 999,
+		unlock_at = now() - interval '20 days' WHERE id = $1`, stuckGrant.GrantID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := owner.Exec(ctx,
+		`UPDATE ledger.grant SET unlock_at = now() - interval '16 days' WHERE id = $1`, goodGrant.GrantID); err != nil {
+		t.Fatal(err)
+	}
+
+	var logs bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&logs, nil))
+	released, err := reward.ReleaseDue(ctx, pool, book, 1, logger)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if released != 1 {
+		t.Fatalf("released = %d, want 1 (the good grant behind the stuck one)", released)
+	}
+	if b, _ := book.Balance(ctx, ledger.UserAccountID(good, ledger.PurposeAvailable)); b != 100 {
+		t.Errorf("good grant available = %d, want 100", b)
+	}
+	if !strings.Contains(logs.String(), stuckGrant.GrantID) {
+		t.Errorf("the stuck grant's failure was not logged with its id: %q", logs.String())
+	}
 }

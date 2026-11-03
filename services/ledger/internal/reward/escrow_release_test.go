@@ -2,6 +2,7 @@ package reward_test
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
 	"github.com/yourtal/services/ledger/internal/escrow"
@@ -41,7 +42,7 @@ func TestHoldbackReleaseSkipsEscrowedUsers(t *testing.T) {
 	if _, err := ownerPool(t).Exec(ctx, `UPDATE ledger.grant SET unlock_at = now() - interval '1 minute' WHERE id = $1`, granted.GrantID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := reward.ReleaseDue(ctx, pool, book, 100); err != nil {
+	if _, err := reward.ReleaseDue(ctx, pool, book, 100, slog.Default()); err != nil {
 		t.Fatal(err)
 	}
 	if a, p := balance(user, ledger.PurposeAvailable), balance(user, ledger.PurposePending); a != 0 || p != 70 {
@@ -55,7 +56,7 @@ func TestHoldbackReleaseSkipsEscrowedUsers(t *testing.T) {
 	if _, err := escrow.New(pool, book).Release(ctx, held.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := reward.ReleaseDue(ctx, pool, book, 100); err != nil {
+	if _, err := reward.ReleaseDue(ctx, pool, book, 100, slog.Default()); err != nil {
 		t.Fatal(err)
 	}
 	if a, p := balance(user, ledger.PurposeAvailable), balance(user, ledger.PurposePending); a != 100 || p != 0 {

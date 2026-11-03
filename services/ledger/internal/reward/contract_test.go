@@ -3,6 +3,7 @@ package reward_test
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"testing"
 	"time"
 
@@ -151,7 +152,7 @@ func TestHoldbackReleasesByTier(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := reward.ReleaseDue(ctx, pool, book, 100); err != nil {
+	if _, err := reward.ReleaseDue(ctx, pool, book, 100, slog.Default()); err != nil {
 		t.Fatal(err)
 	}
 	if b, _ := book.Balance(ctx, ledger.UserAccountID(fresh, ledger.PurposeAvailable)); b != 0 {
@@ -161,7 +162,7 @@ func TestHoldbackReleasesByTier(t *testing.T) {
 		t.Fatal(err)
 	}
 	for range 2 {
-		if _, err := reward.ReleaseDue(ctx, pool, book, 100); err != nil {
+		if _, err := reward.ReleaseDue(ctx, pool, book, 100, slog.Default()); err != nil {
 			t.Fatal(err)
 		}
 	}

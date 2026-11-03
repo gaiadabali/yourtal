@@ -2,7 +2,7 @@
 
 For developers of a partner app (SnapApp first) that reports what its users do, so YourTal can pay them points. Your server calls YourTal; the user's device never does, because the requests are signed with a secret only your server holds.
 
-The machine-readable contract is `POST /api/partners/links`, `POST /api/partners/actions` and `POST /api/partners/receipts/status` in [`packages/contracts/openapi/yourtal.openapi.json`](../../packages/contracts/openapi/yourtal.openapi.json). This page explains how to use them.
+The machine-readable contract is `POST /api/partners/links`, `POST /api/partners/actions`, `POST /api/partners/receipts/status` and `POST /api/partners/vouchers/owner` in [`packages/contracts/openapi/yourtal.openapi.json`](../../packages/contracts/openapi/yourtal.openapi.json). This page explains how to use them.
 
 ## Before you start
 
@@ -133,6 +133,31 @@ Content-Type: application/json
 
 `region` is `AU` or `ID`. YourTal has no outbound channel to you, so there is no webhook: poll this read. A partner with no receipt package yet answers `earning: false` and `remainingPoints: 0`.
 
+## 2a. Is this voucher in the user's wallet?
+
+Some store vouchers are bound to your app (SnapApp: "50 SnapApp scans"). Before you redeem one through the merchant voucher API, ask whether the code your user typed is in the wallet of the YourTal account linked to them. Send the **SHA-256 of the canonical code** (64 lowercase hex characters), never the code. Like the status read, it moves nothing, needs no `Idempotency-Key`, and is limited to 60 requests a minute per source IP.
+
+```http
+POST /api/partners/vouchers/owner
+Authorization: Partner snap-app:<signature>
+Content-Type: application/json
+
+{"linkId":"3f1c2a7e-8b4d-4c1e-9a6f-2d5b7c8e9f01","codeSha256":"<64 hex>"}
+```
+
+```json
+{
+  "linkId": "3f1c2a7e-8b4d-4c1e-9a6f-2d5b7c8e9f01",
+  "held": true,
+  "status": "active",
+  "faceValueMinor": 500,
+  "currency": "AUD",
+  "expiresAt": "2027-01-31T00:00:00.000Z"
+}
+```
+
+`held` is `true` only when the code is in the linked user's wallet, the voucher is bound to your app, and it belongs to the link's region. `status` is `active`, `held` (a redemption is in progress), `redeemed` or `expired`. Anything else (another person's code, a code that doesn't exist, a voucher for another app or region) answers exactly `{"linkId": "...", "held": false}`; don't call the merchant API for it. A revoked or unknown link answers `403 link_revoked` or `400 unknown_link`, as for receipts.
+
 ## 3. Signing a request
 
 Every request carries:
@@ -197,7 +222,7 @@ Every error body has a stable `code` and a readable `message`. Switch on `code`,
 | 409    | `velocity_capped`                                           | The user reached YourTal's daily or monthly earning cap, or the earn was refused as unusual. Nothing was paid. You may report the receipt again later.                                                                                                                                                                                                                                       |
 | 409    | `insufficient_available`, `solvency_blocked`                | Not expected for receipts. If you see one, nothing was paid and it is final: don't retry.                                                                                                                                                                                                                                                                                                    |
 | 409    | `idempotency_key_reused`, `idempotency_request_in_progress` | See section 4.                                                                                                                                                                                                                                                                                                                                                                               |
-| 429    | (none; `retryAfterSeconds` in body)                         | Too many requests: about 120 a minute for receipts, and 60 a minute for link exchanges and for the status read, per source IP. Back off and retry.                                                                                                                                                                                                                                           |
+| 429    | (none; `retryAfterSeconds` in body)                         | Too many requests: about 120 a minute for receipts, and 60 a minute for link exchanges, the status read and the voucher read, per source IP. Back off and retry.                                                                                                                                                                                                                             |
 | 503    | `persistence_unavailable`                                   | A temporary fault on YourTal's side. Retry with the same key.                                                                                                                                                                                                                                                                                                                                |
 
 If a call that sent a code (`user`) links the user and then fails on the receipt, the error body also carries `linkId`. Store it, because the code can't be used again.

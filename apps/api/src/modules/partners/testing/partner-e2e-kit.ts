@@ -2,6 +2,7 @@ import { createHmac, randomUUID } from "node:crypto";
 import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
+import { ZodValidationPipe } from "nestjs-zod";
 import { sql } from "drizzle-orm";
 import { receiptFunderKey } from "@yourtal/contracts/billing/receipt-funder";
 import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
@@ -16,13 +17,14 @@ import { partnerCredentials } from "../persistence/schema/partner.table";
 /**
  * Shared fixtures for the partner-link e2e suites (14.3): an app booted with
  * `rawBody: true` (what main.ts passes, and what the HMAC verifies against)
- * and both regions' marketing funded, plus signed partner calls.
+ * and main.ts's global `ZodValidationPipe`, and both regions' marketing funded, plus signed partner calls.
  */
 export async function bootPartnerApp(): Promise<NestFastifyApplication> {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   const app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter(), {
     rawBody: true,
   });
+  app.useGlobalPipes(new ZodValidationPipe());
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
   const ledger = app.get<LedgerInternalClient>(LEDGER_INTERNAL_CLIENT);

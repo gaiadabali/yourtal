@@ -1,4 +1,6 @@
 import * as z from "zod";
+import { minorUnitsSchema } from "../money/money";
+import { currencySchema } from "../money/money-value";
 
 /**
  * TASKS.md 8.4.a, 14.3: `POST /api/partners/actions` — a partner app's
@@ -88,3 +90,31 @@ export const partnerReceiptStatusResultSchema = z.object({
   remainingPoints: z.number().int().min(0),
 });
 export type PartnerReceiptStatusResult = z.infer<typeof partnerReceiptStatusResultSchema>;
+
+/**
+ * 2.8 T4 (docs/28 4.2): `POST /api/partners/vouchers/owner` -- is the voucher
+ * code the partner's user typed (by SHA-256, never the code) in the wallet of
+ * the YourTal account behind this link, bound to this partner, in the link's
+ * region? Partner-HMAC authenticated, not value-moving. Every case that is not
+ * "yes" answers the identical `{ linkId, held: false }`.
+ */
+export const partnerVoucherOwnerRequestSchema = z.object({
+  linkId: z.uuid(),
+  /** SHA-256 of the canonical code, 64 lower-case hex digits. */
+  codeSha256: z.string().regex(/^[0-9a-f]{64}$/),
+});
+export type PartnerVoucherOwnerRequest = z.infer<typeof partnerVoucherOwnerRequestSchema>;
+
+export const partnerVoucherOwnerResultSchema = z.discriminatedUnion("held", [
+  z.object({ linkId: z.uuid(), held: z.literal(false) }),
+  z.object({
+    linkId: z.uuid(),
+    held: z.literal(true),
+    /** An active or held voucher past its expiry reads `expired`. */
+    status: z.enum(["active", "held", "redeemed", "expired"]),
+    faceValueMinor: minorUnitsSchema,
+    currency: currencySchema,
+    expiresAt: z.iso.datetime(),
+  }),
+]);
+export type PartnerVoucherOwnerResult = z.infer<typeof partnerVoucherOwnerResultSchema>;

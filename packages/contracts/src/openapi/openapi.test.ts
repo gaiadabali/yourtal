@@ -558,6 +558,10 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "device/partner-action.ts's request body for POST /api/partners/receipts/status (2.10.b) — documented inline (route-registry.c-partners.ts).",
   partnerReceiptStatusResultSchema:
     "device/partner-action.ts's response for POST /api/partners/receipts/status (2.10.b) — documented inline (route-registry.c-partners.ts).",
+  partnerVoucherOwnerRequestSchema:
+    "device/partner-action.ts's request body for POST /api/partners/vouchers/owner (2.8 T4) — documented inline (route-registry.c-partners.ts).",
+  partnerVoucherOwnerResultSchema:
+    "device/partner-action.ts's response for POST /api/partners/vouchers/owner (2.8 T4) — documented inline (route-registry.c-partners.ts).",
   receiptProgrammeSchema:
     "billing/receipt-funder.ts's closed programme literal, nested inside other schemas — not a standalone component.",
   receiptFunderValueSchema:

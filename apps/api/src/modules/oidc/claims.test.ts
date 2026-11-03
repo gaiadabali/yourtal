@@ -4,7 +4,7 @@ import type { OidcAccount } from "./claims";
 import { claimsFor } from "./claims";
 import { CLIENTS } from "./clients";
 import { findAccountFrom } from "./find-account";
-import { NO_TEEN_INVITES_YET } from "./sign-in-checks";
+import { NO_TEEN_INVITES } from "./sign-in-checks";
 
 const ACCOUNT: OidcAccount = {
   userId: "6f1c2b9e-4a7d-4c1e-9b2a-3d5e6f708192",
@@ -60,7 +60,7 @@ describe("findAccount", () => {
     const findAccount = findAccountFrom(
       { findAccount: () => Promise.resolve(ACCOUNT) },
       () => CLIENTS,
-      NO_TEEN_INVITES_YET,
+      NO_TEEN_INVITES,
       () => AFTER_18TH,
     );
     const account = await findAccount(asking("snapapp-staging-web"), ACCOUNT.userId);
@@ -81,7 +81,7 @@ describe("findAccount", () => {
     const findAccount = findAccountFrom(
       { findAccount: () => Promise.resolve(null) },
       () => CLIENTS,
-      NO_TEEN_INVITES_YET,
+      NO_TEEN_INVITES,
     );
     expect(await findAccount(asking("snapapp-staging-web"), "gone")).toBeUndefined();
   });
@@ -100,7 +100,7 @@ describe("findAccount", () => {
           findAccount: () => Promise.resolve({ ...ACCOUNT, dateOfBirth: "1990-01-01", ...change }),
         },
         () => CLIENTS,
-        NO_TEEN_INVITES_YET,
+        NO_TEEN_INVITES,
         () => AFTER_18TH,
       );
       expect(await findAccount(asking(clientId), ACCOUNT.userId)).toBeUndefined();
@@ -111,7 +111,7 @@ describe("findAccount", () => {
     const findAccount = findAccountFrom(
       { findAccount: () => Promise.resolve(ACCOUNT) },
       () => CLIENTS,
-      NO_TEEN_INVITES_YET,
+      NO_TEEN_INVITES,
       () => AFTER_18TH,
     );
     expect(await findAccount(asking("unknown"), ACCOUNT.userId)).toBeUndefined();

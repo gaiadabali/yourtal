@@ -56,6 +56,18 @@
     "termsLink": "Terms",
     "linkedApps": "You can remove {app} at any time in YourTal, under Me → Linked apps."
   },
+  "teenConsent": {
+    "heading": "Join {app} with {parent}'s invite",
+    "signedInAs": "Signed in as {name}",
+    "invited": "{parent} invited you to use {app} to keep track of your spending.",
+    "parentSees": "{parent} can see everything you add to {app}: receipts, amounts and notes.",
+    "getsAU": "{app} will get your name and email address, that you're under 18, and that your YourTal account is for Australia.",
+    "getsID": "{app} will get your name and email address, that you're under 18, and that your YourTal account is for Indonesia.",
+    "noPoints": "You won't earn YourTal points for receipts.",
+    "parentEnds": "{parent} can end your access at any time. If they do, your {app} data is deleted.",
+    "runBy": "{app} is run by {operator}.",
+    "notNowCta": "Not now"
+  },
   "refused": {
     "account_on_hold": {
       "title": "Your YourTal account is on hold",
@@ -71,7 +83,12 @@
     },
     "teen_invite_required": {
       "title": "You need an invite from your parent",
-      "body": "To use {app} with a teen account, the parent or guardian who approved your YourTal account needs to invite you from their {app} account. Nothing from your account was shared with {app}."
+      "body": "To use {app} with a teen account, the parent or guardian who approved your YourTal account needs to invite you from their {app} account. Nothing from your account was shared with {app}.",
+      "problem": {
+        "not_approved": "Your parent or guardian hasn't approved your YourTal account yet. We've emailed them. Once they approve it, they can invite you to {app}.",
+        "wrong_inviter": "This invite wasn't made by the parent or guardian who approved your YourTal account. Ask them to send you one.",
+        "invite_expired": "This invite has expired or has already been used. Ask your parent for a new one."
+      }
     },
     "backCta": "Back to {app}"
   },

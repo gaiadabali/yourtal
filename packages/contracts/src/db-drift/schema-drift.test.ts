@@ -612,7 +612,7 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
   "oidc.app_consent":
     "Group 3.9: what a person shares with each app now; the interaction API returns a derived screen and claim list (oidc/interaction.ts), not the row.",
   "oidc.teen_invite":
-    "Group 3.9: parent invites for teens into SnapApp (docs/26 §3.3). Its API, and any contract, come with the teen invite ticket (3.9.e).",
+    "Group 3.9.e: parent invites for teens into SnapApp (docs/26 §3.3). The invite API (oidc/teen-invite.ts) returns a derived status and the teen's sub, never the row; the code is only ever a hash here.",
   "oidc.event_outbox":
     "Group 3.9: signed events waiting for an app. Leaves YourTal only as a Security Event Token (docs/26 §2.3), never as a row.",
   "oidc.sign_in_log":

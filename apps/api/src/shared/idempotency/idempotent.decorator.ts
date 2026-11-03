@@ -74,8 +74,12 @@ export interface IdempotentOptions {
    * a different resolver again. Missing when it should not be is a bug in
    * that guard's own wiring, not something this interceptor works around:
    * see its `scopeFor`'s own handling.
+   *
+   * Group 3.9.e: `"oidc_client"` scopes by the OIDC client a guard verified
+   * from its client-credentials token (`verifiedOidcClientId`, the teen invite
+   * API), on the same terms as `"partner"`.
    */
-  readonly scopeBy?: "session" | "device" | "partner";
+  readonly scopeBy?: "session" | "device" | "partner" | "oidc_client";
 }
 
 export const Idempotent = (options: IdempotentOptions) => SetMetadata(IDEMPOTENT_METADATA, options);

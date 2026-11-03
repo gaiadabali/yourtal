@@ -69,6 +69,8 @@ const DETAILS = {
   account: { name: "Ana", email: "ana@example.com" },
   sharing: { claims: ["name", "email"], ageBand: "adult", region: "AU" },
   refusal: null,
+  inviteProblem: null,
+  teenInvite: null,
   uiLocales: ["id-ID"],
 };
 

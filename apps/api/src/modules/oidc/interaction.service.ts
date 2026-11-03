@@ -100,6 +100,11 @@ export class InteractionService {
           : null,
       sharing: "sharing" in state ? state.sharing : null,
       refusal: state.screen === "refused" ? state.refusal : null,
+      inviteProblem: state.screen === "refused" ? state.inviteProblem : null,
+      teenInvite:
+        "invite" in state && state.invite !== null
+          ? { parentName: state.invite.parentName }
+          : null,
       uiLocales: words(loaded.params["ui_locales"]),
     };
   }
@@ -131,14 +136,21 @@ export class InteractionService {
       const policyVersionId = currentPolicyVersion(account.region)?.id;
       if (policyVersionId === undefined)
         throw new Error("oidc: no consent wording for this region");
-      await loaded.store.grantAppConsent({
+      const { invite } = state;
+      const granted = await loaded.store.grantAppConsent({
         userId: account.userId,
         sector: loaded.client.sector,
         scopes: loaded.scopes,
         policyVersionId,
         jurisdiction: account.region,
         now,
+        // A teen agrees under their guardian's invite, and a pending one is used up here.
+        ...(invite === null ? {} : { invite: { id: invite.inviteId, accept: invite.pending } }),
       });
+      if (!granted) {
+        await loaded.store.logSignIn(account.userId, loaded.client.clientId, "teen_invite_required");
+        throw new InteractionError("sign_in_refused", "teen_invite_required");
+      }
     }
 
     const grant = new loaded.provider.Grant({

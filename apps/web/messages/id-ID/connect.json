@@ -56,6 +56,18 @@
     "termsLink": "Ketentuan",
     "linkedApps": "Kamu bisa menghapus {app} kapan saja di YourTal, lewat Saya → Aplikasi tertaut."
   },
+  "teenConsent": {
+    "heading": "Bergabung dengan {app} lewat undangan {parent}",
+    "signedInAs": "Masuk sebagai {name}",
+    "invited": "{parent} mengundangmu memakai {app} untuk mencatat pengeluaranmu.",
+    "parentSees": "{parent} bisa melihat semua yang kamu tambahkan ke {app}: struk, jumlah, dan catatan.",
+    "getsAU": "{app} akan mendapatkan nama dan alamat email kamu, bahwa kamu berusia di bawah 18 tahun, dan bahwa akun YourTal kamu untuk Australia.",
+    "getsID": "{app} akan mendapatkan nama dan alamat email kamu, bahwa kamu berusia di bawah 18 tahun, dan bahwa akun YourTal kamu untuk Indonesia.",
+    "noPoints": "Kamu tidak akan mendapatkan poin YourTal untuk struk.",
+    "parentEnds": "{parent} bisa menghentikan aksesmu kapan saja. Jika itu terjadi, data {app} kamu dihapus.",
+    "runBy": "{app} dijalankan oleh {operator}.",
+    "notNowCta": "Nanti saja"
+  },
   "refused": {
     "account_on_hold": {
       "title": "Akun YourTal kamu sedang ditahan",
@@ -71,7 +83,12 @@
     },
     "teen_invite_required": {
       "title": "Kamu butuh undangan dari orang tuamu",
-      "body": "Untuk memakai {app} dengan akun remaja, orang tua atau wali yang menyetujui akun YourTal kamu perlu mengundangmu dari akun {app} mereka. Tidak ada data akunmu yang dibagikan ke {app}."
+      "body": "Untuk memakai {app} dengan akun remaja, orang tua atau wali yang menyetujui akun YourTal kamu perlu mengundangmu dari akun {app} mereka. Tidak ada data akunmu yang dibagikan ke {app}.",
+      "problem": {
+        "not_approved": "Orang tua atau walimu belum menyetujui akun YourTal kamu. Kami sudah mengirim email kepada mereka. Setelah mereka menyetujuinya, mereka bisa mengundangmu ke {app}.",
+        "wrong_inviter": "Undangan ini tidak dibuat oleh orang tua atau wali yang menyetujui akun YourTal kamu. Minta mereka mengirimkan undangan untukmu.",
+        "invite_expired": "Undangan ini sudah kedaluwarsa atau sudah dipakai. Minta undangan baru dari orang tuamu."
+      }
     },
     "backCta": "Kembali ke {app}"
   },

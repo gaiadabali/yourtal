@@ -29,14 +29,14 @@ export function findAccountFrom(
     const account = await store.findAccount(accountId);
     if (account === null) return undefined;
     const inviteCode = ctx.oidc.params?.["teen_invite"];
-    const block = await signInBlock(
+    const check = await signInBlock(
       account,
       client,
       teenInvites,
       typeof inviteCode === "string" ? inviteCode : undefined,
       now(),
     );
-    if (block !== null) return undefined;
+    if (!check.ok) return undefined;
     return {
       accountId,
       claims: () => ({ sub: accountId, ...claimsFor(account, now()) }),

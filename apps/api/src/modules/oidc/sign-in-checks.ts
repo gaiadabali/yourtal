@@ -1,21 +1,30 @@
-import type { InteractionSharing, SignInRefusal } from "@yourtal/contracts/oidc/interaction";
+import type {
+  InteractionSharing,
+  SignInRefusal,
+  TeenInviteProblem,
+} from "@yourtal/contracts/oidc/interaction";
 import type { OidcAccount } from "./claims";
 import { ageBandOf } from "./claims";
 import type { SignInClient } from "./clients";
 import type { AppConsent } from "./oidc-store";
 
+/** Whether a teen may sign in to an invite-only app now (teen-invites.ts). */
+export type TeenInviteCheck =
+  | {
+      readonly allowed: true;
+      readonly inviteId: string;
+      /** The inviting guardian's YourTal name, for the teen consent screen. */
+      readonly parentName: string;
+      /** Not yet accepted: the teen's Continue on the consent screen uses it up. */
+      readonly pending: boolean;
+    }
+  | { readonly allowed: false; readonly problem: TeenInviteProblem };
+
 /**
- * The seam for SnapApp's teen invites (docs/26 §3.3). The invite ticket fills
- * it in; until then no teen gets in anywhere. For that ticket:
- * - It is asked from GET /api/connect/{uid} (showing a screen) and from
- *   findAccount at token and userinfo time, so it must only ever read: an
- *   invite is used up when the teen taps Continue, never by a check.
- * - At token and userinfo time there is no invite code; answer from the
- *   standing, accepted invite and the guardian's consent.
- * - A teen's consent is recorded with source `guardian_invite` and
- *   `granted_via = 'guardian_invite'`, not as `oidc_consent_screen`.
- * - The code travels in the authorization URL's query, so it must be
- *   single-use and short-lived, and kept only as a hash.
+ * SnapApp's teen invites (docs/26 §3.3). Asked from GET /api/connect/{uid}
+ * and from findAccount at token and userinfo time, so it only ever reads: an
+ * invite is used up when the teen taps Continue (oidc-store.ts), never by a
+ * check. With no code, it answers from the standing, accepted invite.
  */
 export interface TeenInviteChecker {
   check(input: {
@@ -24,23 +33,34 @@ export interface TeenInviteChecker {
     /** The app's `teen_invite` authorization parameter, if it sent one. */
     readonly inviteCode: string | undefined;
     readonly now: Date;
-  }): Promise<{ readonly allowed: true } | { readonly allowed: false }>;
+  }): Promise<TeenInviteCheck>;
 }
 
 export const TEEN_INVITE_CHECKER = Symbol("TEEN_INVITE_CHECKER");
 
-export const NO_TEEN_INVITES_YET: TeenInviteChecker = {
-  check: () => Promise.resolve({ allowed: false }),
+/** No invite ever lets a teen in: OIDC switched off, and tests. */
+export const NO_TEEN_INVITES: TeenInviteChecker = {
+  check: () => Promise.resolve({ allowed: false, problem: "no_invite" }),
 };
+
+/** The standing or pending invite a teen signs in with, as the screens need it. */
+export type TeenInviteAllowed = Extract<TeenInviteCheck, { allowed: true }>;
 
 export type SignInState =
   | { readonly screen: "login" | "create" }
   | { readonly screen: "verify_email" | "sign_in_again"; readonly account: OidcAccount }
-  | { readonly screen: "refused"; readonly account: OidcAccount; readonly refusal: SignInRefusal }
+  | {
+      readonly screen: "refused";
+      readonly account: OidcAccount;
+      readonly refusal: SignInRefusal;
+      readonly inviteProblem: TeenInviteProblem | null;
+    }
   | {
       readonly screen: "consent" | "continue";
       readonly account: OidcAccount;
       readonly sharing: InteractionSharing;
+      /** Set for a teen: the invite that lets them in. */
+      readonly invite: TeenInviteAllowed | null;
     };
 
 export interface SignInInput {
@@ -97,7 +117,7 @@ export function sharedClaims(scopes: readonly string[]): InteractionSharing["cla
   return claims;
 }
 
-function consentCovers(input: SignInInput, ageBand: "adult" | "teen"): boolean {
+function consentCovers(input: SignInInput, invite: TeenInviteAllowed | null): boolean {
   const { consent } = input;
   if (consent === null || consent.endedAt !== null) return false;
   if (input.prompts.has("consent")) return false;
@@ -105,15 +125,24 @@ function consentCovers(input: SignInInput, ageBand: "adult" | "teen"): boolean {
     return false;
   }
   // A guardian's invite agreed for a teen; the adult agrees for themselves (docs/26 §1.4).
-  if (consent.grantedVia === "guardian_invite" && ageBand === "adult") return false;
+  if (consent.grantedVia === "guardian_invite" && invite === null) return false;
+  // A teen's consent counts only under the accepted invite it was given with.
+  if (invite !== null && (invite.pending || consent.inviteId !== invite.inviteId)) return false;
   return input.scopes.every((scope) => consent.scopes.includes(scope));
 }
 
+export type SignInCheck =
+  | { readonly ok: true; readonly invite: TeenInviteAllowed | null }
+  | {
+      readonly ok: false;
+      readonly block: "verify_email" | SignInRefusal;
+      readonly inviteProblem: TeenInviteProblem | null;
+    };
+
 /**
  * docs/26 §1.5 checks 1 to 4, in order: email verified, not on hold, region,
- * teens. Null when the person may sign in to this app. Also run by findAccount
- * when a code or token is issued, so nothing that changed since the screen
- * (a suspension, a refused teen) slips through.
+ * teens. Also run by findAccount when a code or token is issued, so nothing
+ * that changed since the screen (a suspension, an ended invite) slips through.
  */
 export async function signInBlock(
   account: OidcAccount,
@@ -121,21 +150,22 @@ export async function signInBlock(
   teenInvites: TeenInviteChecker,
   teenInviteCode: string | undefined,
   now: Date,
-): Promise<"verify_email" | SignInRefusal | null> {
-  if (!account.emailVerified || account.email === null) return "verify_email";
-  if (account.suspended) return "account_on_hold";
-  if (!client.regions.includes(account.region)) return "region_not_supported";
-  if (ageBandOf(account, now) === "teen") {
-    if (client.teens === "refuse") return "teen_not_allowed";
-    const invite = await teenInvites.check({
-      userId: account.userId,
-      client,
-      inviteCode: teenInviteCode,
-      now,
-    });
-    if (!invite.allowed) return "teen_invite_required";
-  }
-  return null;
+): Promise<SignInCheck> {
+  const refuse = (block: "verify_email" | SignInRefusal, inviteProblem: TeenInviteProblem | null = null) =>
+    ({ ok: false, block, inviteProblem }) as const;
+  if (!account.emailVerified || account.email === null) return refuse("verify_email");
+  if (account.suspended) return refuse("account_on_hold");
+  if (!client.regions.includes(account.region)) return refuse("region_not_supported");
+  if (ageBandOf(account, now) === "adult") return { ok: true, invite: null };
+  if (client.teens === "refuse") return refuse("teen_not_allowed");
+  const invite = await teenInvites.check({
+    userId: account.userId,
+    client,
+    inviteCode: teenInviteCode,
+    now,
+  });
+  if (!invite.allowed) return refuse("teen_invite_required", invite.problem);
+  return { ok: true, invite };
 }
 
 /**
@@ -145,22 +175,29 @@ export async function signInBlock(
 export async function decideSignIn(input: SignInInput): Promise<SignInState> {
   const { account, client } = input;
   if (account === null) return { screen: input.prompts.has("create") ? "create" : "login" };
-  const block = await signInBlock(
+  const check = await signInBlock(
     account,
     client,
     input.teenInvites,
     input.teenInviteCode,
     input.now,
   );
-  if (block === "verify_email") return { screen: "verify_email", account };
-  if (block !== null) return { screen: "refused", account, refusal: block };
+  if (!check.ok) {
+    const { block, inviteProblem } = check;
+    if (block === "verify_email") return { screen: "verify_email", account };
+    return { screen: "refused", account, refusal: block, inviteProblem };
+  }
   if (input.signInAgain) return { screen: "sign_in_again", account };
 
-  const ageBand = ageBandOf(account, input.now);
   const sharing: InteractionSharing = {
     claims: sharedClaims(input.scopes),
-    ageBand,
+    ageBand: ageBandOf(account, input.now),
     region: account.region,
   };
-  return { screen: consentCovers(input, ageBand) ? "continue" : "consent", account, sharing };
+  return {
+    screen: consentCovers(input, check.invite) ? "continue" : "consent",
+    account,
+    sharing,
+    invite: check.invite,
+  };
 }

@@ -21,10 +21,16 @@ export function ConnectRefusedView({ details }: ConnectRefusedViewProps) {
   const app = details.client.name;
   // The API only sends `refused` with a reason; if one were ever missing, the neutral "on hold" wording is the safest.
   const reason = details.refusal ?? "account_on_hold";
+  // docs/26 §3.4: a teen at SnapApp hears what is wrong with the invite, when it is more than "none".
+  const problem = reason === "teen_invite_required" ? details.inviteProblem : null;
+  const body =
+    problem === null || problem === "no_invite"
+      ? t(`${reason}.body`, { app })
+      : t(`teen_invite_required.problem.${problem}`, { app });
 
   return (
     <AuthCard title={t(`${reason}.title`, { app })}>
-      <Text>{t(`${reason}.body`, { app })}</Text>
+      <Text>{body}</Text>
       {failed ? <Notice tone="danger">{tCommon("actionFailed")}</Notice> : null}
       <Button
         type="button"

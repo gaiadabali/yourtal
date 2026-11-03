@@ -19,6 +19,21 @@ export const signInRefusalSchema = z.enum([
 export type SignInRefusal = z.infer<typeof signInRefusalSchema>;
 
 /**
+ * Why a teen's invite does not open SnapApp (docs/26 §3.4), on `teen_invite_required`:
+ * - `no_invite`: none was sent, and none stands;
+ * - `not_approved`: the guardian has not approved the YourTal account yet;
+ * - `wrong_inviter`: the invite was not made by the guardian who approved it;
+ * - `invite_expired`: expired, already used, ended or unknown.
+ */
+export const teenInviteProblemSchema = z.enum([
+  "no_invite",
+  "not_approved",
+  "wrong_inviter",
+  "invite_expired",
+]);
+export type TeenInviteProblem = z.infer<typeof teenInviteProblemSchema>;
+
+/**
  * What the screen shows:
  * - `login`: no YourTal session; sign in, then reload the details.
  * - `create`: no session and the app sent `prompt=create`; show sign-up.
@@ -75,6 +90,13 @@ export const interactionDetailsSchema = z.object({
   sharing: interactionSharingSchema.nullable(),
   /** Set on `refused` only. */
   refusal: signInRefusalSchema.nullable(),
+  /** Set on `refused` with `teen_invite_required` only. */
+  inviteProblem: teenInviteProblemSchema.nullable(),
+  /**
+   * Set for a teen on `consent` and `continue`: the invite that lets them in.
+   * `parentName` is the inviting guardian's YourTal name ("Join SnapApp with {parent}'s invite").
+   */
+  teenInvite: z.object({ parentName: z.string().min(1) }).nullable(),
   /** The app's `ui_locales`, in its order; the screen follows it, then the person's own language. */
   uiLocales: z.array(z.string()),
 });

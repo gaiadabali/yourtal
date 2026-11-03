@@ -4,7 +4,7 @@ import type { SignInClient } from "./clients";
 import { CLIENTS, isSignInClient } from "./clients";
 import type { AppConsent } from "./oidc-store";
 import type { SignInInput, TeenInviteChecker } from "./sign-in-checks";
-import { NO_TEEN_INVITES_YET, decideSignIn, signInTooOld } from "./sign-in-checks";
+import { NO_TEEN_INVITES, decideSignIn, signInTooOld } from "./sign-in-checks";
 
 function signInClient(clientId: string): SignInClient {
   const client = CLIENTS.find((candidate) => candidate.clientId === clientId);
@@ -31,8 +31,14 @@ const CONSENTED: AppConsent = {
   scopes: SCOPES,
   policyVersionId: "au-2026-09-01",
   grantedVia: "consent_screen",
+  inviteId: null,
   endedAt: null,
 };
+const PENDING = { allowed: true, inviteId: "inv-1", parentName: "Pat", pending: true } as const;
+const STANDING = { ...PENDING, pending: false } as const;
+const invites = (answer: Awaited<ReturnType<TeenInviteChecker["check"]>>): TeenInviteChecker => ({
+  check: () => Promise.resolve(answer),
+});
 
 function input(overrides: Partial<SignInInput> = {}): SignInInput {
   return {
@@ -43,7 +49,7 @@ function input(overrides: Partial<SignInInput> = {}): SignInInput {
     consent: null,
     policyVersionId: "au-2026-09-01",
     teenInviteCode: undefined,
-    teenInvites: NO_TEEN_INVITES_YET,
+    teenInvites: NO_TEEN_INVITES,
     signInAgain: false,
     now: NOW,
     ...overrides,
@@ -87,14 +93,23 @@ describe("the docs/26 §1.5 checks", () => {
     expect(await screen({ account: TEEN, client: FTR })).toBe("refused:teen_not_allowed");
   });
 
-  it("4. SnapApp needs a teen invite, and none exists yet", async () => {
-    expect(await screen({ account: TEEN, teenInviteCode: "abc" })).toBe(
-      "refused:teen_invite_required",
+  it("4. SnapApp refuses a teen without a good invite, and says why", async () => {
+    const state = await decideSignIn(
+      input({
+        account: TEEN,
+        teenInviteCode: "abc",
+        teenInvites: invites({ allowed: false, problem: "wrong_inviter" }),
+      }),
     );
+    expect(state).toMatchObject({
+      screen: "refused",
+      refusal: "teen_invite_required",
+      inviteProblem: "wrong_inviter",
+    });
   });
 
-  it("4. the teen invite seam decides for SnapApp, and is told the invite code", async () => {
-    const check = vi.fn<TeenInviteChecker["check"]>(() => Promise.resolve({ allowed: true }));
+  it("4. the teen invite check decides for SnapApp, and is told the invite code", async () => {
+    const check = vi.fn<TeenInviteChecker["check"]>(() => Promise.resolve(PENDING));
     expect(await screen({ account: TEEN, teenInviteCode: "abc", teenInvites: { check } })).toBe(
       "consent",
     );
@@ -121,6 +136,17 @@ describe("the docs/26 §1.5 checks", () => {
     expect(await screen({ consent: CONSENTED, policyVersionId: "au-2027-01-01" })).toBe("consent");
     expect(await screen({ consent: { ...CONSENTED, endedAt: NOW } })).toBe("consent");
     expect(await screen({ consent: CONSENTED, prompts: new Set(["consent"]) })).toBe("consent");
+  });
+
+  it("5. a teen agrees on the consent screen for a pending invite, then only continues under it", async () => {
+    const teenConsent: AppConsent = { ...CONSENTED, grantedVia: "guardian_invite", inviteId: "inv-1" };
+    const teen = { account: TEEN, consent: teenConsent };
+    expect(await screen({ ...teen, teenInvites: invites(PENDING) })).toBe("consent");
+    expect(await screen({ ...teen, teenInvites: invites(STANDING) })).toBe("continue");
+    const other = { ...STANDING, inviteId: "inv-2" };
+    expect(await screen({ ...teen, teenInvites: invites(other) })).toBe("consent");
+    const state = await decideSignIn(input({ ...teen, teenInvites: invites(STANDING) }));
+    expect(state).toMatchObject({ invite: STANDING, sharing: { ageBand: "teen" } });
   });
 
   it("5. an adult whose consent came from a guardian's invite agrees for themselves", async () => {

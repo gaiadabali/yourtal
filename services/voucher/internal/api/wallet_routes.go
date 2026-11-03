@@ -240,7 +240,7 @@ func (a *API) listForUser(w http.ResponseWriter, r *http.Request) {
 	for i, row := range rows {
 		vouchers[i] = toWalletVoucherView(walletVoucherSource{
 			ID: row.ID, ListingID: row.ListingID, SagaID: row.SagaID, State: row.State,
-			VoidReason: row.VoidReason, MerchantName: row.MerchantName, Title: row.Title,
+			VoidReason: row.VoidReason, MerchantID: row.MerchantID, MerchantName: row.MerchantName, Title: row.Title,
 			Currency: row.Currency, FaceValueMinor: row.FaceValueMinor,
 			RemainingValueMinor:     row.RemainingValueMinor,
 			PartialRedemptionPolicy: row.PartialRedemptionPolicy, ExpiresAt: row.ExpiresAt,
@@ -298,6 +298,7 @@ type walletVoucherView struct {
 	State                   string              `json:"state"`
 	LifecycleState          string              `json:"lifecycleState"`
 	VoidReason              *string             `json:"voidReason"`
+	MerchantID              string              `json:"merchantId"`
 	MerchantName            string              `json:"merchantName"`
 	Title                   string              `json:"title"`
 	Currency                string              `json:"currency"`
@@ -325,6 +326,7 @@ type walletVoucherSource struct {
 	SagaID                  *string
 	State                   string
 	VoidReason              *string
+	MerchantID              pgtype.UUID
 	MerchantName            string
 	Title                   string
 	Currency                string
@@ -366,6 +368,7 @@ func toWalletVoucherView(row walletVoucherSource) walletVoucherView {
 		VoucherID: asUUID(row.ID).String(), ListingID: asUUID(row.ListingID).String(),
 		SagaID: sagaOrVoucherID(row.SagaID, row.ID), State: contractState(row.State),
 		LifecycleState: row.State, VoidReason: row.VoidReason,
+		MerchantID:   asUUID(row.MerchantID).String(),
 		MerchantName: row.MerchantName, Title: row.Title, Currency: row.Currency,
 		FaceValueMinor: row.FaceValueMinor, RemainingValueMinor: row.RemainingValueMinor,
 		PartialRedemptionPolicy: row.PartialRedemptionPolicy, ExpiresAt: iso(row.ExpiresAt.Time),
@@ -397,7 +400,7 @@ func (a *API) get(w http.ResponseWriter, r *http.Request) {
 	}
 	httpx.WriteJSON(w, a.logger, http.StatusOK, toWalletVoucherView(walletVoucherSource{
 		ID: row.ID, ListingID: row.ListingID, SagaID: row.SagaID, State: row.State,
-		VoidReason: row.VoidReason, MerchantName: row.MerchantName, Title: row.Title,
+		VoidReason: row.VoidReason, MerchantID: row.MerchantID, MerchantName: row.MerchantName, Title: row.Title,
 		Currency: row.Currency, FaceValueMinor: row.FaceValueMinor,
 		RemainingValueMinor:     row.RemainingValueMinor,
 		PartialRedemptionPolicy: row.PartialRedemptionPolicy, ExpiresAt: row.ExpiresAt,

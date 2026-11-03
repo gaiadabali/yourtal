@@ -211,7 +211,14 @@ POST /v1/vouchers/void
 
 POST /v1/vouchers/refund
   { receipt_id, amount, reason }      → restores value post-capture
+
+POST /v1/vouchers/lookup
+  { merchant_order_ref }
+  → { authorization_id, state: held|captured|voided|expired,
+      amount_authorized, expires_at, receipt_id?, amount_captured? }
 ```
+
+**Lookup (2.8 T3)** is how a merchant that lost the answer to an authorize or capture learns the outcome. It is a read by the reference the merchant chose, scoped to the calling merchant: an unknown reference and another merchant's reference are the same `404 order_not_found`, and a blank one is `400`. A hold past `expires_at` reads `expired` before the sweep. It never writes a `redemption_attempt` row (so it can never feed the failed-lookup throttle), ignores the kill switch, and a device-scoped credential may call it. It still needs an `Idempotency-Key`, and a caller must use a **fresh key per lookup**: a repeated key replays the stored answer.
 
 **Non-negotiables:**
 

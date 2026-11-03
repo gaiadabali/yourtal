@@ -778,6 +778,52 @@ func (q *Queries) ListUnpostedWebhookOutbox(ctx context.Context, limit int32) ([
 	return items, nil
 }
 
+const lookupOrderForMerchant = `-- name: LookupOrderForMerchant :one
+SELECT a.id,
+       (CASE WHEN a.state = 'held' AND a.expires_at <= now() THEN 'expired'
+             ELSE a.state END)::text AS state,
+       a.amount_minor, a.expires_at,
+       c.receipt_id, c.amount_minor AS captured_minor
+FROM voucher.authorization a
+LEFT JOIN voucher.capture c ON c.authorization_id = a.id
+WHERE a.merchant_id = $1 AND a.merchant_order_ref = $2
+`
+
+type LookupOrderForMerchantParams struct {
+	MerchantID       pgtype.UUID
+	MerchantOrderRef string
+}
+
+type LookupOrderForMerchantRow struct {
+	ID            pgtype.UUID
+	State         string
+	AmountMinor   int64
+	ExpiresAt     pgtype.Timestamptz
+	ReceiptID     *string
+	CapturedMinor *int64
+}
+
+// 2.8 T3, the merchant's order lookup: a pure read by (merchant_id,
+// merchant_order_ref). Both predicates are in the WHERE, so another
+// merchant's order and an unknown reference are the same `pgx.ErrNoRows`.
+// `state` is computed the way ResolveAuthorization decides it: a hold past
+// its expires_at reads as 'expired' even while its row still says 'held',
+// because the sweeper is tidying, not policy. The capture is LEFT-joined
+// through the UNIQUE authorization_id, so at most one row comes back.
+func (q *Queries) LookupOrderForMerchant(ctx context.Context, arg LookupOrderForMerchantParams) (LookupOrderForMerchantRow, error) {
+	row := q.db.QueryRow(ctx, lookupOrderForMerchant, arg.MerchantID, arg.MerchantOrderRef)
+	var i LookupOrderForMerchantRow
+	err := row.Scan(
+		&i.ID,
+		&i.State,
+		&i.AmountMinor,
+		&i.ExpiresAt,
+		&i.ReceiptID,
+		&i.CapturedMinor,
+	)
+	return i, err
+}
+
 const markCaptureOutboxPosted = `-- name: MarkCaptureOutboxPosted :execrows
 UPDATE voucher.capture_outbox SET posted_at = now()
 WHERE capture_id = $1 AND posted_at IS NULL

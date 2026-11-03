@@ -39,6 +39,8 @@ export const walletVoucherRowSchema = z.object({
   state: z.enum(["reserved", "activated", "released"]),
   lifecycleState: voucherLifecycleStateSchema,
   voidReason: voucherVoidReasonSchema.nullable(),
+  /** The business that owns the listing; the BFF resolves its own display name from this. */
+  merchantId: z.uuid(),
   merchantName: z.string(),
   title: z.string(),
   currency: currencySchema,

@@ -1,9 +1,9 @@
 # @yourtal/sdk-merchant
 
 A small, zero-runtime-dependency TypeScript SDK for the YourTal voucher
-service's merchant API: authorize, capture, void and refund a voucher from
-your own backend. Every request is HMAC-signed and idempotent, with
-built-in retries for transient failures.
+service's merchant API: authorize, capture, void and refund a voucher, and
+look up an order, from your own backend. Every request is HMAC-signed and
+idempotent, with built-in retries for transient failures.
 
 This is the same content Studio → Developers shows on its signing/API
 documentation page (TASKS.md 8.3.a) — if you're reading this from there,
@@ -53,9 +53,11 @@ See `examples/authorize-and-capture.ts` for a runnable version
 ### Getting credentials
 
 Studio → Developers (TASKS.md 8.3.a) issues a `keyId`/`secret` pair per
-business, plus a separate **sandbox** credential that talks to a simulated
-voucher catalogue — use the sandbox pair while you integrate, never a live
-one. Credentials can be rotated or revoked from the same page; rotating
+business, plus a **sandbox** credential. The sandbox flag is only a label on
+the credential: the voucher service never reads it, so a sandbox pair talks
+to the same service and the same voucher catalogue as a live one, and nothing
+about it makes a call simulated. Keep the two pairs apart so a test run
+never uses your live key. Credentials can be rotated or revoked from the same page; rotating
 issues a new pair without invalidating the old one until you remove it, so
 a deploy never has a window with no working key.
 
@@ -68,7 +70,7 @@ because you'd be signing with the hex string's own UTF-8 bytes rather than
 the key `services/voucher` actually holds. `createMerchantClient`'s
 `secret` option accepts a `Uint8Array` for exactly this reason.
 
-## The four calls
+## The calls
 
 Every call is a `POST` to the voucher service, request and response
 bodies are JSON, and every amount is an **integer in minor units** with an
@@ -81,6 +83,7 @@ a float).
 | `capture(params)`   | `POST /v1/vouchers/capture`   | Finalizes a prior authorization for the actual amount charged (may be less than authorized, never more).       |
 | `void(params)`      | `POST /v1/vouchers/void`      | Cancels an authorization that was never captured (the customer walked away, the till voided the sale).         |
 | `refund(params)`    | `POST /v1/vouchers/refund`    | Reverses some or all of a capture, identified by your own `refundRef`.                                         |
+| `lookup(ref)`       | `POST /v1/vouchers/lookup`    | Reads the outcome of an order by the `merchantOrderRef` you sent to `authorize`. A read: it changes nothing.   |
 
 ```ts
 interface AuthorizeParams {
@@ -107,6 +110,31 @@ interface RefundParams {
   refundRef: string; // your own reference; reusing one that already succeeded is what makes a retry safe
 }
 ```
+
+### Looking up an order
+
+If you lose the answer to an `authorize` or a `capture` (a timeout, a crash,
+a dropped response), do not guess. Ask:
+
+```ts
+const order = await client.lookup("ORDER-1"); // the merchantOrderRef you authorized with
+// order.state: "held" | "captured" | "voided" | "expired"
+// order.authorizationId, order.amountAuthorized, order.expiresAt (RFC 3339, UTC)
+// when captured: order.receiptId, order.amountCaptured
+```
+
+A hold past its `expiresAt` reads as `expired` even before the service has
+swept it. An unknown reference, or another merchant's, throws a
+`MerchantApiError` with `code: "order_not_found"` (HTTP 404); a blank
+reference is a 400. A lookup never counts toward the failed-lookup throttle,
+never changes state, and works under a counter device's credential. It
+needs the `merchantOrderRef` you sent to `authorize`, so always send one.
+
+**Use a fresh Idempotency-Key for every lookup.** The service stores every
+answer under its key for 24 hours and replays it, a 5xx included, so a
+repeated key returns the old answer rather than the current state. This
+SDK's `lookup` already does it, including on each retry. If you call
+`POST /v1/vouchers/lookup` yourself, generate a new key per request.
 
 A counter device's credential can never void or refund (TASKS.md 8.2.c) —
 those calls are refused with a 403 for a device-scoped key. Only a
@@ -166,7 +194,8 @@ identical request body. The server treats a repeated key + body as "give
 me the answer to that same request again", not as a new one — this is
 what makes automatic retries (below) safe to enable by default: a
 duplicate arrival due to a slow or dropped response never double-charges
-a voucher.
+a voucher. The one exception is `lookup`, a read, which uses a fresh key on
+every attempt (see "Looking up an order").
 
 If you build your own retry loop instead of using this SDK's built-in one
 (for example, retrying `client.capture()` yourself at a higher level),

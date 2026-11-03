@@ -32,6 +32,7 @@ type VoucherRow = {
   readonly remaining_value_minor: string;
   readonly expires_at: string;
   readonly void_reason: string | null;
+  readonly merchant_id: string;
   readonly merchant_name: string;
   readonly title: string;
   readonly currency: string;
@@ -54,6 +55,7 @@ type VoucherRow = {
 const VOUCHER_ROW_SELECT = sql`
   SELECT v.id, v.listing_id, v.saga_id, v.state, v.owner_id,
          v.remaining_value_minor, v.expires_at, v.void_reason,
+         COALESCE(l.merchant_id::text, '00000000-0000-0000-0000-000000000000') AS merchant_id,
          COALESCE(l.merchant_name, '') AS merchant_name,
          COALESCE(l.title, '') AS title,
          COALESCE(l.currency, 'IDR') AS currency,
@@ -102,6 +104,7 @@ function toWalletVoucherRow(row: VoucherRow): WalletVoucherRow {
     state: row.state as WalletVoucherRow["state"],
     lifecycleState,
     voidReason: row.void_reason as WalletVoucherRow["voidReason"],
+    merchantId: row.merchant_id,
     merchantName: row.merchant_name,
     title: row.title,
     currency: row.currency as WalletVoucherRow["currency"],

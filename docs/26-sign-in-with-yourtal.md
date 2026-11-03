@@ -179,7 +179,7 @@ This refines group task 3.3.c: the phone app keeps **SnapApp's** refresh token i
 - **Codes are redeemed on servers.** No browser calls YourTal's token or userinfo endpoints, so CORS on them stays closed. SnapApp's phone app hands its code to SnapApp's server (§1.9).
 - **Signing:** RS256 for ID tokens and events. Encrypted tokens, request objects and `form_post` are off.
 - **Language:** apps send `ui_locales` (FTR sends `en-AU`). YourTal's screens follow it, then the person's own language.
-- **Sign-up from an app:** the app may send `prompt=create` (OpenID Connect "Initiating User Registration") to open YourTal's sign-up form instead of sign-in. The person registers, verifies their email without losing their place, and returns to the app.
+- **Sign-up from an app:** the app may send `prompt=create` (OpenID Connect "Initiating User Registration") to open YourTal's sign-up form instead of sign-in. The person registers, verifies their email without losing their place, and returns to the app. Registering sends them to YourTal's consent step, and its Continue goes straight back to `/connect/<uid>` (group 3.9.j): the optional interests and follows steps are skipped, and stay in Me. Email, region, teen and guardian checks are not skipped, since `/connect` runs §1.5 before it issues a code.
 
 ### 1.8 Signing keys
 

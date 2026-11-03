@@ -81,4 +81,28 @@ describe("OnboardingConsentStep", () => {
 
     expect(push).toHaveBeenCalledWith("/onboarding/follow");
   });
+
+  it("from an app's sign-up, continuing goes straight back to /connect, skipping interests and follows", async () => {
+    vi.mocked(recordOnboardingConsentAction).mockResolvedValue({
+      ok: true,
+      data: {
+        consents: [
+          {
+            purpose: "declared_interest_targeting",
+            state: "granted",
+            recordedAt: "2026-01-01T00:00:00.000Z",
+          },
+        ],
+      },
+    });
+    push.mockClear();
+    const user = userEvent.setup();
+    renderWithIntl(<OnboardingConsentStep initialConsents={[]} returnTo="/connect/uid_1" />);
+
+    await user.click(screen.getByRole("switch", { name: "Personalise which campaigns I see" }));
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+
+    expect(push).toHaveBeenCalledTimes(1);
+    expect(push).toHaveBeenCalledWith("/connect/uid_1");
+  });
 });

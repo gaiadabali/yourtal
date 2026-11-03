@@ -52,6 +52,7 @@ const voucher: WalletVoucherRow = {
   state: "activated",
   lifecycleState: "active",
   voidReason: null,
+  merchantId: "00000000-0000-4000-8000-0000000000b1",
   merchantName: "Cafe Bali",
   title: "Free coffee",
   currency: "AUD",

@@ -36,6 +36,10 @@ import { REGION_SETTINGS_READER } from "../../shared/settings/region-settings-re
 import type { RegionSettingsReader } from "../../shared/settings/region-settings-reader";
 import { USER_PROFILE_REPOSITORY } from "../identity/persistence/user-profile.repository";
 import type { UserProfileRepository } from "../identity/persistence/user-profile.repository";
+import {
+  BUSINESS_ACCOUNT_REPOSITORY,
+  type BusinessAccountRepository,
+} from "../business/persistence/business-account.repository";
 import { SAGA_VOUCHER_READER } from "../checkout/checkout.tokens";
 import type { SagaVoucherReader } from "../checkout/persistence/saga-voucher-reader";
 import { toWalletHistoryEntry, toWalletSummary, toWalletVoucher } from "./wallet-mapping";
@@ -66,7 +70,20 @@ export class WalletController {
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
     @Inject(REGION_SETTINGS_READER) private readonly settings: RegionSettingsReader,
     @Inject(SAGA_VOUCHER_READER) private readonly burns: SagaVoucherReader,
+    @Inject(BUSINESS_ACCOUNT_REPOSITORY) private readonly businesses: BusinessAccountRepository,
   ) {}
+
+  /** The owning businesses' own display names; a business that cannot be read falls back to the listing's copy. */
+  private async namesOf(rows: readonly WalletVoucherRow[]): Promise<Map<string, string>> {
+    const ids = [...new Set(rows.map((row) => row.merchantId))];
+    const found = await Promise.all(
+      ids.map(
+        async (id) =>
+          [id, (await this.businesses.findById(id).catch(() => null))?.displayName] as const,
+      ),
+    );
+    return new Map(found.filter((pair): pair is [string, string] => pair[1] !== undefined));
+  }
 
   @Authorize({ kind: "wallet", action: "view" })
   @Get()
@@ -127,7 +144,11 @@ export class WalletController {
         ...(startingAfter === undefined || startingAfter === "" ? {} : { startingAfter }),
       }),
     );
-    return { vouchers: page.vouchers.map(toWalletVoucher), hasMore: page.hasMore };
+    const names = await this.namesOf(page.vouchers);
+    return {
+      vouchers: page.vouchers.map((row) => toWalletVoucher(row, names)),
+      hasMore: page.hasMore,
+    };
   }
 
   /**
@@ -148,7 +169,7 @@ export class WalletController {
   ): Promise<WalletVoucherDetail> {
     const ownerId = (await this.principals.resolve(request)).id;
     const row = await unwrap(this.vouchers.get({ voucherId, ownerId }));
-    const voucher = toWalletVoucher(row);
+    const voucher = toWalletVoucher(row, await this.namesOf([row]));
     if (!isCodeUsable(row, Date.now())) return voucher;
     const revealed = await this.vouchers.reveal({ voucherId, ownerId });
     return revealed.isOk() ? { ...voucher, code: revealed.value.code } : voucher;

@@ -47,3 +47,12 @@ func TestWalletViewNamesTheRuleThatBlocksAGift(t *testing.T) {
 		})
 	}
 }
+
+// The BFF names the shop from its own business record, so the view must say which business.
+func TestWalletViewCarriesTheMerchantID(t *testing.T) {
+	id := pgtype.UUID{Bytes: [16]byte{1, 2, 3}, Valid: true}
+	view := toWalletVoucherView(giftSource(func(r *walletVoucherSource) { r.MerchantID = id }))
+	if want := asUUID(id).String(); view.MerchantID != want {
+		t.Fatalf("merchantId=%q, want %q", view.MerchantID, want)
+	}
+}

@@ -5101,11 +5101,29 @@
                     },
                     "credential": {
                       "type": "string"
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "AU",
+                        "ID"
+                      ]
+                    },
+                    "label": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "locationName": {
+                      "type": "string",
+                      "minLength": 1
                     }
                   },
                   "required": [
                     "deviceId",
-                    "credential"
+                    "credential",
+                    "region",
+                    "label",
+                    "locationName"
                   ],
                   "additionalProperties": false
                 }

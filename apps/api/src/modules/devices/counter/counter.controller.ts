@@ -15,6 +15,8 @@ import { RateLimit } from "../../../shared/rate-limit/rate-limit.decorator";
 import { DeviceAuthorize, deviceIdOf } from "../device-authorize";
 import { AUTHORIZATION_META_REPOSITORY } from "../persistence/authorization-meta.repository";
 import type { AuthorizationMetaRepository } from "../persistence/authorization-meta.repository";
+import { BUSINESS_ACCOUNT_REPOSITORY } from "../../business/persistence/business-account.repository";
+import type { BusinessAccountRepository } from "../../business/persistence/business-account.repository";
 import { COUNTER_DEVICE_REPOSITORY } from "../persistence/counter-device.repository";
 import type { CounterDeviceRepository } from "../persistence/counter-device.repository";
 import { CAPTURE_LOG_REPOSITORY } from "../persistence/capture-log.repository";
@@ -57,6 +59,7 @@ export class CounterController {
     @Inject(AUTHORIZATION_META_REPOSITORY) private readonly authMeta: AuthorizationMetaRepository,
     @Inject(CAPTURE_LOG_REPOSITORY) private readonly captureLog: CaptureLogRepository,
     @Inject(COUNTER_DEVICE_REPOSITORY) private readonly devices: CounterDeviceRepository,
+    @Inject(BUSINESS_ACCOUNT_REPOSITORY) private readonly businesses: BusinessAccountRepository,
   ) {}
 
   @NotValueMoving("a lookup is a read-only preview; no hold is placed (8.2.a)")
@@ -74,7 +77,7 @@ export class CounterController {
       "lookup",
     );
     const { businessId } = deviceScope(principal);
-    const result = await lookupVoucher(this.vouchers, businessId, body.code);
+    const result = await lookupVoucher(this.vouchers, this.businesses, businessId, body.code);
     if (result.isErr()) throw mapCounterErrorToHttpException(result.error);
     return result.value;
   }

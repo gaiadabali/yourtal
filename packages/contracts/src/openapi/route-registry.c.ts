@@ -591,8 +591,14 @@ const revokedResponseSchema: Record<string, unknown> = {
 /** `device-pairing.controller.ts`'s `pair` — the bearer credential, returned exactly once. */
 const pairDeviceResponseSchema: Record<string, unknown> = {
   type: "object",
-  properties: { deviceId: { type: "string", format: "uuid" }, credential: { type: "string" } },
-  required: ["deviceId", "credential"],
+  properties: {
+    deviceId: { type: "string", format: "uuid" },
+    credential: { type: "string" },
+    region: { type: "string", enum: ["AU", "ID"] },
+    label: { type: "string", minLength: 1 },
+    locationName: { type: "string", minLength: 1 },
+  },
+  required: ["deviceId", "credential", "region", "label", "locationName"],
   additionalProperties: false,
 };
 

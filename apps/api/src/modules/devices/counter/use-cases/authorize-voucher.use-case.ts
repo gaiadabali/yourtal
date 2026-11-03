@@ -69,6 +69,13 @@ export function authorizeVoucher(
   return vouchers
     .lookupAsDevice({ voucherCode: input.code, merchantId: input.businessId })
     .andThen((preview): ResultAsync<CounterAuthorization, AuthorizeVoucherError> => {
+      // Currency first: a wrong currency is its own refusal, whatever the amount.
+      if (input.currency !== preview.currency) {
+        return errAsync({
+          code: "currency_mismatch",
+          message: "the currency does not match the voucher's",
+        });
+      }
       const refusal = refuseAmount(preview, input.amountMinor);
       if (refusal !== null) return errAsync(refusal);
       const amountMinor: MinorUnits =

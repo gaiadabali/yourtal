@@ -345,6 +345,27 @@ describe("counter authorize refuses an amount the voucher cannot give (Group 5.1
     expect(response.json<{ code: string }>().code).toBe("amount_not_positive");
   });
 
+  it("reports a wrong currency as a currency mismatch, even when the amount is also too high", async () => {
+    const { businessId, locationId } = await seedBusinessAndLocation();
+    const { secret } = await provisionAndPairDevice(businessId, locationId);
+    const { code } = await seedRedeemableVoucher(businessId, "balance_carrying");
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/counter/authorize",
+      headers: { authorization: `Bearer ${secret}`, "idempotency-key": randomUUID() },
+      payload: {
+        code,
+        currency: "IDR",
+        amountMinor: 50_001,
+        orderRef: `order-${randomUUID()}`,
+        orderTotalMinor: 5000,
+      },
+    });
+    expect(response.statusCode, response.body).toBe(409);
+    expect(response.json<{ code: string }>().code).toBe("currency_mismatch");
+  });
+
   it("still takes a part of a single-use voucher, as services/voucher always has", async () => {
     const { businessId, locationId } = await seedBusinessAndLocation();
     const { secret } = await provisionAndPairDevice(businessId, locationId);
@@ -353,6 +374,24 @@ describe("counter authorize refuses an amount the voucher cannot give (Group 5.1
     const partial = await authorize(secret, code, 450);
     expect(partial.statusCode, partial.body).toBe(201);
     expect(partial.json<{ amountMinor: number }>().amountMinor).toBe(450);
+  });
+});
+
+describe("POST /api/counter/lookup names the business, not the listing (Group 5.13.g)", () => {
+  it("shows the business's own display name", async () => {
+    const { businessId, locationId } = await seedBusinessAndLocation();
+    const { secret } = await provisionAndPairDevice(businessId, locationId);
+    const { code } = await seedRedeemableVoucher(businessId);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/counter/lookup",
+      headers: { authorization: `Bearer ${secret}` },
+      payload: { code },
+    });
+    expect(response.statusCode, response.body).toBe(201);
+    // The listing's own free-text name is "8.2.h Test Merchant".
+    expect(response.json<{ merchantName: string }>().merchantName).toBe("8.2.h Test Business");
   });
 });
 

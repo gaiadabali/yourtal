@@ -38,6 +38,13 @@ export const consentSourceSchema = z.enum([
   "oidc_consent_screen",
   /** Carried over from a sister app. Weakest: verify before relying on it. */
   "import_from_sister_app",
+  /** Why an app's access ended (docs/26 §2.2), written only by oidc.end_app_access. */
+  "user_removed",
+  "security",
+  "guardian_withdrew",
+  "parent_ended",
+  "teen_removed",
+  "inviter_deleted",
 ]);
 
 export type ConsentSource = z.infer<typeof consentSourceSchema>;

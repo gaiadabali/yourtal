@@ -2,6 +2,8 @@
 export const AUCTION_REFUSALS = [
   "charity_unavailable",
   "voucher_not_unused",
+  // Newly bought: the holding period (fraud-check lag) has not ended yet.
+  "voucher_holdback",
   "voucher_not_transferable",
   "voucher_already_transferred",
   "seller_ineligible",

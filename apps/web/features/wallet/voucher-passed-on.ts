@@ -1,6 +1,8 @@
 import type { WalletGift } from "@yourtal/contracts/wallet/wallet-gift";
 
 /** What happened to a voucher that now reads "Transferred", when the gifts say. */
+type PassedOnStatus = { status: "pending" | "accepted" };
+
 export interface PassedOn {
   /** A pending gift can still come back; an accepted one cannot. */
   status: "pending" | "accepted";
@@ -15,8 +17,9 @@ export interface PassedOn {
  */
 export function passedOnBy(voucherId: string, gifts: readonly WalletGift[]): PassedOn | null {
   const gift = gifts.find(
-    (g) => g.direction === "sent" && g.voucherId === voucherId && g.status !== "returned",
+    (g): g is WalletGift & PassedOnStatus =>
+      g.direction === "sent" && g.voucherId === voucherId && g.status !== "returned",
   );
-  if (gift === undefined || gift.status === "returned") return null;
+  if (gift === undefined) return null;
   return { status: gift.status, sentAt: gift.createdAt, acceptBy: gift.acceptBy };
 }

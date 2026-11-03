@@ -6,6 +6,7 @@ import {
   type WalletHistoryPage,
   type WalletSummary,
 } from "@yourtal/contracts/wallet/wallet";
+import { voucherGiftBlockSchema } from "@yourtal/contracts/voucher-internal/wallet";
 import type { WalletHistoryEntry } from "@yourtal/contracts/wallet/history";
 import { voucherStatusSchema } from "@yourtal/contracts/voucher/voucher";
 import type { Region } from "@yourtal/contracts/region";
@@ -94,7 +95,7 @@ export const walletVoucherDetailSchema = z.object({
   /** 13.20: the voucher can be gifted now (holdback and caps are only known on trying). */
   giftable: z.boolean().optional(),
   /** Which rule stops a gift or a charity listing; absent when `giftable` or from an older service. */
-  giftBlock: z.enum(["not_unused", "not_transferable", "received_as_gift"]).optional(),
+  giftBlock: voucherGiftBlockSchema.optional(),
 });
 export type WalletVoucherDetail = z.infer<typeof walletVoucherDetailSchema>;
 

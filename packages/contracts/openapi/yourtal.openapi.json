@@ -26056,6 +26056,7 @@
         "enum": [
           "charity_unavailable",
           "voucher_not_unused",
+          "voucher_holdback",
           "voucher_not_transferable",
           "voucher_already_transferred",
           "seller_ineligible",

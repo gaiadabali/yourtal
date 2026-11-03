@@ -88,6 +88,7 @@
     "refusal": {
       "charity_unavailable": "Yayasan itu belum bisa menerima lelang.",
       "voucher_not_unused": "Hanya voucher yang belum dipakai yang bisa dilelang.",
+      "voucher_holdback": "Voucher ini terlalu baru untuk dilelang. Kamu bisa melelangnya setelah masa tunggunya selesai, biasanya dalam satu atau dua hari.",
       "voucher_not_transferable": "Voucher ini tidak bisa dialihkan.",
       "voucher_already_transferred": "Voucher ini sudah pernah dialihkan.",
       "seller_ineligible": "Verifikasi emailmu sebelum melelang voucher.",
@@ -115,7 +116,8 @@
     "close": "Tutup",
     "refusal": {
       "charity_unavailable": "Yayasan itu belum bisa menerima lelang.",
-      "voucher_not_unused": "Hanya voucher yang belum dipakai dan masih berlaku minimal 4 hari lagi yang bisa dilelang.",
+      "voucher_not_unused": "Hanya voucher yang belum dipakai dan masih berlaku minimal {days} hari lagi yang bisa dilelang.",
+      "voucher_holdback": "Voucher ini terlalu baru untuk dilelang. Kamu bisa melelangnya setelah masa tunggunya selesai, biasanya dalam satu atau dua hari.",
       "voucher_not_transferable": "Voucher ini tidak bisa dialihkan.",
       "voucher_already_transferred": "Voucher ini sudah pernah dialihkan.",
       "seller_ineligible": "Verifikasi emailmu sebelum melelang voucher.",

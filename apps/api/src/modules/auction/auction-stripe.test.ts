@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { err, ok, okAsync } from "neverthrow";
+import { err, errAsync, ok, okAsync } from "neverthrow";
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type {
@@ -260,6 +260,22 @@ describe("listing for a charity on a Stripe region (5.1.d)", () => {
         charityId,
       ),
     ).rejects.toMatchObject({ response: { code: "charity_not_ready" } });
+  });
+
+  it("says a voucher still in its holding period is voucher_holdback, not voucher_not_unused", async () => {
+    const charityId = await charity(connectedAccount());
+    const vouchers = {
+      get: () => okAsync({ expiresAt: new Date(Date.now() + 30 * 86_400_000).toISOString() }),
+      escrowHold: () => errAsync({ code: "holdback", message: "too new" }),
+    } as unknown as VoucherInternalClient;
+    await expect(
+      listVoucher(
+        { store, vouchers, marketplace: () => stripeLike() },
+        party(),
+        randomUUID(),
+        charityId,
+      ),
+    ).rejects.toMatchObject({ response: { code: "voucher_holdback" } });
   });
 });
 

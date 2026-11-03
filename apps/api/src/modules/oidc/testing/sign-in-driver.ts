@@ -26,6 +26,25 @@ export class Browser {
     return response;
   }
 
+  /** Submits the page's one form, as its script would: the provider's sign-out step on a switch of account. */
+  async submitForm(page: string): Promise<Response> {
+    const action = /<form[^>]*action="([^"]+)"/.exec(page)?.[1];
+    if (action === undefined) throw new Error("no form on the page");
+    const fields = [...page.matchAll(/<input type="hidden" name="([^"]+)" value="([^"]*)"\/>/g)];
+    const target = new URL(action);
+    const response = await fetch(target, {
+      method: "POST",
+      redirect: "manual",
+      headers: {
+        cookie: this.cookieHeader(target.pathname),
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams(fields.map(([, name = "", value = ""]) => [name, value])),
+    });
+    for (const line of response.headers.getSetCookie()) this.keep(line);
+    return response;
+  }
+
   /** The cookies a browser sends to this path, whatever the host (the test plays both origins). */
   cookieHeader(pathname: string): string {
     return [...this.cookies.entries()]
@@ -62,6 +81,8 @@ export async function startSignIn(
   config: client.Configuration,
   redirectUri: string,
   extra: Record<string, string> = {},
+  /** The same browser again keeps the provider's session from its last sign-in. */
+  browser: Browser = new Browser(),
 ): Promise<StartedSignIn> {
   const verifier = client.randomPKCECodeVerifier();
   const state = client.randomState();
@@ -75,7 +96,6 @@ export async function startSignIn(
     nonce,
     ...extra,
   });
-  const browser = new Browser();
   const response = await browser.get(url);
   const location = response.headers.get("location") ?? "";
   const match = /\/connect\/([^/?#]+)$/.exec(new URL(location).pathname);
@@ -99,7 +119,12 @@ export function webServerCall(
     .join("; ");
   return fetch(`${apiBase}/api/connect/${encodeURIComponent(started.uid)}${step}`, {
     method: step === "" ? "GET" : "POST",
-    headers: { cookie, ...(step === "" ? {} : { "content-type": "application/json" }) },
+    headers: {
+      cookie,
+      // Each call from its own address, as many people's would be; the e2e app trusts loopback.
+      "x-forwarded-for": `10.${String(Math.floor(Math.random() * 250))}.${String(Math.floor(Math.random() * 250))}.1`,
+      ...(step === "" ? {} : { "content-type": "application/json" }),
+    },
     ...(step === "" ? {} : { body: JSON.stringify(body ?? {}) }),
   });
 }

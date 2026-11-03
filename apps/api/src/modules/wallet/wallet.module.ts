@@ -8,11 +8,13 @@ import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { createVoucherClient } from "../../shared/voucher-client/create-voucher-client";
 import { VOUCHER_INTERNAL_CLIENT } from "../../shared/voucher-client/voucher-internal-client";
 import { SettingsModule } from "../../shared/settings/settings.module";
+import { BusinessModule } from "../business/business.module";
 import { IdentityModule } from "../identity/identity.module";
 import { WalletAttributeLoader } from "./wallet-attribute-loader";
 import { WalletController } from "./wallet.controller";
 import { WalletGiftController } from "./wallet-gift.controller";
 import { CheckoutModule } from "../checkout/checkout.module";
+import { LISTING_PARTNER_READER, ListingPartnerReader } from "./listing-partner-reader";
 import { GIFT_PARTY_READER, GiftPartyReader } from "./gift-party-reader";
 import { GIFT_NOTIFIER_DB, GiftNotifier } from "./gift-notifier";
 
@@ -25,7 +27,12 @@ export const WALLET_DB = Symbol("WALLET_DB");
  * teen daily-cap read.
  */
 @Module({
-  imports: [IdentityModule, SettingsModule, forwardRef(() => CheckoutModule)],
+  imports: [
+    IdentityModule,
+    SettingsModule,
+    forwardRef(() => BusinessModule),
+    forwardRef(() => CheckoutModule),
+  ],
   controllers: [WalletController, WalletGiftController],
   providers: [
     {
@@ -46,6 +53,11 @@ export const WALLET_DB = Symbol("WALLET_DB");
     {
       provide: GIFT_PARTY_READER,
       useFactory: (db: AppDb) => new GiftPartyReader(db),
+      inject: [WALLET_DB],
+    },
+    {
+      provide: LISTING_PARTNER_READER,
+      useFactory: (db: AppDb) => new ListingPartnerReader(db),
       inject: [WALLET_DB],
     },
     { provide: GIFT_NOTIFIER_DB, useExisting: WALLET_DB },

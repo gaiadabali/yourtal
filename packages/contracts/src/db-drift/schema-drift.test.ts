@@ -612,7 +612,7 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
   "oidc.app_consent":
     "Group 3.9: what a person shares with each app now; the interaction API returns a derived screen and claim list (oidc/interaction.ts), not the row.",
   "oidc.teen_invite":
-    "Group 3.9: parent invites for teens into SnapApp (docs/26 §3.3). Its API, and any contract, come with the teen invite ticket (3.9.e).",
+    "Group 3.9.e: parent invites for teens into SnapApp (docs/26 §3.3). The invite API (oidc/teen-invite.ts) returns a derived status and the teen's sub, never the row; the code is only ever a hash here.",
   "oidc.event_outbox":
     "Group 3.9: signed events waiting for an app. Leaves YourTal only as a Security Event Token (docs/26 §2.3), never as a row.",
   "oidc.sign_in_log":
@@ -736,6 +736,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "The 72h SIM-swap / account-recovery freeze read into AsyncPrincipalResolver.resolve() (YT-0582, docs/14 section 5). No public contract — a principal's freeze is enforced through the PDP's ALLOW/DENY, never returned to any client as a field of its own.",
   "identity.credential":
     "YT-0540. One row per (userId, kind) holding an Argon2id hash — never returned to any client, and secret_hash is never a field on a public contract by construction. Adding a phone-OTP or OIDC kind (YT-0541) is a new row, not a new mapping.",
+  "identity.passkey":
+    "Passkeys: one row per WebAuthn credential, hanging off the account's 'passkey' row in identity.credential. public_key and sign_count never leave the server; PasskeySummary (identity/sign-in-methods.ts) is a projection of name and dates, so there is no 1:1 MAPPINGS row.",
   "identity.session":
     "YT-0540. The server-side session record behind AuthService/SessionService — id is a SHA-256 hash of an opaque bearer token, never readable back through any endpoint (see auth.service.test.ts's own proof of that). AuthController's own responses carry the raw token once, at issuance; this row is never serialised.",
   "identity.verification_token":

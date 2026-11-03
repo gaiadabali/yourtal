@@ -6,6 +6,8 @@ import {
   partnerLinkRevokeResultSchema,
   partnerReceiptStatusRequestSchema,
   partnerReceiptStatusResultSchema,
+  partnerVoucherOwnerRequestSchema,
+  partnerVoucherOwnerResultSchema,
 } from "../device/partner-action";
 import {
   SERVICE_UNAVAILABLE,
@@ -61,7 +63,7 @@ const IDENTITY_CHECK_REQUIRED: RouteErrorResponse = {
   description:
     "The account has not passed YourTal's identity check, so it earns nothing and the receipt is " +
     "not recorded (identity_check_required). missing lists what the user still has to do " +
-    "(verify_email, use_permanent_email). The refusal is final: do not resend the receipt. The " +
+    "(verify_email, use_permanent_email, add_passkey). The refusal is final: do not resend the receipt. The " +
     "body carries the linkId to use next time.",
   documented: true,
 };
@@ -158,5 +160,31 @@ export const PARTNERS_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       "earning is true when a receipt package has room for one receipt. A partner with no receipt package answers earning: false and remainingPoints: 0. A read: it needs no Idempotency-Key.",
     successSchema: inlineSchema(partnerReceiptStatusResultSchema),
     errors: [VALIDATION_400, INVALID_PARTNER_SIGNATURE, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "post",
+    path: "/api/partners/vouchers/owner",
+    summary: "Whether a voucher code is in the linked user's YourTal wallet, for this partner",
+    tags: ["partners"],
+    pathParams: [],
+    requestBody: {
+      description:
+        "The link and the SHA-256 (lower-case hex) of the voucher code the user typed. Never send the code.",
+      schema: inlineSchema(partnerVoucherOwnerRequestSchema),
+    },
+    successStatus: 200,
+    successDescription:
+      "held: true with the voucher's status, face value and expiry when the code is in the linked " +
+      "user's wallet, its listing is bound to your partner and its region is the link's. Every other " +
+      "case (someone else's code, an unknown code, a voucher for another partner or region) answers " +
+      "the identical held: false. A read: it needs no Idempotency-Key.",
+    successSchema: inlineSchema(partnerVoucherOwnerResultSchema),
+    errors: [
+      VALIDATION_400,
+      UNKNOWN_LINK,
+      INVALID_PARTNER_SIGNATURE,
+      LINK_REVOKED,
+      SERVICE_UNAVAILABLE,
+    ],
   },
 ];

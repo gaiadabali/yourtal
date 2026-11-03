@@ -7,6 +7,10 @@ import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
 import { ZodValidationPipe } from "nestjs-zod";
+import type {
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON,
+} from "@simplewebauthn/server";
 import * as client from "openid-client";
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -16,6 +20,10 @@ import {
   interactionRedirectSchema,
 } from "@yourtal/contracts/oidc/interaction";
 import { AppModule } from "../../app.module";
+import { hashOpaqueToken } from "../auth/crypto/opaque-token";
+import { E2E_ORIGIN, E2E_RP_ID, accountFor, bearer, testIp } from "../auth/factors/testing/e2e-app";
+import { SoftAuthenticator } from "../auth/factors/testing/soft-authenticator";
+import { totpCodeAt } from "../auth/factors/totp-code";
 import { SessionService } from "../auth/session/session.service";
 import { mountOidc } from "./mount-oidc";
 import { OIDC_RUNTIME } from "./oidc-runtime";
@@ -30,7 +38,14 @@ import { followToApp, startSignIn, webServerCall } from "./testing/sign-in-drive
 const WEB_REDIRECT = "https://snap-apps.gaiada.com/auth/yourtal/callback";
 const MOBILE_REDIRECT = "au.com.snapapps.app:/oauth/yourtal";
 const FTR_REDIRECT = "https://freetaxreturns.com.au/api/auth/oauth2/callback/yourtal";
-const ENV_KEYS = ["OIDC_ENABLED", "OIDC_ISSUER", "OIDC_CLIENT_KEYS_DIR", "OIDC_JWKS_PATH"];
+const ENV_KEYS = [
+  "OIDC_ENABLED",
+  "OIDC_ISSUER",
+  "OIDC_CLIENT_KEYS_DIR",
+  "OIDC_JWKS_PATH",
+  "WEBAUTHN_RP_ID",
+  "WEBAUTHN_ORIGIN",
+];
 
 let app: NestFastifyApplication;
 let pool: pg.Pool;
@@ -89,9 +104,15 @@ beforeAll(async () => {
   process.env["OIDC_CLIENT_KEYS_DIR"] = keysDir;
   // Absent on purpose: dev makes throwaway signing keys.
   process.env["OIDC_JWKS_PATH"] = path.join(keysDir, "none", "jwks.json");
+  // The relying party the soft authenticator answers for.
+  process.env["WEBAUTHN_RP_ID"] = E2E_RP_ID;
+  process.env["WEBAUTHN_ORIGIN"] = E2E_ORIGIN;
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
-  app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+  // Loopback is the trusted proxy, so each call's x-forwarded-for is its own IP for the rate limits.
+  app = moduleRef.createNestApplication<NestFastifyApplication>(
+    new FastifyAdapter({ trustProxy: "127.0.0.1" }),
+  );
   app
     .getHttpAdapter()
     .getInstance()
@@ -144,7 +165,9 @@ async function person(options: { region?: "AU" | "ID"; teen?: boolean; verified?
              'Australia/Sydney', CASE WHEN $4 THEN 'granted' ELSE 'not_required' END)`,
     [userId, region, region === "AU" ? "en-AU" : "id-ID", options.teen === true],
   );
-  const token = await app.get(SessionService, { strict: false }).issue(userId, new Date());
+  const token = await app
+    .get(SessionService, { strict: false })
+    .issue(userId, new Date(), "consumer", ["pwd"]);
   return { userId, token, email } satisfies Person;
 }
 
@@ -521,5 +544,629 @@ describe("the interaction API", () => {
       body: JSON.stringify({ screen: "consent" }),
     });
     expect(response.status).toBe(403);
+  });
+});
+
+/** A route of the real app, called as YourTal's web server calls it. */
+async function api(
+  url: string,
+  options: { token?: string; payload?: Record<string, unknown> } = {},
+): Promise<{ status: number; body: Record<string, unknown> }> {
+  const response = await app.inject({
+    method: "POST",
+    url,
+    remoteAddress: testIp(),
+    headers: options.token === undefined ? {} : bearer(options.token),
+    ...(options.payload === undefined ? {} : { payload: options.payload }),
+  });
+  return { status: response.statusCode, body: response.json<Record<string, unknown>>() };
+}
+
+const tokenOf = (reply: { status: number; body: Record<string, unknown> }) => {
+  expect(reply.status, JSON.stringify(reply.body)).toBe(201);
+  return z.string().parse(reply.body["token"]);
+};
+
+/** When the session a token names says the person signed in, as auth_time counts it. */
+async function authTimeOf(token: string): Promise<number> {
+  const [row] = z
+    .array(z.object({ signed_in_at: z.date() }))
+    .parse(
+      await rows("SELECT signed_in_at FROM identity.session WHERE id = $1", [
+        hashOpaqueToken(token),
+      ]),
+    );
+  return Math.floor((row?.signed_in_at.getTime() ?? 0) / 1000);
+}
+
+/** The person's sessions that still work. */
+async function liveSessions(userId: string): Promise<unknown[]> {
+  return rows("SELECT id FROM identity.session WHERE user_id = $1 AND revoked_at IS NULL", [
+    userId,
+  ]);
+}
+
+/** A real account, signed in with its password through the real route, email confirmed. */
+async function verifiedAccount() {
+  const account = await accountFor(app);
+  await pool.query(
+    "UPDATE identity.credential SET verified_at = now() WHERE user_id = $1 AND kind = 'password'",
+    [account.userId],
+  );
+  return account;
+}
+
+async function passkeyFor(token: string): Promise<SoftAuthenticator> {
+  const device = new SoftAuthenticator(E2E_RP_ID, E2E_ORIGIN);
+  const options = await api("/api/auth/passkeys/register/options", { token });
+  expect(options.status, JSON.stringify(options.body)).toBe(201);
+  const response = device.register(
+    options.body["options"] as PublicKeyCredentialCreationOptionsJSON,
+  );
+  expect((await api("/api/auth/passkeys/register", { token, payload: { response } })).status).toBe(
+    201,
+  );
+  return device;
+}
+
+async function signInWithPasskey(device: SoftAuthenticator): Promise<string> {
+  const ceremony = await api("/api/auth/passkeys/sign-in/options");
+  const challengeId = z.string().parse(ceremony.body["challengeId"]);
+  const options = ceremony.body["options"] as PublicKeyCredentialRequestOptionsJSON;
+  return tokenOf(
+    await api("/api/auth/passkeys/sign-in", {
+      payload: { challengeId, response: device.assert(options) },
+    }),
+  );
+}
+
+describe("auth_time and amr come from the YourTal sign-in", () => {
+  it("after a password, a passkey, and a password and code", async () => {
+    const ana = await verifiedAccount();
+    const password = await signIn(await webApp(), WEB_REDIRECT, ana, "consent");
+    expect(password.tokens.claims()).toMatchObject({
+      amr: ["pwd"],
+      auth_time: await authTimeOf(ana.token),
+    });
+
+    const device = await passkeyFor(ana.token);
+    const passkey = await signInWithPasskey(device);
+    const withPasskey = await signIn(
+      await webApp(),
+      WEB_REDIRECT,
+      { ...ana, token: passkey },
+      "continue",
+    );
+    expect(withPasskey.tokens.claims()).toMatchObject({
+      amr: ["hwk"],
+      auth_time: await authTimeOf(passkey),
+    });
+
+    const bo = await verifiedAccount();
+    const enrolled = await api("/api/auth/totp/enrol", { token: bo.token });
+    const seed = z.string().parse(enrolled.body["secret"]);
+    const code = (offset: number) => totpCodeAt(seed, new Date(Date.now() + offset * 1000));
+    expect(
+      (await api("/api/auth/totp/confirm", { token: bo.token, payload: { code: code(-30) } }))
+        .status,
+    ).toBe(201);
+    const pending = await api("/api/auth/login", {
+      payload: { email: bo.email, password: "factors-e2e-not-a-real-secret-1" },
+    });
+    const withCode = tokenOf(
+      await api("/api/auth/totp/sign-in", {
+        payload: { pendingToken: pending.body["pendingToken"], code: code(0) },
+      }),
+    );
+    const mfa = await signIn(await ftrApp(), FTR_REDIRECT, { ...bo, token: withCode }, "consent");
+    expect(mfa.tokens.claims()).toMatchObject({
+      amr: ["pwd", "otp", "mfa"],
+      auth_time: await authTimeOf(withCode),
+    });
+  });
+});
+
+describe("a fresh sign-in when the app asks for one", () => {
+  const TWELVE_HOURS = 12 * 3600;
+
+  it("max_age: an older sign-in is asked for again, without a second session", async () => {
+    const ana = await verifiedAccount();
+    await pool.query(
+      "UPDATE identity.session SET signed_in_at = now() - interval '13 hours' WHERE user_id = $1",
+      [ana.userId],
+    );
+    const config = await webApp();
+    const started = await startSignIn(config, WEB_REDIRECT, { max_age: String(TWELVE_HOURS) });
+    expect(await details(await webServerCall(base, started, ana.token, ""))).toMatchObject({
+      screen: "sign_in_again",
+      account: { email: ana.email },
+      sharing: null,
+    });
+    const tapped = await webServerCall(base, started, ana.token, "/continue", {
+      screen: "consent",
+    });
+    expect(tapped.status).toBe(401);
+
+    // YourTal's sign-in takes signed-out callers only, so "Sign in again" signs out first.
+    const credentials = { email: ana.email, password: "factors-e2e-not-a-real-secret-1" };
+    expect((await api("/api/auth/login", { token: ana.token, payload: credentials })).status).toBe(
+      403,
+    );
+    const before = await liveSessions(ana.userId);
+    expect((await api("/api/auth/logout", { token: ana.token })).status).toBe(201);
+    const again = tokenOf(await api("/api/auth/login", { payload: credentials }));
+    // The old session ended and the new one took its place (registering left one of its own).
+    const after = await liveSessions(ana.userId);
+    expect(after).toHaveLength(before.length);
+    expect(after).toContainEqual({ id: hashOpaqueToken(again) });
+    expect(after).not.toContainEqual({ id: hashOpaqueToken(ana.token) });
+
+    expect((await details(await webServerCall(base, started, again, ""))).screen).toBe("consent");
+    const done = await webServerCall(base, started, again, "/continue", { screen: "consent" });
+    const tokens = await client.authorizationCodeGrant(
+      config,
+      await followToApp(started, await redirectOf(done)),
+      {
+        pkceCodeVerifier: started.verifier,
+        expectedState: started.state,
+        expectedNonce: started.nonce,
+        maxAge: TWELVE_HOURS,
+      },
+    );
+    expect(tokens.claims()).toMatchObject({ amr: ["pwd"], auth_time: await authTimeOf(again) });
+  });
+
+  it("prompt=login: a sign-in from before the app asked is asked for again", async () => {
+    const ana = await person();
+    await pool.query(
+      "UPDATE identity.session SET signed_in_at = now() - interval '1 minute' WHERE user_id = $1",
+      [ana.userId],
+    );
+    const started = await startSignIn(await webApp(), WEB_REDIRECT, { prompt: "login" });
+    expect((await details(await webServerCall(base, started, ana.token, ""))).screen).toBe(
+      "sign_in_again",
+    );
+  });
+
+  it("someone else signing in on the same browser gets their own sub, never the first's", async () => {
+    const config = await webApp();
+    const ana = await person();
+    const first = await startSignIn(config, WEB_REDIRECT);
+    const anaTapped = await webServerCall(base, first, ana.token, "/continue", {
+      screen: "consent",
+    });
+    const anaSub = (
+      await client.authorizationCodeGrant(
+        config,
+        await followToApp(first, await redirectOf(anaTapped)),
+        {
+          pkceCodeVerifier: first.verifier,
+          expectedState: first.state,
+          expectedNonce: first.nonce,
+        },
+      )
+    ).claims()?.sub;
+    expect(anaSub).toBeDefined();
+
+    const bob = await person();
+    const second = await startSignIn(config, WEB_REDIRECT, {}, first.browser);
+    const tapped = await webServerCall(base, second, bob.token, "/continue", { screen: "consent" });
+    // The provider's own session is still Ana's, so the library signs it out first.
+    const signOut = await second.browser.get(await redirectOf(tapped));
+    expect(signOut.status).toBe(200);
+    const resumed = await second.browser.submitForm(await signOut.text());
+    expect(resumed.status).toBe(303);
+    const tokens = await client.authorizationCodeGrant(
+      config,
+      await followToApp(second, resumed.headers.get("location") ?? ""),
+      {
+        pkceCodeVerifier: second.verifier,
+        expectedState: second.state,
+        expectedNonce: second.nonce,
+      },
+    );
+    expect(await rows("SELECT sub FROM oidc.subject WHERE user_id = $1", [bob.userId])).toEqual([
+      { sub: tokens.claims()?.sub },
+    ]);
+    expect(tokens.claims()?.sub).not.toBe(anaSub);
+  });
+});
+
+/** A teen whose guardian is `guardianEmail`, approved unless `approved` is false. */
+async function teenOf(guardianEmail: string, approved = true): Promise<Person> {
+  const teen = await person({ teen: true });
+  await pool.query(
+    `INSERT INTO identity.guardian_consent
+       (user_id, token_hash, guardian_email, region, guardian_confirmed_adult_at, approved_at)
+     VALUES ($1, $2, $3, 'AU', $4, $4)`,
+    [teen.userId, randomBytes(32).toString("hex"), guardianEmail, approved ? new Date() : null],
+  );
+  if (!approved) {
+    await pool.query(
+      "UPDATE identity.user_profile SET parent_consent_status = 'pending' WHERE user_id = $1",
+      [teen.userId],
+    );
+  }
+  return teen;
+}
+
+const serverApp = () =>
+  rp(
+    "snapapp-staging-server",
+    client.PrivateKeyJwt({ key: serverKey, kid: "snapapp-staging-server-1" }),
+  );
+
+async function serverToken(): Promise<string> {
+  return (await client.clientCredentialsGrant(await serverApp(), { scope: "teen_invites" }))
+    .access_token;
+}
+
+/** SnapApp's server calling the invite API. */
+async function inviteApi(
+  token: string,
+  path: string,
+  body?: Record<string, unknown>,
+  key: string = randomUUID(),
+): Promise<{ status: number; body: Record<string, unknown> }> {
+  const response = await fetch(`${base}/api/oidc-clients/teen-invites${path}`, {
+    method: body === undefined ? "GET" : "POST",
+    headers: {
+      "x-forwarded-for": testIp(),
+      authorization: `Bearer ${token}`,
+      ...(body === undefined ? {} : { "content-type": "application/json", "idempotency-key": key }),
+    },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+  return { status: response.status, body: (await response.json()) as Record<string, unknown> };
+}
+
+/** A parent who has signed in to SnapApp, and their sub there. */
+async function snapParent(): Promise<Person & { sub: string }> {
+  const parent = await person();
+  const { tokens } = await signIn(await webApp(), WEB_REDIRECT, parent, "consent");
+  return { ...parent, sub: tokens.claims()?.sub ?? "" };
+}
+
+async function invite(
+  token: string,
+  parentSub: string,
+): Promise<{ inviteId: string; code: string }> {
+  const made = await inviteApi(token, "", { parentSub });
+  expect(made.status, JSON.stringify(made.body)).toBe(201);
+  return z.object({ inviteId: z.string(), code: z.string() }).parse(made.body);
+}
+
+/** The teen's screen at SnapApp, with this invite code if any. */
+async function teenScreen(teen: Person, code?: string) {
+  const started = await startSignIn(
+    await webApp(),
+    WEB_REDIRECT,
+    code === undefined ? {} : { teen_invite: code },
+  );
+  return { started, shown: await details(await webServerCall(base, started, teen.token, "")) };
+}
+
+describe("teens (docs/26 §1.5 check 4, §3.3)", () => {
+  it("a teen joins SnapApp with the approving guardian's invite, once, and the parent can end it", async () => {
+    const token = await serverToken();
+    const parent = await snapParent();
+    const teen = await teenOf(parent.email.toUpperCase());
+    const { inviteId, code } = await invite(token, parent.sub);
+    expect(code).toMatch(/^[A-Za-z0-9_-]{22}$/);
+    // Kept only as a hash.
+    expect(
+      JSON.stringify(await rows("SELECT * FROM oidc.teen_invite WHERE id = $1", [inviteId])),
+    ).not.toContain(code);
+    expect((await inviteApi(token, `/${inviteId}`)).body).toEqual({
+      inviteId,
+      status: "pending",
+      teenSub: null,
+    });
+
+    const { started, shown } = await teenScreen(teen, code);
+    expect(shown).toMatchObject({
+      screen: "consent",
+      teenInvite: { parentName: "Ana" },
+      sharing: { ageBand: "teen", region: "AU" },
+    });
+    const tapped = await webServerCall(base, started, teen.token, "/continue", {
+      screen: "consent",
+    });
+    expect(tapped.status).toBe(200);
+    const tokens = await client.authorizationCodeGrant(
+      await webApp(),
+      await followToApp(started, await redirectOf(tapped)),
+      {
+        pkceCodeVerifier: started.verifier,
+        expectedState: started.state,
+        expectedNonce: started.nonce,
+      },
+    );
+    const claims = tokens.claims();
+    expect(claims).toMatchObject({ age_band: "teen", region: "AU", email: teen.email });
+    // The same §1.3 claims as an adult's, and nothing more.
+    expect(Object.keys(claims ?? {}).sort()).toEqual(
+      [
+        "age_band",
+        "amr",
+        "aud",
+        "auth_time",
+        "email",
+        "email_verified",
+        "exp",
+        "iat",
+        "iss",
+        "name",
+        "nonce",
+        "region",
+        "sub",
+      ].sort(),
+    );
+    expect((await inviteApi(token, `/${inviteId}`)).body).toEqual({
+      inviteId,
+      status: "accepted",
+      teenSub: claims?.sub,
+    });
+    expect(
+      await rows(`SELECT source, audience, state FROM identity.consent_record WHERE user_id = $1`, [
+        teen.userId,
+      ]),
+    ).toEqual([{ source: "guardian_invite", audience: "snapapp-staging", state: "granted" }]);
+
+    // While it stands the teen signs in again with no invite; the used code opens nothing new.
+    expect((await teenScreen(teen)).shown.screen).toBe("continue");
+    const other = await teenOf("someone-else@example.test");
+    expect((await teenScreen(other, code)).shown).toMatchObject({
+      screen: "refused",
+      refusal: "teen_invite_required",
+      inviteProblem: "invite_expired",
+    });
+    // A standing SnapApp invite opens no other app.
+    const ftr = await startSignIn(await ftrApp(), FTR_REDIRECT);
+    expect(await details(await webServerCall(base, ftr, teen.token, ""))).toMatchObject({
+      refusal: "teen_not_allowed",
+    });
+
+    // Someone else's sub cannot end it.
+    const stranger = await snapParent();
+    expect((await inviteApi(token, `/${inviteId}/end`, { parentSub: stranger.sub })).status).toBe(
+      404,
+    );
+    const ended = await inviteApi(token, `/${inviteId}/end`, { parentSub: parent.sub });
+    expect(ended).toEqual({
+      status: 200,
+      body: { inviteId, status: "ended", teenSub: claims?.sub },
+    });
+    expect(
+      await rows(
+        "SELECT client_id, sub, event_type, payload FROM oidc.event_outbox WHERE sub = $1",
+        [claims?.sub],
+      ),
+    ).toEqual([
+      {
+        client_id: "snapapp-staging-server",
+        sub: claims?.sub,
+        event_type: "urn:yourtal:event:access-ended",
+        payload: {
+          "urn:yourtal:event:access-ended": { reason: "parent_ended", erase_data: true },
+        },
+      },
+    ]);
+    expect((await teenScreen(teen)).shown).toMatchObject({
+      screen: "refused",
+      inviteProblem: "no_invite",
+    });
+    // The token issued before the end no longer answers userinfo.
+    const me = await fetch(`${issuer}/me`, {
+      headers: { authorization: `Bearer ${tokens.access_token}` },
+    });
+    expect(me.status).toBe(401);
+  });
+
+  it("a teen without an invite at SnapApp needs one, and hears why", async () => {
+    const parent = await snapParent();
+    expect((await teenScreen(await teenOf(parent.email))).shown).toMatchObject({
+      screen: "refused",
+      refusal: "teen_invite_required",
+      inviteProblem: "no_invite",
+    });
+    const { code } = await invite(await serverToken(), parent.sub);
+    expect((await teenScreen(await teenOf(parent.email, false), code)).shown).toMatchObject({
+      refusal: "teen_invite_required",
+      inviteProblem: "not_approved",
+    });
+  });
+
+  it("an invite from someone who is not the teen's approving guardian is refused, and Continue cannot force it", async () => {
+    const guardian = await snapParent();
+    const stranger = await snapParent();
+    const teen = await teenOf(guardian.email);
+    const { code, inviteId } = await invite(await serverToken(), stranger.sub);
+    const { started, shown } = await teenScreen(teen, code);
+    expect(shown).toMatchObject({
+      refusal: "teen_invite_required",
+      inviteProblem: "wrong_inviter",
+    });
+    const forced = await webServerCall(base, started, teen.token, "/continue", {
+      screen: "consent",
+    });
+    expect(forced.status).toBe(403);
+    expect((await inviteApi(await serverToken(), `/${inviteId}`)).body).toMatchObject({
+      status: "pending",
+    });
+  });
+
+  it("an expired invite is refused", async () => {
+    const token = await serverToken();
+    const parent = await snapParent();
+    const teen = await teenOf(parent.email);
+    const { code, inviteId } = await invite(token, parent.sub);
+    await pool.query(
+      `UPDATE oidc.teen_invite SET created_at = now() - interval '8 days',
+              expires_at = now() - interval '1 day' WHERE id = $1`,
+      [inviteId],
+    );
+    expect((await teenScreen(teen, code)).shown).toMatchObject({ inviteProblem: "invite_expired" });
+    expect((await inviteApi(token, `/${inviteId}`)).body).toMatchObject({ status: "expired" });
+  });
+
+  it("the invite API takes only SnapApp's server token with teen_invites", async () => {
+    const parent = await snapParent();
+    const anon = await fetch(`${base}/api/oidc-clients/teen-invites`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "idempotency-key": randomUUID() },
+      body: JSON.stringify({ parentSub: parent.sub }),
+    });
+    expect(anon.status).toBe(401);
+    // A person's access token is not a client-credentials token.
+    const { tokens } = await signIn(await webApp(), WEB_REDIRECT, await person(), "consent");
+    expect((await inviteApi(tokens.access_token, "", { parentSub: parent.sub })).status).toBe(401);
+    // SnapApp's server, without the scope.
+    const bare = await client.clientCredentialsGrant(await serverApp(), {});
+    expect((await inviteApi(bare.access_token, "", { parentSub: parent.sub })).body).toMatchObject({
+      code: "insufficient_scope",
+    });
+  });
+
+  it("refuses a parent who is not a verified adult, caps 10 a day, and replays without the code", async () => {
+    const token = await serverToken();
+    const unknown = await inviteApi(token, "", { parentSub: "not-a-sub" });
+    expect(unknown).toMatchObject({ status: 403, body: { code: "parent_not_eligible" } });
+
+    const parent = await snapParent();
+    const key = randomUUID();
+    const first = await inviteApi(token, "", { parentSub: parent.sub }, key);
+    const replay = await inviteApi(token, "", { parentSub: parent.sub }, key);
+    expect(first.body["code"]).toBeDefined();
+    expect(replay.body).toEqual({
+      inviteId: first.body["inviteId"],
+      expiresAt: first.body["expiresAt"],
+    });
+    for (let made = 1; made < 10; made += 1) await invite(token, parent.sub);
+    expect((await inviteApi(token, "", { parentSub: parent.sub })).body).toMatchObject({
+      code: "too_many_invites",
+    });
+  });
+
+  it("an adult is unaffected by a teen_invite parameter", async () => {
+    const adult = await person();
+    const { started, shown } = await teenScreen(adult, "made-up-code");
+    expect(shown).toMatchObject({ screen: "consent", teenInvite: null, refusal: null });
+    const tapped = await webServerCall(base, started, adult.token, "/continue", {
+      screen: "consent",
+    });
+    expect(tapped.status).toBe(200);
+  });
+});
+
+/** The teen taps Continue on their consent screen, and the browser comes back to SnapApp with a code. */
+async function teenJoins(teen: Person, code: string) {
+  const { started, shown } = await teenScreen(teen, code);
+  expect(shown.screen).toBe("consent");
+  const tapped = await webServerCall(base, started, teen.token, "/continue", { screen: "consent" });
+  expect(tapped.status, await tapped.clone().text()).toBe(200);
+  const callback = await followToApp(started, await redirectOf(tapped));
+  const redeem = async () =>
+    client.authorizationCodeGrant(await webApp(), callback, {
+      pkceCodeVerifier: started.verifier,
+      expectedState: started.state,
+      expectedNonce: started.nonce,
+    });
+  return { redeem };
+}
+
+describe("teens: races and changes after acceptance", () => {
+  it("two Continues racing on one code: one teen gets in, the other is refused", async () => {
+    const parent = await snapParent();
+    // A guardian with two teens: the link works for either, but only once.
+    const [first, second] = [await teenOf(parent.email), await teenOf(parent.email)];
+    const { code, inviteId } = await invite(await serverToken(), parent.sub);
+    const screens = [await teenScreen(first, code), await teenScreen(second, code)];
+    expect(screens.map(({ shown }) => shown.screen)).toEqual(["consent", "consent"]);
+    const taps = await Promise.all(
+      screens.map(({ started }, index) =>
+        webServerCall(base, started, (index === 0 ? first : second).token, "/continue", {
+          screen: "consent",
+        }),
+      ),
+    );
+    expect(taps.map((tap) => tap.status).sort()).toEqual([200, 403]);
+    expect(
+      await rows(
+        `SELECT count(*)::int AS n FROM identity.consent_record
+          WHERE user_id = ANY($1) AND source = 'guardian_invite'`,
+        [[first.userId, second.userId]],
+      ),
+    ).toEqual([{ n: 1 }]);
+    expect(
+      await rows(
+        "SELECT count(*)::int AS n FROM oidc.teen_invite WHERE id = $1 AND accepted_at IS NOT NULL",
+        [inviteId],
+      ),
+    ).toEqual([{ n: 1 }]);
+  });
+
+  it("the guardian withdrawing approval after acceptance stops /connect and /me", async () => {
+    const parent = await snapParent();
+    const teen = await teenOf(parent.email);
+    const { code } = await invite(await serverToken(), parent.sub);
+    const tokens = await (await teenJoins(teen, code)).redeem();
+    await pool.query(
+      `UPDATE identity.guardian_consent SET approved_at = NULL, revoked_at = now() WHERE user_id = $1`,
+      [teen.userId],
+    );
+    await pool.query(
+      "UPDATE identity.user_profile SET parent_consent_status = 'revoked' WHERE user_id = $1",
+      [teen.userId],
+    );
+    expect((await teenScreen(teen)).shown).toMatchObject({
+      screen: "refused",
+      inviteProblem: "not_approved",
+    });
+    const me = await fetch(`${issuer}/me`, {
+      headers: { authorization: `Bearer ${tokens.access_token}` },
+    });
+    expect(me.status).toBe(401);
+  });
+
+  it("/token refuses a code when the parent ends the invite before it is redeemed", async () => {
+    const parent = await snapParent();
+    const teen = await teenOf(parent.email);
+    const token = await serverToken();
+    const { code, inviteId } = await invite(token, parent.sub);
+    const { redeem } = await teenJoins(teen, code);
+    expect((await inviteApi(token, `/${inviteId}/end`, { parentSub: parent.sub })).status).toBe(
+      200,
+    );
+    await expect(redeem()).rejects.toMatchObject({ error: "invalid_grant" });
+  });
+
+  it("a teen who turned 18 and agreed again as an adult is never erased by the parent's end", async () => {
+    const parent = await snapParent();
+    const teen = await teenOf(parent.email);
+    const token = await serverToken();
+    const { code, inviteId } = await invite(token, parent.sub);
+    const sub = (await (await teenJoins(teen, code)).redeem()).claims()?.sub;
+
+    await pool.query(
+      "UPDATE identity.user_profile SET date_of_birth = DATE '2000-01-01' WHERE user_id = $1",
+      [teen.userId],
+    );
+    // The parent's view has nothing to stand on any more.
+    expect((await inviteApi(token, `/${inviteId}`)).body).toMatchObject({ status: "ended" });
+    const adult = await signIn(await webApp(), WEB_REDIRECT, teen, "consent");
+    expect(adult.details.teenInvite).toBeNull();
+    expect(adult.tokens.claims()).toMatchObject({ sub, age_band: "adult" });
+
+    const ended = await inviteApi(token, `/${inviteId}/end`, { parentSub: parent.sub });
+    expect(ended).toMatchObject({ status: 200, body: { status: "ended" } });
+    expect(await rows("SELECT 1 FROM oidc.event_outbox WHERE sub = $1", [sub])).toEqual([]);
+    expect(
+      await rows("SELECT granted_via, ended_at FROM oidc.app_consent WHERE user_id = $1", [
+        teen.userId,
+      ]),
+    ).toEqual([{ granted_via: "consent_screen", ended_at: null }]);
+    // And they still sign in.
+    expect((await teenScreen(teen)).shown.screen).toBe("continue");
   });
 });

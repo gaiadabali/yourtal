@@ -157,6 +157,43 @@ export function pickToRedeem<T extends { status?: string; giftable?: boolean }>(
   return giftable.length > KEEP_GIFTABLE ? giftable.slice(0, 1) : [];
 }
 
+/** The voucher to put up for a charity: a giftable one, only while more than KEEP_GIFTABLE remain. */
+export function pickToAuction<T extends { status?: string; giftable?: boolean }>(
+  vouchers: readonly T[],
+): T | undefined {
+  // Same keep rule as pickToRedeem: the guide's gift and auction journeys need KEEP_GIFTABLE left.
+  const giftable = vouchers.filter((v) => v.status === "active" && v.giftable === true);
+  return giftable.length > KEEP_GIFTABLE ? giftable[0] : undefined;
+}
+
+/**
+ * The seeded auctions run 72 hours and nothing else opens one, so the auctions page would go
+ * empty. When none is open in the region, the member lists one voucher for an approved charity.
+ * Demo data only: this runs from the demo activity job, which is off in production.
+ * ponytail: no bids placed here (a bid needs a saved card on AU); an auction without bids is still open.
+ */
+async function keepAuctionOpen(seller: DemoApi, region: Region): Promise<string> {
+  const open = (field(ok(await seller.get("/api/auctions"), "auctions"), "auctions") ??
+    []) as unknown[];
+  if (open.length > 0) return `${region} auctions open: ${String(open.length)}`;
+  const charities = (field(
+    ok(await seller.get(`/api/charities?region=${region}`), "charities"),
+    "charities",
+  ) ?? []) as { id: string }[];
+  const vouchers = (field(ok(await seller.get("/api/wallet/vouchers"), "vouchers"), "vouchers") ??
+    []) as { voucherId: string; status?: string; giftable?: boolean }[];
+  const voucher = pickToAuction(vouchers);
+  const charity = charities[0];
+  if (voucher === undefined || charity === undefined)
+    return `${region} no auction opened: nothing to list`;
+  const listed = await seller.post(`/api/wallet/vouchers/${voucher.voucherId}/auction`, {
+    charityId: charity.id,
+  });
+  return listed.status < 400
+    ? `${region} opened an auction`
+    : `${region} no auction opened: ${String(field(listed.body, "code"))}`;
+}
+
 /** The owner pairs a till at the brand and redeems every unused demo voucher bought there. */
 async function redeemAtCounter(
   pool: pg.Pool,
@@ -251,6 +288,7 @@ export async function runDemoActivity(
         },
       );
       lines.push(`${region} counter redeemed ${String(redeemed)}`);
+      lines.push(await keepAuctionOpen(adult.api, region).catch((e: unknown) => String(e)));
     }
   }
   for (const line of lines) log(`[demo:activity] ${line}`);

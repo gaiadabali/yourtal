@@ -230,6 +230,47 @@ func (q *Queries) GetCodeCustody(ctx context.Context, voucherID pgtype.UUID) (Ge
 	return i, err
 }
 
+const getHolding = `-- name: GetHolding :one
+SELECT v.state, v.face_value_minor, v.currency, v.expires_at, v.region, l.redeem_partner_id
+FROM voucher.vouchers v
+JOIN voucher.code_custody c ON c.voucher_id = v.id
+LEFT JOIN store.listings l ON l.id = v.listing_id
+WHERE c.code_hash = $1 AND v.owner_id = $2
+`
+
+type GetHoldingParams struct {
+	CodeHash string
+	OwnerID  pgtype.UUID
+}
+
+type GetHoldingRow struct {
+	State           string
+	FaceValueMinor  int64
+	Currency        string
+	ExpiresAt       pgtype.Timestamptz
+	Region          string
+	RedeemPartnerID *string
+}
+
+// 2.8 T2 (docs/28 4.2): is this code in this owner's wallet, and what is it?
+// Both predicates are the boundary: a code held by somebody else matches
+// nothing, the same as an unknown code. Facts only; the route returns no
+// ids and never the hash. `redeem_partner_id` is NULL for an unbound listing
+// and for a voucher whose listing row is gone (LEFT JOIN).
+func (q *Queries) GetHolding(ctx context.Context, arg GetHoldingParams) (GetHoldingRow, error) {
+	row := q.db.QueryRow(ctx, getHolding, arg.CodeHash, arg.OwnerID)
+	var i GetHoldingRow
+	err := row.Scan(
+		&i.State,
+		&i.FaceValueMinor,
+		&i.Currency,
+		&i.ExpiresAt,
+		&i.Region,
+		&i.RedeemPartnerID,
+	)
+	return i, err
+}
+
 const getListingForBatch = `-- name: GetListingForBatch :one
 SELECT id, merchant_id, currency, face_value_minor, settlement_value_minor,
        partial_redemption_policy, minimum_spend_minor, expires_at, transferable

@@ -4,7 +4,7 @@ import type { SignInClient } from "./clients";
 import { CLIENTS, isSignInClient } from "./clients";
 import type { AppConsent } from "./oidc-store";
 import type { SignInInput, TeenInviteChecker } from "./sign-in-checks";
-import { NO_TEEN_INVITES_YET, decideSignIn } from "./sign-in-checks";
+import { NO_TEEN_INVITES, decideSignIn, signInTooOld } from "./sign-in-checks";
 
 function signInClient(clientId: string): SignInClient {
   const client = CLIENTS.find((candidate) => candidate.clientId === clientId);
@@ -31,8 +31,14 @@ const CONSENTED: AppConsent = {
   scopes: SCOPES,
   policyVersionId: "au-2026-09-01",
   grantedVia: "consent_screen",
+  inviteId: null,
   endedAt: null,
 };
+const PENDING = { allowed: true, inviteId: "inv-1", parentName: "Pat", pending: true } as const;
+const STANDING = { ...PENDING, pending: false } as const;
+const invites = (answer: Awaited<ReturnType<TeenInviteChecker["check"]>>): TeenInviteChecker => ({
+  check: () => Promise.resolve(answer),
+});
 
 function input(overrides: Partial<SignInInput> = {}): SignInInput {
   return {
@@ -43,7 +49,8 @@ function input(overrides: Partial<SignInInput> = {}): SignInInput {
     consent: null,
     policyVersionId: "au-2026-09-01",
     teenInviteCode: undefined,
-    teenInvites: NO_TEEN_INVITES_YET,
+    teenInvites: NO_TEEN_INVITES,
+    signInAgain: false,
     now: NOW,
     ...overrides,
   };
@@ -86,14 +93,23 @@ describe("the docs/26 §1.5 checks", () => {
     expect(await screen({ account: TEEN, client: FTR })).toBe("refused:teen_not_allowed");
   });
 
-  it("4. SnapApp needs a teen invite, and none exists yet", async () => {
-    expect(await screen({ account: TEEN, teenInviteCode: "abc" })).toBe(
-      "refused:teen_invite_required",
+  it("4. SnapApp refuses a teen without a good invite, and says why", async () => {
+    const state = await decideSignIn(
+      input({
+        account: TEEN,
+        teenInviteCode: "abc",
+        teenInvites: invites({ allowed: false, problem: "wrong_inviter" }),
+      }),
     );
+    expect(state).toMatchObject({
+      screen: "refused",
+      refusal: "teen_invite_required",
+      inviteProblem: "wrong_inviter",
+    });
   });
 
-  it("4. the teen invite seam decides for SnapApp, and is told the invite code", async () => {
-    const check = vi.fn<TeenInviteChecker["check"]>(() => Promise.resolve({ allowed: true }));
+  it("4. the teen invite check decides for SnapApp, and is told the invite code", async () => {
+    const check = vi.fn<TeenInviteChecker["check"]>(() => Promise.resolve(PENDING));
     expect(await screen({ account: TEEN, teenInviteCode: "abc", teenInvites: { check } })).toBe(
       "consent",
     );
@@ -122,6 +138,21 @@ describe("the docs/26 §1.5 checks", () => {
     expect(await screen({ consent: CONSENTED, prompts: new Set(["consent"]) })).toBe("consent");
   });
 
+  it("5. a teen agrees on the consent screen for a pending invite, then only continues under it", async () => {
+    const teenConsent: AppConsent = {
+      ...CONSENTED,
+      grantedVia: "guardian_invite",
+      inviteId: "inv-1",
+    };
+    const teen = { account: TEEN, consent: teenConsent };
+    expect(await screen({ ...teen, teenInvites: invites(PENDING) })).toBe("consent");
+    expect(await screen({ ...teen, teenInvites: invites(STANDING) })).toBe("continue");
+    const other = { ...STANDING, inviteId: "inv-2" };
+    expect(await screen({ ...teen, teenInvites: invites(other) })).toBe("consent");
+    const state = await decideSignIn(input({ ...teen, teenInvites: invites(STANDING) }));
+    expect(state).toMatchObject({ invite: STANDING, sharing: { ageBand: "teen" } });
+  });
+
   it("5. an adult whose consent came from a guardian's invite agrees for themselves", async () => {
     expect(await screen({ consent: { ...CONSENTED, grantedVia: "guardian_invite" } })).toBe(
       "consent",
@@ -135,5 +166,59 @@ describe("the docs/26 §1.5 checks", () => {
       ageBand: "adult",
       region: "AU",
     });
+  });
+});
+
+describe("a fresh sign-in when the app asks for one", () => {
+  const seconds = (date: Date) => date.getTime() / 1000;
+  const started = new Date(NOW.getTime() - 60_000);
+  const tooOld = (authTime: Date, prompts: string[], maxAge?: number) =>
+    signInTooOld({
+      authTime,
+      interactionStartedAt: seconds(started),
+      prompts: new Set(prompts),
+      maxAge,
+      now: NOW,
+    });
+
+  it("prompt=login: only a sign-in after this sign-in to the app began counts", () => {
+    expect(tooOld(new Date(started.getTime() - 1), ["login"])).toBe(true);
+    expect(tooOld(started, ["login"])).toBe(false);
+    expect(tooOld(new Date(NOW.getTime() - 1000), ["login"])).toBe(false);
+    expect(tooOld(new Date(started.getTime() - 1), [])).toBe(false);
+  });
+
+  it("max_age: at most that many whole seconds old, as auth_time counts them", () => {
+    const twelveHours = 12 * 3600;
+    expect(tooOld(new Date(NOW.getTime() - twelveHours * 1000), [], twelveHours)).toBe(false);
+    expect(tooOld(new Date(NOW.getTime() - twelveHours * 1000 - 1000), [], twelveHours)).toBe(true);
+    // 999 ms ago fell in the previous whole second, so auth_time is already a second old.
+    expect(tooOld(new Date(NOW.getTime() - 999), [], 0)).toBe(true);
+    // A sign-in after the interaction began still has to meet max_age.
+    expect(tooOld(new Date(NOW.getTime() - 30_000), [], 10)).toBe(true);
+  });
+
+  it("asks again when a value it needs is missing", () => {
+    const at = new Date(NOW.getTime() - 1000);
+    expect(
+      signInTooOld({
+        authTime: at,
+        interactionStartedAt: Number.NaN,
+        prompts: new Set(["login"]),
+        maxAge: undefined,
+        now: NOW,
+      }),
+    ).toBe(true);
+    expect(tooOld(at, [], Number.NaN)).toBe(true);
+    expect(tooOld(new Date(Number.NaN), [], 60)).toBe(true);
+  });
+
+  it("is asked for once the person may sign in to the app, before consent", async () => {
+    expect(await screen({ signInAgain: true })).toBe("sign_in_again");
+    expect(await screen({ signInAgain: true, consent: CONSENTED })).toBe("sign_in_again");
+    expect(await screen({ signInAgain: true, account: null })).toBe("login");
+    expect(await screen({ signInAgain: true, account: { ...ADULT, suspended: true } })).toBe(
+      "refused:account_on_hold",
+    );
   });
 });

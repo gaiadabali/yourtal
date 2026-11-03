@@ -24,6 +24,7 @@ import { ChangePasswordDto } from "./dto/change-password.schema";
 import { RequestPasswordResetDto } from "./dto/request-password-reset.schema";
 import { ConfirmPasswordResetDto } from "./dto/confirm-password-reset.schema";
 import { ConfirmEmailVerificationDto } from "./dto/confirm-email-verification.schema";
+import type { PasswordSignIn } from "./factors/second-factor-gate";
 
 /**
  * Email and password authentication. YT-0540.
@@ -120,7 +121,7 @@ export class AuthController {
   async login(@Body() body: LoginDto, @Req() request: FastifyRequest) {
     const result = await this.auth.login(body.email, body.password, request.ip, new Date());
     if (result.isErr()) throw mapAuthErrorToHttpException(result.error);
-    return { token: result.value.token, userId: result.value.userId };
+    return passwordSignInBody(result.value);
   }
 
   @NotValueMoving(
@@ -193,7 +194,7 @@ export class AuthController {
   async confirmPasswordReset(@Body() body: ConfirmPasswordResetDto) {
     const result = await this.auth.confirmPasswordReset(body.token, body.newPassword, new Date());
     if (result.isErr()) throw mapAuthErrorToHttpException(result.error);
-    return { token: result.value.token };
+    return passwordSignInBody(result.value);
   }
 
   @NotValueMoving(
@@ -219,6 +220,20 @@ export class AuthController {
     if (result.isErr()) throw mapAuthErrorToHttpException(result.error);
     return { verified: true };
   }
+}
+
+/**
+ * A session, or (an authenticator app being on) the pending token the code
+ * step answers with: `passwordSignInResultSchema` in the contracts.
+ */
+function passwordSignInBody(signIn: PasswordSignIn) {
+  return signIn.kind === "session"
+    ? { token: signIn.token, userId: signIn.userId }
+    : {
+        secondFactor: "totp" as const,
+        pendingToken: signIn.pendingToken,
+        expiresInSeconds: signIn.expiresInSeconds,
+      };
 }
 
 const SIGNUP_BLOCKED_COOKIE = "yt_signup_blocked";

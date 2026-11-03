@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { IdentityCheckStep } from "@yourtal/contracts/identity/earning-check";
 import { Button } from "@yourtal/ui/button";
 import { requestEmailVerificationAction } from "./identity-check-actions";
@@ -17,13 +19,16 @@ const UNKNOWN_STEPS: readonly IdentityCheckStep[] = ["verify_email"];
 /**
  * F126: the way forward for an account that may not earn yet. A verification
  * step gets the button that sends the link again. A disposable address gets
- * a plain line and no link, because YourTal has no change-email flow yet.
+ * a plain line and no link, because YourTal has no change-email flow yet. A
+ * passkey step links to the passkey page (F102, behind the finance switch).
  */
 export function IdentityCheckPrompt({ missing, locale }: IdentityCheckPromptProps) {
   const t = getPlayerTranslator(locale);
   const [email, setEmail] = useState<"idle" | "sent" | "failed">("idle");
   const [isPending, startTransition] = useTransition();
   const steps = missing.length === 0 ? UNKNOWN_STEPS : missing;
+  // The passkey page sends them back here once it is added.
+  const here = usePathname() || "/";
 
   function sendEmail() {
     startTransition(async () => {
@@ -38,6 +43,13 @@ export function IdentityCheckPrompt({ missing, locale }: IdentityCheckPromptProp
         {steps.includes("verify_email") && email !== "sent" ? (
           <Button type="button" size="sm" onClick={sendEmail} loading={isPending}>
             {t("identityCheck.verifyEmailCta")}
+          </Button>
+        ) : null}
+        {steps.includes("add_passkey") ? (
+          <Button asChild size="sm">
+            <Link href={{ pathname: "/passkey", query: { returnTo: here, reason: "earn" } }}>
+              {t("identityCheck.addPasskeyCta")}
+            </Link>
           </Button>
         ) : null}
       </div>

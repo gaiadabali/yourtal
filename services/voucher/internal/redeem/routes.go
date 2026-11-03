@@ -23,6 +23,7 @@ func Routes(logger *slog.Logger, network *Network) chi.Router {
 	r.Post("/capture", captureHandler(logger, network))
 	r.Post("/void", voidHandler(logger, network))
 	r.Post("/refund", refundHandler(logger, network))
+	r.Post("/lookup", lookupHandler(logger, network))
 	return r
 }
 

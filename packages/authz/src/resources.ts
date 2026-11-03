@@ -287,6 +287,13 @@ export const RESOURCE_ACTIONS = {
     "dev_clock_release_pending",
     "dev_clock_run_job",
     "dev_clock_advance_days",
+    // Passkeys and authenticator codes. Signing in with a passkey and the
+    // code step after a password are signed-out actions, like `create`;
+    // reading and changing the account's own sign-in methods needs a session.
+    "create_with_passkey",
+    "complete_second_factor",
+    "view_sign_in_methods",
+    "manage_sign_in_methods",
   ],
 
   /**

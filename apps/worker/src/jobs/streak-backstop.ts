@@ -16,6 +16,7 @@ import { ageBandFrom, ageYearsFrom } from "@yourtal/jurisdiction/age";
 import {
   identityCheckApplies,
   judgeEarningIdentity,
+  passkeyRequired,
   POINTS_IDENTITY_CHECK_SETTING_KEY,
 } from "@yourtal/contracts/identity/earning-check";
 import { defineJob } from "../job";
@@ -165,7 +166,7 @@ async function getSetting(client: PoolClient, region: Region, key: string): Prom
 /**
  * F126, the same rule `EarningIdentityCheck` applies in the API: a verified
  * verified, permanent (not disposable) sign-in email, required in production
- * and behind the region setting elsewhere.
+ * and behind the region setting elsewhere, and a passkey when `requirePasskey` is on.
  */
 async function mayEarnPoints(
   client: PoolClient,
@@ -181,10 +182,22 @@ async function mayEarnPoints(
     [userId],
   );
   const password = rows[0];
-  return judgeEarningIdentity(true, {
-    emailVerified: password?.verified_at != null,
-    email: password?.identifier ?? null,
-  }).mayEarn;
+  const needsPasskey = passkeyRequired(appEnv, setting);
+  const passkeys = needsPasskey
+    ? await client.query<{ n: string }>(
+        `SELECT count(*) AS n FROM identity.passkey WHERE user_id = $1`,
+        [userId],
+      )
+    : null;
+  return judgeEarningIdentity(
+    true,
+    {
+      emailVerified: password?.verified_at != null,
+      email: password?.identifier ?? null,
+      passkeyCount: Number(passkeys?.rows[0]?.n ?? 0),
+    },
+    needsPasskey,
+  ).mayEarn;
 }
 
 /** Mirrors `fake-ledger-economy.ts`'s `coverage()` formula exactly (1.2.a). */

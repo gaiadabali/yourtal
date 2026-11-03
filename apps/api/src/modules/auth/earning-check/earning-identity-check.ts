@@ -2,10 +2,12 @@ import type { Region } from "@yourtal/contracts/region";
 import {
   identityCheckApplies,
   judgeEarningIdentity,
+  passkeyRequired,
   POINTS_IDENTITY_CHECK_SETTING_KEY,
 } from "@yourtal/contracts/identity/earning-check";
 import type { EarningVerdict } from "@yourtal/contracts/identity/earning-check";
 import type { RegionSettingsReader } from "../../../shared/settings/region-settings-reader";
+import type { PasskeyRepository } from "../persistence/passkey.repository";
 import type { CredentialRepository } from "../persistence/credential.repository";
 import { PASSWORD_CREDENTIAL_KIND } from "../persistence/credential.repository";
 
@@ -20,13 +22,15 @@ export interface EarningIdentityCheckDeps {
   readonly appEnv: string;
   readonly settings: RegionSettingsReader;
   readonly credentials: Pick<CredentialRepository, "findByUserAndKind">;
+  readonly passkeys: Pick<PasskeyRepository, "listForUser">;
 }
 
 /**
  * Reads the facts from the auth module's own repository: the sign-in email
  * is the password credential's identifier and is verified when it carries
  * `verified_at` (1.4.e). The facts are not read at all when the check does
- * not apply, so the demo world pays nothing for it.
+ * not apply, so the demo world pays nothing for it, and the passkeys are read
+ * only while `requirePasskey` is on.
  */
 export class RepositoryEarningIdentityCheck implements EarningIdentityCheck {
   constructor(private readonly deps: EarningIdentityCheckDeps) {}
@@ -40,9 +44,16 @@ export class RepositoryEarningIdentityCheck implements EarningIdentityCheck {
       userId,
       PASSWORD_CREDENTIAL_KIND,
     );
-    return judgeEarningIdentity(true, {
-      emailVerified: password !== null && password.verifiedAt !== null,
-      email: password === null ? null : password.identifier,
-    });
+    const needsPasskey = passkeyRequired(this.deps.appEnv, setting);
+    const passkeyCount = needsPasskey ? (await this.deps.passkeys.listForUser(userId)).length : 0;
+    return judgeEarningIdentity(
+      true,
+      {
+        emailVerified: password !== null && password.verifiedAt !== null,
+        email: password === null ? null : password.identifier,
+        passkeyCount,
+      },
+      needsPasskey,
+    );
   }
 }

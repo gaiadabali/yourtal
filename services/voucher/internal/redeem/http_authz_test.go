@@ -165,3 +165,71 @@ func TestAnotherMerchantCannotRefundYourReceipt(t *testing.T) {
 			retry.Code, retry.Body.String())
 	}
 }
+
+// TestLookupRefusesAnOtherMerchantsOrderLikeAnUnknownOne: the order lookup
+// is keyed by a merchant-chosen reference, so it must not be an oracle for
+// another merchant's orders. A stranger asking for the owner's reference gets
+// byte-for-byte what an unknown reference gets, and the owner still sees it.
+func TestLookupRefusesAnOtherMerchantsOrderLikeAnUnknownOne(t *testing.T) {
+	f := newFixture(t)
+	handler, owner := f.httpFixture(t)
+
+	keys, err := keyring.New(map[keyring.Purpose]map[int][]byte{
+		keyring.PurposeMerchantHMAC: {1: make([]byte, 32)},
+	})
+	if err != nil {
+		t.Fatalf("keyring: %v", err)
+	}
+	stranger := f.issueCredential(t, context.Background(), keys, uuid.New())
+	_, order := f.holdOrder(t)
+
+	foreign := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/lookup",
+		mustJSON(t, map[string]string{"merchant_order_ref": order}), stranger, uuid.NewString())
+	unknown := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/lookup",
+		mustJSON(t, map[string]string{"merchant_order_ref": orderRef()}), stranger, uuid.NewString())
+
+	if foreign.Code != http.StatusNotFound || unknown.Code != http.StatusNotFound {
+		t.Fatalf("status = %d (another merchant's), %d (unknown); want 404, 404: %s",
+			foreign.Code, unknown.Code, foreign.Body.String())
+	}
+	if foreign.Body.String() != unknown.Body.String() {
+		t.Errorf("bodies differ:\n  another merchant's: %s\n  unknown:            %s",
+			foreign.Body.String(), unknown.Body.String())
+	}
+	var envelope struct {
+		Error struct{ Code string } `json:"error"`
+	}
+	decodeBody(t, foreign, &envelope)
+	if envelope.Error.Code != "order_not_found" {
+		t.Errorf("error code = %q, want order_not_found", envelope.Error.Code)
+	}
+
+	if status, answer, body := lookupOverHTTP(t, handler, owner, order); status != http.StatusOK || answer.State != "held" {
+		t.Fatalf("the owner's own lookup = %d, %+v (%s)", status, answer, body)
+	}
+}
+
+// TestLookupNeedsASignatureAndAKey: the route sits behind the same chain as
+// authorize, capture and void, so an unsigned call is 401 and a signed call
+// with no Idempotency-Key is 400.
+func TestLookupNeedsASignatureAndAKey(t *testing.T) {
+	f := newFixture(t)
+	handler, cred := f.httpFixture(t)
+	body := mustJSON(t, map[string]string{"merchant_order_ref": orderRef()})
+
+	if rec := send(handler, "/v1/vouchers/lookup", "", uuid.NewString(), body); rec.Code != http.StatusUnauthorized {
+		t.Errorf("unsigned lookup = %d, want 401: %s", rec.Code, rec.Body.String())
+	}
+
+	rec := signedRequest(t, handler, http.MethodPost, "/v1/vouchers/lookup", body, cred, "")
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("lookup with no Idempotency-Key = %d, want 400: %s", rec.Code, rec.Body.String())
+	}
+	var envelope struct {
+		Error struct{ Code string } `json:"error"`
+	}
+	decodeBody(t, rec, &envelope)
+	if envelope.Error.Code != "idempotency_key_required" {
+		t.Errorf("error code = %q, want idempotency_key_required", envelope.Error.Code)
+	}
+}

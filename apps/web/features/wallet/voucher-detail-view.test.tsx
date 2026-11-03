@@ -181,6 +181,37 @@ describe("VoucherDetailView", () => {
     expect(JSON.stringify(stored)).not.toContain("K7M2-Q9XP");
   });
 
+  it("shows only the code, Copy and the app instructions for a voucher redeemed in an app", async () => {
+    vi.mocked(revealVoucherCodeAction).mockResolvedValueOnce({ ok: true, code: "K7M2-Q9XP" });
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { onLine: true, clipboard: { writeText } });
+    const detail = buildCachedVoucherDetail(cachedVoucher, "2026-09-19T09:00:00.000Z");
+
+    renderWithRegion(
+      <VoucherDetailView
+        voucherId={cachedVoucher.voucherId}
+        initialDetail={detail}
+        initialQr={null}
+        redeemIn={{ partnerId: "snap-app" }}
+      />,
+      "AU",
+    );
+    await flushMicrotasks();
+
+    expect(screen.getByText("K7M2-Q9XP")).toBeInTheDocument();
+    expect(
+      screen.getByText(/enter this code\. Only the SnapApp account linked/),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(screen.queryByText("Toko Cache CBD")).not.toBeInTheDocument();
+    expect(screen.queryByText("Redeem at")).not.toBeInTheDocument();
+
+    screen.getByRole("button", { name: "Copy code" }).click();
+    await flushMicrotasks();
+    expect(writeText).toHaveBeenCalledWith("K7M2-Q9XP");
+    expect(screen.getAllByText("Copied").length).toBeGreaterThan(0);
+  });
+
   it("falls back to the QR alone, with the offline caption, when no code can be fetched", async () => {
     const detail = buildCachedVoucherDetail(cachedVoucher, "2026-09-19T09:00:00.000Z");
 

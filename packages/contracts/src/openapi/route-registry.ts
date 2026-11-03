@@ -24,7 +24,11 @@ import { INVOICE_ROUTE_DEFINITIONS } from "./route-registry.c-invoices";
 import { CHARITY_ROUTE_DEFINITIONS } from "./route-registry.c-charity";
 import { PAYOUT_ROUTE_DEFINITIONS } from "./route-registry.c-payouts";
 import { AUCTION_ROUTE_DEFINITIONS } from "./route-registry.a-auction";
-import { OIDC_INTERACTION_ROUTE_DEFINITIONS } from "./route-registry.a-oidc";
+import {
+  OIDC_INTERACTION_ROUTE_DEFINITIONS,
+  OIDC_TEEN_INVITE_ROUTE_DEFINITIONS,
+} from "./route-registry.a-oidc";
+import { SIGN_IN_METHOD_ROUTE_DEFINITIONS } from "./route-registry.a-auth";
 import { COUNTER_ROUTE_DEFINITIONS } from "./route-registry.c-counter";
 import { DEVELOPERS_ROUTE_DEFINITIONS } from "./route-registry.c-developers";
 import { PARTNERS_ROUTE_DEFINITIONS } from "./route-registry.c-partners";
@@ -91,6 +95,7 @@ export {
   STAFF_RISK_ROUTE_DEFINITIONS,
   STAFF_SETTLEMENT_ROUTE_DEFINITIONS,
   STAFF_OPS_ROUTE_DEFINITIONS,
+  SIGN_IN_METHOD_ROUTE_DEFINITIONS,
 };
 // `export *` is banned (docs/13b section 5) — named re-exports only, and only
 // the pieces something outside this file's own siblings actually needs.
@@ -119,6 +124,7 @@ export const ALL_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   ...PAYOUT_ROUTE_DEFINITIONS,
   ...AUCTION_ROUTE_DEFINITIONS,
   ...OIDC_INTERACTION_ROUTE_DEFINITIONS,
+  ...OIDC_TEEN_INVITE_ROUTE_DEFINITIONS,
   ...COUNTER_ROUTE_DEFINITIONS,
   ...DEVELOPERS_ROUTE_DEFINITIONS,
   ...PARTNERS_ROUTE_DEFINITIONS,
@@ -131,6 +137,7 @@ export const ALL_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   ...STAFF_RISK_ROUTE_DEFINITIONS,
   ...STAFF_SETTLEMENT_ROUTE_DEFINITIONS,
   ...STAFF_OPS_ROUTE_DEFINITIONS,
+  ...SIGN_IN_METHOD_ROUTE_DEFINITIONS,
 ];
 
 /** Builds the `paths` object `build-document.ts` embeds in the document. */

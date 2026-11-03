@@ -5,6 +5,7 @@ import {
   Get,
   Header,
   Inject,
+  Logger,
   NotFoundException,
   Param,
   Query,
@@ -36,8 +37,13 @@ import { REGION_SETTINGS_READER } from "../../shared/settings/region-settings-re
 import type { RegionSettingsReader } from "../../shared/settings/region-settings-reader";
 import { USER_PROFILE_REPOSITORY } from "../identity/persistence/user-profile.repository";
 import type { UserProfileRepository } from "../identity/persistence/user-profile.repository";
+import {
+  BUSINESS_ACCOUNT_REPOSITORY,
+  type BusinessAccountRepository,
+} from "../business/persistence/business-account.repository";
 import { SAGA_VOUCHER_READER } from "../checkout/checkout.tokens";
 import type { SagaVoucherReader } from "../checkout/persistence/saga-voucher-reader";
+import { LISTING_PARTNER_READER, type ListingPartnerReader } from "./listing-partner-reader";
 import { toWalletHistoryEntry, toWalletSummary, toWalletVoucher } from "./wallet-mapping";
 
 /** F12's key in `platform.region_setting` for a teen's own daily earn cap. */
@@ -59,6 +65,8 @@ function isCodeUsable(row: WalletVoucherRow, nowMs: number): boolean {
  */
 @Controller("api/wallet")
 export class WalletController {
+  private readonly logger = new Logger(WalletController.name);
+
   constructor(
     private readonly principals: PrincipalService,
     @Inject(LEDGER_INTERNAL_CLIENT) private readonly ledger: LedgerInternalClient,
@@ -66,7 +74,32 @@ export class WalletController {
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
     @Inject(REGION_SETTINGS_READER) private readonly settings: RegionSettingsReader,
     @Inject(SAGA_VOUCHER_READER) private readonly burns: SagaVoucherReader,
+    @Inject(BUSINESS_ACCOUNT_REPOSITORY) private readonly businesses: BusinessAccountRepository,
+    @Inject(LISTING_PARTNER_READER) private readonly listingPartners: ListingPartnerReader,
   ) {}
+
+  /** The owning businesses' own display names; a business that cannot be read falls back to the listing's copy. */
+  private async namesOf(rows: readonly WalletVoucherRow[]): Promise<Map<string, string>> {
+    const ids = [...new Set(rows.map((row) => row.merchantId))];
+    const found = await Promise.all(
+      ids.map(
+        async (id) =>
+          [
+            id,
+            (
+              await this.businesses.findById(id).catch((error: unknown) => {
+                // Ids only, no names: the listing's own name stands in.
+                this.logger.warn(
+                  `business ${id} name lookup failed: ${error instanceof Error ? error.message : "unknown"}`,
+                );
+                return null;
+              })
+            )?.displayName,
+          ] as const,
+      ),
+    );
+    return new Map(found.filter((pair): pair is [string, string] => pair[1] !== undefined));
+  }
 
   @Authorize({ kind: "wallet", action: "view" })
   @Get()
@@ -127,7 +160,11 @@ export class WalletController {
         ...(startingAfter === undefined || startingAfter === "" ? {} : { startingAfter }),
       }),
     );
-    return { vouchers: page.vouchers.map(toWalletVoucher), hasMore: page.hasMore };
+    const names = await this.namesOf(page.vouchers);
+    return {
+      vouchers: page.vouchers.map((row) => toWalletVoucher(row, names)),
+      hasMore: page.hasMore,
+    };
   }
 
   /**
@@ -137,7 +174,8 @@ export class WalletController {
    * voucher service's own owner-scoped `reveal`. The code is sent only while
    * the voucher can still be redeemed, and `no-store` keeps it out of any
    * cache between here and the screen. A failed reveal drops the code and
-   * keeps the voucher: the QR still works. Never log the code or this body.
+   * keeps the voucher: the QR still works. `redeemIn` comes from the listing's binding, after the same ownership check.
+   * Never log the code or this body.
    */
   @Authorize({ kind: "wallet", action: "view" })
   @Header("Cache-Control", "no-store")
@@ -148,7 +186,11 @@ export class WalletController {
   ): Promise<WalletVoucherDetail> {
     const ownerId = (await this.principals.resolve(request)).id;
     const row = await unwrap(this.vouchers.get({ voucherId, ownerId }));
-    const voucher = toWalletVoucher(row);
+    const partnerId = await this.listingPartners.partnerOf(row.listingId);
+    const voucher = {
+      ...toWalletVoucher(row, await this.namesOf([row])),
+      ...(partnerId === null ? {} : { redeemIn: { partnerId } }),
+    };
     if (!isCodeUsable(row, Date.now())) return voucher;
     const revealed = await this.vouchers.reveal({ voucherId, ownerId });
     return revealed.isOk() ? { ...voucher, code: revealed.value.code } : voucher;

@@ -20,6 +20,8 @@ import type {
 } from "@yourtal/contracts/voucher-internal/lifecycle";
 import type {
   GetVoucherRequest,
+  Holding,
+  HoldingRequest,
   ListForUserRequest,
   ListForUserResult,
   WalletVoucherRow,
@@ -83,6 +85,8 @@ export interface VoucherInternalClient {
 
   listForUser(request: ListForUserRequest): ResultAsync<ListForUserResult, VoucherError>;
   get(request: GetVoucherRequest): ResultAsync<WalletVoucherRow, VoucherError>;
+  /** 2.8 T2: is this code (by SHA-256) in this owner's wallet; facts only, `{ held: false }` otherwise. */
+  holding(request: HoldingRequest): ResultAsync<Holding, VoucherError>;
 
   /** 8.2.a: a read-only preview, no hold placed. */
   lookupAsDevice(request: LookupAsDeviceRequest): ResultAsync<VoucherPreview, VoucherError>;

@@ -19,6 +19,8 @@ import type {
 } from "@yourtal/contracts/voucher-internal/lifecycle";
 import type {
   GetVoucherRequest,
+  Holding,
+  HoldingRequest,
   ListForUserRequest,
   ListForUserResult,
   WalletVoucherRow,
@@ -118,6 +120,10 @@ export class FakeVoucherClient implements VoucherInternalClient {
 
   get(request: GetVoucherRequest): ResultAsync<WalletVoucherRow, VoucherError> {
     return walletOps.get(this.db, request);
+  }
+
+  holding(request: HoldingRequest): ResultAsync<Holding, VoucherError> {
+    return walletOps.holding(this.db, request);
   }
 
   lookupAsDevice(request: LookupAsDeviceRequest): ResultAsync<VoucherPreview, VoucherError> {

@@ -9,16 +9,27 @@ import type {
   SignInRefusal,
 } from "@yourtal/contracts/oidc/interaction";
 import { currentPolicyVersion } from "@yourtal/consent/policy-version";
-import { SESSION_VALIDATOR } from "../../shared/authz/session-validator";
-import type { SessionValidator } from "../../shared/authz/session-validator";
-import { sessionAmr } from "./amr";
+import type { SessionSignIn } from "../auth/session/session.service";
 import type { OidcAccount } from "./claims";
 import type { SignInClient } from "./clients";
 import { clientById, isSignInClient } from "./clients";
 import { OIDC_RUNTIME, OidcRuntime } from "./oidc-runtime";
 import type { OidcStore } from "./oidc-store";
 import type { SignInState, TeenInviteChecker } from "./sign-in-checks";
-import { TEEN_INVITE_CHECKER, decideSignIn } from "./sign-in-checks";
+import { TEEN_INVITE_CHECKER, decideSignIn, signInTooOld } from "./sign-in-checks";
+
+/** YourTal's session, with how and when the person signed in to it (`SessionService`). */
+export interface SignInSessions {
+  validateWithSignIn(token: string, now: Date): Promise<SessionSignIn>;
+}
+export const SIGN_IN_SESSIONS = Symbol("SIGN_IN_SESSIONS");
+
+/** The signed-in person, and the sign-in that the ID token's `auth_time` and `amr` describe. */
+interface SignedIn {
+  readonly account: OidcAccount;
+  readonly authTime: Date;
+  readonly amr: readonly string[];
+}
 
 export type InteractionErrorCode =
   "interaction_not_found" | "session_required" | "screen_changed" | "sign_in_refused";
@@ -46,6 +57,8 @@ interface Loaded {
   readonly scopes: string[];
   readonly prompts: Set<string>;
   readonly params: Record<string, unknown>;
+  /** When the provider started this interaction, epoch seconds. */
+  readonly startedAt: number;
 }
 
 function words(value: unknown): string[] {
@@ -61,13 +74,13 @@ function words(value: unknown): string[] {
 export class InteractionService {
   constructor(
     @Inject(OIDC_RUNTIME) private readonly runtime: OidcRuntime,
-    @Inject(SESSION_VALIDATOR) private readonly sessions: SessionValidator,
+    @Inject(SIGN_IN_SESSIONS) private readonly sessions: SignInSessions,
     @Inject(TEEN_INVITE_CHECKER) private readonly teenInvites: TeenInviteChecker,
   ) {}
 
   async details(http: RawHttp, uid: string, sessionToken: string): Promise<InteractionDetails> {
     const loaded = await this.load(http, uid);
-    const state = await this.decide(loaded, sessionToken, new Date());
+    const { state } = await this.decide(loaded, sessionToken, new Date());
     const { client } = loaded;
     return {
       uid,
@@ -87,6 +100,9 @@ export class InteractionService {
           : null,
       sharing: "sharing" in state ? state.sharing : null,
       refusal: state.screen === "refused" ? state.refusal : null,
+      inviteProblem: state.screen === "refused" ? state.inviteProblem : null,
+      teenInvite:
+        "invite" in state && state.invite !== null ? { parentName: state.invite.parentName } : null,
       uiLocales: words(loaded.params["ui_locales"]),
     };
   }
@@ -99,8 +115,10 @@ export class InteractionService {
   ): Promise<InteractionRedirect> {
     const loaded = await this.load(http, uid);
     const now = new Date();
-    const state = await this.decide(loaded, sessionToken, now);
-    if (!("account" in state)) throw new InteractionError("session_required");
+    const { state, signedIn } = await this.decide(loaded, sessionToken, now);
+    if (!("account" in state) || signedIn === null || state.screen === "sign_in_again") {
+      throw new InteractionError("session_required");
+    }
     if (state.screen === "verify_email") throw new InteractionError("screen_changed");
     if (state.screen === "refused") {
       await loaded.store.logSignIn(state.account.userId, loaded.client.clientId, state.refusal);
@@ -116,14 +134,25 @@ export class InteractionService {
       const policyVersionId = currentPolicyVersion(account.region)?.id;
       if (policyVersionId === undefined)
         throw new Error("oidc: no consent wording for this region");
-      await loaded.store.grantAppConsent({
+      const { invite } = state;
+      const granted = await loaded.store.grantAppConsent({
         userId: account.userId,
         sector: loaded.client.sector,
         scopes: loaded.scopes,
         policyVersionId,
         jurisdiction: account.region,
         now,
+        // A teen agrees under their guardian's invite, and a pending one is used up here.
+        ...(invite === null ? {} : { invite: { id: invite.inviteId, accept: invite.pending } }),
       });
+      if (!granted) {
+        await loaded.store.logSignIn(
+          account.userId,
+          loaded.client.clientId,
+          "teen_invite_required",
+        );
+        throw new InteractionError("sign_in_refused", "teen_invite_required");
+      }
     }
 
     const grant = new loaded.provider.Grant({
@@ -137,7 +166,13 @@ export class InteractionService {
       http.req,
       http.res,
       {
-        login: { accountId: account.userId, amr: sessionAmr(), remember: false },
+        // auth_time and amr are the YourTal session's own sign-in, not this tap.
+        login: {
+          accountId: account.userId,
+          ts: Math.floor(signedIn.authTime.getTime() / 1000),
+          amr: [...signedIn.amr],
+          remember: false,
+        },
         consent: { grantId },
         ...(loaded.prompts.has("create") ? { create: {} } : {}),
       },
@@ -149,7 +184,7 @@ export class InteractionService {
 
   async cancel(http: RawHttp, uid: string, sessionToken: string): Promise<InteractionRedirect> {
     const loaded = await this.load(http, uid);
-    const state = await this.decide(loaded, sessionToken, new Date());
+    const { state } = await this.decide(loaded, sessionToken, new Date());
     const reason: AccessDeniedReason =
       state.screen === "refused" ? state.refusal : "user_cancelled";
     const redirectTo = await loaded.provider.interactionResult(
@@ -191,13 +226,20 @@ export class InteractionService {
       scopes: words(params["scope"]),
       prompts: new Set(words(params["prompt"])),
       params,
+      startedAt: interaction.iat,
     };
   }
 
-  private async decide(loaded: Loaded, sessionToken: string, now: Date): Promise<SignInState> {
-    const account = await this.signedIn(loaded.store, sessionToken, now);
+  private async decide(
+    loaded: Loaded,
+    sessionToken: string,
+    now: Date,
+  ): Promise<{ state: SignInState; signedIn: SignedIn | null }> {
+    const signedIn = await this.signedIn(loaded.store, sessionToken, now);
+    const account = signedIn?.account ?? null;
     const inviteCode = loaded.params["teen_invite"];
-    return decideSignIn({
+    const maxAge = loaded.params["max_age"];
+    const state = await decideSignIn({
       account,
       client: loaded.client,
       scopes: loaded.scopes,
@@ -209,18 +251,30 @@ export class InteractionService {
       policyVersionId: account === null ? undefined : currentPolicyVersion(account.region)?.id,
       teenInviteCode: typeof inviteCode === "string" ? inviteCode : undefined,
       teenInvites: this.teenInvites,
+      signInAgain:
+        signedIn !== null &&
+        signInTooOld({
+          authTime: signedIn.authTime,
+          interactionStartedAt: loaded.startedAt,
+          prompts: loaded.prompts,
+          // The library has checked it is a whole number of seconds.
+          maxAge: maxAge === undefined ? undefined : Number(maxAge),
+          now,
+        }),
       now,
     });
+    return { state, signedIn };
   }
 
   private async signedIn(
     store: OidcStore,
     sessionToken: string,
     now: Date,
-  ): Promise<OidcAccount | null> {
+  ): Promise<SignedIn | null> {
     if (sessionToken.length === 0) return null;
-    const session = await this.sessions.validateAndTouch(sessionToken, now);
+    const session = await this.sessions.validateWithSignIn(sessionToken, now);
     if (!session.valid) return null;
-    return store.findAccount(session.userId);
+    const account = await store.findAccount(session.userId);
+    return account === null ? null : { account, authTime: session.authTime, amr: session.amr };
   }
 }

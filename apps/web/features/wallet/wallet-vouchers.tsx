@@ -118,6 +118,10 @@ export async function WalletVouchers({
                       {t("voucher.giftFrom", { name: receivedAs.get(voucher.voucherId) ?? "" })}
                     </span>
                   ) : null}
+                  {/* Two purchases of one voucher read the same; the tail of the id tells them apart. */}
+                  <span>
+                    {t("voucher.shortRef", { code: voucher.voucherId.slice(-4).toUpperCase() })}
+                  </span>
                   {voucher.expiresAt ? (
                     <span>
                       {status.isArchived

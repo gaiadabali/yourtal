@@ -13,6 +13,8 @@ import type {
   Capture,
   CaptureParams,
   MerchantApiErrorBody,
+  OrderLookup,
+  OrderState,
   RefundParams,
   RefundResult,
   VoidParams,
@@ -52,6 +54,18 @@ export interface MerchantClient {
   capture(params: CaptureParams): Promise<Capture>;
   void(params: VoidParams): Promise<VoidResult>;
   refund(params: RefundParams): Promise<RefundResult>;
+  /**
+   * Reads the outcome of an order by the `merchantOrderRef` you sent to
+   * `authorize`, e.g. after losing the answer to an authorize or capture.
+   * A read: it moves nothing and never counts toward the failed-lookup
+   * throttle. Resolves to a `MerchantApiError` with code `order_not_found`
+   * (404) for an unknown reference or another merchant's.
+   *
+   * Always sent under a FRESH Idempotency-Key (on every retry too): the
+   * service replays the stored answer for a repeated key, so a reused key
+   * would hand back a stale answer, or a stored 5xx.
+   */
+  lookup(merchantOrderRef: string): Promise<OrderLookup>;
 }
 
 function isErrorBody(value: unknown): value is MerchantApiErrorBody {
@@ -138,6 +152,30 @@ function requireBoolean(record: Record<string, unknown>, key: string, path: stri
   return value;
 }
 
+const ORDER_STATES: readonly OrderState[] = ["held", "captured", "voided", "expired"];
+
+function lookupBody(merchantOrderRef: string): Record<string, unknown> {
+  return { merchant_order_ref: merchantOrderRef };
+}
+
+function parseOrderLookup(body: unknown, path: string): OrderLookup {
+  if (!isRecord(body)) throw new Error(`${path}: response body is not a JSON object`);
+  const state = requireString(body, "state", path);
+  if (!ORDER_STATES.includes(state as OrderState)) {
+    throw new Error(`${path}: response has an unknown order state "${state}"`);
+  }
+  return {
+    authorizationId: requireString(body, "authorization_id", path),
+    state: state as OrderState,
+    amountAuthorized: requireNumber(body, "amount_authorized", path),
+    expiresAt: requireString(body, "expires_at", path),
+    ...(state === "captured" && {
+      receiptId: requireString(body, "receipt_id", path),
+      amountCaptured: requireNumber(body, "amount_captured", path),
+    }),
+  };
+}
+
 function parseAuthorization(body: unknown, path: string): Authorization {
   if (!isRecord(body)) throw new Error(`${path}: response body is not a JSON object`);
   return {
@@ -214,11 +252,15 @@ export function createMerchantClient(options: MerchantClientOptions): MerchantCl
     path: string,
     wireBody: Record<string, unknown>,
     parseResponse: (body: unknown, path: string) => T,
+    { freshKeyPerAttempt = false }: { freshKeyPerAttempt?: boolean } = {},
   ): Promise<T> {
-    const idempotencyKey = generateIdempotencyKey();
+    const callKey = generateIdempotencyKey();
     const body = JSON.stringify(wireBody);
 
     return withRetry(options.retry, isRetryable, retryAfterOf, async () => {
+      // A read must not replay: the service stores every answer under its
+      // key, a 5xx included, so reusing one would return the same failure.
+      const idempotencyKey = freshKeyPerAttempt ? generateIdempotencyKey() : callKey;
       const signature = signRequest({
         secret: options.secret,
         keyId: options.keyId,
@@ -275,6 +317,10 @@ export function createMerchantClient(options: MerchantClientOptions): MerchantCl
     capture: (params) => call("/v1/vouchers/capture", captureBody(params), parseCapture),
     void: (params) => call("/v1/vouchers/void", voidBody(params), parseVoidResult),
     refund: (params) => call("/v1/vouchers/refund", refundBody(params), parseRefundResult),
+    lookup: (merchantOrderRef) =>
+      call("/v1/vouchers/lookup", lookupBody(merchantOrderRef), parseOrderLookup, {
+        freshKeyPerAttempt: true,
+      }),
   };
 }
 

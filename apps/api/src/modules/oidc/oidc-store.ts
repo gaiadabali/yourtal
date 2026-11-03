@@ -1,4 +1,4 @@
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import type { OidcAccount } from "./claims";
 import type { Region } from "./clients";
 
@@ -7,6 +7,8 @@ export interface AppConsent {
   readonly scopes: readonly string[];
   readonly policyVersionId: string;
   readonly grantedVia: "consent_screen" | "guardian_invite";
+  /** The guardian's invite a teen's consent was given under. */
+  readonly inviteId: string | null;
   readonly endedAt: Date | null;
 }
 
@@ -17,6 +19,8 @@ export interface GrantAppConsent {
   readonly policyVersionId: string;
   readonly jurisdiction: Region;
   readonly now: Date;
+  /** A teen's consent, under a guardian's invite; `accept` uses a pending one up. */
+  readonly invite?: { readonly id: string; readonly accept: boolean };
 }
 
 /** Everything the provider reads and writes outside its own adapter records. */
@@ -27,8 +31,12 @@ export interface OidcStore {
   /** The person's sub for this sector if one was ever made; never makes one. */
   findSubject(sector: string, userId: string): Promise<string | null>;
   findAppConsent(userId: string, sector: string): Promise<AppConsent | null>;
-  /** The current consent and its append-only evidence, in one transaction. */
-  grantAppConsent(input: GrantAppConsent): Promise<void>;
+  /**
+   * The current consent and its append-only evidence, in one transaction, with
+   * the invite accepted in it. False, and nothing written, when the invite was
+   * used, ended or expired meanwhile.
+   */
+  grantAppConsent(input: GrantAppConsent): Promise<boolean>;
   logSignIn(userId: string, clientId: string, result: string): Promise<void>;
 }
 
@@ -51,6 +59,31 @@ function isUniqueViolation(error: unknown): boolean {
     "code" in error &&
     error.code === UNIQUE_VIOLATION
   );
+}
+
+/**
+ * Locks the invite a teen's consent is given under, so an end or a second
+ * acceptance waits. A pending one is used up here, once, by this teen, while
+ * still good; a standing one must be this teen's and not ended.
+ */
+async function holdInvite(
+  client: PoolClient,
+  invite: NonNullable<GrantAppConsent["invite"]>,
+  input: GrantAppConsent,
+): Promise<boolean> {
+  const locked = await client.query<{ teen_user_id: string | null; expires_at: Date }>(
+    "SELECT teen_user_id, expires_at FROM oidc.teen_invite WHERE id = $1 AND ended_at IS NULL FOR UPDATE",
+    [invite.id],
+  );
+  const row = locked.rows[0];
+  if (row === undefined) return false;
+  if (!invite.accept) return row.teen_user_id === input.userId;
+  if (row.teen_user_id !== null || row.expires_at.getTime() <= input.now.getTime()) return false;
+  await client.query(
+    "UPDATE oidc.teen_invite SET teen_user_id = $2, accepted_at = $3 WHERE id = $1",
+    [invite.id, input.userId, input.now],
+  );
+  return true;
 }
 
 /** Raw SQL over the app role's pool. Never region-scoped: these reads are by user id. */
@@ -118,9 +151,10 @@ export function createPgOidcStore(pool: Pool): OidcStore {
         scopes: string[];
         policy_version_id: string;
         granted_via: AppConsent["grantedVia"];
+        invite_id: string | null;
         ended_at: Date | null;
       }>(
-        `SELECT scopes, policy_version_id, granted_via, ended_at
+        `SELECT scopes, policy_version_id, granted_via, invite_id, ended_at
            FROM oidc.app_consent WHERE user_id = $1 AND sector = $2`,
         [userId, sector],
       );
@@ -130,35 +164,57 @@ export function createPgOidcStore(pool: Pool): OidcStore {
         scopes: row.scopes,
         policyVersionId: row.policy_version_id,
         grantedVia: row.granted_via,
+        inviteId: row.invite_id,
         endedAt: row.ended_at,
       };
     },
 
     async grantAppConsent(input) {
+      const { invite } = input;
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        if (invite !== undefined && !(await holdInvite(client, invite, input))) {
+          await client.query("ROLLBACK");
+          return false;
+        }
         await client.query(
           `INSERT INTO oidc.app_consent
-             (user_id, sector, scopes, policy_version_id, granted_via, granted_at)
-           VALUES ($1, $2, $3, $4, 'consent_screen', $5)
+             (user_id, sector, scopes, policy_version_id, granted_via, invite_id, granted_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
            ON CONFLICT (user_id, sector) DO UPDATE SET
              scopes = EXCLUDED.scopes,
              policy_version_id = EXCLUDED.policy_version_id,
              granted_via = EXCLUDED.granted_via,
-             invite_id = NULL,
+             invite_id = EXCLUDED.invite_id,
              granted_at = EXCLUDED.granted_at,
              ended_at = NULL,
              end_reason = NULL`,
-          [input.userId, input.sector, input.scopes, input.policyVersionId, input.now],
+          [
+            input.userId,
+            input.sector,
+            input.scopes,
+            input.policyVersionId,
+            invite === undefined ? "consent_screen" : "guardian_invite",
+            invite?.id ?? null,
+            input.now,
+          ],
         );
         await client.query(
           `INSERT INTO identity.consent_record
              (user_id, purpose, jurisdiction, policy_version_id, state, recorded_at, source, audience)
-           VALUES ($1, 'sister_app_profile_sharing', $2, $3, 'granted', $4, 'oidc_consent_screen', $5)`,
-          [input.userId, input.jurisdiction, input.policyVersionId, input.now, input.sector],
+           VALUES ($1, 'sister_app_profile_sharing', $2, $3, 'granted', $4, $5, $6)`,
+          [
+            input.userId,
+            input.jurisdiction,
+            input.policyVersionId,
+            input.now,
+            invite === undefined ? "oidc_consent_screen" : "guardian_invite",
+            input.sector,
+          ],
         );
         await client.query("COMMIT");
+        return true;
       } catch (error) {
         await client.query("ROLLBACK");
         throw error;

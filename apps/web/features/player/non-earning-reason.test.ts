@@ -31,6 +31,14 @@ describe("nonEarningReasonKey", () => {
     expect(identityCheckKey(["use_permanent_email"])).toBe("identityCheckPermanentEmail");
   });
 
+  it("asks for the passkey when it is all that is left", () => {
+    expect(identityCheckKey(["add_passkey"])).toBe("identityCheckPasskey");
+    expect(identityCheckKey(["verify_email", "add_passkey"])).toBe("identityCheck");
+    expect(identityCheckKey(["use_permanent_email", "add_passkey"])).toBe(
+      "identityCheckPermanentEmail",
+    );
+  });
+
   it("has a real line in both catalogues for every key", () => {
     for (const locale of ["en-AU", "id-ID"] as const) {
       const t = getPlayerTranslator(locale);
@@ -39,6 +47,7 @@ describe("nonEarningReasonKey", () => {
         "campaignDailyCapReached",
         "identityCheck",
         "identityCheckPermanentEmail",
+        "identityCheckPasskey",
         "generic",
       ] as const) {
         expect(t(`refusal.reasons.${key}`)).not.toContain("refusal.reasons");

@@ -81,6 +81,14 @@ Every app may rely on these, and on nothing else.
 
 The ID token also carries `iss`, `aud`, `azp`, `exp`, `iat`, `auth_time`, `nonce` (when the app sent one) and `amr`. `amr` says how the person signed in: `pwd` for a password, `hwk` for a passkey, `otp` for an authenticator code, and `mfa` when two were used. Apps may require `hwk` or `mfa` for staff (§1.10).
 
+What `amr` does and does not promise (group 3.9.c):
+
+- **Any passkey counts as `hwk`**, synced ones (iCloud Keychain, Google Password Manager, 1Password) included. RFC 8176 reserves `hwk` for a hardware-bound key; YourTal uses it for every passkey because what the staff rule needs is phishing resistance, which a synced passkey has too. YourTal accepts attestation `none`, so it cannot tell a device-bound key from a synced one, and does not try.
+- **A password can add an account's first factor, and for 72 hours the mailbox can take it away.** A recent password sign-in may add a passkey or an authenticator app to an account that has none, so someone holding a phished password can plant one and use it to add more. Once the account has a factor, adding another needs a session signed in with one (`hwk` or `mfa`) or a fresh step-up with one, and every addition and removal is emailed. For 72 hours after the account's first factor, whoever holds the mailbox can remove every passkey and app with a password reset, which also ends every session, including any opened with a planted passkey; adding more factors meanwhile does not extend the 72 hours, and an account left with no factor starts again. After that, factors protect the account against a mailbox compromise: a reset keeps them and asks for the app's code. Accepted trade-off: for those 72 hours a mailbox compromise defeats the account's factors, and an app's "hwk or mfa" rule cannot tell a first factor planted with a phished password from the owner's own, so staff accounts in other apps should get their first passkey in a deliberate setup with the person.
+- **A password reset** emails the list of passkeys and apps that can still sign in.
+- **`auth_time` is the last real sign-in.** A session minted to replace another (a password change) keeps the original's `auth_time` and `amr`.
+- **Accepted for now:** someone who holds the password can spend the account's five wrong-code attempts per 15 minutes and so keep the real person from finishing a password-and-code sign-in for that time. A passkey sign-in is not affected.
+
 **Never shared:** the date of birth, the guardian's email or identity, password and passkey data, the points balance, the trust tier, watch history and YourTal's user id.
 
 An ID token for SnapApp's website, decoded:
@@ -123,6 +131,8 @@ Each client has an allowlist, and a scope outside it is refused, not silently dr
 - a teen turns 18: a guardian's invite agreed for them, so the adult now agrees for themselves (§2.2).
 
 At every other sign-in YourTal shows a one-tap "Continue to SnapApp as Ana" screen, so no sign-in completes without the person seeing which app and which account. There is no silent sign-in: `prompt=none` answers `login_required`. YourTal's own session (`yt_session`, 30 days idle) is the single sign-on session. Signing out of YourTal ends "Continue as" for every app, and signs the person out of no app.
+
+**A fresh sign-in (group 3.9.i).** An app may send `max_age` (seconds) or `prompt=login` (`max_age=0` counts as `prompt=login`). When the YourTal session's own sign-in is older than `max_age`, or for `prompt=login` happened before the app asked, `/connect` shows "Sign in again to continue to {app}" instead of the consent or one-tap screen. That signs the browser out of YourTal, and the person signs in again with a password (plus an app code if they use one) or a passkey; the new session replaces the old one. If a different person signs in, the app gets that person's `sub`: the provider ends its session for the first person, and revokes the grants it holds for them in that browser, before it issues anything. `auth_time` and `amr` are always the YourTal session's own sign-in (§1.3). `max_age` asks only for a recent sign-in, not for a passkey or second factor: SnapApp's staff rule wants `hwk` or `mfa` within 12 hours, so it sends `max_age=43200` so YourTal asks for the sign-in, and keeps its own `hwk`/`mfa` check.
 
 **Records.** `oidc.app_consent` holds what each person currently shares with each app. Each grant and each withdrawal also appends a row to `identity.consent_record`, with purpose `sister_app_profile_sharing`, source `oidc_consent_screen` or the new `guardian_invite`, and a new `audience` column naming the app. That table is the append-only evidence, kept on deletion under its existing basis.
 
@@ -169,7 +179,7 @@ This refines group task 3.3.c: the phone app keeps **SnapApp's** refresh token i
 - **Codes are redeemed on servers.** No browser calls YourTal's token or userinfo endpoints, so CORS on them stays closed. SnapApp's phone app hands its code to SnapApp's server (§1.9).
 - **Signing:** RS256 for ID tokens and events. Encrypted tokens, request objects and `form_post` are off.
 - **Language:** apps send `ui_locales` (FTR sends `en-AU`). YourTal's screens follow it, then the person's own language.
-- **Sign-up from an app:** the app may send `prompt=create` (OpenID Connect "Initiating User Registration") to open YourTal's sign-up form instead of sign-in. The person registers, verifies their email without losing their place, and returns to the app.
+- **Sign-up from an app:** the app may send `prompt=create` (OpenID Connect "Initiating User Registration") to open YourTal's sign-up form instead of sign-in. The person registers, verifies their email without losing their place, and returns to the app. Registering sends them to YourTal's consent step, and its Continue goes straight back to `/connect/<uid>` (group 3.9.j): the optional interests and follows steps are skipped, and stay in Me. Email, region, teen and guardian checks are not skipped, since `/connect` runs §1.5 before it issues a code.
 
 ### 1.8 Signing keys
 

@@ -75,7 +75,12 @@
       "giftAccepted": "You gave this voucher as a gift on {date}, and it was accepted. Its code no longer works for you.",
       "giftPending": "You gave this voucher as a gift on {date}. They have until {deadline} to accept. If they don't, it comes back to your wallet with a new code."
     },
-    "giftFrom": "Gift from {name}"
+    "giftFrom": "Gift from {name}",
+    "shortRef": "Ref. {code}",
+    "appInstructions": "Open SnapApp, go to Points, choose Use a YourTal voucher and enter this code. Only the SnapApp account linked to your YourTal account can use it.",
+    "appCodeCopy": "Copy code",
+    "appCodeCopied": "Copied",
+    "appCodeUnavailable": "Your code can't be shown right now. Reconnect and reopen this voucher."
   },
   "redemption": {
     "balanceCarrying": "If your purchase is less than the voucher's value, the remainder is kept for next time.",

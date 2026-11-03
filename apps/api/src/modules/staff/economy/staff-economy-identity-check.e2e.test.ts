@@ -10,8 +10,8 @@ import { grantStaffRole, ownerPool } from "../staff.test-helper";
 
 /**
  * F126: `points_identity_check` is a two-person economy setting like the
- * others, seeded off in both regions, and only `{"enabled": boolean}` may be
- * proposed or approved.
+ * others, seeded off in both regions, and only `{"enabled": boolean,
+ * "requirePasskey"?: boolean}` may be proposed or approved.
  */
 let app: NestFastifyApplication;
 let owner: Pool;
@@ -74,11 +74,20 @@ async function current(cookie: string): Promise<unknown> {
 
 describe("points_identity_check (F126)", () => {
   it("is seeded off, so the console shows it", async () => {
-    expect(await current(first.cookie)).toEqual({ enabled: false });
+    expect(await current(first.cookie)).toEqual({ enabled: false, requirePasskey: false });
   });
 
-  it("refuses anything but {enabled: boolean} when proposed, and stores nothing", async () => {
-    for (const value of [true, "on", {}, { enabled: "yes" }, { enabled: true, regions: ["ID"] }]) {
+  it("refuses anything but {enabled, requirePasskey} booleans when proposed, and stores nothing", async () => {
+    for (const value of [
+      true,
+      "on",
+      {},
+      { enabled: "yes" },
+      { enabled: true, regions: ["ID"] },
+      { enabled: true, requirePasskey: "yes" },
+      { requirePasskey: true },
+      { enabled: true },
+    ]) {
       const refused = await propose(first.cookie, value);
       expect(refused.statusCode).toBe(400);
       const body = refused.json<{ code: string; message: string }>();
@@ -94,7 +103,7 @@ describe("points_identity_check (F126)", () => {
   });
 
   it("checks again at approval, and a second person switches it on", async () => {
-    const slipped = await propose(first.cookie, { enabled: true });
+    const slipped = await propose(first.cookie, { enabled: true, requirePasskey: false });
     expect(slipped.statusCode).toBe(201);
     const id = slipped.json<{ id: string }>().id;
     await owner.query(
@@ -106,11 +115,21 @@ describe("points_identity_check (F126)", () => {
     expect(refused.statusCode).toBe(400);
     expect(refused.json<{ code: string }>().code).toBe("invalid_setting");
 
-    const on = await propose(first.cookie, { enabled: true });
+    const on = await propose(first.cookie, { enabled: true, requirePasskey: false });
     expect(on.statusCode).toBe(201);
     const onId = on.json<{ id: string }>().id;
     expect((await approve(first.cookie, onId)).statusCode).toBe(403);
     expect((await approve(second.cookie, onId)).statusCode).toBe(201);
-    expect(await current(first.cookie)).toEqual({ enabled: true });
+    expect(await current(first.cookie)).toEqual({ enabled: true, requirePasskey: false });
+  });
+
+  it("the passkey switch is proposed and approved the same two-person way", async () => {
+    const proposed = await propose(first.cookie, { enabled: true, requirePasskey: true });
+    expect(proposed.statusCode).toBe(201);
+    const id = proposed.json<{ id: string }>().id;
+    expect((await approve(first.cookie, id)).statusCode).toBe(403);
+    expect(await current(first.cookie)).toEqual({ enabled: true, requirePasskey: false });
+    expect((await approve(second.cookie, id)).statusCode).toBe(201);
+    expect(await current(first.cookie)).toEqual({ enabled: true, requirePasskey: true });
   });
 });

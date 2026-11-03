@@ -53,6 +53,9 @@ describe("WalletVouchers: two cards with one title", () => {
       `/wallet/voucher/${BOUGHT}`,
     ]);
     expect(screen.getAllByText("Gift from Alex Viewer")).toHaveLength(1);
+    // Same title, same expiry: the short reference is what tells the two apart.
+    expect(screen.getByText("Ref. CBD8")).toBeInTheDocument();
+    expect(screen.getByText("Ref. 2AE5")).toBeInTheDocument();
   });
 
   it("shows no origin line when there are no gifts", async () => {

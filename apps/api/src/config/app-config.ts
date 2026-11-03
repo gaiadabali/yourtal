@@ -60,6 +60,17 @@ export interface AppConfig {
     readonly webhookUrl: string;
     readonly accountName: string;
   };
+  /**
+   * Passkeys and authenticator-app codes. Optional so hand-built test configs
+   * need not name it; absent, those routes refuse with 503.
+   */
+  readonly authFactors?: {
+    readonly rpId: string;
+    readonly rpName: string;
+    readonly origins: readonly string[];
+    /** Absent: authenticator apps are off on this deployment; passkeys still work. */
+    readonly totpSecretKey?: string;
+  };
   /** The key pair the Stripe driver and the simulation share, and the API origin the driver calls. */
   readonly stripe?: {
     readonly secretKey: string;
@@ -86,6 +97,17 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
   if (env.APP_ENV === "staging" && env.HLS_SIGNING_SECRET.startsWith("local-only")) {
     throw new Error("HLS_SIGNING_SECRET is the local-only default; set a real one for staging.");
   }
+  if (env.APP_ENV !== "dev" && env.TOTP_SECRET_ENCRYPTION_KEY?.startsWith("local-only") === true) {
+    throw new Error(
+      "TOTP_SECRET_ENCRYPTION_KEY is the local-only default; set a real one outside dev, or unset it.",
+    );
+  }
+  // 12.1.a: no static schema default (see env.schema.ts's own comment) —
+  // staging's `.env` on Helios is written once and gets no new line for
+  // this, so the fallback has to already be staging's real origin.
+  const webOrigin =
+    env.PUBLIC_WEB_ORIGIN ??
+    (env.APP_ENV === "staging" ? "https://yourtal.gaiada.com" : "http://localhost:3000");
   const teenAccounts =
     env.TEEN_ACCOUNTS === undefined ? env.APP_ENV === "staging" : env.TEEN_ACCOUNTS === "true";
 
@@ -122,13 +144,8 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
       secretAccessKey: env.S3_SECRET_KEY,
       bucket: env.S3_BUCKET,
     },
-    // 12.1.a: no static schema default (see env.schema.ts's own comment) —
-    // staging's `.env` on Helios is written once and gets no new line for
-    // this, so the fallback has to already be staging's real origin rather
-    // than something a deploy would need to remember to override.
-    webOrigin:
-      env.PUBLIC_WEB_ORIGIN ??
-      (env.APP_ENV === "staging" ? "https://yourtal.gaiada.com" : "http://localhost:3000"),
+    authFactors: authFactorsFrom(env, webOrigin),
+    webOrigin,
     paysim: {
       enabled: env.PAYSIM_ENABLED === "true",
       publicUrl: env.PAYSIM_PUBLIC_URL ?? `http://127.0.0.1:${String(env.PORT)}/api/paysim`,
@@ -153,5 +170,24 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
       clientKeysDir: env.OIDC_CLIENT_KEYS_DIR,
       operators: { snapapp: env.OIDC_OPERATOR_SNAPAPP, ftr: env.OIDC_OPERATOR_FTR },
     },
+  };
+}
+
+/** Dev only: a key every reader of this repository holds. */
+const DEV_TOTP_SECRET_KEY = "local-only-totp-secret-encryption-key-not-real";
+
+/** The relying party follows the web origin unless set; see env.schema.ts. */
+function authFactorsFrom(env: Env, webOrigin: string): NonNullable<AppConfig["authFactors"]> {
+  const origins = (env.WEBAUTHN_ORIGIN ?? webOrigin)
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin !== "");
+  const totpSecretKey =
+    env.TOTP_SECRET_ENCRYPTION_KEY ?? (env.APP_ENV === "dev" ? DEV_TOTP_SECRET_KEY : undefined);
+  return {
+    rpId: env.WEBAUTHN_RP_ID ?? new URL(origins[0] ?? webOrigin).hostname,
+    rpName: "YourTal",
+    origins,
+    ...(totpSecretKey === undefined ? {} : { totpSecretKey }),
   };
 }

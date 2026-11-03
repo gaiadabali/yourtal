@@ -6,6 +6,8 @@ import { Test } from "@nestjs/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { toMinorUnits } from "@yourtal/contracts/money";
 import { AppModule } from "../../../app.module";
+import { REGION_SETTINGS_READER } from "../../../shared/settings/region-settings-reader";
+import type { DrizzleRegionSettingsReader } from "../../../shared/settings/drizzle-region-settings-reader";
 import { createAppDb } from "../../../shared/persistence/drizzle-client";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import { LEDGER_INTERNAL_CLIENT } from "../../../shared/ledger-client/ledger-internal-client";
@@ -100,7 +102,7 @@ afterAll(async () => {
   await app.close();
   // The shared database: AU goes back to the seeded "off".
   await owner.execute(
-    sql`DELETE FROM platform.region_setting WHERE key = 'points_identity_check' AND set_by = 'test-a'`,
+    sql`DELETE FROM platform.region_setting WHERE key = 'points_identity_check' AND set_by IN ('test-a', 'test-c')`,
   );
   await owner.execute(
     sql`DELETE FROM platform.ledger_fake_hold WHERE allocation_id = ${allocationId}`,
@@ -318,6 +320,88 @@ describe("F126: partner receipts, with the region's identity check on", () => {
     expect(refused.json<{ code: string; missing: string[] }>()).toMatchObject({
       code: "identity_check_required",
       missing: ["use_permanent_email"],
+    });
+    expect(await grantsFor(viewer.userId)).toBe(0);
+  });
+});
+
+/** A registered passkey, written the way registration does: the account's marker row, then the credential. */
+async function addPasskey(viewer: TestSession): Promise<void> {
+  await owner.execute(sql`
+    INSERT INTO identity.credential (user_id, kind, identifier, secret_hash)
+    VALUES (${viewer.userId}, 'passkey', ${randomUUID()}, '')
+  `);
+  await owner.execute(sql`
+    INSERT INTO identity.passkey (credential_id, user_id, public_key, device_type, backed_up, name)
+    VALUES (${randomUUID()}, ${viewer.userId}, decode('00', 'hex'), 'multiDevice', true, 'test passkey')
+  `);
+}
+
+describe("F102: with the passkey switch on as well", () => {
+  beforeAll(async () => {
+    // Finance's second switch, approved after the first: a newer row wins.
+    await owner.execute(sql`
+      INSERT INTO platform.region_setting (region, key, value, set_by, approved_by, effective_from)
+      VALUES ('AU', 'points_identity_check', '{"enabled": true, "requirePasskey": true}'::jsonb, 'test-c', 'test-b', clock_timestamp())
+    `);
+    // The settings reader keeps a value for up to 60 s.
+    app.get<DrizzleRegionSettingsReader>(REGION_SETTINGS_READER).clearCache();
+  });
+
+  it("a verified account without a passkey watches without earning, and is told to add one", async () => {
+    const viewer = await sessionFor(app);
+    await setVerifiedAt(viewer, true);
+    const started = await start(viewer);
+    expect(started.session).toMatchObject({
+      nonEarning: true,
+      nonEarningReason: "identity_check_required",
+      holdId: null,
+    });
+    expect(started.identityCheck).toEqual({ missing: ["add_passkey"] });
+    expect((await watchAndComplete(viewer, started.session.id)).granted).toBe(false);
+    expect(await grantsFor(viewer.userId)).toBe(0);
+  });
+
+  it("an unverified account is told the email first, then the passkey", async () => {
+    const viewer = await sessionFor(app);
+    expect((await start(viewer)).identityCheck).toEqual({
+      missing: ["verify_email", "add_passkey"],
+    });
+  });
+
+  it("once the passkey is registered the next start earns and pays", async () => {
+    const viewer = await sessionFor(app);
+    await setVerifiedAt(viewer, true);
+    const refused = await start(viewer);
+    expect(refused.identityCheck).toEqual({ missing: ["add_passkey"] });
+
+    await addPasskey(viewer);
+    const earning = await start(viewer);
+    expect(earning.session.nonEarning).toBe(false);
+    expect(earning.identityCheck).toBeUndefined();
+    expect(await watchAndComplete(viewer, earning.session.id)).toMatchObject({
+      granted: true,
+      pendingPoints: REWARD,
+    });
+    expect(await grantsFor(viewer.userId)).toBe(1);
+  });
+
+  it("a partner receipt is refused with add_passkey until the account has one", async () => {
+    const partner = await kit.seedPartner();
+    await kit.fundReceipts(partner, "AU");
+    const viewer = await sessionFor(app);
+    await setVerifiedAt(viewer, true);
+    const { code } = (await kit.issueCode(viewer.cookie)).json<{ code: string }>();
+
+    const refused = await kit.partnerPost(partner, "actions", {
+      user: code,
+      action: "receipt_scanned",
+      externalRef: `receipt-${randomUUID()}`,
+    });
+    expect(refused.statusCode, refused.body).toBe(403);
+    expect(refused.json<{ code: string; linkId: string; missing: string[] }>()).toMatchObject({
+      code: "identity_check_required",
+      missing: ["add_passkey"],
     });
     expect(await grantsFor(viewer.userId)).toBe(0);
   });

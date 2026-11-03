@@ -43,6 +43,8 @@ export function LoginForm({ returnTo, errorCode }: LoginFormProps) {
         // eslint-disable-next-line yt-b/prefer-primitives
         <input type="hidden" name="returnTo" value={returnTo} />
       ) : null}
+      {/* eslint-disable-next-line yt-b/prefer-primitives */}
+      <input type="hidden" name="offerPasskey" value="1" />
       {errorCode ? <Notice tone="danger">{authErrorMessage(t, errorCode)}</Notice> : null}
       <Input label={t("emailLabel")} name="email" type="email" autoComplete="email" required />
       <Input

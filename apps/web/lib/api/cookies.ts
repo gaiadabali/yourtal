@@ -24,6 +24,11 @@ export const REGION_COOKIE = "yt_region";
 /** 13.16.a: `system`, `light` or `dark`, so the server renders the theme with no flash. */
 export const THEME_COOKIE = "yt_theme";
 
+/** Holds the half-finished password sign-in while the person fetches their authenticator-app code; never a session. */
+export const MFA_PENDING_COOKIE = "yt_mfa_pending";
+/** Set once this browser has been offered a passkey, so the offer is made only once. */
+export const PASSKEY_PROMPT_COOKIE = "yt_passkey_prompt";
+
 /** Same fallbacks as 0.5.a's `DEFAULT_REGION` — AU/en-AU, never ID (F2). */
 export const DEFAULT_REGION = "AU";
 export const DEFAULT_LOCALE = "en-AU";

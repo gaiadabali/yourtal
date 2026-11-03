@@ -69,6 +69,8 @@ const DETAILS = {
   account: { name: "Ana", email: "ana@example.com" },
   sharing: { claims: ["name", "email"], ageBand: "adult", region: "AU" },
   refusal: null,
+  inviteProblem: null,
+  teenInvite: null,
   uiLocales: ["id-ID"],
 };
 
@@ -102,6 +104,14 @@ describe("connect Server Actions and loader", () => {
         "_interaction=uid_123-abc; _interaction.sig=sig-value",
       );
       expect(calls[0]?.headers.get("authorization")).toBe("Bearer session-token");
+    });
+
+    it("reads an older API's details, without the teen fields, as null", async () => {
+      const { inviteProblem: _p, teenInvite: _t, ...older } = DETAILS;
+      mockApi(() => json(200, older));
+      const { loadInteraction } = await load(new Map([["yt_session", "session-token"]]));
+
+      expect(await loadInteraction("uid_123-abc")).toEqual({ kind: "ok", details: DETAILS });
     });
 
     it("sends no session when the person is signed out", async () => {

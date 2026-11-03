@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | ✅ done | 23/23 | 105/105 | `██████████` 100% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 20/25 | 95/107 | `█████████░`  89% |
-| **All** | | | **126/131** | **642/654** | `██████████`  98% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 20/25 | 99/111 | `█████████░`  89% |
+| **All** | | | **126/131** | **646/658** | `██████████`  98% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1690,7 +1690,8 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.10.a Before the first real points go to a real person (docs/16 N-5), an account needs a verified email and a passkey: no earning at all until then (F126) → simplified to a verified email from a permanent (not disposable) address, ef9fc40c; watch start and completion, partner receipts (403, final) and streak bonuses gated
   - [x] 14.10.b The fraud checks rest on that, plus the holdback by trust tier and the earn caps; record it in docs/16 → F126 in docs/16, ef9fc40c
   - [x] 14.10.c The staff economy settings show the check's effective state (Required in production, On, Off) (group 5.9.d) → ef9fc40c
-  - [ ] 14.10.d Add the passkey to the check once group 3.9.c is on main, as a second switch (group 5.9.e) — moved to group 6.11, a launch gate (founder, 2026-10-22) — ✂️ cut: moved to group 6.11
+  - [x] 14.10.d Add the passkey to the check once group 3.9.c is on main, as a second switch (group 5.9.e) — moved to group 6.11, a launch gate (founder, 2026-10-22) — ✂️ cut: moved to group 6.11 → 3df31f6a (group 6.11.a, PR #41): `requirePasskey`, off everywhere until finance turns it on
+  - [ ] 14.10.f Before `requirePasskey` goes on (group 6.11.b): `/passkey` explains earning, with a way forward → 43f0f088 (PR #44); partners told about `add_passkey` still open
   - [x] 14.10.e Loose ends: name what is missing in the completion response; the partner link made before a refused receipt (group 5.9.f) → 6716ddc3 (group 5.9.f: missing in the completion response; the partner link after a refused receipt stays, decided 2026-10-22)
 
 - [x] **14.11 Record the payment simulation** (group 0.7.g) · lead · needs: — — ✅ 2026-10-20 fbcd08d5
@@ -1710,7 +1711,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.14.d Receipts are left out of the risk gate’s user-velocity signal (group 2.10.d–e, founder 2026-10-21) → 7076c408
   - [x] 14.14.e Staff console: Receipt programmes (group 2.9.c) → 00d2946d
 - [ ] **14.23 The SnapApp scans voucher** (group 2.8, F128) · A + B + C · needs: 14.3 — 🔄 2026-10-22
-  - [ ] 14.23.a T1 partner-bound listings; T2 the holding read and code test vectors; T3 the merchant order lookup → T1 → ad0901b3
+  - [ ] 14.23.a T1 partner-bound listings; T2 the holding read and code test vectors; T3 the merchant order lookup → T1 → ad0901b3; T3 → e8709598 (PR #30); T2 → 2fadd2d0 (PR #42)
   - [ ] 14.23.b T4 the partner ownership read; T5 wallet copy for vouchers used in an app; T6 the checkout tier exemption
   - [ ] 14.23.c T7 the staging seed (200-point listing, stock, binding); the lead’s credential and secret steps
   - [ ] 14.23.d T8 the staging check: Phases A, B and C pass
@@ -1720,10 +1721,12 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
 - [ ] **14.16 Sign in with YourTal: YourTal is the OpenID Connect provider** (group 3.9, F99, docs/26) · A + B · needs: 14.4 — 🔄 2026-10-21 (slot g3)
   - [x] 14.16.a The provider at `/oidc` on `oidc-provider` 9.x: the `oidc` schema, discovery, authorize, token, JWKS, userinfo, pairwise `sub`, the client registry, the §1.5 checks and the interaction API (group 3.9.a, 3.9.d) → 5cb7f0b0 (group 3.9.a, 3.9.d)
   - [x] 14.16.b The `/connect/[uid]` sign-in, consent and refusal screens, en-AU and id-ID (group 3.9.b) → merged at 5cb7f0b0; screenshots once the provider is on staging → 5cb7f0b0 + 936d005a; staging QA 2026-10-21, axe-clean at 390/1280 light and dark (group 3.9.b)
-  - [ ] 14.16.c Passkeys and authenticator-app codes on YourTal accounts, and `amr` in ID tokens (group 3.9.c)
+  - [x] 14.16.c Passkeys and authenticator-app codes on YourTal accounts, and `amr` in ID tokens (group 3.9.c) → d4687ad5 (PR #28)
   - [ ] 14.16.d Teens: every client refuses them except SnapApp by a guardian's invite; the teen invite API (group 3.9.e)
   - [ ] 14.16.e Deletion and ended access reach every app as signed events, with the `connected_apps` data domain (group 3.9.f)
   - [ ] 14.16.f Rate limits, a sign-in log per client, an uptime check and one restore test (group 3.9.h)
+  - [x] 14.16.g `max_age` and `prompt=login` on `/connect`; `auth_time` and `amr` from the YourTal session (group 3.9.i) → 724682a8 (PR #40)
+  - [x] 14.16.h A sign-up started from an app goes back to the app after the consent step (group 3.9.j) → b1ba58e0 (PR #43)
 - [x] **14.19 Phase 5's screens: evidence and fixes** (group 5.11) · B + C · needs: — — 🔄 g5 — ✅ 2026-10-26 6cd56c7f
   - [x] 14.19.a Screenshots and axe for every Phase 5 screen, both widths, themes and locales: no WCAG A/AA violations, no overflow (2026-10-21)
   - [x] 14.19.b The auction page crashed for bidders (a client-only helper called on the server) → edd733d6
@@ -1759,6 +1762,7 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
   - [x] 14.22.k Gifts and auctions cannot be done from the app: no Gift control and no reason, no way to list a voucher for a charity, wallet history links to "Voucher not found", stale balance after redeeming (group 5.13.k) → 916799ce (group 5.13.k, PR #37; N3, N4 partly and M6 moved to group 5.13.s)
   - [ ] 14.22.l Walk again the journeys the walkthrough could not finish (group 5.13.l)
   - [ ] 14.22.m The player sometimes never starts on repeat visits (V12b): needs the founder's device and browser (group 5.13.m)
+  - [x] 14.22.s Left from 14.22.k and g (group 5.13.s) → 017f6e50 (PR #39)
   - [x] 14.22.n On staging: a dev-clock release shows "points unlocked" at once (V26); the demo reset gives the seeded questions their new prompts (group 5.13.n) → demo reset run 2026-10-26 (group 5.13.n; V26 live check in the re-walk)
   - [x] 14.22.o true_false and likert questions: render them or skip at once (group 5.13.o) → e852a44e (group 5.13.o, PR #38)
   - [x] 14.22.p The whole-video chapter keeps the upload-time title; chapter chips overlap at 390 px (group 5.13.p) → e852a44e (group 5.13.p, PR #38)

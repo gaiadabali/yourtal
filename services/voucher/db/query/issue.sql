@@ -281,6 +281,18 @@ FROM voucher.vouchers v
 LEFT JOIN store.merchant_location l ON l.id = v.location_id
 WHERE v.id = $1 AND v.owner_id = $2;
 
+-- name: GetHolding :one
+-- 2.8 T2 (docs/28 4.2): is this code in this owner's wallet, and what is it?
+-- Both predicates are the boundary: a code held by somebody else matches
+-- nothing, the same as an unknown code. Facts only; the route returns no
+-- ids and never the hash. `redeem_partner_id` is NULL for an unbound listing
+-- and for a voucher whose listing row is gone (LEFT JOIN).
+SELECT v.state, v.face_value_minor, v.currency, v.expires_at, v.region, l.redeem_partner_id
+FROM voucher.vouchers v
+JOIN voucher.code_custody c ON c.voucher_id = v.id
+LEFT JOIN store.listings l ON l.id = v.listing_id
+WHERE c.code_hash = $1 AND v.owner_id = $2;
+
 -- name: ListExpirableVouchers :many
 -- YT-0573: the voucher-level counterpart to `ExpireStaleHolds` in
 -- redeem.sql — a different sweep, over a different table, closing a

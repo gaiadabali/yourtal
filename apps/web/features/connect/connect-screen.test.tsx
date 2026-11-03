@@ -306,6 +306,38 @@ describe("continue", () => {
   });
 });
 
+describe("sign_in_again", () => {
+  const again = details({ screen: "sign_in_again", sharing: null });
+
+  it("asks for a new sign-in: Sign in again signs out and reloads to the sign-in screen", async () => {
+    switchAccountAction.mockResolvedValueOnce({ kind: "reload" });
+    renderScreen(again);
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Sign in again to continue to SnapApp" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("ana@example.com")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Continue" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Sign in again" }));
+    await waitFor(() => expect(switchAccountAction).toHaveBeenCalled());
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
+  });
+
+  it("Cancel goes back to the app", async () => {
+    cancelAction.mockResolvedValueOnce({
+      kind: "redirect",
+      redirectTo: "https://y.test/oidc/auth/d",
+    });
+    renderScreen(again);
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(navigateTo).toHaveBeenCalledWith("https://y.test/oidc/auth/d"));
+  });
+
+  it("renders from the id-ID catalogue", () => {
+    renderScreen(again, "id-ID");
+    expect(screen.getByRole("button", { name: "Masuk lagi" })).toBeInTheDocument();
+  });
+});
+
 describe("refused", () => {
   const cases = [
     ["account_on_hold", "Your YourTal account is on hold", /Contact YourTal support/],
@@ -325,6 +357,61 @@ describe("refused", () => {
     fireEvent.click(screen.getByRole("button", { name: "Back to SnapApp" }));
     await waitFor(() => expect(navigateTo).toHaveBeenCalledWith("https://y.test/oidc/auth/b"));
     expect(cancelAction).toHaveBeenCalledWith("uid_123-abc");
+  });
+});
+
+describe("a teen at SnapApp", () => {
+  const teen: InteractionDetails["sharing"] = {
+    claims: ["name", "email", "age_band", "region"],
+    ageBand: "teen",
+    region: "AU",
+  };
+
+  it("with the guardian's invite: who can see what, and Continue records consent", async () => {
+    consentContinueAction.mockResolvedValueOnce({
+      kind: "redirect",
+      redirectTo: "https://y.test/oidc/auth/t",
+    });
+    renderScreen(details({ sharing: teen, teenInvite: { parentName: "Pat" } }));
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Join SnapApp with Pat's invite" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Pat can see everything you add to SnapApp/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/that you're under 18, and that your YourTal account is for Australia/),
+    ).toBeInTheDocument();
+    expect(screen.getByText("You won't earn YourTal points for receipts.")).toBeInTheDocument();
+    // The same disclosures as an adult gets.
+    expect(
+      screen.getByText(/SnapApp is run by Gaiada Pty Ltd\. Its privacy policy/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Privacy policy" })).toHaveAttribute(
+      "href",
+      "https://snap-apps.gaiada.com/privacy",
+    );
+    expect(screen.getByRole("link", { name: "Terms" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    await waitFor(() => expect(navigateTo).toHaveBeenCalledWith("https://y.test/oidc/auth/t"));
+    expect(consentContinueAction).toHaveBeenCalledWith("uid_123-abc");
+    expect(screen.getByRole("button", { name: "Not now" })).toBeInTheDocument();
+  });
+
+  it("renders from the id-ID catalogue", () => {
+    renderScreen(details({ sharing: teen, teenInvite: { parentName: "Pat" } }), "id-ID");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "Bergabung dengan SnapApp lewat undangan Pat",
+    );
+  });
+
+  it.each([
+    ["not_approved", /hasn't approved your YourTal account yet/],
+    ["wrong_inviter", /wasn't made by the parent or guardian/],
+    ["invite_expired", /expired or has already been used/],
+  ] as const)("refused for %s says why", (inviteProblem, body) => {
+    renderScreen(
+      details({ screen: "refused", sharing: null, refusal: "teen_invite_required", inviteProblem }),
+    );
+    expect(screen.getByText(body)).toBeInTheDocument();
   });
 });
 

@@ -18,4 +18,10 @@ describe("cn knows the v2 token vocabulary", () => {
     expect(cn("border", "border-border-subtle")).toBe("border border-border-subtle");
     expect(cn("border-border", "border-border-subtle")).toBe("border-border-subtle");
   });
+
+  it("lets a later height override the control-size tokens", () => {
+    expect(cn("h-control-compact p-1", "h-14")).toBe("p-1 h-14");
+    expect(cn("h-control", "h-14")).toBe("h-14");
+    expect(cn("h-control-compact", "w-full")).toBe("h-control-compact w-full");
+  });
 });

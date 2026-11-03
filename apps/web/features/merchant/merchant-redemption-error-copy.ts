@@ -1,18 +1,14 @@
 import type { Currency } from "@yourtal/contracts/money/currency";
+import type { Region } from "@yourtal/contracts/region";
 import { formatMerchantMoney } from "./merchant-money";
 import { getMerchantTranslator } from "./merchant-i18n";
 import type { MerchantRedemptionError } from "./merchant-redemption-errors";
+import { formatMerchantTime } from "./merchant-time";
 import type { MerchantLocale } from "./merchant-device";
 
 export interface MerchantErrorCopy {
   heading: string;
   body: string;
-}
-
-function formatDateTime(iso: string, locale: MerchantLocale): string {
-  return new Intl.DateTimeFormat(locale, { dateStyle: "full", timeStyle: "short" }).format(
-    new Date(iso),
-  );
 }
 
 /**
@@ -28,6 +24,7 @@ export function errorCopyFor(
   error: MerchantRedemptionError,
   locale: MerchantLocale,
   currency: Currency,
+  region: Region,
 ): MerchantErrorCopy {
   const t = getMerchantTranslator(locale);
   switch (error.code) {
@@ -48,7 +45,12 @@ export function errorCopyFor(
       return {
         heading: t("error.expired.heading"),
         body: t("error.expired.body", {
-          date: formatDateTime(error.expiresAt ?? new Date().toISOString(), locale),
+          date: formatMerchantTime(
+            error.expiresAt ?? new Date().toISOString(),
+            locale,
+            region,
+            "dateTime",
+          ),
         }),
       };
     case "amount_not_positive":

@@ -116,26 +116,29 @@ async function createSubmittedCampaign(
   });
   expect(chapters.statusCode, chapters.body).toBe(200);
 
-  const correctOptionId = randomUUID();
-  const question = await app.inject({
-    method: "POST",
-    url: `/api/${businessId}/studio/campaigns/${campaignId}/questions`,
-    headers: { cookie, "idempotency-key": `test-${randomUUID()}` },
-    payload: {
-      id: randomUUID(),
-      campaignId,
-      type: "multiple_choice",
-      prompt: "Which discount did the video mention?",
-      options: [
-        { id: correctOptionId, label: "10% off" },
-        { id: randomUUID(), label: "20% off" },
-      ],
-      correctOptionId,
-      answerableAfterSeconds: 10,
-      timerSeconds: 15,
-    },
-  });
-  expect(question.statusCode, question.body).toBe(201);
+  // A 20-minute campaign asks 4 questions (F10), so review needs a bank of 12 (3x).
+  for (let n = 1; n <= 12; n += 1) {
+    const correctOptionId = randomUUID();
+    const question = await app.inject({
+      method: "POST",
+      url: `/api/${businessId}/studio/campaigns/${campaignId}/questions`,
+      headers: { cookie, "idempotency-key": `test-${randomUUID()}` },
+      payload: {
+        id: randomUUID(),
+        campaignId,
+        type: "multiple_choice",
+        prompt: `Which discount did the video mention? (${n})`,
+        options: [
+          { id: correctOptionId, label: "10% off" },
+          { id: randomUUID(), label: "20% off" },
+        ],
+        correctOptionId,
+        answerableAfterSeconds: 10,
+        timerSeconds: 15,
+      },
+    });
+    expect(question.statusCode, question.body).toBe(201);
+  }
 
   const allocationId = await fundedAllocationId(cookie, businessId);
   const reward = await app.inject({

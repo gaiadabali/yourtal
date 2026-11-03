@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | ✅ done | 23/23 | 105/105 | `██████████` 100% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 20/25 | 87/107 | `████████░░`  81% |
-| **All** | | | **126/131** | **634/654** | `██████████`  97% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 20/25 | 91/107 | `█████████░`  85% |
+| **All** | | | **126/131** | **638/654** | `██████████`  98% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1750,13 +1750,13 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
   - [x] 14.22.b Staging's /api/dev/inbox is public, links included; the /dev/inbox page shows 404 (group 5.13.b, the lead) → 016591d4: a session outside dev; staff see all, others only their own mail; the page reads through apiFetch
   - [x] 14.22.c The player restarts after a checkpoint, the overlay is clipped at 390 px, already-earned videos show the wrong state, it sometimes never starts (group 5.13.c) → 6716ddc3 (group 5.13.c; V12b not reproduced, 14.22.m)
   - [x] 14.22.d Sign-up links go to log in, /signup is a 404, no verification state or resend on Me, no unlock notification (group 5.13.d) → 6716ddc3 (group 5.13.d)
-  - [ ] 14.22.e The campaign editor: targeting not saved, reward save and ceiling errors, raw database error on submit, submit without budget, lost edits, placeholder as value (group 5.13.e)
+  - [x] 14.22.e The campaign editor: targeting not saved, reward save and ceiling errors, raw database error on submit, submit without budget, lost edits, placeholder as value (group 5.13.e) → b51e0688 (group 5.13.e, PR #35)
   - [x] 14.22.f Boost: low-bid error in minor units; no way to switch a boost off (group 5.13.f) → 6716ddc3 (group 5.13.f)
-  - [ ] 14.22.g The store counter: pairing steps, amount in cents with one-click full redemption, device id shown, ID counter in English, raw order ids, no revoke confirmation (group 5.13.g) → also the counter's zone-less dates (moved from 14.19.f)
-  - [ ] 14.22.h Studio layout and copy, Reports without metrics, ID billing copy (group 5.13.h)
+  - [x] 14.22.g The store counter: pairing steps, amount in cents with one-click full redemption, device id shown, ID counter in English, raw order ids, no revoke confirmation (group 5.13.g) → also the counter's zone-less dates (moved from 14.19.f) → 38f08c00 (group 5.13.g, PR #36)
+  - [x] 14.22.h Studio layout and copy, Reports without metrics, ID billing copy (group 5.13.h) → b89f21e6 (group 5.13.h, PR #34)
   - [x] 14.22.i Viewer copy and contrast, /review in Bahasa (group 5.13.i) → 6716ddc3 (group 5.13.i)
   - [x] 14.22.j Staging's demo data: test content on public pages, "new viewer" logins not new (group 5.13.j) → 6cd56c7f (group 5.13.j; V5 is 14.22.r)
-  - [ ] 14.22.k Gifts and auctions cannot be done from the app: no Gift control and no reason, no way to list a voucher for a charity, wallet history links to "Voucher not found", stale balance after redeeming (group 5.13.k)
+  - [x] 14.22.k Gifts and auctions cannot be done from the app: no Gift control and no reason, no way to list a voucher for a charity, wallet history links to "Voucher not found", stale balance after redeeming (group 5.13.k) → 916799ce (group 5.13.k, PR #37; N3, N4 partly and M6 moved to group 5.13.s)
   - [ ] 14.22.l Walk again the journeys the walkthrough could not finish (group 5.13.l)
   - [ ] 14.22.m The player sometimes never starts on repeat visits (V12b): needs the founder's device and browser (group 5.13.m)
   - [x] 14.22.n On staging: a dev-clock release shows "points unlocked" at once (V26); the demo reset gives the seeded questions their new prompts (group 5.13.n) → demo reset run 2026-10-26 (group 5.13.n; V26 live check in the re-walk)

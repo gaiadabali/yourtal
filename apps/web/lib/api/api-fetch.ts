@@ -17,6 +17,10 @@ export type ApiError =
       readonly status: number;
       readonly code: string;
       readonly message: string;
+      /** Present only when the error body names one, as an amount refusal does (what is left on the voucher). */
+      readonly remainingValueMinor?: number;
+      /** Any other fields of the error body (an API error may carry numbers for the console to word itself). */
+      readonly details?: Readonly<Record<string, unknown>>;
     }
   | { readonly kind: "network"; readonly message: string }
   | { readonly kind: "invalid_response"; readonly message: string };
@@ -144,7 +148,18 @@ export function httpErrorFrom(status: number, body: unknown): ApiError {
     typeof record["message"] === "string"
       ? record["message"]
       : `request failed with status ${status}`;
-  return { kind: "http", status, code, message };
+  const remaining = record["remainingValueMinor"];
+  const { code: _code, message: _message, ...rest } = record;
+  return {
+    kind: "http",
+    status,
+    code,
+    message,
+    ...(typeof remaining === "number" && Number.isInteger(remaining) && remaining >= 0
+      ? { remainingValueMinor: remaining }
+      : {}),
+    ...(Object.keys(rest).length === 0 ? {} : { details: rest }),
+  };
 }
 
 export function networkErrorMessage(cause: unknown): string {

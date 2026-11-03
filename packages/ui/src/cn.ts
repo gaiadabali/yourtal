@@ -77,6 +77,9 @@ const twMerge = extendTailwindMerge({
         "ring",
       ],
       radius: ["control", "card", "sheet", "pill"],
+      // `h-control-compact` is a spacing token; unknown to tailwind-merge, it never lost
+      // to a later `h-14`, so the stylesheet order decided and the override was ignored.
+      spacing: ["control", "control-compact"],
       shadow: ["1", "2", "3"],
     },
   },

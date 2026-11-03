@@ -40,7 +40,7 @@
         "try": "Tagihan dan laporan di Studio."
       }
     },
-    "counter": "Kasir toko: masuk sebagai pemilik bisnis, buka Studio › Tim, tambahkan perangkat, lalu salin kode pemasangannya. Buka {pairUrl} di perangkat lain, masukkan kodenya, lalu PIN {pin}.",
+    "counter": "Kasir toko: masuk sebagai pemilik bisnis, buka Studio › Tim, tambahkan perangkat, pilih PIN shift untuknya (panduan ini memakai {pin}), lalu salin kode pemasangannya. Buka {pairUrl} di perangkat lain dan masukkan kodenya: kasir langsung terbuka. Pilih Kunci sekarang dan kasir akan meminta PIN itu.",
     "staffNote": "Login konsol staf tidak dicantumkan di sini; pendiri memilikinya."
   },
   "journeys": {

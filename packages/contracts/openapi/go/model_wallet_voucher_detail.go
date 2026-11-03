@@ -36,6 +36,7 @@ type WalletVoucherDetail struct {
 	Location *WalletVoucherDetailLocation `json:"location,omitempty"`
 	PartialRedemptionPolicy *PartialRedemptionPolicy `json:"partialRedemptionPolicy,omitempty"`
 	Giftable *bool `json:"giftable,omitempty"`
+	GiftBlock *string `json:"giftBlock,omitempty"`
 	Code *string `json:"code,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
@@ -478,6 +479,38 @@ func (o *WalletVoucherDetail) SetGiftable(v bool) {
 	o.Giftable = &v
 }
 
+// GetGiftBlock returns the GiftBlock field value if set, zero value otherwise.
+func (o *WalletVoucherDetail) GetGiftBlock() string {
+	if o == nil || IsNil(o.GiftBlock) {
+		var ret string
+		return ret
+	}
+	return *o.GiftBlock
+}
+
+// GetGiftBlockOk returns a tuple with the GiftBlock field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *WalletVoucherDetail) GetGiftBlockOk() (*string, bool) {
+	if o == nil || IsNil(o.GiftBlock) {
+		return nil, false
+	}
+	return o.GiftBlock, true
+}
+
+// HasGiftBlock returns a boolean if a field has been set.
+func (o *WalletVoucherDetail) HasGiftBlock() bool {
+	if o != nil && !IsNil(o.GiftBlock) {
+		return true
+	}
+
+	return false
+}
+
+// SetGiftBlock gets a reference to the given string and assigns it to the GiftBlock field.
+func (o *WalletVoucherDetail) SetGiftBlock(v string) {
+	o.GiftBlock = &v
+}
+
 // GetCode returns the Code field value if set, zero value otherwise.
 func (o *WalletVoucherDetail) GetCode() string {
 	if o == nil || IsNil(o.Code) {
@@ -553,6 +586,9 @@ func (o WalletVoucherDetail) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Giftable) {
 		toSerialize["giftable"] = o.Giftable
 	}
+	if !IsNil(o.GiftBlock) {
+		toSerialize["giftBlock"] = o.GiftBlock
+	}
 	if !IsNil(o.Code) {
 		toSerialize["code"] = o.Code
 	}
@@ -614,6 +650,7 @@ func (o *WalletVoucherDetail) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "location")
 		delete(additionalProperties, "partialRedemptionPolicy")
 		delete(additionalProperties, "giftable")
+		delete(additionalProperties, "giftBlock")
 		delete(additionalProperties, "code")
 		o.AdditionalProperties = additionalProperties
 	}

@@ -175,7 +175,12 @@ describe("13.20.b — gift a voucher", () => {
       url: `/api/wallet/vouchers/${received.voucherId}`,
       headers: { authorization: `Bearer ${recipient.token}` },
     });
-    expect(wallet.json()).toMatchObject({ status: "active", giftable: false });
+    // The page can say why: it was passed on once already.
+    expect(wallet.json()).toMatchObject({
+      status: "active",
+      giftable: false,
+      giftBlock: "received_as_gift",
+    });
 
     const again = await post(`/api/wallet/vouchers/${received.voucherId}/gift`, recipient, {
       recipientEmail: sender.email,

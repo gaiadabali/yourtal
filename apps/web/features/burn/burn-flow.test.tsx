@@ -7,6 +7,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { toPoints } from "@yourtal/contracts/money";
 import type { Region } from "@yourtal/contracts/region";
 import { RegionProvider } from "@/features/region/region-context";
+import { ShellBalanceProvider, useShellBalance } from "@/features/shell/shell-balance";
 import idID from "@/messages/id-ID/burn.json";
 import enAU from "@/messages/en-AU/burn.json";
 import { BurnFlow } from "./burn-flow";
@@ -286,5 +287,94 @@ describe("BurnFlow (en-AU, YT-0405)", () => {
     expect(document.body.textContent).not.toMatch(
       /Lanjutkan|Tukar sekarang|Berhasil|Lihat di Dompet/,
     );
+  });
+});
+
+/** Stands for the top bar's points chip, which lives outside the redeem page's own tree. */
+function HeaderChip({ server }: { server: number }) {
+  return <output aria-label="header balance">{useShellBalance(server)}</output>;
+}
+
+describe("BurnFlow: the header balance after a redemption (en-AU)", () => {
+  beforeEach(() => {
+    mockConfirm.mockReset();
+  });
+
+  async function redeem() {
+    const user = userEvent.setup();
+    renderBurnFlow(
+      <ShellBalanceProvider serverPoints={630}>
+        <HeaderChip server={630} />
+        <BurnFlow
+          listing={makeListingFixture({ priceInPoints: toPoints(150), currency: "AUD" })}
+          balance={makeBalanceFixture({ availablePoints: toPoints(630) })}
+          checkoutId={CHECKOUT_ID}
+          pricePoints={toPoints(150)}
+          lockExpiresAt={freshLockExpiresAt()}
+        />
+      </ShellBalanceProvider>,
+      "AU",
+    );
+    expect(screen.getByLabelText("header balance")).toHaveTextContent("630");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("button", { name: "Redeem now" }));
+    await screen.findByText("Success");
+  }
+
+  it("shows the balance the server read back, not the one drawn before the burn", async () => {
+    mockConfirm.mockResolvedValue({
+      ok: true,
+      result: {
+        checkoutId: CHECKOUT_ID,
+        state: "done",
+        voucherId: VOUCHER_ID,
+        pricePoints: toPoints(150),
+      },
+      availablePoints: 480,
+    });
+    await redeem();
+
+    expect(screen.getByLabelText("header balance")).toHaveTextContent("480");
+  });
+
+  it("subtracts the locked price when the balance could not be read back", async () => {
+    mockConfirm.mockResolvedValue({
+      ok: true,
+      result: {
+        checkoutId: CHECKOUT_ID,
+        state: "done",
+        voucherId: VOUCHER_ID,
+        pricePoints: toPoints(150),
+      },
+    });
+    await redeem();
+
+    expect(screen.getByLabelText("header balance")).toHaveTextContent("480");
+  });
+
+  it("leaves the header balance alone when the redemption fails", async () => {
+    mockConfirm.mockResolvedValue({
+      ok: false,
+      error: { kind: "http", status: 409, code: "insufficient_available", message: "no" },
+    } as never);
+    const user = userEvent.setup();
+    renderBurnFlow(
+      <ShellBalanceProvider serverPoints={630}>
+        <HeaderChip server={630} />
+        <BurnFlow
+          listing={makeListingFixture({ priceInPoints: toPoints(150), currency: "AUD" })}
+          balance={makeBalanceFixture({ availablePoints: toPoints(630) })}
+          checkoutId={CHECKOUT_ID}
+          pricePoints={toPoints(150)}
+          lockExpiresAt={freshLockExpiresAt()}
+        />
+      </ShellBalanceProvider>,
+      "AU",
+    );
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    await user.click(screen.getByRole("button", { name: "Redeem now" }));
+    await screen.findByRole("alert");
+
+    expect(screen.getByLabelText("header balance")).toHaveTextContent("630");
   });
 });

@@ -45,6 +45,7 @@ export function captureVoucher(
             currency: capture.currency,
             orderRef,
             orderTotalMinor: meta?.orderTotalMinor ?? capture.amountMinor,
+            offerTitle: meta?.offerTitle ?? null,
             authorizedAt: new Date(),
             capturedAt: new Date(capture.capturedAt),
           }),

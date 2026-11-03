@@ -9,6 +9,7 @@ import type { Notification } from "@yourtal/contracts/me/notification";
 import { NotificationsBell } from "../notifications/notifications-bell";
 import { getNavTranslator, type SupportedLocale } from "./nav-i18n";
 import { AccountMenu, type AccountSummary } from "./account-menu";
+import { useShellBalance } from "./shell-balance";
 import { Wordmark } from "./wordmark";
 
 export interface TopBarProps {
@@ -57,6 +58,7 @@ export function TopBar({
   streakDays = null,
 }: TopBarProps) {
   const t = getNavTranslator(locale);
+  const points = useShellBalance(availablePoints);
 
   return (
     <header className="sticky top-0 z-(--z-nav) flex h-14 items-center gap-1 border-b border-border-subtle bg-surface/95 px-gutter-sm backdrop-blur min-[360px]:gap-2 md:gap-3 md:px-gutter-md lg:pl-[calc(14rem+var(--spacing-gutter-md))]">
@@ -128,7 +130,7 @@ export function TopBar({
           {notifications ? <NotificationsBell initialNotifications={notifications} /> : null}
           <Link href="/wallet" className="shrink-0 rounded-pill">
             <PointsChip
-              value={availablePoints}
+              value={points}
               size="sm"
               locale={locale}
               formatLabel={(formatted) => t("pointsAvailable", { points: formatted })}

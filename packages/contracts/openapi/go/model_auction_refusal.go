@@ -22,6 +22,7 @@ type AuctionRefusal string
 const (
 	AUCTIONREFUSAL_CHARITY_UNAVAILABLE AuctionRefusal = "charity_unavailable"
 	AUCTIONREFUSAL_VOUCHER_NOT_UNUSED AuctionRefusal = "voucher_not_unused"
+	AUCTIONREFUSAL_VOUCHER_HOLDBACK AuctionRefusal = "voucher_holdback"
 	AUCTIONREFUSAL_VOUCHER_NOT_TRANSFERABLE AuctionRefusal = "voucher_not_transferable"
 	AUCTIONREFUSAL_VOUCHER_ALREADY_TRANSFERRED AuctionRefusal = "voucher_already_transferred"
 	AUCTIONREFUSAL_SELLER_INELIGIBLE AuctionRefusal = "seller_ineligible"
@@ -38,6 +39,7 @@ const (
 var AllowedAuctionRefusalEnumValues = []AuctionRefusal{
 	"charity_unavailable",
 	"voucher_not_unused",
+	"voucher_holdback",
 	"voucher_not_transferable",
 	"voucher_already_transferred",
 	"seller_ineligible",

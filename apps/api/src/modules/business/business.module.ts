@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { forwardRef, Module } from "@nestjs/common";
 import { AuthzModule } from "../../shared/authz/authz.module";
 import { PdpClientModule } from "../../shared/pdp/pdp-client.module";
 import { EmailDriverModule } from "../../shared/drivers/email-driver.module";
@@ -57,7 +57,8 @@ const BUSINESS_DB = Symbol("BUSINESS_DB");
  * driver seam: `live` without its credential does not fall back either.
  */
 @Module({
-  imports: [AuthzModule, PdpClientModule, EmailDriverModule],
+  // forwardRef: AuthzModule -> DevicesModule -> BusinessModule -> AuthzModule (devices.module.ts says why).
+  imports: [forwardRef(() => AuthzModule), PdpClientModule, EmailDriverModule],
   controllers: [
     CreateBusinessController,
     BusinessController,

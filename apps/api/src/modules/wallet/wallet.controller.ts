@@ -36,6 +36,8 @@ import { REGION_SETTINGS_READER } from "../../shared/settings/region-settings-re
 import type { RegionSettingsReader } from "../../shared/settings/region-settings-reader";
 import { USER_PROFILE_REPOSITORY } from "../identity/persistence/user-profile.repository";
 import type { UserProfileRepository } from "../identity/persistence/user-profile.repository";
+import { SAGA_VOUCHER_READER } from "../checkout/checkout.tokens";
+import type { SagaVoucherReader } from "../checkout/persistence/saga-voucher-reader";
 import { toWalletHistoryEntry, toWalletSummary, toWalletVoucher } from "./wallet-mapping";
 
 /** F12's key in `platform.region_setting` for a teen's own daily earn cap. */
@@ -63,6 +65,7 @@ export class WalletController {
     @Inject(VOUCHER_INTERNAL_CLIENT) private readonly vouchers: VoucherInternalClient,
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
     @Inject(REGION_SETTINGS_READER) private readonly settings: RegionSettingsReader,
+    @Inject(SAGA_VOUCHER_READER) private readonly burns: SagaVoucherReader,
   ) {}
 
   @Authorize({ kind: "wallet", action: "view" })
@@ -100,8 +103,12 @@ export class WalletController {
       }),
     );
     const page = rows.slice(0, HISTORY_PAGE);
+    const voucherBySaga = await this.burns.vouchersBySaga(
+      userId,
+      page.filter((row) => row.kind === "burn").map((row) => row.externalRef),
+    );
     return {
-      entries: page.map(toWalletHistoryEntry),
+      entries: page.map((row) => toWalletHistoryEntry(row, voucherBySaga)),
       nextCursor: rows.length > HISTORY_PAGE ? (page.at(-1)?.id ?? null) : null,
     };
   }

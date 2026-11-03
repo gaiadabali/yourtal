@@ -36,6 +36,7 @@ type WalletVoucher struct {
 	Location *WalletVoucherLocation `json:"location,omitempty"`
 	PartialRedemptionPolicy *PartialRedemptionPolicy `json:"partialRedemptionPolicy,omitempty"`
 	Giftable *bool `json:"giftable,omitempty"`
+	GiftBlock *string `json:"giftBlock,omitempty"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -477,6 +478,38 @@ func (o *WalletVoucher) SetGiftable(v bool) {
 	o.Giftable = &v
 }
 
+// GetGiftBlock returns the GiftBlock field value if set, zero value otherwise.
+func (o *WalletVoucher) GetGiftBlock() string {
+	if o == nil || IsNil(o.GiftBlock) {
+		var ret string
+		return ret
+	}
+	return *o.GiftBlock
+}
+
+// GetGiftBlockOk returns a tuple with the GiftBlock field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *WalletVoucher) GetGiftBlockOk() (*string, bool) {
+	if o == nil || IsNil(o.GiftBlock) {
+		return nil, false
+	}
+	return o.GiftBlock, true
+}
+
+// HasGiftBlock returns a boolean if a field has been set.
+func (o *WalletVoucher) HasGiftBlock() bool {
+	if o != nil && !IsNil(o.GiftBlock) {
+		return true
+	}
+
+	return false
+}
+
+// SetGiftBlock gets a reference to the given string and assigns it to the GiftBlock field.
+func (o *WalletVoucher) SetGiftBlock(v string) {
+	o.GiftBlock = &v
+}
+
 func (o WalletVoucher) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -519,6 +552,9 @@ func (o WalletVoucher) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.Giftable) {
 		toSerialize["giftable"] = o.Giftable
+	}
+	if !IsNil(o.GiftBlock) {
+		toSerialize["giftBlock"] = o.GiftBlock
 	}
 
 	for key, value := range o.AdditionalProperties {
@@ -578,6 +614,7 @@ func (o *WalletVoucher) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "location")
 		delete(additionalProperties, "partialRedemptionPolicy")
 		delete(additionalProperties, "giftable")
+		delete(additionalProperties, "giftBlock")
 		o.AdditionalProperties = additionalProperties
 	}
 

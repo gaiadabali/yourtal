@@ -1,13 +1,10 @@
 import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import type { MerchantDevice } from "../merchant-device";
+import { buildMerchantDevice } from "../merchant-device";
 import { PinUnlockScreen } from "./pin-unlock-screen";
 
-const device: MerchantDevice = {
-  id: "3f9a2b10-1111-4000-8000-000000000001",
-  locale: "en-AU",
-};
+const device = buildMerchantDevice({ id: "3f9a2b10-1111-4000-8000-000000000001", region: "AU" });
 
 /** Rendering-only — see `device-pairing-form.test.tsx`'s doc comment on why the `unlockWithPin` Server Action is never invoked here. */
 describe("PinUnlockScreen", () => {
@@ -39,7 +36,12 @@ describe("PinUnlockScreen", () => {
   });
 
   it("renders id-ID copy for an Indonesian device", () => {
-    render(<PinUnlockScreen device={{ ...device, locale: "id-ID" }} error="wrong_pin" />);
+    render(
+      <PinUnlockScreen
+        device={buildMerchantDevice({ id: device.id, region: "ID" })}
+        error="wrong_pin"
+      />,
+    );
     expect(screen.getByRole("alert")).toHaveTextContent("PIN salah. Coba lagi.");
   });
 });

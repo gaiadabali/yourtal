@@ -49,4 +49,35 @@ describe("DrizzleCampaignDraftRepository rename", () => {
     await repo.update(businessId, campaignId, { title: "Renamed again" });
     expect(await chapterTitles()).toEqual(["My intro"]);
   });
+
+  it("does not retitle when the campaign has several chapters", async () => {
+    await pool.query(`UPDATE campaign.chapter SET title = 'Renamed again' WHERE campaign_id = $1`, [
+      campaignId,
+    ]);
+    await pool.query(
+      `INSERT INTO campaign.chapter (campaign_id, ordinal, title, start_seconds, reward_weight)
+       VALUES ($1, 1, 'Second', 60, 1)`,
+      [campaignId],
+    );
+    await repo.update(businessId, campaignId, { title: "Third name" });
+    expect(await chapterTitles()).toEqual(["Renamed again", "Second"]);
+    await pool.query("DELETE FROM campaign.chapter WHERE campaign_id = $1 AND ordinal = 1", [
+      campaignId,
+    ]);
+  });
+
+  it("never touches another business's campaign", async () => {
+    await pool.query("UPDATE campaign.chapter SET title = 'Third name' WHERE campaign_id = $1", [
+      campaignId,
+    ]);
+    // Matches the campaign's title, so only the business check can stop it.
+    await pool.query("UPDATE campaign.campaigns SET title = 'Third name' WHERE id = $1", [
+      campaignId,
+    ]);
+    const result = await repo.update("00000000-0000-4000-8000-000000000000", campaignId, {
+      title: "Hijacked",
+    });
+    expect(result).toBeNull();
+    expect(await chapterTitles()).toEqual(["Third name"]);
+  });
 });

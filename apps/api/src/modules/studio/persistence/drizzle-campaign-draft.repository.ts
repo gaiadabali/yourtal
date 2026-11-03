@@ -123,31 +123,36 @@ export class DrizzleCampaignDraftRepository implements CampaignDraftRepository {
       values["targetDistricts"] = columnPatch.targetDistricts;
     }
 
-    if (columnPatch.title !== undefined && newChapters === undefined) {
-      // The whole-video chapter is created with the campaign's title (media
-      // upload); keep it in step on a rename. Before the campaign update, so
-      // `c.title` is still the old one. A split or hand-edited chapter set is left alone.
-      await this.db.execute(sql`
-        UPDATE campaign.chapter ch SET title = left(${columnPatch.title}, 120)
-        FROM campaign.campaigns c
-        WHERE c.id = ${campaignId} AND c.business_id = ${businessId} AND ch.campaign_id = c.id
-          AND ch.ordinal = 0 AND ch.title = left(c.title, 120)
-          AND (SELECT count(*) FROM campaign.chapter x WHERE x.campaign_id = c.id) = 1
-      `);
-    }
+    // One transaction, so a rename and its chapter retitle land together or not at all.
+    const found = await this.db.transaction(async (tx) => {
+      if (columnPatch.title !== undefined && newChapters === undefined) {
+        // The whole-video chapter is created with the campaign's title (media
+        // upload); keep it in step on a rename. Before the campaign update, so
+        // `c.title` is still the old one. A split or hand-edited chapter set is left alone.
+        await tx.execute(sql`
+          UPDATE campaign.chapter ch SET title = left(${columnPatch.title}, 120)
+          FROM campaign.campaigns c
+          WHERE c.id = ${campaignId} AND c.business_id = ${businessId} AND ch.campaign_id = c.id
+            AND ch.ordinal = 0 AND ch.title = left(c.title, 120)
+            AND (SELECT count(*) FROM campaign.chapter x WHERE x.campaign_id = c.id) = 1
+        `);
+      }
 
-    if (Object.keys(values).length > 0) {
-      const updated = await this.db
-        .update(campaigns)
-        .set(values)
-        .where(and(eq(campaigns.id, campaignId), eq(campaigns.businessId, businessId)))
-        .returning();
-      if (updated[0] === undefined) return null;
-    }
+      if (Object.keys(values).length > 0) {
+        const updated = await tx
+          .update(campaigns)
+          .set(values)
+          .where(and(eq(campaigns.id, campaignId), eq(campaigns.businessId, businessId)))
+          .returning();
+        if (updated[0] === undefined) return false;
+      }
 
-    if (newChapters !== undefined) {
-      await this.replaceChapters(campaignId, newChapters);
-    }
+      if (newChapters !== undefined) {
+        await this.replaceChapters(tx, campaignId, newChapters);
+      }
+      return true;
+    });
+    if (!found) return null;
 
     return this.findById(businessId, campaignId);
   }
@@ -239,12 +244,13 @@ export class DrizzleCampaignDraftRepository implements CampaignDraftRepository {
   }
 
   private async replaceChapters(
+    db: Pick<AppDb, "delete" | "insert">,
     campaignId: string,
     chapters: readonly CampaignChapter[],
   ): Promise<void> {
-    await this.db.delete(campaignChapters).where(eq(campaignChapters.campaignId, campaignId));
+    await db.delete(campaignChapters).where(eq(campaignChapters.campaignId, campaignId));
     if (chapters.length === 0) return;
-    await this.db.insert(campaignChapters).values(
+    await db.insert(campaignChapters).values(
       chapters.map((chapter, index) => ({
         campaignId,
         ordinal: index,

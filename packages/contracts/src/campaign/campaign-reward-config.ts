@@ -154,9 +154,11 @@ export function exceedsRewardCeiling(
   durationSeconds: number,
   ceilingPointsPerMinute: number,
 ): boolean {
-  const minutes = durationSeconds / 60;
-  const ceiling = ceilingPointsPerMinute * minutes;
-  return config.rewardPointsPerCompletion + config.accuracyBonusPoints > ceiling;
+  // Whole numbers throughout, so the exact boundary agrees with maxRewardPointsFor.
+  return (
+    (config.rewardPointsPerCompletion + config.accuracyBonusPoints) * 60 >
+    ceilingPointsPerMinute * durationSeconds
+  );
 }
 
 /**

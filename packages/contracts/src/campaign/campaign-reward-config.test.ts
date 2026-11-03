@@ -82,6 +82,29 @@ describe("exceedsRewardCeiling (F14)", () => {
     expect(exceedsRewardCeiling(baseConfig, 5 * 60, 8)).toBe(true);
   });
 
+  it("accepts exactly the stated maximum, with no float error at the boundary", () => {
+    // 7 pts/min over 90s is 10.5 allowed; maxRewardPointsFor says 10. 0.1 pt/min style
+    // float products (e.g. 3 * (20/60)) must not tip a stated max over.
+    for (const [seconds, perMinute] of [
+      [20, 3],
+      [50, 6],
+      [35, 12],
+      [7, 9],
+      [1, 60],
+    ] as const) {
+      const max = maxRewardPointsFor(seconds, perMinute);
+      const at = { rewardPointsPerCompletion: toPoints(max), accuracyBonusPoints: toPoints(0) };
+      expect(exceedsRewardCeiling(at, seconds, perMinute)).toBe(false);
+      expect(
+        exceedsRewardCeiling(
+          { ...at, rewardPointsPerCompletion: toPoints(max + 1) },
+          seconds,
+          perMinute,
+        ),
+      ).toBe(true);
+    }
+  });
+
   it("counts base plus bonus together, not just the base", () => {
     // 14 minutes at 8 pts/min = 112 pts allowed. Base alone (100) would fit;
     // base+bonus (120) does not.

@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | ✅ done | 23/23 | 105/105 | `██████████` 100% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 20/25 | 89/107 | `████████░░`  83% |
-| **All** | | | **126/131** | **636/654** | `██████████`  97% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 20/25 | 90/107 | `████████░░`  84% |
+| **All** | | | **126/131** | **637/654** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1750,7 +1750,7 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
   - [x] 14.22.b Staging's /api/dev/inbox is public, links included; the /dev/inbox page shows 404 (group 5.13.b, the lead) → 016591d4: a session outside dev; staff see all, others only their own mail; the page reads through apiFetch
   - [x] 14.22.c The player restarts after a checkpoint, the overlay is clipped at 390 px, already-earned videos show the wrong state, it sometimes never starts (group 5.13.c) → 6716ddc3 (group 5.13.c; V12b not reproduced, 14.22.m)
   - [x] 14.22.d Sign-up links go to log in, /signup is a 404, no verification state or resend on Me, no unlock notification (group 5.13.d) → 6716ddc3 (group 5.13.d)
-  - [ ] 14.22.e The campaign editor: targeting not saved, reward save and ceiling errors, raw database error on submit, submit without budget, lost edits, placeholder as value (group 5.13.e)
+  - [x] 14.22.e The campaign editor: targeting not saved, reward save and ceiling errors, raw database error on submit, submit without budget, lost edits, placeholder as value (group 5.13.e) → b51e0688 (group 5.13.e, PR #35)
   - [x] 14.22.f Boost: low-bid error in minor units; no way to switch a boost off (group 5.13.f) → 6716ddc3 (group 5.13.f)
   - [ ] 14.22.g The store counter: pairing steps, amount in cents with one-click full redemption, device id shown, ID counter in English, raw order ids, no revoke confirmation (group 5.13.g) → also the counter's zone-less dates (moved from 14.19.f)
   - [x] 14.22.h Studio layout and copy, Reports without metrics, ID billing copy (group 5.13.h) → b89f21e6 (group 5.13.h, PR #34)

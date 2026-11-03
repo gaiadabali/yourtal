@@ -1,7 +1,5 @@
 import { sql } from "drizzle-orm";
-import type { AppDb } from "../../shared/persistence/drizzle-client";
-
-export const BURN_VOUCHER_READER = Symbol("BURN_VOUCHER_READER");
+import type { AppDb } from "../../../shared/persistence/drizzle-client";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -10,7 +8,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * never by the voucher it produced. The saga row holds that voucher, so a
  * history line can point at the voucher it made instead of at the store item.
  */
-export class BurnVoucherReader {
+export class SagaVoucherReader {
   constructor(private readonly db: AppDb) {}
 
   /** Saga id to voucher id, for this user's finished checkouts only. */

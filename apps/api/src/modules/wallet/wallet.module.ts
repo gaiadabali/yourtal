@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import { createLedgerClient } from "../../shared/ledger-client/create-ledger-client";
@@ -12,7 +12,7 @@ import { IdentityModule } from "../identity/identity.module";
 import { WalletAttributeLoader } from "./wallet-attribute-loader";
 import { WalletController } from "./wallet.controller";
 import { WalletGiftController } from "./wallet-gift.controller";
-import { BURN_VOUCHER_READER, BurnVoucherReader } from "./burn-voucher-reader";
+import { CheckoutModule } from "../checkout/checkout.module";
 import { GIFT_PARTY_READER, GiftPartyReader } from "./gift-party-reader";
 import { GIFT_NOTIFIER_DB, GiftNotifier } from "./gift-notifier";
 
@@ -25,7 +25,7 @@ export const WALLET_DB = Symbol("WALLET_DB");
  * teen daily-cap read.
  */
 @Module({
-  imports: [IdentityModule, SettingsModule],
+  imports: [IdentityModule, SettingsModule, forwardRef(() => CheckoutModule)],
   controllers: [WalletController, WalletGiftController],
   providers: [
     {
@@ -46,11 +46,6 @@ export const WALLET_DB = Symbol("WALLET_DB");
     {
       provide: GIFT_PARTY_READER,
       useFactory: (db: AppDb) => new GiftPartyReader(db),
-      inject: [WALLET_DB],
-    },
-    {
-      provide: BURN_VOUCHER_READER,
-      useFactory: (db: AppDb) => new BurnVoucherReader(db),
       inject: [WALLET_DB],
     },
     { provide: GIFT_NOTIFIER_DB, useExisting: WALLET_DB },

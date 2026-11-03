@@ -6,6 +6,7 @@ import type { AccountSummary } from "./account-menu";
 import { BottomNav } from "./bottom-nav";
 import type { SupportedLocale } from "./nav-i18n";
 import type { NavLabelKey } from "./nav-items";
+import { ShellBalanceProvider } from "./shell-balance";
 import { SideNav } from "./side-nav";
 import { TopBar } from "./top-bar";
 
@@ -99,41 +100,43 @@ export function ViewerShell({
   const topBarAccountProps = account && !signedOut ? { account } : {};
 
   return (
-    <div
-      data-surface="viewer"
-      data-theme={forceTheme}
-      // The rail is fixed; its colour and edge are also painted on the shell,
-      // so it reads as full height however tall the page gets.
-      className={cn(
-        "min-h-[calc(100dvh-var(--staging-banner-h,0px))] bg-canvas text-fg",
-        "lg:bg-[linear-gradient(to_right,var(--color-surface)_calc(14rem-1px),var(--color-border-subtle)_calc(14rem-1px),var(--color-border-subtle)_14rem,var(--color-canvas)_14rem)]",
-      )}
-    >
-      <TopBar
-        locale={locale}
-        availablePoints={availablePoints}
-        theme={theme}
-        streakDays={signedOut ? null : streakDays}
-        {...topBarSignedOutProps}
-        {...topBarNotificationsProps}
-        {...topBarAccountProps}
-      />
-      <SideNav
-        locale={locale}
-        {...navSignedOutProps}
-        {...(signedOut ? { homeHref: signedOut.homeHref } : {})}
-      />
-      <main
+    <ShellBalanceProvider serverPoints={availablePoints}>
+      <div
+        data-surface="viewer"
+        data-theme={forceTheme}
+        // The rail is fixed; its colour and edge are also painted on the shell,
+        // so it reads as full height however tall the page gets.
         className={cn(
-          // A solid ground: the shell's rail gradient behind it stops a contrast check reading the page's colours.
-          // Fills what the top bar and the staging banner leave, so a short page does not scroll by their height.
-          "min-h-[calc(100dvh-3.5rem-var(--staging-banner-h,0px))] bg-canvas pb-[calc(4rem+max(0px,env(safe-area-inset-bottom)))]",
-          "lg:pb-0 lg:pl-56",
+          "min-h-[calc(100dvh-var(--staging-banner-h,0px))] bg-canvas text-fg",
+          "lg:bg-[linear-gradient(to_right,var(--color-surface)_calc(14rem-1px),var(--color-border-subtle)_calc(14rem-1px),var(--color-border-subtle)_14rem,var(--color-canvas)_14rem)]",
         )}
       >
-        {children}
-      </main>
-      <BottomNav locale={locale} {...navSignedOutProps} />
-    </div>
+        <TopBar
+          locale={locale}
+          availablePoints={availablePoints}
+          theme={theme}
+          streakDays={signedOut ? null : streakDays}
+          {...topBarSignedOutProps}
+          {...topBarNotificationsProps}
+          {...topBarAccountProps}
+        />
+        <SideNav
+          locale={locale}
+          {...navSignedOutProps}
+          {...(signedOut ? { homeHref: signedOut.homeHref } : {})}
+        />
+        <main
+          className={cn(
+            // A solid ground: the shell's rail gradient behind it stops a contrast check reading the page's colours.
+            // Fills what the top bar and the staging banner leave, so a short page does not scroll by their height.
+            "min-h-[calc(100dvh-3.5rem-var(--staging-banner-h,0px))] bg-canvas pb-[calc(4rem+max(0px,env(safe-area-inset-bottom)))]",
+            "lg:pb-0 lg:pl-56",
+          )}
+        >
+          {children}
+        </main>
+        <BottomNav locale={locale} {...navSignedOutProps} />
+      </div>
+    </ShellBalanceProvider>
   );
 }

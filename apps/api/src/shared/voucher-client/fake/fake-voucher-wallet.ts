@@ -107,11 +107,7 @@ function toWalletVoucherRow(row: VoucherRow): WalletVoucherRow {
     currency: row.currency as WalletVoucherRow["currency"],
     faceValueMinor,
     remainingValueMinor,
-    giftable:
-      row.transferable &&
-      !row.received_as_gift &&
-      lifecycleState === "active" &&
-      remainingValueMinor === faceValueMinor,
+    ...giftability(row, lifecycleState === "active" && remainingValueMinor === faceValueMinor),
     partialRedemptionPolicy:
       row.partial_redemption_policy as WalletVoucherRow["partialRedemptionPolicy"],
     expiresAt: new Date(row.expires_at).toISOString(),
@@ -124,6 +120,17 @@ function toWalletVoucherRow(row: VoucherRow): WalletVoucherRow {
             district: row.location_district,
           },
   };
+}
+
+/** The same rule, and the same order of reasons, as services/voucher's `giftBlockOf`. */
+function giftability(
+  row: { transferable: boolean; received_as_gift: boolean },
+  unused: boolean,
+): Pick<WalletVoucherRow, "giftable" | "giftBlock"> {
+  if (!unused) return { giftable: false, giftBlock: "not_unused" };
+  if (!row.transferable) return { giftable: false, giftBlock: "not_transferable" };
+  if (row.received_as_gift) return { giftable: false, giftBlock: "received_as_gift" };
+  return { giftable: true };
 }
 
 export function listForUser(

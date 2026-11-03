@@ -44,14 +44,22 @@ const KIND: Record<LedgerHistoryEntry["kind"], Pick<WalletHistoryEntry, "kind" |
  * `relatedId` in its own catalogues. `externalRef` stays server side (it is
  * a support handle, not something a viewer reads).
  */
-export function toWalletHistoryEntry(entry: LedgerHistoryEntry): WalletHistoryEntry {
-  const relatedId = entry.voucherId ?? entry.listingId ?? entry.campaignId;
+export function toWalletHistoryEntry(
+  entry: LedgerHistoryEntry,
+  voucherBySaga: ReadonlyMap<string, string> = new Map(),
+): WalletHistoryEntry {
+  // A burn's own pointer is the voucher it made (found through its saga), never the
+  // store item it paid for: that id opens "Voucher not found". No voucher, no pointer.
+  const relatedId =
+    entry.kind === "burn"
+      ? (entry.voucherId ?? voucherBySaga.get(entry.externalRef))
+      : (entry.voucherId ?? entry.listingId ?? entry.campaignId);
   return {
     id: entry.id,
     ...KIND[entry.kind],
     occurredAt: entry.at,
     points: entry.points,
-    ...(relatedId === null ? {} : { relatedId }),
+    ...(relatedId === null || relatedId === undefined ? {} : { relatedId }),
   };
 }
 
@@ -82,5 +90,6 @@ export function toWalletVoucher(row: WalletVoucherRow): WalletVoucher {
     ...(row.location === null ? {} : { location: row.location }),
     partialRedemptionPolicy: row.partialRedemptionPolicy,
     ...(row.giftable === undefined ? {} : { giftable: row.giftable }),
+    ...(row.giftBlock === undefined ? {} : { giftBlock: row.giftBlock }),
   };
 }

@@ -41,10 +41,10 @@ export const walletHistoryEntrySchema = z
     points: pointsSchema,
     direction: z.enum(["credit", "debit"]),
     /**
-     * An opaque pointer back to what caused this entry — a campaign id, a
-     * voucher id, a support case id — informational only. Never parsed by
-     * this schema's own consumers; `description` already carries everything
-     * a screen shows, per docs/17 section 3.
+     * An opaque pointer back to what caused this entry: a campaign id for an
+     * earn, the voucher's own id for a burn that produced one (omitted when
+     * none is known, never a store item's id). `description` already carries
+     * everything a screen shows, per docs/17 section 3.
      */
     relatedId: z.string().min(1).optional(),
   })

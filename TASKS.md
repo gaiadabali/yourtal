@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | ✅ done | 23/23 | 105/105 | `██████████` 100% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 20/25 | 88/107 | `████████░░`  82% |
-| **All** | | | **126/131** | **635/654** | `██████████`  97% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 20/25 | 89/107 | `████████░░`  83% |
+| **All** | | | **126/131** | **636/654** | `██████████`  97% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1756,7 +1756,7 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
   - [x] 14.22.h Studio layout and copy, Reports without metrics, ID billing copy (group 5.13.h) → b89f21e6 (group 5.13.h, PR #34)
   - [x] 14.22.i Viewer copy and contrast, /review in Bahasa (group 5.13.i) → 6716ddc3 (group 5.13.i)
   - [x] 14.22.j Staging's demo data: test content on public pages, "new viewer" logins not new (group 5.13.j) → 6cd56c7f (group 5.13.j; V5 is 14.22.r)
-  - [ ] 14.22.k Gifts and auctions cannot be done from the app: no Gift control and no reason, no way to list a voucher for a charity, wallet history links to "Voucher not found", stale balance after redeeming (group 5.13.k)
+  - [x] 14.22.k Gifts and auctions cannot be done from the app: no Gift control and no reason, no way to list a voucher for a charity, wallet history links to "Voucher not found", stale balance after redeeming (group 5.13.k) → 916799ce (group 5.13.k, PR #37; N3, N4 partly and M6 moved to group 5.13.s)
   - [ ] 14.22.l Walk again the journeys the walkthrough could not finish (group 5.13.l)
   - [ ] 14.22.m The player sometimes never starts on repeat visits (V12b): needs the founder's device and browser (group 5.13.m)
   - [x] 14.22.n On staging: a dev-clock release shows "points unlocked" at once (V26); the demo reset gives the seeded questions their new prompts (group 5.13.n) → demo reset run 2026-10-26 (group 5.13.n; V26 live check in the re-walk)

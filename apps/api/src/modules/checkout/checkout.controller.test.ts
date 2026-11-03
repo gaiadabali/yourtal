@@ -6,7 +6,7 @@ import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { checkoutQuoteSchema, checkoutResultSchema } from "@yourtal/contracts/checkout/checkout";
 import { toMinorUnits, toPoints } from "@yourtal/contracts/money";
-import { walletQrSchema } from "@yourtal/contracts/wallet/wallet";
+import { walletHistoryPageSchema, walletQrSchema } from "@yourtal/contracts/wallet/wallet";
 import { AppModule } from "../../app.module";
 import { createAppDb, type AppDb } from "../../shared/persistence/drizzle-client";
 import { sessionFor } from "../../shared/testing/session-for";
@@ -145,6 +145,39 @@ describe("POST /api/checkout", () => {
     expect(new Date(walletQrSchema.parse(qr.json()).expiresAt).getTime()).toBeGreaterThan(
       Date.now(),
     );
+  });
+
+  it("points the wallet history's redemption line at the voucher it made, never at the store item", async () => {
+    const session = await sessionFor(app, { jurisdiction: "ID", dateOfBirth: "1990-01-01" });
+    const listingId = await buyableListing("ID");
+    const quote = checkoutQuoteSchema.parse(
+      (await post("/api/checkout/quote", { cookie: session.cookie }, { listingId })).json(),
+    );
+    await earn(session.userId, "ID", quote.pricePoints + 5);
+    const bought = await post(
+      "/api/checkout",
+      { cookie: session.cookie, "idempotency-key": randomUUID() },
+      { checkoutId: quote.checkoutId },
+    );
+    const { voucherId } = checkoutResultSchema.parse(bought.json());
+
+    const history = await app.inject({
+      method: "GET",
+      url: "/api/wallet/history",
+      headers: { cookie: session.cookie },
+    });
+    const burn = walletHistoryPageSchema
+      .parse(history.json())
+      .entries.find((e) => e.kind === "burn");
+    expect(burn?.relatedId).toBe(voucherId);
+    expect(burn?.relatedId).not.toBe(listingId);
+    // That id opens: it is a voucher this member holds.
+    const opened = await app.inject({
+      method: "GET",
+      url: `/api/wallet/vouchers/${voucherId}`,
+      headers: { cookie: session.cookie },
+    });
+    expect(opened.statusCode).toBe(200);
   });
 
   it("refuses when the points are short, before reserving anything", async () => {

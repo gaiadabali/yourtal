@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { VOUCHER_GIFT_BLOCKS } from "./gift-block";
 import { minorUnitsSchema } from "../money/money";
 import { currencySchema } from "../money/money-value";
 import { partialRedemptionPolicySchema } from "../listing/listing";
@@ -22,6 +23,14 @@ import { voucherLifecycleStateSchema, voucherVoidReasonSchema } from "../voucher
  * unrelated read, unrelated caller, no reason to widen what it never asked
  * for.
  */
+/**
+ * Why a voucher cannot be gifted or listed for a charity: spent, expired or
+ * mid-redemption (`not_unused`), a listing that forbids it (`not_transferable`),
+ * or already passed on once, by a gift or an auction win (`received_as_gift`).
+ */
+export const voucherGiftBlockSchema = z.enum(VOUCHER_GIFT_BLOCKS);
+export type VoucherGiftBlock = z.infer<typeof voucherGiftBlockSchema>;
+
 export const walletVoucherRowSchema = z.object({
   voucherId: z.uuid(),
   listingId: z.uuid(),
@@ -42,6 +51,8 @@ export const walletVoucherRowSchema = z.object({
   location: z.object({ name: z.string(), address: z.string(), district: z.string() }).nullable(),
   /** 13.20: transferable, unused, unexpired and not itself received as a gift. */
   giftable: z.boolean().optional(),
+  /** The first rule that stops a gift or a charity listing, in the order the service checks them; absent when `giftable`. */
+  giftBlock: voucherGiftBlockSchema.optional(),
 });
 export type WalletVoucherRow = z.infer<typeof walletVoucherRowSchema>;
 

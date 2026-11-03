@@ -11,7 +11,7 @@ import type { RawHttp } from "./interaction.service";
 import { OidcRuntime } from "./oidc-runtime";
 import type { AppConsent, OidcStore } from "./oidc-store";
 import { pairwiseIdentifierFor } from "./pairwise";
-import { NO_TEEN_INVITES_YET } from "./sign-in-checks";
+import { NO_TEEN_INVITES } from "./sign-in-checks";
 import { Browser, followToApp, startSignIn } from "./testing/sign-in-driver";
 import type { StartedSignIn } from "./testing/sign-in-driver";
 import { buildTestProvider } from "./testing/oidc-test-kit";
@@ -44,9 +44,10 @@ function memoryStore(accounts: Map<string, OidcAccount>) {
         scopes: input.scopes,
         policyVersionId: input.policyVersionId,
         grantedVia: "consent_screen",
+        inviteId: null,
         endedAt: null,
       });
-      return Promise.resolve();
+      return Promise.resolve(true);
     },
     logSignIn: (userId, clientId, result) => {
       log.push({ userId, clientId, result });
@@ -131,7 +132,7 @@ beforeAll(async () => {
   let registered: TestProvider["registered"] = [];
   kit = await buildTestProvider({
     issuer,
-    findAccount: findAccountFrom(memory.store, () => registered, NO_TEEN_INVITES_YET),
+    findAccount: findAccountFrom(memory.store, () => registered, NO_TEEN_INVITES),
     store: memory.store,
     keys: {
       jwks: { keys: [signingKey(SIGNING_KID), signingKey("2026-10-21-next")] },
@@ -155,7 +156,7 @@ beforeAll(async () => {
         );
       },
     },
-    NO_TEEN_INVITES_YET,
+    NO_TEEN_INVITES,
   );
 });
 

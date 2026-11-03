@@ -17,6 +17,8 @@ export function details(overrides: Partial<InteractionDetails> = {}): Interactio
     account: { name: "Ana", email: "ana@example.com" },
     sharing: { claims: ["name", "email", "age_band", "region"], ageBand: "adult", region: "AU" },
     refusal: null,
+    inviteProblem: null,
+    teenInvite: null,
     uiLocales: [],
     ...overrides,
   };

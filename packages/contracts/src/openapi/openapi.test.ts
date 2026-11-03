@@ -584,6 +584,14 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   interactionSharingSchema: "oidc/interaction.ts's nested object InteractionDetails.sharing.",
   accessDeniedReasonSchema:
     "oidc/interaction.ts's error_description values on the redirect to the app, not an HTTP body.",
+  teenInviteProblemSchema: "oidc/interaction.ts's nested enum on InteractionDetails.inviteProblem.",
+  teenInviteParentRequestSchema:
+    "oidc/teen-invite.ts's body for the teen invite POSTs — documented inline (route-registry.a-oidc.ts).",
+  teenInviteCreatedSchema:
+    "oidc/teen-invite.ts's response for POST /api/oidc-clients/teen-invites — documented inline (route-registry.a-oidc.ts).",
+  teenInviteSchema:
+    "oidc/teen-invite.ts's response for the teen invite read and end — documented inline (route-registry.a-oidc.ts).",
+  teenInviteStatusSchema: "oidc/teen-invite.ts's nested enum on TeenInvite.status.",
 
   // --- merchant: Studio Developers (TASKS.md 8.3.a/c) ---
   merchantCredentialStateSchema:

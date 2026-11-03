@@ -108,12 +108,26 @@ async function userOfSub(db: Query, sector: string, sub: string): Promise<string
   return result.rows[0]?.user_id ?? null;
 }
 
+/** Still a teen, with their consent to the app standing under this invite. */
+async function standsUnder(db: Query, invite: InviteRow, teenUserId: string, now: Date) {
+  const result = await db.query<{ date_of_birth: string }>(
+    `SELECT to_char(p.date_of_birth, 'YYYY-MM-DD') AS date_of_birth
+       FROM oidc.app_consent c JOIN identity.user_profile p ON p.user_id = c.user_id
+      WHERE c.user_id = $1 AND c.sector = $2 AND c.invite_id = $3
+        AND c.granted_via = 'guardian_invite' AND c.ended_at IS NULL`,
+    [teenUserId, invite.sector, invite.id],
+  );
+  const row = result.rows[0];
+  return row !== undefined && ageBandOf({ dateOfBirth: row.date_of_birth }, now) === "teen";
+}
+
 async function view(db: Query, row: InviteRow, now: Date): Promise<TeenInvite> {
-  return {
-    inviteId: row.id,
-    status: statusOf(row, now),
-    teenSub: await subOf(db, row.sector, row.teen_user_id),
-  };
+  let status = statusOf(row, now);
+  // Turned 18, or agreed again under another invite: the parent's view has nothing to stand on.
+  if (status === "accepted" && row.teen_user_id !== null) {
+    if (!(await standsUnder(db, row, row.teen_user_id, now))) status = "ended";
+  }
+  return { inviteId: row.id, status, teenSub: await subOf(db, row.sector, row.teen_user_id) };
 }
 
 /** The approved guardian's email, or null while the guardian's consent is not `granted`. */
@@ -206,27 +220,40 @@ export function createPgTeenInvites(pool: Pool): TeenInviteStore {
       }
       const code = randomBytes(CODE_BYTES).toString("base64url");
       const expiresAt = new Date(now.getTime() + INVITE_TTL_MS);
-      // The daily cap and the insert in one statement, so two at once cannot both slip under it.
-      const made = await pool.query<{ id: string }>(
-        `INSERT INTO oidc.teen_invite (id, sector, code_hash, inviter_user_id, region, created_at, expires_at)
-         SELECT $1, $2, $3, $4, $5, $6, $7
-          WHERE (SELECT count(*) FROM oidc.teen_invite
-                  WHERE inviter_user_id = $4 AND created_at > $6::timestamptz - interval '1 day') < $8
-         RETURNING id`,
-        [
-          randomUUID(),
-          sector,
-          hashOpaqueToken(code),
+      const db = await pool.connect();
+      try {
+        await db.query("BEGIN");
+        // One parent's creates in turn, so the daily cap holds under concurrent calls.
+        await db.query("SELECT pg_advisory_xact_lock(hashtext('oidc.teen_invite:' || $1))", [
           parentId,
-          parent.region,
-          now,
-          expiresAt,
-          INVITES_PER_DAY,
-        ],
-      );
-      const inviteId = made.rows[0]?.id;
-      if (inviteId === undefined) return { ok: false, error: "too_many_invites" };
-      return { ok: true, invite: { inviteId, code, expiresAt: expiresAt.toISOString() } };
+        ]);
+        const made = await db.query<{ id: string }>(
+          `INSERT INTO oidc.teen_invite (id, sector, code_hash, inviter_user_id, region, created_at, expires_at)
+           SELECT $1, $2, $3, $4, $5, $6, $7
+            WHERE (SELECT count(*) FROM oidc.teen_invite
+                    WHERE inviter_user_id = $4 AND created_at > $6::timestamptz - interval '1 day') < $8
+           RETURNING id`,
+          [
+            randomUUID(),
+            sector,
+            hashOpaqueToken(code),
+            parentId,
+            parent.region,
+            now,
+            expiresAt,
+            INVITES_PER_DAY,
+          ],
+        );
+        await db.query("COMMIT");
+        const inviteId = made.rows[0]?.id;
+        if (inviteId === undefined) return { ok: false, error: "too_many_invites" };
+        return { ok: true, invite: { inviteId, code, expiresAt: expiresAt.toISOString() } };
+      } catch (error) {
+        await db.query("ROLLBACK");
+        throw error;
+      } finally {
+        db.release();
+      }
     },
 
     async find({ sector, inviteId, now }) {
@@ -276,7 +303,12 @@ export function createPgTeenInvites(pool: Pool): TeenInviteStore {
   };
 }
 
-/** The teen's consent ends, its withdrawal is evidenced, and each receiving client is told. */
+/**
+ * The teen's consent under this invite ends, its withdrawal is evidenced, and
+ * each receiving client is told to erase. Nothing is sent unless such a
+ * consent stood, and never for someone now 18: their space is their own
+ * (docs/26 §3.3), and became-adult covers them.
+ */
 async function endTeenAccess(
   db: PoolClient,
   invite: InviteRow,
@@ -284,21 +316,23 @@ async function endTeenAccess(
   receivers: readonly string[],
   now: Date,
 ): Promise<void> {
+  const teen = await person(db, teenUserId);
+  if (teen === null || ageBandOf({ dateOfBirth: teen.date_of_birth }, now) === "adult") return;
   const ended = await db.query<{ policy_version_id: string }>(
     `UPDATE oidc.app_consent SET ended_at = $3, end_reason = 'parent_ended'
       WHERE user_id = $1 AND sector = $2 AND invite_id = $4 AND ended_at IS NULL
+        AND granted_via = 'guardian_invite'
       RETURNING policy_version_id`,
     [teenUserId, invite.sector, now, invite.id],
   );
   const policy = ended.rows[0]?.policy_version_id;
-  if (policy !== undefined) {
-    await db.query(
-      `INSERT INTO identity.consent_record
-         (user_id, purpose, jurisdiction, policy_version_id, state, recorded_at, source, audience)
-       VALUES ($1, 'sister_app_profile_sharing', $2, $3, 'withdrawn', $4, 'guardian_invite', $5)`,
-      [teenUserId, invite.region, policy, now, invite.sector],
-    );
-  }
+  if (policy === undefined) return;
+  await db.query(
+    `INSERT INTO identity.consent_record
+       (user_id, purpose, jurisdiction, policy_version_id, state, recorded_at, source, audience)
+     VALUES ($1, 'sister_app_profile_sharing', $2, $3, 'withdrawn', $4, 'guardian_invite', $5)`,
+    [teenUserId, invite.region, policy, now, invite.sector],
+  );
   const sub = await subOf(db, invite.sector, teenUserId);
   if (sub === null) return;
   for (const clientId of receivers) {

@@ -106,6 +106,14 @@ describe("connect Server Actions and loader", () => {
       expect(calls[0]?.headers.get("authorization")).toBe("Bearer session-token");
     });
 
+    it("reads an older API's details, without the teen fields, as null", async () => {
+      const { inviteProblem: _p, teenInvite: _t, ...older } = DETAILS;
+      mockApi(() => json(200, older));
+      const { loadInteraction } = await load(new Map([["yt_session", "session-token"]]));
+
+      expect(await loadInteraction("uid_123-abc")).toEqual({ kind: "ok", details: DETAILS });
+    });
+
     it("sends no session when the person is signed out", async () => {
       const calls = mockApi(() =>
         json(200, { ...DETAILS, screen: "login", account: null, sharing: null }),

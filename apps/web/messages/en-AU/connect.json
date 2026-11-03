@@ -65,7 +65,6 @@
     "getsID": "{app} will get your name and email address, that you're under 18, and that your YourTal account is for Indonesia.",
     "noPoints": "You won't earn YourTal points for receipts.",
     "parentEnds": "{parent} can end your access at any time. If they do, your {app} data is deleted.",
-    "runBy": "{app} is run by {operator}.",
     "notNowCta": "Not now"
   },
   "refused": {

@@ -381,6 +381,15 @@ describe("a teen at SnapApp", () => {
       screen.getByText(/that you're under 18, and that your YourTal account is for Australia/),
     ).toBeInTheDocument();
     expect(screen.getByText("You won't earn YourTal points for receipts.")).toBeInTheDocument();
+    // The same disclosures as an adult gets.
+    expect(
+      screen.getByText(/SnapApp is run by Gaiada Pty Ltd\. Its privacy policy/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Privacy policy" })).toHaveAttribute(
+      "href",
+      "https://snap-apps.gaiada.com/privacy",
+    );
+    expect(screen.getByRole("link", { name: "Terms" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     await waitFor(() => expect(navigateTo).toHaveBeenCalledWith("https://y.test/oidc/auth/t"));
     expect(consentContinueAction).toHaveBeenCalledWith("uid_123-abc");

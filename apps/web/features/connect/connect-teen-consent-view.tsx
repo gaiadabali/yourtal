@@ -7,6 +7,7 @@ import { Notice } from "@yourtal/ui/notice";
 import { Text } from "@yourtal/ui/text";
 import { AuthCard } from "@/features/auth/auth-card";
 import { AccountLine } from "./account-line";
+import { AppPolicy } from "./connect-consent-view";
 import { cancelAction, consentContinueAction } from "./connect-actions";
 import { useConnectAction } from "./use-connect-action";
 
@@ -36,9 +37,7 @@ export function ConnectTeenConsentView({ details, parent }: ConnectTeenConsentVi
         <li>{t("noPoints")}</li>
         <li>{t("parentEnds", { parent, app })}</li>
       </ul>
-      {client.operator === client.name ? null : (
-        <Text size="body-sm">{t("runBy", { app, operator: client.operator })}</Text>
-      )}
+      <AppPolicy client={client} />
       {failed ? <Notice tone="danger">{tCommon("actionFailed")}</Notice> : null}
       <div className="flex gap-3">
         <Button

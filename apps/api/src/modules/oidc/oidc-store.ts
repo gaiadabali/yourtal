@@ -1,4 +1,4 @@
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import type { OidcAccount } from "./claims";
 import type { Region } from "./clients";
 
@@ -59,6 +59,31 @@ function isUniqueViolation(error: unknown): boolean {
     "code" in error &&
     error.code === UNIQUE_VIOLATION
   );
+}
+
+/**
+ * Locks the invite a teen's consent is given under, so an end or a second
+ * acceptance waits. A pending one is used up here, once, by this teen, while
+ * still good; a standing one must be this teen's and not ended.
+ */
+async function holdInvite(
+  client: PoolClient,
+  invite: NonNullable<GrantAppConsent["invite"]>,
+  input: GrantAppConsent,
+): Promise<boolean> {
+  const locked = await client.query<{ teen_user_id: string | null; expires_at: Date }>(
+    "SELECT teen_user_id, expires_at FROM oidc.teen_invite WHERE id = $1 AND ended_at IS NULL FOR UPDATE",
+    [invite.id],
+  );
+  const row = locked.rows[0];
+  if (row === undefined) return false;
+  if (!invite.accept) return row.teen_user_id === input.userId;
+  if (row.teen_user_id !== null || row.expires_at.getTime() <= input.now.getTime()) return false;
+  await client.query(
+    "UPDATE oidc.teen_invite SET teen_user_id = $2, accepted_at = $3 WHERE id = $1",
+    [invite.id, input.userId, input.now],
+  );
+  return true;
 }
 
 /** Raw SQL over the app role's pool. Never region-scoped: these reads are by user id. */
@@ -149,17 +174,9 @@ export function createPgOidcStore(pool: Pool): OidcStore {
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
-        if (invite?.accept === true) {
-          // The one place an invite is used up: once, by this teen, while still good.
-          const accepted = await client.query(
-            `UPDATE oidc.teen_invite SET teen_user_id = $2, accepted_at = $3
-              WHERE id = $1 AND accepted_at IS NULL AND ended_at IS NULL AND expires_at > $3`,
-            [invite.id, input.userId, input.now],
-          );
-          if (accepted.rowCount !== 1) {
-            await client.query("ROLLBACK");
-            return false;
-          }
+        if (invite !== undefined && !(await holdInvite(client, invite, input))) {
+          await client.query("ROLLBACK");
+          return false;
         }
         await client.query(
           `INSERT INTO oidc.app_consent

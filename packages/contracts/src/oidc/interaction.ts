@@ -90,13 +90,16 @@ export const interactionDetailsSchema = z.object({
   sharing: interactionSharingSchema.nullable(),
   /** Set on `refused` only. */
   refusal: signInRefusalSchema.nullable(),
-  /** Set on `refused` with `teen_invite_required` only. */
-  inviteProblem: teenInviteProblemSchema.nullable(),
+  /** Set on `refused` with `teen_invite_required` only. Defaults to null, so an older API still parses. */
+  inviteProblem: teenInviteProblemSchema.nullable().default(null),
   /**
    * Set for a teen on `consent` and `continue`: the invite that lets them in.
    * `parentName` is the inviting guardian's YourTal name ("Join SnapApp with {parent}'s invite").
    */
-  teenInvite: z.object({ parentName: z.string().min(1) }).nullable(),
+  teenInvite: z
+    .object({ parentName: z.string().min(1) })
+    .nullable()
+    .default(null),
   /** The app's `ui_locales`, in its order; the screen follows it, then the person's own language. */
   uiLocales: z.array(z.string()),
 });

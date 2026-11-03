@@ -65,7 +65,6 @@
     "getsID": "{app} akan mendapatkan nama dan alamat email kamu, bahwa kamu berusia di bawah 18 tahun, dan bahwa akun YourTal kamu untuk Indonesia.",
     "noPoints": "Kamu tidak akan mendapatkan poin YourTal untuk struk.",
     "parentEnds": "{parent} bisa menghentikan aksesmu kapan saja. Jika itu terjadi, data {app} kamu dihapus.",
-    "runBy": "{app} dijalankan oleh {operator}.",
     "notNowCta": "Nanti saja"
   },
   "refused": {

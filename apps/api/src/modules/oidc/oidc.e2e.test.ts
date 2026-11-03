@@ -109,7 +109,10 @@ beforeAll(async () => {
   process.env["WEBAUTHN_ORIGIN"] = E2E_ORIGIN;
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
-  app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+  // Loopback is the trusted proxy, so each call's x-forwarded-for is its own IP for the rate limits.
+  app = moduleRef.createNestApplication<NestFastifyApplication>(
+    new FastifyAdapter({ trustProxy: "127.0.0.1" }),
+  );
   app
     .getHttpAdapter()
     .getInstance()
@@ -808,6 +811,7 @@ async function inviteApi(
   const response = await fetch(`${base}/api/oidc-clients/teen-invites${path}`, {
     method: body === undefined ? "GET" : "POST",
     headers: {
+      "x-forwarded-for": testIp(),
       authorization: `Bearer ${token}`,
       ...(body === undefined ? {} : { "content-type": "application/json", "idempotency-key": key }),
     },
@@ -1052,5 +1056,117 @@ describe("teens (docs/26 §1.5 check 4, §3.3)", () => {
       screen: "consent",
     });
     expect(tapped.status).toBe(200);
+  });
+});
+
+/** The teen taps Continue on their consent screen, and the browser comes back to SnapApp with a code. */
+async function teenJoins(teen: Person, code: string) {
+  const { started, shown } = await teenScreen(teen, code);
+  expect(shown.screen).toBe("consent");
+  const tapped = await webServerCall(base, started, teen.token, "/continue", { screen: "consent" });
+  expect(tapped.status, await tapped.clone().text()).toBe(200);
+  const callback = await followToApp(started, await redirectOf(tapped));
+  const redeem = async () =>
+    client.authorizationCodeGrant(await webApp(), callback, {
+      pkceCodeVerifier: started.verifier,
+      expectedState: started.state,
+      expectedNonce: started.nonce,
+    });
+  return { redeem };
+}
+
+describe("teens: races and changes after acceptance", () => {
+  it("two Continues racing on one code: one teen gets in, the other is refused", async () => {
+    const parent = await snapParent();
+    // A guardian with two teens: the link works for either, but only once.
+    const [first, second] = [await teenOf(parent.email), await teenOf(parent.email)];
+    const { code, inviteId } = await invite(await serverToken(), parent.sub);
+    const screens = [await teenScreen(first, code), await teenScreen(second, code)];
+    expect(screens.map(({ shown }) => shown.screen)).toEqual(["consent", "consent"]);
+    const taps = await Promise.all(
+      screens.map(({ started }, index) =>
+        webServerCall(base, started, (index === 0 ? first : second).token, "/continue", {
+          screen: "consent",
+        }),
+      ),
+    );
+    expect(taps.map((tap) => tap.status).sort()).toEqual([200, 403]);
+    expect(
+      await rows(
+        `SELECT count(*)::int AS n FROM identity.consent_record
+          WHERE user_id = ANY($1) AND source = 'guardian_invite'`,
+        [[first.userId, second.userId]],
+      ),
+    ).toEqual([{ n: 1 }]);
+    expect(
+      await rows(
+        "SELECT count(*)::int AS n FROM oidc.teen_invite WHERE id = $1 AND accepted_at IS NOT NULL",
+        [inviteId],
+      ),
+    ).toEqual([{ n: 1 }]);
+  });
+
+  it("the guardian withdrawing approval after acceptance stops /connect and /me", async () => {
+    const parent = await snapParent();
+    const teen = await teenOf(parent.email);
+    const { code } = await invite(await serverToken(), parent.sub);
+    const tokens = await (await teenJoins(teen, code)).redeem();
+    await pool.query(
+      `UPDATE identity.guardian_consent SET approved_at = NULL, revoked_at = now() WHERE user_id = $1`,
+      [teen.userId],
+    );
+    await pool.query(
+      "UPDATE identity.user_profile SET parent_consent_status = 'revoked' WHERE user_id = $1",
+      [teen.userId],
+    );
+    expect((await teenScreen(teen)).shown).toMatchObject({
+      screen: "refused",
+      inviteProblem: "not_approved",
+    });
+    const me = await fetch(`${issuer}/me`, {
+      headers: { authorization: `Bearer ${tokens.access_token}` },
+    });
+    expect(me.status).toBe(401);
+  });
+
+  it("/token refuses a code when the parent ends the invite before it is redeemed", async () => {
+    const parent = await snapParent();
+    const teen = await teenOf(parent.email);
+    const token = await serverToken();
+    const { code, inviteId } = await invite(token, parent.sub);
+    const { redeem } = await teenJoins(teen, code);
+    expect((await inviteApi(token, `/${inviteId}/end`, { parentSub: parent.sub })).status).toBe(
+      200,
+    );
+    await expect(redeem()).rejects.toMatchObject({ error: "invalid_grant" });
+  });
+
+  it("a teen who turned 18 and agreed again as an adult is never erased by the parent's end", async () => {
+    const parent = await snapParent();
+    const teen = await teenOf(parent.email);
+    const token = await serverToken();
+    const { code, inviteId } = await invite(token, parent.sub);
+    const sub = (await (await teenJoins(teen, code)).redeem()).claims()?.sub;
+
+    await pool.query(
+      "UPDATE identity.user_profile SET date_of_birth = DATE '2000-01-01' WHERE user_id = $1",
+      [teen.userId],
+    );
+    // The parent's view has nothing to stand on any more.
+    expect((await inviteApi(token, `/${inviteId}`)).body).toMatchObject({ status: "ended" });
+    const adult = await signIn(await webApp(), WEB_REDIRECT, teen, "consent");
+    expect(adult.details.teenInvite).toBeNull();
+    expect(adult.tokens.claims()).toMatchObject({ sub, age_band: "adult" });
+
+    const ended = await inviteApi(token, `/${inviteId}/end`, { parentSub: parent.sub });
+    expect(ended).toMatchObject({ status: 200, body: { status: "ended" } });
+    expect(await rows("SELECT 1 FROM oidc.event_outbox WHERE sub = $1", [sub])).toEqual([]);
+    expect(
+      await rows("SELECT granted_via, ended_at FROM oidc.app_consent WHERE user_id = $1", [
+        teen.userId,
+      ]),
+    ).toEqual([{ granted_via: "consent_screen", ended_at: null }]);
+    // And they still sign in.
+    expect((await teenScreen(teen)).shown.screen).toBe("continue");
   });
 });

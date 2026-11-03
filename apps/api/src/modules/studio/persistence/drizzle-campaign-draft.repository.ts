@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import type { CampaignChapter } from "@yourtal/contracts/campaign/chapter";
 import type { CampaignLifecycleState } from "@yourtal/contracts/campaign/lifecycle";
 import {
@@ -121,6 +121,19 @@ export class DrizzleCampaignDraftRepository implements CampaignDraftRepository {
     if (columnPatch.captionsUrl !== undefined) values["captionsUrl"] = columnPatch.captionsUrl;
     if (columnPatch.targetDistricts !== undefined) {
       values["targetDistricts"] = columnPatch.targetDistricts;
+    }
+
+    if (columnPatch.title !== undefined && newChapters === undefined) {
+      // The whole-video chapter is created with the campaign's title (media
+      // upload); keep it in step on a rename. Before the campaign update, so
+      // `c.title` is still the old one. A split or hand-edited chapter set is left alone.
+      await this.db.execute(sql`
+        UPDATE campaign.chapter ch SET title = left(${columnPatch.title}, 120)
+        FROM campaign.campaigns c
+        WHERE c.id = ${campaignId} AND c.business_id = ${businessId} AND ch.campaign_id = c.id
+          AND ch.ordinal = 0 AND ch.title = left(c.title, 120)
+          AND (SELECT count(*) FROM campaign.chapter x WHERE x.campaign_id = c.id) = 1
+      `);
     }
 
     if (Object.keys(values).length > 0) {

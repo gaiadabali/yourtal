@@ -7,6 +7,10 @@ import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
 import { ZodValidationPipe } from "nestjs-zod";
+import type {
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON,
+} from "@simplewebauthn/server";
 import * as client from "openid-client";
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -16,6 +20,10 @@ import {
   interactionRedirectSchema,
 } from "@yourtal/contracts/oidc/interaction";
 import { AppModule } from "../../app.module";
+import { hashOpaqueToken } from "../auth/crypto/opaque-token";
+import { E2E_ORIGIN, E2E_RP_ID, accountFor, bearer, testIp } from "../auth/factors/testing/e2e-app";
+import { SoftAuthenticator } from "../auth/factors/testing/soft-authenticator";
+import { totpCodeAt } from "../auth/factors/totp-code";
 import { SessionService } from "../auth/session/session.service";
 import { mountOidc } from "./mount-oidc";
 import { OIDC_RUNTIME } from "./oidc-runtime";
@@ -30,7 +38,14 @@ import { followToApp, startSignIn, webServerCall } from "./testing/sign-in-drive
 const WEB_REDIRECT = "https://snap-apps.gaiada.com/auth/yourtal/callback";
 const MOBILE_REDIRECT = "au.com.snapapps.app:/oauth/yourtal";
 const FTR_REDIRECT = "https://freetaxreturns.com.au/api/auth/oauth2/callback/yourtal";
-const ENV_KEYS = ["OIDC_ENABLED", "OIDC_ISSUER", "OIDC_CLIENT_KEYS_DIR", "OIDC_JWKS_PATH"];
+const ENV_KEYS = [
+  "OIDC_ENABLED",
+  "OIDC_ISSUER",
+  "OIDC_CLIENT_KEYS_DIR",
+  "OIDC_JWKS_PATH",
+  "WEBAUTHN_RP_ID",
+  "WEBAUTHN_ORIGIN",
+];
 
 let app: NestFastifyApplication;
 let pool: pg.Pool;
@@ -89,6 +104,9 @@ beforeAll(async () => {
   process.env["OIDC_CLIENT_KEYS_DIR"] = keysDir;
   // Absent on purpose: dev makes throwaway signing keys.
   process.env["OIDC_JWKS_PATH"] = path.join(keysDir, "none", "jwks.json");
+  // The relying party the soft authenticator answers for.
+  process.env["WEBAUTHN_RP_ID"] = E2E_RP_ID;
+  process.env["WEBAUTHN_ORIGIN"] = E2E_ORIGIN;
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
@@ -523,5 +541,230 @@ describe("the interaction API", () => {
       body: JSON.stringify({ screen: "consent" }),
     });
     expect(response.status).toBe(403);
+  });
+});
+
+/** A route of the real app, called as YourTal's web server calls it. */
+async function api(
+  url: string,
+  options: { token?: string; payload?: Record<string, unknown> } = {},
+): Promise<{ status: number; body: Record<string, unknown> }> {
+  const response = await app.inject({
+    method: "POST",
+    url,
+    remoteAddress: testIp(),
+    headers: options.token === undefined ? {} : bearer(options.token),
+    ...(options.payload === undefined ? {} : { payload: options.payload }),
+  });
+  return { status: response.statusCode, body: response.json<Record<string, unknown>>() };
+}
+
+const tokenOf = (reply: { status: number; body: Record<string, unknown> }) => {
+  expect(reply.status, JSON.stringify(reply.body)).toBe(201);
+  return z.string().parse(reply.body["token"]);
+};
+
+/** When the session a token names says the person signed in, as auth_time counts it. */
+async function authTimeOf(token: string): Promise<number> {
+  const [row] = z
+    .array(z.object({ signed_in_at: z.date() }))
+    .parse(
+      await rows("SELECT signed_in_at FROM identity.session WHERE id = $1", [
+        hashOpaqueToken(token),
+      ]),
+    );
+  return Math.floor((row?.signed_in_at.getTime() ?? 0) / 1000);
+}
+
+/** The person's sessions that still work. */
+async function liveSessions(userId: string): Promise<unknown[]> {
+  return rows("SELECT id FROM identity.session WHERE user_id = $1 AND revoked_at IS NULL", [
+    userId,
+  ]);
+}
+
+/** A real account, signed in with its password through the real route, email confirmed. */
+async function verifiedAccount() {
+  const account = await accountFor(app);
+  await pool.query(
+    "UPDATE identity.credential SET verified_at = now() WHERE user_id = $1 AND kind = 'password'",
+    [account.userId],
+  );
+  return account;
+}
+
+async function passkeyFor(token: string): Promise<SoftAuthenticator> {
+  const device = new SoftAuthenticator(E2E_RP_ID, E2E_ORIGIN);
+  const options = await api("/api/auth/passkeys/register/options", { token });
+  expect(options.status, JSON.stringify(options.body)).toBe(201);
+  const response = device.register(
+    options.body["options"] as PublicKeyCredentialCreationOptionsJSON,
+  );
+  expect((await api("/api/auth/passkeys/register", { token, payload: { response } })).status).toBe(
+    201,
+  );
+  return device;
+}
+
+async function signInWithPasskey(device: SoftAuthenticator): Promise<string> {
+  const ceremony = await api("/api/auth/passkeys/sign-in/options");
+  const challengeId = z.string().parse(ceremony.body["challengeId"]);
+  const options = ceremony.body["options"] as PublicKeyCredentialRequestOptionsJSON;
+  return tokenOf(
+    await api("/api/auth/passkeys/sign-in", {
+      payload: { challengeId, response: device.assert(options) },
+    }),
+  );
+}
+
+describe("auth_time and amr come from the YourTal sign-in", () => {
+  it("after a password, a passkey, and a password and code", async () => {
+    const ana = await verifiedAccount();
+    const password = await signIn(await webApp(), WEB_REDIRECT, ana, "consent");
+    expect(password.tokens.claims()).toMatchObject({
+      amr: ["pwd"],
+      auth_time: await authTimeOf(ana.token),
+    });
+
+    const device = await passkeyFor(ana.token);
+    const passkey = await signInWithPasskey(device);
+    const withPasskey = await signIn(
+      await webApp(),
+      WEB_REDIRECT,
+      { ...ana, token: passkey },
+      "continue",
+    );
+    expect(withPasskey.tokens.claims()).toMatchObject({
+      amr: ["hwk"],
+      auth_time: await authTimeOf(passkey),
+    });
+
+    const bo = await verifiedAccount();
+    const enrolled = await api("/api/auth/totp/enrol", { token: bo.token });
+    const seed = z.string().parse(enrolled.body["secret"]);
+    const code = (offset: number) => totpCodeAt(seed, new Date(Date.now() + offset * 1000));
+    expect(
+      (await api("/api/auth/totp/confirm", { token: bo.token, payload: { code: code(-30) } }))
+        .status,
+    ).toBe(201);
+    const pending = await api("/api/auth/login", {
+      payload: { email: bo.email, password: "factors-e2e-not-a-real-secret-1" },
+    });
+    const withCode = tokenOf(
+      await api("/api/auth/totp/sign-in", {
+        payload: { pendingToken: pending.body["pendingToken"], code: code(0) },
+      }),
+    );
+    const mfa = await signIn(await ftrApp(), FTR_REDIRECT, { ...bo, token: withCode }, "consent");
+    expect(mfa.tokens.claims()).toMatchObject({
+      amr: ["pwd", "otp", "mfa"],
+      auth_time: await authTimeOf(withCode),
+    });
+  });
+});
+
+describe("a fresh sign-in when the app asks for one", () => {
+  const TWELVE_HOURS = 12 * 3600;
+
+  it("max_age: an older sign-in is asked for again, without a second session", async () => {
+    const ana = await verifiedAccount();
+    await pool.query(
+      "UPDATE identity.session SET signed_in_at = now() - interval '13 hours' WHERE user_id = $1",
+      [ana.userId],
+    );
+    const config = await webApp();
+    const started = await startSignIn(config, WEB_REDIRECT, { max_age: String(TWELVE_HOURS) });
+    expect(await details(await webServerCall(base, started, ana.token, ""))).toMatchObject({
+      screen: "sign_in_again",
+      account: { email: ana.email },
+      sharing: null,
+    });
+    const tapped = await webServerCall(base, started, ana.token, "/continue", {
+      screen: "consent",
+    });
+    expect(tapped.status).toBe(401);
+
+    // YourTal's sign-in takes signed-out callers only, so "Sign in again" signs out first.
+    const credentials = { email: ana.email, password: "factors-e2e-not-a-real-secret-1" };
+    expect((await api("/api/auth/login", { token: ana.token, payload: credentials })).status).toBe(
+      403,
+    );
+    const before = await liveSessions(ana.userId);
+    expect((await api("/api/auth/logout", { token: ana.token })).status).toBe(201);
+    const again = tokenOf(await api("/api/auth/login", { payload: credentials }));
+    // The old session ended and the new one took its place (registering left one of its own).
+    const after = await liveSessions(ana.userId);
+    expect(after).toHaveLength(before.length);
+    expect(after).toContainEqual({ id: hashOpaqueToken(again) });
+    expect(after).not.toContainEqual({ id: hashOpaqueToken(ana.token) });
+
+    expect((await details(await webServerCall(base, started, again, ""))).screen).toBe("consent");
+    const done = await webServerCall(base, started, again, "/continue", { screen: "consent" });
+    const tokens = await client.authorizationCodeGrant(
+      config,
+      await followToApp(started, await redirectOf(done)),
+      {
+        pkceCodeVerifier: started.verifier,
+        expectedState: started.state,
+        expectedNonce: started.nonce,
+        maxAge: TWELVE_HOURS,
+      },
+    );
+    expect(tokens.claims()).toMatchObject({ amr: ["pwd"], auth_time: await authTimeOf(again) });
+  });
+
+  it("prompt=login: a sign-in from before the app asked is asked for again", async () => {
+    const ana = await person();
+    await pool.query(
+      "UPDATE identity.session SET signed_in_at = now() - interval '1 minute' WHERE user_id = $1",
+      [ana.userId],
+    );
+    const started = await startSignIn(await webApp(), WEB_REDIRECT, { prompt: "login" });
+    expect((await details(await webServerCall(base, started, ana.token, ""))).screen).toBe(
+      "sign_in_again",
+    );
+  });
+
+  it("someone else signing in on the same browser gets their own sub, never the first's", async () => {
+    const config = await webApp();
+    const ana = await person();
+    const first = await startSignIn(config, WEB_REDIRECT);
+    const anaTapped = await webServerCall(base, first, ana.token, "/continue", {
+      screen: "consent",
+    });
+    const anaSub = (
+      await client.authorizationCodeGrant(
+        config,
+        await followToApp(first, await redirectOf(anaTapped)),
+        {
+          pkceCodeVerifier: first.verifier,
+          expectedState: first.state,
+          expectedNonce: first.nonce,
+        },
+      )
+    ).claims()?.sub;
+    expect(anaSub).toBeDefined();
+
+    const bob = await person();
+    const second = await startSignIn(config, WEB_REDIRECT, {}, first.browser);
+    const tapped = await webServerCall(base, second, bob.token, "/continue", { screen: "consent" });
+    // The provider's own session is still Ana's, so the library signs it out first.
+    const signOut = await second.browser.get(await redirectOf(tapped));
+    expect(signOut.status).toBe(200);
+    const resumed = await second.browser.submitForm(await signOut.text());
+    expect(resumed.status).toBe(303);
+    const tokens = await client.authorizationCodeGrant(
+      config,
+      await followToApp(second, resumed.headers.get("location") ?? ""),
+      {
+        pkceCodeVerifier: second.verifier,
+        expectedState: second.state,
+        expectedNonce: second.nonce,
+      },
+    );
+    expect(await rows("SELECT sub FROM oidc.subject WHERE user_id = $1", [bob.userId])).toEqual([
+      { sub: tokens.claims()?.sub },
+    ]);
+    expect(tokens.claims()?.sub).not.toBe(anaSub);
   });
 });

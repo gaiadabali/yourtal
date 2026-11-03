@@ -98,7 +98,9 @@ export function memoryAdapterFactory(): AdapterFactory {
       },
       revokeByGrantId: (grantId) => {
         for (const [stored, entry] of store) {
-          if (entry.payload.grantId === grantId) store.delete(stored);
+          if (stored.startsWith(`${kind}:`) && entry.payload.grantId === grantId) {
+            store.delete(stored);
+          }
         }
         return Promise.resolve();
       },

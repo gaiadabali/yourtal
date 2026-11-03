@@ -103,8 +103,16 @@ class PgAdapter implements Adapter {
     await this.pool.query("DELETE FROM oidc.model WHERE kind = $1 AND id = $2", [this.kind, id]);
   }
 
+  /**
+   * The library asks each token kind in turn. Only this kind: an Interaction
+   * also carries a grantId, and a sign-in that is switching account would
+   * otherwise lose itself when the library signs the previous account out.
+   */
   async revokeByGrantId(grantId: string): Promise<void> {
-    await this.pool.query("DELETE FROM oidc.model WHERE grant_id = $1", [grantId]);
+    await this.pool.query("DELETE FROM oidc.model WHERE kind = $1 AND grant_id = $2", [
+      this.kind,
+      grantId,
+    ]);
   }
 }
 

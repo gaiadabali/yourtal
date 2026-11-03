@@ -2,8 +2,9 @@ import { Module } from "@nestjs/common";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import { AuthModule } from "../auth/auth.module";
+import { SessionService } from "../auth/session/session.service";
 import { InteractionController } from "./interaction.controller";
-import { InteractionService } from "./interaction.service";
+import { InteractionService, SIGN_IN_SESSIONS } from "./interaction.service";
 import { OIDC_RUNTIME, OidcRuntime, createOidcRuntime } from "./oidc-runtime";
 import { NO_TEEN_INVITES_YET, TEEN_INVITE_CHECKER } from "./sign-in-checks";
 import type { TeenInviteChecker } from "./sign-in-checks";
@@ -27,6 +28,7 @@ import type { TeenInviteChecker } from "./sign-in-checks";
     },
     // The teen invite ticket (3.9.e) replaces this with the real check.
     { provide: TEEN_INVITE_CHECKER, useValue: NO_TEEN_INVITES_YET },
+    { provide: SIGN_IN_SESSIONS, useExisting: SessionService },
     InteractionService,
   ],
   exports: [OIDC_RUNTIME],

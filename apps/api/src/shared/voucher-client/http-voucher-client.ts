@@ -24,6 +24,8 @@ import type {
 } from "@yourtal/contracts/voucher-internal/lifecycle";
 import type {
   GetVoucherRequest,
+  Holding,
+  HoldingRequest,
   ListForUserRequest,
   ListForUserResult,
   WalletVoucherRow,
@@ -184,6 +186,10 @@ export class HttpVoucherClient implements VoucherInternalClient {
 
   get(request: GetVoucherRequest): ResultAsync<WalletVoucherRow, VoucherError> {
     return this.post("/internal/v1/wallet/get", request);
+  }
+
+  holding(request: HoldingRequest): ResultAsync<Holding, VoucherError> {
+    return this.post("/internal/v1/vouchers/holding", request);
   }
 
   lookupAsDevice(request: LookupAsDeviceRequest): ResultAsync<VoucherPreview, VoucherError> {

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import pg from "pg";
 import { consentRecordSchema } from "@yourtal/consent/consent-record";
+import { ageYearsFrom } from "@yourtal/jurisdiction/age";
 import { APP_URL, OWNER_URL } from "./database-urls";
 
 /**
@@ -91,11 +92,17 @@ const forget = (userId: string) =>
     return rows[0]?.n;
   });
 
-const endAccess = (userId: string, sector: string, receiver: string | null, reason: string) =>
+const endAccess = (
+  userId: string,
+  sector: string,
+  receiver: string | null,
+  reason: string,
+  inviteId: string | null = null,
+) =>
   inTransaction(async (db) => {
     const { rows } = await db.query<{ ended: boolean }>(
-      `SELECT oidc.end_app_access($1, $2, $3, $4) AS ended`,
-      [userId, sector, receiver, reason],
+      `SELECT oidc.end_app_access($1, $2, $3, $4, $5) AS ended`,
+      [userId, sector, receiver, reason, inviteId],
     );
     return rows[0]?.ended;
   });
@@ -120,7 +127,7 @@ async function oidcRows(userId: string): Promise<Record<string, number>> {
             (SELECT count(*) FROM oidc.teen_invite WHERE inviter_user_id = $1 OR teen_user_id = $1)::int AS teen_invite,
             (SELECT count(*) FROM oidc.sign_in_log WHERE user_id = $1)::int AS sign_in_log,
             (SELECT count(*) FROM oidc.model
-              WHERE payload->>'accountId' = $1 OR payload->'result'->'login'->>'accountId' = $1)::int AS model`,
+              WHERE jsonb_path_exists(payload, 'strict $.**.accountId ? (@ == $p)', jsonb_build_object('p', $1::text)))::int AS model`,
     [userId],
   );
   return rows[0] ?? {};
@@ -150,7 +157,7 @@ async function liveConsent(userId: string, sector: string) {
 }
 
 beforeAll(() => {
-  app = new Pool({ connectionString: APP_URL, max: 2 });
+  app = new Pool({ connectionString: APP_URL, max: 3 });
   owner = new Pool({ connectionString: OWNER_URL, max: 2 });
 });
 
@@ -164,6 +171,7 @@ describe("oidc.forget_subject", () => {
     const parent = await person("1985-05-05");
     const teen = await person(yearsAgo(15));
     const grownUp = await person(yearsAgo(19)); // invited as a teen, now 18+
+    const elsewhere = await person(yearsAgo(14)); // invited into a sector with no receiver
     const other = await person("1990-01-01");
 
     const subs = {
@@ -172,6 +180,7 @@ describe("oidc.forget_subject", () => {
       unreceived: await subject(parent, "no-receiver"),
       teen: await subject(teen, SNAP),
       grownUp: await subject(grownUp, SNAP),
+      elsewhere: await subject(elsewhere, "no-receiver"),
       other: await subject(other, SNAP),
     };
     await consent(parent, SNAP);
@@ -182,6 +191,7 @@ describe("oidc.forget_subject", () => {
     await invite(parent, null); // pending, never accepted
     await consent(teen, SNAP, teenInvite);
     await consent(grownUp, SNAP, grownUpInvite);
+    await consent(elsewhere, "no-receiver", await invite(parent, elsewhere, "no-receiver"));
     await owner.query(
       `INSERT INTO identity.consent_record
          (user_id, purpose, jurisdiction, policy_version_id, state, source, audience)
@@ -196,15 +206,17 @@ describe("oidc.forget_subject", () => {
       `INSERT INTO oidc.model (kind, id, payload) VALUES
          ('Session', $1, jsonb_build_object('accountId', $4::text)),
          ('Interaction', $2, jsonb_build_object('result', jsonb_build_object('login', jsonb_build_object('accountId', $4::text)))),
-         ('Session', $3, jsonb_build_object('accountId', $5::text))`,
-      [randomUUID(), randomUUID(), randomUUID(), parent, other],
+         ('Session', $3, jsonb_build_object('accountId', $5::text)),
+         ('Interaction', $6, jsonb_build_object('session', jsonb_build_object('accountId', $4::text))),
+         ('Interaction', $7, jsonb_build_object('lastSubmission', jsonb_build_object('login', jsonb_build_object('accountId', $4::text))))`,
+      [randomUUID(), randomUUID(), randomUUID(), parent, other, randomUUID(), randomUUID()],
     );
     const evidenceBefore = await consentRecords(parent);
     const otherBefore = await oidcRows(other);
 
-    // 2 account-deleted + 1 inviter_deleted, then 3 subjects, 2 consents,
-    // 3 invites, 1 log line and 2 provider records deleted.
-    expect(await forget(parent)).toBe(14);
+    // 2 account-deleted + 2 inviter_deleted (one with no receiver), then 3
+    // subjects, 2 consents, 4 invites, 1 log line and 4 provider records deleted.
+    expect(await forget(parent)).toBe(18);
 
     expect(await events([subs.snap, subs.ftr, subs.unreceived])).toEqual([
       { client_id: "ftr-web", sub: subs.ftr, event_type: DELETED, payload: { [DELETED]: {} } },
@@ -232,6 +244,12 @@ describe("oidc.forget_subject", () => {
       jurisdiction: "AU",
     });
 
+    // No receiver: the access ends, and nothing is queued.
+    expect(await liveConsent(elsewhere, "no-receiver")).toMatchObject({
+      end_reason: "inviter_deleted",
+    });
+    expect(await events([subs.elsewhere])).toEqual([]);
+
     // The adult's space is their own: no event, consent standing.
     expect(await events([subs.grownUp])).toEqual([]);
     expect(await liveConsent(grownUp, SNAP)).toMatchObject({ ended_at: null });
@@ -256,6 +274,8 @@ describe("oidc.forget_subject", () => {
     const id = await person("1980-01-01");
     for (const bad of [
       "{}",
+      "[]",
+      null,
       JSON.stringify([{ sector: SNAP }]),
       JSON.stringify([...RECEIVERS, RECEIVERS[0]]),
     ]) {
@@ -263,6 +283,32 @@ describe("oidc.forget_subject", () => {
         app.query(`SELECT oidc.forget_subject($1, $2::jsonb)`, [id, bad]),
       ).rejects.toThrow(/receiver/);
     }
+  });
+});
+
+describe("oidc.forget_subject under concurrent calls", () => {
+  it("queues each account-deleted once when the API and the sweep race", async () => {
+    const userId = await person("1980-01-01");
+    const subs = [await subject(userId, SNAP), await subject(userId, FTR)];
+    const first = await app.connect();
+    const second = await app.connect();
+    try {
+      await first.query("BEGIN");
+      await second.query("BEGIN");
+      const call = `SELECT oidc.forget_subject($1, $2::jsonb) AS n`;
+      const args = [userId, JSON.stringify(RECEIVERS)];
+      await first.query(call, args);
+      // The second call waits on the first's lock until it commits.
+      const waiting = second.query<{ n: number }>(call, args);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      await first.query("COMMIT");
+      expect((await waiting).rows[0]?.n).toBe(0);
+      await second.query("COMMIT");
+    } finally {
+      first.release();
+      second.release();
+    }
+    expect(await events(subs)).toHaveLength(2);
   });
 });
 
@@ -350,6 +396,86 @@ describe("oidc.end_app_access", () => {
     expect(await endAccess(adult, SNAP, null, "user_removed")).toBe(true);
     expect(await events([sub])).toEqual([]);
     expect(await consentRecords(adult)).toHaveLength(1);
+  });
+
+  it("does not erase an adult for teen_removed", async () => {
+    const adult = await person("1990-01-01");
+    const sub = await subject(adult, SNAP);
+    await consent(adult, SNAP);
+    expect(await endAccess(adult, SNAP, "snapapp-staging-server", "teen_removed")).toBe(false);
+    expect(await liveConsent(adult, SNAP)).toMatchObject({ ended_at: null });
+    expect(await events([sub])).toEqual([]);
+  });
+
+  it("leaves a teen's consent-screen consent alone for a guardian-side reason", async () => {
+    const teen = await person(yearsAgo(15));
+    await consent(teen, SNAP);
+    expect(await endAccess(teen, SNAP, "snapapp-staging-server", "parent_ended")).toBe(false);
+    expect(await liveConsent(teen, SNAP)).toMatchObject({ ended_at: null });
+  });
+
+  it("ends only the consent and invite of the invite it names", async () => {
+    const parent = await person("1970-01-01");
+    const teen = await person(yearsAgo(15));
+    const sub = await subject(teen, SNAP);
+    const inviteA = await invite(parent, teen);
+    const inviteB = await invite(parent, teen);
+    await consent(teen, SNAP, inviteB);
+
+    expect(await endAccess(teen, SNAP, "snapapp-staging-server", "parent_ended", inviteA)).toBe(
+      false,
+    );
+    expect(await liveConsent(teen, SNAP)).toMatchObject({ ended_at: null });
+    const { rows } = await app.query(
+      `SELECT id FROM oidc.teen_invite WHERE id = ANY($1) AND ended_at IS NOT NULL`,
+      [[inviteA, inviteB]],
+    );
+    expect(rows).toEqual([]);
+    expect(await events([sub])).toEqual([]);
+
+    expect(await endAccess(teen, SNAP, "snapapp-staging-server", "parent_ended", inviteB)).toBe(
+      true,
+    );
+    expect(await events([sub])).toHaveLength(1);
+  });
+
+  it("turns adult on the 18th birthday, by UTC date", async () => {
+    // Built by hand: someone born on today's date 18 years ago is 18 today.
+    // On 29 Feb that date does not exist, and 28 Feb is the birthday passed.
+    const now = new Date();
+    const y = now.getUTCFullYear() - 18;
+    const m = now.getUTCMonth();
+    const d = m === 1 && now.getUTCDate() === 29 ? 28 : now.getUTCDate();
+    const iso = (date: Date) => date.toISOString().slice(0, 10);
+    const eighteen = iso(new Date(Date.UTC(y, m, d)));
+    const dayShort = iso(new Date(Date.UTC(y, m, d + 1)));
+    expect(ageYearsFrom(eighteen, now)).toBe(18);
+    expect(ageYearsFrom(dayShort, now)).toBe(17);
+
+    for (const [dob, ends] of [
+      [eighteen, false],
+      [dayShort, true],
+    ] as const) {
+      const userId = await person(dob);
+      await consent(userId, SNAP, await invite(await person("1970-01-01"), userId));
+      expect(await endAccess(userId, SNAP, null, "guardian_withdrew")).toBe(ends);
+    }
+  });
+
+  it("agrees with ageYearsFrom for a 29 February birthday", async () => {
+    // now() cannot be moved, so this checks the expression the function uses.
+    const EXPR = "extract(year FROM age((now() AT TIME ZONE 'UTC')::date, p.date_of_birth))";
+    const { rows: defs } = await app.query<{ def: string }>(
+      `SELECT pg_get_functiondef('oidc.end_app_access(text, text, text, text, uuid)'::regprocedure) AS def`,
+    );
+    expect(defs[0]?.def).toContain(EXPR);
+    for (const today of ["2026-02-28", "2026-03-01", "2028-02-28", "2028-02-29"]) {
+      const { rows } = await app.query<{ years: number }>(
+        `SELECT extract(year FROM age($1::date, '2008-02-29'::date))::int AS years`,
+        [today],
+      );
+      expect(rows[0]?.years).toBe(ageYearsFrom("2008-02-29", new Date(`${today}T12:00:00Z`)));
+    }
   });
 
   it("refuses an unknown reason", async () => {

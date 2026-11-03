@@ -15,9 +15,10 @@ CREATE INDEX event_outbox_pending_idx ON oidc.event_outbox (client_id, sub, iat)
 -- reasons: ends the live consent, appends the `withdrawn` evidence, ends their
 -- live teen invite there, and queues `access-ended` for `receiver` (NULL when the
 -- sector has no receiver: the access still ends, nothing is sent). `invite`
--- narrows it to the consent and invite of one teen invite. The guardian-side
--- reasons touch only a consent given through an invite by someone still under
--- 18 (UTC, as ageYearsFrom): an adult's space is their own (docs/26 §3.3).
+-- narrows it to the consent and invite of one teen invite. The four teen
+-- reasons (erase_data true) touch only a consent given through an invite by
+-- someone still under 18 (UTC, as ageYearsFrom): an adult's space is their own
+-- (docs/26 §3.3).
 -- False, with nothing written, when no such consent is live.
 CREATE FUNCTION oidc.end_app_access(
   person text, app_sector text, receiver text, reason text, invite uuid DEFAULT NULL
@@ -27,7 +28,7 @@ LANGUAGE plpgsql
 SET search_path = pg_catalog, oidc, identity
 AS $$
 DECLARE
-  guardian_side boolean := reason IN ('guardian_withdrew', 'parent_ended', 'inviter_deleted');
+  teen_only boolean := reason IN ('guardian_withdrew', 'parent_ended', 'teen_removed', 'inviter_deleted');
   policy text;
   recorded integer;
   sub_of text;
@@ -40,11 +41,18 @@ BEGIN
     RAISE EXCEPTION 'oidc: unknown access-ended reason %', reason USING ERRCODE = 'invalid_parameter_value';
   END IF;
 
+  -- Invite before consent, the order 3.9.e's invite end takes, so the two cannot deadlock.
+  PERFORM 1 FROM oidc.teen_invite
+   WHERE teen_user_id = person AND sector = app_sector
+     AND accepted_at IS NOT NULL AND ended_at IS NULL
+     AND (invite IS NULL OR id = invite)
+     FOR UPDATE;
+
   UPDATE oidc.app_consent c
      SET ended_at = now(), end_reason = reason
    WHERE c.user_id = person AND c.sector = app_sector AND c.ended_at IS NULL
      AND (invite IS NULL OR c.invite_id = invite)
-     AND (NOT guardian_side OR (c.granted_via = 'guardian_invite' AND EXISTS (
+     AND (NOT teen_only OR (c.granted_via = 'guardian_invite' AND EXISTS (
            SELECT 1 FROM identity.user_profile p
             WHERE p.user_id = c.user_id
               AND extract(year FROM age((now() AT TIME ZONE 'UTC')::date, p.date_of_birth)) < 18)))
@@ -75,7 +83,7 @@ BEGIN
     INSERT INTO oidc.event_outbox (jti, client_id, sub, event_type, payload, iat)
     VALUES (gen_random_uuid(), receiver, sub_of, 'urn:yourtal:event:access-ended',
             jsonb_build_object('urn:yourtal:event:access-ended',
-              jsonb_build_object('reason', reason, 'erase_data', reason NOT IN ('user_removed', 'security'))),
+              jsonb_build_object('reason', reason, 'erase_data', teen_only)),
             now());
   END IF;
   RETURN true;
@@ -103,8 +111,9 @@ BEGIN
   IF person IS NULL OR length(person) = 0 THEN
     RAISE EXCEPTION 'oidc: a person is required' USING ERRCODE = 'invalid_parameter_value';
   END IF;
-  IF jsonb_typeof(receivers) IS DISTINCT FROM 'array' THEN
-    RAISE EXCEPTION 'oidc: receivers must be a JSON array' USING ERRCODE = 'invalid_parameter_value';
+  -- An empty list would drop every app link with no app told, for good.
+  IF jsonb_typeof(receivers) IS DISTINCT FROM 'array' OR jsonb_array_length(receivers) = 0 THEN
+    RAISE EXCEPTION 'oidc: receivers must be a non-empty JSON array' USING ERRCODE = 'invalid_parameter_value';
   END IF;
   IF (SELECT count(*) <> count(DISTINCT r->>'sector') OR bool_or(r->>'sector' IS NULL OR r->>'clientId' IS NULL)
         FROM jsonb_array_elements(receivers) r) THEN
@@ -114,8 +123,9 @@ BEGIN
 
   -- The API's deletion and the worker's sweep may race: the second waits here,
   -- then finds no subject rows, so no event is queued twice. (FOR UPDATE would
-  -- need UPDATE on oidc.subject, which the app must not hold.)
-  PERFORM pg_advisory_xact_lock(hashtext('oidc.forget_subject:' || person));
+  -- need UPDATE on oidc.subject, which the app must not hold.) Assumes READ
+  -- COMMITTED: each later statement takes a snapshot after the lock.
+  PERFORM pg_advisory_xact_lock(hashtextextended('oidc.forget_subject:' || person, 0));
 
   FOR teen IN
     SELECT i.id, i.sector, i.teen_user_id, r->>'clientId' AS client_id
@@ -144,9 +154,9 @@ BEGIN
   GET DIAGNOSTICS n = ROW_COUNT; total := total + n;
   DELETE FROM oidc.sign_in_log WHERE user_id = person;
   GET DIAGNOSTICS n = ROW_COUNT; total := total + n;
-  -- Sessions, grants and tokens carry accountId; an interaction carries it under its login result.
+  -- accountId sits at the top of sessions, grants and tokens, and nested in interactions.
   DELETE FROM oidc.model
-   WHERE payload->>'accountId' = person OR payload->'result'->'login'->>'accountId' = person;
+   WHERE jsonb_path_exists(payload, 'strict $.**.accountId ? (@ == $p)', jsonb_build_object('p', person));
   GET DIAGNOSTICS n = ROW_COUNT; total := total + n;
 
   RETURN total;

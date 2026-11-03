@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { SettingsScreen } from "@yourtal/contracts/staff/economy";
 import enStaff from "@/messages/en-AU/staff.json";
@@ -72,6 +72,26 @@ describe("F126: the staff console shows the identity check's effective state", (
 
   it("follows the setting on staging", () => {
     expect(identityCard("staging", { enabled: true }).getByText("On")).toBeInTheDocument();
+  });
+
+  it("shows the passkey step as not required until the setting turns it on (F102)", () => {
+    expect(
+      identityCard("staging", { enabled: true }).getByText("Not required"),
+    ).toBeInTheDocument();
+    cleanup();
+    expect(
+      identityCard("production", { enabled: false }).getByText("Not required"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the passkey step as required when requirePasskey is on, in production too", () => {
+    const staging = identityCard("staging", { enabled: true, requirePasskey: true });
+    expect(staging.getByText("Required")).toBeInTheDocument();
+    expect(staging.getByText('{"enabled":true,"requirePasskey":true}')).toBeInTheDocument();
+    cleanup();
+    expect(
+      identityCard("production", { enabled: false, requirePasskey: true }).getByText("Required"),
+    ).toBeInTheDocument();
   });
 
   it("reads a malformed setting as off outside production", () => {

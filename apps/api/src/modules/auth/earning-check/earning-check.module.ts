@@ -7,6 +7,7 @@ import { SettingsModule } from "../../../shared/settings/settings.module";
 import { REGION_SETTINGS_READER } from "../../../shared/settings/region-settings-reader";
 import type { RegionSettingsReader } from "../../../shared/settings/region-settings-reader";
 import { DrizzleCredentialRepository } from "../persistence/drizzle-credential.repository";
+import { DrizzlePasskeyRepository } from "../persistence/drizzle-passkey.repository";
 import { EARNING_IDENTITY_CHECK, RepositoryEarningIdentityCheck } from "./earning-identity-check";
 
 const EARNING_CHECK_DB = Symbol("EARNING_CHECK_DB");
@@ -31,6 +32,7 @@ const EARNING_CHECK_DB = Symbol("EARNING_CHECK_DB");
           appEnv: config.appEnv,
           settings,
           credentials: new DrizzleCredentialRepository(db),
+          passkeys: new DrizzlePasskeyRepository(db),
         }),
       inject: [APP_CONFIG, REGION_SETTINGS_READER, EARNING_CHECK_DB],
     },

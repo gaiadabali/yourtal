@@ -22,6 +22,7 @@ export type NonEarningReasonKey =
   | "notConfirmed"
   | "identityCheck"
   | "identityCheckPermanentEmail"
+  | "identityCheckPasskey"
   | "generic";
 
 const BY_REASON: Readonly<Record<string, NonEarningReasonKey>> = {
@@ -49,14 +50,18 @@ export function nonEarningReasonKey(reason: string | null): NonEarningReasonKey 
 }
 
 /**
- * F126's banner for a refused identity check: asking to verify would mislead
- * someone whose email is verified but disposable, so that case says so.
- * `missing` is absent when the server did not say (the end of a session).
+ * F126's banner for a refused identity check. Asking to verify would mislead
+ * someone whose email is verified but disposable, so that case says so; when
+ * the passkey is all that is left it asks for that. `missing` is absent when
+ * the server did not say (the end of a session).
  */
 export function identityCheckKey(
   missing: readonly IdentityCheckStep[] | undefined,
-): "identityCheck" | "identityCheckPermanentEmail" {
-  const onlyPermanentEmail =
-    missing !== undefined && missing.length > 0 && !missing.includes("verify_email");
-  return onlyPermanentEmail ? "identityCheckPermanentEmail" : "identityCheck";
+): "identityCheck" | "identityCheckPermanentEmail" | "identityCheckPasskey" {
+  if (missing === undefined || missing.length === 0 || missing.includes("verify_email")) {
+    return "identityCheck";
+  }
+  return missing.includes("use_permanent_email")
+    ? "identityCheckPermanentEmail"
+    : "identityCheckPasskey";
 }

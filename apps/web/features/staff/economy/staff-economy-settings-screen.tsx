@@ -11,6 +11,7 @@ import { Textarea } from "@yourtal/ui/textarea";
 import type { EconomyProposal, SettingsScreen } from "@yourtal/contracts/staff/economy";
 import {
   identityCheckApplies,
+  passkeyRequired,
   POINTS_IDENTITY_CHECK_SETTING_KEY,
 } from "@yourtal/contracts/identity/earning-check";
 import { approveSettingAction, proposeSettingAction } from "./staff-economy-actions";
@@ -91,6 +92,7 @@ export function StaffEconomySettingsScreen({
       : identityCheckApplies(appEnv, identityCheck?.value)
         ? "on"
         : "off";
+  const passkeyStep = passkeyRequired(appEnv, identityCheck?.value);
 
   return (
     <div className="flex flex-col gap-6">
@@ -149,6 +151,15 @@ export function StaffEconomySettingsScreen({
                   ),
               },
               {
+                key: "identity-check-passkey",
+                label: t("economy.identityCheckPasskey"),
+                value: passkeyStep ? (
+                  <StatusBadge status="success">{t("economy.identityCheckPasskeyOn")}</StatusBadge>
+                ) : (
+                  <StatusBadge status="warning">{t("economy.identityCheckPasskeyOff")}</StatusBadge>
+                ),
+              },
+              {
                 key: "identity-check-raw",
                 label: t("economy.currentValue"),
                 value: identityCheck === undefined ? "—" : JSON.stringify(identityCheck.value),
@@ -160,7 +171,8 @@ export function StaffEconomySettingsScreen({
               identityCheckState === "required"
                 ? "economy.identityCheckHintProduction"
                 : "economy.identityCheckHint",
-            )}
+            )}{" "}
+            {t("economy.identityCheckPasskeyHint")}
           </p>
         </CardContent>
       </Card>

@@ -61,7 +61,7 @@ const IDENTITY_CHECK_REQUIRED: RouteErrorResponse = {
   description:
     "The account has not passed YourTal's identity check, so it earns nothing and the receipt is " +
     "not recorded (identity_check_required). missing lists what the user still has to do " +
-    "(verify_email, use_permanent_email). The refusal is final: do not resend the receipt. The " +
+    "(verify_email, use_permanent_email, add_passkey). The refusal is final: do not resend the receipt. The " +
     "body carries the linkId to use next time.",
   documented: true,
 };

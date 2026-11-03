@@ -220,4 +220,44 @@ describe("streak-backstop job", () => {
     // Forfeited, not deferred: passing the check later does not pay this streak.
     expect(state.rows.map((row) => row.day3_granted)).toEqual([true, true, true]);
   });
+
+  it("F102: with requirePasskey on (production), a verified account without a passkey forfeits the bonus and one with a passkey is paid", async () => {
+    const campaign = await seededCampaign();
+    const without = randomUUID();
+    const withPasskey = randomUUID();
+    const everyone = [without, withPasskey];
+    for (const userId of everyone) {
+      await seedProfile(userId, "1990-01-01");
+      await seedIdentityCheck(userId);
+    }
+    await pool.query(
+      `INSERT INTO identity.credential (user_id, kind, identifier, secret_hash)
+       VALUES ($1, 'passkey', $2, '')`,
+      [withPasskey, randomUUID()],
+    );
+    await pool.query(
+      `INSERT INTO identity.passkey (credential_id, user_id, public_key, device_type, backed_up, name)
+       VALUES ($1, $2, decode('00', 'hex'), 'multiDevice', true, 'test passkey')`,
+      [randomUUID(), withPasskey],
+    );
+    // The app role cannot delete settings; this suite's database is throwaway, and this test runs last.
+    await pool.query(
+      `INSERT INTO platform.region_setting (region, key, value, set_by, approved_by, effective_from)
+       VALUES ('AU', 'points_identity_check', '{"enabled": false, "requirePasskey": true}'::jsonb, 'test-a', 'test-b', clock_timestamp())`,
+    );
+    await fundReserve("AU", 1_000_000_00);
+    for (const userId of everyone) {
+      await seedCompletedSession(userId, new Date("2026-08-11T04:00:00Z"), campaign);
+      await seedCompletedSession(userId, new Date("2026-08-12T04:00:00Z"), campaign);
+      await seedCompletedSession(userId, new Date("2026-08-13T04:00:00Z"), campaign);
+    }
+
+    await runStreakBackstop(pool, new Date("2026-08-13T12:00:00Z"), undefined, "production");
+
+    const grants = await pool.query<{ user_id: string }>(
+      `SELECT user_id FROM platform.ledger_fake_grant WHERE user_id = ANY($1) AND kind = 'streak'`,
+      [everyone],
+    );
+    expect(grants.rows.map((row) => row.user_id)).toEqual([withPasskey]);
+  });
 });

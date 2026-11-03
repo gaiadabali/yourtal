@@ -109,13 +109,15 @@
       "notConfirmed": "Your points could not be confirmed right now.",
       "generic": "This video isn't giving out points right now.",
       "identityCheck": "Verify your email to start earning points.",
-      "identityCheckPermanentEmail": "This email address can't be used to earn points."
+      "identityCheckPermanentEmail": "This email address can't be used to earn points.",
+      "identityCheckPasskey": "Add a passkey to start earning points."
     }
   },
   "identityCheck": {
     "verifyEmailCta": "Send me the verification email",
     "verifyEmailSent": "Check your inbox and open the link, then come back to earn points.",
     "verifyEmailFailed": "The email couldn't be sent. Try again in a minute.",
-    "usePermanentEmail": "Use a permanent email address to earn points. Changing the email on an account isn't available yet."
+    "usePermanentEmail": "Use a permanent email address to earn points. Changing the email on an account isn't available yet.",
+    "addPasskeyCta": "Add a passkey"
   }
 }

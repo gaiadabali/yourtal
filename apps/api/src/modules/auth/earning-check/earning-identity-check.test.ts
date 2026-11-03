@@ -9,6 +9,7 @@ function check(options: {
   verifiedAt: Date | null;
   email?: string;
   password?: boolean;
+  passkeys?: number;
 }) {
   const reads: string[] = [];
   const password: Credential | null =
@@ -35,6 +36,12 @@ function check(options: {
       findByUserAndKind: (_userId, kind) => {
         reads.push(`credential:${kind}`);
         return Promise.resolve(password);
+      },
+    },
+    passkeys: {
+      listForUser: () => {
+        reads.push("passkeys");
+        return Promise.resolve(Array.from({ length: options.passkeys ?? 0 }) as never);
       },
     },
   });
@@ -134,6 +141,55 @@ describe("RepositoryEarningIdentityCheck (F126)", () => {
     expect(await service.verdictFor("u1", "AU")).toEqual({
       mayEarn: false,
       missing: ["verify_email", "use_permanent_email"],
+    });
+  });
+
+  it("F102: the passkey step follows requirePasskey, in production too", async () => {
+    const base = { verifiedAt: new Date() };
+    const on = { enabled: true, requirePasskey: true };
+
+    const none = check({ ...base, appEnv: "staging", setting: on });
+    expect(await none.service.verdictFor("u1", "AU")).toEqual({
+      mayEarn: false,
+      missing: ["add_passkey"],
+    });
+    const one = check({ ...base, appEnv: "staging", setting: on, passkeys: 1 });
+    expect(await one.service.verdictFor("u1", "AU")).toEqual({ mayEarn: true });
+
+    const prod = check({
+      ...base,
+      appEnv: "production",
+      setting: { enabled: false, requirePasskey: true },
+    });
+    expect(await prod.service.verdictFor("u1", "AU")).toEqual({
+      mayEarn: false,
+      missing: ["add_passkey"],
+    });
+  });
+
+  it("F102: off by default, and then the passkeys are never read", async () => {
+    for (const [appEnv, setting] of [
+      ["staging", { enabled: true }],
+      ["staging", { enabled: true, requirePasskey: false }],
+      ["production", { enabled: false }],
+      ["production", null],
+      ["staging", { enabled: false, requirePasskey: true }],
+    ] as const) {
+      const { service, reads } = check({ appEnv, setting, verifiedAt: new Date() });
+      expect(await service.verdictFor("u1", "AU")).toEqual({ mayEarn: true });
+      expect(reads).not.toContain("passkeys");
+    }
+  });
+
+  it("F102: names every missing step in order", async () => {
+    const { service } = check({
+      appEnv: "staging",
+      setting: { enabled: true, requirePasskey: true },
+      verifiedAt: null,
+    });
+    expect(await service.verdictFor("u1", "AU")).toEqual({
+      mayEarn: false,
+      missing: ["verify_email", "add_passkey"],
     });
   });
 });

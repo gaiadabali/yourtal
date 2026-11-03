@@ -60,6 +60,23 @@ describe("IdentityCheckPrompt (F126)", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("sends a missing passkey to the passkey page, back to this page afterwards, and offers no email button", () => {
+    render(<IdentityCheckPrompt missing={["add_passkey"]} locale="en-AU" />);
+    expect(screen.getByRole("link", { name: "Add a passkey" })).toHaveAttribute(
+      "href",
+      "/passkey?returnTo=%2F",
+    );
+    expect(
+      screen.queryByRole("button", { name: "Send me the verification email" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("offers both the email button and the passkey link when both are missing, in Indonesian too", () => {
+    render(<IdentityCheckPrompt missing={["verify_email", "add_passkey"]} locale="id-ID" />);
+    expect(screen.getByRole("button", { name: "Kirim email verifikasi" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Tambahkan passkey" })).toBeInTheDocument();
+  });
+
   it("says so when the email could not be sent, in Indonesian too", async () => {
     requestEmailVerificationActionMock.mockResolvedValue({
       ok: false,
@@ -140,6 +157,33 @@ describe("the player, when the session is refused for the identity check", () =>
     expect(screen.queryByRole("link", { name: /passkey/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Watch without earning" })).toBeInTheDocument();
     expect(document.querySelector("video")?.getAttribute("src")).toBeNull();
+  });
+
+  it("asks a verified person with no passkey to add one, with the link, and still lets them watch", async () => {
+    startWatchSessionActionMock.mockResolvedValue({
+      ok: true,
+      data: {
+        session: {
+          id: "session-1",
+          nonEarning: true,
+          nonEarningReason: "identity_check_required",
+          questionsAsked: 0,
+        },
+        durationSeconds: 90,
+        alreadyEarned: false,
+        manifestUrl: "/media/hls/1/2/session-1/index.m3u8",
+        identityCheck: { missing: ["add_passkey"] },
+      },
+    });
+    render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
+    fireEvent.click(screen.getByRole("button", { name: "Play Test Campaign" }));
+
+    expect(await screen.findByText("Add a passkey to start earning points.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Add a passkey" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Send me the verification email" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Watch without earning" })).toBeInTheDocument();
   });
 
   it("tells a verified person with a disposable address plainly, with no button and no link", async () => {

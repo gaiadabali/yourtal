@@ -2363,7 +2363,8 @@
                             "type": "string",
                             "enum": [
                               "verify_email",
-                              "use_permanent_email"
+                              "use_permanent_email",
+                              "add_passkey"
                             ]
                           }
                         }
@@ -2917,7 +2918,8 @@
                         "type": "string",
                         "enum": [
                           "verify_email",
-                          "use_permanent_email"
+                          "use_permanent_email",
+                          "add_passkey"
                         ]
                       }
                     },
@@ -15364,7 +15366,7 @@
             }
           },
           "403": {
-            "description": "A teen account cannot link a partner app (teen_consent_not_allowed, F101/F105). OR: The user unlinked this app; the link earns nothing (link_revoked). OR: The account has not passed YourTal's identity check, so it earns nothing and the receipt is not recorded (identity_check_required). missing lists what the user still has to do (verify_email, use_permanent_email). The refusal is final: do not resend the receipt. The body carries the linkId to use next time.",
+            "description": "A teen account cannot link a partner app (teen_consent_not_allowed, F101/F105). OR: The user unlinked this app; the link earns nothing (link_revoked). OR: The account has not passed YourTal's identity check, so it earns nothing and the receipt is not recorded (identity_check_required). missing lists what the user still has to do (verify_email, use_permanent_email, add_passkey). The refusal is final: do not resend the receipt. The body carries the linkId to use next time.",
             "content": {
               "application/json": {
                 "schema": {

@@ -74,14 +74,18 @@ export function toWalletHistoryEntry(
  * and a non-transfer void has no public status at all (omitted, not sent
  * as `null`: `exactOptionalPropertyTypes`).
  */
-export function toWalletVoucher(row: WalletVoucherRow): WalletVoucher {
+export function toWalletVoucher(
+  row: WalletVoucherRow,
+  /** Business display names by id: the business's own name beats the listing's free-text copy. */
+  businessNames: ReadonlyMap<string, string> = new Map(),
+): WalletVoucher {
   const status = publicVoucherStatusOf(row.lifecycleState, row.voidReason);
   return {
     voucherId: row.voucherId,
     listingId: row.listingId,
     state: row.state,
     ...(status === undefined ? {} : { status }),
-    merchantName: row.merchantName,
+    merchantName: businessNames.get(row.merchantId) ?? row.merchantName,
     title: row.title,
     currency: row.currency,
     faceValueMinor: row.faceValueMinor,

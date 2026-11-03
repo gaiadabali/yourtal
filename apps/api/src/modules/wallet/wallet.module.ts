@@ -8,6 +8,7 @@ import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { createVoucherClient } from "../../shared/voucher-client/create-voucher-client";
 import { VOUCHER_INTERNAL_CLIENT } from "../../shared/voucher-client/voucher-internal-client";
 import { SettingsModule } from "../../shared/settings/settings.module";
+import { BusinessModule } from "../business/business.module";
 import { IdentityModule } from "../identity/identity.module";
 import { WalletAttributeLoader } from "./wallet-attribute-loader";
 import { WalletController } from "./wallet.controller";
@@ -25,7 +26,12 @@ export const WALLET_DB = Symbol("WALLET_DB");
  * teen daily-cap read.
  */
 @Module({
-  imports: [IdentityModule, SettingsModule, forwardRef(() => CheckoutModule)],
+  imports: [
+    IdentityModule,
+    SettingsModule,
+    forwardRef(() => BusinessModule),
+    forwardRef(() => CheckoutModule),
+  ],
   controllers: [WalletController, WalletGiftController],
   providers: [
     {

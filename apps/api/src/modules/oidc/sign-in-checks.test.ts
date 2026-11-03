@@ -168,6 +168,21 @@ describe("a fresh sign-in when the app asks for one", () => {
     expect(tooOld(new Date(NOW.getTime() - 30_000), [], 10)).toBe(true);
   });
 
+  it("asks again when a value it needs is missing", () => {
+    const at = new Date(NOW.getTime() - 1000);
+    expect(
+      signInTooOld({
+        authTime: at,
+        interactionStartedAt: Number.NaN,
+        prompts: new Set(["login"]),
+        maxAge: undefined,
+        now: NOW,
+      }),
+    ).toBe(true);
+    expect(tooOld(at, [], Number.NaN)).toBe(true);
+    expect(tooOld(new Date(Number.NaN), [], 60)).toBe(true);
+  });
+
   it("is asked for once the person may sign in to the app, before consent", async () => {
     expect(await screen({ signInAgain: true })).toBe("sign_in_again");
     expect(await screen({ signInAgain: true, consent: CONSENTED })).toBe("sign_in_again");

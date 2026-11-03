@@ -76,9 +76,16 @@ export function signInTooOld(input: {
   readonly now: Date;
 }): boolean {
   const authTime = input.authTime.getTime();
-  if (input.prompts.has("login") && authTime < input.interactionStartedAt * 1000) return true;
+  const authSeconds = Math.floor(authTime / 1000);
+  // `iat` is whole seconds, so a sign-in under a second before the app asked counts as after it:
+  // being stricter would loop a re-sign-in that finishes in the same second.
+  if (input.prompts.has("login")) {
+    if (!Number.isFinite(input.interactionStartedAt) || !Number.isFinite(authTime)) return true;
+    if (authTime < input.interactionStartedAt * 1000) return true;
+  }
   if (input.maxAge === undefined) return false;
-  return Math.floor(input.now.getTime() / 1000) - Math.floor(authTime / 1000) > input.maxAge;
+  if (!Number.isFinite(input.maxAge) || !Number.isFinite(authSeconds)) return true;
+  return Math.floor(input.now.getTime() / 1000) - authSeconds > input.maxAge;
 }
 
 /** The claims the consent screen lists, from the scopes asked for. */

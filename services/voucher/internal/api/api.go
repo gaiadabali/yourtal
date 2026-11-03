@@ -64,6 +64,7 @@ func (a *API) Routes() chi.Router {
 	r.Post("/vouchers/void", a.voidVoucher)
 	r.Post("/vouchers/qr-token", a.qrToken)
 	r.Post("/vouchers/qr-token/verify", a.verifyQrToken)
+	r.Post("/vouchers/holding", a.holding)
 
 	r.Post("/wallet/list", a.listForUser)
 	r.Post("/wallet/get", a.get)

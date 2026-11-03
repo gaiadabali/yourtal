@@ -1,6 +1,8 @@
 package code_test
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"strings"
 	"testing"
@@ -179,5 +181,86 @@ func TestTheDisplayFormRoundTrips(t *testing.T) {
 	}
 	if parsed != minted {
 		t.Errorf("round trip gave %q, want %q", parsed, minted)
+	}
+}
+
+// 2.8 T2: the cross-language vectors. SnapApp ports Normalise/Parse/Format to
+// TypeScript (snap-apps S2) and checks its port against this exact table, so
+// a change here is a contract change: edit both sides together. The canonical
+// forms and the three outcomes are the whole contract; error text is not.
+func TestParseVectors(t *testing.T) {
+	accept := []struct{ name, input, canonical string }{
+		{"all zero", "00000000000000000", "00000000000000000"},
+		{"plain", "0123456789ABCDEFK", "0123456789ABCDEFK"},
+		{"mixed", "7M3Q9K2X5VRT8WBHN", "7M3Q9K2X5VRT8WBHN"},
+		{"check symbol ~", "KE14SG8DJFFDZH9N~", "KE14SG8DJFFDZH9N~"},
+		{"check symbol $", "5Z9JF3MD8VSN5S4Z$", "5Z9JF3MD8VSN5S4Z$"},
+		{"check symbol *", "VXWD6KSNCQQ84BZ0*", "VXWD6KSNCQQ84BZ0*"},
+		{"check symbol U", "ZSHQ9JKMCDM1YW9DU", "ZSHQ9JKMCDM1YW9DU"},
+		{"check symbol =", "TKQ9Z8GC17FXNBF6=", "TKQ9Z8GC17FXNBF6="},
+		{"display form", "0123-4567-89AB-CDEF-K", "0123456789ABCDEFK"},
+		{"lower case", "7m3q-9k2x-5vrt-8wbh-n", "7M3Q9K2X5VRT8WBHN"},
+		{"spaces for hyphens", "7M3Q 9K2X 5VRT 8WBH N", "7M3Q9K2X5VRT8WBHN"},
+		{"outer whitespace", " \t0123456789ABCDEFK\n", "0123456789ABCDEFK"},
+		{"I and O fold to 1 and 0", "I4OB5FOBEBGFII75Z", "140B5F0BEBGF1175Z"},
+		{"L folds to 1, lower case", "l4ob5f0bebgfl175z", "140B5F0BEBGF1175Z"},
+		{"fold inside the display form", "I4OB-5FOB-EBGF-II75-Z", "140B5F0BEBGF1175Z"},
+		{"special check symbol, lower-case u", "zshq9jkmcdm1yw9du", "ZSHQ9JKMCDM1YW9DU"},
+	}
+	for _, c := range accept {
+		got, err := code.Parse(c.input)
+		if err != nil || got != c.canonical {
+			t.Errorf("%s: Parse(%q) = %q, %v; want %q", c.name, c.input, got, err, c.canonical)
+		}
+	}
+
+	// ErrMalformed: wrong length after normalising, a payload symbol outside
+	// the alphabet (U included, only the 17th may be U), or a 17th symbol
+	// outside the check alphabet. Malformed wins over a failed check.
+	malformed := []struct{ name, input string }{
+		{"empty", ""},
+		{"only formatting", "- - -"},
+		{"16 symbols", "0123456789ABCDEF"},
+		{"18 symbols", "0123456789ABCDEFKK"},
+		{"inner tab is content, not formatting", "0123456789ABC\tDEFK"},
+		{"payload symbol outside the alphabet", "0123456789ABCDE!K"},
+		{"U in the payload", "U123456789ABCDEFK"},
+		{"check position outside the check alphabet", "0123456789ABCDEF?"},
+		{"underscore in the check position", "0123456789ABCDEF_"},
+	}
+	for _, c := range malformed {
+		if _, err := code.Parse(c.input); !errors.Is(err, code.ErrMalformed) {
+			t.Errorf("%s: Parse(%q) = %v, want ErrMalformed", c.name, c.input, err)
+		}
+	}
+
+	// ErrCheckFailed: well-formed, wrong 17th symbol. Plain is "...K".
+	checkFailed := []struct{ name, input string }{
+		{"wrong check symbol", "0123456789ABCDEFJ"},
+		{"special symbol where K belongs", "0123456789ABCDEFU"},
+		{"one payload symbol changed", "0123456789ABCDEEK"},
+		{"adjacent pair swapped", "0123456789ABCDFEK"},
+		{"all-zero payload, check 1", "00000000000000001"},
+	}
+	for _, c := range checkFailed {
+		if _, err := code.Parse(c.input); !errors.Is(err, code.ErrCheckFailed) {
+			t.Errorf("%s: Parse(%q) = %v, want ErrCheckFailed", c.name, c.input, err)
+		}
+	}
+
+	if got := code.Format("0123456789ABCDEFK"); got != "0123-4567-89AB-CDEF-K" {
+		t.Errorf("Format = %q, want 0123-4567-89AB-CDEF-K", got)
+	}
+
+	// What apps/api and the holding read key on: SHA-256 of the canonical
+	// form, lower-case hex, never of what was typed.
+	for canonical, want := range map[string]string{
+		"0123456789ABCDEFK": "d024ef43bb4311f7be1515efd6cea9d1ae0ea0ab8ea2f4b1915f1e9abf188cd7",
+		"140B5F0BEBGF1175Z": "d01d91b8f14319f45e7df33a29b1e8cacafef2df929c5416e08b78e8c09652dc",
+	} {
+		sum := sha256.Sum256([]byte(canonical))
+		if got := hex.EncodeToString(sum[:]); got != want {
+			t.Errorf("sha256(%q) = %s, want %s", canonical, got, want)
+		}
 	}
 }

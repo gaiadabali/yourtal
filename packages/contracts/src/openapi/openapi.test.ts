@@ -448,6 +448,8 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   listForUserRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   listForUserResultSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
   getVoucherRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  holdingRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
+  holdingSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,
 
   // --- voucher-internal: device-authorized redemption ---
   lookupAsDeviceRequestSchema: LEDGER_AND_VOUCHER_INTERNAL_REASON,

@@ -51,6 +51,16 @@ describe("the oidc.model adapter", () => {
     expect(await adapterFor("AccessToken").find(tokenId)).toBeUndefined();
   });
 
+  it("revokes only its own kind's rows of a grant, so a sign-in in progress survives", async () => {
+    const { code, grantId, tokenId } = await issuedCode();
+    const uid = randomUUID();
+    await adapterFor("Interaction").upsert(uid, { jti: uid, grantId }, 60);
+    await adapterFor("AccessToken").revokeByGrantId(grantId);
+    expect(await adapterFor("AccessToken").find(tokenId)).toBeUndefined();
+    expect(await adapterFor("AuthorizationCode").find(code)).toMatchObject({ jti: code });
+    expect(await adapterFor("Interaction").find(uid)).toMatchObject({ jti: uid });
+  });
+
   it("never stores or reads a client", async () => {
     await expect(
       adapterFor("Client").upsert("evil-app", { client_id: "evil-app" }, 60),

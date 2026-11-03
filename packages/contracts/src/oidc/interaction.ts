@@ -23,6 +23,8 @@ export type SignInRefusal = z.infer<typeof signInRefusalSchema>;
  * - `login`: no YourTal session; sign in, then reload the details.
  * - `create`: no session and the app sent `prompt=create`; show sign-up.
  * - `verify_email`: signed in, email not verified yet.
+ * - `sign_in_again`: signed in, but the app asked for a newer sign-in
+ *   (`prompt=login` or `max_age`); sign out, sign in again, then reload.
  * - `consent`: first sign-in to this app, or it asks for more (the full consent screen).
  * - `continue`: already agreed; the one-tap "Continue to {app} as {name}".
  * - `refused`: see `refusal`; the only way out is cancel ("Back to {app}").
@@ -31,6 +33,7 @@ export const interactionScreenSchema = z.enum([
   "login",
   "create",
   "verify_email",
+  "sign_in_again",
   "consent",
   "continue",
   "refused",

@@ -35,7 +35,7 @@ export const NO_TEEN_INVITES_YET: TeenInviteChecker = {
 
 export type SignInState =
   | { readonly screen: "login" | "create" }
-  | { readonly screen: "verify_email"; readonly account: OidcAccount }
+  | { readonly screen: "verify_email" | "sign_in_again"; readonly account: OidcAccount }
   | { readonly screen: "refused"; readonly account: OidcAccount; readonly refusal: SignInRefusal }
   | {
       readonly screen: "consent" | "continue";
@@ -55,7 +55,30 @@ export interface SignInInput {
   readonly policyVersionId: string | undefined;
   readonly teenInviteCode: string | undefined;
   readonly teenInvites: TeenInviteChecker;
+  /** The app asked for a newer sign-in than the session's (`signInTooOld`). */
+  readonly signInAgain: boolean;
   readonly now: Date;
+}
+
+/**
+ * Whether the app asked for a newer sign-in than the YourTal session's own
+ * (OIDC `prompt=login` and `max_age`; the library turns `max_age=0` into
+ * `prompt=login`). `prompt=login` is met only by a sign-in finished after this
+ * sign-in to the app began; `max_age` by one at most that many seconds old,
+ * counted in whole seconds as the ID token's `auth_time` is.
+ */
+export function signInTooOld(input: {
+  readonly authTime: Date;
+  /** When the provider started this interaction, epoch seconds (its `iat`). */
+  readonly interactionStartedAt: number;
+  readonly prompts: ReadonlySet<string>;
+  readonly maxAge: number | undefined;
+  readonly now: Date;
+}): boolean {
+  const authTime = input.authTime.getTime();
+  if (input.prompts.has("login") && authTime < input.interactionStartedAt * 1000) return true;
+  if (input.maxAge === undefined) return false;
+  return Math.floor(input.now.getTime() / 1000) - Math.floor(authTime / 1000) > input.maxAge;
 }
 
 /** The claims the consent screen lists, from the scopes asked for. */
@@ -108,7 +131,10 @@ export async function signInBlock(
   return null;
 }
 
-/** docs/26 §1.5, in order, once the person is known and before any code is issued. */
+/**
+ * docs/26 §1.5, in order, once the person is known and before any code is
+ * issued; then a fresh sign-in when the app asked for one (§1.4).
+ */
 export async function decideSignIn(input: SignInInput): Promise<SignInState> {
   const { account, client } = input;
   if (account === null) return { screen: input.prompts.has("create") ? "create" : "login" };
@@ -121,6 +147,7 @@ export async function decideSignIn(input: SignInInput): Promise<SignInState> {
   );
   if (block === "verify_email") return { screen: "verify_email", account };
   if (block !== null) return { screen: "refused", account, refusal: block };
+  if (input.signInAgain) return { screen: "sign_in_again", account };
 
   const ageBand = ageBandOf(account, input.now);
   const sharing: InteractionSharing = {

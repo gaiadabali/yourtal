@@ -4,7 +4,7 @@ import type { SignInClient } from "./clients";
 import { CLIENTS, isSignInClient } from "./clients";
 import type { AppConsent } from "./oidc-store";
 import type { SignInInput, TeenInviteChecker } from "./sign-in-checks";
-import { NO_TEEN_INVITES_YET, decideSignIn } from "./sign-in-checks";
+import { NO_TEEN_INVITES_YET, decideSignIn, signInTooOld } from "./sign-in-checks";
 
 function signInClient(clientId: string): SignInClient {
   const client = CLIENTS.find((candidate) => candidate.clientId === clientId);
@@ -44,6 +44,7 @@ function input(overrides: Partial<SignInInput> = {}): SignInInput {
     policyVersionId: "au-2026-09-01",
     teenInviteCode: undefined,
     teenInvites: NO_TEEN_INVITES_YET,
+    signInAgain: false,
     now: NOW,
     ...overrides,
   };
@@ -135,5 +136,44 @@ describe("the docs/26 §1.5 checks", () => {
       ageBand: "adult",
       region: "AU",
     });
+  });
+});
+
+describe("a fresh sign-in when the app asks for one", () => {
+  const seconds = (date: Date) => date.getTime() / 1000;
+  const started = new Date(NOW.getTime() - 60_000);
+  const tooOld = (authTime: Date, prompts: string[], maxAge?: number) =>
+    signInTooOld({
+      authTime,
+      interactionStartedAt: seconds(started),
+      prompts: new Set(prompts),
+      maxAge,
+      now: NOW,
+    });
+
+  it("prompt=login: only a sign-in after this sign-in to the app began counts", () => {
+    expect(tooOld(new Date(started.getTime() - 1), ["login"])).toBe(true);
+    expect(tooOld(started, ["login"])).toBe(false);
+    expect(tooOld(new Date(NOW.getTime() - 1000), ["login"])).toBe(false);
+    expect(tooOld(new Date(started.getTime() - 1), [])).toBe(false);
+  });
+
+  it("max_age: at most that many whole seconds old, as auth_time counts them", () => {
+    const twelveHours = 12 * 3600;
+    expect(tooOld(new Date(NOW.getTime() - twelveHours * 1000), [], twelveHours)).toBe(false);
+    expect(tooOld(new Date(NOW.getTime() - twelveHours * 1000 - 1000), [], twelveHours)).toBe(true);
+    // 999 ms ago fell in the previous whole second, so auth_time is already a second old.
+    expect(tooOld(new Date(NOW.getTime() - 999), [], 0)).toBe(true);
+    // A sign-in after the interaction began still has to meet max_age.
+    expect(tooOld(new Date(NOW.getTime() - 30_000), [], 10)).toBe(true);
+  });
+
+  it("is asked for once the person may sign in to the app, before consent", async () => {
+    expect(await screen({ signInAgain: true })).toBe("sign_in_again");
+    expect(await screen({ signInAgain: true, consent: CONSENTED })).toBe("sign_in_again");
+    expect(await screen({ signInAgain: true, account: null })).toBe("login");
+    expect(await screen({ signInAgain: true, account: { ...ADULT, suspended: true } })).toBe(
+      "refused:account_on_hold",
+    );
   });
 });

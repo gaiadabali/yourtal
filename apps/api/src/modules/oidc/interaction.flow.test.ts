@@ -3,6 +3,7 @@ import { IncomingMessage, ServerResponse } from "node:http";
 import { createServer, Socket } from "node:net";
 import * as client from "openid-client";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { AuthMethod } from "../auth/session/amr";
 import type { OidcAccount } from "./claims";
 import { findAccountFrom } from "./find-account";
 import { InteractionError, InteractionService } from "./interaction.service";
@@ -12,6 +13,7 @@ import type { AppConsent, OidcStore } from "./oidc-store";
 import { pairwiseIdentifierFor } from "./pairwise";
 import { NO_TEEN_INVITES_YET } from "./sign-in-checks";
 import { Browser, followToApp, startSignIn } from "./testing/sign-in-driver";
+import type { StartedSignIn } from "./testing/sign-in-driver";
 import { buildTestProvider } from "./testing/oidc-test-kit";
 import type { TestProvider } from "./testing/oidc-test-kit";
 
@@ -69,12 +71,26 @@ const TEEN: OidcAccount = {
   dateOfBirth: "2012-01-01",
 };
 const HELD: OidcAccount = { ...ADULT, userId: "33333333-3333-4333-8333-333333333333" };
-const SESSIONS = new Map([
-  ["adult-token", ADULT.userId],
-  ["teen-token", TEEN.userId],
-  ["held-token", HELD.userId],
+const BOB: OidcAccount = {
+  ...ADULT,
+  userId: "44444444-4444-4444-8444-444444444444",
+  displayName: "Bob",
+  email: "bob@example.com",
+};
+interface FakeSession {
+  readonly userId: string;
+  readonly amr: readonly AuthMethod[];
+  readonly authTime: Date;
+}
+/** A minute ago, at a millisecond that is not a whole second. */
+const EARLIER = new Date(Math.floor(Date.now() / 1000) * 1000 - 60_000 + 250);
+const SESSIONS = new Map<string, FakeSession>([
+  ["adult-token", { userId: ADULT.userId, amr: ["pwd"], authTime: EARLIER }],
+  ["teen-token", { userId: TEEN.userId, amr: ["pwd"], authTime: EARLIER }],
+  ["held-token", { userId: HELD.userId, amr: ["pwd"], authTime: EARLIER }],
+  ["bob-token", { userId: BOB.userId, amr: ["pwd"], authTime: EARLIER }],
 ]);
-const ACCOUNTS = new Map([ADULT, TEEN, HELD].map((account) => [account.userId, account]));
+const ACCOUNTS = new Map([ADULT, TEEN, HELD, BOB].map((account) => [account.userId, account]));
 
 /** Two signing keys, as mid-rotation: the first signs, the second is only published. */
 function signingKey(kid: string) {
@@ -130,10 +146,12 @@ beforeAll(async () => {
   service = new InteractionService(
     new OidcRuntime(kit.provider, kit.registered, memory.store, null),
     {
-      validateAndTouch: (token) => {
-        const userId = SESSIONS.get(token);
+      validateWithSignIn: (token) => {
+        const session = SESSIONS.get(token);
         return Promise.resolve(
-          userId === undefined ? { valid: false, reason: "not_found" } : { valid: true, userId },
+          session === undefined
+            ? { valid: false, reason: "not_found" }
+            : { valid: true, ...session },
         );
       },
     },
@@ -339,5 +357,142 @@ describe("a sign-in through the interaction service", () => {
         expectedNonce: started.nonce,
       }),
     ).rejects.toMatchObject({ error: "invalid_grant" });
+  });
+});
+
+/** Shows the screen, taps through it, follows the redirect and redeems the code, as the app would. */
+async function finish(
+  config: client.Configuration,
+  started: StartedSignIn,
+  token: string,
+  checks: { maxAge?: number } = {},
+) {
+  const raw = () => http(started.browser, started.uid);
+  const shown = await service.details(raw(), started.uid, token);
+  const tapped = shown.screen === "consent" ? "consent" : "continue";
+  const { redirectTo } = await service.continue(raw(), started.uid, token, tapped);
+  return client.authorizationCodeGrant(config, await followToApp(started, redirectTo), {
+    pkceCodeVerifier: started.verifier,
+    expectedState: started.state,
+    expectedNonce: started.nonce,
+    ...checks,
+  });
+}
+
+const epoch = (date: Date) => Math.floor(date.getTime() / 1000);
+const TWELVE_HOURS = 12 * 3600;
+
+describe("auth_time, amr and a fresh sign-in", () => {
+  it("auth_time is when the person signed in to YourTal, and amr how", async () => {
+    for (const amr of [["pwd"], ["hwk"], ["pwd", "otp", "mfa"]] as const) {
+      const token = `amr-${amr.join("-")}`;
+      SESSIONS.set(token, { userId: ADULT.userId, amr, authTime: EARLIER });
+      const config = await webApp();
+      const claims = (
+        await finish(config, await startSignIn(config, WEB_REDIRECT), token)
+      ).claims();
+      expect(claims?.amr).toEqual(amr);
+      expect(claims?.auth_time).toBe(epoch(EARLIER));
+      expect(Number(claims?.iat)).toBeGreaterThan(epoch(EARLIER));
+    }
+  });
+
+  it("max_age: a sign-in within it goes straight on", async () => {
+    SESSIONS.set("eleven-hours", {
+      userId: ADULT.userId,
+      amr: ["hwk"],
+      authTime: new Date(Date.now() - 11 * 3600_000),
+    });
+    const config = await webApp();
+    const started = await startSignIn(config, WEB_REDIRECT, { max_age: String(TWELVE_HOURS) });
+    const claims = (
+      await finish(config, started, "eleven-hours", { maxAge: TWELVE_HOURS })
+    ).claims();
+    expect(claims?.amr).toEqual(["hwk"]);
+  });
+
+  it("max_age: an older sign-in is asked for again, and the new one is the ID token's", async () => {
+    SESSIONS.set("thirteen-hours", {
+      userId: ADULT.userId,
+      amr: ["hwk"],
+      authTime: new Date(Date.now() - 13 * 3600_000),
+    });
+    const config = await webApp();
+    const started = await startSignIn(config, WEB_REDIRECT, { max_age: String(TWELVE_HOURS) });
+    const raw = () => http(started.browser, started.uid);
+    expect(await service.details(raw(), started.uid, "thirteen-hours")).toMatchObject({
+      screen: "sign_in_again",
+      account: { name: "Ana", email: "ana@example.com" },
+      sharing: null,
+    });
+    for (const tapped of ["consent", "continue"] as const) {
+      await expect(service.continue(raw(), started.uid, "thirteen-hours", tapped)).rejects.toEqual(
+        new InteractionError("session_required"),
+      );
+    }
+
+    // Signed out and in again on YourTal's own sign-in, with a password and a code.
+    const again = new Date();
+    SESSIONS.set("signed-in-again", {
+      userId: ADULT.userId,
+      amr: ["pwd", "otp", "mfa"],
+      authTime: again,
+    });
+    const claims = (
+      await finish(config, started, "signed-in-again", { maxAge: TWELVE_HOURS })
+    ).claims();
+    expect(claims?.auth_time).toBe(epoch(again));
+    expect(claims?.amr).toEqual(["pwd", "otp", "mfa"]);
+  });
+
+  it("prompt=login, and max_age=0: only a sign-in after the app asked counts", async () => {
+    const config = await webApp();
+    for (const extra of [{ prompt: "login" }, { max_age: "0" }]) {
+      const started = await startSignIn(config, WEB_REDIRECT, extra);
+      const raw = () => http(started.browser, started.uid);
+      // adult-token signed in a minute ago, before this sign-in began.
+      expect((await service.details(raw(), started.uid, "adult-token")).screen).toBe(
+        "sign_in_again",
+      );
+      const again = new Date();
+      SESSIONS.set("login-again", { userId: ADULT.userId, amr: ["pwd"], authTime: again });
+      const claims = (await finish(config, started, "login-again")).claims();
+      expect(claims?.auth_time).toBe(epoch(again));
+    }
+  });
+
+  it("someone else signing in again on the same browser gets their own sub, never the first's", async () => {
+    const config = await webApp();
+    const first = await startSignIn(config, WEB_REDIRECT);
+    const ana = (await finish(config, first, "adult-token")).claims();
+    expect(ana?.sub).toBe(memory.subjects.get(`snapapp-staging|${ADULT.userId}`));
+
+    const second = await startSignIn(config, WEB_REDIRECT, { prompt: "login" }, first.browser);
+    expect(
+      (await service.details(http(second.browser, second.uid), second.uid, "adult-token")).screen,
+    ).toBe("sign_in_again");
+    // "Sign in again" signed Ana out of YourTal, and Bob signed in.
+    SESSIONS.set("bob-again", { userId: BOB.userId, amr: ["hwk"], authTime: new Date() });
+    const raw = () => http(second.browser, second.uid);
+    expect(await service.details(raw(), second.uid, "bob-again")).toMatchObject({
+      screen: "consent",
+      account: { name: "Bob", email: "bob@example.com" },
+    });
+    const { redirectTo } = await service.continue(raw(), second.uid, "bob-again", "consent");
+    // The provider's own session is still Ana's, so the library signs it out first.
+    const signOut = await second.browser.get(redirectTo);
+    expect(signOut.status).toBe(200);
+    const resumed = await second.browser.submitForm(await signOut.text());
+    expect(resumed.status).toBe(303);
+    const callback = await followToApp(second, resumed.headers.get("location") ?? "");
+    const tokens = await client.authorizationCodeGrant(config, callback, {
+      pkceCodeVerifier: second.verifier,
+      expectedState: second.state,
+      expectedNonce: second.nonce,
+    });
+    const bob = tokens.claims();
+    expect(bob?.sub).toBe(memory.subjects.get(`snapapp-staging|${BOB.userId}`));
+    expect(bob?.sub).not.toBe(ana?.sub);
+    expect(bob).toMatchObject({ name: "Bob", email: "bob@example.com", amr: ["hwk"] });
   });
 });

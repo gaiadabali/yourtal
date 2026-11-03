@@ -16,6 +16,7 @@ import { repairDemoListingCopy, repairDemoListingImages } from "./demo-listing-i
 import { retireLeakedFixtures } from "./retire-leaked-fixtures";
 import { ensureDemoInvoiceIssuer } from "./demo-invoice-issuer";
 import { ensureDemoReceiptFunders } from "./demo-receipt-funders";
+import { ensureSnapAppScansListing } from "./demo-snapapp-scans";
 import { SNAP_APP_ASSET_ID, captionSnapAppMedia, repairSnapAppMedia } from "./snap-app-media";
 import type { DemoCampaignFundingResult } from "./demo-campaign-funding";
 import { runDemoMediaVouchers } from "./demo-media-vouchers";
@@ -366,12 +367,27 @@ async function main(): Promise<void> {
       demoSuppliersSummary = `demo suppliers: FAILED (${detail}) — not failing the deploy over it`;
     }
 
+    // The SnapApp scans voucher (docs/28). Never fails the deploy: a staging check covers it.
+    let snapAppScansSummary: string;
+    try {
+      const scans = await ensureSnapAppScansListing(
+        pool,
+        { baseUrl: ledgerBaseUrl, serviceSecret: ledgerServiceSecret },
+        { baseUrl: voucherBaseUrl, serviceSecret: voucherServiceSecret },
+        console.log,
+      );
+      snapAppScansSummary = `snapapp scans voucher: ${scans.status}`;
+    } catch (error) {
+      const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+      snapAppScansSummary = `snapapp scans voucher: FAILED (${detail}) — not failing the deploy over it`;
+    }
+
     console.log(
       `Staging seed — ${worldSummary}; marketing funding: ${result.marketingFunding}; ` +
         `${grantSummary}; ${voucherSummary}; ${affordableListingsSummary}; ` +
         `${redemptionBalanceSummary}; ${mediaSummary}; ${demoMediaSummary}; ` +
         `${demoCampaignFundingSummary}; ${demoMediaVouchersSummary}; ${demoAudiencesSummary}; ` +
-        `${demoTagsSummary}; ${demoSuppliersSummary}.`,
+        `${demoTagsSummary}; ${demoSuppliersSummary}; ${snapAppScansSummary}.`,
     );
 
     if (

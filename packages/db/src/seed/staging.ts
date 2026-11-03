@@ -1159,7 +1159,7 @@ export async function insertListing(pool: pg.Pool, listing: Listing): Promise<vo
   ]);
 }
 
-interface VoucherOutcome {
+export interface VoucherOutcome {
   readonly status: "created" | "already_present" | "failed";
   readonly detail?: string;
 }
@@ -1366,7 +1366,7 @@ async function deriveAffordableSettlementMinor(
   return { ok: true, settlementMinor, pricePoints: final.pricePoints };
 }
 
-interface EnsureListingStockParams {
+export interface EnsureListingStockParams {
   readonly listingId: string;
   readonly merchantId: string;
   readonly stockTarget: number;
@@ -1405,7 +1405,7 @@ interface EnsureListingStockParams {
  * voucher/internal/api/batches_routes.go`) — so this re-checks
  * `voucher.vouchers` afterward rather than trusting the response shape.
  */
-async function ensureListingStock(
+export async function ensureListingStock(
   pool: pg.Pool,
   voucher: StagingVoucherConfig,
   params: EnsureListingStockParams,

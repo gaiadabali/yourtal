@@ -11,6 +11,7 @@ import { seedWatch } from "./seed/watch";
 import { backfillDemoTags } from "./seed/demo-tags";
 import { ensureDemoInvoiceIssuer } from "./seed/demo-invoice-issuer";
 import { ensureDemoReceiptFunders } from "./seed/demo-receipt-funders";
+import { ensureSnapAppScansListing } from "./seed/demo-snapapp-scans";
 
 /**
  * Seeds the local database from the same mock generators Phase U renders.
@@ -147,6 +148,25 @@ async function main(): Promise<void> {
     await ensureDemoInvoiceIssuer(pool, console.log);
     // Whose package pays SnapApp's receipts; production waits for finance to name the business.
     await ensureDemoReceiptFunders(pool, console.log);
+    // The SnapApp scans voucher needs the dev ledger and voucher services; without them it is skipped.
+    try {
+      await ensureSnapAppScansListing(
+        pool,
+        {
+          baseUrl: process.env.LEDGER_BASE_URL ?? "http://127.0.0.1:26910",
+          serviceSecret:
+            process.env.LEDGER_SERVICE_SECRET ?? "local-only-ledger-service-secret-not-real",
+        },
+        {
+          baseUrl: process.env.VOUCHER_BASE_URL ?? "http://127.0.0.1:26313",
+          serviceSecret:
+            process.env.VOUCHER_SERVICE_SECRET ?? "local-only-voucher-service-secret-not-real",
+        },
+        console.log,
+      );
+    } catch (error) {
+      console.warn(`[seed] SnapApp scans voucher skipped: ${String(error)}`);
+    }
     console.log(
       `Seeded ${String(counts.businesses)} businesses, ${String(counts.campaigns)} campaigns, ` +
         `${String(counts.listings)} listings, ${String(counts.vouchers)} vouchers, ` +

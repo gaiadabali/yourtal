@@ -2,7 +2,13 @@ import { notFound } from "next/navigation";
 import { PageContainer } from "@yourtal/ui/page-container";
 import { getMeProfile } from "@/features/me/me-data";
 import { auctionSource } from "@/features/auction/auction-source";
-import { getWalletVoucher, getWalletVoucherQr } from "@/features/wallet/wallet-data";
+import {
+  getWalletVoucher,
+  getWalletVoucherQr,
+  listWalletGifts,
+} from "@/features/wallet/wallet-data";
+import { passedOnBy } from "@/features/wallet/voucher-passed-on";
+import { passOptions } from "@/features/wallet/voucher-pass-rules";
 import { buildCachedVoucherDetail } from "@/features/wallet/voucher-detail-cache";
 import { isVoucherRedeemable } from "@/features/wallet/wallet-voucher-status-copy";
 import { VoucherDetailView } from "@/features/wallet/voucher-detail-view";
@@ -35,10 +41,20 @@ export default async function WalletVoucherDetailPage(
   const isRedeemable = isVoucherRedeemable(voucher, Date.now());
   const qrResult = isRedeemable ? await getWalletVoucherQr(voucherId) : null;
 
-  const adult = me.ok && me.data.profile.ageBand === "adult";
-  // The same rule as gifting decides listing: transferable, unused, one hop.
-  const canPass = isRedeemable && voucher.giftable === true && adult;
-  const charities = canPass ? await auctionSource.charities() : null;
+  // The server's `giftable` decides gifting and listing alike: transferable, unused, one hop.
+  // When it says no, the page says which rule it was.
+  const pass = passOptions({
+    redeemable: isRedeemable,
+    ageBand: me.ok ? me.data.profile.ageBand : undefined,
+    giftable: voucher.giftable,
+    giftBlock: voucher.giftBlock,
+    expiresAt: voucher.expiresAt,
+    nowMs: Date.now(),
+  });
+  const charities = pass.canList ? await auctionSource.charities() : null;
+  // A voucher already passed on: say how, from the gifts this member sent.
+  const passedOn =
+    voucher.status === "transferred" ? passedOnBy(voucherId, await listWalletGifts()) : null;
 
   const initialDetail = buildCachedVoucherDetail(voucher, new Date().toISOString());
 
@@ -48,8 +64,9 @@ export default async function WalletVoucherDetailPage(
         voucherId={voucher.voucherId}
         initialDetail={initialDetail}
         initialQr={qrResult?.ok ? qrResult.data : null}
-        // F86: teens can neither give nor receive gifts; an unknown age offers nothing.
-        giftable={canPass}
+        giftable={pass.canGift}
+        {...(pass.notice ? { passNotice: pass.notice } : {})}
+        {...(passedOn ? { passedOn } : {})}
         {...(charities ? { charities } : {})}
       />
     </PageContainer>

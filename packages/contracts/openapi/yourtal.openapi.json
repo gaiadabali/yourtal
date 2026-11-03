@@ -26054,6 +26054,7 @@
         "enum": [
           "charity_unavailable",
           "voucher_not_unused",
+          "voucher_holdback",
           "voucher_not_transferable",
           "voucher_already_transferred",
           "seller_ineligible",
@@ -32417,6 +32418,14 @@
           },
           "giftable": {
             "type": "boolean"
+          },
+          "giftBlock": {
+            "type": "string",
+            "enum": [
+              "not_unused",
+              "not_transferable",
+              "received_as_gift"
+            ]
           }
         },
         "required": [
@@ -32496,6 +32505,14 @@
           },
           "giftable": {
             "type": "boolean"
+          },
+          "giftBlock": {
+            "type": "string",
+            "enum": [
+              "not_unused",
+              "not_transferable",
+              "received_as_gift"
+            ]
           },
           "code": {
             "type": "string",

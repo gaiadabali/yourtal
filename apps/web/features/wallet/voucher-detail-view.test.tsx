@@ -8,6 +8,10 @@ import { RegionProvider } from "@/features/region/region-context";
 import { regionDisplayConfig } from "@/features/region/region-config";
 import enAU from "@/messages/en-AU/wallet.json";
 import idID from "@/messages/id-ID/wallet.json";
+import enAuction from "@/messages/en-AU/auction.json";
+import idAuction from "@/messages/id-ID/auction.json";
+import enCharity from "@/messages/en-AU/charity.json";
+import idCharity from "@/messages/id-ID/charity.json";
 import { VoucherDetailView } from "./voucher-detail-view";
 import { revealVoucherCodeAction } from "./reveal-voucher-code-action";
 import type { VoucherDetailSource } from "./voucher-detail-cache";
@@ -17,7 +21,12 @@ import type { WalletQrDetail } from "./wallet-data";
 /** `VoucherDetailView` reads the region and its translations ambiently — see `burn-error-message.test.tsx` for the same pattern. */
 function renderWithRegion(ui: ReactElement, region: Region = "ID") {
   const { locale } = regionDisplayConfig(region);
-  const messages = { wallet: region === "AU" ? enAU : idID };
+  const au = region === "AU";
+  const messages = {
+    wallet: au ? enAU : idID,
+    auction: au ? enAuction : idAuction,
+    charity: au ? enCharity : idCharity,
+  };
   return render(
     <NextIntlClientProvider locale={locale} messages={messages}>
       <RegionProvider region={region}>{ui}</RegionProvider>
@@ -53,6 +62,10 @@ vi.mock("./reveal-voucher-code-action", () => ({
 vi.mock("./dispute-voucher-action", () => ({
   disputeVoucherAction: vi.fn(),
 }));
+// The Gift and List for charity dialogs route and call server actions only when used.
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
+vi.mock("./gift-actions", () => ({ giftVoucherAction: vi.fn() }));
+vi.mock("@/features/auction/auction-actions", () => ({ listVoucherAction: vi.fn() }));
 
 /** Flushes pending microtasks (the mocked qrcode promise, cache reads) so they settle inside `act`. */
 async function flushMicrotasks(): Promise<void> {
@@ -375,5 +388,100 @@ describe("VoucherDetailView (en-AU)", () => {
     await flushMicrotasks();
 
     expect(screen.getAllByText("Released").length).toBeGreaterThan(0);
+  });
+});
+
+describe("VoucherDetailView: why a voucher cannot be passed on", () => {
+  const auVoucher: VoucherDetailSource = {
+    ...cachedVoucher,
+    currency: "AUD",
+    expiresAt: "2027-10-01T00:00:00.000Z",
+  };
+
+  beforeEach(() => {
+    window.localStorage.clear();
+    vi.useFakeTimers();
+    vi.setSystemTime(Date.parse("2026-09-19T09:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  async function show(extra: Partial<React.ComponentProps<typeof VoucherDetailView>>) {
+    const detail = buildCachedVoucherDetail(auVoucher, "2026-09-19T09:00:00.000Z");
+    renderWithRegion(
+      <VoucherDetailView
+        voucherId={auVoucher.voucherId}
+        initialDetail={detail}
+        initialQr={sampleQr}
+        {...extra}
+      />,
+      "AU",
+    );
+    await flushMicrotasks();
+  }
+
+  it("says a voucher won at an auction cannot be passed on again, instead of showing nothing", async () => {
+    await show({ passNotice: "received_as_gift" });
+
+    expect(screen.getByText(/can't be passed on again/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Gift" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "List for charity" })).not.toBeInTheDocument();
+  });
+
+  it("offers Gift and List for charity, and no reason, when the voucher qualifies", async () => {
+    await show({ giftable: true, charities: [] });
+
+    expect(screen.getByRole("button", { name: "Gift" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "List for charity" })).toBeInTheDocument();
+    expect(screen.queryByText(/can't be gifted or listed/)).not.toBeInTheDocument();
+  });
+
+  it("keeps Gift but explains the missing listing when the voucher is too close to expiry", async () => {
+    await show({ giftable: true, passNotice: "expires_soon" });
+
+    expect(screen.getByRole("button", { name: "Gift" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "List for charity" })).not.toBeInTheDocument();
+    expect(screen.getByText(/needs at least 4 days left/)).toBeInTheDocument();
+  });
+
+  it("explains a transferred voucher once, with the gift's date, and does not repeat the status", async () => {
+    const transferred: VoucherDetailSource = { ...auVoucher, status: "transferred" };
+    const detail = buildCachedVoucherDetail(transferred, "2026-09-19T09:00:00.000Z");
+    renderWithRegion(
+      <VoucherDetailView
+        voucherId={transferred.voucherId}
+        initialDetail={detail}
+        initialQr={null}
+        passedOn={{
+          status: "accepted",
+          sentAt: "2026-10-02T01:40:22.770Z",
+          acceptBy: "2026-10-09T01:40:22.783Z",
+        }}
+      />,
+      "AU",
+    );
+    await flushMicrotasks();
+
+    expect(screen.getAllByText("Transferred")).toHaveLength(1);
+    expect(screen.getByText(/You gave this voucher as a gift on 2 Oct 2026/)).toBeInTheDocument();
+  });
+
+  it("explains a transferred voucher in general words when no gift is known", async () => {
+    const transferred: VoucherDetailSource = { ...auVoucher, status: "transferred" };
+    const detail = buildCachedVoucherDetail(transferred, "2026-09-19T09:00:00.000Z");
+    renderWithRegion(
+      <VoucherDetailView
+        voucherId={transferred.voucherId}
+        initialDetail={detail}
+        initialQr={null}
+      />,
+      "AU",
+    );
+    await flushMicrotasks();
+
+    expect(screen.getAllByText("Transferred")).toHaveLength(1);
+    expect(screen.getByText(/gifted or listed for a charity auction/)).toBeInTheDocument();
   });
 });

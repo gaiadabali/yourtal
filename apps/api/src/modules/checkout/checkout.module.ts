@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import { AuthzModule } from "../../shared/authz/authz.module";
@@ -18,13 +18,15 @@ import { WalletModule } from "../wallet/wallet.module";
 import { CheckoutController } from "./checkout.controller";
 import { DisputeController } from "./dispute.controller";
 import { CheckoutRecoveryService } from "./checkout-recovery.service";
-import { CHECKOUT_DB, SAGA_DEPS } from "./checkout.tokens";
+import { CHECKOUT_DB, SAGA_DEPS, SAGA_VOUCHER_READER } from "./checkout.tokens";
+import { SagaVoucherReader } from "./persistence/saga-voucher-reader";
 import { PostgresSagaRepository } from "./persistence/postgres-saga.repository";
 import type { SagaDeps } from "./use-cases/run-saga";
 
 /** The burn saga (4.7). Uses the wallet module's ledger and voucher clients. */
 @Module({
-  imports: [IdentityModule, WalletModule, AuthzModule, PdpClientModule],
+  // forwardRef: the wallet history reads vouchers through this module (SAGA_VOUCHER_READER).
+  imports: [IdentityModule, forwardRef(() => WalletModule), AuthzModule, PdpClientModule],
   controllers: [CheckoutController, DisputeController],
   providers: [
     {
@@ -46,9 +48,14 @@ import type { SagaDeps } from "./use-cases/run-saga";
       }),
       inject: [CHECKOUT_DB, LEDGER_INTERNAL_CLIENT, VOUCHER_INTERNAL_CLIENT],
     },
+    {
+      provide: SAGA_VOUCHER_READER,
+      useFactory: (db: AppDb) => new SagaVoucherReader(db),
+      inject: [CHECKOUT_DB],
+    },
     CheckoutRecoveryService,
   ],
-  exports: [SAGA_DEPS],
+  exports: [SAGA_DEPS, SAGA_VOUCHER_READER],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata, YT-0100
 export class CheckoutModule {}

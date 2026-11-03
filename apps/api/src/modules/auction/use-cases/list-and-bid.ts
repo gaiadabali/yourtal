@@ -73,8 +73,8 @@ export async function listVoucher(
       throw refusal("voucher_not_transferable", escrow.error.message);
     if (code === "already_gifted")
       throw refusal("voucher_already_transferred", escrow.error.message);
-    if (code === "not_unused" || code === "holdback")
-      throw refusal("voucher_not_unused", escrow.error.message);
+    if (code === "holdback") throw refusal("voucher_holdback", escrow.error.message);
+    if (code === "not_unused") throw refusal("voucher_not_unused", escrow.error.message);
     throw new BadGatewayException({ code, message: "The voucher service is unavailable." });
   }
 

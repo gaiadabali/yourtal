@@ -28,6 +28,12 @@ export async function AuctionCard({ auction, locale, nowMs }: AuctionCardProps) 
   const left = timeLeftParts(auction.endsAt, nowMs);
   const closing = auction.state === "open" && Date.parse(auction.endsAt) - nowMs < 3_600_000;
   const standing = auction.viewer.bidStatus;
+  // Once it is over the card says how it ended ("Sold"), not "Ended" a second time next to the bidder's standing.
+  const over = auction.state !== "open" || left.key === "ended";
+  const timeLabel =
+    over && auction.outcome !== null
+      ? t(`outcome.${auction.outcome}`)
+      : t(`left.${left.key}`, left.values);
   return (
     <article className="group relative flex h-full flex-col gap-3 rounded-card border border-border-subtle bg-surface p-4 transition-shadow hover:shadow-md">
       <p className="flex items-center gap-2 text-caption font-sans font-semibold text-success-on-subtle">
@@ -83,7 +89,7 @@ export async function AuctionCard({ auction, locale, nowMs }: AuctionCardProps) 
             )}
           >
             <Clock aria-hidden="true" className="h-3.5 w-3.5" />
-            {t(`left.${left.key}`, left.values)}
+            {timeLabel}
           </span>
         </div>
       </div>

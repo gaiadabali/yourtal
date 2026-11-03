@@ -82,3 +82,19 @@ export function submitGapsFromRefusal(failure: {
     questionsHave: number(failure.details?.["questionsHave"]),
   };
 }
+
+const REFUSAL_KEYS: Record<string, string> = {
+  illegal_transition: "illegalTransition",
+  creative_blocked: "creativeBlocked",
+  not_kyb_verified: "notVerified",
+  campaign_not_found: "notFound",
+};
+
+/** The author's-language text for a refused submit: known codes by catalogue, anything else a generic line, never the server's English. */
+export function submitRefusalText(
+  failure: { code?: string },
+  t: (key: `campaignBuilder.submit.refusal.${string}`) => string,
+): string {
+  const key = failure.code === undefined ? undefined : REFUSAL_KEYS[failure.code];
+  return t(`campaignBuilder.submit.refusal.${key ?? "generic"}`);
+}

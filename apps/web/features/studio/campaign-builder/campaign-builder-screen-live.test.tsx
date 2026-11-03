@@ -331,11 +331,28 @@ describe("Submit for review (B6, B7)", () => {
     ).toBeInTheDocument();
   });
 
+  it("words an unmapped refusal in the catalogue, not the server's English", async () => {
+    submit.mockResolvedValue({
+      ok: false,
+      code: "illegal_transition",
+      message: "the database refused this transition",
+    });
+    renderLive([submittable()]);
+    await openFirstDraft();
+
+    await userEvent.click(screen.getByRole("button", { name: "Submit for review" }));
+
+    expect(
+      await screen.findByText(/can't move to review from its current state/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/database refused/)).not.toBeInTheDocument();
+  });
+
   it("does not let a refusal follow the author to other tabs", async () => {
     submit.mockResolvedValue({
       ok: false,
       code: "creative_blocked",
-      message: "The title or synopsis breaks the content rules. Change it and submit again.",
+      message: "server wording",
     });
     const user = userEvent.setup();
     renderLive([submittable()]);

@@ -17,7 +17,11 @@ import type { CampaignDraft } from "./campaign-draft";
 import { CampaignDraftStatusBadge } from "./campaign-draft-status-badge";
 import { canPause, canResume, canSubmitForReview } from "./campaign-draft-status";
 import type { CampaignEditorSection } from "./campaign-editor-sections";
-import { submitGapsFromRefusal, submitReadiness } from "./campaign-submit-readiness";
+import {
+  submitGapsFromRefusal,
+  submitReadiness,
+  submitRefusalText,
+} from "./campaign-submit-readiness";
 import type { SubmitReadiness } from "./campaign-submit-readiness";
 
 export interface CampaignEditorStatusPanelProps {
@@ -98,7 +102,11 @@ export function CampaignEditorStatusPanel({
     const result = await submitCampaignDraftLive(businessId, campaignId, merchantName);
     setSubmitting(false);
     if (!result.ok) {
-      setRefusal({ ...raisedOn, message: result.message, gaps: submitGapsFromRefusal(result) });
+      setRefusal({
+        ...raisedOn,
+        message: submitRefusalText(result, t),
+        gaps: submitGapsFromRefusal(result),
+      });
       return;
     }
     // The submit response has no reward config, question bank or upload state.

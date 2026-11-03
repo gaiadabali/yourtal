@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { CampaignDraft } from "./campaign-draft";
 import { liveApiDraft, liveDraft } from "./campaign-draft-live-fixtures";
-import { submitGapsFromRefusal, submitReadiness } from "./campaign-submit-readiness";
+import {
+  submitGapsFromRefusal,
+  submitReadiness,
+  submitRefusalText,
+} from "./campaign-submit-readiness";
 
 /** A 20-second video, processed, with a saved reward and budget: asks no questions, so none are needed. */
 function readyDraft(overrides: Partial<CampaignDraft> = {}): CampaignDraft {
@@ -101,5 +105,23 @@ describe("submitGapsFromRefusal", () => {
 
   it("keeps the fixtures honest: a fresh API draft really has a placeholder minute", () => {
     expect(liveApiDraft().durationSeconds).toBe(60);
+  });
+});
+
+describe("submitRefusalText", () => {
+  const t = (key: string) => key;
+  it("words each known refusal from the catalogue", () => {
+    expect(submitRefusalText({ code: "illegal_transition" }, t)).toBe(
+      "campaignBuilder.submit.refusal.illegalTransition",
+    );
+    expect(submitRefusalText({ code: "creative_blocked" }, t)).toBe(
+      "campaignBuilder.submit.refusal.creativeBlocked",
+    );
+  });
+  it("falls back to a generic line for any other code, never the server's message", () => {
+    expect(submitRefusalText({ code: "something_new" }, t)).toBe(
+      "campaignBuilder.submit.refusal.generic",
+    );
+    expect(submitRefusalText({}, t)).toBe("campaignBuilder.submit.refusal.generic");
   });
 });

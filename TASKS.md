@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | ✅ done | 23/23 | 105/105 | `██████████` 100% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 20/25 | 91/107 | `█████████░`  85% |
-| **All** | | | **126/131** | **638/654** | `██████████`  98% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 20/25 | 95/107 | `█████████░`  89% |
+| **All** | | | **126/131** | **642/654** | `██████████`  98% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1760,10 +1760,10 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
   - [ ] 14.22.l Walk again the journeys the walkthrough could not finish (group 5.13.l)
   - [ ] 14.22.m The player sometimes never starts on repeat visits (V12b): needs the founder's device and browser (group 5.13.m)
   - [x] 14.22.n On staging: a dev-clock release shows "points unlocked" at once (V26); the demo reset gives the seeded questions their new prompts (group 5.13.n) → demo reset run 2026-10-26 (group 5.13.n; V26 live check in the re-walk)
-  - [ ] 14.22.o true_false and likert questions: render them or skip at once (group 5.13.o)
-  - [ ] 14.22.p The whole-video chapter keeps the upload-time title; chapter chips overlap at 390 px (group 5.13.p)
-  - [ ] 14.22.q Shorts: a bolder scrim behind the Share and Save rail, about 3.6:1 over a near-white frame (group 5.13.q)
-  - [ ] 14.22.r The first visitor after a release can get an empty public landing page: warm `/`, `/au`, `/id` after the reload, or render them dynamically (group 5.13.r, V5)
+  - [x] 14.22.o true_false and likert questions: render them or skip at once (group 5.13.o) → e852a44e (group 5.13.o, PR #38)
+  - [x] 14.22.p The whole-video chapter keeps the upload-time title; chapter chips overlap at 390 px (group 5.13.p) → e852a44e (group 5.13.p, PR #38)
+  - [x] 14.22.q Shorts: a bolder scrim behind the Share and Save rail, about 3.6:1 over a near-white frame (group 5.13.q) → e852a44e (group 5.13.q, PR #38)
+  - [x] 14.22.r The first visitor after a release can get an empty public landing page: warm `/`, `/au`, `/id` after the reload, or render them dynamically (group 5.13.r, V5) → e852a44e (group 5.13.r, PR #38)
 - [x] **14.24 main is green and staging deploys again** (group 1.31) · A · needs: — — ✅ 2026-10-26 781f983a
   - [x] 14.24.a Quality and the Release gate had failed on every push since 2026-10-22 (an unneeded type assertion in the fake ledger, an unformatted docs/28), so staging stayed on ef9fc40c → 781f983a; Release green, staging /api/health reports 781f983a
 - [x] **14.25 A patched Next.js** (group 1.32) · A + B · needs: 14.24 — 🔄 2026-11-02 — ✅ 2026-11-02 136b2b50

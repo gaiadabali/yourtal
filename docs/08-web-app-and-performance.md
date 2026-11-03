@@ -100,6 +100,8 @@ The Core Web Vitals numbers that matter are **not** measured on an iPhone on Wi-
 | **Time to first video frame**  | **≤ 1.0 s** from tap                                                                                 | field telemetry                                                                                      |
 | **Total shell transfer, cold** | ≤ 350 KB                                                                                             | build-time check                                                                                     |
 
+_Exception (5.13.r): `/` and `/[locale]` render dynamically (data cached 60 s) because a release has no post-reload warm hook; revert to ISR once one exists._
+
 **Fail the build on regression.** A performance budget that is not enforced by CI is a wish. Lighthouse CI on every PR, plus real-user monitoring (RUM) segmented by country, connection type and device class — because the p75 that matters is Indonesian mid-tier, and a Sydney-measured p75 will lie to you.
 
 ### 3.2 How we hit it

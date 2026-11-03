@@ -31,6 +31,11 @@
     "resendThrottled": "Kamu baru saja memintanya. Tunggu beberapa menit, lalu coba lagi.",
     "resendFailed": "Kami tidak bisa mengirimnya. Coba lagi sebentar lagi."
   },
+  "signInAgain": {
+    "heading": "Masuk lagi untuk melanjutkan ke {app}",
+    "intro": "{app} memintamu masuk lagi ke YourTal untuk memastikan ini memang kamu.",
+    "signInCta": "Masuk lagi"
+  },
   "consent": {
     "heading": "Lanjutkan ke {app} sebagai {name}",
     "willGet": "{app} akan mendapatkan:",

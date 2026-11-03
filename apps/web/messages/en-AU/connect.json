@@ -31,6 +31,11 @@
     "resendThrottled": "You asked a moment ago. Wait a few minutes, then try again.",
     "resendFailed": "We couldn't send it. Try again shortly."
   },
+  "signInAgain": {
+    "heading": "Sign in again to continue to {app}",
+    "intro": "{app} asks you to sign in to YourTal again to confirm it's you.",
+    "signInCta": "Sign in again"
+  },
   "consent": {
     "heading": "Continue to {app} as {name}",
     "willGet": "{app} will get:",

@@ -306,6 +306,38 @@ describe("continue", () => {
   });
 });
 
+describe("sign_in_again", () => {
+  const again = details({ screen: "sign_in_again", sharing: null });
+
+  it("asks for a new sign-in: Sign in again signs out and reloads to the sign-in screen", async () => {
+    switchAccountAction.mockResolvedValueOnce({ kind: "reload" });
+    renderScreen(again);
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Sign in again to continue to SnapApp" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("ana@example.com")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Continue" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Sign in again" }));
+    await waitFor(() => expect(switchAccountAction).toHaveBeenCalled());
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
+  });
+
+  it("Cancel goes back to the app", async () => {
+    cancelAction.mockResolvedValueOnce({
+      kind: "redirect",
+      redirectTo: "https://y.test/oidc/auth/d",
+    });
+    renderScreen(again);
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(navigateTo).toHaveBeenCalledWith("https://y.test/oidc/auth/d"));
+  });
+
+  it("renders from the id-ID catalogue", () => {
+    renderScreen(again, "id-ID");
+    expect(screen.getByRole("button", { name: "Masuk lagi" })).toBeInTheDocument();
+  });
+});
+
 describe("refused", () => {
   const cases = [
     ["account_on_hold", "Your YourTal account is on hold", /Contact YourTal support/],

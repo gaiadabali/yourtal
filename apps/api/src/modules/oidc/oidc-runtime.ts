@@ -15,7 +15,8 @@ import { pairwiseIdentifierFor } from "./pairwise";
 import { pgAdapterFactory } from "./pg-adapter";
 import { providerConfiguration } from "./provider-config";
 import { addProviderMiddleware } from "./provider-middleware";
-import type { TeenInviteChecker } from "./sign-in-checks";
+import type { TeenInviteStore } from "./teen-invites";
+import { createPgTeenInvites } from "./teen-invites";
 
 export const OIDC_RUNTIME = Symbol("OIDC_RUNTIME");
 
@@ -28,6 +29,8 @@ export class OidcRuntime implements OnApplicationShutdown {
     readonly clients: readonly YourTalClient[],
     readonly store: OidcStore | null,
     private readonly pool: Pool | null,
+    /** The teen invite API's store, and the sign-in checks' teen invites. */
+    readonly teenInvites: TeenInviteStore | null = null,
   ) {}
 
   get enabled(): boolean {
@@ -48,11 +51,7 @@ export function disabledOidcRuntime(): OidcRuntime {
  * production without the key files; leaves out any client whose credential
  * file is missing, saying which.
  */
-export function createOidcRuntime(
-  config: AppConfig,
-  teenInvites: TeenInviteChecker,
-  pool?: Pool,
-): OidcRuntime {
+export function createOidcRuntime(config: AppConfig, pool?: Pool): OidcRuntime {
   const oidc = config.oidc;
   if (oidc?.enabled !== true) return disabledOidcRuntime();
 
@@ -68,6 +67,7 @@ export function createOidcRuntime(
   const usePool = pool ?? ownPool;
   if (usePool === null) throw new Error("oidc: no database pool");
   const store = createPgOidcStore(usePool);
+  const teenInvites = createPgTeenInvites(usePool);
 
   const provider = new Provider(
     oidc.issuer,
@@ -86,5 +86,5 @@ export function createOidcRuntime(
     logger.error(message);
   });
   logger.log(`provider ready at ${oidc.issuer} with ${String(loaded.registered.length)} clients`);
-  return new OidcRuntime(provider, loaded.registered, store, ownPool);
+  return new OidcRuntime(provider, loaded.registered, store, ownPool, teenInvites);
 }

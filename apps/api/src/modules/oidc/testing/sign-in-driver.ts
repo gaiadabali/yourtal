@@ -119,7 +119,12 @@ export function webServerCall(
     .join("; ");
   return fetch(`${apiBase}/api/connect/${encodeURIComponent(started.uid)}${step}`, {
     method: step === "" ? "GET" : "POST",
-    headers: { cookie, ...(step === "" ? {} : { "content-type": "application/json" }) },
+    headers: {
+      cookie,
+      // Each call from its own address, as many people's would be; the e2e app trusts loopback.
+      "x-forwarded-for": `10.${String(Math.floor(Math.random() * 250))}.${String(Math.floor(Math.random() * 250))}.1`,
+      ...(step === "" ? {} : { "content-type": "application/json" }),
+    },
     ...(step === "" ? {} : { body: JSON.stringify(body ?? {}) }),
   });
 }

@@ -26,6 +26,8 @@ type ApiConnectUidGet200Response struct {
 	Account NullableApiConnectUidGet200ResponseAccount `json:"account"`
 	Sharing NullableApiConnectUidGet200ResponseSharing `json:"sharing"`
 	Refusal NullableString `json:"refusal"`
+	InviteProblem NullableString `json:"inviteProblem"`
+	TeenInvite NullableApiConnectUidGet200ResponseTeenInvite `json:"teenInvite"`
 	UiLocales []string `json:"uiLocales"`
 	AdditionalProperties map[string]interface{}
 }
@@ -36,7 +38,7 @@ type _ApiConnectUidGet200Response ApiConnectUidGet200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiConnectUidGet200Response(uid string, screen string, client ApiConnectUidGet200ResponseClient, account NullableApiConnectUidGet200ResponseAccount, sharing NullableApiConnectUidGet200ResponseSharing, refusal NullableString, uiLocales []string) *ApiConnectUidGet200Response {
+func NewApiConnectUidGet200Response(uid string, screen string, client ApiConnectUidGet200ResponseClient, account NullableApiConnectUidGet200ResponseAccount, sharing NullableApiConnectUidGet200ResponseSharing, refusal NullableString, inviteProblem NullableString, teenInvite NullableApiConnectUidGet200ResponseTeenInvite, uiLocales []string) *ApiConnectUidGet200Response {
 	this := ApiConnectUidGet200Response{}
 	this.Uid = uid
 	this.Screen = screen
@@ -44,6 +46,8 @@ func NewApiConnectUidGet200Response(uid string, screen string, client ApiConnect
 	this.Account = account
 	this.Sharing = sharing
 	this.Refusal = refusal
+	this.InviteProblem = inviteProblem
+	this.TeenInvite = teenInvite
 	this.UiLocales = uiLocales
 	return &this
 }
@@ -206,6 +210,58 @@ func (o *ApiConnectUidGet200Response) SetRefusal(v string) {
 	o.Refusal.Set(&v)
 }
 
+// GetInviteProblem returns the InviteProblem field value
+// If the value is explicit nil, the zero value for string will be returned
+func (o *ApiConnectUidGet200Response) GetInviteProblem() string {
+	if o == nil || o.InviteProblem.Get() == nil {
+		var ret string
+		return ret
+	}
+
+	return *o.InviteProblem.Get()
+}
+
+// GetInviteProblemOk returns a tuple with the InviteProblem field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiConnectUidGet200Response) GetInviteProblemOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.InviteProblem.Get(), o.InviteProblem.IsSet()
+}
+
+// SetInviteProblem sets field value
+func (o *ApiConnectUidGet200Response) SetInviteProblem(v string) {
+	o.InviteProblem.Set(&v)
+}
+
+// GetTeenInvite returns the TeenInvite field value
+// If the value is explicit nil, the zero value for ApiConnectUidGet200ResponseTeenInvite will be returned
+func (o *ApiConnectUidGet200Response) GetTeenInvite() ApiConnectUidGet200ResponseTeenInvite {
+	if o == nil || o.TeenInvite.Get() == nil {
+		var ret ApiConnectUidGet200ResponseTeenInvite
+		return ret
+	}
+
+	return *o.TeenInvite.Get()
+}
+
+// GetTeenInviteOk returns a tuple with the TeenInvite field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiConnectUidGet200Response) GetTeenInviteOk() (*ApiConnectUidGet200ResponseTeenInvite, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.TeenInvite.Get(), o.TeenInvite.IsSet()
+}
+
+// SetTeenInvite sets field value
+func (o *ApiConnectUidGet200Response) SetTeenInvite(v ApiConnectUidGet200ResponseTeenInvite) {
+	o.TeenInvite.Set(&v)
+}
+
 // GetUiLocales returns the UiLocales field value
 func (o *ApiConnectUidGet200Response) GetUiLocales() []string {
 	if o == nil {
@@ -246,6 +302,8 @@ func (o ApiConnectUidGet200Response) ToMap() (map[string]interface{}, error) {
 	toSerialize["account"] = o.Account.Get()
 	toSerialize["sharing"] = o.Sharing.Get()
 	toSerialize["refusal"] = o.Refusal.Get()
+	toSerialize["inviteProblem"] = o.InviteProblem.Get()
+	toSerialize["teenInvite"] = o.TeenInvite.Get()
 	toSerialize["uiLocales"] = o.UiLocales
 
 	for key, value := range o.AdditionalProperties {
@@ -266,6 +324,8 @@ func (o *ApiConnectUidGet200Response) UnmarshalJSON(data []byte) (err error) {
 		"account",
 		"sharing",
 		"refusal",
+		"inviteProblem",
+		"teenInvite",
 		"uiLocales",
 	}
 
@@ -302,6 +362,8 @@ func (o *ApiConnectUidGet200Response) UnmarshalJSON(data []byte) (err error) {
 		delete(additionalProperties, "account")
 		delete(additionalProperties, "sharing")
 		delete(additionalProperties, "refusal")
+		delete(additionalProperties, "inviteProblem")
+		delete(additionalProperties, "teenInvite")
 		delete(additionalProperties, "uiLocales")
 		o.AdditionalProperties = additionalProperties
 	}

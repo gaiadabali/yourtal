@@ -109,7 +109,10 @@ beforeAll(async () => {
   process.env["WEBAUTHN_ORIGIN"] = E2E_ORIGIN;
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
-  app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+  // Loopback is the trusted proxy, so each call's x-forwarded-for is its own IP for the rate limits.
+  app = moduleRef.createNestApplication<NestFastifyApplication>(
+    new FastifyAdapter({ trustProxy: "127.0.0.1" }),
+  );
   app
     .getHttpAdapter()
     .getInstance()
@@ -766,5 +769,404 @@ describe("a fresh sign-in when the app asks for one", () => {
       { sub: tokens.claims()?.sub },
     ]);
     expect(tokens.claims()?.sub).not.toBe(anaSub);
+  });
+});
+
+/** A teen whose guardian is `guardianEmail`, approved unless `approved` is false. */
+async function teenOf(guardianEmail: string, approved = true): Promise<Person> {
+  const teen = await person({ teen: true });
+  await pool.query(
+    `INSERT INTO identity.guardian_consent
+       (user_id, token_hash, guardian_email, region, guardian_confirmed_adult_at, approved_at)
+     VALUES ($1, $2, $3, 'AU', $4, $4)`,
+    [teen.userId, randomBytes(32).toString("hex"), guardianEmail, approved ? new Date() : null],
+  );
+  if (!approved) {
+    await pool.query(
+      "UPDATE identity.user_profile SET parent_consent_status = 'pending' WHERE user_id = $1",
+      [teen.userId],
+    );
+  }
+  return teen;
+}
+
+const serverApp = () =>
+  rp(
+    "snapapp-staging-server",
+    client.PrivateKeyJwt({ key: serverKey, kid: "snapapp-staging-server-1" }),
+  );
+
+async function serverToken(): Promise<string> {
+  return (await client.clientCredentialsGrant(await serverApp(), { scope: "teen_invites" }))
+    .access_token;
+}
+
+/** SnapApp's server calling the invite API. */
+async function inviteApi(
+  token: string,
+  path: string,
+  body?: Record<string, unknown>,
+  key: string = randomUUID(),
+): Promise<{ status: number; body: Record<string, unknown> }> {
+  const response = await fetch(`${base}/api/oidc-clients/teen-invites${path}`, {
+    method: body === undefined ? "GET" : "POST",
+    headers: {
+      "x-forwarded-for": testIp(),
+      authorization: `Bearer ${token}`,
+      ...(body === undefined ? {} : { "content-type": "application/json", "idempotency-key": key }),
+    },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+  return { status: response.status, body: (await response.json()) as Record<string, unknown> };
+}
+
+/** A parent who has signed in to SnapApp, and their sub there. */
+async function snapParent(): Promise<Person & { sub: string }> {
+  const parent = await person();
+  const { tokens } = await signIn(await webApp(), WEB_REDIRECT, parent, "consent");
+  return { ...parent, sub: tokens.claims()?.sub ?? "" };
+}
+
+async function invite(
+  token: string,
+  parentSub: string,
+): Promise<{ inviteId: string; code: string }> {
+  const made = await inviteApi(token, "", { parentSub });
+  expect(made.status, JSON.stringify(made.body)).toBe(201);
+  return z.object({ inviteId: z.string(), code: z.string() }).parse(made.body);
+}
+
+/** The teen's screen at SnapApp, with this invite code if any. */
+async function teenScreen(teen: Person, code?: string) {
+  const started = await startSignIn(
+    await webApp(),
+    WEB_REDIRECT,
+    code === undefined ? {} : { teen_invite: code },
+  );
+  return { started, shown: await details(await webServerCall(base, started, teen.token, "")) };
+}
+
+describe("teens (docs/26 §1.5 check 4, §3.3)", () => {
+  it("a teen joins SnapApp with the approving guardian's invite, once, and the parent can end it", async () => {
+    const token = await serverToken();
+    const parent = await snapParent();
+    const teen = await teenOf(parent.email.toUpperCase());
+    const { inviteId, code } = await invite(token, parent.sub);
+    expect(code).toMatch(/^[A-Za-z0-9_-]{22}$/);
+    // Kept only as a hash.
+    expect(
+      JSON.stringify(await rows("SELECT * FROM oidc.teen_invite WHERE id = $1", [inviteId])),
+    ).not.toContain(code);
+    expect((await inviteApi(token, `/${inviteId}`)).body).toEqual({
+      inviteId,
+      status: "pending",
+      teenSub: null,
+    });
+
+    const { started, shown } = await teenScreen(teen, code);
+    expect(shown).toMatchObject({
+      screen: "consent",
+      teenInvite: { parentName: "Ana" },
+      sharing: { ageBand: "teen", region: "AU" },
+    });
+    const tapped = await webServerCall(base, started, teen.token, "/continue", {
+      screen: "consent",
+    });
+    expect(tapped.status).toBe(200);
+    const tokens = await client.authorizationCodeGrant(
+      await webApp(),
+      await followToApp(started, await redirectOf(tapped)),
+      {
+        pkceCodeVerifier: started.verifier,
+        expectedState: started.state,
+        expectedNonce: started.nonce,
+      },
+    );
+    const claims = tokens.claims();
+    expect(claims).toMatchObject({ age_band: "teen", region: "AU", email: teen.email });
+    // The same §1.3 claims as an adult's, and nothing more.
+    expect(Object.keys(claims ?? {}).sort()).toEqual(
+      [
+        "age_band",
+        "amr",
+        "aud",
+        "auth_time",
+        "email",
+        "email_verified",
+        "exp",
+        "iat",
+        "iss",
+        "name",
+        "nonce",
+        "region",
+        "sub",
+      ].sort(),
+    );
+    expect((await inviteApi(token, `/${inviteId}`)).body).toEqual({
+      inviteId,
+      status: "accepted",
+      teenSub: claims?.sub,
+    });
+    expect(
+      await rows(`SELECT source, audience, state FROM identity.consent_record WHERE user_id = $1`, [
+        teen.userId,
+      ]),
+    ).toEqual([{ source: "guardian_invite", audience: "snapapp-staging", state: "granted" }]);
+
+    // While it stands the teen signs in again with no invite; the used code opens nothing new.
+    expect((await teenScreen(teen)).shown.screen).toBe("continue");
+    const other = await teenOf("someone-else@example.test");
+    expect((await teenScreen(other, code)).shown).toMatchObject({
+      screen: "refused",
+      refusal: "teen_invite_required",
+      inviteProblem: "invite_expired",
+    });
+    // A standing SnapApp invite opens no other app.
+    const ftr = await startSignIn(await ftrApp(), FTR_REDIRECT);
+    expect(await details(await webServerCall(base, ftr, teen.token, ""))).toMatchObject({
+      refusal: "teen_not_allowed",
+    });
+
+    // Someone else's sub cannot end it.
+    const stranger = await snapParent();
+    expect((await inviteApi(token, `/${inviteId}/end`, { parentSub: stranger.sub })).status).toBe(
+      404,
+    );
+    const ended = await inviteApi(token, `/${inviteId}/end`, { parentSub: parent.sub });
+    expect(ended).toEqual({
+      status: 200,
+      body: { inviteId, status: "ended", teenSub: claims?.sub },
+    });
+    expect(
+      await rows(
+        "SELECT client_id, sub, event_type, payload FROM oidc.event_outbox WHERE sub = $1",
+        [claims?.sub],
+      ),
+    ).toEqual([
+      {
+        client_id: "snapapp-staging-server",
+        sub: claims?.sub,
+        event_type: "urn:yourtal:event:access-ended",
+        payload: {
+          "urn:yourtal:event:access-ended": { reason: "parent_ended", erase_data: true },
+        },
+      },
+    ]);
+    expect((await teenScreen(teen)).shown).toMatchObject({
+      screen: "refused",
+      inviteProblem: "no_invite",
+    });
+    // The token issued before the end no longer answers userinfo.
+    const me = await fetch(`${issuer}/me`, {
+      headers: { authorization: `Bearer ${tokens.access_token}` },
+    });
+    expect(me.status).toBe(401);
+  });
+
+  it("a teen without an invite at SnapApp needs one, and hears why", async () => {
+    const parent = await snapParent();
+    expect((await teenScreen(await teenOf(parent.email))).shown).toMatchObject({
+      screen: "refused",
+      refusal: "teen_invite_required",
+      inviteProblem: "no_invite",
+    });
+    const { code } = await invite(await serverToken(), parent.sub);
+    expect((await teenScreen(await teenOf(parent.email, false), code)).shown).toMatchObject({
+      refusal: "teen_invite_required",
+      inviteProblem: "not_approved",
+    });
+  });
+
+  it("an invite from someone who is not the teen's approving guardian is refused, and Continue cannot force it", async () => {
+    const guardian = await snapParent();
+    const stranger = await snapParent();
+    const teen = await teenOf(guardian.email);
+    const { code, inviteId } = await invite(await serverToken(), stranger.sub);
+    const { started, shown } = await teenScreen(teen, code);
+    expect(shown).toMatchObject({
+      refusal: "teen_invite_required",
+      inviteProblem: "wrong_inviter",
+    });
+    const forced = await webServerCall(base, started, teen.token, "/continue", {
+      screen: "consent",
+    });
+    expect(forced.status).toBe(403);
+    expect((await inviteApi(await serverToken(), `/${inviteId}`)).body).toMatchObject({
+      status: "pending",
+    });
+  });
+
+  it("an expired invite is refused", async () => {
+    const token = await serverToken();
+    const parent = await snapParent();
+    const teen = await teenOf(parent.email);
+    const { code, inviteId } = await invite(token, parent.sub);
+    await pool.query(
+      `UPDATE oidc.teen_invite SET created_at = now() - interval '8 days',
+              expires_at = now() - interval '1 day' WHERE id = $1`,
+      [inviteId],
+    );
+    expect((await teenScreen(teen, code)).shown).toMatchObject({ inviteProblem: "invite_expired" });
+    expect((await inviteApi(token, `/${inviteId}`)).body).toMatchObject({ status: "expired" });
+  });
+
+  it("the invite API takes only SnapApp's server token with teen_invites", async () => {
+    const parent = await snapParent();
+    const anon = await fetch(`${base}/api/oidc-clients/teen-invites`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "idempotency-key": randomUUID() },
+      body: JSON.stringify({ parentSub: parent.sub }),
+    });
+    expect(anon.status).toBe(401);
+    // A person's access token is not a client-credentials token.
+    const { tokens } = await signIn(await webApp(), WEB_REDIRECT, await person(), "consent");
+    expect((await inviteApi(tokens.access_token, "", { parentSub: parent.sub })).status).toBe(401);
+    // SnapApp's server, without the scope.
+    const bare = await client.clientCredentialsGrant(await serverApp(), {});
+    expect((await inviteApi(bare.access_token, "", { parentSub: parent.sub })).body).toMatchObject({
+      code: "insufficient_scope",
+    });
+  });
+
+  it("refuses a parent who is not a verified adult, caps 10 a day, and replays without the code", async () => {
+    const token = await serverToken();
+    const unknown = await inviteApi(token, "", { parentSub: "not-a-sub" });
+    expect(unknown).toMatchObject({ status: 403, body: { code: "parent_not_eligible" } });
+
+    const parent = await snapParent();
+    const key = randomUUID();
+    const first = await inviteApi(token, "", { parentSub: parent.sub }, key);
+    const replay = await inviteApi(token, "", { parentSub: parent.sub }, key);
+    expect(first.body["code"]).toBeDefined();
+    expect(replay.body).toEqual({
+      inviteId: first.body["inviteId"],
+      expiresAt: first.body["expiresAt"],
+    });
+    for (let made = 1; made < 10; made += 1) await invite(token, parent.sub);
+    expect((await inviteApi(token, "", { parentSub: parent.sub })).body).toMatchObject({
+      code: "too_many_invites",
+    });
+  });
+
+  it("an adult is unaffected by a teen_invite parameter", async () => {
+    const adult = await person();
+    const { started, shown } = await teenScreen(adult, "made-up-code");
+    expect(shown).toMatchObject({ screen: "consent", teenInvite: null, refusal: null });
+    const tapped = await webServerCall(base, started, adult.token, "/continue", {
+      screen: "consent",
+    });
+    expect(tapped.status).toBe(200);
+  });
+});
+
+/** The teen taps Continue on their consent screen, and the browser comes back to SnapApp with a code. */
+async function teenJoins(teen: Person, code: string) {
+  const { started, shown } = await teenScreen(teen, code);
+  expect(shown.screen).toBe("consent");
+  const tapped = await webServerCall(base, started, teen.token, "/continue", { screen: "consent" });
+  expect(tapped.status, await tapped.clone().text()).toBe(200);
+  const callback = await followToApp(started, await redirectOf(tapped));
+  const redeem = async () =>
+    client.authorizationCodeGrant(await webApp(), callback, {
+      pkceCodeVerifier: started.verifier,
+      expectedState: started.state,
+      expectedNonce: started.nonce,
+    });
+  return { redeem };
+}
+
+describe("teens: races and changes after acceptance", () => {
+  it("two Continues racing on one code: one teen gets in, the other is refused", async () => {
+    const parent = await snapParent();
+    // A guardian with two teens: the link works for either, but only once.
+    const [first, second] = [await teenOf(parent.email), await teenOf(parent.email)];
+    const { code, inviteId } = await invite(await serverToken(), parent.sub);
+    const screens = [await teenScreen(first, code), await teenScreen(second, code)];
+    expect(screens.map(({ shown }) => shown.screen)).toEqual(["consent", "consent"]);
+    const taps = await Promise.all(
+      screens.map(({ started }, index) =>
+        webServerCall(base, started, (index === 0 ? first : second).token, "/continue", {
+          screen: "consent",
+        }),
+      ),
+    );
+    expect(taps.map((tap) => tap.status).sort()).toEqual([200, 403]);
+    expect(
+      await rows(
+        `SELECT count(*)::int AS n FROM identity.consent_record
+          WHERE user_id = ANY($1) AND source = 'guardian_invite'`,
+        [[first.userId, second.userId]],
+      ),
+    ).toEqual([{ n: 1 }]);
+    expect(
+      await rows(
+        "SELECT count(*)::int AS n FROM oidc.teen_invite WHERE id = $1 AND accepted_at IS NOT NULL",
+        [inviteId],
+      ),
+    ).toEqual([{ n: 1 }]);
+  });
+
+  it("the guardian withdrawing approval after acceptance stops /connect and /me", async () => {
+    const parent = await snapParent();
+    const teen = await teenOf(parent.email);
+    const { code } = await invite(await serverToken(), parent.sub);
+    const tokens = await (await teenJoins(teen, code)).redeem();
+    await pool.query(
+      `UPDATE identity.guardian_consent SET approved_at = NULL, revoked_at = now() WHERE user_id = $1`,
+      [teen.userId],
+    );
+    await pool.query(
+      "UPDATE identity.user_profile SET parent_consent_status = 'revoked' WHERE user_id = $1",
+      [teen.userId],
+    );
+    expect((await teenScreen(teen)).shown).toMatchObject({
+      screen: "refused",
+      inviteProblem: "not_approved",
+    });
+    const me = await fetch(`${issuer}/me`, {
+      headers: { authorization: `Bearer ${tokens.access_token}` },
+    });
+    expect(me.status).toBe(401);
+  });
+
+  it("/token refuses a code when the parent ends the invite before it is redeemed", async () => {
+    const parent = await snapParent();
+    const teen = await teenOf(parent.email);
+    const token = await serverToken();
+    const { code, inviteId } = await invite(token, parent.sub);
+    const { redeem } = await teenJoins(teen, code);
+    expect((await inviteApi(token, `/${inviteId}/end`, { parentSub: parent.sub })).status).toBe(
+      200,
+    );
+    await expect(redeem()).rejects.toMatchObject({ error: "invalid_grant" });
+  });
+
+  it("a teen who turned 18 and agreed again as an adult is never erased by the parent's end", async () => {
+    const parent = await snapParent();
+    const teen = await teenOf(parent.email);
+    const token = await serverToken();
+    const { code, inviteId } = await invite(token, parent.sub);
+    const sub = (await (await teenJoins(teen, code)).redeem()).claims()?.sub;
+
+    await pool.query(
+      "UPDATE identity.user_profile SET date_of_birth = DATE '2000-01-01' WHERE user_id = $1",
+      [teen.userId],
+    );
+    // The parent's view has nothing to stand on any more.
+    expect((await inviteApi(token, `/${inviteId}`)).body).toMatchObject({ status: "ended" });
+    const adult = await signIn(await webApp(), WEB_REDIRECT, teen, "consent");
+    expect(adult.details.teenInvite).toBeNull();
+    expect(adult.tokens.claims()).toMatchObject({ sub, age_band: "adult" });
+
+    const ended = await inviteApi(token, `/${inviteId}/end`, { parentSub: parent.sub });
+    expect(ended).toMatchObject({ status: 200, body: { status: "ended" } });
+    expect(await rows("SELECT 1 FROM oidc.event_outbox WHERE sub = $1", [sub])).toEqual([]);
+    expect(
+      await rows("SELECT granted_via, ended_at FROM oidc.app_consent WHERE user_id = $1", [
+        teen.userId,
+      ]),
+    ).toEqual([{ granted_via: "consent_screen", ended_at: null }]);
+    // And they still sign in.
+    expect((await teenScreen(teen)).shown.screen).toBe("continue");
   });
 });

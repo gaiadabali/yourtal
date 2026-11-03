@@ -36,6 +36,8 @@ export const consentSourceSchema = z.enum([
   "contextual_prompt",
   /** The consent screen when signing in to another app with YourTal (docs/26 §1.4). */
   "oidc_consent_screen",
+  /** A teen joining SnapApp through the invite of the guardian who approved them (docs/26 §3.3). */
+  "guardian_invite",
   /** Carried over from a sister app. Weakest: verify before relying on it. */
   "import_from_sister_app",
   /** Why an app's access ended (docs/26 §2.2), written only by oidc.end_app_access. */

@@ -5,6 +5,11 @@ import {
   interactionRedirectSchema,
 } from "../oidc/interaction";
 import {
+  teenInviteCreatedSchema,
+  teenInviteParentRequestSchema,
+  teenInviteSchema,
+} from "../oidc/teen-invite";
+import {
   VALIDATION_400,
   inlineSchema,
   type RouteDefinition,
@@ -107,5 +112,119 @@ export const OIDC_INTERACTION_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       "user_cancelled, as error_description.",
     successSchema: inlineSchema(interactionRedirectSchema),
     errors: [VALIDATION_400, ORIGIN_REFUSED, NOT_FOUND, UNSUPPORTED_MEDIA],
+  },
+];
+
+/**
+ * Group 3.9.e (docs/26 §3.3): the teen invite API, for SnapApp's server. A
+ * client-credentials access token with scope `teen_invites`
+ * (`Authorization: Bearer …`), checked by a guard before anything else; not Cerbos.
+ */
+const INVITE_ID: RoutePathParam = {
+  name: "inviteId",
+  description: "An invite this app made.",
+  schema: { type: "string", format: "uuid" },
+};
+const INVALID_TOKEN: RouteErrorResponse = {
+  status: 401,
+  description:
+    "No valid client-credentials access token from a registered machine client (invalid_token).",
+  documented: true,
+};
+const INSUFFICIENT_SCOPE: RouteErrorResponse = {
+  status: 403,
+  description: "The token lacks the teen_invites scope (insufficient_scope).",
+  documented: true,
+};
+const INVITE_NOT_FOUND: RouteErrorResponse = {
+  status: 404,
+  description:
+    "No such invite in this app, or (on end) not one this parent made (invite_not_found). " +
+    "Also when sign in with YourTal is switched off.",
+  documented: true,
+};
+const IDEMPOTENCY_KEY_400: RouteErrorResponse = {
+  status: 400,
+  description: "The Idempotency-Key header is missing (idempotency_key_required).",
+  documented: true,
+};
+const IDEMPOTENCY_409: RouteErrorResponse = {
+  status: 409,
+  description:
+    "The Idempotency-Key was used with another body, or its first request is still running.",
+  documented: true,
+};
+
+export const OIDC_TEEN_INVITE_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
+  {
+    method: "post",
+    path: "/api/oidc-clients/teen-invites",
+    summary: "Make a one-time invite for a parent's teen to join the app",
+    tags: ["oidc"],
+    pathParams: [],
+    requestBody: {
+      description:
+        "The parent's sub in this app. Takes an Idempotency-Key; a parent may make 10 a day.",
+      schema: inlineSchema(teenInviteParentRequestSchema),
+    },
+    successStatus: 201,
+    successDescription:
+      "The invite and its one-time code for the join link (valid 7 days). A replay of the same " +
+      "Idempotency-Key answers without the code, which YourTal keeps only as a hash.",
+    successSchema: inlineSchema(teenInviteCreatedSchema),
+    errors: [
+      VALIDATION_400,
+      IDEMPOTENCY_KEY_400,
+      INVALID_TOKEN,
+      {
+        status: 403,
+        description:
+          "The token lacks the teen_invites scope (insufficient_scope), or the parent is not a " +
+          "verified adult with YourTal (parent_not_eligible).",
+        documented: true,
+      },
+      IDEMPOTENCY_409,
+      {
+        status: 429,
+        description: "This parent has made 10 invites in the last day (too_many_invites).",
+        documented: true,
+      },
+    ],
+  },
+  {
+    method: "get",
+    path: "/api/oidc-clients/teen-invites/{inviteId}",
+    summary: "Read an invite: whether a teen accepted it, and as whom",
+    tags: ["oidc"],
+    pathParams: [INVITE_ID],
+    successStatus: 200,
+    successDescription:
+      "pending, accepted, expired or ended, with the teen's sub in this app once accepted.",
+    successSchema: inlineSchema(teenInviteSchema),
+    errors: [INVALID_TOKEN, INSUFFICIENT_SCOPE, INVITE_NOT_FOUND],
+  },
+  {
+    method: "post",
+    path: "/api/oidc-clients/teen-invites/{inviteId}/end",
+    summary: "End the invite and the teen's access to the app",
+    tags: ["oidc"],
+    pathParams: [INVITE_ID],
+    requestBody: {
+      description: "The inviting parent's sub in this app. Takes an Idempotency-Key.",
+      schema: inlineSchema(teenInviteParentRequestSchema),
+    },
+    successStatus: 200,
+    successDescription:
+      "The invite, now ended. When a teen had accepted it, their consent ends and the app is " +
+      "sent access-ended with reason parent_ended and erase_data true. Ending it again answers the same.",
+    successSchema: inlineSchema(teenInviteSchema),
+    errors: [
+      VALIDATION_400,
+      IDEMPOTENCY_KEY_400,
+      INVALID_TOKEN,
+      INSUFFICIENT_SCOPE,
+      INVITE_NOT_FOUND,
+      IDEMPOTENCY_409,
+    ],
   },
 ];

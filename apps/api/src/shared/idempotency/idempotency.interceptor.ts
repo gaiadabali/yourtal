@@ -201,7 +201,7 @@ export class IdempotencyInterceptor implements NestInterceptor {
    */
   private async scopeFor(
     request: FastifyRequest,
-    scopeBy: "session" | "device" | "partner" | undefined,
+    scopeBy: IdempotentOptions["scopeBy"],
   ): Promise<string> {
     const params: unknown = request.params;
     if (typeof params === "object" && params !== null && "tenantId" in params) {
@@ -230,6 +230,17 @@ export class IdempotencyInterceptor implements NestInterceptor {
         });
       }
       return `principal:partner:${partnerId}`;
+    }
+    if (scopeBy === "oidc_client") {
+      // Same terms as "partner": set only by a guard that verified the token.
+      const clientId: unknown = Reflect.get(request, "verifiedOidcClientId");
+      if (typeof clientId !== "string" || clientId.length === 0) {
+        throw new UnauthorizedException({
+          code: "invalid_request_error",
+          message: "no verified client id on this request",
+        });
+      }
+      return `principal:oidc-client:${clientId}`;
     }
     return `principal:${(await this.principals.resolve(request)).id}`;
   }

@@ -24,7 +24,10 @@ import { INVOICE_ROUTE_DEFINITIONS } from "./route-registry.c-invoices";
 import { CHARITY_ROUTE_DEFINITIONS } from "./route-registry.c-charity";
 import { PAYOUT_ROUTE_DEFINITIONS } from "./route-registry.c-payouts";
 import { AUCTION_ROUTE_DEFINITIONS } from "./route-registry.a-auction";
-import { OIDC_INTERACTION_ROUTE_DEFINITIONS } from "./route-registry.a-oidc";
+import {
+  OIDC_INTERACTION_ROUTE_DEFINITIONS,
+  OIDC_TEEN_INVITE_ROUTE_DEFINITIONS,
+} from "./route-registry.a-oidc";
 import { SIGN_IN_METHOD_ROUTE_DEFINITIONS } from "./route-registry.a-auth";
 import { COUNTER_ROUTE_DEFINITIONS } from "./route-registry.c-counter";
 import { DEVELOPERS_ROUTE_DEFINITIONS } from "./route-registry.c-developers";
@@ -121,6 +124,7 @@ export const ALL_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   ...PAYOUT_ROUTE_DEFINITIONS,
   ...AUCTION_ROUTE_DEFINITIONS,
   ...OIDC_INTERACTION_ROUTE_DEFINITIONS,
+  ...OIDC_TEEN_INVITE_ROUTE_DEFINITIONS,
   ...COUNTER_ROUTE_DEFINITIONS,
   ...DEVELOPERS_ROUTE_DEFINITIONS,
   ...PARTNERS_ROUTE_DEFINITIONS,

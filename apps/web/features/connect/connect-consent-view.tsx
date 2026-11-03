@@ -35,6 +35,38 @@ function operatorClause(t: Translate, client: InteractionDetails["client"]): str
   return sameName ? null : t("runBy", { app: client.name, operator: client.operator });
 }
 
+/** Who runs the app, and its privacy policy and terms: on every consent screen, adult or teen. */
+export function AppPolicy({ client }: { client: InteractionDetails["client"] }) {
+  const t = useTranslations("connect.consent");
+  const clause = operatorClause(t, client);
+  return (
+    <div className="flex flex-col gap-2">
+      <Text size="body-sm">
+        {clause === null ? t("policyAlone") : `${clause} ${t("policyAfterClause")}`}
+      </Text>
+      <Text size="body-sm" className="flex gap-4">
+        {/* No referrer: this address carries the sign-in's id. */}
+        <a
+          href={client.privacyUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-accent underline underline-offset-4"
+        >
+          {t("privacyLink")}
+        </a>
+        <a
+          href={client.termsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-accent underline underline-offset-4"
+        >
+          {t("termsLink")}
+        </a>
+      </Text>
+    </div>
+  );
+}
+
 export interface ConnectConsentViewProps {
   details: InteractionDetails;
   /** Which view this is, set by `ConnectScreen`; it decides which Continue action the button calls. */
@@ -50,7 +82,6 @@ export function ConnectConsentView({ details, mode }: ConnectConsentViewProps) {
   if (account === null) return null;
   const full = mode === "consent" && sharing !== null;
   const continueFrom = mode === "consent" ? consentContinueAction : oneTapContinueAction;
-  const clause = operatorClause(t, client);
 
   return (
     <AuthCard title={t("heading", { app: client.name, name: account.name })}>
@@ -68,30 +99,7 @@ export function ConnectConsentView({ details, mode }: ConnectConsentViewProps) {
               {t("wontGet", { app: client.name })}
             </Text>
           </div>
-          <div className="flex flex-col gap-2">
-            <Text size="body-sm">
-              {clause === null ? t("policyAlone") : `${clause} ${t("policyAfterClause")}`}
-            </Text>
-            <Text size="body-sm" className="flex gap-4">
-              {/* No referrer: this address carries the sign-in's id. */}
-              <a
-                href={client.privacyUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-accent underline underline-offset-4"
-              >
-                {t("privacyLink")}
-              </a>
-              <a
-                href={client.termsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-accent underline underline-offset-4"
-              >
-                {t("termsLink")}
-              </a>
-            </Text>
-          </div>
+          <AppPolicy client={client} />
           <Text tone="muted" size="body-sm">
             {t("linkedApps", { app: client.name })}
           </Text>

@@ -1,4 +1,4 @@
-h1:6pkWuzgPeG1e2t+HK55EGhCAxabjO9SSdaa7TvdJe9M=
+h1:Sxi6rU/tkPKMDOoz5dGs7ebkAPhz8JriSCg4hwXbpYg=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -146,4 +146,5 @@ h1:6pkWuzgPeG1e2t+HK55EGhCAxabjO9SSdaa7TvdJe9M=
 20261026134824_counter_log_offer_title.sql h1:+r1g81iavEoAx5mt4NEodZ8EhrRhVOiIBAVrnXeT9iQ=
 20261102090000_identity_passkey_totp_amr.sql h1:LMMGW2p7x1nY3VvN3mNpl8grxt+jEJm0nmesYWqqKgw=
 20261103090000_points_identity_check_passkey_switch.sql h1:gWDnU9CGS1j3BaCpVDGhJjeCi6oxHFQc+Ia+uyV4yNg=
-20261103130000_oidc_app_events.sql h1:UGOJeGFuW2+XefvWIE+ruVAcdCPWHsu4F8HEOjjIt00=
+20261103120000_oidc_teen_invite.sql h1:KTemi45KT04/FUDQfMkjUGWPoNzqjO+o7zTTzNsgM7s=
+20261103130000_oidc_app_events.sql h1:VbF3Uxs6QZSknsdKNDJYg2A9qndpiVf1t0UFelv483w=

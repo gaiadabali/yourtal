@@ -21,6 +21,7 @@ function check(options: {
           secretHash: "x",
           updatedAt: new Date(),
           verifiedAt: options.verifiedAt,
+          factorsOpenUntil: null,
         };
   const service = new RepositoryEarningIdentityCheck({
     appEnv: options.appEnv,

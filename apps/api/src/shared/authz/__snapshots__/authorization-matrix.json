@@ -5,16 +5,20 @@
     "auction-AU": [],
     "auction-ID": [],
     "session-AU": [
+      "complete_second_factor",
       "confirm_email_verification",
       "confirm_password_reset",
       "create",
+      "create_with_passkey",
       "register",
       "request_password_reset"
     ],
     "session-ID": [
+      "complete_second_factor",
       "confirm_email_verification",
       "confirm_password_reset",
       "create",
+      "create_with_passkey",
       "register",
       "request_password_reset"
     ],
@@ -75,16 +79,20 @@
     "auction-AU": [],
     "auction-ID": [],
     "session-AU": [
+      "complete_second_factor",
       "confirm_email_verification",
       "confirm_password_reset",
       "create",
+      "create_with_passkey",
       "register",
       "request_password_reset"
     ],
     "session-ID": [
+      "complete_second_factor",
       "confirm_email_verification",
       "confirm_password_reset",
       "create",
+      "create_with_passkey",
       "register",
       "request_password_reset"
     ],
@@ -168,10 +176,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "session-ID": [
       "change_password",
@@ -181,10 +191,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "billing-AU": [],
     "billing-ID": [],
@@ -326,10 +338,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "session-ID": [
       "change_password",
@@ -339,10 +353,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "billing-AU": [],
     "billing-ID": [],
@@ -484,10 +500,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "session-ID": [
       "change_password",
@@ -497,10 +515,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "billing-AU": [
       "manage_payouts",
@@ -691,10 +711,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "session-ID": [
       "change_password",
@@ -704,10 +726,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "billing-AU": [],
     "billing-ID": [
@@ -986,10 +1010,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "session-ID": [
       "change_password",
@@ -999,10 +1025,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "billing-AU": [],
     "billing-ID": [],
@@ -1130,10 +1158,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "session-ID": [
       "change_password",
@@ -1143,10 +1173,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "billing-AU": [],
     "billing-ID": [],
@@ -1274,10 +1306,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "session-ID": [
       "change_password",
@@ -1287,10 +1321,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "billing-AU": [],
     "billing-ID": [],
@@ -1416,10 +1452,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "session-ID": [
       "change_password",
@@ -1429,10 +1467,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "billing-AU": [],
     "billing-ID": [],
@@ -1558,10 +1598,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "session-ID": [
       "change_password",
@@ -1571,10 +1613,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "billing-AU": [],
     "billing-ID": [],
@@ -1706,10 +1750,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "session-ID": [
       "change_password",
@@ -1719,10 +1765,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "billing-AU": [],
     "billing-ID": [],
@@ -1854,10 +1902,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "session-ID": [
       "change_password",
@@ -1867,10 +1917,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "billing-AU": [
       "resolve_dispute",
@@ -2036,10 +2088,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "session-ID": [
       "change_password",
@@ -2049,10 +2103,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "billing-AU": [
       "resolve_dispute",
@@ -2222,10 +2278,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "session-ID": [
       "change_password",
@@ -2235,10 +2293,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "billing-AU": [
       "resolve_dispute",
@@ -2398,10 +2458,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "session-ID": [
       "change_password",
@@ -2411,10 +2473,12 @@
       "dev_clock_advance_days",
       "dev_clock_release_pending",
       "dev_clock_run_job",
+      "manage_sign_in_methods",
       "request_email_verification",
       "request_password_reset",
       "update_profile",
-      "view_profile"
+      "view_profile",
+      "view_sign_in_methods"
     ],
     "billing-AU": [
       "resolve_dispute",

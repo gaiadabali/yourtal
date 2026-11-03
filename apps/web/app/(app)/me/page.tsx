@@ -6,6 +6,7 @@ import {
   getMeProfile,
   getViewerArea,
   getNotificationPreferences,
+  getSignInMethods,
   listConsents,
   listFollows,
   listInterests,
@@ -24,6 +25,7 @@ import { MeInterestsSection } from "@/features/me/me-interests-section";
 import { MeFollowsSection } from "@/features/me/me-follows-section";
 import { MeConsentSection } from "@/features/me/me-consent-section";
 import { MeSecuritySection } from "@/features/me/me-security-section";
+import { MeAuthenticatorSection, MePasskeysSection } from "@/features/me/me-sign-in-methods-lazy";
 import { MeNotificationsSection } from "@/features/me/me-notifications-section";
 import { MeLinkedAppsSection } from "@/features/me/me-linked-apps-section";
 import { MeDataExportSection } from "@/features/me/me-data-export-section";
@@ -47,16 +49,25 @@ import { MeSectionError } from "@/features/me/me-section-states";
  */
 export default async function MePage() {
   const t = await getTranslations("me");
-  const [profile, consents, interests, follows, notificationPreferences, autoplay, linkedApps] =
-    await Promise.all([
-      getMeProfile(),
-      listConsents(),
-      listInterests(),
-      listFollows(),
-      getNotificationPreferences(),
-      getAutoplaySetting(),
-      listLinkedApps(),
-    ]);
+  const [
+    profile,
+    consents,
+    interests,
+    follows,
+    notificationPreferences,
+    autoplay,
+    linkedApps,
+    signInMethods,
+  ] = await Promise.all([
+    getMeProfile(),
+    listConsents(),
+    listInterests(),
+    listFollows(),
+    getNotificationPreferences(),
+    getAutoplaySetting(),
+    listLinkedApps(),
+    getSignInMethods(),
+  ]);
 
   // 12.2.b: the teen daily-cap meter is its own, teen-only read -- most
   // viewers are adults and never pay for this round trip at all.
@@ -135,6 +146,24 @@ export default async function MePage() {
         )}
 
         <MeSecuritySection />
+        {signInMethods.ok ? (
+          <>
+            <MePasskeysSection
+              initialPasskeys={signInMethods.data.passkeys}
+              appCodeAvailable={
+                signInMethods.data.authenticatorApp.enabled &&
+                signInMethods.data.authenticatorApp.available
+              }
+            />
+            <MeAuthenticatorSection
+              enabled={signInMethods.data.authenticatorApp.enabled}
+              available={signInMethods.data.authenticatorApp.available}
+              hasPasskeys={signInMethods.data.passkeys.length > 0}
+            />
+          </>
+        ) : (
+          <MeSectionError title={t("signInMethods.heading")} error={signInMethods.error} />
+        )}
 
         {notificationPreferences.ok ? (
           <MeNotificationsSection initialPreferences={notificationPreferences.data.preferences} />

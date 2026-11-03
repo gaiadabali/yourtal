@@ -5,13 +5,13 @@ import { redirect } from "next/navigation";
 import type { Route } from "next";
 import { apiFetch } from "@/lib/api/api-fetch";
 import type { ApiError } from "@/lib/api/api-fetch";
-import { loginResponseSchema } from "@/lib/api/auth-schema";
+import { loginResponseSchema, passwordSignInResponseSchema } from "@/lib/api/auth-schema";
+import { codeStepPath, finishSignIn } from "@/lib/api/finish-sign-in";
 import { meResponseSchema } from "@/lib/api/me-schema";
-import { setSessionCookies } from "@/lib/api/session-cookies";
+import { setMfaPendingCookie, setSessionCookies } from "@/lib/api/session-cookies";
 import { parseReturnTo, withReturnTo } from "@/features/onboarding/onboarding-return-to";
 import {
   emailVerificationConfirmedSchema,
-  passwordResetConfirmedSchema,
   requestPasswordResetResponseSchema,
 } from "./auth-schemas";
 
@@ -137,15 +137,17 @@ export async function forgotPasswordAction(formData: FormData): Promise<void> {
  * `POST /api/auth/password/reset/confirm` (1.4.f) also mints a fresh
  * session, so a successful reset signs the person straight in — the same
  * "as privilege-relevant as a password change" reasoning `AuthService`'s
- * own doc comment gives for reissuing a token here. A missing token (a
- * reset link opened with its query string stripped) never reaches the API
- * at all; the page itself renders a plain notice for that case.
+ * own doc comment gives for reissuing a token here. An account with an
+ * authenticator app gets the code step first, like a password sign-in. A
+ * missing token (a reset link opened with its query string stripped) never
+ * reaches the API at all; the page itself renders a plain notice for that
+ * case.
  */
 export async function resetPasswordAction(formData: FormData): Promise<void> {
   const token = stringField(formData, "token");
   const newPassword = stringField(formData, "newPassword");
 
-  const result = await apiFetch("/api/auth/password/reset/confirm", passwordResetConfirmedSchema, {
+  const result = await apiFetch("/api/auth/password/reset/confirm", passwordSignInResponseSchema, {
     method: "POST",
     body: { token, newPassword },
   });
@@ -153,23 +155,20 @@ export async function resetPasswordAction(formData: FormData): Promise<void> {
     redirectTo("/reset", { token, error: errorCode(result.error) });
   }
 
-  const meResult = await apiFetch("/api/me", meResponseSchema, {
-    headers: { authorization: `Bearer ${result.data.token}` },
-  });
-  if (!meResult.ok) {
-    redirect("/login");
+  if ("secondFactor" in result.data) {
+    await setMfaPendingCookie(result.data.pendingToken, result.data.expiresInSeconds);
+    redirect(codeStepPath("/") as Route);
   }
 
-  await setSessionCookies({
+  const finished = await finishSignIn({
     token: result.data.token,
-    region: meResult.data.profile.region,
-    displayLocale: meResult.data.profile.displayLocale,
+    returnTo: "/",
+    offerPasskey: false,
   });
-  // "/" is now a real page (11.1.a's landing page), so typedRoutes' own
-  // generated `Route` union includes it literally — the cast every other
-  // redirect() call here still needs is redundant for this one exact
-  // literal (F46's own precedent: drop the cast, no behaviour change).
-  redirect("/");
+  if (!finished.ok) {
+    redirect("/login");
+  }
+  redirect(finished.next as Route);
 }
 
 /**

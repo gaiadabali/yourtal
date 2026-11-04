@@ -13,7 +13,9 @@
 //
 // <dir> is where OIDC_JWKS_PATH points (/opt/yourtal/secrets/oidc on Helios).
 // The first key in jwks.json signs and the rest are only published; the first
-// cookie key signs and the rest only verify. Emergency rotation: remove-old
+// cookie key signs and the rest only verify. Keep an old key published at least
+// 72 hours after promote: SnapApp re-verifies stored app events with the key that
+// signed them (docs/29 §4.2). Emergency rotation: remove-old
 // after promote on the same day (apps re-fetch the JWKS on an unknown kid).
 import { generateKeyPairSync, randomBytes } from "node:crypto";
 import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";

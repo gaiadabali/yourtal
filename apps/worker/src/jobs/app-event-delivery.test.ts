@@ -15,7 +15,7 @@ import {
   jwtVerify,
 } from "jose";
 import type { JSONWebKeySet } from "jose";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { EventReceiver } from "@yourtal/contracts/oidc/event-receivers";
 import { createLiveAppEvents, createSimulatedAppEvents } from "@yourtal/drivers/app-events";
 import { loadSigner, minutesToNextAttempt, runAppEventDelivery } from "./app-event-delivery";
@@ -57,7 +57,15 @@ async function verifyLikeTheApps(token: string, clientId: string): Promise<Recei
       algorithms: ["RS256"],
     }));
   } catch (error) {
-    return error instanceof errors.JWKSNoMatchingKey ? "invalid_key" : "authentication_failed";
+    if (error instanceof errors.JWKSNoMatchingKey) return "invalid_key";
+    if (error instanceof errors.JWTClaimValidationFailed) {
+      return error.claim === "iss"
+        ? "invalid_issuer"
+        : error.claim === "aud"
+          ? "invalid_audience"
+          : "invalid_request";
+    }
+    return "authentication_failed";
   }
   const now = Date.now() / 1000;
   const { aud, iat, jti, sub_id: sid, events } = payload;
@@ -113,16 +121,21 @@ afterAll(async () => {
   await pool.end();
 });
 
-// Rows are due on a clock far in the past, so a run here never touches another test's rows.
+// Rows are due on a clock years in the past, so a run never takes rows the database made
+// itself (due at now()); each test's own rows are removed after it.
 let clock: Date;
 let client: string;
 const logs: string[] = [];
 beforeEach(() => {
-  clock = new Date(Date.UTC(2001, 0, 1) + Math.floor(Math.random() * 1e9) * 1000);
+  clock = new Date(Date.UTC(2001, 0, 1) + Math.floor(Math.random() * 1e8) * 1000);
   client = `client-${randomUUID()}`;
   received.length = 0;
   logs.length = 0;
   answer = () => ({ status: 202 });
+});
+
+afterEach(async () => {
+  await pool.query(`DELETE FROM oidc.event_outbox WHERE client_id = $1`, [client]);
 });
 
 const receivers = (): EventReceiver[] => [
@@ -283,16 +296,19 @@ describe("app-event-delivery (3.7 Y4)", () => {
     expect(received.map((r) => r.payload["jti"]).sort()).toStrictEqual([...jtis].sort());
   });
 
-  it("a leased row is not taken again for 2 minutes", async () => {
+  it("a row in flight is leased for 2 minutes: a second run does not send it again", async () => {
+    let release = (): void => undefined;
+    answer = () => new Promise((resolve) => (release = () => resolve({ status: 202 })));
     const jti = await row();
-    await pool.query(
-      `UPDATE oidc.event_outbox SET next_attempt_at = $2::timestamptz + interval '2 minutes' WHERE jti = $1`,
-      [jti, clock],
-    );
+    const first = runAppEventDelivery(pool, deps());
+    await expect.poll(() => received.length).toBe(1);
+    expect(await runAppEventDelivery(pool, deps())).toBe(0);
+    expect((await state(jti)).next_attempt_at).toStrictEqual(later(2));
     clock = later(1);
     expect(await runAppEventDelivery(pool, deps())).toBe(0);
-    clock = later(1);
-    expect(await runAppEventDelivery(pool, deps())).toBe(1);
+    release();
+    expect(await first).toBe(1);
+    expect(received).toHaveLength(1);
   });
 
   it("keeps the order for one client and sub, while another sub goes ahead", async () => {

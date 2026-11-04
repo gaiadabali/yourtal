@@ -68,7 +68,7 @@ As docs/26 §2.3: `POST` with `Content-Type: application/secevent+jwt` and a com
 
 ### 4.2 Sending (Y4)
 
-`apps/worker/src/jobs/app-event-delivery.ts` runs every minute. It claims up to 100 due rows with a 2-minute lease on `next_attempt_at`, oldest `iat` first, and skips a row while an earlier one for the same client and `sub` is still retrying. It builds the claims from the row and the configured issuer, signs them with the first key in `OIDC_JWKS_PATH` (jose `SignJWT`) and posts through the `app_events` driver: live, with a 10 s timeout and `redirect: "error"`; simulated, with no call and a 202.
+`apps/worker/src/jobs/app-event-delivery.ts` runs every minute. It claims due rows one at a time (up to 100 a run) with a 2-minute lease on `next_attempt_at`, oldest `iat` first, and skips a row while an earlier one for the same client and `sub` is still retrying. It builds the claims from the row and the configured issuer, signs them with the first key in `OIDC_JWKS_PATH` (jose `SignJWT`) and posts through the `app_events` driver: live, with a 10 s timeout and `redirect: "error"`; simulated, with no call and a 202.
 
 | The app answers                        | YourTal                                                                                                              |
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
@@ -77,7 +77,7 @@ As docs/26 §2.3: `POST` with `Content-Type: application/secevent+jwt` and a com
 | Any other `400`                        | Sets `failed_at`; error log `app_event.refused`                                                                      |
 | `429`, `5xx`, a timeout, anything else | Retries after 1, 5, 15 and 30 minutes, then hourly; after 7 days sets `failed_at`; error log `app_event.undelivered` |
 
-Logs carry the `jti`, the client and the event type, never the token. The job also purges rows delivered more than 30 days ago. Every 30 minutes it runs the sweep: for each `oidc.subject` older than 10 minutes whose `identity.user_profile` is gone, it calls `oidc.forget_subject`, so a deletion whose `connected_apps` step failed still reaches the apps. A resend is `UPDATE oidc.event_outbox SET failed_at = NULL, attempts = 0, next_attempt_at = now() WHERE jti = …`, or `WHERE client_id = … AND iat >= <backup time>` after an app restores a backup.
+Logs carry the `jti`, the client and the event type, never the token. `app-event-sweep.ts` runs every 30 minutes: it purges rows delivered more than 30 days ago, and runs the sweep: for each `oidc.subject` older than 10 minutes whose `identity.user_profile` is gone, it calls `forgetConnectedApps` (`oidc.forget_subject`; with no receivers it refuses, so nothing is dropped untold), so a deletion whose `connected_apps` step failed still reaches the apps. A resend is `UPDATE oidc.event_outbox SET failed_at = NULL, attempts = 0, next_attempt_at = now() WHERE jti = …`, or `WHERE client_id = … AND iat >= <backup time>` after an app restores a backup.
 
 ### 4.3 Receiving (S2, F1)
 

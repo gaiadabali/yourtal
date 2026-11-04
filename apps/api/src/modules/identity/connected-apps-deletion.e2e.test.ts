@@ -303,12 +303,14 @@ describe("3.10.g: a withdrawal racing a teen's acceptance leaves no live consent
   });
 
   /** A teen with an approved guardian, a sub at SnapApp and a pending invite nobody has used. */
-  async function acceptable() {
+  async function acceptable(approved = true) {
     const person = await teen();
-    await owner.query(
-      `UPDATE identity.guardian_consent SET approved_at = now(), guardian_confirmed_adult_at = now() WHERE user_id = $1`,
-      [person.userId],
-    );
+    if (approved) {
+      await owner.query(
+        `UPDATE identity.guardian_consent SET approved_at = now(), guardian_confirmed_adult_at = now() WHERE user_id = $1`,
+        [person.userId],
+      );
+    }
     await signedIn(person.userId);
     const invite = randomUUID();
     await owner.query(
@@ -319,7 +321,7 @@ describe("3.10.g: a withdrawal racing a teen's acceptance leaves no live consent
     return { ...person, invite };
   }
 
-  const accept = (userId: string, invite: string) =>
+  const accept = (userId: string, invite: string, firstTime = true) =>
     createPgOidcStore(appPool).grantAppConsent({
       userId,
       sector: SNAP.sector,
@@ -327,7 +329,7 @@ describe("3.10.g: a withdrawal racing a teen's acceptance leaves no live consent
       policyVersionId: "pv-1",
       jurisdiction: "AU",
       now: new Date(),
-      invite: { id: invite, accept: true },
+      invite: { id: invite, accept: firstTime },
     });
 
   const withdraw = (token: string) =>
@@ -361,6 +363,26 @@ describe("3.10.g: a withdrawal racing a teen's acceptance leaves no live consent
         userId,
       ])
     ).rowCount;
+
+  it("refuses an acceptance while the guardian has not approved", async () => {
+    const person = await acceptable(false);
+    expect(await accept(person.userId, person.invite)).toBe(false);
+    expect(await live(person.userId)).toBe(0);
+  });
+
+  it("refuses a standing invite's renewal after the guardian withdrew", async () => {
+    const person = await acceptable();
+    expect(await accept(person.userId, person.invite)).toBe(true);
+    await owner.query(
+      `UPDATE identity.guardian_consent SET approved_at = NULL, revoked_at = now() WHERE user_id = $1`,
+      [person.userId],
+    );
+    await owner.query(`UPDATE oidc.app_consent SET ended_at = now() WHERE user_id = $1`, [
+      person.userId,
+    ]);
+    expect(await accept(person.userId, person.invite, false)).toBe(false);
+    expect(await live(person.userId)).toBe(0);
+  });
 
   it("a withdrawal that commits first refuses the acceptance", async () => {
     const person = await acceptable();

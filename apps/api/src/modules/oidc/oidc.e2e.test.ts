@@ -1300,6 +1300,28 @@ describe("removing an app from Me -> Linked apps (3.7 Y3)", () => {
     });
   });
 
+  it("a teen's consent that no invite stands behind still ends, as an ordinary removal", async () => {
+    const teen = await teenOf("someone@example.test");
+    const sub = randomUUID();
+    await pool.query("INSERT INTO oidc.subject (sector, user_id, sub) VALUES ($1, $2, $3)", [
+      "snapapp-staging",
+      teen.userId,
+      sub,
+    ]);
+    await pool.query(
+      `INSERT INTO oidc.app_consent (user_id, sector, scopes, policy_version_id, granted_via, granted_at)
+       VALUES ($1, 'snapapp-staging', '{openid}', 'pv-1', 'consent_screen', now())`,
+      [teen.userId],
+    );
+    expect((await meApps("GET", teen)).body["connectedApps"]).toHaveLength(1);
+    expect((await meApps("DELETE", teen, "snapapp")).status).toBe(200);
+    expect(
+      await rows("SELECT end_reason FROM oidc.app_consent WHERE user_id = $1", [teen.userId]),
+    ).toEqual([{ end_reason: "user_removed" }]);
+    expect((await meApps("GET", teen)).body["connectedApps"]).toEqual([]);
+    expect(await outboxOf(sub)).toHaveLength(1);
+  });
+
   it("answers 404 for an app YourTal does not know, and 401 without a session", async () => {
     const adult = await person();
     expect((await meApps("DELETE", adult, "not-an-app")).status).toBe(404);

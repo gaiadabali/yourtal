@@ -31,6 +31,7 @@ import type { PartnerLinkRepository } from "./persistence/partner-link.repositor
 import { ACCOUNT_AGE_LOOKUP } from "./persistence/account-age-lookup";
 import type { AccountAgeLookup } from "./persistence/account-age-lookup";
 import { PartnerAuthGuard } from "./partner-auth.guard";
+import { PartnerRateLimitGuard } from "./partner-rate-limit.guard";
 import { verifiedPartnerIdOf } from "./partner-auth";
 import {
   PartnerActionDto,
@@ -65,7 +66,7 @@ export const PUBLIC_REASON =
  * after a dropped response.
  */
 @Controller("api/partners")
-@UseGuards(PartnerAuthGuard)
+@UseGuards(PartnerAuthGuard, PartnerRateLimitGuard)
 export class PartnerActionsController {
   private readonly deps: GrantPartnerActionDeps;
 

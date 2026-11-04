@@ -107,8 +107,8 @@ async function newAccount(tag) {
     body: { email, password: PASSWORD, region: "AU", locale: "en-AU", displayName: `QA C1 ${tag.toUpperCase()}`, dateOfBirth: "1990-01-01", timezone: "Australia/Sydney" },
   });
   let reg = await register();
-  // YourTal allows 5 sign-ups per address per hour; a full run makes 5, so wait it out once.
-  if (reg.status === 429 && (reg.json?.retryAfterSeconds ?? 9e9) <= 3600) {
+  // YourTal allows 5 sign-ups per address per rolling hour; wait each one out.
+  while (reg.status === 429 && (reg.json?.retryAfterSeconds ?? 9e9) <= 3600) {
     log(`${tag}: sign-up rate-limited, waiting ${reg.json.retryAfterSeconds}s`);
     await sleep((reg.json.retryAfterSeconds + 5) * 1000);
     reg = await register();

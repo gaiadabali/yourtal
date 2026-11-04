@@ -7,7 +7,7 @@ import {
 } from "@yourtal/contracts/oidc/event-receivers";
 import { describe, expect, it } from "vitest";
 import { loadClients } from "./client-keys";
-import { CLIENTS, clientsFor, isSignInClient } from "./clients";
+import { CLIENTS, TRANSFER_ROUTES, clientsFor, isSignInClient, transferRoutesFor } from "./clients";
 
 const DIR = "/opt/yourtal/secrets/oidc/clients";
 
@@ -99,12 +99,48 @@ describe("the client registry (docs/26 §1.9)", () => {
     expect(named.find((client) => client.clientId === "ftr-web")?.externalOperator).toBe(true);
   });
 
-  it("allows sign-in clients the four sign-in scopes, and teen_invites to SnapApp's server only", () => {
+  it("allows sign-in clients the four sign-in scopes, and the client APIs to SnapApp's server only", () => {
     for (const client of CLIENTS) {
       expect(client.allowedScopes).toEqual(
-        client.kind === "machine" ? ["teen_invites"] : ["openid", "email", "profile", "account"],
+        client.kind === "machine"
+          ? ["teen_invites", "app_transfers"]
+          : ["openid", "email", "profile", "account"],
       );
     }
+  });
+});
+
+describe("the transfer routes (docs/30 §5)", () => {
+  it("send to a sign-in client, from a sector with a server client, in that client's environments", () => {
+    for (const route of TRANSFER_ROUTES) {
+      const to = CLIENTS.find((client) => client.clientId === route.toClientId);
+      expect(to !== undefined && isSignInClient(to)).toBe(true);
+      expect(to?.app).toBe(route.to);
+      for (const environment of route.environments) expect(to?.environments).toContain(environment);
+      expect(
+        CLIENTS.some((client) => client.kind === "machine" && client.sector === route.fromSector),
+      ).toBe(true);
+      for (const region of route.regions) {
+        expect(to !== undefined && isSignInClient(to) && to.regions.includes(region)).toBe(true);
+      }
+    }
+  });
+
+  it("SnapApp to FTR, AU only, dev and staging only, and only while FTR is registered", () => {
+    expect(TRANSFER_ROUTES).toEqual([
+      {
+        kind: "deduction-bundle-v1",
+        fromSector: "snapapp-staging",
+        to: "ftr",
+        toClientId: "ftr-web",
+        regions: ["AU"],
+        environments: ["dev", "staging"],
+      },
+    ]);
+    expect(transferRoutesFor("production", CLIENTS)).toEqual([]);
+    expect(transferRoutesFor("staging", CLIENTS)).toHaveLength(1);
+    const withoutFtr = CLIENTS.filter((client) => client.clientId !== "ftr-web");
+    expect(transferRoutesFor("staging", withoutFtr)).toEqual([]);
   });
 });
 

@@ -1,4 +1,5 @@
-import { createPublicKey, randomBytes, randomUUID, verify } from "node:crypto";
+import { createHash, createPublicKey, randomBytes, randomUUID, verify } from "node:crypto";
+import { compactDecrypt, createRemoteJWKSet, jwtVerify } from "jose";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
@@ -15,6 +16,7 @@ import * as client from "openid-client";
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { z } from "zod";
+import { receiversFor } from "@yourtal/contracts/oidc/event-receivers";
 import {
   interactionDetailsSchema,
   interactionRedirectSchema,
@@ -28,6 +30,7 @@ import { SessionService } from "../auth/session/session.service";
 import { mountOidc } from "./mount-oidc";
 import { OIDC_RUNTIME } from "./oidc-runtime";
 import type { OidcRuntime } from "./oidc-runtime";
+import { ftrOpenTransfer } from "./testing/ftr-transfer-check";
 import { followToApp, startSignIn, webServerCall } from "./testing/sign-in-driver";
 
 /**
@@ -1351,5 +1354,367 @@ describe("removing an app from Me -> Linked apps (3.7 Y3)", () => {
     ]);
     expect(exported.body).not.toContain(snap ?? "no sub");
     expect(exported.body).not.toContain(ftr ?? "no sub");
+  });
+});
+
+/** SnapApp's server calling the transfer API. */
+async function transferApi(token: string, path: string, body: Record<string, unknown>) {
+  const response = await fetch(`${base}/api/oidc-clients/transfers${path}`, {
+    method: "POST",
+    headers: {
+      "x-forwarded-for": testIp(),
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+      "idempotency-key": randomUUID(),
+    },
+    body: JSON.stringify(body),
+  });
+  return {
+    status: response.status,
+    cacheControl: response.headers.get("cache-control"),
+    body: (await response.json()) as Record<string, unknown>,
+  };
+}
+
+async function transferToken(scope = "app_transfers"): Promise<string> {
+  return (await client.clientCredentialsGrant(await serverApp(), { scope })).access_token;
+}
+
+const BUNDLE_SHA256 = createHash("sha256").update("a bundle").digest("hex");
+const transfersOf = () => {
+  const transfers = app.get<OidcRuntime>(OIDC_RUNTIME).transfers;
+  if (transfers === null) throw new Error("transfers are off");
+  return transfers;
+};
+
+/** An adult in AU signed in to SnapApp and, unless `ftr` is false, to FTR: both their subs. */
+async function sender(ftr = true) {
+  const who = await person();
+  const snapSub = (await signIn(await webApp(), WEB_REDIRECT, who, "consent")).tokens.claims()?.sub;
+  const ftrSub = ftr
+    ? (await signIn(await ftrApp(), FTR_REDIRECT, who, "consent")).tokens.claims()?.sub
+    : undefined;
+  return { ...who, snapSub: snapSub ?? "", ftrSub };
+}
+
+async function openTransfer(token: string, fromSub: string): Promise<string> {
+  const made = await transferApi(token, "", {
+    fromSub,
+    to: "ftr",
+    financialYear: "2025-26",
+    bundleSha256: BUNDLE_SHA256,
+    lineCount: 7,
+  });
+  expect(made.status, JSON.stringify(made.body)).toBe(201);
+  return z.object({ transferId: z.uuid() }).parse(made.body).transferId;
+}
+
+/** Opened as FTR will: dir/A256GCM with SHA-256 of its secret, then RS256 against the JWKS. */
+async function openAssertion(assertion: string) {
+  const { plaintext, protectedHeader } = await compactDecrypt(
+    assertion,
+    createHash("sha256").update(ftrSecret).digest(),
+  );
+  expect(protectedHeader).toEqual({ alg: "dir", enc: "A256GCM", cty: "JWT" });
+  const jws = new TextDecoder().decode(plaintext);
+  const verified = await jwtVerify(jws, createRemoteJWKSet(new URL(`${issuer}/jwks`)), {
+    issuer,
+    audience: "ftr-web",
+    typ: "transfer+jwt",
+    algorithms: ["RS256"],
+  });
+  return { jws, payload: verified.payload, header: verified.protectedHeader };
+}
+
+describe("app transfers: SnapApp to FTR (docs/30 §5, 4.8 Y1)", () => {
+  it("opens a transfer for SnapApp's own sub; the assertion follows the person's Send, for FTR's sub only", async () => {
+    const token = await transferToken();
+    const ana = await sender();
+    const before = Date.now();
+    const made = await transferApi(token, "", {
+      fromSub: ana.snapSub,
+      to: "ftr",
+      financialYear: "2025-26",
+      bundleSha256: BUNDLE_SHA256,
+      lineCount: 7,
+    });
+    expect(made.status).toBe(201);
+    const { transferId, expiresAt } = z
+      .object({ transferId: z.uuid(), expiresAt: z.iso.datetime() })
+      .parse(made.body);
+    const ttl = Date.parse(expiresAt) - before;
+    expect(ttl).toBeGreaterThan(14 * 60 * 1000);
+    expect(ttl).toBeLessThanOrEqual(15 * 60 * 1000 + 5000);
+    // Held as the provider's own kind of row: no amount, no sub, the person by user id.
+    expect(
+      await rows("SELECT payload FROM oidc.model WHERE kind = 'AppTransfer' AND id = $1", [
+        transferId,
+      ]),
+    ).toEqual([
+      {
+        payload: {
+          accountId: ana.userId,
+          fromSector: "snapapp-staging",
+          toClientId: "ftr-web",
+          kind: "deduction-bundle-v1",
+          financialYear: "2025-26",
+          bundleSha256: BUNDLE_SHA256,
+          lineCount: 7,
+        },
+      },
+    ]);
+
+    const early = await transferApi(token, `/${transferId}/assertion`, { fromSub: ana.snapSub });
+    expect(early).toMatchObject({ status: 409, body: { code: "not_approved" } });
+
+    const approvedAt = new Date();
+    expect(await transfersOf().approve({ transferId, userId: ana.userId, now: approvedAt })).toBe(
+      true,
+    );
+    const first = await transferApi(token, `/${transferId}/assertion`, { fromSub: ana.snapSub });
+    expect(first.status, JSON.stringify(first.body)).toBe(200);
+    expect(first.cacheControl).toBe("no-store");
+    expect(first.body["expiresAt"]).toBe(expiresAt);
+    const assertion = z.string().parse(first.body["assertion"]);
+    // Ciphertext to SnapApp: neither FTR's sub nor the claims show.
+    expect(assertion.split(".")).toHaveLength(5);
+    expect(Buffer.from(assertion.replaceAll(".", ""), "base64url").toString()).not.toContain(
+      ana.ftrSub,
+    );
+
+    const opened = await openAssertion(assertion);
+    expect(opened.header).toMatchObject({ alg: "RS256", typ: "transfer+jwt" });
+    const exp = Math.floor(Date.parse(expiresAt) / 1000);
+    expect(opened.payload).toEqual({
+      iss: issuer,
+      aud: "ftr-web",
+      azp: "snapapp-staging-server",
+      sub: ana.ftrSub,
+      jti: transferId,
+      iat: Math.floor(approvedAt.getTime() / 1000),
+      exp,
+      region: "AU",
+      age_band: "adult",
+      kind: "deduction-bundle-v1",
+      source: "snapapp",
+      financial_year: "2025-26",
+      bundle_sha256: BUNDLE_SHA256,
+    });
+    expect(exp - (opened.payload.iat ?? 0)).toBeLessThanOrEqual(15 * 60);
+    expect(opened.payload.sub).not.toBe(ana.snapSub);
+    // Another key cannot open it.
+    await expect(
+      compactDecrypt(assertion, createHash("sha256").update("not-ftr").digest()),
+    ).rejects.toThrow();
+
+    // A second call: a fresh encryption of the same signed claims, and a second approval changes nothing.
+    await transfersOf().approve({
+      transferId,
+      userId: ana.userId,
+      now: new Date(Date.now() + 5000),
+    });
+    const second = await transferApi(token, `/${transferId}/assertion`, { fromSub: ana.snapSub });
+    expect(second.status).toBe(200);
+    expect(second.body["assertion"]).not.toBe(assertion);
+    expect((await openAssertion(z.string().parse(second.body["assertion"]))).jws).toBe(opened.jws);
+    // Never kept by the idempotency layer.
+    expect(
+      await rows("SELECT 1 FROM platform.idempotency t WHERE t::text LIKE $1", [
+        `%${assertion.slice(0, 40)}%`,
+      ]),
+    ).toEqual([]);
+  });
+
+  it("makes an assertion FTR's own check accepts, for the bundle's bytes", async () => {
+    const token = await transferToken();
+    const ana = await sender();
+    const bundle = Buffer.from(JSON.stringify({ version: 1, financialYear: "2025-26", lines: [] }));
+    const made = await transferApi(token, "", {
+      fromSub: ana.snapSub,
+      to: "ftr",
+      financialYear: "2025-26",
+      bundleSha256: createHash("sha256").update(bundle).digest("hex"),
+      lineCount: 0,
+    });
+    const transferId = z.object({ transferId: z.uuid() }).parse(made.body).transferId;
+    await transfersOf().approve({ transferId, userId: ana.userId, now: new Date() });
+    const minted = await transferApi(token, `/${transferId}/assertion`, { fromSub: ana.snapSub });
+    const assertion = z.string().parse(minted.body["assertion"]);
+    const jwks = createRemoteJWKSet(new URL(`${issuer}/jwks`));
+    // FTR reads its secret from an env value it trims.
+    expect(await ftrOpenTransfer(assertion, issuer, "ftr-web", `${ftrSecret}\n`, jwks)).toEqual({
+      ok: true,
+      sub: ana.ftrSub,
+      jti: transferId,
+      financialYear: "2025-26",
+      bundleSha256: createHash("sha256").update(bundle).digest("hex"),
+    });
+    for (const [wrongIssuer, clientId, secret] of [
+      [`${issuer}/x`, "ftr-web", ftrSecret],
+      [issuer, "snapapp-staging-web", ftrSecret],
+      [issuer, "ftr-web", `${ftrSecret}x`],
+    ] as const) {
+      expect(await ftrOpenTransfer(assertion, wrongIssuer, clientId, secret, jwks)).toEqual({
+        ok: false,
+        err: "invalid_token",
+      });
+    }
+  });
+
+  it("answers 404 for a sub that is no one in SnapApp, another person's sub, another app's transfer or an unknown one", async () => {
+    const token = await transferToken();
+    const ana = await sender();
+    const ben = await sender();
+    for (const fromSub of [ana.ftrSub, "nobody"]) {
+      const made = await transferApi(token, "", {
+        fromSub,
+        to: "ftr",
+        financialYear: "2025-26",
+        bundleSha256: BUNDLE_SHA256,
+        lineCount: 1,
+      });
+      expect(made).toMatchObject({ status: 404, body: { code: "unknown_subject" } });
+    }
+    const bad = await transferApi(token, "", {
+      fromSub: ana.snapSub,
+      to: "ftr",
+      financialYear: "2025-27",
+      bundleSha256: "ABC",
+      lineCount: 1,
+    });
+    expect(bad.status).toBe(400);
+
+    const transferId = await openTransfer(token, ana.snapSub);
+    await transfersOf().approve({ transferId, userId: ana.userId, now: new Date() });
+    // The approval is Ana's alone.
+    expect(await transfersOf().approve({ transferId, userId: ben.userId, now: new Date() })).toBe(
+      false,
+    );
+    for (const [path, fromSub] of [
+      [`/${transferId}/assertion`, ben.snapSub],
+      [`/${transferId}/assertion`, ana.ftrSub],
+      [`/${randomUUID()}/assertion`, ana.snapSub],
+      ["/not-a-uuid/assertion", ana.snapSub],
+    ] as const) {
+      expect(await transferApi(token, path, { fromSub })).toMatchObject({
+        status: 404,
+        body: { code: "transfer_not_found" },
+      });
+    }
+    // A transfer opened by another app's sector is not SnapApp's to fetch.
+    const foreign = randomUUID();
+    await pool.query(
+      `INSERT INTO oidc.model (kind, id, payload, expires_at)
+       SELECT 'AppTransfer', $1, payload || '{"fromSector": "ftr"}', expires_at
+         FROM oidc.model WHERE kind = 'AppTransfer' AND id = $2`,
+      [foreign, transferId],
+    );
+    expect(
+      (await transferApi(token, `/${foreign}/assertion`, { fromSub: ana.snapSub })).status,
+    ).toBe(404);
+
+    // The screen's checks, for Y2.
+    const transfer = await transfersOf().find({
+      sector: "snapapp-staging",
+      transferId,
+      now: new Date(),
+    });
+    expect(transfer).not.toBeNull();
+    if (transfer === null) return;
+    expect(await transfersOf().check({ transfer, userId: ben.userId, now: new Date() })).toBe(
+      "wrong_account",
+    );
+    expect(await transfersOf().check({ transfer, userId: ana.userId, now: new Date() })).toBeNull();
+  });
+
+  it("takes only SnapApp's server token with app_transfers", async () => {
+    const ana = await sender(false);
+    const body = {
+      fromSub: ana.snapSub,
+      to: "ftr",
+      financialYear: "2025-26",
+      bundleSha256: BUNDLE_SHA256,
+      lineCount: 1,
+    };
+    expect((await transferApi("", "", body)).status).toBe(401);
+    expect(await transferApi(await transferToken("teen_invites"), "", body)).toMatchObject({
+      status: 403,
+      body: { code: "insufficient_scope" },
+    });
+    // And the transfer token opens no teen invite.
+    expect(
+      (await inviteApi(await transferToken(), "", { parentSub: ana.snapSub })).body,
+    ).toMatchObject({ code: "insufficient_scope" });
+  });
+
+  it("says nothing about FTR before the Send, then 409 not_allowed for someone never at FTR", async () => {
+    const token = await transferToken();
+    const ben = await sender(false);
+    const transferId = await openTransfer(token, ben.snapSub);
+    expect(
+      await transferApi(token, `/${transferId}/assertion`, { fromSub: ben.snapSub }),
+    ).toMatchObject({ status: 409, body: { code: "not_approved" } });
+    await transfersOf().approve({ transferId, userId: ben.userId, now: new Date() });
+    expect(
+      await transferApi(token, `/${transferId}/assertion`, { fromSub: ben.snapSub }),
+    ).toMatchObject({ status: 409, body: { code: "not_allowed" } });
+  });
+
+  const changes: readonly [string, (who: Person) => Promise<unknown>][] = [
+    ["FTR access ended", (who) => meApps("DELETE", who, "ftr")],
+    [
+      "now a teen",
+      (who) =>
+        pool.query(
+          "UPDATE identity.user_profile SET date_of_birth = (now() - interval '15 years')::date WHERE user_id = $1",
+          [who.userId],
+        ),
+    ],
+    [
+      "an ID account",
+      (who) =>
+        pool.query("UPDATE identity.user_profile SET region = 'ID' WHERE user_id = $1", [
+          who.userId,
+        ]),
+    ],
+    [
+      "suspended",
+      (who) =>
+        pool.query("UPDATE identity.user_profile SET suspended_at = now() WHERE user_id = $1", [
+          who.userId,
+        ]),
+    ],
+  ];
+  it.each(changes)("409 not_allowed after the Send when %s", async (_, change) => {
+    const token = await transferToken();
+    const ana = await sender();
+    const transferId = await openTransfer(token, ana.snapSub);
+    await transfersOf().approve({ transferId, userId: ana.userId, now: new Date() });
+    await change(ana);
+    expect(
+      await transferApi(token, `/${transferId}/assertion`, { fromSub: ana.snapSub }),
+    ).toMatchObject({ status: 409, body: { code: "not_allowed" } });
+  });
+
+  it("lasts 15 minutes, and the person's deletion takes it", async () => {
+    const token = await transferToken();
+    const ana = await sender();
+    const transferId = await openTransfer(token, ana.snapSub);
+    await transfersOf().approve({ transferId, userId: ana.userId, now: new Date() });
+    await pool.query(
+      "UPDATE oidc.model SET expires_at = now() - interval '1 second' WHERE kind = 'AppTransfer' AND id = $1",
+      [transferId],
+    );
+    expect(
+      await transferApi(token, `/${transferId}/assertion`, { fromSub: ana.snapSub }),
+    ).toMatchObject({ status: 404, body: { code: "transfer_not_found" } });
+
+    const ben = await sender();
+    const live = await openTransfer(token, ben.snapSub);
+    await pool.query("SELECT oidc.forget_subject($1, $2::jsonb)", [
+      ben.userId,
+      JSON.stringify(receiversFor("dev")),
+    ]);
+    expect(await rows("SELECT 1 FROM oidc.model WHERE id = $1", [live])).toEqual([]);
   });
 });

@@ -13,6 +13,7 @@ import { PartnerVouchersController } from "./partner-vouchers.controller";
 import { createVoucherClient } from "../../shared/voucher-client/create-voucher-client";
 import { VOUCHER_INTERNAL_CLIENT } from "../../shared/voucher-client/voucher-internal-client";
 import { PartnerAuthGuard } from "./partner-auth.guard";
+import { PartnerRateLimitGuard } from "./partner-rate-limit.guard";
 import { PARTNER_CREDENTIAL_REPOSITORY } from "./persistence/partner-credential.repository";
 import { DrizzlePartnerCredentialRepository } from "./persistence/drizzle-partner-credential.repository";
 import { PARTNER_RECEIPT_REPOSITORY } from "./persistence/partner-receipt.repository";
@@ -36,6 +37,7 @@ const PARTNERS_DB = Symbol("PARTNERS_DB");
   controllers: [PartnerActionsController, PartnerVouchersController],
   providers: [
     PartnerAuthGuard,
+    PartnerRateLimitGuard,
     {
       provide: PARTNERS_DB,
       useFactory: (config: AppConfig): AppDb => createAppDb(config.databaseUrl),

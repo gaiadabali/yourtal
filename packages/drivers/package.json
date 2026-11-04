@@ -34,7 +34,8 @@
     "./sim-outbox": "./src/sim-outbox.ts",
     "./email": "./src/boundaries/email.ts",
     "./push": "./src/boundaries/push.ts",
-    "./webhook": "./src/boundaries/webhook.ts"
+    "./webhook": "./src/boundaries/webhook.ts",
+    "./app-events": "./src/boundaries/app-events.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

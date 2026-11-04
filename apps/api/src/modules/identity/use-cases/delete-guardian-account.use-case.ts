@@ -1,3 +1,4 @@
+import { Logger } from "@nestjs/common";
 import { err, ok } from "neverthrow";
 import type { Result } from "neverthrow";
 import type pg from "pg";
@@ -27,6 +28,8 @@ import type { DeleteGuardianAccountError } from "../guardian-consent.errors";
  * escrowed for good and the grants' device and IP are cleared, the same as
  * self-deletion.
  */
+const logger = new Logger("DeleteGuardianAccount");
+
 export async function deleteGuardianAccount(
   pool: pg.Pool,
   consents: GuardianConsentRepository,
@@ -40,7 +43,17 @@ export async function deleteGuardianAccount(
   const row = await consents.findByTokenHash(tokenHash);
   if (row === null) return err({ type: "not_found" });
 
-  await executeDeletion(row.userId, deletionHandlers(pool, ledger, payments, receivers));
+  const report = await executeDeletion(
+    row.userId,
+    deletionHandlers(pool, ledger, payments, receivers),
+  );
+  // The guardian sees only "deleted", so an incomplete run is visible only here (docs/29 §10).
+  if (!report.complete) {
+    const open = report.results
+      .filter(({ outcome }) => outcome.status === "failed" || outcome.status === "unhandled")
+      .map(({ domain }) => domain);
+    logger.error(`complete: false for ${row.userId}; open domains: ${open.join(", ")}`);
+  }
 
   return ok({ deleted: true });
 }

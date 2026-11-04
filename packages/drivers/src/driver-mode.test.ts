@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { BOUNDARIES, BOUNDARY_NAMES } from "./boundary";
 import {
+  AppEventsLiveError,
   DriverConfigurationError,
   StagingDriverModeError,
   assertDriversConfigured,
@@ -187,10 +188,10 @@ describe("staging posture (2.3.b)", () => {
     }
     expect(thrown).toBeInstanceOf(StagingDriverModeError);
     const failure = thrown as StagingDriverModeError;
-    // Every boundary was live, so every boundary is named.
-    for (const boundary of BOUNDARY_NAMES) {
-      expect(failure.message).toContain(boundary);
-    }
+    // Every boundary was live, so every boundary but app_events (always allowed on staging) is named.
+    expect(failure.boundaries).toStrictEqual(
+      BOUNDARY_NAMES.filter((name) => name !== "app_events"),
+    );
     expect(failure.message).toContain("simulated");
   });
 
@@ -216,10 +217,57 @@ describe("staging posture (2.3.b)", () => {
     expect(failure.message).not.toContain("disbursement");
   });
 
-  it("dev (and any non-staging APP_ENV) is unaffected by a live driver", () => {
+  it("dev (and any non-staging APP_ENV) is unaffected by a live driver, app events aside", () => {
+    const allLiveButEvents = { ...allLive, APP_EVENTS_DRIVER: "simulated" };
     for (const appEnv of ["dev", "production", "", "test"]) {
-      expect(() => assertDriversConfiguredForBoot(allLive, appEnv)).not.toThrow();
+      expect(() => assertDriversConfiguredForBoot(allLiveButEvents, appEnv)).not.toThrow();
     }
+  });
+
+  const eventsLive: Environment = {
+    ...allSimulated,
+    APP_EVENTS_DRIVER: "live",
+    OIDC_JWKS_PATH: "/keys/jwks.json",
+    OIDC_ISSUER: "https://yourtal.gaiada.com/oidc",
+  };
+
+  it("staging boots with app events live, and still refuses every other live driver", () => {
+    expect(assertDriversConfiguredForBoot(eventsLive, "staging").app_events).toBe("live");
+    const others = {
+      ...allLive,
+      ...eventsLive,
+      ...Object.fromEntries(
+        BOUNDARY_NAMES.filter((name) => name !== "app_events").map((name) => [
+          BOUNDARIES[name].modeEnvVar,
+          "live",
+        ]),
+      ),
+    };
+    let thrown: unknown;
+    try {
+      assertDriversConfiguredForBoot(others, "staging");
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(StagingDriverModeError);
+    expect((thrown as StagingDriverModeError).boundaries).not.toContain("app_events");
+    expect((thrown as StagingDriverModeError).boundaries).toHaveLength(BOUNDARY_NAMES.length - 1);
+  });
+
+  it("refuses app events live anywhere but staging and production: dev's receivers are real apps", () => {
+    for (const appEnv of ["dev", "", "test"]) {
+      expect(() => assertDriversConfiguredForBoot(eventsLive, appEnv)).toThrow(AppEventsLiveError);
+    }
+    expect(assertDriversConfiguredForBoot(eventsLive, "production").app_events).toBe("live");
+  });
+
+  it("app events live needs the signing keys and the issuer", () => {
+    expect(() =>
+      assertDriversConfiguredForBoot(
+        { APP_EVENTS_DRIVER: "live", OIDC_JWKS_PATH: "/k" },
+        "staging",
+      ),
+    ).toThrow(/OIDC_ISSUER/);
   });
 
   it("staging's ordinary misconfiguration check still runs first", () => {

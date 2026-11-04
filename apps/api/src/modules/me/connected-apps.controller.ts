@@ -69,13 +69,17 @@ export class ConnectedAppsController {
     }
     const principal = await this.principals.resolve(request);
     const receiver = receiversFor(this.config.appEnv).find((one) => one.sector === sector);
-    // A repeat finds no live consent and writes nothing.
-    await this.pool.query("SELECT oidc.end_app_access($1, $2, $3, $4)", [
-      principal.id,
-      sector,
-      receiver?.clientId ?? null,
-      principal.attr.ageBand === "teen" ? "teen_removed" : "user_removed",
-    ]);
+    const end = async (reason: string): Promise<boolean> =>
+      (
+        await this.pool.query<{ ended: boolean }>(
+          "SELECT oidc.end_app_access($1, $2, $3, $4) AS ended",
+          [principal.id, sector, receiver?.clientId ?? null, reason],
+        )
+      ).rows[0]?.ended === true;
+    // A repeat finds no live consent and writes nothing. `teen_removed` ends only an invite's
+    // consent: anything else a teen holds (or a birthday mid-call) ends as an ordinary removal.
+    if (principal.attr.ageBand !== "teen" || !(await end("teen_removed")))
+      await end("user_removed");
     return { app: app.data, connected: false };
   }
 }

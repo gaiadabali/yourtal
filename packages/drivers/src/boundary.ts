@@ -39,6 +39,7 @@ export const BOUNDARY_NAMES = [
   "email",
   "push",
   "webhook",
+  "app_events",
 ] as const;
 
 export type BoundaryName = (typeof BOUNDARY_NAMES)[number];
@@ -175,6 +176,18 @@ export const BOUNDARIES: Record<BoundaryName, BoundaryDefinition> = {
       "No single vendor — generic delivery to a partner-registered URL, signed with a shared " +
       "secret rather than a named provider's own SDK.",
     liveTicket: "1.6",
+  },
+  app_events: {
+    name: "app_events",
+    purpose:
+      "Telling a sign-in app (SnapApp, FTR) that a YourTal account was deleted or its access ended " +
+      "(docs/29 §4.2): a Security Event Token signed with the OIDC key, posted to the app's receiver.",
+    modeEnvVar: "APP_EVENTS_DRIVER",
+    liveCredentialEnvVars: ["OIDC_JWKS_PATH", "OIDC_ISSUER"],
+    liveVendor:
+      "No vendor: our own sister apps' receivers, and only those in event-receivers.ts. Never live in dev " +
+      "or CI, whose receivers are real endpoints.",
+    liveTicket: "3.7",
   },
 };
 

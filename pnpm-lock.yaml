@@ -536,6 +536,9 @@ importers:
       '@yourtal/queue':
         specifier: workspace:*
         version: link:../../packages/queue
+      jose:
+        specifier: 6.2.12
+        version: 6.2.12
       neverthrow:
         specifier: 8.2.0
         version: 8.2.0

@@ -153,6 +153,15 @@ const EXERCISES: readonly Exercise[] = [
         payload: { voucherId: "v_1" },
       }),
   },
+  {
+    boundary: "app_events",
+    describe: "telling a sign-in app an account was deleted",
+    call: (fault) =>
+      driversWith("app_events", fault).appEvents.post({
+        endpoint: "https://app.example.test/events",
+        token: "a.b.c",
+      }),
+  },
 ];
 
 describe("every boundary is covered", () => {
@@ -303,6 +312,12 @@ function boundCall(
           region: "AU",
           event: "voucher.captured",
           payload: { voucherId: "v_1" },
+        });
+    case "app_events":
+      return () =>
+        drivers.appEvents.post({
+          endpoint: `https://app.example.test/${nextKey()}`,
+          token: "a.b.c",
         });
   }
 }

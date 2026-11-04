@@ -41,7 +41,8 @@ const envSchema = z.object({
   NGINX_ACCESS_LOG_PATH: z.string().default(""),
   // 13.1: the demo reset and daily demo activity. Both refuse to run unless
   // the owner URL and the demo password are set, and never in production.
-  APP_ENV: z.string().default("dev"),
+  // The API's enum: a typo must not reach receiversFor() as an empty list (3.7 Y4).
+  APP_ENV: z.enum(["dev", "staging", "production"]).default("dev"),
   DATABASE_OWNER_URL: z.url().optional(),
   STAGING_DEMO_PASSWORD: z.string().min(1).optional(),
   // 13.2.b (F95): the non-staff demo logins' own password; staff keep the one above.
@@ -49,12 +50,16 @@ const envSchema = z.object({
   SITE_URL: z.url().optional(),
   // Helios's api port (infra/PORTS.md); a local slot sets its own.
   DEMO_API_BASE_URL: z.url().default("http://127.0.0.1:26301"),
+  // 3.7 Y4: the app-event sender signs with the API's OIDC keys and issuer (same variables
+  // and defaults as env.schema.ts). APP_EVENTS_DRIVER=live requires both to be set.
+  OIDC_ISSUER: z.url().optional(),
+  OIDC_JWKS_PATH: z.string().min(1).default("/opt/yourtal/secrets/oidc/jwks.json"),
 });
 
 export interface WorkerConfig {
   readonly nodeEnv: "development" | "test" | "production";
-  /** `dev`, `staging` or `production`; production forces the identity check before earning (F126). */
-  readonly appEnv: string;
+  /** Production forces the identity check before earning (F126). */
+  readonly appEnv: "dev" | "staging" | "production";
   readonly databaseUrl: string;
   readonly ledger: {
     readonly baseUrl: string;
@@ -64,6 +69,8 @@ export interface WorkerConfig {
   readonly voucher: { readonly baseUrl: string; readonly serviceSecret: string };
   readonly webhookSecretEncryptionKey: string;
   readonly nginxAccessLogPath: string;
+  /** The OIDC issuer and signing keys, for the app-event sender. */
+  readonly oidc: { readonly issuer: string; readonly jwksPath: string };
   /** Present only where the demo world may be reset (never production). */
   readonly demo?: {
     readonly ownerDatabaseUrl: string;
@@ -89,6 +96,11 @@ export function loadWorkerConfig(source: NodeJS.ProcessEnv = process.env): Worke
     voucher: { baseUrl: env.VOUCHER_BASE_URL, serviceSecret: env.VOUCHER_SERVICE_SECRET },
     webhookSecretEncryptionKey: env.WEBHOOK_SECRET_ENCRYPTION_KEY,
     nginxAccessLogPath: env.NGINX_ACCESS_LOG_PATH,
+    oidc: {
+      // The API's default for staging and production (F109); dev never sends live.
+      issuer: env.OIDC_ISSUER ?? "https://yourtal.gaiada.com/oidc",
+      jwksPath: env.OIDC_JWKS_PATH,
+    },
     ...(env.APP_ENV !== "production" &&
     env.DATABASE_OWNER_URL !== undefined &&
     env.STAGING_DEMO_PASSWORD !== undefined

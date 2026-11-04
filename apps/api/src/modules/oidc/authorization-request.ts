@@ -1,6 +1,6 @@
 import { errors } from "oidc-provider";
-import type { KoaContextWithOIDC } from "oidc-provider";
-import { REQUIRED_SIGN_IN_SCOPES } from "./clients";
+import type { Client, KoaContextWithOIDC } from "oidc-provider";
+import { CLIENTS, REQUIRED_SIGN_IN_SCOPES, TRANSFER_ROUTES, clientById } from "./clients";
 
 const TEEN_INVITE_PARAM = /^[A-Za-z0-9_-]{1,128}$/;
 const TRANSFER_PARAM = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -63,16 +63,29 @@ export function validateAuthorizationRequest(
 
 /**
  * docs/30 §5: `transfer` names an app transfer for the send screen. It is a
- * uuid, and never rides with a teen invite or a sign-up.
+ * uuid, comes only from an app some transfer route starts from, and never
+ * rides with a teen invite, a sign-up or `prompt=none` (which could never show
+ * the screen it needs).
  */
-export function validateTransferParam(ctx: KoaContextWithOIDC, transfer: string | undefined): void {
+export function validateTransferParam(
+  ctx: KoaContextWithOIDC,
+  transfer: string | undefined,
+  client: Pick<Client, "clientId"> | undefined,
+): void {
   if (transfer === undefined) return;
   if (!TRANSFER_PARAM.test(transfer)) throw new errors.InvalidRequest("invalid transfer parameter");
+  const sector = client === undefined ? undefined : clientById(CLIENTS, client.clientId)?.sector;
+  if (!TRANSFER_ROUTES.some((route) => route.fromSector === sector)) {
+    throw new errors.InvalidRequest("this app cannot start a transfer");
+  }
   const params = ctx.oidc.params ?? {};
   const prompts = typeof params["prompt"] === "string" ? params["prompt"].split(" ") : [];
   if (params["teen_invite"] !== undefined || prompts.includes("create")) {
     throw new errors.InvalidRequest(
       "transfer cannot be combined with teen_invite or prompt=create",
     );
+  }
+  if (prompts.includes("none")) {
+    throw new errors.InvalidRequest("transfer needs the send screen, so not prompt=none");
   }
 }

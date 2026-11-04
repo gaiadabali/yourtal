@@ -19,6 +19,8 @@ export function details(overrides: Partial<InteractionDetails> = {}): Interactio
     refusal: null,
     inviteProblem: null,
     teenInvite: null,
+    send: null,
+    sendProblem: null,
     uiLocales: [],
     ...overrides,
   };

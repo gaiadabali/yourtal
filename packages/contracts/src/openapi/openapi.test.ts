@@ -586,6 +586,7 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   interactionScreenSchema: "oidc/interaction.ts's nested enum on InteractionDetails.screen.",
   interactionClientSchema: "oidc/interaction.ts's nested object InteractionDetails.client.",
   interactionSharingSchema: "oidc/interaction.ts's nested object InteractionDetails.sharing.",
+  interactionSendSchema: "oidc/interaction.ts's nested object InteractionDetails.send.",
   accessDeniedReasonSchema:
     "oidc/interaction.ts's error_description values on the redirect to the app, not an HTTP body.",
   teenInviteProblemSchema: "oidc/interaction.ts's nested enum on InteractionDetails.inviteProblem.",

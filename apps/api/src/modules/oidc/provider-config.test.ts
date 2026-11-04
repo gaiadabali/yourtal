@@ -260,6 +260,22 @@ describe("authorization requests", () => {
     }
   });
 
+  it("transfer comes only from an app a transfer route starts from, and never with prompt=none", async () => {
+    const id = "6f1c2a4e-8b7d-4e5f-9a0b-1c2d3e4f5a6b";
+    const ftr = {
+      client_id: "ftr-web",
+      redirect_uri: "https://freetaxreturns.com.au/api/auth/oauth2/callback/yourtal",
+    };
+    expect((await authorize(ftr)).headers.location ?? "").toContain("/connect/");
+    expect(errorOf((await authorize({ ...ftr, transfer: id })).headers.location)).toBe(
+      "invalid_request",
+    );
+    // Without transfer, prompt=none is still login_required; with it, the request itself is bad.
+    expect(errorOf((await authorize({ transfer: id, prompt: "none" })).headers.location)).toBe(
+      "invalid_request",
+    );
+  });
+
   it("the account scope is required", async () => {
     const response = await authorize({ scope: "openid email profile" });
     expect(errorOf(response.headers.location)).toBe("invalid_scope");

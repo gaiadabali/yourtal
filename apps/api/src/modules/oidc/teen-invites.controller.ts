@@ -112,15 +112,16 @@ export class TeenInvitesController {
     @Req() request: FastifyRequest,
   ): Promise<TeenInvite> {
     const client = verifiedClient(request, this.runtime);
-    // docs/26 §1.9: an app's events go to its clients that receive them.
-    const receivers = this.runtime.clients
-      .filter((one) => one.sector === client.sector && one.eventsEndpoint !== undefined)
-      .map((one) => one.clientId);
+    // docs/29 §5: one receiver per sector (`event-receivers.ts`); `clients` carries only this environment's.
+    const receiver =
+      this.runtime.clients.find(
+        (one) => one.sector === client.sector && one.eventsEndpoint !== undefined,
+      )?.clientId ?? null;
     const ended = await this.store().end({
       sector: client.sector,
       inviteId: inviteIdOf(raw),
       parentSub: body.parentSub,
-      receivers,
+      receiver,
       now: new Date(),
     });
     if (ended === null) throw notFound();

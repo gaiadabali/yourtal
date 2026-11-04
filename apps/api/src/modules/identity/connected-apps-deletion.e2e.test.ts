@@ -16,6 +16,7 @@ import { GUARDIAN_CONSENT_REPOSITORY } from "./persistence/guardian-consent.repo
 import type { GuardianConsentRepository } from "./persistence/guardian-consent.repository";
 import { USER_PROFILE_REPOSITORY } from "./persistence/user-profile.repository";
 import type { UserProfileRepository } from "./persistence/user-profile.repository";
+import { createPgOidcStore } from "../oidc/oidc-store";
 import { revokeGuardianConsent } from "./use-cases/revoke-guardian-consent.use-case";
 
 /**
@@ -289,5 +290,137 @@ describe("the guardian's withdrawal ends the teen's app access", () => {
       withdrawnRecords: 0,
       revoked: false,
     });
+  });
+});
+
+describe("3.10.g: a withdrawal racing a teen's acceptance leaves no live consent", () => {
+  let appPool: pg.Pool;
+  beforeAll(() => {
+    appPool = new pg.Pool({ connectionString: DATABASE_URL, max: 4 });
+  });
+  afterAll(async () => {
+    await appPool.end();
+  });
+
+  /** A teen with an approved guardian, a sub at SnapApp and a pending invite nobody has used. */
+  async function acceptable() {
+    const person = await teen();
+    await owner.query(
+      `UPDATE identity.guardian_consent SET approved_at = now(), guardian_confirmed_adult_at = now() WHERE user_id = $1`,
+      [person.userId],
+    );
+    await signedIn(person.userId);
+    const invite = randomUUID();
+    await owner.query(
+      `INSERT INTO oidc.teen_invite (id, sector, code_hash, inviter_user_id, region, expires_at)
+       VALUES ($1, $2, $3, $4, 'AU', now() + interval '7 days')`,
+      [invite, SNAP.sector, `hash-${invite}`, randomUUID()],
+    );
+    return { ...person, invite };
+  }
+
+  const accept = (userId: string, invite: string) =>
+    createPgOidcStore(appPool).grantAppConsent({
+      userId,
+      sector: SNAP.sector,
+      scopes: ["openid"],
+      policyVersionId: "pv-1",
+      jurisdiction: "AU",
+      now: new Date(),
+      invite: { id: invite, accept: true },
+    });
+
+  const withdraw = (token: string) =>
+    revokeGuardianConsent(
+      app.get<AppDb>(IDENTITY_DB, { strict: false }),
+      app.get<GuardianConsentRepository>(GUARDIAN_CONSENT_REPOSITORY, { strict: false }),
+      app.get<UserProfileRepository>(USER_PROFILE_REPOSITORY, { strict: false }),
+      app.get<LedgerInternalClient>(LEDGER_INTERNAL_CLIENT, { strict: false }),
+      token,
+      new Date(),
+      RECEIVERS,
+    );
+
+  /** Waits until `count` sessions are blocked on a lock whose statement matches `pattern`. */
+  async function blocked(pattern: string, count = 1): Promise<void> {
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      const { rows } = await owner.query<{ n: number }>(
+        `SELECT count(*)::int AS n FROM pg_stat_activity
+          WHERE wait_event_type = 'Lock' AND query ILIKE $1 AND pid <> pg_backend_pid()`,
+        [pattern],
+      );
+      if ((rows[0]?.n ?? 0) >= count) return;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    throw new Error(`nothing blocked on ${pattern}`);
+  }
+
+  const live = async (userId: string) =>
+    (
+      await owner.query(`SELECT 1 FROM oidc.app_consent WHERE user_id = $1 AND ended_at IS NULL`, [
+        userId,
+      ])
+    ).rowCount;
+
+  it("a withdrawal that commits first refuses the acceptance", async () => {
+    const person = await acceptable();
+    const guardian = await owner.connect();
+    try {
+      await guardian.query("BEGIN");
+      await guardian.query(
+        `UPDATE identity.guardian_consent SET approved_at = NULL, revoked_at = now() WHERE user_id = $1`,
+        [person.userId],
+      );
+      const accepting = accept(person.userId, person.invite);
+      await blocked("%FOR SHARE%");
+      await guardian.query("COMMIT");
+      expect(await accepting).toBe(false);
+    } finally {
+      await guardian.query("ROLLBACK");
+      guardian.release();
+    }
+    expect(await live(person.userId)).toBe(0);
+    expect(
+      (await owner.query(`SELECT accepted_at FROM oidc.teen_invite WHERE id = $1`, [person.invite]))
+        .rows[0].accepted_at,
+    ).toBeNull();
+  });
+
+  it("an acceptance that holds the guardian row first is ended by the withdrawal that waits for it", async () => {
+    const person = await acceptable();
+    // Stall the acceptance after it has locked the guardian row, on the invite.
+    const stall = await owner.connect();
+    let accepting: Promise<boolean>;
+    let withdrawing: ReturnType<typeof withdraw>;
+    try {
+      await stall.query("BEGIN");
+      await stall.query(`SELECT 1 FROM oidc.teen_invite WHERE id = $1 FOR UPDATE`, [person.invite]);
+      accepting = accept(person.userId, person.invite);
+      await blocked("%teen_invite%FOR UPDATE%");
+      withdrawing = withdraw(person.token);
+      await blocked("%update%guardian_consent%");
+      await stall.query("COMMIT");
+    } finally {
+      await stall.query("ROLLBACK");
+      stall.release();
+    }
+    expect(await accepting).toBe(true);
+    expect((await withdrawing).isOk()).toBe(true);
+
+    expect(await live(person.userId)).toBe(0);
+    const consent = await owner.query<{ end_reason: string }>(
+      `SELECT end_reason FROM oidc.app_consent WHERE user_id = $1`,
+      [person.userId],
+    );
+    expect(consent.rows).toEqual([{ end_reason: "guardian_withdrew" }]);
+    expect(
+      (
+        await owner.query(
+          `SELECT 1 FROM oidc.event_outbox WHERE client_id = $1 AND payload::text LIKE '%guardian_withdrew%' AND sub IN
+             (SELECT sub FROM oidc.subject WHERE user_id = $2)`,
+          [SNAP.clientId, person.userId],
+        )
+      ).rowCount,
+    ).toBe(1);
   });
 });

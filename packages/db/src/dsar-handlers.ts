@@ -1,4 +1,5 @@
 import type pg from "pg";
+import type { EventReceiver } from "@yourtal/contracts/oidc/event-receivers";
 import type { DomainHandler, HandlerRegistry } from "@yourtal/consent/dsar-orchestrator";
 import { meHandlers } from "./dsar-me-handlers";
 import { type ProcessorCustomerDeleter, paymentHandlers } from "./dsar-payment-handlers";
@@ -265,6 +266,36 @@ export function forgetPartnerLinks(pool: pg.Pool): DomainHandler {
 }
 
 /**
+ * `oidc.forget_subject` refuses an empty receiver list, so that a list lost to a bug
+ * cannot silently drop every app link. An environment with no receiver on purpose
+ * (production, until its first sign-in client) passes this instead: it matches no
+ * sector, so the function writes no event and still deletes the person's `oidc.*`
+ * rows and ends the access of any teen they invited.
+ */
+const NO_RECEIVER = [{ sector: "-", clientId: "-" }];
+
+/**
+ * The `connected_apps` domain (docs/29 §5): `oidc.forget_subject` queues one
+ * `account-deleted` event per app the person signed in to, in the same statement that
+ * erases their `oidc.*` rows. `erase`: the events carry only the app's own `sub`.
+ * The worker delivers them (Y4), and its sweep calls this handler again for any
+ * person whose deletion failed here.
+ */
+export function forgetConnectedApps(
+  pool: pg.Pool,
+  receivers: readonly EventReceiver[],
+): DomainHandler {
+  const list = JSON.stringify(receivers.length === 0 ? NO_RECEIVER : receivers);
+  return async (subjectId: string): Promise<number> => {
+    const { rows } = await pool.query<{ forgotten: number }>(
+      "SELECT oidc.forget_subject($1, $2::jsonb) AS forgotten",
+      [subjectId, list],
+    );
+    return rows[0]?.forgotten ?? 0;
+  };
+}
+
+/**
  * The handlers this database can supply today.
  *
  * Deliberately NOT a complete registry. Passing it to `executeDeletion` still
@@ -278,7 +309,11 @@ export function forgetPartnerLinks(pool: pg.Pool): DomainHandler {
  */
 export function postgresHandlers(
   pool: pg.Pool,
-  options: { readonly deleteAtProcessor?: ProcessorCustomerDeleter } = {},
+  options: {
+    readonly deleteAtProcessor?: ProcessorCustomerDeleter;
+    /** The environment's receivers; `[]` is production's. Without it the domain stays unhandled. */
+    readonly receivers?: readonly EventReceiver[];
+  } = {},
 ): HandlerRegistry {
   return {
     vouchers: anonymiseVouchers(pool),
@@ -286,6 +321,10 @@ export function postgresHandlers(
     // and .session — see eraseIdentity's own doc comment.
     identity: eraseIdentity(pool),
     partner_links: forgetPartnerLinks(pool),
+    // 3.7 Y2: a deletion tells the apps. Unhandled until the caller names its receivers.
+    ...(options.receivers === undefined
+      ? {}
+      : { connected_apps: forgetConnectedApps(pool, options.receivers) }),
     // 1.20: me.*, account-security tokens, org memberships and watch sessions.
     ...meHandlers(pool),
     // 5.1.d, 5.1.h: a bidder's saved card, here and at the processor. Without a deleter the

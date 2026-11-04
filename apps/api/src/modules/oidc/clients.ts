@@ -1,3 +1,4 @@
+import { EVENT_RECEIVERS } from "@yourtal/contracts/oidc/event-receivers";
 import type { AppConfig } from "../../config/app-config";
 
 /**
@@ -27,7 +28,7 @@ interface ClientBase {
   /** One pairwise `sub` per person per sector; an app's clients share it. */
   readonly sector: string;
   readonly allowedScopes: readonly string[];
-  /** Where signed events go (docs/26 §2), for clients that receive them. */
+  /** Where signed events go (docs/26 §2): set from `event-receivers.ts`, never here. */
   readonly eventsEndpoint?: string;
   /** Registered only in these environments. Empty: not registered yet. */
   readonly environments: readonly AppConfig["appEnv"][];
@@ -107,7 +108,6 @@ const DEFINITIONS: readonly Definition<YourTalClient>[] = [
     kind: "machine",
     auth: "private_key_jwt",
     allowedScopes: ["teen_invites"],
-    eventsEndpoint: "https://snap-apps-api.gaiada.com/v1/yourtal/events",
     environments: ["dev", "staging"],
   },
   {
@@ -122,13 +122,17 @@ const DEFINITIONS: readonly Definition<YourTalClient>[] = [
     privacyUrl: "https://freetaxreturns.com.au/privacy",
     termsUrl: "https://freetaxreturns.com.au/terms",
     returnHost: "freetaxreturns.com.au",
-    eventsEndpoint: "https://freetaxreturns.com.au/api/yourtal/events",
     environments: ["dev", "staging"],
   },
 ];
 
 function withOperator(definition: Definition<YourTalClient>, operators: Operators): YourTalClient {
-  return { ...definition, operator: operators[definition.app] };
+  const receiver = EVENT_RECEIVERS.find((one) => one.clientId === definition.clientId);
+  return {
+    ...definition,
+    operator: operators[definition.app],
+    ...(receiver === undefined ? {} : { eventsEndpoint: receiver.endpoint }),
+  };
 }
 
 /** Every client in every environment, with the default operator names: for tests and review. */

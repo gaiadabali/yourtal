@@ -84,7 +84,7 @@ const DOMAINS: readonly DataDomain[] = [
   {
     id: "identity",
     holds: "Email address, name, language, jurisdiction, declared area (a postcode)",
-    service: "YourtalID (Zitadel)",
+    service: "identity",
     owner: "ops",
     onDeletion: "erase",
   },
@@ -97,6 +97,14 @@ const DOMAINS: readonly DataDomain[] = [
     onDeletion: "anonymise",
     basis:
       "A receipt earns once (F101), so its record must outlive the account or the same receipt could be paid again to someone else; the subject is detached from it. Links are revoked rather than deleted so a partner calling with one is told it was revoked, keyed only by the opaque user id as the ledger's rows are (F88). Link codes are deleted.",
+  },
+  {
+    id: "connected_apps",
+    holds:
+      "Which apps (SnapApp, Free Tax Returns) the account signs in to with YourTal: its per-app subject ids, consents, teen invites, sign-in log and provider sessions. Each app is sent a signed event and erases what it holds",
+    service: "oidc",
+    owner: "ops",
+    onDeletion: "erase",
   },
   {
     id: "me_data",

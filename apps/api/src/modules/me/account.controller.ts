@@ -6,6 +6,9 @@ import type { FastifyRequest } from "fastify";
 import type { DeletionReport } from "@yourtal/consent/dsar-orchestrator";
 import { executeDeletion } from "@yourtal/consent/dsar-orchestrator";
 import { deletionPlan } from "@yourtal/consent/dsar";
+import { receiversFor } from "@yourtal/contracts/oidc/event-receivers";
+import { APP_CONFIG } from "../../config/app-config.module";
+import type { AppConfig } from "../../config/app-config";
 import { deletionHandlers } from "../../shared/dsar/deletion-handlers";
 import { PAYMENT_PROVIDERS } from "../../shared/drivers/payment-providers.module";
 import type { RegionPaymentProviders } from "../../shared/drivers/payment-providers.module";
@@ -76,6 +79,7 @@ export class AccountController {
     @Inject(VOUCHER_INTERNAL_CLIENT) private readonly vouchers: VoucherInternalClient,
     @Inject(DATA_EXPORT_READER) private readonly exportReader: DataExportReader,
     @Inject(PAYMENT_PROVIDERS) private readonly payments: RegionPaymentProviders,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   /** Every ledger entry for the caller, newest first, page by page. */
@@ -123,7 +127,13 @@ export class AccountController {
   @Delete()
   async deleteAccount(@Req() request: FastifyRequest): Promise<DeletionReport> {
     const userId = (await this.principals.resolve(request)).id;
-    return executeDeletion(userId, deletionHandlers(this.pool, this.ledger, this.payments));
+    const handlers = deletionHandlers(
+      this.pool,
+      this.ledger,
+      this.payments,
+      receiversFor(this.config.appEnv),
+    );
+    return executeDeletion(userId, handlers);
   }
 
   @Authorize({ kind: "me", action: "export_data" })

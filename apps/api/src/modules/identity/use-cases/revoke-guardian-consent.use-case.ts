@@ -26,8 +26,8 @@ import type { RevokeGuardianConsentError } from "../guardian-consent.errors";
  * reverse order — DB first — would risk a row marked revoked whose balance
  * was never actually protected if the process died right after.
  *
- * The same transaction ends the teen's app access (docs/29 §5): for each receiver,
- * `oidc.end_app_access(…, 'guardian_withdrew')` ends the live invite consent and
+ * The same transaction ends the teen's app access (docs/29 §5): for each live app
+ * consent, `oidc.end_app_access(…, 'guardian_withdrew')` ends the live invite consent and
  * queues `access-ended`, so the revoke and the events commit or roll back together.
  * It does nothing for a person with no such consent, and today no teen has one.
  *
@@ -82,9 +82,18 @@ export async function revokeGuardianConsent(
   await db.transaction(async (tx) => {
     const transition = await consents.revoke(tokenHash, now, tx);
     if (transition.transitioned) {
-      for (const receiver of receivers) {
+      // Every live consent, with its sector's receiver: a sector with none still ends
+      // its access (a NULL client queues no event), as `oidc.forget_subject` does.
+      const live = await tx.execute<{ sector: string; client_id: string | null }>(
+        sql`SELECT c.sector, r->>'clientId' AS client_id
+              FROM oidc.app_consent c
+              LEFT JOIN jsonb_array_elements(${JSON.stringify(receivers)}::jsonb) r
+                ON r->>'sector' = c.sector
+             WHERE c.user_id = ${transition.userId} AND c.ended_at IS NULL`,
+      );
+      for (const consent of live.rows) {
         await tx.execute(
-          sql`SELECT oidc.end_app_access(${transition.userId}, ${receiver.sector}, ${receiver.clientId}, 'guardian_withdrew')`,
+          sql`SELECT oidc.end_app_access(${transition.userId}, ${consent.sector}, ${consent.client_id}, 'guardian_withdrew')`,
         );
       }
       await profiles.setParentConsentStatus(transition.userId, "revoked", tx);

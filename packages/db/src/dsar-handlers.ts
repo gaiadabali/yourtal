@@ -270,7 +270,9 @@ export function forgetPartnerLinks(pool: pg.Pool): DomainHandler {
  * cannot silently drop every app link. An environment with no receiver on purpose
  * (production, until its first sign-in client) passes this instead: it matches no
  * sector, so the function writes no event and still deletes the person's `oidc.*`
- * rows and ends the access of any teen they invited.
+ * rows and ends the access of any teen they invited. It runs only for a person with
+ * no `oidc.subject` row, so a list that is empty by mistake (a mistyped environment)
+ * fails the domain instead of dropping an app link nobody was told about.
  */
 const NO_RECEIVER = [{ sector: "-", clientId: "-" }];
 
@@ -285,13 +287,18 @@ export function forgetConnectedApps(
   pool: pg.Pool,
   receivers: readonly EventReceiver[],
 ): DomainHandler {
-  const list = JSON.stringify(receivers.length === 0 ? NO_RECEIVER : receivers);
+  const none = receivers.length === 0;
+  const list = JSON.stringify(none ? NO_RECEIVER : receivers);
+  const guard = none ? "WHERE NOT EXISTS (SELECT 1 FROM oidc.subject WHERE user_id = $1)" : "";
   return async (subjectId: string): Promise<number> => {
     const { rows } = await pool.query<{ forgotten: number }>(
-      "SELECT oidc.forget_subject($1, $2::jsonb) AS forgotten",
+      `SELECT oidc.forget_subject($1, $2::jsonb) AS forgotten ${guard}`,
       [subjectId, list],
     );
-    return rows[0]?.forgotten ?? 0;
+    if (rows[0] === undefined) {
+      throw new Error("connected_apps: the person has app links but no receiver is configured");
+    }
+    return rows[0].forgotten;
   };
 }
 

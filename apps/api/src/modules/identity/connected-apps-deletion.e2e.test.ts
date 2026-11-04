@@ -245,6 +245,26 @@ describe("the guardian's withdrawal ends the teen's app access", () => {
     expect(await outbox([person.sub])).toHaveLength(1);
   });
 
+  it("ends a live consent in a sector with no receiver too, queueing no event for it", async () => {
+    const person = await invitedTeen();
+    await owner.query(`UPDATE oidc.app_consent SET sector = 'no-receiver' WHERE user_id = $1`, [
+      person.userId,
+    ]);
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/guardian/${person.token}/revoke`,
+      remoteAddress: randomTestIp(),
+      headers: { "idempotency-key": randomUUID() },
+    });
+    expect(response.statusCode, response.body).toBe(201);
+    expect(await outbox([person.sub])).toEqual([]);
+    const consent = await owner.query<{ end_reason: string | null }>(
+      `SELECT end_reason FROM oidc.app_consent WHERE user_id = $1`,
+      [person.userId],
+    );
+    expect(consent.rows[0]?.end_reason).toBe("guardian_withdrew");
+  });
+
   it("a forced rollback writes neither the revoke nor the events", async () => {
     const person = await invitedTeen();
     const profiles = app.get<UserProfileRepository>(USER_PROFILE_REPOSITORY, { strict: false });

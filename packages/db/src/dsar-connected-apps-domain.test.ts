@@ -92,8 +92,28 @@ describe("the connected_apps domain", () => {
     expect((await leftOver(person)).oidc).toBe(0);
   });
 
-  it("succeeds in production, where there is no receiver: rows erased, nothing queued", async () => {
+  it("succeeds in production, where there is no receiver and no app link: rows erased, nothing queued", async () => {
     expect(receiversFor("production")).toEqual([]);
+    const person = randomUUID();
+    await owner.query(
+      `INSERT INTO oidc.sign_in_log (user_id, client_id, result) VALUES ($1, 'x', 'refused')`,
+      [person],
+    );
+    await owner.query(
+      `INSERT INTO oidc.model (kind, id, payload) VALUES ('Session', $1, $2::jsonb)`,
+      [`m-${randomUUID()}`, JSON.stringify({ accountId: person })],
+    );
+    const report = await executeDeletion(
+      person,
+      { connected_apps: postgresHandlers(app, { receivers: [] })["connected_apps"]! },
+      DATA_DOMAINS.filter((domain) => domain.id === "connected_apps"),
+    );
+    expect(report.complete).toBe(true);
+    expect(report.results[0]?.outcome).toEqual({ status: "erased", records: 2 });
+    expect((await leftOver(person)).oidc).toBe(0);
+  });
+
+  it("fails closed on an empty receiver list when the person has an app link: domain failed, rows kept", async () => {
     const person = await signedInPerson();
     const subs = await subsOf(person);
     const report = await executeDeletion(
@@ -101,10 +121,11 @@ describe("the connected_apps domain", () => {
       { connected_apps: postgresHandlers(app, { receivers: [] })["connected_apps"]! },
       DATA_DOMAINS.filter((domain) => domain.id === "connected_apps"),
     );
-    expect(report.complete).toBe(true);
-    expect(report.results[0]?.outcome).toEqual({ status: "erased", records: 3 });
+    expect(report.complete).toBe(false);
+    expect(report.results[0]?.outcome.status).toBe("failed");
+    expect(await subsOf(person)).toEqual(subs);
+    expect((await leftOver(person)).oidc).toBe(3);
     expect(await eventCount(subs)).toBe(0);
-    expect((await leftOver(person)).oidc).toBe(0);
   });
 
   it("is a no-op for a person who never signed in to an app", async () => {

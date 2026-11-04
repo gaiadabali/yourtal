@@ -114,6 +114,8 @@ function fakeProfiles(profile: StoredUserProfile | null): UserProfileRepository 
 
 const FAKE_DB: AppDb = {
   transaction: async <T>(cb: (tx: AppDb) => Promise<T>): Promise<T> => cb(FAKE_DB),
+  // The withdrawal's list of live app consents: none.
+  execute: () => Promise.resolve({ rows: [] }),
 } as unknown as AppDb;
 
 function zeroBalance(): LedgerBalance {

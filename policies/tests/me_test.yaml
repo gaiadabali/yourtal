@@ -31,6 +31,8 @@ tests:
           create_link_code,
           view_linked_apps,
           unlink_app,
+          view_connected_apps,
+          remove_connected_app,
           view_settings,
           update_settings,
         ]
@@ -57,6 +59,8 @@ tests:
             create_link_code: EFFECT_ALLOW,
             view_linked_apps: EFFECT_ALLOW,
             unlink_app: EFFECT_ALLOW,
+            view_connected_apps: EFFECT_ALLOW,
+            remove_connected_app: EFFECT_ALLOW,
             view_settings: EFFECT_ALLOW,
             update_settings: EFFECT_ALLOW,
           }
@@ -82,6 +86,8 @@ tests:
             create_link_code: EFFECT_ALLOW,
             view_linked_apps: EFFECT_ALLOW,
             unlink_app: EFFECT_ALLOW,
+            view_connected_apps: EFFECT_ALLOW,
+            remove_connected_app: EFFECT_ALLOW,
             view_settings: EFFECT_ALLOW,
             update_settings: EFFECT_ALLOW,
           }
@@ -107,6 +113,8 @@ tests:
             create_link_code: EFFECT_ALLOW,
             view_linked_apps: EFFECT_ALLOW,
             unlink_app: EFFECT_ALLOW,
+            view_connected_apps: EFFECT_ALLOW,
+            remove_connected_app: EFFECT_ALLOW,
             view_settings: EFFECT_ALLOW,
             update_settings: EFFECT_ALLOW,
           }
@@ -116,7 +124,16 @@ tests:
       principals: [anon]
       resources: [me_self]
       actions:
-        [view_consents, update_consent, delete_account, export_data, view_linked_apps, unlink_app]
+        [
+          view_consents,
+          update_consent,
+          delete_account,
+          export_data,
+          view_linked_apps,
+          unlink_app,
+          view_connected_apps,
+          remove_connected_app,
+        ]
     expected:
       - principal: anon
         resource: me_self
@@ -128,6 +145,8 @@ tests:
             export_data: EFFECT_DENY,
             view_linked_apps: EFFECT_DENY,
             unlink_app: EFFECT_DENY,
+            view_connected_apps: EFFECT_DENY,
+            remove_connected_app: EFFECT_DENY,
           }
 
   - name: a store device has no me surface either

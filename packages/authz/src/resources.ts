@@ -327,6 +327,8 @@ export const RESOURCE_ACTIONS = {
     "create_link_code",
     "view_linked_apps",
     "unlink_app",
+    "view_connected_apps",
+    "remove_connected_app",
     "view_settings",
     "update_settings",
   ],

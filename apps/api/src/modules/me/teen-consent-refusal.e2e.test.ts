@@ -8,10 +8,10 @@ import { sessionFor } from "../../shared/testing/session-for";
 
 /**
  * TASKS.md 12.4.b (#2): a teen may not self-consent to
- * `marketing_communications`/`market_research_panel`/
- * `sister_app_profile_sharing` -- refused with `teen_consent_not_allowed`
+ * `marketing_communications`/`market_research_panel` -- refused with `teen_consent_not_allowed`
  * (403) on `POST /api/me/consents` and `POST /api/me/linked-apps/code`,
- * while an adult's own identical request succeeds. Own `app` instance,
+ * while an adult's own identical request succeeds. `sister_app_profile_sharing` is
+ * refused for everyone with 400 (3.7 Y3). Own `app` instance,
  * same "isolated container" reasoning `teen-interests.e2e.test.ts`
  * documents.
  */
@@ -66,21 +66,36 @@ async function registerTeen(): Promise<{ cookie: string }> {
 }
 
 describe("POST /api/me/consents, a teen account", () => {
-  it.each([
-    "marketing_communications",
-    "market_research_panel",
-    "sister_app_profile_sharing",
-  ] as const)("refuses a teen granting %s with 403 teen_consent_not_allowed", async (purpose) => {
-    const { cookie } = await registerTeen();
+  it.each(["marketing_communications", "market_research_panel"] as const)(
+    "refuses a teen granting %s with 403 teen_consent_not_allowed",
+    async (purpose) => {
+      const { cookie } = await registerTeen();
 
-    const response = await app.inject({
-      method: "POST",
-      url: "/api/me/consents",
-      headers: { cookie },
-      payload: { purpose, state: "granted", source: "settings_toggle" },
-    });
-    expect(response.statusCode).toBe(403);
-    expect(response.json<{ code: string }>().code).toBe("teen_consent_not_allowed");
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/me/consents",
+        headers: { cookie },
+        payload: { purpose, state: "granted", source: "settings_toggle" },
+      });
+      expect(response.statusCode).toBe(403);
+      expect(response.json<{ code: string }>().code).toBe("teen_consent_not_allowed");
+    },
+  );
+
+  it("answers 400 for sister_app_profile_sharing, to a teen or an adult, granted or withdrawn", async () => {
+    const adult = await sessionFor(app);
+    for (const { cookie } of [await registerTeen(), adult]) {
+      for (const state of ["granted", "withdrawn"] as const) {
+        const response = await app.inject({
+          method: "POST",
+          url: "/api/me/consents",
+          headers: { cookie },
+          payload: { purpose: "sister_app_profile_sharing", state, source: "settings_toggle" },
+        });
+        expect(response.statusCode).toBe(400);
+        expect(response.json<{ code: string }>().code).toBe("app_consent_not_here");
+      }
+    }
   });
 
   it("an adult granting the same purpose succeeds", async () => {

@@ -490,6 +490,10 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   linkedAppsResponseSchema:
     "MeModule -- TASKS.md 14.3.c, same convention as autoplaySettingSchema.",
   unlinkAppResponseSchema: "MeModule -- TASKS.md 14.3.c, same convention as autoplaySettingSchema.",
+  connectedAppIdSchema: "MeModule -- group 3.7 Y3, same convention as linkedAppSchema.",
+  connectedAppSchema: "MeModule -- group 3.7 Y3, same convention as linkedAppSchema.",
+  connectedAppsResponseSchema: "MeModule -- group 3.7 Y3, same convention as linkedAppSchema.",
+  removeConnectedAppResponseSchema: "MeModule -- group 3.7 Y3, same convention as linkedAppSchema.",
 
   // --- areas (F116, group 1.6.f/g) ---
   areaStatesResponseSchema:

@@ -952,6 +952,16 @@ describe("teens (docs/26 §1.5 check 4, §3.3)", () => {
         },
       },
     ]);
+    // 3.7 Y3: the end goes through `end_app_access`, so its evidence carries the reason as its source.
+    expect(
+      await rows(
+        `SELECT source, audience FROM identity.consent_record WHERE user_id = $1 AND state = 'withdrawn'`,
+        [teen.userId],
+      ),
+    ).toEqual([{ source: "parent_ended", audience: "snapapp-staging" }]);
+    expect(
+      await rows("SELECT end_reason FROM oidc.app_consent WHERE user_id = $1", [teen.userId]),
+    ).toEqual([{ end_reason: "parent_ended" }]);
     expect((await teenScreen(teen)).shown).toMatchObject({
       screen: "refused",
       inviteProblem: "no_invite",
@@ -1168,5 +1178,156 @@ describe("teens: races and changes after acceptance", () => {
     ).toEqual([{ granted_via: "consent_screen", ended_at: null }]);
     // And they still sign in.
     expect((await teenScreen(teen)).shown.screen).toBe("continue");
+  });
+});
+
+/** Me → Linked apps, called with the person's own session. */
+async function meApps(method: "GET" | "DELETE", who: Person, app = "") {
+  const response = await inject(
+    method,
+    `/api/me/connected-apps${app === "" ? "" : `/${app}`}`,
+    who,
+  );
+  return { status: response.statusCode, body: response.json<Record<string, unknown>>() };
+}
+
+function inject(method: "GET" | "DELETE", url: string, who: Person) {
+  return app.inject({ method, url, remoteAddress: testIp(), headers: bearer(who.token) });
+}
+
+const outboxOf = (sub: string | undefined) =>
+  rows("SELECT client_id, payload FROM oidc.event_outbox WHERE sub = $1", [sub]);
+
+describe("removing an app from Me -> Linked apps (3.7 Y3)", () => {
+  it("lists live consents only, with the app and company from the registry and no sub", async () => {
+    const adult = await person();
+    expect(await meApps("GET", adult)).toEqual({ status: 200, body: { connectedApps: [] } });
+    const { tokens } = await signIn(await webApp(), WEB_REDIRECT, adult, "consent");
+    const ftr = await signIn(await ftrApp(), FTR_REDIRECT, adult, "consent");
+
+    const listed = await meApps("GET", adult);
+    expect(listed.status).toBe(200);
+    const apps = z
+      .array(z.looseObject({ app: z.string(), name: z.string(), operator: z.string() }))
+      .parse(listed.body["connectedApps"]);
+    // Oldest grant first.
+    expect(apps.map(({ app, name, operator }) => ({ app, name, operator }))).toEqual([
+      { app: "snapapp", name: "SnapApp", operator: "SnapApp" },
+      { app: "ftr", name: "Free Tax Returns", operator: "Free Tax Returns" },
+    ]);
+    const text = JSON.stringify(listed.body);
+    for (const sub of [tokens.claims()?.sub, ftr.tokens.claims()?.sub]) {
+      expect(text).not.toContain(sub ?? "no sub");
+    }
+
+    expect((await meApps("DELETE", adult, "snapapp")).status).toBe(200);
+    expect(
+      z
+        .array(z.looseObject({ app: z.string() }))
+        .parse((await meApps("GET", adult)).body["connectedApps"]),
+    ).toMatchObject([{ app: "ftr" }]);
+  });
+
+  it("an adult's removal records user_removed once, keeps their app account, and the next sign-in asks again", async () => {
+    const adult = await person();
+    const sub = (await signIn(await webApp(), WEB_REDIRECT, adult, "consent")).tokens.claims()?.sub;
+
+    const removed = await meApps("DELETE", adult, "snapapp");
+    expect(removed).toEqual({ status: 200, body: { app: "snapapp", connected: false } });
+    expect(
+      await rows("SELECT end_reason FROM oidc.app_consent WHERE user_id = $1", [adult.userId]),
+    ).toEqual([{ end_reason: "user_removed" }]);
+    expect(
+      await rows(
+        `SELECT source, audience FROM identity.consent_record WHERE user_id = $1 AND state = 'withdrawn'`,
+        [adult.userId],
+      ),
+    ).toEqual([{ source: "user_removed", audience: "snapapp-staging" }]);
+    expect(await outboxOf(sub)).toEqual([
+      {
+        client_id: "snapapp-staging-server",
+        payload: {
+          "urn:yourtal:event:access-ended": { reason: "user_removed", erase_data: false },
+        },
+      },
+    ]);
+
+    // A repeat changes nothing.
+    expect((await meApps("DELETE", adult, "snapapp")).status).toBe(200);
+    expect(await outboxOf(sub)).toHaveLength(1);
+    expect(
+      await rows(
+        "SELECT count(*)::int AS n FROM identity.consent_record WHERE user_id = $1 AND state = 'withdrawn'",
+        [adult.userId],
+      ),
+    ).toEqual([{ n: 1 }]);
+
+    // The same sub, and the consent screen again.
+    const again = await signIn(await webApp(), WEB_REDIRECT, adult, "consent");
+    expect(again.tokens.claims()?.sub).toBe(sub);
+  });
+
+  it("a teen's removal records teen_removed, ends the invite, and needs a new invite", async () => {
+    const parent = await snapParent();
+    const teen = await teenOf(parent.email);
+    const token = await serverToken();
+    const { code, inviteId } = await invite(token, parent.sub);
+    const sub = (await (await teenJoins(teen, code)).redeem()).claims()?.sub;
+
+    expect((await meApps("GET", teen)).body["connectedApps"]).toHaveLength(1);
+    expect((await meApps("DELETE", teen, "snapapp")).status).toBe(200);
+    expect(
+      await rows("SELECT end_reason FROM oidc.app_consent WHERE user_id = $1", [teen.userId]),
+    ).toEqual([{ end_reason: "teen_removed" }]);
+    expect(await rows("SELECT end_reason FROM oidc.teen_invite WHERE id = $1", [inviteId])).toEqual(
+      [{ end_reason: "teen_removed" }],
+    );
+    expect(await outboxOf(sub)).toEqual([
+      {
+        client_id: "snapapp-staging-server",
+        payload: {
+          "urn:yourtal:event:access-ended": { reason: "teen_removed", erase_data: true },
+        },
+      },
+    ]);
+    expect((await meApps("GET", teen)).body["connectedApps"]).toEqual([]);
+
+    expect((await meApps("DELETE", teen, "snapapp")).status).toBe(200);
+    expect(await outboxOf(sub)).toHaveLength(1);
+    expect((await teenScreen(teen)).shown).toMatchObject({
+      screen: "refused",
+      inviteProblem: "no_invite",
+    });
+  });
+
+  it("answers 404 for an app YourTal does not know, and 401 without a session", async () => {
+    const adult = await person();
+    expect((await meApps("DELETE", adult, "not-an-app")).status).toBe(404);
+    const anonymous = await app.inject({ method: "GET", url: "/api/me/connected-apps" });
+    expect(anonymous.statusCode).toBe(401);
+  });
+
+  it("the data export lists the person's app consents, live and ended, and never a sub", async () => {
+    const adult = await person();
+    const snap = (await signIn(await webApp(), WEB_REDIRECT, adult, "consent")).tokens.claims()
+      ?.sub;
+    const ftr = (await signIn(await ftrApp(), FTR_REDIRECT, adult, "consent")).tokens.claims()?.sub;
+    await meApps("DELETE", adult, "ftr");
+
+    const exported = await inject("GET", "/api/me/data-export", adult);
+    expect(exported.statusCode, exported.body).toBe(200);
+    const body = exported.json<{ connectedApps: Record<string, unknown>[] }>();
+    expect(body.connectedApps.map((row) => [row["app"], row["ended"] === null]).sort()).toEqual([
+      ["ftr", false],
+      ["snapapp", true],
+    ]);
+    expect(Object.keys(body.connectedApps[0] ?? {}).sort()).toEqual([
+      "app",
+      "ended",
+      "granted",
+      "scopes",
+    ]);
+    expect(exported.body).not.toContain(snap ?? "no sub");
+    expect(exported.body).not.toContain(ftr ?? "no sub");
   });
 });

@@ -69,6 +69,16 @@ export class ConsentController {
       throw new BadRequestException("A consent update needs purpose, state and source.");
     }
 
+    // 3.7 Y3: an app's consent is a row in `oidc.app_consent` made by the sign-in consent screen
+    // and ended by `DELETE /api/me/connected-apps/:app`; a record written here would mislead.
+    if (parsed.data.purpose === "sister_app_profile_sharing") {
+      throw new BadRequestException({
+        code: "app_consent_not_here",
+        message:
+          "Apps you sign in to are agreed on their consent screen and removed under Linked apps.",
+      });
+    }
+
     const principal = await this.principals.resolve(request);
 
     // 12.4.b (#2): a teen may not self-consent to these purposes -- checked

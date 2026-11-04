@@ -23,6 +23,13 @@ export interface ExportAccountRow {
   readonly createdAt: Date;
 }
 
+export interface ExportConnectedAppRow {
+  readonly sector: string;
+  readonly scopes: readonly string[];
+  readonly grantedAt: Date;
+  readonly endedAt: Date | null;
+}
+
 export interface ExportWatchSessionRow {
   readonly sessionId: string;
   readonly campaignId: string;
@@ -85,6 +92,8 @@ export interface ExportPersonalData {
  * row and watch sessions, nothing keyed by anyone else.
  */
 export interface DataExportReader {
+  /** Every app consent, live or ended, oldest first. By sector: the `sub` is never read. */
+  connectedApps(userId: string): Promise<ExportConnectedAppRow[]>;
   account(userId: string): Promise<ExportAccountRow | null>;
   watchSessions(userId: string, limit: number): Promise<ExportWatchSessionRow[]>;
   personal(userId: string): Promise<ExportPersonalData>;
@@ -97,6 +106,24 @@ export const DATA_EXPORT_READER = Symbol("DATA_EXPORT_READER");
 
 export class DrizzleDataExportReader implements DataExportReader {
   constructor(private readonly db: AppDb) {}
+
+  async connectedApps(userId: string): Promise<ExportConnectedAppRow[]> {
+    const { rows } = await this.db.execute<{
+      sector: string;
+      scopes: string[];
+      granted_at: Date;
+      ended_at: Date | null;
+    }>(
+      sql`SELECT sector, scopes, granted_at, ended_at FROM oidc.app_consent
+           WHERE user_id = ${userId} ORDER BY granted_at`,
+    );
+    return rows.map((row) => ({
+      sector: row.sector,
+      scopes: row.scopes,
+      grantedAt: new Date(row.granted_at),
+      endedAt: row.ended_at === null ? null : new Date(row.ended_at),
+    }));
+  }
 
   async account(userId: string): Promise<ExportAccountRow | null> {
     const [profile] = await this.db

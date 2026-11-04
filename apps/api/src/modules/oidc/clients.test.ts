@@ -1,5 +1,10 @@
 import { generateKeyPairSync } from "node:crypto";
 import path from "node:path";
+import {
+  EVENT_RECEIVERS,
+  receiversFor,
+  sectorsWithoutReceiver,
+} from "@yourtal/contracts/oidc/event-receivers";
 import { describe, expect, it } from "vitest";
 import { loadClients } from "./client-keys";
 import { CLIENTS, clientsFor, isSignInClient } from "./clients";
@@ -100,6 +105,45 @@ describe("the client registry (docs/26 §1.9)", () => {
         client.kind === "machine" ? ["teen_invites"] : ["openid", "email", "profile", "account"],
       );
     }
+  });
+});
+
+describe("the event receivers (docs/29 §5)", () => {
+  it("has a receiver for every sector a client is registered in, in every environment", () => {
+    expect(sectorsWithoutReceiver(CLIENTS)).toEqual([]);
+  });
+
+  it("fails for a sector that has a client but no receiver, or none in that environment", () => {
+    expect(sectorsWithoutReceiver(CLIENTS, EVENT_RECEIVERS.slice(1))).toEqual([
+      "snapapp-staging@dev",
+      "snapapp-staging@staging",
+    ]);
+    const ftr = EVENT_RECEIVERS.filter((receiver) => receiver.sector === "ftr");
+    expect(sectorsWithoutReceiver(CLIENTS, [{ ...ftr[0]!, environments: ["dev"] }])).toContain(
+      "ftr@staging",
+    );
+  });
+
+  it("names a receiving client that exists, in the receiver's sector and environments", () => {
+    for (const receiver of EVENT_RECEIVERS) {
+      const client = CLIENTS.find((one) => one.clientId === receiver.clientId);
+      expect(client?.sector).toBe(receiver.sector);
+      expect(client?.eventsEndpoint).toBe(receiver.endpoint);
+      for (const environment of receiver.environments) {
+        expect(client?.environments).toContain(environment);
+      }
+    }
+    // One receiver per sector: oidc.forget_subject refuses a list with two.
+    const sectors = EVENT_RECEIVERS.map((receiver) => receiver.sector);
+    expect(new Set(sectors).size).toBe(sectors.length);
+  });
+
+  it("is empty in production, where no client is registered yet", () => {
+    expect(receiversFor("production")).toEqual([]);
+    expect(receiversFor("staging").map((receiver) => receiver.sector)).toEqual([
+      "snapapp-staging",
+      "ftr",
+    ]);
   });
 });
 

@@ -2,6 +2,7 @@ import { err, ok } from "neverthrow";
 import type { Result } from "neverthrow";
 import type pg from "pg";
 import type { DeleteGuardianAccountResult } from "@yourtal/contracts/identity/guardian";
+import type { EventReceiver } from "@yourtal/contracts/oidc/event-receivers";
 import { executeDeletion } from "@yourtal/consent/dsar-orchestrator";
 import { deletionHandlers } from "../../../shared/dsar/deletion-handlers";
 import type { RegionPaymentProviders } from "../../../shared/drivers/payment-providers.module";
@@ -32,13 +33,14 @@ export async function deleteGuardianAccount(
   ledger: LedgerInternalClient,
   payments: RegionPaymentProviders,
   rawToken: string,
+  receivers: readonly EventReceiver[],
 ): Promise<Result<DeleteGuardianAccountResult, DeleteGuardianAccountError>> {
   const tokenHash = hashOpaqueToken(rawToken);
 
   const row = await consents.findByTokenHash(tokenHash);
   if (row === null) return err({ type: "not_found" });
 
-  await executeDeletion(row.userId, deletionHandlers(pool, ledger, payments));
+  await executeDeletion(row.userId, deletionHandlers(pool, ledger, payments, receivers));
 
   return ok({ deleted: true });
 }

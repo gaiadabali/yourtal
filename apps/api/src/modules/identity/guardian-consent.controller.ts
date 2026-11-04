@@ -1,4 +1,7 @@
 import { Body, Controller, Get, Inject, Param, Post } from "@nestjs/common";
+import { receiversFor } from "@yourtal/contracts/oidc/event-receivers";
+import { APP_CONFIG } from "../../config/app-config.module";
+import type { AppConfig } from "../../config/app-config";
 import { PublicRoute } from "../../shared/authz/authorize.decorator";
 import {
   GUARDIAN_CONSENT_APPROVE_RATE_LIMIT,
@@ -56,6 +59,7 @@ export class GuardianConsentController {
     @Inject(USER_PROFILE_REPOSITORY) private readonly profiles: UserProfileRepository,
     @Inject(LEDGER_INTERNAL_CLIENT) private readonly ledger: LedgerInternalClient,
     @Inject(PAYMENT_PROVIDERS) private readonly payments: RegionPaymentProviders,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   @RateLimit(GUARDIAN_CONSENT_VIEW_RATE_LIMIT)
@@ -97,6 +101,7 @@ export class GuardianConsentController {
       this.ledger,
       token,
       new Date(),
+      receiversFor(this.config.appEnv),
     );
     if (result.isErr()) throw mapGuardianConsentErrorToHttpException(result.error);
     return result.value;
@@ -127,6 +132,7 @@ export class GuardianConsentController {
       this.ledger,
       this.payments,
       token,
+      receiversFor(this.config.appEnv),
     );
     if (result.isErr()) throw mapGuardianConsentErrorToHttpException(result.error);
     return result.value;

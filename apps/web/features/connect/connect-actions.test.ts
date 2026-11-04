@@ -71,6 +71,8 @@ const DETAILS = {
   refusal: null,
   inviteProblem: null,
   teenInvite: null,
+  send: null,
+  sendProblem: null,
   uiLocales: ["id-ID"],
 };
 
@@ -106,8 +108,8 @@ describe("connect Server Actions and loader", () => {
       expect(calls[0]?.headers.get("authorization")).toBe("Bearer session-token");
     });
 
-    it("reads an older API's details, without the teen fields, as null", async () => {
-      const { inviteProblem: _p, teenInvite: _t, ...older } = DETAILS;
+    it("reads an older API's details, without the teen or send fields, as null", async () => {
+      const { inviteProblem: _p, teenInvite: _t, send: _s, sendProblem: _sp, ...older } = DETAILS;
       mockApi(() => json(200, older));
       const { loadInteraction } = await load(new Map([["yt_session", "session-token"]]));
 

@@ -148,6 +148,7 @@ After the person proves who they are, and before any code is issued, YourTal che
 | 3   | The app accepts the person's region: SnapApp takes AU and ID, FTR takes AU only (§6 Q3)                                       | `region_not_supported`                     |
 | 4   | Adults pass. Teens: FTR and every other app refuse them; SnapApp needs an active invite and guardian consent `granted` (§3.3) | `teen_not_allowed`, `teen_invite_required` |
 | 5   | Consent covers the requested scopes; if not, the consent screen                                                               | `user_cancelled`                           |
+| 6   | With `transfer` (docs/30 §5): the send can go ahead; the send screen shows instead of Continue                                | `send_refused`                             |
 
 Each app repeats checks 3 and 4 against the claims, as defence in depth, and refuses if they disagree.
 
@@ -515,6 +516,8 @@ When the teen joins, the parent sees: "{teen} joined SnapApp. You can see their 
 - Not yet approved: "Your parent or guardian hasn't approved your YourTal account yet. We've emailed them. Once they approve it, they can invite you to SnapApp."
 - Invited by someone else: "This invite wasn't made by the parent or guardian who approved your YourTal account. Ask them to send you one."
 - Expired or used: "This invite has expired or has already been used. Ask your parent for a new one."
+
+**A send from SnapApp that cannot go ahead** (`send_refused`, the reason in `sendProblem`): docs/30 §5's copy.
 
 **An Indonesian account at Free Tax Returns:**
 

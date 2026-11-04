@@ -1739,3 +1739,198 @@ describe("app transfers: SnapApp to FTR (docs/30 §5, 4.8 Y1)", () => {
     expect(await rows("SELECT 1 FROM oidc.model WHERE id = $1", [live])).toEqual([]);
   });
 });
+
+/** Whether the person's Send is on the transfer row. */
+async function approvedAt(transferId: string): Promise<unknown> {
+  const [row] = await rows(
+    "SELECT payload->'approvedAt' AS at FROM oidc.model WHERE kind = 'AppTransfer' AND id = $1",
+    [transferId],
+  );
+  return (row as { at: unknown } | undefined)?.at ?? null;
+}
+
+/** SnapApp's website starting a sign-in that carries the transfer, and the screen it shows. */
+async function sendScreen(who: Person, transferId: string, extra: Record<string, string> = {}) {
+  const started = await startSignIn(await webApp(), WEB_REDIRECT, {
+    transfer: transferId,
+    ...extra,
+  });
+  return { started, shown: await details(await webServerCall(base, started, who.token, "")) };
+}
+
+describe("the send screen (docs/30 §5, 4.8 Y2)", () => {
+  it("Send approves the transfer and a code follows, for SnapApp's own sub; other taps change nothing", async () => {
+    const token = await transferToken();
+    const ana = await sender();
+    const transferId = await openTransfer(token, ana.snapSub);
+    const { started, shown } = await sendScreen(ana, transferId);
+    expect(shown).toMatchObject({
+      screen: "send",
+      client: { clientId: "snapapp-staging-web" },
+      account: { name: "Ana", email: ana.email },
+      refusal: null,
+      sendProblem: null,
+      send: {
+        financialYear: "2025-26",
+        lineCount: 7,
+        to: {
+          clientId: "ftr-web",
+          name: "Free Tax Returns",
+          externalOperator: true,
+          privacyUrl: "https://freetaxreturns.com.au/privacy",
+        },
+      },
+    });
+
+    // Continue or consent on the send screen approves nothing.
+    for (const screen of ["continue", "consent"]) {
+      const tapped = await webServerCall(base, started, ana.token, "/continue", { screen });
+      expect(tapped.status).toBe(409);
+      expect(await errorBody(tapped)).toMatchObject({ code: "screen_changed" });
+    }
+    expect(await approvedAt(transferId)).toBeNull();
+
+    const sent = await webServerCall(base, started, ana.token, "/continue", { screen: "send" });
+    expect(sent.status, await sent.clone().text()).toBe(200);
+    expect(await approvedAt(transferId)).toEqual(expect.any(Number));
+    const callback = await followToApp(started, await redirectOf(sent));
+    const tokens = await client.authorizationCodeGrant(await webApp(), callback, {
+      pkceCodeVerifier: started.verifier,
+      expectedState: started.state,
+      expectedNonce: started.nonce,
+    });
+    expect(tokens.claims()?.sub).toBe(ana.snapSub);
+    expect(
+      await rows(
+        "SELECT result FROM oidc.sign_in_log WHERE user_id = $1 AND client_id = 'snapapp-staging-web' ORDER BY id",
+        [ana.userId],
+      ),
+    ).toEqual([{ result: "signed_in" }, { result: "send_approved" }, { result: "signed_in" }]);
+    expect(
+      (await transferApi(token, `/${transferId}/assertion`, { fromSub: ana.snapSub })).status,
+    ).toBe(200);
+  });
+
+  it("a send tap on any other screen is screen_changed", async () => {
+    const ana = await sender(false);
+    const started = await startSignIn(await webApp(), WEB_REDIRECT);
+    expect((await details(await webServerCall(base, started, ana.token, ""))).screen).toBe(
+      "continue",
+    );
+    const tapped = await webServerCall(base, started, ana.token, "/continue", { screen: "send" });
+    expect(tapped.status).toBe(409);
+  });
+
+  it("without a covering consent, the consent screen shows and nothing is approved", async () => {
+    const token = await transferToken();
+    const ana = await sender();
+    const transferId = await openTransfer(token, ana.snapSub);
+    const { started, shown } = await sendScreen(ana, transferId, { prompt: "consent" });
+    expect(shown).toMatchObject({ screen: "consent", send: null });
+    const tapped = await webServerCall(base, started, ana.token, "/continue", {
+      screen: "consent",
+    });
+    expect(tapped.status).toBe(200);
+    await followToApp(started, await redirectOf(tapped));
+    expect(await approvedAt(transferId)).toBeNull();
+    expect(
+      await transferApi(token, `/${transferId}/assertion`, { fromSub: ana.snapSub }),
+    ).toMatchObject({ status: 409, body: { code: "not_approved" } });
+  });
+
+  it("Cancel goes back to SnapApp with user_cancelled, and nothing is approved", async () => {
+    const token = await transferToken();
+    const ana = await sender();
+    const transferId = await openTransfer(token, ana.snapSub);
+    const { started, shown } = await sendScreen(ana, transferId);
+    expect(shown.screen).toBe("send");
+    const cancelled = await webServerCall(base, started, ana.token, "/cancel", {});
+    const back = await followToApp(started, await redirectOf(cancelled));
+    expect(back.searchParams.get("error")).toBe("access_denied");
+    expect(back.searchParams.get("error_description")).toBe("user_cancelled");
+    expect(await approvedAt(transferId)).toBeNull();
+  });
+
+  const problems: readonly [
+    string,
+    (token: string) => Promise<{ who: Person; transferId: string }>,
+  ][] = [
+    [
+      "not_connected",
+      async (token) => {
+        const ben = await sender(false);
+        return { who: ben, transferId: await openTransfer(token, ben.snapSub) };
+      },
+    ],
+    [
+      "wrong_account",
+      async (token) => {
+        const ana = await sender();
+        const ben = await sender();
+        return { who: ben, transferId: await openTransfer(token, ana.snapSub) };
+      },
+    ],
+    [
+      "expired",
+      async (token) => {
+        const ana = await sender();
+        const transferId = await openTransfer(token, ana.snapSub);
+        await pool.query(
+          "UPDATE oidc.model SET expires_at = now() - interval '1 second' WHERE kind = 'AppTransfer' AND id = $1",
+          [transferId],
+        );
+        return { who: ana, transferId };
+      },
+    ],
+    [
+      "not_allowed",
+      async (token) => {
+        // SnapApp takes Indonesia; FTR, and so the route, does not.
+        const budi = await person({ region: "ID" });
+        const { tokens } = await signIn(await webApp(), WEB_REDIRECT, budi, "consent");
+        return { who: budi, transferId: await openTransfer(token, tokens.claims()?.sub ?? "") };
+      },
+    ],
+  ];
+  it.each(problems)(
+    "%s: refused with send_refused, Send cannot force it, and SnapApp hears only send_refused",
+    async (problem, arrange) => {
+      const token = await transferToken();
+      const { who, transferId } = await arrange(token);
+      const { started, shown } = await sendScreen(who, transferId);
+      expect(shown).toMatchObject({
+        screen: "refused",
+        refusal: "send_refused",
+        sendProblem: problem,
+        inviteProblem: null,
+        send: null,
+      });
+      const forced = await webServerCall(base, started, who.token, "/continue", {
+        screen: "send",
+      });
+      expect(forced.status).toBe(403);
+      expect(await errorBody(forced)).toMatchObject({
+        code: "sign_in_refused",
+        refusal: "send_refused",
+      });
+      expect(await approvedAt(transferId)).toBeNull();
+      const back = await followToApp(
+        started,
+        await redirectOf(await webServerCall(base, started, who.token, "/cancel", {})),
+      );
+      expect(back.searchParams.get("error_description")).toBe("send_refused");
+    },
+  );
+
+  it("FTR's own sign-in cannot carry a transfer", async () => {
+    const token = await transferToken();
+    const ana = await sender();
+    const transferId = await openTransfer(token, ana.snapSub);
+    // No route starts from FTR, so its request is refused before any screen.
+    const config = await ftrApp();
+    await expect(startSignIn(config, FTR_REDIRECT, { transfer: transferId })).rejects.toThrow(
+      /expected the \/connect page/,
+    );
+    expect(await approvedAt(transferId)).toBeNull();
+  });
+});

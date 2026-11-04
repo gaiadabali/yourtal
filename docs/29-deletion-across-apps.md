@@ -83,7 +83,7 @@ Logs carry the `jti`, the client and the event type, never the token. The job al
 
 Each app verifies with jose against YourTal's JWKS, found through discovery: `typ` `secevent+jwt`, `RS256` only, `iss` the configured issuer, `aud` its own client id, `iat` at most 5 minutes ahead and at most 30 days old, exactly one event, and `sub_id.iss` equal to the issuer. On an unknown `kid` it refetches the JWKS once, then answers `400 invalid_key`. It answers within 10 seconds. Other `400`s carry RFC 8935's `err` (`invalid_request`, `invalid_issuer`, `invalid_audience`, `authentication_failed`).
 
-Idempotency: SnapApp keys on the `jti` (its job id) and FTR on the `sub`; sessions end only if opened before `iat` (D3). After `account-deleted` the `sub` goes into `yourtal_erased_subjects`: every later event for it is a no-op, and its sign-in is refused for good (docs/26 §2.2: "never recreate this `sub`"). An unknown `sub` is recorded and answered 202, and so is an unknown event type. The endpoint works whenever the issuer and client id are set, with sign-in switched off too: turning sign-in off must not stop deletions.
+Idempotency: SnapApp keys on the `jti` (its job id) and FTR on the `sub`; sessions end only if opened before `iat` (D3). After `account-deleted` the `sub` goes into `yourtal_erased_subjects` (SnapApp: by the worker job after it re-verifies the SET, §6 S2; FTR: at once in the route): every later event for it is a no-op, and its sign-in is refused for good (docs/26 §2.2: "never recreate this `sub`"). An unknown `sub` is recorded and answered 202, and so is an unknown event type. The endpoint works whenever the issuer and client id are set, with sign-in switched off too: turning sign-in off must not stop deletions.
 
 ## 5. YourTal design
 

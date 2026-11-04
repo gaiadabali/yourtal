@@ -43,6 +43,7 @@ export function MeDeleteAccountSection() {
       <ul className="flex flex-col gap-2 text-body-sm text-fg-muted">
         <li>{t("bulletPoints")}</li>
         <li>{t("bulletVouchers")}</li>
+        <li>{t("bulletConnectedApps")}</li>
         <li className="font-semibold text-fg">{t("bulletIrreversible")}</li>
       </ul>
       <Dialog>

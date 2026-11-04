@@ -11,6 +11,7 @@ import {
   listFollows,
   listInterests,
   listLinkedApps,
+  listConnectedApps,
 } from "@/features/me/me-data";
 import { earnedToday, getWalletBalance } from "@/features/wallet/wallet-data";
 import { LogoutButton } from "@/features/me/logout-button";
@@ -28,6 +29,7 @@ import { MeSecuritySection } from "@/features/me/me-security-section";
 import { MeAuthenticatorSection, MePasskeysSection } from "@/features/me/me-sign-in-methods-lazy";
 import { MeNotificationsSection } from "@/features/me/me-notifications-section";
 import { MeLinkedAppsSection } from "@/features/me/me-linked-apps-section";
+import { MeConnectedAppsSection } from "@/features/me/me-connected-apps-section";
 import { MeDataExportSection } from "@/features/me/me-data-export-section";
 import { MeDeleteAccountSection } from "@/features/me/me-delete-account-section";
 import { MeTeenCapSection } from "@/features/me/me-teen-cap-section";
@@ -57,6 +59,7 @@ export default async function MePage() {
     notificationPreferences,
     autoplay,
     linkedApps,
+    connectedApps,
     signInMethods,
   ] = await Promise.all([
     getMeProfile(),
@@ -66,6 +69,7 @@ export default async function MePage() {
     getNotificationPreferences(),
     getAutoplaySetting(),
     listLinkedApps(),
+    listConnectedApps(),
     getSignInMethods(),
   ]);
 
@@ -174,6 +178,11 @@ export default async function MePage() {
           />
         )}
 
+        {connectedApps.ok ? (
+          <MeConnectedAppsSection initialApps={connectedApps.data.connectedApps} isTeen={isTeen} />
+        ) : (
+          <MeSectionError title={t("connectedApps.heading")} error={connectedApps.error} />
+        )}
         {linkedApps.ok ? (
           <MeLinkedAppsSection initialLinkedApps={linkedApps.data.linkedApps} isTeen={isTeen} />
         ) : (

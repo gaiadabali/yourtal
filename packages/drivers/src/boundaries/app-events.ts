@@ -9,15 +9,23 @@ import type { DriverMode } from "../driver-mode";
  * The caller signs; this only carries the token, and maps the app's answer onto the shared
  * failure vocabulary so the sender can pick the outbox state:
  * - 202 -> ok (delivered)
- * - 400 with any `err` but `invalid_key` -> `declined` (the sender stops: one side has a bug)
- * - 400 `invalid_key`, 429, 5xx, a timeout, a network error, any other status -> `server_error`
- *   or `timeout` (the sender retries; `invalid_key` means the app holds an old JWKS)
+ * - 400 with an RFC 8935 refusal (`REFUSALS`) -> `declined` (the sender stops: one side has a bug)
+ * - any other 400 (`invalid_key`: the app holds an old JWKS; or no code: a proxy's page), 429,
+ *   5xx, a timeout, a network error, any other status -> `server_error` or `timeout` (retried)
  *
  * `detail` carries the status and the app's `err` code, never the token.
  */
 
 export const SECEVENT_CONTENT_TYPE = "application/secevent+jwt";
 export const APP_EVENT_TIMEOUT_MS = 10_000;
+/** docs/26 §2.3: the answers that mean the token itself is wrong, so a retry cannot help. */
+const REFUSALS = [
+  "invalid_request",
+  "invalid_issuer",
+  "invalid_audience",
+  "authentication_failed",
+  "access_denied",
+];
 
 export interface AppEventPost {
   readonly endpoint: string;
@@ -101,9 +109,9 @@ export function createLiveAppEvents(options: LiveAppEventsOptions = {}): AppEven
       if (response.status === 400) {
         const code = await errCode(response);
         return err(
-          code === "invalid_key"
-            ? failure("server_error", "400 invalid_key")
-            : failure("decline", `400 ${code}`),
+          REFUSALS.includes(code)
+            ? failure("decline", `400 ${code}`)
+            : failure("server_error", `400 ${code}`),
         );
       }
       await response.body?.cancel();

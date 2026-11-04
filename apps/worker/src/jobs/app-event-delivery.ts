@@ -6,6 +6,7 @@ import type { EventReceiver } from "@yourtal/contracts/oidc/event-receivers";
 import { createAppEventsDriver } from "@yourtal/drivers/app-events";
 import type { AppEventsDriver } from "@yourtal/drivers/app-events";
 import { describeProblem, resolveDriverMode } from "@yourtal/drivers/driver-mode";
+import type { DriverMode } from "@yourtal/drivers/driver-mode";
 import { createPool } from "../pool";
 import { defineJob } from "../job";
 
@@ -154,17 +155,39 @@ export async function runAppEventDelivery(db: Pool, deps: DeliveryDeps): Promise
   return attempted;
 }
 
+/**
+ * Only dev drains the outbox through the simulator. Staging and production without the live
+ * driver leave every row queued (nothing claimed) until L1 turns it on; live outside them throws.
+ */
+export function deliveryPlan(
+  appEnv: "dev" | "staging" | "production",
+  mode: DriverMode,
+): "live" | "simulate" | "hold" {
+  if (mode === "live") {
+    if (appEnv === "dev") throw new Error("app-event: APP_EVENTS_DRIVER=live is refused in dev");
+    return "live";
+  }
+  return appEnv === "dev" ? "simulate" : "hold";
+}
+
 let pool: Pool | undefined;
 
 export const job = defineJob({
   queue: "oidc.app_event_delivery",
   schedule: "* * * * *",
   async handle(_job, { config }) {
-    pool ??= createPool(config.databaseUrl);
     const mode = resolveDriverMode("app_events", process.env);
     // Never a silent fallback to the simulator (driver-mode.ts): a bad setting stops the job.
     if (mode.isErr()) throw new Error(describeProblem(mode.error));
-    const live = mode.value === "live";
+    const plan = deliveryPlan(config.appEnv, mode.value);
+    if (plan === "hold") {
+      console.error(
+        `[app-event] simulated on ${config.appEnv}: events stay queued until it is live`,
+      );
+      return;
+    }
+    const live = plan === "live";
+    pool ??= createPool(config.databaseUrl);
     await runAppEventDelivery(pool, {
       driver: createAppEventsDriver(mode.value),
       // Read every run, so a key rotation needs no worker restart. Simulated sends nothing.

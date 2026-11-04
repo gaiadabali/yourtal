@@ -24,6 +24,8 @@ export async function sweepOrphanSubjects(
     `SELECT DISTINCT s.user_id FROM oidc.subject s
       WHERE s.created_at < now() - interval '10 minutes'
         AND NOT EXISTS (SELECT 1 FROM identity.user_profile p WHERE p.user_id = s.user_id)
+        -- Under a region setting the other region's profiles look gone: find nobody then.
+        AND nullif(current_setting('yourtal.region', true), '') IS NULL
       LIMIT $1`,
     [BATCH],
   );

@@ -18,7 +18,15 @@ import type { JSONWebKeySet } from "jose";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { EventReceiver } from "@yourtal/contracts/oidc/event-receivers";
 import { createLiveAppEvents, createSimulatedAppEvents } from "@yourtal/drivers/app-events";
-import { loadSigner, minutesToNextAttempt, runAppEventDelivery } from "./app-event-delivery";
+import { loadWorkerConfig } from "../config";
+import type { JobContext } from "../job";
+import {
+  deliveryPlan,
+  job,
+  loadSigner,
+  minutesToNextAttempt,
+  runAppEventDelivery,
+} from "./app-event-delivery";
 import type { DeliveryDeps, Signer } from "./app-event-delivery";
 import { purgeDeliveredEvents, sweepOrphanSubjects } from "./app-event-sweep";
 
@@ -221,6 +229,8 @@ describe("app-event-delivery (3.7 Y4)", () => {
     ["500", 500, ""],
     ["503", 503, ""],
     ["another 2xx", 200, ""],
+    ["400 with no RFC 8935 code (a proxy's page)", 400, "<html>Bad Request</html>"],
+    ["400 with an unknown code", 400, '{"err":"something_else"}'],
   ])("retries after 1 minute on %s", async (_name, status, body) => {
     answer = () => ({ status, body });
     const jti = await row();
@@ -247,7 +257,7 @@ describe("app-event-delivery (3.7 Y4)", () => {
 
   it.each([
     ["invalid_audience", '{"err":"invalid_audience"}'],
-    ["a 400 with no err", "not json"],
+    ["access_denied", '{"err":"access_denied"}'],
   ])("fails at once on a 400 with %s, and logs app_event.refused", async (_name, body) => {
     answer = () => ({ status: 400, body });
     const jti = await row();
@@ -353,6 +363,23 @@ describe("app-event-delivery (3.7 Y4)", () => {
     expect(received).toHaveLength(0);
   });
 
+  it("simulates only in dev, holds rows elsewhere, and refuses live in dev", () => {
+    expect(deliveryPlan("dev", "simulated")).toBe("simulate");
+    expect(deliveryPlan("staging", "simulated")).toBe("hold");
+    expect(deliveryPlan("production", "simulated")).toBe("hold");
+    expect(deliveryPlan("staging", "live")).toBe("live");
+    expect(deliveryPlan("production", "live")).toBe("live");
+    expect(() => deliveryPlan("dev", "live")).toThrow(/refused in dev/);
+  });
+
+  it("staging with the simulated driver leaves rows unclaimed and undelivered", async () => {
+    const jti = await row();
+    await pool.query(`UPDATE oidc.event_outbox SET next_attempt_at = now() WHERE jti = $1`, [jti]);
+    const config = loadWorkerConfig({ DATABASE_URL, APP_ENV: "staging" });
+    await job.handle({ id: "t", name: job.queue, data: {} } as never, { config } as JobContext);
+    expect(await state(jti)).toMatchObject({ attempts: 0, delivered_at: null, failed_at: null });
+  });
+
   it("simulated: no call, delivered", async () => {
     const jti = await row();
     await runAppEventDelivery(pool, deps({ driver: createSimulatedAppEvents() }));
@@ -395,6 +422,17 @@ describe("app-event-sweep (3.7 Y4)", () => {
       [sector, fresh],
     );
 
+    const live = randomUUID();
+    await pool.query(
+      `INSERT INTO identity.user_profile (user_id, region, display_name, date_of_birth, timezone)
+       VALUES ($1, 'AU', 'Still Here', '1990-01-01', 'Australia/Sydney')`,
+      [live],
+    );
+    await pool.query(
+      `INSERT INTO oidc.subject (sector, user_id, sub, created_at) VALUES ($1, $2, 'live-sub', now() - interval '1 hour')`,
+      [sector, live],
+    );
+
     // Production has no receivers: the handler refuses, and the subject row stays.
     const closed = await sweepOrphanSubjects(pool, [], (message) => logs.push(message));
     expect(closed.failed).toBeGreaterThanOrEqual(1);
@@ -402,14 +440,17 @@ describe("app-event-sweep (3.7 Y4)", () => {
 
     expect((await sweepOrphanSubjects(pool, receivers())).forgotten).toBeGreaterThanOrEqual(1);
     const left = await pool.query(`SELECT user_id FROM oidc.subject WHERE sector = $1`, [sector]);
-    expect(left.rows.map((r: { user_id: string }) => r.user_id)).toStrictEqual([fresh]); // under 10 minutes old
+    // Left alone: a subject under 10 minutes old, and an old one whose person still exists.
+    expect(left.rows.map((r: { user_id: string }) => r.user_id).sort()).toStrictEqual(
+      [fresh, live].sort(),
+    );
 
     await pool.query(`UPDATE oidc.event_outbox SET next_attempt_at = $2 WHERE client_id = $1`, [
       client,
       clock,
     ]);
     await runAppEventDelivery(pool, deps());
-    expect(received).toHaveLength(1);
+    expect(received).toHaveLength(1); // nothing for live-sub
     expect(received[0]?.payload["sub_id"]).toMatchObject({ sub: "orphan-sub" });
     expect(received[0]?.payload["events"]).toStrictEqual({ [DELETED]: {} });
   });

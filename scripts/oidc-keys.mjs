@@ -15,8 +15,13 @@
 // The first key in jwks.json signs and the rest are only published; the first
 // cookie key signs and the rest only verify. Keep an old key published at least
 // 72 hours after promote: SnapApp re-verifies stored app events with the key that
-// signed them (docs/29 §4.2). Emergency rotation: remove-old
-// after promote on the same day (apps re-fetch the JWKS on an unknown kid).
+// signed them (docs/29 §4.2).
+// Emergency rotation (a leaked key): promote, restart the API; remove-old, restart
+// the API. Then on SnapApp, delete the yourtal_event jobs that failed re-verification
+// with invalid_key AND whose jti is in YourTal's oidc.event_outbox (only those are
+// genuine), and resend those jtis from YourTal (docs/29 §4.2). FTR acts inline and
+// needs nothing. Never make SnapApp trust a stored event whose key is gone: that check
+// is what stops events forged with the leaked key.
 import { generateKeyPairSync, randomBytes } from "node:crypto";
 import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";

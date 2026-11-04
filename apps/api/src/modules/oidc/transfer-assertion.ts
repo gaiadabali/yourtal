@@ -40,14 +40,17 @@ export function transferSigner(issuer: string, signingKey: JWK): TransferSigner 
   if (signingKey.kty !== "RSA" || typeof kid !== "string") {
     throw new Error("oidc: the signing key is not an RSA key with a kid");
   }
-  const key = importJWK(
-    { ...signingKey, alg: "RS256" } as Parameters<typeof importJWK>[0],
-    "RS256",
-  );
+  // Imported on first use, so a bad key fails that call rather than as an unhandled rejection at boot.
+  let key: ReturnType<typeof importJWK> | undefined;
   return async (claims, destinationSecret) => {
     const signed = await new SignJWT({ iss: issuer, ...claims })
       .setProtectedHeader({ alg: "RS256", typ: TRANSFER_JWT_TYPE, kid })
-      .sign(await key);
+      .sign(
+        await (key ??= importJWK(
+          { ...signingKey, alg: "RS256" } as Parameters<typeof importJWK>[0],
+          "RS256",
+        )),
+      );
     return new CompactEncrypt(new TextEncoder().encode(signed))
       .setProtectedHeader({ alg: "dir", enc: "A256GCM", cty: "JWT" })
       .encrypt(destinationKey(destinationSecret));

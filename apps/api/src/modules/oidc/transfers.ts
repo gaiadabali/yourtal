@@ -60,8 +60,17 @@ export interface TransferStore {
     userId: string;
     now: Date;
   }): Promise<TransferProblem | null>;
-  /** The person's Send. Keeps the first approval, so the assertion stays the same. */
-  approve(input: { transferId: string; userId: string; now: Date }): Promise<boolean>;
+  /**
+   * The person's Send, on a screen started by a client of `sector`. Runs the
+   * screen's checks again and approves only when none fails; keeps the first
+   * approval, so the assertion stays the same. Null when approved.
+   */
+  approve(input: {
+    sector: string;
+    transferId: string;
+    userId: string;
+    now: Date;
+  }): Promise<TransferProblem | null>;
   assertion(input: {
     client: MachineClient;
     transferId: string;
@@ -126,6 +135,9 @@ export function createPgTransfers(deps: TransferDeps): TransferStore {
     ) {
       return { ok: false, problem: "not_allowed" };
     }
+    // Still signed in to the source app with YourTal (docs/30 §1).
+    const source = await store.findAppConsent(userId, transfer.fromSector);
+    if (source === null || source.endedAt !== null) return { ok: false, problem: "not_allowed" };
     const consent = await store.findAppConsent(userId, to.sector);
     const sub = await store.findSubject(to.sector, userId);
     if (consent === null || consent.endedAt !== null || sub === null) {
@@ -165,15 +177,20 @@ export function createPgTransfers(deps: TransferDeps): TransferStore {
       return result.ok ? null : result.problem;
     },
 
-    async approve({ transferId, userId, now }) {
-      const result = await pool.query(
+    async approve({ sector, transferId, userId, now }) {
+      const transfer = await find(sector, transferId, now);
+      if (transfer === null) return "expired";
+      const result = await evaluate(transfer, userId, now);
+      if (!result.ok) return result.problem;
+      const updated = await pool.query(
         `UPDATE oidc.model
             SET payload = payload || jsonb_build_object(
                   'approvedAt', COALESCE(payload->'approvedAt', to_jsonb($3::bigint)))
-          WHERE kind = $1 AND id = $2 AND payload->>'accountId' = $4 AND expires_at > $5`,
-        [KIND, transferId, seconds(now), userId, now],
+          WHERE kind = $1 AND id = $2 AND payload->>'accountId' = $4 AND expires_at > $5
+            AND payload->>'fromSector' = $6`,
+        [KIND, transferId, seconds(now), userId, now, sector],
       );
-      return result.rowCount === 1;
+      return updated.rowCount === 1 ? null : "expired";
     },
 
     async assertion({ client, transferId, fromSub, now }) {

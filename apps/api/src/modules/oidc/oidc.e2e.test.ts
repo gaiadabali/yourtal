@@ -1387,6 +1387,14 @@ const transfersOf = () => {
   return transfers;
 };
 
+/** The person's Send, on a screen started by a SnapApp client unless `sector` says otherwise. */
+const approve = (
+  transferId: string,
+  userId: string,
+  now = new Date(),
+  sector = "snapapp-staging",
+) => transfersOf().approve({ sector, transferId, userId, now });
+
 /** An adult in AU signed in to SnapApp and, unless `ftr` is false, to FTR: both their subs. */
 async function sender(ftr = true) {
   const who = await person();
@@ -1468,9 +1476,7 @@ describe("app transfers: SnapApp to FTR (docs/30 §5, 4.8 Y1)", () => {
     expect(early).toMatchObject({ status: 409, body: { code: "not_approved" } });
 
     const approvedAt = new Date();
-    expect(await transfersOf().approve({ transferId, userId: ana.userId, now: approvedAt })).toBe(
-      true,
-    );
+    expect(await approve(transferId, ana.userId, approvedAt)).toBeNull();
     const first = await transferApi(token, `/${transferId}/assertion`, { fromSub: ana.snapSub });
     expect(first.status, JSON.stringify(first.body)).toBe(200);
     expect(first.cacheControl).toBe("no-store");
@@ -1508,11 +1514,7 @@ describe("app transfers: SnapApp to FTR (docs/30 §5, 4.8 Y1)", () => {
     ).rejects.toThrow();
 
     // A second call: a fresh encryption of the same signed claims, and a second approval changes nothing.
-    await transfersOf().approve({
-      transferId,
-      userId: ana.userId,
-      now: new Date(Date.now() + 5000),
-    });
+    expect(await approve(transferId, ana.userId, new Date(Date.now() + 5000))).toBeNull();
     const second = await transferApi(token, `/${transferId}/assertion`, { fromSub: ana.snapSub });
     expect(second.status).toBe(200);
     expect(second.body["assertion"]).not.toBe(assertion);
@@ -1537,7 +1539,7 @@ describe("app transfers: SnapApp to FTR (docs/30 §5, 4.8 Y1)", () => {
       lineCount: 0,
     });
     const transferId = z.object({ transferId: z.uuid() }).parse(made.body).transferId;
-    await transfersOf().approve({ transferId, userId: ana.userId, now: new Date() });
+    expect(await approve(transferId, ana.userId)).toBeNull();
     const minted = await transferApi(token, `/${transferId}/assertion`, { fromSub: ana.snapSub });
     const assertion = z.string().parse(minted.body["assertion"]);
     const jwks = createRemoteJWKSet(new URL(`${issuer}/jwks`));
@@ -1585,11 +1587,13 @@ describe("app transfers: SnapApp to FTR (docs/30 §5, 4.8 Y1)", () => {
     expect(bad.status).toBe(400);
 
     const transferId = await openTransfer(token, ana.snapSub);
-    await transfersOf().approve({ transferId, userId: ana.userId, now: new Date() });
-    // The approval is Ana's alone.
-    expect(await transfersOf().approve({ transferId, userId: ben.userId, now: new Date() })).toBe(
-      false,
-    );
+    // The approval is Ana's alone, and only on a screen of the transfer's own app.
+    expect(await approve(transferId, ben.userId)).toBe("wrong_account");
+    expect(await approve(transferId, ana.userId, new Date(), "ftr")).toBe("expired");
+    expect(
+      await transferApi(token, `/${transferId}/assertion`, { fromSub: ana.snapSub }),
+    ).toMatchObject({ status: 409, body: { code: "not_approved" } });
+    expect(await approve(transferId, ana.userId)).toBeNull();
     for (const [path, fromSub] of [
       [`/${transferId}/assertion`, ben.snapSub],
       [`/${transferId}/assertion`, ana.ftrSub],
@@ -1612,6 +1616,21 @@ describe("app transfers: SnapApp to FTR (docs/30 §5, 4.8 Y1)", () => {
     expect(
       (await transferApi(token, `/${foreign}/assertion`, { fromSub: ana.snapSub })).status,
     ).toBe(404);
+
+    // Another sector's client never sees it, even with a sub that maps to the same person there.
+    expect(await transfersOf().find({ sector: "ftr", transferId, now: new Date() })).toBeNull();
+    const server = app
+      .get<OidcRuntime>(OIDC_RUNTIME)
+      .clients.find((one) => one.clientId === "snapapp-staging-server");
+    if (server?.kind !== "machine") throw new Error("no SnapApp server client");
+    expect(
+      await transfersOf().assertion({
+        client: { ...server, clientId: "other-server", sector: "ftr" },
+        transferId,
+        fromSub: ana.ftrSub ?? "",
+        now: new Date(),
+      }),
+    ).toEqual({ ok: false, error: "not_found" });
 
     // The screen's checks, for Y2.
     const transfer = await transfersOf().find({
@@ -1647,21 +1666,23 @@ describe("app transfers: SnapApp to FTR (docs/30 §5, 4.8 Y1)", () => {
     ).toMatchObject({ code: "insufficient_scope" });
   });
 
-  it("says nothing about FTR before the Send, then 409 not_allowed for someone never at FTR", async () => {
+  it("says nothing about FTR before the Send; someone never at FTR cannot send", async () => {
     const token = await transferToken();
     const ben = await sender(false);
     const transferId = await openTransfer(token, ben.snapSub);
     expect(
       await transferApi(token, `/${transferId}/assertion`, { fromSub: ben.snapSub }),
     ).toMatchObject({ status: 409, body: { code: "not_approved" } });
-    await transfersOf().approve({ transferId, userId: ben.userId, now: new Date() });
+    // The Send runs the screen's checks again and approves nothing.
+    expect(await approve(transferId, ben.userId)).toBe("not_connected");
     expect(
       await transferApi(token, `/${transferId}/assertion`, { fromSub: ben.snapSub }),
-    ).toMatchObject({ status: 409, body: { code: "not_allowed" } });
+    ).toMatchObject({ status: 409, body: { code: "not_approved" } });
   });
 
   const changes: readonly [string, (who: Person) => Promise<unknown>][] = [
     ["FTR access ended", (who) => meApps("DELETE", who, "ftr")],
+    ["SnapApp access ended", (who) => meApps("DELETE", who, "snapapp")],
     [
       "now a teen",
       (who) =>
@@ -1689,7 +1710,7 @@ describe("app transfers: SnapApp to FTR (docs/30 §5, 4.8 Y1)", () => {
     const token = await transferToken();
     const ana = await sender();
     const transferId = await openTransfer(token, ana.snapSub);
-    await transfersOf().approve({ transferId, userId: ana.userId, now: new Date() });
+    expect(await approve(transferId, ana.userId)).toBeNull();
     await change(ana);
     expect(
       await transferApi(token, `/${transferId}/assertion`, { fromSub: ana.snapSub }),
@@ -1700,7 +1721,7 @@ describe("app transfers: SnapApp to FTR (docs/30 §5, 4.8 Y1)", () => {
     const token = await transferToken();
     const ana = await sender();
     const transferId = await openTransfer(token, ana.snapSub);
-    await transfersOf().approve({ transferId, userId: ana.userId, now: new Date() });
+    expect(await approve(transferId, ana.userId)).toBeNull();
     await pool.query(
       "UPDATE oidc.model SET expires_at = now() - interval '1 second' WHERE kind = 'AppTransfer' AND id = $1",
       [transferId],

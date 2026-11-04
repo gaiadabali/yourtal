@@ -99,14 +99,19 @@ describe("the client registry (docs/26 §1.9)", () => {
     expect(named.find((client) => client.clientId === "ftr-web")?.externalOperator).toBe(true);
   });
 
-  it("allows sign-in clients the four sign-in scopes, and the client APIs to SnapApp's server only", () => {
+  it("allows sign-in clients the four sign-in scopes, and the client APIs to machine clients only", () => {
     for (const client of CLIENTS) {
-      expect(client.allowedScopes).toEqual(
-        client.kind === "machine"
-          ? ["teen_invites", "app_transfers"]
-          : ["openid", "email", "profile", "account"],
-      );
+      if (client.kind === "machine") {
+        expect(["teen_invites", "app_transfers"]).toEqual(
+          expect.arrayContaining([...client.allowedScopes]),
+        );
+      } else {
+        expect(client.allowedScopes).toEqual(["openid", "email", "profile", "account"]);
+      }
     }
+    expect(
+      CLIENTS.find((client) => client.clientId === "snapapp-staging-server")?.allowedScopes,
+    ).toEqual(["teen_invites", "app_transfers"]);
   });
 });
 

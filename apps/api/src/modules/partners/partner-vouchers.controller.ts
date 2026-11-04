@@ -20,6 +20,7 @@ import type { PartnerLinkRepository } from "./persistence/partner-link.repositor
 import { ACCOUNT_AGE_LOOKUP } from "./persistence/account-age-lookup";
 import type { AccountAgeLookup } from "./persistence/account-age-lookup";
 import { PartnerAuthGuard } from "./partner-auth.guard";
+import { PartnerRateLimitGuard } from "./partner-rate-limit.guard";
 import { PUBLIC_REASON, requirePartnerId } from "./partner-actions.controller";
 import { PartnerVoucherOwnerDto } from "./dto/partner-action.schema";
 import { voucherOwner } from "./use-cases/voucher-owner.use-case";
@@ -32,7 +33,7 @@ import { mapPartnersErrorToHttpException } from "./to-http-exception";
  * session or a Cerbos principal.
  */
 @Controller("api/partners/vouchers")
-@UseGuards(PartnerAuthGuard)
+@UseGuards(PartnerAuthGuard, PartnerRateLimitGuard)
 export class PartnerVouchersController {
   private readonly deps: VoucherOwnerDeps;
 

@@ -1723,10 +1723,11 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.16.b The `/connect/[uid]` sign-in, consent and refusal screens, en-AU and id-ID (group 3.9.b) → merged at 5cb7f0b0; screenshots once the provider is on staging → 5cb7f0b0 + 936d005a; staging QA 2026-10-21, axe-clean at 390/1280 light and dark (group 3.9.b)
   - [x] 14.16.c Passkeys and authenticator-app codes on YourTal accounts, and `amr` in ID tokens (group 3.9.c) → d4687ad5 (PR #28)
   - [x] 14.16.d Teens: every client refuses them except SnapApp by a guardian's invite; the teen invite API (group 3.9.e) → cc1c5088 (PR #48); guardian lock at acceptance 31922ded (PR #55, group 3.10.g)
-  - [ ] 14.16.e Deletion and ended access reach every app as signed events, with the `connected_apps` data domain (group 3.9.f) → Y1 2563ff1a (#50), Y2 a0e3b8c5 (#52), Y3 31922ded (#55), Y4 26d21ef4 (#54), Y5 2d48e225 (#56); live after the lead's Helios step L1 (user's OK)
+  - [ ] 14.16.e Deletion and ended access reach every app as signed events, with the `connected_apps` data domain (group 3.9.f) → Y1 2563ff1a (#50), Y2 a0e3b8c5 (#52), Y3 31922ded (#55), Y4 26d21ef4 (#54), Y5 2d48e225 (#56); live after the lead's Helios step L1 (user's OK) → staging check C1 2026-11-04: SnapApp leg PASS (delete erases, remove keeps data); FTR leg waits on the FTR sign-in switch (group 3.7.m L4)
   - [ ] 14.16.f Rate limits, a sign-in log per client, an uptime check and one restore test (group 3.9.h)
   - [x] 14.16.g `max_age` and `prompt=login` on `/connect`; `auth_time` and `amr` from the YourTal session (group 3.9.i) → 724682a8 (PR #40)
   - [x] 14.16.h A sign-up started from an app goes back to the app after the consent step (group 3.9.j) → b1ba58e0 (PR #43)
+  - [x] 14.16.i Transfer assertions for the SnapApp → Free Tax Returns direct send: create, approve, mint (group 4.8.b, docs/30) → 1f064cf2 (#60); Send screen is group 4.8.c
 - [x] **14.19 Phase 5's screens: evidence and fixes** (group 5.11) · B + C · needs: — — 🔄 g5 — ✅ 2026-10-26 6cd56c7f
   - [x] 14.19.a Screenshots and axe for every Phase 5 screen, both widths, themes and locales: no WCAG A/AA violations, no overflow (2026-10-21)
   - [x] 14.19.b The auction page crashed for bidders (a client-only helper called on the server) → edd733d6

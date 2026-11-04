@@ -3,6 +3,7 @@ import type { KoaContextWithOIDC } from "oidc-provider";
 import { REQUIRED_SIGN_IN_SCOPES } from "./clients";
 
 const TEEN_INVITE_PARAM = /^[A-Za-z0-9_-]{1,128}$/;
+const TRANSFER_PARAM = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /**
  * The longest any authorization parameter may be. Each one is stored in the
@@ -57,5 +58,21 @@ export function validateAuthorizationRequest(
   }
   if (teenInvite !== undefined && !TEEN_INVITE_PARAM.test(teenInvite)) {
     throw new errors.InvalidRequest("invalid teen_invite parameter");
+  }
+}
+
+/**
+ * docs/30 §5: `transfer` names an app transfer for the send screen. It is a
+ * uuid, and never rides with a teen invite or a sign-up.
+ */
+export function validateTransferParam(ctx: KoaContextWithOIDC, transfer: string | undefined): void {
+  if (transfer === undefined) return;
+  if (!TRANSFER_PARAM.test(transfer)) throw new errors.InvalidRequest("invalid transfer parameter");
+  const params = ctx.oidc.params ?? {};
+  const prompts = typeof params["prompt"] === "string" ? params["prompt"].split(" ") : [];
+  if (params["teen_invite"] !== undefined || prompts.includes("create")) {
+    throw new errors.InvalidRequest(
+      "transfer cannot be combined with teen_invite or prompt=create",
+    );
   }
 }

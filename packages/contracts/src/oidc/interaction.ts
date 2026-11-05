@@ -151,8 +151,8 @@ export type InteractionRedirect = z.infer<typeof interactionRedirectSchema>;
 
 /**
  * The `error_description` an app gets with `error=access_denied`. A send
- * refused for any reason is `send_refused`, so the app never learns whether
- * the person uses the other app (docs/30 D4).
+ * refused for any reason, or cancelled on the send screen, is `send_refused`,
+ * so the app never learns whether the person uses the other app (docs/30 D4).
  */
 export const accessDeniedReasonSchema = z.enum([...signInRefusalSchema.options, "user_cancelled"]);
 export type AccessDeniedReason = z.infer<typeof accessDeniedReasonSchema>;

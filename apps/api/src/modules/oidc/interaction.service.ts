@@ -57,6 +57,15 @@ function publicClient(client: SignInClient): InteractionClient {
   };
 }
 
+/**
+ * The sign-in log's result for a refusal. A refused send keeps its real cause
+ * there ("send_refused:not_connected"), while the app only ever hears
+ * `send_refused` (docs/30 D4). A reason code, never personal data.
+ */
+function refusalLogged(state: Extract<SignInState, { screen: "refused" }>): string {
+  return state.sendProblem === null ? state.refusal : `send_refused:${state.sendProblem}`;
+}
+
 /** The raw request and response, which the provider reads its interaction cookies from. */
 export interface RawHttp {
   readonly req: IncomingMessage;
@@ -130,7 +139,11 @@ export class InteractionService {
     }
     if (state.screen === "verify_email") throw new InteractionError("screen_changed");
     if (state.screen === "refused") {
-      await loaded.store.logSignIn(state.account.userId, loaded.client.clientId, state.refusal);
+      await loaded.store.logSignIn(
+        state.account.userId,
+        loaded.client.clientId,
+        refusalLogged(state),
+      );
       throw new InteractionError("sign_in_refused", state.refusal);
     }
     // Consent is only ever recorded from the consent screen itself, and a send
@@ -200,8 +213,20 @@ export class InteractionService {
   async cancel(http: RawHttp, uid: string, sessionToken: string): Promise<InteractionRedirect> {
     const loaded = await this.load(http, uid);
     const { state } = await this.decide(loaded, sessionToken, new Date());
+    // Cancel on the send screen is told to the app as a refused send, so it never
+    // learns whether the person uses the destination (docs/30 D4).
     const reason: AccessDeniedReason =
-      state.screen === "refused" ? state.refusal : "user_cancelled";
+      state.screen === "refused"
+        ? state.refusal
+        : state.screen === "send"
+          ? "send_refused"
+          : "user_cancelled";
+    const logged =
+      state.screen === "refused"
+        ? refusalLogged(state)
+        : state.screen === "send"
+          ? "send_refused:user_cancelled"
+          : reason;
     const redirectTo = await loaded.provider.interactionResult(
       http.req,
       http.res,
@@ -209,7 +234,7 @@ export class InteractionService {
       { mergeWithLastSubmission: false },
     );
     if ("account" in state) {
-      await loaded.store.logSignIn(state.account.userId, loaded.client.clientId, reason);
+      await loaded.store.logSignIn(state.account.userId, loaded.client.clientId, logged);
     }
     return { redirectTo };
   }
@@ -227,7 +252,7 @@ export class InteractionService {
             now,
           });
     if (problem !== null) {
-      await loaded.store.logSignIn(userId, loaded.client.clientId, "send_refused");
+      await loaded.store.logSignIn(userId, loaded.client.clientId, `send_refused:${problem}`);
       throw new InteractionError("sign_in_refused", "send_refused");
     }
     await loaded.store.logSignIn(userId, loaded.client.clientId, "send_approved");

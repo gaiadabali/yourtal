@@ -1749,6 +1749,13 @@ async function approvedAt(transferId: string): Promise<unknown> {
   return (row as { at: unknown } | undefined)?.at ?? null;
 }
 
+/** The person's rows in the sign-in log at SnapApp's website. */
+const logged = (userId: string) =>
+  rows(
+    "SELECT result FROM oidc.sign_in_log WHERE user_id = $1 AND client_id = 'snapapp-staging-web' ORDER BY id",
+    [userId],
+  );
+
 /** SnapApp's website starting a sign-in that carries the transfer, and the screen it shows. */
 async function sendScreen(who: Person, transferId: string, extra: Record<string, string> = {}) {
   const started = await startSignIn(await webApp(), WEB_REDIRECT, {
@@ -1838,7 +1845,7 @@ describe("the send screen (docs/30 §5, 4.8 Y2)", () => {
     ).toMatchObject({ status: 409, body: { code: "not_approved" } });
   });
 
-  it("Cancel goes back to SnapApp with user_cancelled, and nothing is approved", async () => {
+  it("Cancel goes back to SnapApp as send_refused, and nothing is approved", async () => {
     const token = await transferToken();
     const ana = await sender();
     const transferId = await openTransfer(token, ana.snapSub);
@@ -1847,8 +1854,28 @@ describe("the send screen (docs/30 §5, 4.8 Y2)", () => {
     const cancelled = await webServerCall(base, started, ana.token, "/cancel", {});
     const back = await followToApp(started, await redirectOf(cancelled));
     expect(back.searchParams.get("error")).toBe("access_denied");
-    expect(back.searchParams.get("error_description")).toBe("user_cancelled");
+    // As for a refused send: SnapApp cannot tell that the person reached the screen (D4).
+    expect(back.searchParams.get("error_description")).toBe("send_refused");
     expect(await approvedAt(transferId)).toBeNull();
+    expect(await logged(ana.userId)).toContainEqual({ result: "send_refused:user_cancelled" });
+  });
+
+  it("FTR access ending after the screen showed: Send is refused and nothing is approved", async () => {
+    const token = await transferToken();
+    const ana = await sender();
+    const transferId = await openTransfer(token, ana.snapSub);
+    const { started, shown } = await sendScreen(ana, transferId);
+    expect(shown.screen).toBe("send");
+    await meApps("DELETE", ana, "ftr");
+    const sent = await webServerCall(base, started, ana.token, "/continue", { screen: "send" });
+    expect(sent.status).toBe(403);
+    expect(await errorBody(sent)).toMatchObject({
+      code: "sign_in_refused",
+      refusal: "send_refused",
+    });
+    expect(await approvedAt(transferId)).toBeNull();
+    expect(await logged(ana.userId)).toContainEqual({ result: "send_refused:not_connected" });
+    expect(await logged(ana.userId)).not.toContainEqual({ result: "send_approved" });
   });
 
   const problems: readonly [
@@ -1919,6 +1946,8 @@ describe("the send screen (docs/30 §5, 4.8 Y2)", () => {
         await redirectOf(await webServerCall(base, started, who.token, "/cancel", {})),
       );
       expect(back.searchParams.get("error_description")).toBe("send_refused");
+      // The real cause stays in YourTal's own log.
+      expect(await logged(who.userId)).toContainEqual({ result: `send_refused:${problem}` });
     },
   );
 

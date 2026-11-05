@@ -2,7 +2,8 @@ import { generateKeyPairSync } from "node:crypto";
 import { IncomingMessage, ServerResponse } from "node:http";
 import { createServer, Socket } from "node:net";
 import * as client from "openid-client";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { currentPolicyVersion } from "@yourtal/consent/policy-version";
 import type { AuthMethod } from "../auth/session/amr";
 import type { OidcAccount } from "./claims";
 import { findAccountFrom } from "./find-account";
@@ -16,6 +17,7 @@ import { Browser, followToApp, startSignIn } from "./testing/sign-in-driver";
 import type { StartedSignIn } from "./testing/sign-in-driver";
 import { buildTestProvider } from "./testing/oidc-test-kit";
 import type { TestProvider } from "./testing/oidc-test-kit";
+import type { AppTransfer, TransferStore } from "./transfers";
 
 /**
  * The interaction service and the provider together, with no database: the
@@ -78,6 +80,12 @@ const BOB: OidcAccount = {
   displayName: "Bob",
   email: "bob@example.com",
 };
+const CARA: OidcAccount = {
+  ...ADULT,
+  userId: "55555555-5555-4555-8555-555555555555",
+  displayName: "Cara",
+  email: "cara@example.com",
+};
 interface FakeSession {
   readonly userId: string;
   readonly amr: readonly AuthMethod[];
@@ -90,8 +98,11 @@ const SESSIONS = new Map<string, FakeSession>([
   ["teen-token", { userId: TEEN.userId, amr: ["pwd"], authTime: EARLIER }],
   ["held-token", { userId: HELD.userId, amr: ["pwd"], authTime: EARLIER }],
   ["bob-token", { userId: BOB.userId, amr: ["pwd"], authTime: EARLIER }],
+  ["cara-token", { userId: CARA.userId, amr: ["pwd"], authTime: EARLIER }],
 ]);
-const ACCOUNTS = new Map([ADULT, TEEN, HELD, BOB].map((account) => [account.userId, account]));
+const ACCOUNTS = new Map(
+  [ADULT, TEEN, HELD, BOB, CARA].map((account) => [account.userId, account]),
+);
 
 /** Two signing keys, as mid-rotation: the first signs, the second is only published. */
 function signingKey(kid: string) {
@@ -163,6 +174,24 @@ beforeAll(async () => {
 afterAll(async () => {
   await kit.fastify.close();
 });
+
+/** The interaction service as configured, with app transfers from this store. */
+function serviceWith(transfers: TransferStore): InteractionService {
+  return new InteractionService(
+    new OidcRuntime(kit.provider, kit.registered, memory.store, null, null, transfers),
+    {
+      validateWithSignIn: (token) => {
+        const session = SESSIONS.get(token);
+        return Promise.resolve(
+          session === undefined
+            ? { valid: false, reason: "not_found" }
+            : { valid: true, ...session },
+        );
+      },
+    },
+    NO_TEEN_INVITES,
+  );
+}
 
 async function rp(clientId: string, auth: client.ClientAuth) {
   return client.discovery(new URL(issuer), clientId, undefined, auth, {
@@ -495,5 +524,60 @@ describe("auth_time, amr and a fresh sign-in", () => {
     expect(bob?.sub).toBe(memory.subjects.get(`snapapp-staging|${BOB.userId}`));
     expect(bob?.sub).not.toBe(ana?.sub);
     expect(bob).toMatchObject({ name: "Bob", email: "bob@example.com", amr: ["hwk"] });
+  });
+});
+
+describe("the send tap (docs/30 §5)", () => {
+  it("approves nothing and finishes nothing when the store refuses at the tap", async () => {
+    const policyVersionId = currentPolicyVersion("AU")?.id ?? "";
+    memory.consents.set(`${CARA.userId}|snapapp-staging`, {
+      scopes: ["openid", "email", "profile", "account"],
+      policyVersionId,
+      grantedVia: "consent_screen",
+      inviteId: null,
+      endedAt: null,
+    });
+    const transfer: AppTransfer = {
+      id: "6f1c2a4e-8b7d-4e5f-9a0b-1c2d3e4f5a6b",
+      accountId: CARA.userId,
+      fromSector: "snapapp-staging",
+      toClientId: "ftr-web",
+      kind: "deduction-bundle-v1",
+      financialYear: "2025-26",
+      bundleSha256: "0".repeat(64),
+      lineCount: 3,
+      expiresAt: new Date(Date.now() + 60_000),
+    };
+    // The screen passes; the store's own re-check at the tap does not (a race).
+    const approve = vi.fn(() => Promise.resolve("expired" as const));
+    const sending = serviceWith({
+      create: () => Promise.reject(new Error("not used")),
+      find: () => Promise.resolve(transfer),
+      check: () => Promise.resolve(null),
+      approve,
+      assertion: () => Promise.reject(new Error("not used")),
+    });
+    const started = await startSignIn(await webApp(), WEB_REDIRECT, { transfer: transfer.id });
+    const at = () => http(started.browser, started.uid);
+    expect(await sending.details(at(), started.uid, "cara-token")).toMatchObject({
+      screen: "send",
+      send: { financialYear: "2025-26", lineCount: 3, to: { clientId: "ftr-web" } },
+    });
+
+    await expect(sending.continue(at(), started.uid, "cara-token", "send")).rejects.toEqual(
+      new InteractionError("sign_in_refused", "send_refused"),
+    );
+    expect(approve).toHaveBeenCalledWith(
+      expect.objectContaining({ sector: "snapapp-staging", transferId: transfer.id }),
+    );
+    const caras = memory.log.filter((row) => row.userId === CARA.userId);
+    expect(caras).toEqual([
+      { userId: CARA.userId, clientId: "snapapp-staging-web", result: "send_refused:expired" },
+    ]);
+    // The sign-in was not finished: the screen is still there to cancel, and SnapApp hears send_refused.
+    const { redirectTo } = await sending.cancel(at(), started.uid, "cara-token");
+    const back = await followToApp(started, redirectTo);
+    expect(back.searchParams.get("error")).toBe("access_denied");
+    expect(back.searchParams.get("error_description")).toBe("send_refused");
   });
 });

@@ -23,10 +23,13 @@ export function ConnectRefusedView({ details }: ConnectRefusedViewProps) {
   const reason = details.refusal ?? "account_on_hold";
   // docs/26 §3.4: a teen at SnapApp hears what is wrong with the invite, when it is more than "none".
   const problem = reason === "teen_invite_required" ? details.inviteProblem : null;
+  // docs/30 §5: a refused send says which check failed; "expired" is the neutral one if it were ever missing.
   const body =
-    problem === null || problem === "no_invite"
-      ? t(`${reason}.body`, { app })
-      : t(`teen_invite_required.problem.${problem}`, { app });
+    reason === "send_refused"
+      ? t(`send_refused.problem.${details.sendProblem ?? "expired"}`, { app })
+      : problem === null || problem === "no_invite"
+        ? t(`${reason}.body`, { app })
+        : t(`teen_invite_required.problem.${problem}`, { app });
 
   return (
     <AuthCard title={t(`${reason}.title`, { app })}>

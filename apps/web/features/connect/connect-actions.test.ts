@@ -173,11 +173,16 @@ describe("connect Server Actions and loader", () => {
 
     it("each action fixes its own screen; the browser supplies only the id", async () => {
       const calls = mockApi(() => json(200, { redirectTo: "https://yourtal.test/x" }));
-      const { oneTapContinueAction, consentContinueAction } = await load(new Map());
+      const { oneTapContinueAction, consentContinueAction, sendContinueAction } = await load(
+        new Map(),
+      );
       await oneTapContinueAction("uid_123-abc");
       await consentContinueAction("uid_123-abc");
+      await sendContinueAction("uid_123-abc");
       expect(calls[0]?.body).toEqual({ screen: "continue" });
       expect(calls[1]?.body).toEqual({ screen: "consent" });
+      expect(calls[2]?.body).toEqual({ screen: "send" });
+      expect(sendContinueAction.length).toBe(1);
       expect(consentContinueAction.length).toBe(1);
       expect(oneTapContinueAction.length).toBe(1);
     });

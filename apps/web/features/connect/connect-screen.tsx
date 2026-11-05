@@ -3,6 +3,7 @@
 import type { InteractionDetails } from "@yourtal/contracts/oidc/interaction";
 import { ConnectConsentView } from "./connect-consent-view";
 import { ConnectRefusedView } from "./connect-refused-view";
+import { ConnectSendView } from "./connect-send-view";
 import { ConnectSignInAgainView } from "./connect-sign-in-again-view";
 import { ConnectSignInView } from "./connect-sign-in-view";
 import { ConnectTeenConsentView } from "./connect-teen-consent-view";
@@ -30,6 +31,8 @@ export function ConnectScreen({ details }: ConnectScreenProps) {
       );
     case "continue":
       return <ConnectConsentView details={details} mode="continue" />;
+    case "send":
+      return <ConnectSendView details={details} />;
     case "refused":
       return <ConnectRefusedView details={details} />;
   }

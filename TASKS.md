@@ -1729,6 +1729,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.16.h A sign-up started from an app goes back to the app after the consent step (group 3.9.j) → b1ba58e0 (PR #43)
   - [x] 14.16.i Transfer assertions for the SnapApp → Free Tax Returns direct send: create, approve, mint (group 4.8.b, docs/30) → 1f064cf2 (#60); Send screen is group 4.8.c
   - [x] 14.16.j The Send screen decision and approval in `/connect` for a transfer (group 4.8.c, docs/30) → 0a53efed (#62); web view is group 4.8.d
+  - [x] 14.16.k The web Send screen and its refusals on `/connect`, en-AU and id-ID (group 4.8.d) → 6c7d6873 (#63); id-ID copy needs a native read
 - [x] **14.19 Phase 5's screens: evidence and fixes** (group 5.11) · B + C · needs: — — 🔄 g5 — ✅ 2026-10-26 6cd56c7f
   - [x] 14.19.a Screenshots and axe for every Phase 5 screen, both widths, themes and locales: no WCAG A/AA violations, no overflow (2026-10-21)
   - [x] 14.19.b The auction page crashed for bidders (a client-only helper called on the server) → edd733d6

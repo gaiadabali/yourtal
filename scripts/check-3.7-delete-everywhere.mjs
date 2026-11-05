@@ -22,9 +22,34 @@
 import { createHash, randomUUID } from "node:crypto";
 
 import {
-  FTR, PASSWORD, RUN, SNAP_API, YT, call, check, closeBrowser, deleteByEmail, ftrSignIn, lit, log,
-  newAccount, onboard, outbox, page, settledOutbox, shot, short, show, snapSession, snapSignIn, sql,
-  storageHas, subOf, summary, until, ytLogin,
+  FTR,
+  PASSWORD,
+  RUN,
+  SNAP_API,
+  YT,
+  call,
+  check,
+  closeBrowser,
+  deleteByEmail,
+  ftrSignIn,
+  lit,
+  log,
+  newAccount,
+  onboard,
+  outbox,
+  page,
+  settledOutbox,
+  shot,
+  short,
+  show,
+  snapSession,
+  snapSignIn,
+  sql,
+  storageHas,
+  subOf,
+  summary,
+  until,
+  ytLogin,
 } from "./lib/staging-check.mjs";
 
 const SNAP = "snapapp-staging";
@@ -269,7 +294,8 @@ async function phaseA() {
   check("no mail_deliveries to A", snapAfter.mail === 0);
   check(
     "B is untouched (session 200, workspace kept)",
-    (await snapSession(b.token)) === 200 && snapRows(subOf(B.userId, SNAP), B.email, [wsB]).tenants === 1,
+    (await snapSession(b.token)) === 200 &&
+      snapRows(subOf(B.userId, SNAP), B.email, [wsB]).tenants === 1,
   );
   if (!shared)
     log(
@@ -427,18 +453,24 @@ async function ftr() {
 // ftr_prod holds real customers: every read here names the run's own email or sub.
 function ftrRows(email, sub) {
   const u = `(select id from "user" where lower(email) = ${lit(email)})`;
-  const [users, accounts, sessions, imports, erased] = sql("ftr", `select
+  const [users, accounts, sessions, imports, erased] = sql(
+    "ftr",
+    `select
     (select count(*) from "user" where lower(email) = ${lit(email)}),
     (select count(*) from account where provider_id = 'yourtal' and account_id = ${lit(sub)}),
     (select count(*) from session where user_id in ${u}),
     (select count(*) from deduction_imports where user_id in ${u}),
-    (select count(*) from yourtal_erased_subjects where sub = ${lit(sub)})`)[0].map(Number);
+    (select count(*) from yourtal_erased_subjects where sub = ${lit(sub)})`,
+  )[0].map(Number);
   return { users, accounts, sessions, imports, erased };
 }
 const ftrSeen = (jti) =>
-  sql("ftr", `select s.event_type, s.outcome,
+  sql(
+    "ftr",
+    `select s.event_type, s.outcome,
     (select count(*) from audit_log a where a.action = 'yourtal.event' and a.entity_id = s.jti)
-    from yourtal_events_seen s where s.jti = ${lit(jti)}`).map(([type, outcome, audit]) => ({ type, outcome, audit: Number(audit) }));
+    from yourtal_events_seen s where s.jti = ${lit(jti)}`,
+  ).map(([type, outcome, audit]) => ({ type, outcome, audit: Number(audit) }));
 
 async function phaseF() {
   console.log(`\n=== Phase F: the FTR leg (run ${RUN}) ===`);
@@ -446,17 +478,27 @@ async function phaseF() {
   leftovers.push(F);
   const f = await ftrSignIn(F, "f");
   if (f.off) {
-    check("FTR shows 'Sign in with YourTal' (its switch is on)", false, "no button on /login: switch off");
+    check(
+      "FTR shows 'Sign in with YourTal' (its switch is on)",
+      false,
+      "no button on /login: switch off",
+    );
     return;
   }
-  check("F signs in to FTR through YourTal's consent screen and lands on /account",
-    f.consent && f.landed.startsWith("/account") && !f.error, `landed ${f.landed}${f.error ? ` error=${f.error}` : ""}`);
+  check(
+    "F signs in to FTR through YourTal's consent screen and lands on /account",
+    f.consent && f.landed.startsWith("/account") && !f.error,
+    `landed ${f.landed}${f.error ? ` error=${f.error}` : ""}`,
+  );
   F.sub = subOf(F.userId, "ftr");
   check("F has an FTR sub at YourTal", !!F.sub, `sub ${short(F.sub)}`);
   if (!F.sub) return;
   const before = ftrRows(F.email, F.sub);
   show("FTR rows for F, before", before);
-  check("FTR has F's user, YourTal account and a session", before.users === 1 && before.accounts === 1 && before.sessions >= 1);
+  check(
+    "FTR has F's user, YourTal account and a session",
+    before.users === 1 && before.accounts === 1 && before.sessions >= 1,
+  );
 
   log("F deletes the account in Me…");
   leftovers.splice(leftovers.indexOf(F), 1);
@@ -465,23 +507,35 @@ async function phaseF() {
   const tDel = Date.now();
   const rows = await settledOutbox(F.sub, "F's outbox row to ftr-web");
   for (const r of rows ?? outbox(F.sub)) show("outbox row", { ...r, jti: short(r.jti) });
-  const row = (rows ?? []).find((r) => r.client === "ftr-web" && r.type.endsWith(":account-deleted"));
-  check("one account-deleted row to ftr-web, delivered", rows?.length === 1 && !!row?.delivered,
-    `${rows?.length ?? 0} row(s), ${Math.round((Date.now() - tDel) / 1000)}s after delete${row?.error ? `, last_error ${row.error}` : ""}`);
+  const row = (rows ?? []).find(
+    (r) => r.client === "ftr-web" && r.type.endsWith(":account-deleted"),
+  );
+  check(
+    "one account-deleted row to ftr-web, delivered",
+    rows?.length === 1 && !!row?.delivered,
+    `${rows?.length ?? 0} row(s), ${Math.round((Date.now() - tDel) / 1000)}s after delete${row?.error ? `, last_error ${row.error}` : ""}`,
+  );
   const yt = ytRows(F.userId);
   show("YourTal rows for F, after", yt);
   check("no oidc rows left for F at YourTal", yt.subject + yt.consents + yt.signInLog === 0);
   const after = ftrRows(F.email, F.sub);
   show("FTR rows for F, after", after);
-  check("FTR: user, YourTal account and sessions gone", after.users === 0 && after.accounts === 0 && after.sessions === 0);
+  check(
+    "FTR: user, YourTal account and sessions gone",
+    after.users === 0 && after.accounts === 0 && after.sessions === 0,
+  );
   check("FTR: sub on yourtal_erased_subjects", after.erased === 1);
   const seen = row ? ftrSeen(row.jti) : [];
   show("FTR yourtal_events_seen", seen);
-  check("FTR: event in yourtal_events_seen (outcome erased) with its audit_log row",
-    seen.length === 1 && seen[0].type.endsWith(":account-deleted") && seen[0].outcome === "erased" && seen[0].audit === 1);
+  check(
+    "FTR: event in yourtal_events_seen (outcome erased) with its audit_log row",
+    seen.length === 1 &&
+      seen[0].type.endsWith(":account-deleted") &&
+      seen[0].outcome === "erased" &&
+      seen[0].audit === 1,
+  );
   return [];
 }
-
 
 const what = process.argv[2] ?? "all";
 if (what === "cleanup") {

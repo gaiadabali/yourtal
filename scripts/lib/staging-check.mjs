@@ -42,7 +42,9 @@ export function check(name, ok, evidence = "") {
 /** Prints the tally and returns the exit code. */
 export function summary() {
   const failed = results.filter((r) => !r.ok);
-  console.log(`\n${results.length - failed.length}/${results.length} checks passed (run ${RUN}, screenshots in ${SHOTS})`);
+  console.log(
+    `\n${results.length - failed.length}/${results.length} checks passed (run ${RUN}, screenshots in ${SHOTS})`,
+  );
   for (const f of failed) console.log(`  FAIL ${f.name}`);
   return failed.length ? 1 : 0;
 }
@@ -68,9 +70,16 @@ export function sql(db, query) {
 export const one = (db, q) => sql(db, q)[0]?.[0] ?? null;
 export const num = (db, q) => Number(one(db, q));
 export const storageHas = (dir) =>
-  execFileSync("ssh", [SSH, `docker exec snap-apps-worker-1 sh -c 'test -d "$STORAGE_DIR"/${dir} && echo yes || echo no'`], {
-    encoding: "utf8",
-  }).trim() === "yes";
+  execFileSync(
+    "ssh",
+    [
+      SSH,
+      `docker exec snap-apps-worker-1 sh -c 'test -d "$STORAGE_DIR"/${dir} && echo yes || echo no'`,
+    ],
+    {
+      encoding: "utf8",
+    },
+  ).trim() === "yes";
 
 // ── HTTP ────────────────────────────────────────────────────────────────────────────────────
 export async function call(base, path, { method = "GET", token, body, headers = {}, raw } = {}) {
@@ -78,10 +87,18 @@ export async function call(base, path, { method = "GET", token, body, headers = 
   if (token) h.authorization = `Bearer ${token}`;
   if (body !== undefined && raw === undefined) h["content-type"] = "application/json";
   if (base === YT && method !== "GET") h["idempotency-key"] = randomUUID();
-  const res = await fetch(base + path, { method, headers: h, body: raw ?? (body === undefined ? undefined : JSON.stringify(body)) });
+  const res = await fetch(base + path, {
+    method,
+    headers: h,
+    body: raw ?? (body === undefined ? undefined : JSON.stringify(body)),
+  });
   const text = await res.text();
   let json = null;
-  try { json = JSON.parse(text); } catch { /* not JSON */ }
+  try {
+    json = JSON.parse(text);
+  } catch {
+    /* not JSON */
+  }
   return { status: res.status, json, text };
 }
 export async function until(what, fn, ms = WAIT_MS) {
@@ -89,7 +106,10 @@ export async function until(what, fn, ms = WAIT_MS) {
   for (;;) {
     const v = await fn();
     if (v) return v;
-    if (Date.now() > end) { log(`timed out waiting for ${what}`); return null; }
+    if (Date.now() > end) {
+      log(`timed out waiting for ${what}`);
+      return null;
+    }
     await sleep(5000);
   }
 }
@@ -97,10 +117,19 @@ export async function until(what, fn, ms = WAIT_MS) {
 // ── YourTal accounts ────────────────────────────────────────────────────────────────────────
 export async function newAccount(tag) {
   const email = `qa-c1-${RUN}-${tag}@example.test`;
-  const register = () => call(YT, "/api/auth/register", {
-    method: "POST",
-    body: { email, password: PASSWORD, region: "AU", locale: "en-AU", displayName: `QA C1 ${tag.toUpperCase()}`, dateOfBirth: "1990-01-01", timezone: "Australia/Sydney" },
-  });
+  const register = () =>
+    call(YT, "/api/auth/register", {
+      method: "POST",
+      body: {
+        email,
+        password: PASSWORD,
+        region: "AU",
+        locale: "en-AU",
+        displayName: `QA C1 ${tag.toUpperCase()}`,
+        dateOfBirth: "1990-01-01",
+        timezone: "Australia/Sydney",
+      },
+    });
   let reg = await register();
   // YourTal allows 5 sign-ups per address per rolling hour; wait each one out.
   while (reg.status === 429 && (reg.json?.retryAfterSeconds ?? 9e9) <= 3600) {
@@ -108,24 +137,52 @@ export async function newAccount(tag) {
     await sleep((reg.json.retryAfterSeconds + 5) * 1000);
     reg = await register();
   }
-  if (reg.status !== 201 && reg.status !== 200) throw new Error(`register ${tag}: ${reg.status} ${reg.text}`);
-  const vt = await until(`verification mail for ${tag}`, () =>
-    one("yt", `select metadata->>'token' from platform.sim_outbox where recipient = ${lit(email)} and category = 'email_verification' order by created_at desc limit 1`), 60_000);
-  const v = await call(YT, "/api/auth/email/verify/confirm", { method: "POST", body: { token: vt } });
+  if (reg.status !== 201 && reg.status !== 200)
+    throw new Error(`register ${tag}: ${reg.status} ${reg.text}`);
+  const vt = await until(
+    `verification mail for ${tag}`,
+    () =>
+      one(
+        "yt",
+        `select metadata->>'token' from platform.sim_outbox where recipient = ${lit(email)} and category = 'email_verification' order by created_at desc limit 1`,
+      ),
+    60_000,
+  );
+  const v = await call(YT, "/api/auth/email/verify/confirm", {
+    method: "POST",
+    body: { token: vt },
+  });
   log(`${tag}: registered ${email} (register ${reg.status}, verify ${v.status})`);
   return { tag, email, userId: reg.json.userId, ytToken: reg.json.token };
 }
 /** The person's pairwise `sub` in one sector (`snapapp-staging` or `ftr`). */
 export const subOf = (userId, sector) =>
-  one("yt", `select sub from oidc.subject where user_id = ${lit(userId)} and sector = ${lit(sector)}`);
+  one(
+    "yt",
+    `select sub from oidc.subject where user_id = ${lit(userId)} and sector = ${lit(sector)}`,
+  );
 export const outbox = (sub) =>
-  sql("yt", `select jti, client_id, event_type, payload::text, attempts, delivered_at is not null, failed_at is not null, coalesce(last_error,''),
-    round(extract(epoch from (delivered_at - iat)))::text from oidc.event_outbox where sub = ${lit(sub)} order by iat`)
-    .map(([jti, client, type, payload, attempts, delivered, failed, error, lag]) =>
-      ({ jti, client, type, payload, attempts: Number(attempts), delivered: delivered === "t", failed: failed === "t", error, lag }));
+  sql(
+    "yt",
+    `select jti, client_id, event_type, payload::text, attempts, delivered_at is not null, failed_at is not null, coalesce(last_error,''),
+    round(extract(epoch from (delivered_at - iat)))::text from oidc.event_outbox where sub = ${lit(sub)} order by iat`,
+  ).map(([jti, client, type, payload, attempts, delivered, failed, error, lag]) => ({
+    jti,
+    client,
+    type,
+    payload,
+    attempts: Number(attempts),
+    delivered: delivered === "t",
+    failed: failed === "t",
+    error,
+    lag,
+  }));
 /** Waits until every outbox row for `sub` is delivered or failed. */
 export const settledOutbox = (sub, what) =>
-  until(what, () => { const r = outbox(sub); return r.length && r.every((x) => x.delivered || x.failed) ? r : null; });
+  until(what, () => {
+    const r = outbox(sub);
+    return r.length && r.every((x) => x.delivered || x.failed) ? r : null;
+  });
 
 // ── Browser ─────────────────────────────────────────────────────────────────────────────────
 let browser;
@@ -146,14 +203,22 @@ export async function ytLogin(p, who) {
     await p.fill("input[name=email]", who.email);
     await p.fill("input[name=password]", PASSWORD);
     await p.locator("button[type=submit]").first().click();
-    await p.waitForURL((u) => !/\/login$/.test(new URL(String(u)).pathname) || /error=/.test(String(u)), { timeout: 30_000 });
+    await p.waitForURL(
+      (u) => !/\/login$/.test(new URL(String(u)).pathname) || /error=/.test(String(u)),
+      { timeout: 30_000 },
+    );
     if (!/error=http_429/.test(p.url()) || i >= 16) break;
     log(`${who.tag}: login rate-limited (429), waiting 60s`);
     await sleep(60_000);
   }
-  if (/\/login/.test(pathOf(p))) throw new Error(`${who.tag}: login failed (${new URL(p.url()).search})`);
+  if (/\/login/.test(pathOf(p)))
+    throw new Error(`${who.tag}: login failed (${new URL(p.url()).search})`);
   if (/\/passkey/.test(pathOf(p))) {
-    await p.getByRole("button", { name: "Not now" }).or(p.getByRole("link", { name: "Not now" })).first().click();
+    await p
+      .getByRole("button", { name: "Not now" })
+      .or(p.getByRole("link", { name: "Not now" }))
+      .first()
+      .click();
     await p.waitForURL((u) => !/\/passkey/.test(String(u)), { timeout: 30_000 });
   }
 }
@@ -167,7 +232,10 @@ export async function passYourTal(p, who, label) {
   for (let i = 0; i < 6; i++) {
     await p.waitForLoadState("networkidle");
     if (!p.url().startsWith(YT)) return { consent, at: "left" };
-    if (/\/login/.test(pathOf(p))) { await ytLogin(p, who); continue; }
+    if (/\/login/.test(pathOf(p))) {
+      await ytLogin(p, who);
+      continue;
+    }
     const signIn = p.getByRole("link", { name: "Sign in", exact: true });
     if (await signIn.isVisible().catch(() => false)) {
       await signIn.click();
@@ -183,7 +251,10 @@ export async function passYourTal(p, who, label) {
       await p.waitForURL((u) => String(u) !== before, { timeout: 45_000 });
       continue;
     }
-    const send = await p.getByRole("button", { name: "Send", exact: true }).isVisible().catch(() => false);
+    const send = await p
+      .getByRole("button", { name: "Send", exact: true })
+      .isVisible()
+      .catch(() => false);
     return { consent, at: send ? "send" : "other" };
   }
   return { consent, at: "other" };
@@ -200,7 +271,9 @@ export async function snapSignIn(who, label, { keep = false } = {}) {
   const landed = pathOf(p);
   if (!keep) await ctx.close();
   if (!token) throw new Error(`${label}: no snap_session after sign-in (landed on ${landed})`);
-  log(`${label}: signed in to SnapApp via YourTal (consent screen shown: ${consent}, landed ${landed})`);
+  log(
+    `${label}: signed in to SnapApp via YourTal (consent screen shown: ${consent}, landed ${landed})`,
+  );
   return { token, consent, landed, ctx, p };
 }
 /**
@@ -224,24 +297,37 @@ export async function ftrSignIn(who, label, { keep = false } = {}) {
     await shot(p, `${label}-ftr-stuck`);
     throw new Error(`${label}: stopped at YourTal (${pathOf(p)}) on the way to FTR`);
   }
-  await p.waitForURL((u) => String(u).startsWith(FTR) && !/\/api\/|\/auth\/continue/.test(String(u)), { timeout: 45_000 });
+  await p.waitForURL(
+    (u) => String(u).startsWith(FTR) && !/\/api\/|\/auth\/continue/.test(String(u)),
+    { timeout: 45_000 },
+  );
   await p.waitForLoadState("networkidle");
   await shot(p, `${label}-ftr`);
   const landed = pathOf(p);
   const error = new URL(p.url()).searchParams.get("error");
   if (!keep) await ctx.close();
-  log(`${label}: signed in to FTR via YourTal (consent screen shown: ${consent}, landed ${landed}${error ? `, error=${error}` : ""})`);
+  log(
+    `${label}: signed in to FTR via YourTal (consent screen shown: ${consent}, landed ${landed}${error ? `, error=${error}` : ""})`,
+  );
   return { off: false, consent, landed, error, ctx, p };
 }
 
 // ── SnapApp data, through its API ───────────────────────────────────────────────────────────
 export async function onboard(token, name) {
-  const r = await call(SNAP_API, "/v1/workspaces/onboarding", { method: "POST", token, body: { workspaceName: name, kind: "personal" } });
-  const ws = r.json?.workspaces?.[0]?.id ?? r.json?.workspace?.id ?? (await call(SNAP_API, "/v1/workspaces", { token })).json?.[0]?.id;
+  const r = await call(SNAP_API, "/v1/workspaces/onboarding", {
+    method: "POST",
+    token,
+    body: { workspaceName: name, kind: "personal" },
+  });
+  const ws =
+    r.json?.workspaces?.[0]?.id ??
+    r.json?.workspace?.id ??
+    (await call(SNAP_API, "/v1/workspaces", { token })).json?.[0]?.id;
   log(`onboarding "${name}": ${r.status}, workspace ${ws}`);
   return ws;
 }
-export const snapSession = async (token) => (await call(SNAP_API, "/v1/auth/session", { token })).status;
+export const snapSession = async (token) =>
+  (await call(SNAP_API, "/v1/auth/session", { token })).status;
 
 // ── Cleanup: each leftover account deletes itself through the public API ───────────────────
 // With the run's password a login gives a session; otherwise a password reset (its link read
@@ -255,10 +341,27 @@ export async function deleteByEmail(email, password) {
     }
   }
   const since = one("yt", "select now()");
-  const req = await call(YT, "/api/auth/password/reset/request", { method: "POST", body: { email } });
-  const token = await until(`reset mail for ${email}`, () =>
-    one("yt", `select metadata->>'token' from platform.sim_outbox where recipient = ${lit(email)} and created_at >= ${lit(since)} and metadata ? 'token' order by created_at desc limit 1`), 60_000);
-  const conf = token ? await call(YT, "/api/auth/password/reset/confirm", { method: "POST", body: { token, newPassword: `C1-${randomUUID()}` } }) : req;
-  const del = conf.json?.token ? await call(YT, "/api/me", { method: "DELETE", token: conf.json.token }) : conf;
+  const req = await call(YT, "/api/auth/password/reset/request", {
+    method: "POST",
+    body: { email },
+  });
+  const token = await until(
+    `reset mail for ${email}`,
+    () =>
+      one(
+        "yt",
+        `select metadata->>'token' from platform.sim_outbox where recipient = ${lit(email)} and created_at >= ${lit(since)} and metadata ? 'token' order by created_at desc limit 1`,
+      ),
+    60_000,
+  );
+  const conf = token
+    ? await call(YT, "/api/auth/password/reset/confirm", {
+        method: "POST",
+        body: { token, newPassword: `C1-${randomUUID()}` },
+      })
+    : req;
+  const del = conf.json?.token
+    ? await call(YT, "/api/me", { method: "DELETE", token: conf.json.token })
+    : conf;
   log(`cleanup ${email}: reset ${req.status}/${conf.status}, DELETE /api/me ${del.status}`);
 }

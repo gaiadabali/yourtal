@@ -16,22 +16,22 @@ YourTal is the sign-in provider. SnapApp and FTR are its clients. Each app has a
 
 No step in section 3 starts until the gates marked **hard** are closed. State on 2026-11-05, from TASKS.md.
 
-| Gate | What | State | Kind |
-|---|---|---|---|
-| Red line 11 / F108, **6.2.c**, **6.7.b** | YourTal runs on Helios; docs/26 §6 Q1 says real users wait for the hosting document and the APP 8 position. Helios was measured in Jakarta (2026-11-03). | open | hard, founder + counsel |
-| **6.2** | YourTal legal review (privacy, consent wording) | open, 0/5 | hard for production (legal never blocks dev, but this is production) |
-| **BCG** | Free Tax Returns is run by Benjamin Charles Group. They must agree to the switch and the privacy-policy line. | to confirm | hard for FTR |
-| **3.8.b** | Phase 3 "Done when" passed on staging, then on production | staging leg partly done (SnapApp 3.7.b legs PASS, FTR leg F 8/8 on 2026-11-05); the full run is open | hard |
-| **3.9.h** | Uptime check on discovery, one restore test, IPv6 /64 and a site-wide rate ceiling | partly (nginx limit and sign-in log live on staging) | hard: every sign-in now depends on YourTal |
-| Production issuer (docs/26 §6 Q2) | Founder chose C: `https://yourtal.gaiada.com/oidc` stays the issuer in production (F109) | decided | done |
-| Production clients | docs/26 §3 says SnapApp and FTR production clients follow `snapapp-staging-*`. FTR's `ftr-web` already exists. A SnapApp production web, mobile and server client, a sector `snapapp`, and rows in `event-receivers.ts` | to confirm (not seen in `clients.ts` on main) | hard |
-| **6.9** | App email reaches the inbox (it lands in Spam today). Sign-up verification and the "you were linked" notices are email. | open | hard |
-| **6.11** | Passkey requirement | off at launch (decided 2026-11-04) | done |
-| **3.10.i** | Teen invites stay off for real teens until the event sender, L2 and the 30-day hold are live | open | hard for teens only; teens stay refused until then |
-| **3.3.e** | App Link flip for the phone app | code merged (snap-apps#49), flip not done | optional: the private scheme keeps working. Do it before real users, not as a blocker |
-| **8.1** | Private Android signing key (App Link proof uses the public debug key until then) | open | soft; see 3.3.e risk |
-| **6.9 / 6.5.i-k** | FTR tax figures for a tax agent | open | not a sign-in gate; do not mix into this switch |
-| Deletion path live | YourTal L1 (sender), L2 (SnapApp server client id), L3 (FTR 0017-0021) done on staging 2026-11-04. Production needs the same, with production client ids | to confirm for production | hard: "delete everywhere" is part of Done when |
+| Gate                                     | What                                                                                                                                                                                                                    | State                                                                                                | Kind                                                                                  |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Red line 11 / F108, **6.2.c**, **6.7.b** | YourTal runs on Helios; docs/26 §6 Q1 says real users wait for the hosting document and the APP 8 position. Helios was measured in Jakarta (2026-11-03).                                                                | open                                                                                                 | hard, founder + counsel                                                               |
+| **6.2**                                  | YourTal legal review (privacy, consent wording)                                                                                                                                                                         | open, 0/5                                                                                            | hard for production (legal never blocks dev, but this is production)                  |
+| **BCG**                                  | Free Tax Returns is run by Benjamin Charles Group. They must agree to the switch and the privacy-policy line.                                                                                                           | to confirm                                                                                           | hard for FTR                                                                          |
+| **3.8.b**                                | Phase 3 "Done when" passed on staging, then on production                                                                                                                                                               | staging leg partly done (SnapApp 3.7.b legs PASS, FTR leg F 8/8 on 2026-11-05); the full run is open | hard                                                                                  |
+| **3.9.h**                                | Uptime check on discovery, one restore test, IPv6 /64 and a site-wide rate ceiling                                                                                                                                      | partly (nginx limit and sign-in log live on staging)                                                 | hard: every sign-in now depends on YourTal                                            |
+| Production issuer (docs/26 §6 Q2)        | Founder chose C: `https://yourtal.gaiada.com/oidc` stays the issuer in production (F109)                                                                                                                                | decided                                                                                              | done                                                                                  |
+| Production clients                       | docs/26 §3 says SnapApp and FTR production clients follow `snapapp-staging-*`. FTR's `ftr-web` already exists. A SnapApp production web, mobile and server client, a sector `snapapp`, and rows in `event-receivers.ts` | to confirm (not seen in `clients.ts` on main)                                                        | hard                                                                                  |
+| **6.9**                                  | App email reaches the inbox (it lands in Spam today). Sign-up verification and the "you were linked" notices are email.                                                                                                 | open                                                                                                 | hard                                                                                  |
+| **6.11**                                 | Passkey requirement                                                                                                                                                                                                     | off at launch (decided 2026-11-04)                                                                   | done                                                                                  |
+| **3.10.i**                               | Teen invites stay off for real teens until the event sender, L2 and the 30-day hold are live                                                                                                                            | open                                                                                                 | hard for teens only; teens stay refused until then                                    |
+| **3.3.e**                                | App Link flip for the phone app                                                                                                                                                                                         | code merged (snap-apps#49), flip not done                                                            | optional: the private scheme keeps working. Do it before real users, not as a blocker |
+| **8.1**                                  | Private Android signing key (App Link proof uses the public debug key until then)                                                                                                                                       | open                                                                                                 | soft; see 3.3.e risk                                                                  |
+| **6.9 / 6.5.i-k**                        | FTR tax figures for a tax agent                                                                                                                                                                                         | open                                                                                                 | not a sign-in gate; do not mix into this switch                                       |
+| Deletion path live                       | YourTal L1 (sender), L2 (SnapApp server client id), L3 (FTR 0017-0021) done on staging 2026-11-04. Production needs the same, with production client ids                                                                | to confirm for production                                                                            | hard: "delete everywhere" is part of Done when                                        |
 
 Who closes the hard gates: the founder (6.2, 6.7, F108, BCG, 6.9), the lead session (Helios work, with the user's OK for each write).
 
@@ -50,12 +50,12 @@ Rule: one app at a time, SnapApp first (it has the fewer legacy users and no tax
 
 Where: YourTal on Helios (api and worker env).
 
-| Setting | Value |
-|---|---|
-| `OIDC_ENABLED` | `true` (already on staging) |
-| `OIDC_ISSUER` | `https://yourtal.gaiada.com/oidc` |
-| `OIDC_JWKS_PATH` | default `/opt/yourtal/secrets/oidc/jwks.json` |
-| `APP_EVENTS_DRIVER` | `live` (worker; done on staging 2026-11-04) |
+| Setting             | Value                                         |
+| ------------------- | --------------------------------------------- |
+| `OIDC_ENABLED`      | `true` (already on staging)                   |
+| `OIDC_ISSUER`       | `https://yourtal.gaiada.com/oidc`             |
+| `OIDC_JWKS_PATH`    | default `/opt/yourtal/secrets/oidc/jwks.json` |
+| `APP_EVENTS_DRIVER` | `live` (worker; done on staging 2026-11-04)   |
 
 Also: register the production SnapApp clients and the `event-receivers.ts` rows (docs/29 §11 L4 note). **To confirm** the production client ids; staging ids are `snapapp-staging-web`, `snapapp-staging-mobile`, `snapapp-staging-server`. FTR's is `ftr-web`.
 
@@ -67,14 +67,14 @@ Roll back: set `OIDC_ENABLED=false`, restart the api. No app is on yet, so no on
 
 Where: Helios, `/etc/snap-apps/secrets/yourtal.env` and the deploy `.env` (compose). Recreate the api and the worker after.
 
-| Setting | Value |
-|---|---|
-| `YOURTAL_OIDC_ISSUER` | `https://yourtal.gaiada.com/oidc` |
-| `YOURTAL_OIDC_WEB_CLIENT_ID` | production web client id (to confirm) |
-| `YOURTAL_OIDC_WEB_REDIRECT_URI` | exactly what YourTal registered, https only (default `${WEB_PUBLIC_URL}/auth/yourtal/callback`) |
-| `YOURTAL_OIDC_KEY_FILE_HOST` | `/etc/snap-apps/secrets/yourtal-oidc-web.jwk` (chmod 600, chown 1001); its public JWK is registered in YourTal first |
-| `YOURTAL_OIDC_SERVER_CLIENT_ID` | production server client id (needed for deletion events and teen-invite end jobs) (to confirm) |
-| `YOURTAL_OIDC_KEY_FILE` for the worker | the worker key mount for `teen_invite_end` is a code PR (TASKS 3.7.m): to confirm it is merged |
+| Setting                                | Value                                                                                                                |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `YOURTAL_OIDC_ISSUER`                  | `https://yourtal.gaiada.com/oidc`                                                                                    |
+| `YOURTAL_OIDC_WEB_CLIENT_ID`           | production web client id (to confirm)                                                                                |
+| `YOURTAL_OIDC_WEB_REDIRECT_URI`        | exactly what YourTal registered, https only (default `${WEB_PUBLIC_URL}/auth/yourtal/callback`)                      |
+| `YOURTAL_OIDC_KEY_FILE_HOST`           | `/etc/snap-apps/secrets/yourtal-oidc-web.jwk` (chmod 600, chown 1001); its public JWK is registered in YourTal first |
+| `YOURTAL_OIDC_SERVER_CLIENT_ID`        | production server client id (needed for deletion events and teen-invite end jobs) (to confirm)                       |
+| `YOURTAL_OIDC_KEY_FILE` for the worker | the worker key mount for `teen_invite_end` is a code PR (TASKS 3.7.m): to confirm it is merged                       |
 
 Check (3.8.b): `GET /v1/auth/yourtal` reports `web`. Staff account signs in with a passkey or MFA (it must, or SnapApp refuses `staff_strong_auth_required`). A brand-new person creates a YourTal account from SnapApp and lands in onboarding. An existing user signs in and keeps their workspaces, points and credits (same `users.id`). Old password and magic-link for a linked account answer the ordinary refusal.
 
@@ -84,9 +84,9 @@ Roll back: remove the web client id and write nothing else, then recreate the ap
 
 Where: same files. Needs the client id for mobile.
 
-| Setting | Value |
-|---|---|
-| `YOURTAL_OIDC_MOBILE_CLIENT_ID` | production mobile client id (to confirm) |
+| Setting                            | Value                                                                               |
+| ---------------------------------- | ----------------------------------------------------------------------------------- |
+| `YOURTAL_OIDC_MOBILE_CLIENT_ID`    | production mobile client id (to confirm)                                            |
 | `YOURTAL_OIDC_MOBILE_REDIRECT_URI` | first `au.com.snapapps.app:/oauth/yourtal` (default). Later the App Link, see below |
 
 Check: `GET /v1/auth/yourtal` reports `mobile`. On a real Android phone: sign in, sign out, create account. The founder's real-phone check (APK 0.1.245) is still owed on another gate (1.29.e), so use the same phone.
@@ -99,13 +99,13 @@ Where: Helios, `/home/ufreetax/.env`, run as user `ufreetax` under pm2 (`ecosyst
 
 Do first, in this order (PRE-LIVE-SETTINGS §1a): migrations `0017` to `0021` on `ftr_prod` (applied 2026-11-04 with backups in `/root/ftr-backups/`; **to confirm** none are pending), YourTal client `ftr-web` registered with the exact redirect `https://freetaxreturns.com.au/api/auth/oauth2/callback/yourtal`, AU only, teens refused.
 
-| Setting | Value |
-|---|---|
-| `YOURTAL_ISSUER` | `https://yourtal.gaiada.com/oidc` (https only) |
-| `YOURTAL_CLIENT_ID` | `ftr-web` |
-| `YOURTAL_CLIENT_SECRET` | the secret from YourTal's `ftr-web.secret`; letters and digits only; never paste it anywhere |
-| `YOURTAL_SIGN_IN_ENABLED` | `1` (exact value) |
-| `DEDUCTION_IMPORT_ENABLED`, `DEDUCTION_TRANSFER_ENABLED` | stay `0`. They are separate (4.6, 4.8) and need BCG. Not part of this switch |
+| Setting                                                  | Value                                                                                        |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `YOURTAL_ISSUER`                                         | `https://yourtal.gaiada.com/oidc` (https only)                                               |
+| `YOURTAL_CLIENT_ID`                                      | `ftr-web`                                                                                    |
+| `YOURTAL_CLIENT_SECRET`                                  | the secret from YourTal's `ftr-web.secret`; letters and digits only; never paste it anywhere |
+| `YOURTAL_SIGN_IN_ENABLED`                                | `1` (exact value)                                                                            |
+| `DEDUCTION_IMPORT_ENABLED`, `DEDUCTION_TRANSFER_ENABLED` | stay `0`. They are separate (4.6, 4.8) and need BCG. Not part of this switch                 |
 
 Apply: edit `.env`, then re-parse pm2 as in PRE-LIVE-SETTINGS §5 "Changing .env" (`pm2 delete` then `pm2 start ecosystem.config.cjs`, then `pm2 save`). A plain `pm2 reload ... --update-env` does **not** re-read `.env`. The poller deploy only reloads, so code deploys do not change the switch.
 
@@ -113,12 +113,12 @@ Check: `https://freetaxreturns.com.au/login` shows "Sign in with YourTal". `pm2 
 
 ## 4. Roll back, step by step
 
-| Step | How to undo | Check it is really off |
-|---|---|---|
-| 4 FTR | **Write `YOURTAL_SIGN_IN_ENABLED=0`. Do not delete the line.** Re-parse pm2. | `/login` has no "Sign in with YourTal"; `pm2 jlist` shows `pm2_env.YOURTAL_SIGN_IN_ENABLED` is `0` |
-| 3 SnapApp phone | Remove `YOURTAL_OIDC_MOBILE_CLIENT_ID`, recreate api. App Link: restore the old redirect URI value | `GET /v1/auth/yourtal` no longer lists `mobile` |
-| 2 SnapApp web | Remove `YOURTAL_OIDC_WEB_CLIENT_ID` (or the issuer), recreate api | `GET /v1/auth/yourtal` no longer lists `web` |
-| 1 YourTal | `OIDC_ENABLED=false`, restart | discovery returns 404 |
+| Step            | How to undo                                                                                        | Check it is really off                                                                             |
+| --------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| 4 FTR           | **Write `YOURTAL_SIGN_IN_ENABLED=0`. Do not delete the line.** Re-parse pm2.                       | `/login` has no "Sign in with YourTal"; `pm2 jlist` shows `pm2_env.YOURTAL_SIGN_IN_ENABLED` is `0` |
+| 3 SnapApp phone | Remove `YOURTAL_OIDC_MOBILE_CLIENT_ID`, recreate api. App Link: restore the old redirect URI value | `GET /v1/auth/yourtal` no longer lists `mobile`                                                    |
+| 2 SnapApp web   | Remove `YOURTAL_OIDC_WEB_CLIENT_ID` (or the issuer), recreate api                                  | `GET /v1/auth/yourtal` no longer lists `web`                                                       |
+| 1 YourTal       | `OIDC_ENABLED=false`, restart                                                                      | discovery returns 404                                                                              |
 
 ### The pm2 `=0` trap (FTR)
 
@@ -142,17 +142,17 @@ Every sign-in depends on YourTal. People already signed in to an app keep their 
 
 ## 5. What happens to existing people
 
-| Who | What happens |
-|---|---|
-| SnapApp user with a verified email | At their next sign-in they press "Sign in with YourTal" (creating a YourTal account if they have none). If the YourTal email matches their verified SnapApp email, SnapApp attaches the YourTal sub to their existing user: same `users.id`, same points and credits, same workspaces (0039). Password is removed, other sessions end, old mail links stop. |
-| SnapApp user whose YourTal email differs | The prompt moves them to a new empty account (3.6.e follow-up). The decision of 2026-11-04 was to **build the warning before the FTR switch**. **To confirm** it is merged and covered by the Step 2 check. |
-| SnapApp conflicts (second YourTal account, email taken) | A row goes to the review list; the person sees "account review" (3.6.c, snap #60). Someone must read that list during the first weeks. **To confirm** who. |
-| FTR user with a verified email | Linked once by the verified email, only if never linked before and no verified phone. After linking, FTR keys on the sub. |
-| FTR phone-only or verified-phone (Twilio) user | Not linked by phone, ever. They sign in with their phone as today, then press "Connect YourTal" in account settings or on the prompt on `/account` (within 5 minutes of the phone sign-in; other sessions end; the owner is emailed). With no SMS (0.7.b), phone-only accounts end: they must add and verify an email. Twilio Verify and the legacy sender retire only after every user has moved (3.5.e). **To confirm** the cut-off date and what happens to users who never return. |
-| Teens (under 18) | FTR refuses them with its own message. Every client except SnapApp refuses them. SnapApp accepts a teen only through a parent's invite (3.10), and until 3.10.i is live a teen gets "teen invite required". Not a bug; say so in support. |
-| Indonesian accounts (region ID) | FTR refuses them (AU adults only). SnapApp allows AU and ID. |
-| Staff and owners | Need a passkey or authenticator app (amr `hwk` or `mfa`) and a sign-in in the last 12 hours. Roles stay in each app. Tell them before the day. |
-| People who delete their YourTal account | Deleted from each app within 72 hours (docs/29). Not a switch-over matter, but the message says so. |
+| Who                                                     | What happens                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SnapApp user with a verified email                      | At their next sign-in they press "Sign in with YourTal" (creating a YourTal account if they have none). If the YourTal email matches their verified SnapApp email, SnapApp attaches the YourTal sub to their existing user: same `users.id`, same points and credits, same workspaces (0039). Password is removed, other sessions end, old mail links stop.                                                                                                                            |
+| SnapApp user whose YourTal email differs                | The prompt moves them to a new empty account (3.6.e follow-up). The decision of 2026-11-04 was to **build the warning before the FTR switch**. **To confirm** it is merged and covered by the Step 2 check.                                                                                                                                                                                                                                                                            |
+| SnapApp conflicts (second YourTal account, email taken) | A row goes to the review list; the person sees "account review" (3.6.c, snap #60). Someone must read that list during the first weeks. **To confirm** who.                                                                                                                                                                                                                                                                                                                             |
+| FTR user with a verified email                          | Linked once by the verified email, only if never linked before and no verified phone. After linking, FTR keys on the sub.                                                                                                                                                                                                                                                                                                                                                              |
+| FTR phone-only or verified-phone (Twilio) user          | Not linked by phone, ever. They sign in with their phone as today, then press "Connect YourTal" in account settings or on the prompt on `/account` (within 5 minutes of the phone sign-in; other sessions end; the owner is emailed). With no SMS (0.7.b), phone-only accounts end: they must add and verify an email. Twilio Verify and the legacy sender retire only after every user has moved (3.5.e). **To confirm** the cut-off date and what happens to users who never return. |
+| Teens (under 18)                                        | FTR refuses them with its own message. Every client except SnapApp refuses them. SnapApp accepts a teen only through a parent's invite (3.10), and until 3.10.i is live a teen gets "teen invite required". Not a bug; say so in support.                                                                                                                                                                                                                                              |
+| Indonesian accounts (region ID)                         | FTR refuses them (AU adults only). SnapApp allows AU and ID.                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Staff and owners                                        | Need a passkey or authenticator app (amr `hwk` or `mfa`) and a sign-in in the last 12 hours. Roles stay in each app. Tell them before the day.                                                                                                                                                                                                                                                                                                                                         |
+| People who delete their YourTal account                 | Deleted from each app within 72 hours (docs/29). Not a switch-over matter, but the message says so.                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ## 6. After the switch (not part of go)
 

@@ -417,7 +417,7 @@ describe("send", () => {
     renderScreen({ ...value, send: { ...value.send!, lineCount: 0 } });
     expect(
       screen.getByText(
-        /SnapApp will send Free Tax Returns your work kilometres and the other details below for 2025-26\. Not the receipts/,
+        /SnapApp will send Free Tax Returns your occupation and work kilometres for 2025-26\. Not the receipts/,
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/0 deduction/)).not.toBeInTheDocument();
@@ -428,7 +428,7 @@ describe("send", () => {
     renderScreen({ ...value, send: { ...value.send!, lineCount: 0 } }, "id-ID");
     expect(
       screen.getByText(
-        /SnapApp akan mengirim kilometer kerjamu dan rincian lain di bawah untuk 2025-26 ke Free Tax Returns\. Bukan/,
+        /SnapApp akan mengirim pekerjaan dan kilometer kerjamu untuk 2025-26 ke Free Tax Returns\. Bukan/,
       ),
     ).toBeInTheDocument();
   });

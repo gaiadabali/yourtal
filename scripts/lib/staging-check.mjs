@@ -13,6 +13,9 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+/** True when `url` is on the same origin as `base` (not a prefix match: CodeQL js/incomplete-url-substring-sanitization). */
+const sameOrigin = (url, base) => new URL(String(url)).origin === new URL(base).origin;
+
 export const YT = process.env.CHECK_YT ?? "https://yourtal.gaiada.com";
 export const SNAP_WEB = process.env.CHECK_SNAP_WEB ?? "https://snap-apps.gaiada.com";
 export const SNAP_API = process.env.CHECK_SNAP_API ?? "https://snap-apps-api.gaiada.com";
@@ -231,7 +234,7 @@ export async function passYourTal(p, who, label) {
   let consent = false;
   for (let i = 0; i < 6; i++) {
     await p.waitForLoadState("networkidle");
-    if (!p.url().startsWith(YT)) return { consent, at: "left" };
+    if (!sameOrigin(p.url(), YT)) return { consent, at: "left" };
     if (/\/login/.test(pathOf(p))) {
       await ytLogin(p, who);
       continue;
@@ -264,7 +267,7 @@ export async function snapSignIn(who, label, { keep = false } = {}) {
   const { ctx, p } = await page();
   await p.goto(`${SNAP_WEB}/auth/yourtal`);
   const { consent } = await passYourTal(p, who, label);
-  await p.waitForURL((u) => String(u).startsWith(SNAP_WEB), { timeout: 45_000 });
+  await p.waitForURL((u) => sameOrigin(u, SNAP_WEB), { timeout: 45_000 });
   await p.waitForLoadState("networkidle");
   await shot(p, `${label}-snap`);
   const token = (await ctx.cookies(SNAP_WEB)).find((c) => c.name === "snap_session")?.value;
@@ -291,16 +294,15 @@ export async function ftrSignIn(who, label, { keep = false } = {}) {
     return { off: true };
   }
   await button.click();
-  await p.waitForURL((u) => String(u).startsWith(YT), { timeout: 30_000 });
+  await p.waitForURL((u) => sameOrigin(u, YT), { timeout: 30_000 });
   const { consent, at } = await passYourTal(p, who, label);
   if (at !== "left") {
     await shot(p, `${label}-ftr-stuck`);
     throw new Error(`${label}: stopped at YourTal (${pathOf(p)}) on the way to FTR`);
   }
-  await p.waitForURL(
-    (u) => String(u).startsWith(FTR) && !/\/api\/|\/auth\/continue/.test(String(u)),
-    { timeout: 45_000 },
-  );
+  await p.waitForURL((u) => sameOrigin(u, FTR) && !/\/api\/|\/auth\/continue/.test(String(u)), {
+    timeout: 45_000,
+  });
   await p.waitForLoadState("networkidle");
   await shot(p, `${label}-ftr`);
   const landed = pathOf(p);

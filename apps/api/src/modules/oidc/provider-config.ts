@@ -7,7 +7,7 @@ import type {
   KoaContextWithOIDC,
 } from "oidc-provider";
 import type { ProviderKeys } from "./keys";
-import { validateAuthorizationRequest } from "./authorization-request";
+import { validateAuthorizationRequest, validateTransferParam } from "./authorization-request";
 import { SCOPE_CLAIMS } from "./claims";
 import { renderError } from "./render-error";
 
@@ -48,7 +48,14 @@ export const TTL = {
   Grant: 60 * 60,
 } as const;
 
-export const SCOPES = ["openid", "email", "profile", "account", "teen_invites"] as const;
+export const SCOPES = [
+  "openid",
+  "email",
+  "profile",
+  "account",
+  "teen_invites",
+  "app_transfers",
+] as const;
 
 /**
  * The library's prompts, plus two of YourTal's: `create` (OpenID Connect
@@ -132,7 +139,7 @@ export function providerConfiguration(deps: ProviderConfigDeps): Configuration {
       profile: [...SCOPE_CLAIMS.profile],
       account: [...SCOPE_CLAIMS.account],
     },
-    extraParams: { teen_invite: validateAuthorizationRequest },
+    extraParams: { teen_invite: validateAuthorizationRequest, transfer: validateTransferParam },
     ttl: { ...TTL },
 
     enabledJWA: {

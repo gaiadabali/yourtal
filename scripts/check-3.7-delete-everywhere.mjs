@@ -212,7 +212,9 @@ async function snapSignIn(who, label) {
     await shot(p, `${label}-consent`);
     if (consent) await continueBtn.click();
   }
-  await p.waitForURL((u) => new URL(String(u)).origin === new URL(SNAP_WEB).origin, { timeout: 45_000 });
+  await p.waitForURL((u) => new URL(String(u)).origin === new URL(SNAP_WEB).origin, {
+    timeout: 45_000,
+  });
   await p.waitForLoadState("networkidle");
   await shot(p, `${label}-snap`);
   const token = (await ctx.cookies(SNAP_WEB)).find((c) => c.name === "snap_session")?.value;

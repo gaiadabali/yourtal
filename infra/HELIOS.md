@@ -67,6 +67,28 @@ no vouchers yet; the default is strict (zero rows fails). Run it by hand
 after any bootstrap or restore-affecting change:
 `sudo /opt/yourtal/bin/restore-rehearsal.sh --allow-empty`.
 
+### Restore test and monitoring (3.9.h)
+
+`restore-rehearsal.sh` now also counts `oidc.subject`, `oidc.app_consent`,
+`oidc.sign_in_log`, `oidc.model` and the identity tables live vs restored
+(fails if a durable table is empty in the restore but not live) and drops
+`yourtal_restore` on exit (`--keep` to inspect). Run it after any change to
+the backup and at least monthly:
+`sudo /opt/yourtal/bin/restore-rehearsal.sh --allow-empty`.
+
+Uptime: `monitor/uptime.sh` checks OIDC discovery (issuer, `jwks_uri` keys),
+TLS expiry and, with `YT_CHECK_BACKUP=1`, backup age. On Helios it runs from
+root's cron through a copy of SnapApp's `alert.sh` (mails once on failure and
+once on recovery, using `ALERT_EMAIL_TO` and the SMTP settings that monitor
+already has): `/opt/yourtal/monitor/{alert.sh,uptime.sh}`, state in
+`/var/lib/yourtal-monitor`. `.github/workflows/oidc-uptime.yml` checks
+discovery every 15 minutes from GitHub, off the box.
+
+nginx: `/oidc/` rate limits key on the IPv6 /64 (`$yt_ip_key`) and share a
+50 r/s site-wide ceiling (`yt_oidc_site`). The live vhost differs from
+`nginx/yourtal.gaiada.com.conf` (Certbot TLS blocks, `/api/dev/`), so apply
+with `nginx/patch-3.9h.sh`, not by copying the file.
+
 ## Storage cut-over to RustFS (7.9.c, F58/F60)
 
 `infra/helios/rustfs-cutover.sh` is a one-time, reviewed-then-run script

@@ -2,7 +2,9 @@
 # Restore rehearsal (2.3.c, old YT-0531): proves the newest backup.sh output
 # is actually usable, not merely written. Run by hand, or from a monitoring
 # hook — never automatically deletes or touches the live `yourtal` database.
-# Usage: restore-rehearsal.sh [--allow-empty]
+# Usage: restore-rehearsal.sh [--allow-empty] [--keep]
+# The scratch database is dropped on exit, pass or fail; --keep leaves it for
+# inspection.
 #
 # WHAT THIS PROVES:
 #   1. The dump restores cleanly into a scratch database in the same
@@ -22,6 +24,11 @@
 #      it is passed through here) on a database with no vouchers yet — it
 #      otherwise refuses to pass on zero rows, so an empty rehearsal can
 #      never look like a successful one.
+#   5. (3.9.h) the sign-in provider's tables came back: oidc.subject,
+#      oidc.app_consent, oidc.sign_in_log, oidc.model and the identity tables
+#      are counted live vs restored, and a durable table that is empty in the
+#      restore while live has rows fails. Counts drift legitimately (up to a day
+#      of sign-ins; oidc.model rows expire), so they are printed, not equated.
 set -Eeuo pipefail
 
 BACKUP_ROOT=/opt/yourtal/backups
@@ -36,9 +43,19 @@ die() {
 }
 
 allow_empty=""
-if [ "${1:-}" = "--allow-empty" ]; then
-  allow_empty="--allow-empty"
-fi
+keep=""
+for a in "$@"; do
+  case $a in
+    --allow-empty) allow_empty="--allow-empty" ;;
+    --keep) keep=1 ;;
+    *) die "unknown argument $a" ;;
+  esac
+done
+drop_scratch() {
+  [ -n "$keep" ] ||
+    docker exec yourtal-postgres psql -U yourtal -d postgres -c "DROP DATABASE IF EXISTS $SCRATCH_DB;" >/dev/null 2>&1 || true
+}
+trap drop_scratch EXIT
 
 [ "$(id -u)" -eq 0 ] || die "must run as root"
 
@@ -70,10 +87,23 @@ if [ -n "$live_count" ] && [ "$live_count" != "$restored_count" ]; then
   die "row count mismatch — the restore is not whole"
 fi
 
+# --- 2b. the sign-in provider's tables (3.9.h) ---
+count() { docker exec yourtal-postgres psql -U yourtal -d "$1" -tAc "SELECT count(*) FROM $2" 2>/dev/null || echo ""; }
+for t in oidc.subject oidc.app_consent oidc.sign_in_log oidc.model identity.user_profile identity.credential; do
+  l=$(count yourtal "$t")
+  r=$(count "$SCRATCH_DB" "$t")
+  log "$t: live=${l:-?} restored=${r:-?}"
+  [ -n "$r" ] || die "$t is missing from the restore"
+  # oidc.model rows expire, so an empty restore of it is legitimate.
+  if [ "$t" != oidc.model ] && [ "${l:-0}" -gt 0 ] && [ "$r" -eq 0 ]; then
+    die "$t is empty in the restore but has rows live"
+  fi
+done
+
 # --- 3. this backup's keyring vs the keyring currently live on disk ---
 tmp=$(mktemp -d)
 chmod 700 "$tmp"
-trap 'rm -rf "$tmp"' EXIT
+trap 'rm -rf "$tmp"; drop_scratch' EXIT
 tar -xzf "$newest/keyring.tar.gz" -C "$tmp"
 mismatch=0
 for f in "$tmp/keyring/"*.key; do
@@ -101,5 +131,4 @@ VERIFY_DATABASE_URL="$restore_url" VERIFY_KEY_DIR="$tmp/keyring" \
   "$VERIFY_BIN" $allow_empty || die "voucher-verify-backup failed — see its output above"
 
 log "ok: $newest restores whole, pairs with the live keyring, and decrypts"
-log "scratch database $SCRATCH_DB left in place for manual inspection; drop it when done:"
-log "  docker exec yourtal-postgres psql -U yourtal -d postgres -c 'DROP DATABASE $SCRATCH_DB;'"
+[ -z "$keep" ] || log "scratch database $SCRATCH_DB kept (--keep); drop it when done"

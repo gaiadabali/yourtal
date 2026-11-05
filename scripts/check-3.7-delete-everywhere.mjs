@@ -5,7 +5,7 @@
 // READ ONLY transactions. Prints each step's HTTP status and row counts before and after.
 // No password, session token or full `sub` is printed (subs are shown as an 8-char prefix).
 //
-//   node scripts/check-3.7-delete-everywhere.mjs [a|b|ftr|all]   (default all; a and b need
+//   node scripts/check-3.7-delete-everywhere.mjs [a|b|ftr|f|all]   (all = a, b, ftr; a and b need
 //   separate hours: YourTal allows 5 sign-ups an hour per address)
 //   node scripts/check-3.7-delete-everywhere.mjs cleanup <email>…   (leftovers of a broken run)
 //
@@ -13,219 +13,23 @@
 // Phase B: C removes SnapApp in Me → Linked apps; D (only owner) invites admin E.
 // ftr:     FTR's endpoint is configured and fetches YourTal's JWKS (no linked FTR account
 //          can exist while its sign-in switch is off, so no signed event can reach it).
+// Phase F: the FTR leg, run only while FTR's YourTal sign-in switch is on (not in `all`):
+//          F signs in to FTR with YourTal, deletes in Me; ftr_prod (read-only) then shows F's
+//          user gone, the sub on yourtal_erased_subjects and the event in yourtal_events_seen.
 // Phase C (teens) waits for 3.10.
 //
-// Env: CHECK_YT (https://yourtal.gaiada.com), CHECK_SNAP_WEB (https://snap-apps.gaiada.com),
-// CHECK_SNAP_API (https://snap-apps-api.gaiada.com), CHECK_FTR_EVENTS
-// (https://freetaxreturns.com.au/api/yourtal/events), CHECK_SSH (helios), CHECK_WAIT_MIN (5),
-// CHECK_PLAYWRIGHT_FROM (a package.json whose node_modules has @playwright/test; default
-// apps/web/package.json of this checkout), CHECK_HEADED=1 to watch, CHECK_SHOTS (screenshot dir).
+// Env: see scripts/lib/staging-check.mjs.
 import { createHash, randomUUID } from "node:crypto";
-import { execFileSync } from "node:child_process";
-import { mkdirSync } from "node:fs";
-import { createRequire } from "node:module";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 
-const YT = process.env.CHECK_YT ?? "https://yourtal.gaiada.com";
-const SNAP_WEB = process.env.CHECK_SNAP_WEB ?? "https://snap-apps.gaiada.com";
-const SNAP_API = process.env.CHECK_SNAP_API ?? "https://snap-apps-api.gaiada.com";
-const FTR_EVENTS =
-  process.env.CHECK_FTR_EVENTS ?? "https://freetaxreturns.com.au/api/yourtal/events";
-const SSH = process.env.CHECK_SSH ?? "helios";
-const WAIT_MS = Number(process.env.CHECK_WAIT_MIN ?? 5) * 60_000;
-const SHOTS = process.env.CHECK_SHOTS ?? join(tmpdir(), "check-3.7-shots");
-const repo = join(dirname(fileURLToPath(import.meta.url)), "..");
-const { chromium } = createRequire(
-  process.env.CHECK_PLAYWRIGHT_FROM ?? join(repo, "apps/web/package.json"),
-)("@playwright/test");
+import {
+  FTR, PASSWORD, RUN, SNAP_API, YT, call, check, closeBrowser, deleteByEmail, ftrSignIn, lit, log,
+  newAccount, onboard, outbox, page, settledOutbox, shot, short, show, snapSession, snapSignIn, sql,
+  storageHas, subOf, summary, until, ytLogin,
+} from "./lib/staging-check.mjs";
 
-const RUN = `${new Date().toISOString().slice(5, 10).replace("-", "")}-${randomUUID().slice(0, 6)}`;
-const PASSWORD = `C1-${randomUUID()}`; // per run, never printed
-const results = [];
-const t0 = Date.now();
-const secs = () => `${Math.round((Date.now() - t0) / 1000)}s`;
-const log = (...a) => console.log(`[${secs()}]`, ...a);
-function check(name, ok, evidence = "") {
-  results.push({ name, ok });
-  console.log(`[${secs()}] ${ok ? "PASS" : "FAIL"}  ${name}${evidence ? `  — ${evidence}` : ""}`);
-  return ok;
-}
-const short = (s) => (s ? `${s.slice(0, 8)}…` : String(s));
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const SNAP = "snapapp-staging";
 
-// ── Read-only SQL on the box ───────────────────────────────────────────────────────────────
-const PSQL = {
-  yt: "docker exec -i yourtal-postgres psql -U yourtal -d yourtal -XAt -F '|' -v ON_ERROR_STOP=1",
-  snap: "docker exec -i snap-postgres psql -U postgres -d snapapps -XAt -F '|' -v ON_ERROR_STOP=1",
-};
-const lit = (v) => `'${String(v).replace(/'/g, "''")}'`;
-function sql(db, query) {
-  const out = execFileSync("ssh", [SSH, PSQL[db]], {
-    input: `begin read only;\n${query};\nrollback;\n`,
-    encoding: "utf8",
-  });
-  return out
-    .split("\n")
-    .filter((l) => l && l !== "BEGIN" && l !== "ROLLBACK")
-    .map((l) => l.split("|"));
-}
-const one = (db, q) => sql(db, q)[0]?.[0] ?? null;
-const num = (db, q) => Number(one(db, q));
-const storageHas = (dir) =>
-  execFileSync(
-    "ssh",
-    [
-      SSH,
-      `docker exec snap-apps-worker-1 sh -c 'test -d "$STORAGE_DIR"/${dir} && echo yes || echo no'`,
-    ],
-    {
-      encoding: "utf8",
-    },
-  ).trim() === "yes";
-
-// ── HTTP ────────────────────────────────────────────────────────────────────────────────────
-async function call(base, path, { method = "GET", token, body, headers = {}, raw } = {}) {
-  const h = { ...headers };
-  if (token) h.authorization = `Bearer ${token}`;
-  if (body !== undefined && raw === undefined) h["content-type"] = "application/json";
-  if (base === YT && method !== "GET") h["idempotency-key"] = randomUUID();
-  const res = await fetch(base + path, {
-    method,
-    headers: h,
-    body: raw ?? (body === undefined ? undefined : JSON.stringify(body)),
-  });
-  const text = await res.text();
-  let json = null;
-  try {
-    json = JSON.parse(text);
-  } catch {
-    /* not JSON */
-  }
-  return { status: res.status, json, text };
-}
-async function until(what, fn, ms = WAIT_MS) {
-  const end = Date.now() + ms;
-  for (;;) {
-    const v = await fn();
-    if (v) return v;
-    if (Date.now() > end) {
-      log(`timed out waiting for ${what}`);
-      return null;
-    }
-    await sleep(5000);
-  }
-}
-
-// ── YourTal accounts ────────────────────────────────────────────────────────────────────────
-async function newAccount(tag) {
-  const email = `qa-c1-${RUN}-${tag}@example.test`;
-  const register = () =>
-    call(YT, "/api/auth/register", {
-      method: "POST",
-      body: {
-        email,
-        password: PASSWORD,
-        region: "AU",
-        locale: "en-AU",
-        displayName: `QA C1 ${tag.toUpperCase()}`,
-        dateOfBirth: "1990-01-01",
-        timezone: "Australia/Sydney",
-      },
-    });
-  let reg = await register();
-  // YourTal allows 5 sign-ups per address per rolling hour; wait each one out.
-  while (reg.status === 429 && (reg.json?.retryAfterSeconds ?? 9e9) <= 3600) {
-    log(`${tag}: sign-up rate-limited, waiting ${reg.json.retryAfterSeconds}s`);
-    await sleep((reg.json.retryAfterSeconds + 5) * 1000);
-    reg = await register();
-  }
-  if (reg.status !== 201 && reg.status !== 200)
-    throw new Error(`register ${tag}: ${reg.status} ${reg.text}`);
-  const vt = await until(
-    `verification mail for ${tag}`,
-    () =>
-      one(
-        "yt",
-        `select metadata->>'token' from platform.sim_outbox where recipient = ${lit(email)} and category = 'email_verification' order by created_at desc limit 1`,
-      ),
-    60_000,
-  );
-  const v = await call(YT, "/api/auth/email/verify/confirm", {
-    method: "POST",
-    body: { token: vt },
-  });
-  log(`${tag}: registered ${email} (register ${reg.status}, verify ${v.status})`);
-  return { tag, email, userId: reg.json.userId, ytToken: reg.json.token };
-}
-
-// ── Browser: SnapApp → YourTal → SnapApp, and YourTal's Me ─────────────────────────────────
-let browser;
-async function page() {
-  browser ??= await chromium.launch({ headless: process.env.CHECK_HEADED !== "1" });
-  const ctx = await browser.newContext();
-  return { ctx, p: await ctx.newPage() };
-}
-async function shot(p, name) {
-  mkdirSync(SHOTS, { recursive: true });
-  await p.screenshot({ path: join(SHOTS, `${RUN}-${name}.png`), fullPage: true }).catch(() => {});
-}
-// YourTal allows 30 logins per address per 15 minutes; a run is ~15, so back off on a 429.
-async function ytLogin(p, who) {
-  for (let i = 0; ; i++) {
-    await p.fill("input[name=email]", who.email);
-    await p.fill("input[name=password]", PASSWORD);
-    await p.locator("button[type=submit]").first().click();
-    await p.waitForURL(
-      (u) => !/\/login$/.test(new URL(String(u)).pathname) || /error=/.test(String(u)),
-      { timeout: 30_000 },
-    );
-    if (!/error=http_429/.test(p.url()) || i >= 16) break;
-    log(`${who.tag}: login rate-limited (429), waiting 60s`);
-    await sleep(60_000);
-  }
-  if (/\/login/.test(new URL(p.url()).pathname))
-    throw new Error(`${who.tag}: login failed (${new URL(p.url()).search})`);
-  if (/\/passkey/.test(p.url())) {
-    await p
-      .getByRole("button", { name: "Not now" })
-      .or(p.getByRole("link", { name: "Not now" }))
-      .first()
-      .click();
-    await p.waitForURL((u) => !/\/passkey/.test(String(u)), { timeout: 30_000 });
-  }
-}
-/** Signs `who` in to SnapApp with YourTal. Returns the SnapApp session token and what the consent step showed. */
-async function snapSignIn(who, label) {
-  const { ctx, p } = await page();
-  await p.goto(`${SNAP_WEB}/auth/yourtal`);
-  await p.waitForLoadState("networkidle");
-  await p.getByRole("link", { name: "Sign in", exact: true }).click();
-  await p.waitForURL(/\/login/);
-  await ytLogin(p, who);
-  let consent = false;
-  if (/\/connect\//.test(p.url())) {
-    await p.waitForLoadState("networkidle");
-    const continueBtn = p.getByRole("button", { name: "Continue", exact: true });
-    consent = await continueBtn.isVisible().catch(() => false);
-    await shot(p, `${label}-consent`);
-    if (consent) await continueBtn.click();
-  }
-  await p.waitForURL((u) => new URL(String(u)).origin === new URL(SNAP_WEB).origin, {
-    timeout: 45_000,
-  });
-  await p.waitForLoadState("networkidle");
-  await shot(p, `${label}-snap`);
-  const token = (await ctx.cookies(SNAP_WEB)).find((c) => c.name === "snap_session")?.value;
-  const landed = new URL(p.url()).pathname;
-  await ctx.close();
-  if (!token) throw new Error(`${label}: no snap_session after sign-in (landed on ${landed})`);
-  log(
-    `${label}: signed in to SnapApp via YourTal (consent screen shown: ${consent}, landed ${landed})`,
-  );
-  return { token, consent };
-}
+// ── YourTal's Me ────────────────────────────────────────────────────────────────────────────
 /** Me → Delete my account, as the person does it. */
 async function deleteInMe(who) {
   const { ctx, p } = await page();
@@ -283,19 +87,6 @@ const PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
   "base64",
 );
-async function onboard(token, name) {
-  const r = await call(SNAP_API, "/v1/workspaces/onboarding", {
-    method: "POST",
-    token,
-    body: { workspaceName: name, kind: "personal" },
-  });
-  const ws =
-    r.json?.workspaces?.[0]?.id ??
-    r.json?.workspace?.id ??
-    (await call(SNAP_API, "/v1/workspaces", { token })).json?.[0]?.id;
-  log(`onboarding "${name}": ${r.status}, workspace ${ws}`);
-  return ws;
-}
 async function capture(token, ws) {
   const headers = { "x-workspace-id": ws };
   const sha256 = createHash("sha256").update(PNG).digest("hex");
@@ -317,11 +108,7 @@ async function capture(token, ws) {
   log(`capture in ${ws}: POST ${c.status}, PUT ${u.status}`);
   return c.json?.captureId ?? c.json?.capture?.id ?? c.json?.id ?? null;
 }
-const session = async (token) => (await call(SNAP_API, "/v1/auth/session", { token })).status;
-
 // ── Row snapshots ───────────────────────────────────────────────────────────────────────────
-const subOf = (userId) =>
-  one("yt", `select sub from oidc.subject where user_id = ${lit(userId)} limit 1`);
 function ytRows(userId) {
   const r = sql(
     "yt",
@@ -338,22 +125,6 @@ function ytRows(userId) {
     r.map(Number);
   return { subject, consents, liveConsents, signInLog, consentRecords, appConsentRecords, profile };
 }
-const outbox = (sub) =>
-  sql(
-    "yt",
-    `select jti, client_id, event_type, payload::text, attempts, delivered_at is not null, failed_at is not null, coalesce(last_error,''),
-    round(extract(epoch from (delivered_at - iat)))::text from oidc.event_outbox where sub = ${lit(sub)} order by iat`,
-  ).map(([jti, client, type, payload, attempts, delivered, failed, error, lag]) => ({
-    jti,
-    client,
-    type,
-    payload,
-    attempts: Number(attempts),
-    delivered: delivered === "t",
-    failed: failed === "t",
-    error,
-    lag,
-  }));
 function snapRows(sub, email, wsIds) {
   const ws = wsIds.filter(Boolean).map(lit).join(",") || "NULL";
   const u = `(select id from users where subject = ${lit(`yourtal|${sub}`)})`;
@@ -385,7 +156,6 @@ const purgeJobs = (ws) =>
     "snap",
     `select attempts, completed_at is not null, coalesce(last_error,'') from jobs where kind = 'storage_purge' and payload->>'tenantId' = ${lit(ws)}`,
   ).map(([attempts, done, error]) => ({ attempts: Number(attempts), done: done === "t", error }));
-const show = (label, o) => log(`${label}: ${JSON.stringify(o)}`);
 
 // ── Phase A ─────────────────────────────────────────────────────────────────────────────────
 async function phaseA() {
@@ -420,9 +190,9 @@ async function phaseA() {
       "UNTESTABLE on staging: B's workspace has one seat (Free plan); a plan needs a staff grant. Shared-workspace sub-check skipped.",
     );
   }
-  A.sub = subOf(A.userId);
+  A.sub = subOf(A.userId, SNAP);
   check("A has a SnapApp sub at YourTal", !!A.sub, `sub ${short(A.sub)}`);
-  check("A's SnapApp token works before (200)", (await session(a.token)) === 200);
+  check("A's SnapApp token works before (200)", (await snapSession(a.token)) === 200);
   const ytBefore = ytRows(A.userId);
   const snapBefore = snapRows(A.sub, A.email, [wsA]);
   const dirBefore = storageHas(wsA);
@@ -465,7 +235,7 @@ async function phaseA() {
   check("A's YourTal profile is erased", ytAfter.profile === 0);
   const tok401 = await until(
     "A's SnapApp token to answer 401",
-    async () => ((await session(a.token)) === 401 ? true : null),
+    async () => ((await snapSession(a.token)) === 401 ? true : null),
     120_000,
   );
   check("A's old SnapApp token answers 401", !!tok401);
@@ -499,7 +269,7 @@ async function phaseA() {
   check("no mail_deliveries to A", snapAfter.mail === 0);
   check(
     "B is untouched (session 200, workspace kept)",
-    (await session(b.token)) === 200 && snapRows(subOf(B.userId), B.email, [wsB]).tenants === 1,
+    (await snapSession(b.token)) === 200 && snapRows(subOf(B.userId, SNAP), B.email, [wsB]).tenants === 1,
   );
   if (!shared)
     log(
@@ -514,7 +284,7 @@ async function phaseA() {
   }
   const a2 = await snapSignIn(A2, "a2");
   const s2 = (await call(SNAP_API, "/v1/auth/session", { token: a2.token })).json;
-  A2.sub = subOf(A2.userId);
+  A2.sub = subOf(A2.userId, SNAP);
   check(
     "A's new account gets a new, empty SnapApp account",
     A2.sub !== A.sub && a2.consent && (s2?.workspaces?.length ?? -1) === 0,
@@ -530,7 +300,7 @@ async function phaseB() {
   const c = await snapSignIn(C, "c");
   const wsC = await onboard(c.token, `C1 ${RUN} C home`);
   await capture(c.token, wsC);
-  C.sub = subOf(C.userId);
+  C.sub = subOf(C.userId, SNAP);
   const before = snapRows(C.sub, C.email, [wsC]);
   const dirBefore = storageHas(wsC);
   show("SnapApp rows for C, before", { ...before, storageDir: dirBefore });
@@ -563,7 +333,7 @@ async function phaseB() {
     "C's old SnapApp token answers 401",
     !!(await until(
       "C's token 401",
-      async () => ((await session(c.token)) === 401 ? true : null),
+      async () => ((await snapSession(c.token)) === 401 ? true : null),
       120_000,
     )),
   );
@@ -631,7 +401,7 @@ async function ftr() {
     jti: randomUUID(),
   });
   const post = (header) =>
-    call("", FTR_EVENTS, {
+    call(FTR, "/api/yourtal/events", {
       method: "POST",
       headers: { "content-type": "application/secevent+jwt" },
       raw: `${b64(header)}.${body}.${b64({ x: 1 })}`,
@@ -653,43 +423,65 @@ async function ftr() {
   );
 }
 
-// ── Cleanup: each leftover account deletes itself through the public API ───────────────────
-// A password reset (its link read from the dev inbox) gives a session, so this also clears
-// accounts from an interrupted run: `cleanup <email>…`.
-async function deleteByEmail(email, password) {
-  if (password) {
-    const login = await call(YT, "/api/auth/login", { method: "POST", body: { email, password } });
-    if (login.json?.token) {
-      const del = await call(YT, "/api/me", { method: "DELETE", token: login.json.token });
-      return log(`cleanup ${email}: login ${login.status}, DELETE /api/me ${del.status}`);
-    }
-  }
-  // Only 3 resets an hour per address: for a broken run's leftovers only.
-  const since = one("yt", "select now()");
-  const req = await call(YT, "/api/auth/password/reset/request", {
-    method: "POST",
-    body: { email },
-  });
-  const token = await until(
-    `reset mail for ${email}`,
-    () =>
-      one(
-        "yt",
-        `select metadata->>'token' from platform.sim_outbox where recipient = ${lit(email)} and created_at >= ${lit(since)} and metadata ? 'token' order by created_at desc limit 1`,
-      ),
-    60_000,
-  );
-  const conf = token
-    ? await call(YT, "/api/auth/password/reset/confirm", {
-        method: "POST",
-        body: { token, newPassword: `C1-${randomUUID()}` },
-      })
-    : req;
-  const del = conf.json?.token
-    ? await call(YT, "/api/me", { method: "DELETE", token: conf.json.token })
-    : conf;
-  log(`cleanup ${email}: reset ${req.status}/${conf.status}, DELETE /api/me ${del.status}`);
+// ── Phase F: the FTR leg (FTR's YourTal sign-in switch on) ─────────────────────────────────
+// ftr_prod holds real customers: every read here names the run's own email or sub.
+function ftrRows(email, sub) {
+  const u = `(select id from "user" where lower(email) = ${lit(email)})`;
+  const [users, accounts, sessions, imports, erased] = sql("ftr", `select
+    (select count(*) from "user" where lower(email) = ${lit(email)}),
+    (select count(*) from account where provider_id = 'yourtal' and account_id = ${lit(sub)}),
+    (select count(*) from session where user_id in ${u}),
+    (select count(*) from deduction_imports where user_id in ${u}),
+    (select count(*) from yourtal_erased_subjects where sub = ${lit(sub)})`)[0].map(Number);
+  return { users, accounts, sessions, imports, erased };
 }
+const ftrSeen = (jti) =>
+  sql("ftr", `select s.event_type, s.outcome,
+    (select count(*) from audit_log a where a.action = 'yourtal.event' and a.entity_id = s.jti)
+    from yourtal_events_seen s where s.jti = ${lit(jti)}`).map(([type, outcome, audit]) => ({ type, outcome, audit: Number(audit) }));
+
+async function phaseF() {
+  console.log(`\n=== Phase F: the FTR leg (run ${RUN}) ===`);
+  const F = await newAccount("f");
+  leftovers.push(F);
+  const f = await ftrSignIn(F, "f");
+  if (f.off) {
+    check("FTR shows 'Sign in with YourTal' (its switch is on)", false, "no button on /login: switch off");
+    return;
+  }
+  check("F signs in to FTR through YourTal's consent screen and lands on /account",
+    f.consent && f.landed.startsWith("/account") && !f.error, `landed ${f.landed}${f.error ? ` error=${f.error}` : ""}`);
+  F.sub = subOf(F.userId, "ftr");
+  check("F has an FTR sub at YourTal", !!F.sub, `sub ${short(F.sub)}`);
+  if (!F.sub) return;
+  const before = ftrRows(F.email, F.sub);
+  show("FTR rows for F, before", before);
+  check("FTR has F's user, YourTal account and a session", before.users === 1 && before.accounts === 1 && before.sessions >= 1);
+
+  log("F deletes the account in Me…");
+  leftovers.splice(leftovers.indexOf(F), 1);
+  const del = await deleteInMe(F);
+  log(`delete: server-action statuses ${JSON.stringify(del.actions)}, landed on ${del.where}`);
+  const tDel = Date.now();
+  const rows = await settledOutbox(F.sub, "F's outbox row to ftr-web");
+  for (const r of rows ?? outbox(F.sub)) show("outbox row", { ...r, jti: short(r.jti) });
+  const row = (rows ?? []).find((r) => r.client === "ftr-web" && r.type.endsWith(":account-deleted"));
+  check("one account-deleted row to ftr-web, delivered", rows?.length === 1 && !!row?.delivered,
+    `${rows?.length ?? 0} row(s), ${Math.round((Date.now() - tDel) / 1000)}s after delete${row?.error ? `, last_error ${row.error}` : ""}`);
+  const yt = ytRows(F.userId);
+  show("YourTal rows for F, after", yt);
+  check("no oidc rows left for F at YourTal", yt.subject + yt.consents + yt.signInLog === 0);
+  const after = ftrRows(F.email, F.sub);
+  show("FTR rows for F, after", after);
+  check("FTR: user, YourTal account and sessions gone", after.users === 0 && after.accounts === 0 && after.sessions === 0);
+  check("FTR: sub on yourtal_erased_subjects", after.erased === 1);
+  const seen = row ? ftrSeen(row.jti) : [];
+  show("FTR yourtal_events_seen", seen);
+  check("FTR: event in yourtal_events_seen (outcome erased) with its audit_log row",
+    seen.length === 1 && seen[0].type.endsWith(":account-deleted") && seen[0].outcome === "erased" && seen[0].audit === 1);
+  return [];
+}
+
 
 const what = process.argv[2] ?? "all";
 if (what === "cleanup") {
@@ -701,16 +493,12 @@ try {
   if (what === "a" || what === "all") leftovers.push(...((await phaseA()) ?? []));
   if (what === "b" || what === "all") leftovers.push(...((await phaseB()) ?? []));
   if (what === "ftr" || what === "all") await ftr();
+  if (what === "f") await phaseF();
 } catch (error) {
   check("run finished without an exception", false, error.stack ?? String(error));
 } finally {
-  await browser?.close();
+  await closeBrowser();
   if (process.env.CHECK_KEEP !== "1")
     for (const who of leftovers) if (who?.email) await deleteByEmail(who.email, PASSWORD);
 }
-const failed = results.filter((r) => !r.ok);
-console.log(
-  `\n${results.length - failed.length}/${results.length} checks passed (run ${RUN}, screenshots in ${SHOTS})`,
-);
-for (const f of failed) console.log(`  FAIL ${f.name}`);
-process.exit(failed.length ? 1 : 0);
+process.exit(summary());

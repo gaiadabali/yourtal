@@ -23,6 +23,7 @@ import type { TransferAssertion, TransferCreated } from "@yourtal/contracts/oidc
 import { PublicRoute } from "../../shared/authz/authorize.decorator";
 import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { RateLimit } from "../../shared/rate-limit/rate-limit.decorator";
+import { OidcClientRateLimitGuard } from "./client-rate-limit.guard";
 import { OIDC_RUNTIME, OidcRuntime } from "./oidc-runtime";
 import { TransferClientGuard, verifiedClient } from "./teen-invite-client.guard";
 import type { TransferStore } from "./transfers";
@@ -36,6 +37,17 @@ const PUBLIC_REASON =
   "client-credentials token with scope app_transfers, verified by TransferClientGuard; " +
   "a machine client, never a session or Cerbos principal";
 
+/**
+ * Per app: 60 a minute, counted on its verified client id. The per-IP window is
+ * only a floor for junk before the guard knows the client, and is shared by
+ * every app calling from one server address, so it sits well above the sum.
+ * Not measured from production traffic.
+ */
+const TRANSFER_LIMITS = {
+  identity: { max: 60, windowSeconds: 60 },
+  ip: { max: 600, windowSeconds: 60 },
+} as const;
+
 const notFound = (code = "transfer_not_found") =>
   new NotFoundException({ code, message: "no such transfer for this app" });
 
@@ -46,12 +58,12 @@ const notFound = (code = "transfer_not_found") =>
  * calling client's sector; the API never says whether the person uses the destination.
  */
 @Controller("api/oidc-clients/transfers")
-@UseGuards(TransferClientGuard)
+@UseGuards(TransferClientGuard, OidcClientRateLimitGuard)
 export class TransfersController {
   constructor(@Inject(OIDC_RUNTIME) private readonly runtime: OidcRuntime) {}
 
   @Idempotent({ retentionMs: RETENTION_MS, scopeBy: "oidc_client" })
-  @RateLimit({ routeId: "oidc.transfers.create", ip: { max: 60, windowSeconds: 60 } })
+  @RateLimit({ routeId: "oidc.transfers.create", ...TRANSFER_LIMITS })
   @PublicRoute(PUBLIC_REASON)
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -76,7 +88,7 @@ export class TransfersController {
 
   /** A credential: never kept by the idempotency layer, cached or logged. */
   @NotValueMoving("Mints a short-lived assertion; a repeat mints the same claims.")
-  @RateLimit({ routeId: "oidc.transfers.assertion", ip: { max: 60, windowSeconds: 60 } })
+  @RateLimit({ routeId: "oidc.transfers.assertion", ...TRANSFER_LIMITS })
   @PublicRoute(PUBLIC_REASON)
   @Post(":transferId/assertion")
   @HttpCode(HttpStatus.OK)

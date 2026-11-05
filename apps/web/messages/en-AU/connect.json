@@ -72,7 +72,7 @@
   "send": {
     "heading": "Send your {year} deductions to {to}?",
     "signedInAs": "Signed in as {name}",
-    "what": "{app} will send {to} {lines, plural, one {# deduction line} other {# deduction lines}} for {year}: the amount of each, your occupation, your work kilometres and a fingerprint of each receipt. Not the receipts themselves or the shops' names. YourTal only tells {to} which of its accounts is yours.",
+    "what": "{app} will send {to} {lines, plural, =0 {your work kilometres and the other details below for {year}.} other {{lines, plural, one {# deduction line} other {# deduction lines}} for {year}: the amount of each, your occupation, your work kilometres and a fingerprint of each receipt.}} Not the receipts themselves or the shops' names. YourTal only tells {to} which of its accounts is yours.",
     "arrives": "It arrives as an import for you to check. Nothing in your return changes until you accept it.",
     "operator": "{to} is run by {operator}, not by YourTal."
   },

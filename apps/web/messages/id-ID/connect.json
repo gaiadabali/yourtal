@@ -72,7 +72,7 @@
   "send": {
     "heading": "Kirim pengurang pajak {year} kamu ke {to}?",
     "signedInAs": "Masuk sebagai {name}",
-    "what": "{app} akan mengirim {lines} baris pengurang pajak untuk {year} ke {to}: jumlah tiap baris, pekerjaanmu, kilometer kerjamu, dan sidik jari tiap struk. Bukan struknya sendiri atau nama tokonya. YourTal hanya memberi tahu {to} akun mana miliknya yang adalah kamu.",
+    "what": "{app} akan mengirim {lines, plural, =0 {kilometer kerjamu dan rincian lain di bawah untuk {year} ke {to}.} other {{lines} baris pengurang pajak untuk {year} ke {to}: jumlah tiap baris, pekerjaanmu, kilometer kerjamu, dan sidik jari tiap struk.}} Bukan struknya sendiri atau nama tokonya. YourTal hanya memberi tahu {to} akun mana miliknya yang adalah kamu.",
     "arrives": "Data ini masuk sebagai impor untuk kamu periksa. Tidak ada yang berubah di pengembalian pajakmu sampai kamu menerimanya.",
     "operator": "{to} dijalankan oleh {operator}, bukan oleh YourTal."
   },

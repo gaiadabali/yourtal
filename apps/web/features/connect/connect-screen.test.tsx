@@ -412,6 +412,33 @@ describe("send", () => {
     expect(screen.getByText(/ 1 deduction line for /)).toBeInTheDocument();
   });
 
+  it("says what is sent when there are no deduction lines, only kilometres", () => {
+    const value = sendDetails();
+    renderScreen({ ...value, send: { ...value.send!, lineCount: 0 } });
+    expect(
+      screen.getByText(
+        /SnapApp will send Free Tax Returns your work kilometres and the other details below for 2025-26\. Not the receipts/,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/0 deduction/)).not.toBeInTheDocument();
+  });
+
+  it("says the same in Indonesian for kilometres only and for lines", () => {
+    const value = sendDetails();
+    renderScreen({ ...value, send: { ...value.send!, lineCount: 0 } }, "id-ID");
+    expect(
+      screen.getByText(
+        /SnapApp akan mengirim kilometer kerjamu dan rincian lain di bawah untuk 2025-26 ke Free Tax Returns\. Bukan/,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("says many deduction lines for many", () => {
+    const value = sendDetails();
+    renderScreen({ ...value, send: { ...value.send!, lineCount: 120 } });
+    expect(screen.getByText(/ 120 deduction lines for 2025-26: /)).toBeInTheDocument();
+  });
+
   it("Send approves, then goes where the API says", async () => {
     sendContinueAction.mockResolvedValueOnce({
       kind: "redirect",

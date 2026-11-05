@@ -3,6 +3,7 @@ import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import { AuthModule } from "../auth/auth.module";
 import { SessionService } from "../auth/session/session.service";
+import { OidcClientRateLimitGuard } from "./client-rate-limit.guard";
 import { InteractionController } from "./interaction.controller";
 import { InteractionService, SIGN_IN_SESSIONS } from "./interaction.service";
 import { OIDC_RUNTIME, OidcRuntime, createOidcRuntime } from "./oidc-runtime";
@@ -34,6 +35,7 @@ import { TransfersController } from "./transfers.controller";
     },
     TeenInviteClientGuard,
     TransferClientGuard,
+    OidcClientRateLimitGuard,
     { provide: SIGN_IN_SESSIONS, useExisting: SessionService },
     InteractionService,
   ],

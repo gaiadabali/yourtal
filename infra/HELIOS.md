@@ -81,7 +81,7 @@ TLS expiry and, with `YT_CHECK_BACKUP=1`, backup age. On Helios it runs from
 root's cron through a copy of SnapApp's `alert.sh` (mails once on failure and
 once on recovery, using `ALERT_EMAIL_TO` and the SMTP settings that monitor
 already has): `/opt/yourtal/monitor/{alert.sh,uptime.sh}`, state in
-`/var/lib/yourtal-monitor`. `infra/helios/monitor/oidc-uptime.workflow.yml (copy to .github/workflows/ once the gh token has the workflow scope)` checks
+`/var/lib/yourtal-monitor`. `.github/workflows/oidc-uptime.yml` checks
 discovery every 15 minutes from GitHub, off the box.
 
 nginx: `/oidc/` rate limits key on the IPv6 /64 (`$yt_ip_key`) and share a

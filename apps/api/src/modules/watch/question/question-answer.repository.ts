@@ -61,19 +61,25 @@ export class DrizzleQuestionAnswerRepository implements QuestionAnswerRepository
       // nonce (which already guarantees one answer per CHECKPOINT) in case
       // two different checkpoints ever resolved to the same question —
       // belt and braces, not the primary control.
-      try {
-        await tx.execute(sql`
+      // 5.13.u: a question left to run out carries no answer, and the table
+      // refuses such a row (question_response_carries_an_answer); it is
+      // still counted below as asked and wrong, so the session moves on.
+      const hasAnswer = input.selectedOptionId !== null || input.answeredBool !== null;
+      if (hasAnswer) {
+        try {
+          await tx.execute(sql`
           INSERT INTO campaign.question_response
             (session_id, question_id, selected_option_id, answered_bool, was_correct, latency_ms)
           VALUES (${input.sessionId}, ${input.question.id}, ${input.selectedOptionId},
                   ${input.answeredBool}, ${wasCorrect}, ${Math.max(0, Math.round(input.latencyMs))})
         `);
-      } catch (error) {
-        if (isUniqueViolation(error)) {
-          // Already answered. Nothing else should be double-counted either.
-          return;
+        } catch (error) {
+          if (isUniqueViolation(error)) {
+            // Already answered. Nothing else should be double-counted either.
+            return;
+          }
+          throw error;
         }
-        throw error;
       }
 
       await tx.execute(sql`

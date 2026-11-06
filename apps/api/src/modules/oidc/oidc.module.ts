@@ -3,23 +3,25 @@ import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import { AuthModule } from "../auth/auth.module";
 import { SessionService } from "../auth/session/session.service";
+import { OidcClientRateLimitGuard } from "./client-rate-limit.guard";
 import { InteractionController } from "./interaction.controller";
 import { InteractionService, SIGN_IN_SESSIONS } from "./interaction.service";
 import { OIDC_RUNTIME, OidcRuntime, createOidcRuntime } from "./oidc-runtime";
 import { NO_TEEN_INVITES, TEEN_INVITE_CHECKER } from "./sign-in-checks";
-import { TeenInviteClientGuard } from "./teen-invite-client.guard";
+import { TeenInviteClientGuard, TransferClientGuard } from "./teen-invite-client.guard";
 import { TeenInvitesController } from "./teen-invites.controller";
+import { TransfersController } from "./transfers.controller";
 
 /**
  * Group 3.9 (docs/26): YourTal as an OpenID Connect provider. The provider
  * itself is mounted on the raw Fastify instance at `/oidc` (mount-oidc.ts),
  * outside Nest's guards; this module builds it and serves the interaction API
- * the `/connect/[uid]` screens call, and SnapApp's teen invite API. With OIDC_ENABLED off, nothing is built
+ * the `/connect/[uid]` screens call, SnapApp's teen invite API and its transfers (docs/30). With OIDC_ENABLED off, nothing is built
  * and the interaction API answers 404.
  */
 @Module({
   imports: [AuthModule],
-  controllers: [InteractionController, TeenInvitesController],
+  controllers: [InteractionController, TeenInvitesController, TransfersController],
   providers: [
     {
       provide: OIDC_RUNTIME,
@@ -32,6 +34,8 @@ import { TeenInvitesController } from "./teen-invites.controller";
       inject: [OIDC_RUNTIME],
     },
     TeenInviteClientGuard,
+    TransferClientGuard,
+    OidcClientRateLimitGuard,
     { provide: SIGN_IN_SESSIONS, useExisting: SessionService },
     InteractionService,
   ],

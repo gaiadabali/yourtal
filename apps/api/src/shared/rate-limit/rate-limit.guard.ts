@@ -15,7 +15,11 @@ import {
   RATE_LIMIT_METADATA,
   type RateLimitOptions,
 } from "./rate-limit.decorator";
-import { RateLimitService } from "./rate-limit.service";
+import {
+  RateLimitService,
+  type RateLimitPolicy,
+  type RateLimitSubject,
+} from "./rate-limit.service";
 
 /**
  * Applies `@RateLimit` metadata. YT-0052 AC2.
@@ -63,36 +67,16 @@ export class RateLimitGuard implements CanActivate {
     // whose id is undefined" are genuinely different, and only the first
     // should cause `RateLimitService` to skip the identity dimension.
     const identityId = identityOf(request);
-    const verdict = await this.rateLimit
-      .consume(
-        {
-          routeId: options.routeId,
-          ip: request.ip,
-          ...(identityId === undefined ? {} : { identityId }),
-        },
-        options,
-      )
-      .catch((cause: unknown) => {
-        throw new ServiceUnavailableException(
-          "Rate limiting is unavailable, so this request cannot be served.",
-          { cause },
-        );
-      });
-
-    if (!verdict.blocked) return true;
-
-    // 429 with Retry-After. The body deliberately does NOT name which
-    // dimension refused: telling a caller whether they hit the per-IP or
-    // the per-route limit tells them whether rotating addresses would help.
-    throw new HttpException(
+    await enforceRateLimit(
+      this.rateLimit,
       {
-        statusCode: HttpStatus.TOO_MANY_REQUESTS,
-        error: "Too Many Requests",
-        message: "Too many requests. Try again later.",
-        retryAfterSeconds: verdict.retryAfterSeconds,
+        routeId: options.routeId,
+        ip: request.ip,
+        ...(identityId === undefined ? {} : { identityId }),
       },
-      HttpStatus.TOO_MANY_REQUESTS,
+      options,
     );
+    return true;
   }
 
   private policyFor(context: ExecutionContext): RateLimitOptions | undefined {
@@ -115,6 +99,38 @@ export class RateLimitGuard implements CanActivate {
       routeId: `public:${context.getClass().name}.${context.getHandler().name}`,
     };
   }
+}
+
+/**
+ * Consumes one request and throws the refusal: 503 if the store is down,
+ * 429 with `retryAfterSeconds` if over a limit. Shared so a guard that runs
+ * after authentication (the partner one) answers in exactly this shape.
+ *
+ * The 429 body deliberately does NOT name which dimension refused: telling a
+ * caller whether they hit the per-IP or the per-route limit tells them
+ * whether rotating addresses would help.
+ */
+export async function enforceRateLimit(
+  rateLimit: RateLimitService,
+  subject: RateLimitSubject,
+  policy: RateLimitPolicy,
+): Promise<void> {
+  const verdict = await rateLimit.consume(subject, policy).catch((cause: unknown) => {
+    throw new ServiceUnavailableException(
+      "Rate limiting is unavailable, so this request cannot be served.",
+      { cause },
+    );
+  });
+  if (!verdict.blocked) return;
+  throw new HttpException(
+    {
+      statusCode: HttpStatus.TOO_MANY_REQUESTS,
+      error: "Too Many Requests",
+      message: "Too many requests. Try again later.",
+      retryAfterSeconds: verdict.retryAfterSeconds,
+    },
+    HttpStatus.TOO_MANY_REQUESTS,
+  );
 }
 
 /**

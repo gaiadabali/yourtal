@@ -21,6 +21,7 @@ import type { TeenInvite, TeenInviteCreated } from "@yourtal/contracts/oidc/teen
 import { PublicRoute } from "../../shared/authz/authorize.decorator";
 import { Idempotent } from "../../shared/idempotency/idempotent.decorator";
 import { RateLimit } from "../../shared/rate-limit/rate-limit.decorator";
+import { OidcClientRateLimitGuard } from "./client-rate-limit.guard";
 import { OIDC_RUNTIME, OidcRuntime } from "./oidc-runtime";
 import { TeenInviteClientGuard, verifiedClient } from "./teen-invite-client.guard";
 import type { TeenInviteStore } from "./teen-invites";
@@ -46,6 +47,20 @@ function inviteIdOf(raw: string): string {
   return parsed.data;
 }
 
+/**
+ * Per app, counted on its verified client id. The per-IP window is only a floor
+ * for junk before the guard knows the client, and every app's server shares one
+ * address, so it is 10x the per-client number. Not measured from production traffic.
+ */
+const WRITE_LIMITS = {
+  identity: { max: 60, windowSeconds: 60 },
+  ip: { max: 600, windowSeconds: 60 },
+} as const;
+const READ_LIMITS = {
+  identity: { max: 120, windowSeconds: 60 },
+  ip: { max: 1200, windowSeconds: 60 },
+} as const;
+
 const notFound = () =>
   new NotFoundException({ code: "invite_not_found", message: "no such invite for this app" });
 
@@ -55,12 +70,12 @@ const notFound = () =>
  * and every invite belongs to the calling client's sector.
  */
 @Controller("api/oidc-clients/teen-invites")
-@UseGuards(TeenInviteClientGuard)
+@UseGuards(TeenInviteClientGuard, OidcClientRateLimitGuard)
 export class TeenInvitesController {
   constructor(@Inject(OIDC_RUNTIME) private readonly runtime: OidcRuntime) {}
 
   @Idempotent({ retentionMs: RETENTION_MS, scopeBy: "oidc_client", redact: withoutCode })
-  @RateLimit({ routeId: "oidc.teen_invites.create", ip: { max: 60, windowSeconds: 60 } })
+  @RateLimit({ routeId: "oidc.teen_invites.create", ...WRITE_LIMITS })
   @PublicRoute(PUBLIC_REASON)
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -87,7 +102,7 @@ export class TeenInvitesController {
     });
   }
 
-  @RateLimit({ routeId: "oidc.teen_invites.read", ip: { max: 120, windowSeconds: 60 } })
+  @RateLimit({ routeId: "oidc.teen_invites.read", ...READ_LIMITS })
   @PublicRoute(PUBLIC_REASON)
   @Get(":inviteId")
   async read(@Param("inviteId") raw: string, @Req() request: FastifyRequest): Promise<TeenInvite> {
@@ -102,7 +117,7 @@ export class TeenInvitesController {
   }
 
   @Idempotent({ retentionMs: RETENTION_MS, scopeBy: "oidc_client" })
-  @RateLimit({ routeId: "oidc.teen_invites.end", ip: { max: 60, windowSeconds: 60 } })
+  @RateLimit({ routeId: "oidc.teen_invites.end", ...WRITE_LIMITS })
   @PublicRoute(PUBLIC_REASON)
   @Post(":inviteId/end")
   @HttpCode(HttpStatus.OK)
@@ -112,15 +127,16 @@ export class TeenInvitesController {
     @Req() request: FastifyRequest,
   ): Promise<TeenInvite> {
     const client = verifiedClient(request, this.runtime);
-    // docs/26 §1.9: an app's events go to its clients that receive them.
-    const receivers = this.runtime.clients
-      .filter((one) => one.sector === client.sector && one.eventsEndpoint !== undefined)
-      .map((one) => one.clientId);
+    // docs/29 §5: one receiver per sector (`event-receivers.ts`); `clients` carries only this environment's.
+    const receiver =
+      this.runtime.clients.find(
+        (one) => one.sector === client.sector && one.eventsEndpoint !== undefined,
+      )?.clientId ?? null;
     const ended = await this.store().end({
       sector: client.sector,
       inviteId: inviteIdOf(raw),
       parentSub: body.parentSub,
-      receivers,
+      receiver,
       now: new Date(),
     });
     if (ended === null) throw notFound();

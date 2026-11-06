@@ -61,6 +61,7 @@ import { StreakController } from "./streak.controller";
 import { NotificationsController } from "./notifications.controller";
 import { AccountController } from "./account.controller";
 import { LinkedAppsController } from "./linked-apps.controller";
+import { ConnectedAppsController } from "./connected-apps.controller";
 import { SettingsController } from "./settings.controller";
 import { StreakService } from "./streak.service";
 
@@ -93,6 +94,7 @@ export const ME_DB = Symbol("ME_DB");
     NotificationsController,
     AccountController,
     LinkedAppsController,
+    ConnectedAppsController,
     SettingsController,
   ],
   providers: [

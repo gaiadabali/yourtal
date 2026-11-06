@@ -1,8 +1,10 @@
 import type {
+  InteractionSend,
   InteractionSharing,
   SignInRefusal,
   TeenInviteProblem,
 } from "@yourtal/contracts/oidc/interaction";
+import type { TransferProblem } from "@yourtal/contracts/oidc/transfer";
 import type { OidcAccount } from "./claims";
 import { ageBandOf } from "./claims";
 import type { SignInClient } from "./clients";
@@ -43,6 +45,11 @@ export const NO_TEEN_INVITES: TeenInviteChecker = {
   check: () => Promise.resolve({ allowed: false, problem: "no_invite" }),
 };
 
+/** Whether the app's `transfer` may be sent by this person now (docs/30 §5), as the send screen needs it. */
+export type SendCheck =
+  | { readonly ok: true; readonly send: InteractionSend }
+  | { readonly ok: false; readonly problem: TransferProblem };
+
 /** The standing or pending invite a teen signs in with, as the screens need it. */
 export type TeenInviteAllowed = Extract<TeenInviteCheck, { allowed: true }>;
 
@@ -54,6 +61,8 @@ export type SignInState =
       readonly account: OidcAccount;
       readonly refusal: SignInRefusal;
       readonly inviteProblem: TeenInviteProblem | null;
+      /** Set with `send_refused` only. */
+      readonly sendProblem: TransferProblem | null;
     }
   | {
       readonly screen: "consent" | "continue";
@@ -61,6 +70,13 @@ export type SignInState =
       readonly sharing: InteractionSharing;
       /** Set for a teen: the invite that lets them in. */
       readonly invite: TeenInviteAllowed | null;
+    }
+  | {
+      readonly screen: "send";
+      readonly account: OidcAccount;
+      readonly sharing: InteractionSharing;
+      readonly invite: TeenInviteAllowed | null;
+      readonly send: InteractionSend;
     };
 
 export interface SignInInput {
@@ -77,6 +93,8 @@ export interface SignInInput {
   readonly teenInvites: TeenInviteChecker;
   /** The app asked for a newer sign-in than the session's (`signInTooOld`). */
   readonly signInAgain: boolean;
+  /** Set when the app sent `transfer`: checks it for the signed-in person. */
+  readonly checkSend?: (account: OidcAccount) => Promise<SendCheck>;
   readonly now: Date;
 }
 
@@ -187,7 +205,7 @@ export async function decideSignIn(input: SignInInput): Promise<SignInState> {
   if (!check.ok) {
     const { block, inviteProblem } = check;
     if (block === "verify_email") return { screen: "verify_email", account };
-    return { screen: "refused", account, refusal: block, inviteProblem };
+    return { screen: "refused", account, refusal: block, inviteProblem, sendProblem: null };
   }
   if (input.signInAgain) return { screen: "sign_in_again", account };
 
@@ -196,10 +214,24 @@ export async function decideSignIn(input: SignInInput): Promise<SignInState> {
     ageBand: ageBandOf(account, input.now),
     region: account.region,
   };
-  return {
-    screen: consentCovers(input, check.invite) ? "continue" : "consent",
-    account,
-    sharing,
-    invite: check.invite,
-  };
+  if (!consentCovers(input, check.invite)) {
+    return { screen: "consent", account, sharing, invite: check.invite };
+  }
+  // docs/30 §5: a send is asked only once the app's consent stands; before it,
+  // the consent screen shows and nothing is approved.
+  if (input.checkSend === undefined) {
+    return { screen: "continue", account, sharing, invite: check.invite };
+  }
+  const send = await input.checkSend(account);
+  if (!send.ok) {
+    const { problem } = send;
+    return {
+      screen: "refused",
+      account,
+      refusal: "send_refused",
+      inviteProblem: null,
+      sendProblem: problem,
+    };
+  }
+  return { screen: "send", account, sharing, invite: check.invite, send: send.send };
 }

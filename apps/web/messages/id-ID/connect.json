@@ -5,7 +5,9 @@
     "notYou": "Bukan kamu?",
     "useAnotherCta": "Pakai akun lain",
     "returnNote": "Kamu akan kembali ke {returnHost}.",
-    "actionFailed": "Terjadi masalah. Coba lagi."
+    "actionFailed": "Terjadi masalah. Coba lagi.",
+    "sendCta": "Kirim",
+    "privacyLink": "Kebijakan privasi"
   },
   "login": {
     "heading": "Masuk untuk melanjutkan ke {app}",
@@ -67,6 +69,13 @@
     "parentEnds": "{parent} bisa menghentikan aksesmu kapan saja. Jika itu terjadi, data {app} kamu dihapus.",
     "notNowCta": "Nanti saja"
   },
+  "send": {
+    "heading": "Kirim pengurang pajak {year} kamu ke {to}?",
+    "signedInAs": "Masuk sebagai {name}",
+    "what": "{app} akan mengirim {lines, plural, =0 {pekerjaan dan kilometer kerjamu untuk {year} ke {to}.} other {{lines} baris pengurang pajak untuk {year} ke {to}: jumlah tiap baris, pekerjaanmu, kilometer kerjamu, dan sidik jari tiap struk.}} Bukan struknya sendiri atau nama tokonya. YourTal hanya memberi tahu {to} akun mana miliknya yang adalah kamu.",
+    "arrives": "Data ini masuk sebagai impor untuk kamu periksa. Tidak ada yang berubah di pengembalian pajakmu sampai kamu menerimanya.",
+    "operator": "{to} dijalankan oleh {operator}, bukan oleh YourTal."
+  },
   "refused": {
     "account_on_hold": {
       "title": "Akun YourTal kamu sedang ditahan",
@@ -89,7 +98,16 @@
         "invite_expired": "Undangan ini sudah kedaluwarsa atau sudah dipakai. Minta undangan baru dari orang tuamu."
       }
     },
-    "backCta": "Kembali ke {app}"
+    "backCta": "Kembali ke {app}",
+    "send_refused": {
+      "title": "Pengurang pajakmu tidak bisa dikirim",
+      "problem": {
+        "not_connected": "Masuk ke Free Tax Returns dengan YourTal sekali, lalu kirim lagi dari {app}. Tidak ada yang terkirim.",
+        "wrong_account": "Ini dimulai dari akun YourTal lain. Kembali ke akun yang kamu pakai di {app}. Tidak ada yang terkirim.",
+        "expired": "Permintaan ini sudah kedaluwarsa. Mulai lagi dari {app}. Tidak ada yang terkirim.",
+        "not_allowed": "Free Tax Returns untuk orang dewasa di Australia. Tidak ada yang terkirim."
+      }
+    }
   },
   "continuing": {
     "heading": "Melanjutkan…"

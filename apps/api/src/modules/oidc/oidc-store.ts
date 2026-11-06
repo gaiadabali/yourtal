@@ -62,6 +62,22 @@ function isUniqueViolation(error: unknown): boolean {
 }
 
 /**
+ * Locks the teen's guardian consent FOR SHARE, and is true only while it stands
+ * (3.10.g). A withdrawal updates this row first (`revoke-guardian-consent`), so one
+ * that races this grant either waits for it and then ends the consent it wrote, or
+ * commits first and this refuses. Lock order everywhere: guardian consent, invite,
+ * app consent.
+ */
+async function holdGuardian(client: PoolClient, teenUserId: string): Promise<boolean> {
+  const locked = await client.query<{ approved_at: Date | null; revoked_at: Date | null }>(
+    "SELECT approved_at, revoked_at FROM identity.guardian_consent WHERE user_id = $1 FOR SHARE",
+    [teenUserId],
+  );
+  const row = locked.rows[0];
+  return row !== undefined && row.approved_at !== null && row.revoked_at === null;
+}
+
+/**
  * Locks the invite a teen's consent is given under, so an end or a second
  * acceptance waits. A pending one is used up here, once, by this teen, while
  * still good; a standing one must be this teen's and not ended.
@@ -174,7 +190,10 @@ export function createPgOidcStore(pool: Pool): OidcStore {
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
-        if (invite !== undefined && !(await holdInvite(client, invite, input))) {
+        if (
+          invite !== undefined &&
+          !((await holdGuardian(client, input.userId)) && (await holdInvite(client, invite, input)))
+        ) {
           await client.query("ROLLBACK");
           return false;
         }

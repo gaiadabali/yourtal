@@ -1,5 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { assertDriversConfiguredForBoot } from "@yourtal/drivers/driver-mode";
 import { loadWorkerConfig } from "./config";
 import { loadJobs } from "./job-loader";
 import { startWorker } from "./worker";
@@ -21,6 +22,8 @@ const jobsDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "jobs");
 
 async function bootstrap(): Promise<void> {
   const config = loadWorkerConfig();
+  // The API's boot rule (2.3.b), now that the worker sends app events itself (3.7 Y4).
+  assertDriversConfiguredForBoot(process.env, config.appEnv);
   // 13.8: the deploy's boot check. Parses config and imports every job, so a
   // missing dependency or variable fails before the release goes live, but
   // starts no queue and so takes no job from the running worker.

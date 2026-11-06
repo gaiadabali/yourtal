@@ -5,7 +5,9 @@
     "notYou": "Not you?",
     "useAnotherCta": "Use another account",
     "returnNote": "You'll go back to {returnHost}.",
-    "actionFailed": "Something went wrong. Try again."
+    "actionFailed": "Something went wrong. Try again.",
+    "sendCta": "Send",
+    "privacyLink": "Privacy policy"
   },
   "login": {
     "heading": "Sign in to continue to {app}",
@@ -67,6 +69,13 @@
     "parentEnds": "{parent} can end your access at any time. If they do, your {app} data is deleted.",
     "notNowCta": "Not now"
   },
+  "send": {
+    "heading": "Send your {year} deductions to {to}?",
+    "signedInAs": "Signed in as {name}",
+    "what": "{app} will send {to} {lines, plural, =0 {your occupation and work kilometres for {year}.} other {{lines, plural, one {# deduction line} other {# deduction lines}} for {year}: the amount of each, your occupation, your work kilometres and a fingerprint of each receipt.}} Not the receipts themselves or the shops' names. YourTal only tells {to} which of its accounts is yours.",
+    "arrives": "It arrives as an import for you to check. Nothing in your return changes until you accept it.",
+    "operator": "{to} is run by {operator}, not by YourTal."
+  },
   "refused": {
     "account_on_hold": {
       "title": "Your YourTal account is on hold",
@@ -89,7 +98,16 @@
         "invite_expired": "This invite has expired or has already been used. Ask your parent for a new one."
       }
     },
-    "backCta": "Back to {app}"
+    "backCta": "Back to {app}",
+    "send_refused": {
+      "title": "We couldn't send your deductions",
+      "problem": {
+        "not_connected": "Sign in to Free Tax Returns with YourTal once, then send again from {app}. Nothing was sent.",
+        "wrong_account": "This was started from another YourTal account. Switch back to the one you use in {app}. Nothing was sent.",
+        "expired": "This has expired. Start again from {app}. Nothing was sent.",
+        "not_allowed": "Free Tax Returns is for adults in Australia. Nothing was sent."
+      }
+    }
   },
   "continuing": {
     "heading": "Continuing…"

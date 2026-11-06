@@ -37,7 +37,7 @@ function outcomeOf(error: ApiError): ConnectActionResult {
 
 async function continueWith(
   uid: string,
-  screen: "consent" | "continue",
+  screen: "consent" | "continue" | "send",
 ): Promise<ConnectActionResult> {
   if (!isInteractionUid(uid)) return { kind: "error" };
   const result = await interactionFetch(uid, "/continue", interactionRedirectSchema, {
@@ -61,6 +61,11 @@ export async function consentContinueAction(uid: string): Promise<ConnectActionR
 /** `POST /api/connect/{uid}/continue` from the one-tap "Continue as" screen's Continue. */
 export async function oneTapContinueAction(uid: string): Promise<ConnectActionResult> {
   return continueWith(uid, "continue");
+}
+
+/** `POST /api/connect/{uid}/continue` from the send screen's Send: approves the transfer and goes back to the app. */
+export async function sendContinueAction(uid: string): Promise<ConnectActionResult> {
+  return continueWith(uid, "send");
 }
 
 /** `POST /api/connect/{uid}/cancel`: sends the person back to the app with a refusal. */

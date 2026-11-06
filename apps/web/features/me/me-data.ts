@@ -8,6 +8,8 @@ import { meResponseSchema } from "@/lib/api/me-schema";
 import type { MeResponse } from "@/lib/api/me-schema";
 import { signInMethodsSchema } from "@yourtal/contracts/identity/sign-in-methods";
 import type { SignInMethods } from "@yourtal/contracts/identity/sign-in-methods";
+import { connectedAppsResponseSchema } from "@yourtal/contracts/me/connected-app";
+import type { ConnectedAppsResponse } from "@yourtal/contracts/me/connected-app";
 import { linkedAppsResponseSchema } from "@yourtal/contracts/me/linked-app";
 import type { LinkedAppsResponse } from "@yourtal/contracts/me/linked-app";
 import {
@@ -61,6 +63,11 @@ export function getAutoplaySetting(): Promise<ApiResult<AutoplayResponse>> {
 
 export function listLinkedApps(): Promise<ApiResult<LinkedAppsResponse>> {
   return apiFetch("/api/me/linked-apps", linkedAppsResponseSchema);
+}
+
+/** Docs/29 Y3: live sign-in consents. Not `listConsents`: its `latestPerPurpose` groups by purpose, so two apps collapse into one. */
+export function listConnectedApps(): Promise<ApiResult<ConnectedAppsResponse>> {
+  return apiFetch("/api/me/connected-apps", connectedAppsResponseSchema);
 }
 
 /** F116: the viewer's declared area. The API refuses a teen, so callers ask only for an adult. */

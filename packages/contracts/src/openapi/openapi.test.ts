@@ -490,6 +490,10 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   linkedAppsResponseSchema:
     "MeModule -- TASKS.md 14.3.c, same convention as autoplaySettingSchema.",
   unlinkAppResponseSchema: "MeModule -- TASKS.md 14.3.c, same convention as autoplaySettingSchema.",
+  connectedAppIdSchema: "MeModule -- group 3.7 Y3, same convention as linkedAppSchema.",
+  connectedAppSchema: "MeModule -- group 3.7 Y3, same convention as linkedAppSchema.",
+  connectedAppsResponseSchema: "MeModule -- group 3.7 Y3, same convention as linkedAppSchema.",
+  removeConnectedAppResponseSchema: "MeModule -- group 3.7 Y3, same convention as linkedAppSchema.",
 
   // --- areas (F116, group 1.6.f/g) ---
   areaStatesResponseSchema:
@@ -582,6 +586,7 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   interactionScreenSchema: "oidc/interaction.ts's nested enum on InteractionDetails.screen.",
   interactionClientSchema: "oidc/interaction.ts's nested object InteractionDetails.client.",
   interactionSharingSchema: "oidc/interaction.ts's nested object InteractionDetails.sharing.",
+  interactionSendSchema: "oidc/interaction.ts's nested object InteractionDetails.send.",
   accessDeniedReasonSchema:
     "oidc/interaction.ts's error_description values on the redirect to the app, not an HTTP body.",
   teenInviteProblemSchema: "oidc/interaction.ts's nested enum on InteractionDetails.inviteProblem.",
@@ -592,6 +597,17 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   teenInviteSchema:
     "oidc/teen-invite.ts's response for the teen invite read and end — documented inline (route-registry.a-oidc.ts).",
   teenInviteStatusSchema: "oidc/teen-invite.ts's nested enum on TeenInvite.status.",
+  financialYearSchema: "oidc/transfer.ts's nested string on TransferCreateRequest.financialYear.",
+  transferCreateRequestSchema:
+    "oidc/transfer.ts's body for POST /api/oidc-clients/transfers — documented inline (route-registry.a-oidc.ts).",
+  transferCreatedSchema:
+    "oidc/transfer.ts's response for POST /api/oidc-clients/transfers — documented inline (route-registry.a-oidc.ts).",
+  transferAssertionRequestSchema:
+    "oidc/transfer.ts's body for the assertion POST — documented inline (route-registry.a-oidc.ts).",
+  transferAssertionSchema:
+    "oidc/transfer.ts's response for the assertion POST — documented inline (route-registry.a-oidc.ts).",
+  transferProblemSchema:
+    "oidc/transfer.ts's send-screen problem codes; joins InteractionDetails with the send screen (4.8 Y2).",
 
   // --- merchant: Studio Developers (TASKS.md 8.3.a/c) ---
   merchantCredentialStateSchema:

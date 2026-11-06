@@ -13,8 +13,6 @@ export const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const INVITES_PER_DAY = 10;
 const CODE_BYTES = 16;
 
-export const ACCESS_ENDED_EVENT = "urn:yourtal:event:access-ended";
-
 export type CreateInviteResult =
   | { readonly ok: true; readonly invite: Required<TeenInviteCreated> }
   | { readonly ok: false; readonly error: "parent_not_eligible" | "too_many_invites" };
@@ -24,14 +22,14 @@ export interface TeenInviteStore extends TeenInviteChecker {
   find(input: { sector: string; inviteId: string; now: Date }): Promise<TeenInvite | null>;
   /**
    * Ends the invite and the teen's access, and queues `access-ended` with
-   * `parent_ended` for each of `receivers` (docs/26 §2.2). Null when no such
+   * `parent_ended` for the sector's `receiver` (docs/26 §2.2). Null when no such
    * invite by this parent exists in this sector.
    */
   end(input: {
     sector: string;
     inviteId: string;
     parentSub: string;
-    receivers: readonly string[];
+    receiver: string | null;
     now: Date;
   }): Promise<TeenInvite | null>;
 }
@@ -265,7 +263,7 @@ export function createPgTeenInvites(pool: Pool): TeenInviteStore {
       return row === undefined ? null : view(pool, row, now);
     },
 
-    async end({ sector, inviteId, parentSub, receivers, now }) {
+    async end({ sector, inviteId, parentSub, receiver, now }) {
       const db = await pool.connect();
       try {
         await db.query("BEGIN");
@@ -287,7 +285,7 @@ export function createPgTeenInvites(pool: Pool): TeenInviteStore {
           );
           row.ended_at = now;
           if (row.teen_user_id !== null) {
-            await endTeenAccess(db, row, row.teen_user_id, receivers, now);
+            await endTeenAccess(db, row, row.teen_user_id, receiver);
           }
         }
         const answer = await view(db, row, now);
@@ -304,49 +302,22 @@ export function createPgTeenInvites(pool: Pool): TeenInviteStore {
 }
 
 /**
- * The teen's consent under this invite ends, its withdrawal is evidenced, and
- * each receiving client is told to erase. Nothing is sent unless such a
- * consent stood, and never for someone now 18: their space is their own
- * (docs/26 §3.3), and became-adult covers them.
+ * The teen's consent under this invite ends, with its withdrawal evidence and the
+ * `access-ended` event, through `oidc.end_app_access` (docs/29 §5). It does nothing
+ * unless such a consent stood, and never for someone now 18: their space is their
+ * own (docs/26 §3.3), and became-adult covers them. Runs inside `end`'s invite lock,
+ * the order the function itself takes.
  */
 async function endTeenAccess(
   db: PoolClient,
   invite: InviteRow,
   teenUserId: string,
-  receivers: readonly string[],
-  now: Date,
+  receiver: string | null,
 ): Promise<void> {
-  const teen = await person(db, teenUserId);
-  if (teen === null || ageBandOf({ dateOfBirth: teen.date_of_birth }, now) === "adult") return;
-  const ended = await db.query<{ policy_version_id: string }>(
-    `UPDATE oidc.app_consent SET ended_at = $3, end_reason = 'parent_ended'
-      WHERE user_id = $1 AND sector = $2 AND invite_id = $4 AND ended_at IS NULL
-        AND granted_via = 'guardian_invite'
-      RETURNING policy_version_id`,
-    [teenUserId, invite.sector, now, invite.id],
-  );
-  const policy = ended.rows[0]?.policy_version_id;
-  if (policy === undefined) return;
-  await db.query(
-    `INSERT INTO identity.consent_record
-       (user_id, purpose, jurisdiction, policy_version_id, state, recorded_at, source, audience)
-     VALUES ($1, 'sister_app_profile_sharing', $2, $3, 'withdrawn', $4, 'guardian_invite', $5)`,
-    [teenUserId, invite.region, policy, now, invite.sector],
-  );
-  const sub = await subOf(db, invite.sector, teenUserId);
-  if (sub === null) return;
-  for (const clientId of receivers) {
-    await db.query(
-      `INSERT INTO oidc.event_outbox (jti, client_id, sub, event_type, payload, iat)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [
-        randomUUID(),
-        clientId,
-        sub,
-        ACCESS_ENDED_EVENT,
-        { [ACCESS_ENDED_EVENT]: { reason: "parent_ended", erase_data: true } },
-        now,
-      ],
-    );
-  }
+  await db.query("SELECT oidc.end_app_access($1, $2, $3, 'parent_ended', $4)", [
+    teenUserId,
+    invite.sector,
+    receiver,
+    invite.id,
+  ]);
 }

@@ -12,12 +12,14 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
 type Answer = Promise<unknown>;
 const consentContinueAction = vi.fn<(uid: string) => Answer>();
 const oneTapContinueAction = vi.fn<(uid: string) => Answer>();
+const sendContinueAction = vi.fn<(uid: string) => Answer>();
 const cancelAction = vi.fn<(uid: string) => Answer>();
 const switchAccountAction = vi.fn<() => Answer>();
 const resendVerificationAction = vi.fn<() => Answer>();
 vi.mock("./connect-actions", () => ({
   consentContinueAction: (uid: string): Answer => consentContinueAction(uid),
   oneTapContinueAction: (uid: string): Answer => oneTapContinueAction(uid),
+  sendContinueAction: (uid: string): Answer => sendContinueAction(uid),
   cancelAction: (uid: string): Answer => cancelAction(uid),
   switchAccountAction: (): Answer => switchAccountAction(),
   resendVerificationAction: (): Answer => resendVerificationAction(),
@@ -357,6 +359,164 @@ describe("refused", () => {
     fireEvent.click(screen.getByRole("button", { name: "Back to SnapApp" }));
     await waitFor(() => expect(navigateTo).toHaveBeenCalledWith("https://y.test/oidc/auth/b"));
     expect(cancelAction).toHaveBeenCalledWith("uid_123-abc");
+  });
+});
+
+const sendDetails = (overrides: Partial<InteractionDetails> = {}) =>
+  details({
+    screen: "send",
+    sharing: null,
+    send: {
+      financialYear: "2025-26",
+      lineCount: 14,
+      to: {
+        clientId: "ftr-web",
+        name: "Free Tax Returns",
+        operator: "Benjamin Charles Group",
+        externalOperator: true,
+        privacyUrl: "https://ftr.test/privacy",
+        termsUrl: "https://ftr.test/terms",
+        returnHost: "ftr.test",
+      },
+    },
+    ...overrides,
+  });
+
+describe("send", () => {
+  it("says what is sent and to whom, with the operator and the privacy policy", () => {
+    renderScreen(sendDetails());
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: "Send your 2025-26 deductions to Free Tax Returns?",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Signed in as Ana")).toBeInTheDocument();
+    expect(screen.getByText("ana@example.com")).toBeInTheDocument();
+    expect(
+      screen.getByText(/SnapApp will send Free Tax Returns 14 deduction lines for 2025-26: /),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/It arrives as an import for you to check\./)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Free Tax Returns is run by Benjamin Charles Group, not by YourTal\./),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Privacy policy" })).toHaveAttribute(
+      "href",
+      "https://ftr.test/privacy",
+    );
+  });
+
+  it("says one deduction line for one", () => {
+    const value = sendDetails();
+    renderScreen({ ...value, send: { ...value.send!, lineCount: 1 } });
+    expect(screen.getByText(/ 1 deduction line for /)).toBeInTheDocument();
+  });
+
+  it("says what is sent when there are no deduction lines, only kilometres", () => {
+    const value = sendDetails();
+    renderScreen({ ...value, send: { ...value.send!, lineCount: 0 } });
+    expect(
+      screen.getByText(
+        /SnapApp will send Free Tax Returns your occupation and work kilometres for 2025-26\. Not the receipts/,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/0 deduction/)).not.toBeInTheDocument();
+  });
+
+  it("says the same in Indonesian for kilometres only and for lines", () => {
+    const value = sendDetails();
+    renderScreen({ ...value, send: { ...value.send!, lineCount: 0 } }, "id-ID");
+    expect(
+      screen.getByText(
+        /SnapApp akan mengirim pekerjaan dan kilometer kerjamu untuk 2025-26 ke Free Tax Returns\. Bukan/,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("says many deduction lines for many", () => {
+    const value = sendDetails();
+    renderScreen({ ...value, send: { ...value.send!, lineCount: 120 } });
+    expect(screen.getByText(/ 120 deduction lines for 2025-26: /)).toBeInTheDocument();
+  });
+
+  it("Send approves, then goes where the API says", async () => {
+    sendContinueAction.mockResolvedValueOnce({
+      kind: "redirect",
+      redirectTo: "https://y.test/oidc/auth/b",
+    });
+    renderScreen(sendDetails());
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+    await waitFor(() => expect(navigateTo).toHaveBeenCalledWith("https://y.test/oidc/auth/b"));
+    expect(sendContinueAction).toHaveBeenCalledWith("uid_123-abc");
+    expect(cancelAction).not.toHaveBeenCalled();
+  });
+
+  it("Cancel sends nothing", async () => {
+    cancelAction.mockResolvedValueOnce({ kind: "redirect", redirectTo: "https://y.test/c" });
+    renderScreen(sendDetails());
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(navigateTo).toHaveBeenCalledWith("https://y.test/c"));
+    expect(sendContinueAction).not.toHaveBeenCalled();
+  });
+
+  it("a failed Send says so and stays", async () => {
+    sendContinueAction.mockResolvedValueOnce({ kind: "error" });
+    renderScreen(sendDetails());
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+    expect(await screen.findByText("Something went wrong. Try again.")).toBeInTheDocument();
+    expect(navigateTo).not.toHaveBeenCalled();
+  });
+
+  it("renders from the id-ID catalogue", () => {
+    renderScreen(sendDetails(), "id-ID");
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: "Kirim pengurang pajak 2025-26 kamu ke Free Tax Returns?",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Kirim" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Batal" })).toBeInTheDocument();
+  });
+
+  it.each([
+    [
+      "not_connected",
+      "Sign in to Free Tax Returns with YourTal once, then send again from SnapApp.",
+    ],
+    [
+      "wrong_account",
+      "This was started from another YourTal account. Switch back to the one you use in SnapApp.",
+    ],
+    ["expired", "This has expired. Start again from SnapApp."],
+    ["not_allowed", "Free Tax Returns is for adults in Australia."],
+  ] as const)("refused for %s ends with Nothing was sent", async (sendProblem, text) => {
+    cancelAction.mockResolvedValueOnce({ kind: "redirect", redirectTo: "https://y.test/c" });
+    renderScreen(
+      details({ screen: "refused", sharing: null, refusal: "send_refused", sendProblem }),
+    );
+    expect(
+      screen.getByRole("heading", { level: 1, name: "We couldn't send your deductions" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(`${text} Nothing was sent.`)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Back to SnapApp" }));
+    await waitFor(() => expect(navigateTo).toHaveBeenCalledWith("https://y.test/c"));
+  });
+
+  it("every send refusal has an id-ID message ending Tidak ada yang terkirim", () => {
+    for (const sendProblem of [
+      "not_connected",
+      "wrong_account",
+      "expired",
+      "not_allowed",
+    ] as const) {
+      const { unmount } = renderScreen(
+        details({ screen: "refused", sharing: null, refusal: "send_refused", sendProblem }),
+        "id-ID",
+      );
+      expect(screen.getByText(/Tidak ada yang terkirim\.$/)).toBeInTheDocument();
+      unmount();
+    }
   });
 });
 

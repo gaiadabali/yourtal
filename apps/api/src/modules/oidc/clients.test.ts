@@ -1,8 +1,13 @@
 import { generateKeyPairSync } from "node:crypto";
 import path from "node:path";
+import {
+  EVENT_RECEIVERS,
+  receiversFor,
+  sectorsWithoutReceiver,
+} from "@yourtal/contracts/oidc/event-receivers";
 import { describe, expect, it } from "vitest";
 import { loadClients } from "./client-keys";
-import { CLIENTS, clientsFor, isSignInClient } from "./clients";
+import { CLIENTS, TRANSFER_ROUTES, clientsFor, isSignInClient, transferRoutesFor } from "./clients";
 
 const DIR = "/opt/yourtal/secrets/oidc/clients";
 
@@ -94,12 +99,92 @@ describe("the client registry (docs/26 §1.9)", () => {
     expect(named.find((client) => client.clientId === "ftr-web")?.externalOperator).toBe(true);
   });
 
-  it("allows sign-in clients the four sign-in scopes, and teen_invites to SnapApp's server only", () => {
+  it("allows sign-in clients the four sign-in scopes, and the client APIs to machine clients only", () => {
     for (const client of CLIENTS) {
-      expect(client.allowedScopes).toEqual(
-        client.kind === "machine" ? ["teen_invites"] : ["openid", "email", "profile", "account"],
-      );
+      if (client.kind === "machine") {
+        expect(["teen_invites", "app_transfers"]).toEqual(
+          expect.arrayContaining([...client.allowedScopes]),
+        );
+      } else {
+        expect(client.allowedScopes).toEqual(["openid", "email", "profile", "account"]);
+      }
     }
+    expect(
+      CLIENTS.find((client) => client.clientId === "snapapp-staging-server")?.allowedScopes,
+    ).toEqual(["teen_invites", "app_transfers"]);
+  });
+});
+
+describe("the transfer routes (docs/30 §5)", () => {
+  it("send to a sign-in client, from a sector with a server client, in that client's environments", () => {
+    for (const route of TRANSFER_ROUTES) {
+      const to = CLIENTS.find((client) => client.clientId === route.toClientId);
+      expect(to !== undefined && isSignInClient(to)).toBe(true);
+      expect(to?.app).toBe(route.to);
+      for (const environment of route.environments) expect(to?.environments).toContain(environment);
+      expect(
+        CLIENTS.some((client) => client.kind === "machine" && client.sector === route.fromSector),
+      ).toBe(true);
+      for (const region of route.regions) {
+        expect(to !== undefined && isSignInClient(to) && to.regions.includes(region)).toBe(true);
+      }
+    }
+  });
+
+  it("SnapApp to FTR, AU only, dev and staging only, and only while FTR is registered", () => {
+    expect(TRANSFER_ROUTES).toEqual([
+      {
+        kind: "deduction-bundle-v1",
+        fromSector: "snapapp-staging",
+        to: "ftr",
+        toClientId: "ftr-web",
+        regions: ["AU"],
+        environments: ["dev", "staging"],
+      },
+    ]);
+    expect(transferRoutesFor("production", CLIENTS)).toEqual([]);
+    expect(transferRoutesFor("staging", CLIENTS)).toHaveLength(1);
+    const withoutFtr = CLIENTS.filter((client) => client.clientId !== "ftr-web");
+    expect(transferRoutesFor("staging", withoutFtr)).toEqual([]);
+  });
+});
+
+describe("the event receivers (docs/29 §5)", () => {
+  it("has a receiver for every sector a client is registered in, in every environment", () => {
+    expect(sectorsWithoutReceiver(CLIENTS)).toEqual([]);
+  });
+
+  it("fails for a sector that has a client but no receiver, or none in that environment", () => {
+    expect(sectorsWithoutReceiver(CLIENTS, EVENT_RECEIVERS.slice(1))).toEqual([
+      "snapapp-staging@dev",
+      "snapapp-staging@staging",
+    ]);
+    const ftr = EVENT_RECEIVERS.filter((receiver) => receiver.sector === "ftr");
+    expect(sectorsWithoutReceiver(CLIENTS, [{ ...ftr[0]!, environments: ["dev"] }])).toContain(
+      "ftr@staging",
+    );
+  });
+
+  it("names a receiving client that exists, in the receiver's sector and environments", () => {
+    for (const receiver of EVENT_RECEIVERS) {
+      const client = CLIENTS.find((one) => one.clientId === receiver.clientId);
+      expect(client?.sector).toBe(receiver.sector);
+      expect(client?.eventsEndpoint).toBe(receiver.endpoint);
+      for (const environment of receiver.environments) {
+        expect(client?.environments).toContain(environment);
+      }
+    }
+    // One receiver per sector: oidc.forget_subject refuses a list with two.
+    const sectors = EVENT_RECEIVERS.map((receiver) => receiver.sector);
+    expect(new Set(sectors).size).toBe(sectors.length);
+  });
+
+  it("is empty in production, where no client is registered yet", () => {
+    expect(receiversFor("production")).toEqual([]);
+    expect(receiversFor("staging").map((receiver) => receiver.sector)).toEqual([
+      "snapapp-staging",
+      "ftr",
+    ]);
   });
 });
 

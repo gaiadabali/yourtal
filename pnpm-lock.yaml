@@ -303,6 +303,9 @@ importers:
       ioredis:
         specifier: 6.0.0
         version: 6.0.0(supports-color@5.5.0)
+      jose:
+        specifier: 6.2.12
+        version: 6.2.12
       nestjs-zod:
         specifier: 5.5.0
         version: 5.5.0(@nestjs/common@12.1.0(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@5.5.0))(rxjs@7.8.2)(zod@4.6.7)
@@ -536,6 +539,9 @@ importers:
       '@yourtal/queue':
         specifier: workspace:*
         version: link:../../packages/queue
+      jose:
+        specifier: 6.2.12
+        version: 6.2.12
       neverthrow:
         specifier: 8.2.0
         version: 8.2.0

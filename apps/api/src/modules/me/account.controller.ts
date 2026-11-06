@@ -6,6 +6,9 @@ import type { FastifyRequest } from "fastify";
 import type { DeletionReport } from "@yourtal/consent/dsar-orchestrator";
 import { executeDeletion } from "@yourtal/consent/dsar-orchestrator";
 import { deletionPlan } from "@yourtal/consent/dsar";
+import { receiversFor } from "@yourtal/contracts/oidc/event-receivers";
+import { APP_CONFIG } from "../../config/app-config.module";
+import type { AppConfig } from "../../config/app-config";
 import { deletionHandlers } from "../../shared/dsar/deletion-handlers";
 import { PAYMENT_PROVIDERS } from "../../shared/drivers/payment-providers.module";
 import type { RegionPaymentProviders } from "../../shared/drivers/payment-providers.module";
@@ -18,6 +21,7 @@ import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.
 import { PrincipalService } from "../../shared/authz/principal.service";
 import type { PrincipalResolver } from "../../shared/authz/principal-resolver";
 import { buildDataExportSections } from "./data-export";
+import { appsBySector } from "./connected-apps";
 import { ME_PG_POOL } from "./me.tokens";
 import type { MePgPool } from "./me.tokens";
 import { CONSENT_RECORD_REPOSITORY } from "./persistence/consent-record.repository";
@@ -76,6 +80,7 @@ export class AccountController {
     @Inject(VOUCHER_INTERNAL_CLIENT) private readonly vouchers: VoucherInternalClient,
     @Inject(DATA_EXPORT_READER) private readonly exportReader: DataExportReader,
     @Inject(PAYMENT_PROVIDERS) private readonly payments: RegionPaymentProviders,
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
   ) {}
 
   /** Every ledger entry for the caller, newest first, page by page. */
@@ -123,7 +128,13 @@ export class AccountController {
   @Delete()
   async deleteAccount(@Req() request: FastifyRequest): Promise<DeletionReport> {
     const userId = (await this.principals.resolve(request)).id;
-    return executeDeletion(userId, deletionHandlers(this.pool, this.ledger, this.payments));
+    const handlers = deletionHandlers(
+      this.pool,
+      this.ledger,
+      this.payments,
+      receiversFor(this.config.appEnv),
+    );
+    return executeDeletion(userId, handlers);
   }
 
   @Authorize({ kind: "me", action: "export_data" })
@@ -158,6 +169,7 @@ export class AccountController {
     const held = buildDataExportSections({ now, account, history, vouchers, sessions });
     // 1.20: the rest of what `DELETE /api/me` erases from `me` and the feed.
     const personal = await this.exportReader.personal(userId);
+    const apps = appsBySector(this.config);
 
     return {
       generatedAt: now.toISOString(),
@@ -179,6 +191,13 @@ export class AccountController {
       streak,
       // F116: the postcode the viewer picked as "my area", or null. Declared by them, not located.
       declaredArea: declaredArea === null ? null : { postcode: declaredArea },
+      // 3.7 Y3: the apps signed in to with YourTal. Never the pairwise `sub` each app knows the person by.
+      connectedApps: (await this.exportReader.connectedApps(userId)).map((row) => ({
+        app: apps.get(row.sector)?.app ?? row.sector,
+        scopes: row.scopes,
+        granted: row.grantedAt.toISOString(),
+        ended: row.endedAt?.toISOString() ?? null,
+      })),
       // Named honestly per @yourtal/consent/dsar's own design: this export
       // covers what this module holds, not the other 9 data domains a full
       // DSAR (delete-account) accounts for — that list stays visible here

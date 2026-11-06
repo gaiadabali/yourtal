@@ -1,3 +1,4 @@
+import { EVENT_RECEIVERS } from "@yourtal/contracts/oidc/event-receivers";
 import type { AppConfig } from "../../config/app-config";
 
 /**
@@ -27,7 +28,7 @@ interface ClientBase {
   /** One pairwise `sub` per person per sector; an app's clients share it. */
   readonly sector: string;
   readonly allowedScopes: readonly string[];
-  /** Where signed events go (docs/26 §2), for clients that receive them. */
+  /** Where signed events go (docs/26 §2): set from `event-receivers.ts`, never here. */
   readonly eventsEndpoint?: string;
   /** Registered only in these environments. Empty: not registered yet. */
   readonly environments: readonly AppConfig["appEnv"][];
@@ -106,8 +107,7 @@ const DEFINITIONS: readonly Definition<YourTalClient>[] = [
     sector: SNAPAPP.sector,
     kind: "machine",
     auth: "private_key_jwt",
-    allowedScopes: ["teen_invites"],
-    eventsEndpoint: "https://snap-apps-api.gaiada.com/v1/yourtal/events",
+    allowedScopes: ["teen_invites", "app_transfers"],
     environments: ["dev", "staging"],
   },
   {
@@ -122,13 +122,17 @@ const DEFINITIONS: readonly Definition<YourTalClient>[] = [
     privacyUrl: "https://freetaxreturns.com.au/privacy",
     termsUrl: "https://freetaxreturns.com.au/terms",
     returnHost: "freetaxreturns.com.au",
-    eventsEndpoint: "https://freetaxreturns.com.au/api/yourtal/events",
     environments: ["dev", "staging"],
   },
 ];
 
 function withOperator(definition: Definition<YourTalClient>, operators: Operators): YourTalClient {
-  return { ...definition, operator: operators[definition.app] };
+  const receiver = EVENT_RECEIVERS.find((one) => one.clientId === definition.clientId);
+  return {
+    ...definition,
+    operator: operators[definition.app],
+    ...(receiver === undefined ? {} : { eventsEndpoint: receiver.endpoint }),
+  };
 }
 
 /** Every client in every environment, with the default operator names: for tests and review. */
@@ -154,4 +158,42 @@ export function clientById(
   clientId: string,
 ): YourTalClient | undefined {
   return clients.find((client) => client.clientId === clientId);
+}
+
+/**
+ * Group 4.8.a (docs/30 §5): which app's server may send what to which app.
+ * Reviewed like the clients; a route is live only where its destination is
+ * registered as a sign-in client.
+ */
+export interface TransferRoute {
+  readonly kind: "deduction-bundle-v1";
+  readonly fromSector: string;
+  /** The app the caller names (`to`). */
+  readonly to: OperatedApp;
+  readonly toClientId: string;
+  readonly regions: readonly Region[];
+  readonly environments: readonly AppConfig["appEnv"][];
+}
+
+export const TRANSFER_ROUTES: readonly TransferRoute[] = [
+  {
+    kind: "deduction-bundle-v1",
+    fromSector: SNAPAPP.sector,
+    to: "ftr",
+    toClientId: "ftr-web",
+    regions: ["AU"],
+    // Production waits for F108, the import switch and the founder's Q1 (docs/30 §11).
+    environments: ["dev", "staging"],
+  },
+];
+
+/** This environment's routes whose destination is registered. */
+export function transferRoutesFor(
+  appEnv: AppConfig["appEnv"],
+  registered: readonly YourTalClient[],
+): readonly TransferRoute[] {
+  return TRANSFER_ROUTES.filter((route) => {
+    const to = clientById(registered, route.toClientId);
+    return route.environments.includes(appEnv) && to !== undefined && isSignInClient(to);
+  });
 }

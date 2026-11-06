@@ -42,6 +42,17 @@ describe("oidc-model-purge job", () => {
     expect(await exists(live)).toBe(true);
   });
 
+  it("takes an app transfer a day after its 15 minutes (docs/30 D3)", async () => {
+    const id = randomUUID();
+    await pool.query(
+      `INSERT INTO oidc.model (kind, id, payload, expires_at)
+       VALUES ('AppTransfer', $1, '{"accountId": "someone"}', $2)`,
+      [id, new Date("2026-10-20T11:00:00Z")],
+    );
+    await runOidcModelPurge(pool, NOW);
+    expect(await exists(id)).toBe(false);
+  });
+
   it("works through more than one batch", async () => {
     const prefix = randomUUID();
     await pool.query(

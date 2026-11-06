@@ -126,6 +126,24 @@
     "pointsUnlockedTitle": "Poin terbuka",
     "pointsUnlockedBody": "Saat poin yang sudah kamu dapatkan menjadi tersedia untuk dipakai."
   },
+  "connectedApps": {
+    "heading": "Aplikasi yang kamu masuki dengan YourTal",
+    "intro": "Aplikasi tempat kamu masuk memakai akun YourTal.",
+    "operatorLine": "Dijalankan oleh {operator}.",
+    "sinceLine": "Masuk sejak {date}.",
+    "getsLine": "Mendapat namamu, email, kelompok usia, dan negara.",
+    "removeCta": "Hapus",
+    "removeLabel": "Hapus {app}",
+    "emptyTitle": "Belum ada aplikasi",
+    "emptyBody": "Saat kamu masuk ke sebuah aplikasi dengan YourTal, aplikasinya akan muncul di sini.",
+    "removeTitle": "Hapus {app}?",
+    "adultBody": "Kamu akan keluar dari {app}, dan aplikasi itu tidak bisa memasukkanmu lewat YourTal sampai kamu setuju lagi. Akun {app} dan datamu tetap ada di {app}, dan kamu bisa menghapusnya di sana.",
+    "teenBody": "Ruangmu di {app} akan dihapus setelah 30 hari, dan kamu butuh undangan baru dari orang tuamu untuk memakai {app} lagi.",
+    "closeLabel": "Tutup",
+    "confirmCta": "Hapus",
+    "cancelCta": "Batal",
+    "failed": "Gagal. Coba lagi."
+  },
   "linkedApps": {
     "heading": "Aplikasi tertaut",
     "intro": "Tautkan akun ini di aplikasi lain, seperti SnapApp, untuk mendapatkan poin di sana. Buat kode sekali pakai dan masukkan di aplikasi itu dalam 10 menit.",
@@ -151,6 +169,7 @@
     "intro": "Ini menghapus akun YourTal-mu secara permanen. Sebelum kamu konfirmasi, ini yang akan terjadi persis — tidak ada pengembalian dana tunai untuk apa pun di bawah ini.",
     "bulletPoints": "Poin yang belum dipakai hangus, termasuk yang masih ditahan, dan tidak bisa dipindahkan ke orang lain.",
     "bulletVouchers": "Voucher yang sudah ada di walletmu tetap punya kode dan masih bisa ditukarkan merchant sampai kedaluwarsa — tapi kamu tidak bisa login lagi untuk melihatnya, jadi simpan atau screenshot dulu voucher yang ingin kamu pakai.",
+    "bulletConnectedApps": "Aplikasi yang kamu masuki dengan YourTal, seperti SnapApp dan Free Tax Returns, diberi tahu dan menghapus data tentangmu yang mereka simpan dalam 3 hari. Mereka hanya menyimpan catatan yang diwajibkan hukum. Unduh dulu apa pun yang kamu perlukan dari mereka.",
     "bulletIrreversible": "Tindakan ini tidak bisa dibatalkan.",
     "confirmCheckboxLabel": "Saya paham poin yang belum dipakai akan hangus dan ini tidak bisa dibatalkan.",
     "startCta": "Hapus akun saya",

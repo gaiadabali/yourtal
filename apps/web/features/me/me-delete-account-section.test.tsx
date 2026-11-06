@@ -18,6 +18,16 @@ function renderWithIntl(ui: React.ReactElement) {
 }
 
 describe("MeDeleteAccountSection", () => {
+  it("says the apps you sign in to with YourTal are told and erase what they hold", () => {
+    renderWithIntl(<MeDeleteAccountSection />);
+
+    expect(
+      screen.getByText(
+        "Apps you sign in to with YourTal, such as SnapApp and Free Tax Returns, are told, and delete what they hold about you within 3 days. They keep only records the law requires. Download anything you need from them first.",
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("the delete button in the confirmation dialog stays disabled until the checkbox is ticked", async () => {
     const user = userEvent.setup();
     renderWithIntl(<MeDeleteAccountSection />);

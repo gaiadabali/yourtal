@@ -121,10 +121,12 @@ export function describeProblem(problem: DriverConfigProblem): string {
 
 /**
  * 2.3.b — staging refuses ANY live driver, even one whose credentials are
- * fully present, with two narrow exceptions. Payments and disbursement may run
+ * fully present, with three narrow exceptions. Payments and disbursement may run
  * the real Stripe driver against the payment simulation, so only with a
  * test-mode key (`sk_test_`), never a live one (F106). Email may be live
- * behind a non-empty `EMAIL_LIVE_ALLOWLIST` (F115). `assertDriversConfigured`
+ * behind a non-empty `EMAIL_LIVE_ALLOWLIST` (F115). App events may be live
+ * (docs/26 §2.4, docs/29 §5): the sender posts only to the receivers in
+ * `event-receivers.ts`, our own sister apps, never an address from the database. `assertDriversConfigured`
  * alone would let a correctly configured live boundary through in every
  * environment, staging included; this is the additional, staging-only rule.
  * Not folded into `resolveDriverMode`/`assertDriversConfigured` because those
@@ -150,6 +152,7 @@ export class StagingDriverModeError extends Error {
         : boundary === "email"
           ? "EMAIL_LIVE_ALLOWLIST is empty"
           : "no staging exception";
+    // app_events is always exempt on staging, so it never reaches this message.
     super(
       `APP_ENV=staging requires every external driver to be simulated, but ` +
         `${boundaries.length === 1 ? "this one is" : "these are"} live: ` +
@@ -162,7 +165,8 @@ export class StagingDriverModeError extends Error {
         `. Staging holds demo data only (red line 11) — a live driver here would reach a ` +
         `real vendor with simulated money. Set ${boundaries.map((boundary) => BOUNDARIES[boundary].modeEnvVar).join("/")} to "simulated". ` +
         `The only exceptions: PAYMENTS_DRIVER and DISBURSEMENT_DRIVER with a test-mode STRIPE_SECRET_KEY (the payment ` +
-        `simulation's, or Stripe test mode; F106), and email when EMAIL_LIVE_ALLOWLIST is a non-empty list (F115).`,
+        `simulation's, or Stripe test mode; F106), email when EMAIL_LIVE_ALLOWLIST is a non-empty list (F115), ` +
+        `and APP_EVENTS_DRIVER (docs/29 §5).`,
     );
     this.name = "StagingDriverModeError";
     this.boundaries = boundaries;
@@ -187,12 +191,37 @@ export function assertStagingDriversSimulated(
   const testKey = isStripeTestKey(env);
   const emailAllowed = isEmailAllowedLiveOnStaging(env);
   const exempt = (boundary: BoundaryName) =>
-    (testKey && STRIPE_BOUNDARIES.includes(boundary)) || (boundary === "email" && emailAllowed);
+    (testKey && STRIPE_BOUNDARIES.includes(boundary)) ||
+    (boundary === "email" && emailAllowed) ||
+    boundary === "app_events";
   const refused = BOUNDARY_NAMES.filter(
     (boundary) => modes[boundary] === "live" && !exempt(boundary),
   );
   if (refused.length > 0) {
     throw new StagingDriverModeError(refused);
+  }
+}
+
+/**
+ * docs/29 §4.2: dev's and CI's receivers are real endpoints (staging SnapApp, production FTR), so
+ * app events are live only where APP_ENV says staging or production.
+ */
+export class AppEventsLiveError extends Error {
+  constructor(appEnv: string) {
+    super(
+      `APP_ENV="${appEnv.slice(0, 40)}" refuses APP_EVENTS_DRIVER=live: its receivers are real apps. ` +
+        `Only staging and production send app events; set APP_EVENTS_DRIVER="simulated".`,
+    );
+    this.name = "AppEventsLiveError";
+  }
+}
+
+export function assertAppEventsLiveOnlyDeployed(
+  appEnv: string,
+  modes: Record<BoundaryName, DriverMode>,
+): void {
+  if (modes.app_events === "live" && appEnv !== "staging" && appEnv !== "production") {
+    throw new AppEventsLiveError(appEnv);
   }
 }
 
@@ -285,14 +314,15 @@ export function assertDriversConfigured(env: Environment): Record<BoundaryName, 
     email: modeOf("email"),
     push: modeOf("push"),
     webhook: modeOf("webhook"),
+    app_events: modeOf("app_events"),
   };
 }
 
 /**
  * The single call `main.ts` makes at boot (2.3.b): every ordinary
  * misconfiguration first (`assertDriversConfigured`, in every environment),
- * then staging's stricter "must actually be simulated" rule on top, and
- * production's "Stripe means api.stripe.com" rule. Kept as
+ * then staging's stricter "must actually be simulated" rule on top, app
+ * events refused live outside staging and production, and production's "Stripe means api.stripe.com" rule. Kept as
  * one function so a caller cannot wire the first check and forget the
  * second (with `env`, so the F115 email allow-list exception can be
  * evaluated) — the same reasoning `assertDriversConfigured` itself gives for
@@ -304,6 +334,7 @@ export function assertDriversConfiguredForBoot(
 ): Record<BoundaryName, DriverMode> {
   const modes = assertDriversConfigured(env);
   assertStagingDriversSimulated(appEnv, modes, env);
+  assertAppEventsLiveOnlyDeployed(appEnv, modes);
   assertProductionStripeAddress(appEnv, env);
   return modes;
 }

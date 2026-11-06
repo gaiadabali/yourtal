@@ -114,6 +114,8 @@ function fakeProfiles(profile: StoredUserProfile | null): UserProfileRepository 
 
 const FAKE_DB: AppDb = {
   transaction: async <T>(cb: (tx: AppDb) => Promise<T>): Promise<T> => cb(FAKE_DB),
+  // The withdrawal's list of live app consents: none.
+  execute: () => Promise.resolve({ rows: [] }),
 } as unknown as AppDb;
 
 function zeroBalance(): LedgerBalance {
@@ -251,6 +253,7 @@ describe("revokeGuardianConsent", () => {
       client,
       RAW_TOKEN,
       new Date("2026-02-01T00:00:00Z"),
+      [],
     );
 
     expect(result.isOk()).toBe(true);
@@ -278,6 +281,7 @@ describe("revokeGuardianConsent", () => {
       client,
       RAW_TOKEN,
       new Date(),
+      [],
     );
 
     expect(result._unsafeUnwrap()).toStrictEqual({ revoked: true, escrowedPoints: 0 });
@@ -302,6 +306,7 @@ describe("revokeGuardianConsent", () => {
       client,
       RAW_TOKEN,
       new Date(),
+      [],
     );
 
     expect(result._unsafeUnwrap()).toStrictEqual({ revoked: true, escrowedPoints: 0 });
@@ -322,6 +327,7 @@ describe("revokeGuardianConsent", () => {
       client,
       RAW_TOKEN,
       new Date(),
+      [],
     );
 
     expect(result._unsafeUnwrapErr()).toStrictEqual({ type: "not_found" });

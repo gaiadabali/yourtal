@@ -222,3 +222,52 @@ describe("a fresh sign-in when the app asks for one", () => {
     );
   });
 });
+
+describe("the send screen (docs/30 §5)", () => {
+  const SEND = {
+    financialYear: "2025-26",
+    lineCount: 7,
+    to: {
+      clientId: FTR.clientId,
+      name: FTR.name,
+      operator: FTR.operator,
+      externalOperator: FTR.externalOperator,
+      privacyUrl: FTR.privacyUrl,
+      termsUrl: FTR.termsUrl,
+      returnHost: FTR.returnHost,
+    },
+  };
+
+  it("shows send instead of continue once the app's consent stands and the transfer passes", async () => {
+    const checkSend = vi.fn(() => Promise.resolve({ ok: true, send: SEND } as const));
+    const state = await decideSignIn(input({ consent: CONSENTED, checkSend }));
+    expect(state).toMatchObject({ screen: "send", send: SEND });
+    expect(checkSend).toHaveBeenCalledWith(ADULT);
+  });
+
+  it("refuses with send_refused and the problem when the transfer does not pass", async () => {
+    for (const problem of ["expired", "wrong_account", "not_allowed", "not_connected"] as const) {
+      const state = await decideSignIn(
+        input({ consent: CONSENTED, checkSend: () => Promise.resolve({ ok: false, problem }) }),
+      );
+      expect(state).toMatchObject({
+        screen: "refused",
+        refusal: "send_refused",
+        sendProblem: problem,
+        inviteProblem: null,
+      });
+    }
+  });
+
+  it("asks for consent first, and checks no transfer before it or before the sign-in checks", async () => {
+    const checkSend = vi.fn(() => Promise.resolve({ ok: true, send: SEND } as const));
+    expect(await screen({ checkSend })).toBe("consent");
+    expect(await screen({ consent: CONSENTED, signInAgain: true, checkSend })).toBe(
+      "sign_in_again",
+    );
+    expect(await screen({ account: { ...ADULT, suspended: true }, checkSend })).toBe(
+      "refused:account_on_hold",
+    );
+    expect(checkSend).not.toHaveBeenCalled();
+  });
+});

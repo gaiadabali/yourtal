@@ -126,6 +126,24 @@
     "pointsUnlockedTitle": "Points unlocked",
     "pointsUnlockedBody": "When points you've earned become available to spend."
   },
+  "connectedApps": {
+    "heading": "Apps you sign in to with YourTal",
+    "intro": "Apps where you used your YourTal account to sign in.",
+    "operatorLine": "Run by {operator}.",
+    "sinceLine": "Signed in since {date}.",
+    "getsLine": "Gets your name, email, age group and country.",
+    "removeCta": "Remove",
+    "removeLabel": "Remove {app}",
+    "emptyTitle": "No apps yet",
+    "emptyBody": "When you sign in to an app with YourTal, it will show up here.",
+    "removeTitle": "Remove {app}?",
+    "adultBody": "You'll be signed out of {app}, and it can't sign you in with YourTal until you agree again. Your {app} account and data stay with {app}, and you can delete them there.",
+    "teenBody": "Your {app} space will be deleted after 30 days, and you'll need a new invite from your parent to use {app} again.",
+    "closeLabel": "Close",
+    "confirmCta": "Remove",
+    "cancelCta": "Cancel",
+    "failed": "That didn't work. Try again."
+  },
   "linkedApps": {
     "heading": "Linked apps",
     "intro": "Link this account in another app, such as SnapApp, to earn points there. Generate a one-time code and enter it in that app within 10 minutes.",
@@ -151,6 +169,7 @@
     "intro": "This permanently removes your YourTal account. Before you confirm, here is exactly what happens — there is no cash refund for any of it.",
     "bulletPoints": "Unspent points are forfeited, including anything on hold, and can't be moved to anyone else.",
     "bulletVouchers": "Vouchers already in your wallet keep their code and can still be redeemed by the merchant until they expire — but you won't be able to log back in to view them, so save or screenshot any you plan to use first.",
+    "bulletConnectedApps": "Apps you sign in to with YourTal, such as SnapApp and Free Tax Returns, are told, and delete what they hold about you within 3 days. They keep only records the law requires. Download anything you need from them first.",
     "bulletIrreversible": "This can't be undone.",
     "confirmCheckboxLabel": "I understand my unspent points will be forfeited and this can't be undone.",
     "startCta": "Delete my account",

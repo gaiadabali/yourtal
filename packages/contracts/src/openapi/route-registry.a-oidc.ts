@@ -10,6 +10,12 @@ import {
   teenInviteSchema,
 } from "../oidc/teen-invite";
 import {
+  transferAssertionRequestSchema,
+  transferAssertionSchema,
+  transferCreateRequestSchema,
+  transferCreatedSchema,
+} from "../oidc/transfer";
+import {
   VALIDATION_400,
   inlineSchema,
   type RouteDefinition,
@@ -225,6 +231,90 @@ export const OIDC_TEEN_INVITE_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       INSUFFICIENT_SCOPE,
       INVITE_NOT_FOUND,
       IDEMPOTENCY_409,
+    ],
+  },
+];
+
+/**
+ * Group 4.8.a (docs/30 §5): the transfer API, for SnapApp's server. A
+ * client-credentials access token with scope `app_transfers`, checked by a guard
+ * first; not Cerbos. Never says whether the person uses the destination.
+ */
+const TRANSFER_ID: RoutePathParam = {
+  name: "transferId",
+  description: "A transfer this app opened.",
+  schema: { type: "string", format: "uuid" },
+};
+const TRANSFER_SCOPE_403: RouteErrorResponse = {
+  status: 403,
+  description: "The token lacks the app_transfers scope (insufficient_scope).",
+  documented: true,
+};
+
+export const OIDC_TRANSFER_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
+  {
+    method: "post",
+    path: "/api/oidc-clients/transfers",
+    summary: "Open a transfer of one person's data to another app, for them to confirm",
+    tags: ["oidc"],
+    pathParams: [],
+    requestBody: {
+      description:
+        "The person's sub in this app, the destination, the year, the bundle's SHA-256 and line " +
+        "count. Takes an Idempotency-Key.",
+      schema: inlineSchema(transferCreateRequestSchema),
+    },
+    successStatus: 201,
+    successDescription:
+      "The transfer, live for 15 minutes. Send the person to YourTal with transfer={transferId}.",
+    successSchema: inlineSchema(transferCreatedSchema),
+    errors: [
+      VALIDATION_400,
+      IDEMPOTENCY_KEY_400,
+      INVALID_TOKEN,
+      TRANSFER_SCOPE_403,
+      {
+        status: 404,
+        description:
+          "No such person in this app (unknown_subject), no route from this app to the " +
+          "destination here (no_route), or sign in with YourTal is switched off.",
+        documented: true,
+      },
+      IDEMPOTENCY_409,
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/oidc-clients/transfers/{transferId}/assertion",
+    summary: "Fetch the assertion for a transfer the person has sent",
+    tags: ["oidc"],
+    pathParams: [TRANSFER_ID],
+    requestBody: {
+      description: "The person's sub in this app.",
+      schema: inlineSchema(transferAssertionRequestSchema),
+    },
+    successStatus: 200,
+    successDescription:
+      "A compact JWE only the destination can open, with Cache-Control no-store. Pass it on; " +
+      "never decode, log or keep it.",
+    successSchema: inlineSchema(transferAssertionSchema),
+    errors: [
+      VALIDATION_400,
+      INVALID_TOKEN,
+      TRANSFER_SCOPE_403,
+      {
+        status: 404,
+        description:
+          "No such live transfer from this app, or the sub is not its person (transfer_not_found).",
+        documented: true,
+      },
+      {
+        status: 409,
+        description:
+          "The person has not sent it yet (not_approved), or it can no longer be sent " +
+          "(not_allowed: not an adult in a route region, on hold, or the destination's access ended).",
+        documented: true,
+      },
     ],
   },
 ];

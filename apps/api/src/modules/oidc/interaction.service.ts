@@ -4,6 +4,7 @@ import { errors } from "oidc-provider";
 import type Provider from "oidc-provider";
 import type {
   AccessDeniedReason,
+  InteractionClient,
   InteractionDetails,
   InteractionRedirect,
   SignInRefusal,
@@ -15,7 +16,7 @@ import type { SignInClient } from "./clients";
 import { clientById, isSignInClient } from "./clients";
 import { OIDC_RUNTIME, OidcRuntime } from "./oidc-runtime";
 import type { OidcStore } from "./oidc-store";
-import type { SignInState, TeenInviteChecker } from "./sign-in-checks";
+import type { SendCheck, SignInState, TeenInviteChecker } from "./sign-in-checks";
 import { TEEN_INVITE_CHECKER, decideSignIn, signInTooOld } from "./sign-in-checks";
 
 /** YourTal's session, with how and when the person signed in to it (`SessionService`). */
@@ -43,6 +44,28 @@ export class InteractionError extends Error {
   }
 }
 
+/** What a screen says about an app, from the registry. */
+function publicClient(client: SignInClient): InteractionClient {
+  return {
+    clientId: client.clientId,
+    name: client.name,
+    operator: client.operator,
+    externalOperator: client.externalOperator,
+    privacyUrl: client.privacyUrl,
+    termsUrl: client.termsUrl,
+    returnHost: client.returnHost,
+  };
+}
+
+/**
+ * The sign-in log's result for a refusal. A refused send keeps its real cause
+ * there ("send_refused:not_connected"), while the app only ever hears
+ * `send_refused` (docs/30 D4). A reason code, never personal data.
+ */
+function refusalLogged(state: Extract<SignInState, { screen: "refused" }>): string {
+  return state.sendProblem === null ? state.refusal : `send_refused:${state.sendProblem}`;
+}
+
 /** The raw request and response, which the provider reads its interaction cookies from. */
 export interface RawHttp {
   readonly req: IncomingMessage;
@@ -59,6 +82,8 @@ interface Loaded {
   readonly params: Record<string, unknown>;
   /** When the provider started this interaction, epoch seconds. */
   readonly startedAt: number;
+  /** The app's `transfer` parameter (docs/30 §5), already checked to be a uuid. */
+  readonly transferId: string | undefined;
 }
 
 function words(value: unknown): string[] {
@@ -81,19 +106,10 @@ export class InteractionService {
   async details(http: RawHttp, uid: string, sessionToken: string): Promise<InteractionDetails> {
     const loaded = await this.load(http, uid);
     const { state } = await this.decide(loaded, sessionToken, new Date());
-    const { client } = loaded;
     return {
       uid,
       screen: state.screen,
-      client: {
-        clientId: client.clientId,
-        name: client.name,
-        operator: client.operator,
-        externalOperator: client.externalOperator,
-        privacyUrl: client.privacyUrl,
-        termsUrl: client.termsUrl,
-        returnHost: client.returnHost,
-      },
+      client: publicClient(loaded.client),
       account:
         "account" in state
           ? { name: state.account.displayName, email: state.account.email ?? "" }
@@ -103,6 +119,8 @@ export class InteractionService {
       inviteProblem: state.screen === "refused" ? state.inviteProblem : null,
       teenInvite:
         "invite" in state && state.invite !== null ? { parentName: state.invite.parentName } : null,
+      send: state.screen === "send" ? state.send : null,
+      sendProblem: state.screen === "refused" ? state.sendProblem : null,
       uiLocales: words(loaded.params["ui_locales"]),
     };
   }
@@ -111,7 +129,7 @@ export class InteractionService {
     http: RawHttp,
     uid: string,
     sessionToken: string,
-    tapped: "consent" | "continue",
+    tapped: "consent" | "continue" | "send",
   ): Promise<InteractionRedirect> {
     const loaded = await this.load(http, uid);
     const now = new Date();
@@ -121,11 +139,19 @@ export class InteractionService {
     }
     if (state.screen === "verify_email") throw new InteractionError("screen_changed");
     if (state.screen === "refused") {
-      await loaded.store.logSignIn(state.account.userId, loaded.client.clientId, state.refusal);
+      await loaded.store.logSignIn(
+        state.account.userId,
+        loaded.client.clientId,
+        refusalLogged(state),
+      );
       throw new InteractionError("sign_in_refused", state.refusal);
     }
-    // Consent is only ever recorded from the consent screen itself.
+    // Consent is only ever recorded from the consent screen itself, and a send
+    // only ever approved by a tap on the send screen.
     if (state.screen === "consent" && tapped !== "consent") {
+      throw new InteractionError("screen_changed");
+    }
+    if ((state.screen === "send") !== (tapped === "send")) {
       throw new InteractionError("screen_changed");
     }
 
@@ -154,6 +180,8 @@ export class InteractionService {
         throw new InteractionError("sign_in_refused", "teen_invite_required");
       }
     }
+
+    if (state.screen === "send") await this.approveSend(loaded, account.userId, now);
 
     const grant = new loaded.provider.Grant({
       accountId: account.userId,
@@ -185,8 +213,20 @@ export class InteractionService {
   async cancel(http: RawHttp, uid: string, sessionToken: string): Promise<InteractionRedirect> {
     const loaded = await this.load(http, uid);
     const { state } = await this.decide(loaded, sessionToken, new Date());
+    // Cancel on the send screen is told to the app as a refused send, so it never
+    // learns whether the person uses the destination (docs/30 D4).
     const reason: AccessDeniedReason =
-      state.screen === "refused" ? state.refusal : "user_cancelled";
+      state.screen === "refused"
+        ? state.refusal
+        : state.screen === "send"
+          ? "send_refused"
+          : "user_cancelled";
+    const logged =
+      state.screen === "refused"
+        ? refusalLogged(state)
+        : state.screen === "send"
+          ? "send_refused:user_cancelled"
+          : reason;
     const redirectTo = await loaded.provider.interactionResult(
       http.req,
       http.res,
@@ -194,9 +234,55 @@ export class InteractionService {
       { mergeWithLastSubmission: false },
     );
     if ("account" in state) {
-      await loaded.store.logSignIn(state.account.userId, loaded.client.clientId, reason);
+      await loaded.store.logSignIn(state.account.userId, loaded.client.clientId, logged);
     }
     return { redirectTo };
+  }
+
+  /** The send tap (docs/30 §5): the store runs the screen's checks again before it approves. */
+  private async approveSend(loaded: Loaded, userId: string, now: Date): Promise<void> {
+    const { transfers } = this.runtime;
+    const problem =
+      transfers === null || loaded.transferId === undefined
+        ? "expired"
+        : await transfers.approve({
+            sector: loaded.client.sector,
+            transferId: loaded.transferId,
+            userId,
+            now,
+          });
+    if (problem !== null) {
+      await loaded.store.logSignIn(userId, loaded.client.clientId, `send_refused:${problem}`);
+      throw new InteractionError("sign_in_refused", "send_refused");
+    }
+    await loaded.store.logSignIn(userId, loaded.client.clientId, "send_approved");
+  }
+
+  /** Whether this sign-in's transfer may be sent by `userId` now, and what the screen shows. */
+  private async checkSend(loaded: Loaded, userId: string, now: Date): Promise<SendCheck> {
+    const { transfers, clients } = this.runtime;
+    if (transfers === null || loaded.transferId === undefined) {
+      return { ok: false, problem: "expired" };
+    }
+    const transfer = await transfers.find({
+      sector: loaded.client.sector,
+      transferId: loaded.transferId,
+      now,
+    });
+    if (transfer === null) return { ok: false, problem: "expired" };
+    const problem = await transfers.check({ transfer, userId, now });
+    if (problem !== null) return { ok: false, problem };
+    // `check` has found the route, whose destination is a registered sign-in client.
+    const to = clientById(clients, transfer.toClientId);
+    if (to === undefined || !isSignInClient(to)) return { ok: false, problem: "expired" };
+    return {
+      ok: true,
+      send: {
+        financialYear: transfer.financialYear,
+        lineCount: transfer.lineCount,
+        to: publicClient(to),
+      },
+    };
   }
 
   private async load(http: RawHttp, uid: string): Promise<Loaded> {
@@ -227,6 +313,7 @@ export class InteractionService {
       prompts: new Set(words(params["prompt"])),
       params,
       startedAt: interaction.iat,
+      transferId: typeof params["transfer"] === "string" ? params["transfer"] : undefined,
     };
   }
 
@@ -261,6 +348,9 @@ export class InteractionService {
           maxAge: maxAge === undefined ? undefined : Number(maxAge),
           now,
         }),
+      ...(loaded.transferId === undefined
+        ? {}
+        : { checkSend: (who: OidcAccount) => this.checkSend(loaded, who.userId, now) }),
       now,
     });
     return { state, signedIn };

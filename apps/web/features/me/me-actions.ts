@@ -11,6 +11,11 @@ import { viewerAreaResponseSchema } from "@yourtal/contracts/areas/schema";
 import type { ViewerAreaResponse } from "@yourtal/contracts/areas/schema";
 import { themeResponseSchema } from "@yourtal/contracts/me/theme-setting";
 import type { ThemeResponse, ThemeSetting } from "@yourtal/contracts/me/theme-setting";
+import {
+  connectedAppsResponseSchema,
+  removeConnectedAppResponseSchema,
+} from "@yourtal/contracts/me/connected-app";
+import type { ConnectedAppId, ConnectedAppsResponse } from "@yourtal/contracts/me/connected-app";
 import { unlinkAppResponseSchema } from "@yourtal/contracts/me/linked-app";
 import type { UnlinkAppResponse } from "@yourtal/contracts/me/linked-app";
 import {
@@ -174,6 +179,19 @@ export async function unlinkAppAction(linkId: string): Promise<ApiResult<UnlinkA
   return apiFetch(`/api/me/linked-apps/${encodeURIComponent(linkId)}`, unlinkAppResponseSchema, {
     method: "DELETE",
   });
+}
+
+/** Docs/29 Y5: ends the sign-in (idempotent), then re-reads the list so the screen shows what is true. */
+export async function removeConnectedAppAction(
+  app: ConnectedAppId,
+): Promise<ApiResult<ConnectedAppsResponse>> {
+  const removed = await apiFetch(
+    `/api/me/connected-apps/${app}`,
+    removeConnectedAppResponseSchema,
+    { method: "DELETE" },
+  );
+  if (!removed.ok) return removed;
+  return apiFetch("/api/me/connected-apps", connectedAppsResponseSchema);
 }
 
 export async function fetchDataExportAction(): Promise<ApiResult<DataExportResponse>> {

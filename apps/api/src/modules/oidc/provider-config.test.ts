@@ -171,6 +171,7 @@ describe("docs/26 §1.1 provider settings", () => {
       "profile",
       "account",
       "teen_invites",
+      "app_transfers",
     ]);
     expect(new Set(discovery["claims_supported"] as string[])).toEqual(
       new Set([
@@ -245,6 +246,34 @@ describe("authorization requests", () => {
     expect(errorOf(known.headers.location)).toBe("invalid_scope");
     const unknown = await authorize({ scope: "openid email profile account phone" });
     expect(errorOf(unknown.headers.location)).toBe("invalid_scope");
+  });
+
+  it("transfer is a uuid, and never rides with teen_invite or prompt=create", async () => {
+    const id = "6f1c2a4e-8b7d-4e5f-9a0b-1c2d3e4f5a6b";
+    expect((await authorize({ transfer: id })).headers.location ?? "").toContain("/connect/");
+    for (const params of [
+      { transfer: "not-a-uuid" },
+      { transfer: id, teen_invite: "abc" },
+      { transfer: id, prompt: "create" },
+    ]) {
+      expect(errorOf((await authorize(params)).headers.location)).toBe("invalid_request");
+    }
+  });
+
+  it("transfer comes only from an app a transfer route starts from, and never with prompt=none", async () => {
+    const id = "6f1c2a4e-8b7d-4e5f-9a0b-1c2d3e4f5a6b";
+    const ftr = {
+      client_id: "ftr-web",
+      redirect_uri: "https://freetaxreturns.com.au/api/auth/oauth2/callback/yourtal",
+    };
+    expect((await authorize(ftr)).headers.location ?? "").toContain("/connect/");
+    expect(errorOf((await authorize({ ...ftr, transfer: id })).headers.location)).toBe(
+      "invalid_request",
+    );
+    // Without transfer, prompt=none is still login_required; with it, the request itself is bad.
+    expect(errorOf((await authorize({ transfer: id, prompt: "none" })).headers.location)).toBe(
+      "invalid_request",
+    );
   });
 
   it("the account scope is required", async () => {

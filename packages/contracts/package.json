@@ -95,6 +95,8 @@
     "./oidc/interaction": "./src/oidc/interaction.ts",
     "./oidc/protocol-routes": "./src/oidc/protocol-routes.ts",
     "./oidc/teen-invite": "./src/oidc/teen-invite.ts",
+    "./oidc/transfer": "./src/oidc/transfer.ts",
+    "./oidc/event-receivers": "./src/oidc/event-receivers.ts",
     "./identity/sign-in-methods": "./src/identity/sign-in-methods.ts",
     "./mock-source": "./src/mock-source.ts",
     "./mock-seed": "./src/mock-seed.ts",

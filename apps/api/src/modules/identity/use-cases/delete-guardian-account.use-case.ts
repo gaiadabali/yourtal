@@ -1,7 +1,9 @@
+import { Logger } from "@nestjs/common";
 import { err, ok } from "neverthrow";
 import type { Result } from "neverthrow";
 import type pg from "pg";
 import type { DeleteGuardianAccountResult } from "@yourtal/contracts/identity/guardian";
+import type { EventReceiver } from "@yourtal/contracts/oidc/event-receivers";
 import { executeDeletion } from "@yourtal/consent/dsar-orchestrator";
 import { deletionHandlers } from "../../../shared/dsar/deletion-handlers";
 import type { RegionPaymentProviders } from "../../../shared/drivers/payment-providers.module";
@@ -26,19 +28,32 @@ import type { DeleteGuardianAccountError } from "../guardian-consent.errors";
  * escrowed for good and the grants' device and IP are cleared, the same as
  * self-deletion.
  */
+const logger = new Logger("DeleteGuardianAccount");
+
 export async function deleteGuardianAccount(
   pool: pg.Pool,
   consents: GuardianConsentRepository,
   ledger: LedgerInternalClient,
   payments: RegionPaymentProviders,
   rawToken: string,
+  receivers: readonly EventReceiver[],
 ): Promise<Result<DeleteGuardianAccountResult, DeleteGuardianAccountError>> {
   const tokenHash = hashOpaqueToken(rawToken);
 
   const row = await consents.findByTokenHash(tokenHash);
   if (row === null) return err({ type: "not_found" });
 
-  await executeDeletion(row.userId, deletionHandlers(pool, ledger, payments));
+  const report = await executeDeletion(
+    row.userId,
+    deletionHandlers(pool, ledger, payments, receivers),
+  );
+  // The guardian sees only "deleted", so an incomplete run is visible only here (docs/29 §10).
+  if (!report.complete) {
+    const open = report.results
+      .filter(({ outcome }) => outcome.status === "failed" || outcome.status === "unhandled")
+      .map(({ domain }) => domain);
+    logger.error(`complete: false for ${row.userId}; open domains: ${open.join(", ")}`);
+  }
 
   return ok({ deleted: true });
 }

@@ -1,0 +1,28 @@
+# To enable: copy to .github/workflows/oidc-uptime.yml (needs a GitHub token with the workflow scope; group 5.13.t).
+# Off-box uptime check on OIDC discovery (3.9.h). Every app's sign-in starts
+# there, so a red run (GitHub emails repo watchers) is the notice if Helios or
+# its nginx is down. It runs from GitHub, not from the box it watches. The
+# on-box check (infra/helios/monitor) mails separately.
+name: OIDC uptime
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Discovery answers with the right issuer and a key set
+        run: |
+          set -euo pipefail
+          base=https://yourtal.gaiada.com/oidc
+          disc=$(curl -fsS --retry 2 --retry-delay 5 --max-time 15 "$base/.well-known/openid-configuration")
+          [ "$(jq -r .issuer <<<"$disc")" = "$base" ] || { echo "::error::issuer is not $base"; exit 1; }
+          curl -fsS --max-time 15 "$(jq -r .jwks_uri <<<"$disc")" | jq -e '.keys | length > 0' >/dev/null ||
+            { echo "::error::jwks_uri serves no keys"; exit 1; }

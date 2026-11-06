@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | ✅ done | 23/23 | 105/105 | `██████████` 100% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 20/25 | 99/111 | `█████████░`  89% |
-| **All** | | | **126/131** | **646/658** | `██████████`  98% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 20/25 | 102/111 | `█████████░`  92% |
+| **All** | | | **126/131** | **649/658** | `██████████`  99% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1711,9 +1711,9 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.14.d Receipts are left out of the risk gate’s user-velocity signal (group 2.10.d–e, founder 2026-10-21) → 7076c408
   - [x] 14.14.e Staff console: Receipt programmes (group 2.9.c) → 00d2946d
 - [ ] **14.23 The SnapApp scans voucher** (group 2.8, F128) · A + B + C · needs: 14.3 — 🔄 2026-10-22
-  - [ ] 14.23.a T1 partner-bound listings; T2 the holding read and code test vectors; T3 the merchant order lookup → T1 → ad0901b3; T3 → e8709598 (PR #30); T2 → 2fadd2d0 (PR #42)
-  - [ ] 14.23.b T4 the partner ownership read; T5 wallet copy for vouchers used in an app; T6 the checkout tier exemption
-  - [ ] 14.23.c T7 the staging seed (200-point listing, stock, binding); the lead’s credential and secret steps
+  - [x] 14.23.a T1 partner-bound listings; T2 the holding read and code test vectors; T3 the merchant order lookup → T1 → ad0901b3; T3 → e8709598 (PR #30); T2 → 2fadd2d0 (PR #42); all three done (T2 2fadd2d0, T3 e8709598)
+  - [x] 14.23.b T4 the partner ownership read; T5 wallet copy for vouchers used in an app; T6 the checkout tier exemption → T4 f05b75ba (PR #45); T5, T6 b553583e (PR #46)
+  - [ ] 14.23.c T7 the staging seed (200-point listing, stock, binding); the lead’s credential and secret steps → seed merged b553583e (PR #46), priced at the ledger quote (167) until group 2.8.g; runs on the next staging deploy
   - [ ] 14.23.d T8 the staging check: Phases A, B and C pass
 - [x] **14.15 Account deletion: the last gaps** (group 1.24) · A · needs: — — ✅ 2026-10-21 0551286a
   - [x] 14.15.a Pending team invitations to an erased email are removed inside the identity domain, before the address goes (group 1.24.a) → 0551286a
@@ -1722,11 +1722,17 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.16.a The provider at `/oidc` on `oidc-provider` 9.x: the `oidc` schema, discovery, authorize, token, JWKS, userinfo, pairwise `sub`, the client registry, the §1.5 checks and the interaction API (group 3.9.a, 3.9.d) → 5cb7f0b0 (group 3.9.a, 3.9.d)
   - [x] 14.16.b The `/connect/[uid]` sign-in, consent and refusal screens, en-AU and id-ID (group 3.9.b) → merged at 5cb7f0b0; screenshots once the provider is on staging → 5cb7f0b0 + 936d005a; staging QA 2026-10-21, axe-clean at 390/1280 light and dark (group 3.9.b)
   - [x] 14.16.c Passkeys and authenticator-app codes on YourTal accounts, and `amr` in ID tokens (group 3.9.c) → d4687ad5 (PR #28)
-  - [ ] 14.16.d Teens: every client refuses them except SnapApp by a guardian's invite; the teen invite API (group 3.9.e)
-  - [ ] 14.16.e Deletion and ended access reach every app as signed events, with the `connected_apps` data domain (group 3.9.f)
+  - [x] 14.16.d Teens: every client refuses them except SnapApp by a guardian's invite; the teen invite API (group 3.9.e) → cc1c5088 (PR #48); guardian lock at acceptance 31922ded (PR #55, group 3.10.g)
+  - [x] 14.16.e Deletion and ended access reach every app as signed events, with the `connected_apps` data domain (group 3.9.f) → Y1 2563ff1a (#50), Y2 a0e3b8c5 (#52), Y3 31922ded (#55), Y4 26d21ef4 (#54), Y5 2d48e225 (#56); live after the lead's Helios step L1 (user's OK) → staging check C1 2026-11-04: SnapApp leg PASS (delete erases, remove keeps data); FTR leg waits on the FTR sign-in switch (group 3.7.m L4) → FTR leg PASS 2026-11-05 (live window), scripts 86f93893 (#64)
   - [ ] 14.16.f Rate limits, a sign-in log per client, an uptime check and one restore test (group 3.9.h)
   - [x] 14.16.g `max_age` and `prompt=login` on `/connect`; `auth_time` and `amr` from the YourTal session (group 3.9.i) → 724682a8 (PR #40)
   - [x] 14.16.h A sign-up started from an app goes back to the app after the consent step (group 3.9.j) → b1ba58e0 (PR #43)
+  - [x] 14.16.i Transfer assertions for the SnapApp → Free Tax Returns direct send: create, approve, mint (group 4.8.b, docs/30) → 1f064cf2 (#60); Send screen is group 4.8.c
+  - [x] 14.16.j The Send screen decision and approval in `/connect` for a transfer (group 4.8.c, docs/30) → 0a53efed (#62); web view is group 4.8.d
+  - [x] 14.16.k The web Send screen and its refusals on `/connect`, en-AU and id-ID (group 4.8.d) → 6c7d6873 (#63); id-ID copy needs a native read
+  - [x] 14.16.l Before direct send goes live: kilometres-only Send copy; transfer API limited per client id (group 4.10.a/b) → 8599e4bd (#65); teen invites too → 4bb72087 (#66, group 4.10.g)
+  - [x] 14.16.m Switch-over plan for Sign in with YourTal: order, checks, rollback, user messages (group 3.8.a) → dc1a3c61 (#67), docs/31
+  - [x] 14.16.n Sign-in ops: IPv6 /64 + site-wide /oidc limits, uptime + backup-age monitor, restore rehearsal; nightly backup installed on Helios (group 3.9.h) → 045eff11 (#68)
 - [x] **14.19 Phase 5's screens: evidence and fixes** (group 5.11) · B + C · needs: — — 🔄 g5 — ✅ 2026-10-26 6cd56c7f
   - [x] 14.19.a Screenshots and axe for every Phase 5 screen, both widths, themes and locales: no WCAG A/AA violations, no overflow (2026-10-21)
   - [x] 14.19.b The auction page crashed for bidders (a client-only helper called on the server) → edd733d6

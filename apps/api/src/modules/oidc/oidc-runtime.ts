@@ -6,7 +6,7 @@ import type { AppConfig } from "../../config/app-config";
 import { createPool } from "../../shared/persistence/create-pool";
 import { loadClients } from "./client-keys";
 import type { YourTalClient } from "./clients";
-import { clientsFor } from "./clients";
+import { clientsFor, transferRoutesFor } from "./clients";
 import { findAccountFrom } from "./find-account";
 import { loadProviderKeys } from "./keys";
 import type { OidcStore } from "./oidc-store";
@@ -17,6 +17,9 @@ import { providerConfiguration } from "./provider-config";
 import { addProviderMiddleware } from "./provider-middleware";
 import type { TeenInviteStore } from "./teen-invites";
 import { createPgTeenInvites } from "./teen-invites";
+import { transferSigner } from "./transfer-assertion";
+import type { TransferStore } from "./transfers";
+import { createPgTransfers } from "./transfers";
 
 export const OIDC_RUNTIME = Symbol("OIDC_RUNTIME");
 
@@ -31,6 +34,8 @@ export class OidcRuntime implements OnApplicationShutdown {
     private readonly pool: Pool | null,
     /** The teen invite API's store, and the sign-in checks' teen invites. */
     readonly teenInvites: TeenInviteStore | null = null,
+    /** App transfers (docs/30 §5): the client API and, later, the send screen. */
+    readonly transfers: TransferStore | null = null,
   ) {}
 
   get enabled(): boolean {
@@ -85,6 +90,16 @@ export function createOidcRuntime(config: AppConfig, pool?: Pool): OidcRuntime {
   addProviderMiddleware(provider, store, (message) => {
     logger.error(message);
   });
+  const [signingKey] = keys.jwks.keys;
+  if (signingKey === undefined) throw new Error("oidc: no signing key");
+  const transfers = createPgTransfers({
+    pool: usePool,
+    store,
+    clients: loaded.registered,
+    routes: transferRoutesFor(config.appEnv, loaded.registered),
+    sign: transferSigner(oidc.issuer, signingKey),
+    secretOf: async (clientId) => (await provider.Client.find(clientId))?.clientSecret,
+  });
   logger.log(`provider ready at ${oidc.issuer} with ${String(loaded.registered.length)} clients`);
-  return new OidcRuntime(provider, loaded.registered, store, ownPool, teenInvites);
+  return new OidcRuntime(provider, loaded.registered, store, ownPool, teenInvites, transfers);
 }

@@ -1,4 +1,5 @@
 import type pg from "pg";
+import type { EventReceiver } from "@yourtal/contracts/oidc/event-receivers";
 import { toPoints } from "@yourtal/contracts/money";
 import type { DomainHandler, HandlerRegistry } from "@yourtal/consent/dsar-orchestrator";
 import { postgresHandlers } from "@yourtal/db/dsar-handlers";
@@ -51,9 +52,13 @@ export function deletionHandlers(
   pool: pg.Pool,
   ledger: LedgerInternalClient,
   providers: RegionPaymentProviders,
+  receivers: readonly EventReceiver[],
 ): HandlerRegistry {
   return {
-    ...postgresHandlers(pool, { deleteAtProcessor: processorCustomerDeleter(providers) }),
+    ...postgresHandlers(pool, {
+      deleteAtProcessor: processorCustomerDeleter(providers),
+      receivers,
+    }),
     ledger: ledgerDeletionHandler(pool, ledger),
   };
 }

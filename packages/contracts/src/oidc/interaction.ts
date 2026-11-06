@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { financialYearSchema, transferProblemSchema } from "./transfer";
 
 /**
  * Group 3.9 (docs/26 §1.1, §1.5): the API behind YourTal's `/connect/[uid]`
@@ -15,6 +16,8 @@ export const signInRefusalSchema = z.enum([
   "region_not_supported",
   "teen_not_allowed",
   "teen_invite_required",
+  // docs/30 §5: the app's send cannot go ahead; `sendProblem` says why.
+  "send_refused",
 ]);
 export type SignInRefusal = z.infer<typeof signInRefusalSchema>;
 
@@ -42,6 +45,8 @@ export type TeenInviteProblem = z.infer<typeof teenInviteProblemSchema>;
  *   (`prompt=login` or `max_age`); sign out, sign in again, then reload.
  * - `consent`: first sign-in to this app, or it asks for more (the full consent screen).
  * - `continue`: already agreed; the one-tap "Continue to {app} as {name}".
+ * - `send`: already agreed, and the app asked to send data to another app
+ *   (docs/30 §5); see `send`. Send approves it and goes back to the app.
  * - `refused`: see `refusal`; the only way out is cancel ("Back to {app}").
  */
 export const interactionScreenSchema = z.enum([
@@ -51,6 +56,7 @@ export const interactionScreenSchema = z.enum([
   "sign_in_again",
   "consent",
   "continue",
+  "send",
   "refused",
 ]);
 export type InteractionScreen = z.infer<typeof interactionScreenSchema>;
@@ -79,6 +85,18 @@ export const interactionSharingSchema = z.object({
 });
 export type InteractionSharing = z.infer<typeof interactionSharingSchema>;
 
+/**
+ * What the app asks to send, on `send` (docs/30 §5): "Send your {financialYear}
+ * deductions to {to.name}?", and "{lineCount} deduction lines". `to` is the
+ * destination app, named with its operator and privacy policy.
+ */
+export const interactionSendSchema = z.object({
+  financialYear: financialYearSchema,
+  lineCount: z.number().int().min(0),
+  to: interactionClientSchema,
+});
+export type InteractionSend = z.infer<typeof interactionSendSchema>;
+
 /** `GET /api/connect/{uid}`. */
 export const interactionDetailsSchema = z.object({
   uid: z.string().min(1),
@@ -100,6 +118,13 @@ export const interactionDetailsSchema = z.object({
     .object({ parentName: z.string().min(1) })
     .nullable()
     .default(null),
+  /** Set on `send` only. Defaults to null, so an older API still parses. */
+  send: interactionSendSchema.nullable().default(null),
+  /**
+   * Set on `refused` with `send_refused` only: `not_connected`, `wrong_account`,
+   * `expired` or `not_allowed`, each with its own message ending "Nothing was sent."
+   */
+  sendProblem: transferProblemSchema.nullable().default(null),
   /** The app's `ui_locales`, in its order; the screen follows it, then the person's own language. */
   uiLocales: z.array(z.string()),
 });
@@ -107,11 +132,12 @@ export type InteractionDetails = z.infer<typeof interactionDetailsSchema>;
 
 /**
  * `POST /api/connect/{uid}/continue`. `screen` is the one the person tapped
- * Continue on. A `continue` tap when consent is now needed answers 409
- * `screen_changed`, so consent is only ever recorded from the consent screen.
+ * Continue (or Send) on. A `continue` tap when consent is now needed answers
+ * 409 `screen_changed`, so consent is only ever recorded from the consent
+ * screen; likewise a send is only ever approved by a `send` tap on `send`.
  */
 export const interactionContinueRequestSchema = z
-  .object({ screen: z.enum(["consent", "continue"]) })
+  .object({ screen: z.enum(["consent", "continue", "send"]) })
   .strict();
 export type InteractionContinueRequest = z.infer<typeof interactionContinueRequestSchema>;
 
@@ -123,6 +149,10 @@ export type InteractionCancelRequest = z.infer<typeof interactionCancelRequestSc
 export const interactionRedirectSchema = z.object({ redirectTo: z.url() });
 export type InteractionRedirect = z.infer<typeof interactionRedirectSchema>;
 
-/** The `error_description` an app gets with `error=access_denied`. */
+/**
+ * The `error_description` an app gets with `error=access_denied`. A send
+ * refused for any reason, or cancelled on the send screen, is `send_refused`,
+ * so the app never learns whether the person uses the other app (docs/30 D4).
+ */
 export const accessDeniedReasonSchema = z.enum([...signInRefusalSchema.options, "user_cancelled"]);
 export type AccessDeniedReason = z.infer<typeof accessDeniedReasonSchema>;

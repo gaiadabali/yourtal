@@ -137,7 +137,8 @@ jobs:
       # supply-chain trust, and ubuntu-24.04's own repos carry a current
       # ffmpeg build (ffprobe ships in the same package).
       - name: Install ffmpeg (F50/F62)
-        run: sudo apt-get update -y && sudo apt-get install -y ffmpeg
+        timeout-minutes: 6
+        run: sudo timeout 150 apt-get -o Acquire::Retries=3 update -y && sudo timeout 150 apt-get -o Acquire::Retries=3 install -y ffmpeg
       #
       # It was a service container, and it could never have worked. GitHub
       # creates service containers BEFORE the job's first step — so before
@@ -292,6 +293,7 @@ jobs:
             services/voucher/go.sum
 
       - name: Install dependencies
+        timeout-minutes: 5
         run: pnpm install --frozen-lockfile
 
       # The compose file runs this at container start; the Actions service
@@ -302,27 +304,32 @@ jobs:
         run: psql "$DATABASE_OWNER_URL" -v ON_ERROR_STOP=1 -f infra/postgres/init/01-schemas.sql
 
       - name: Apply migrations
+        timeout-minutes: 3
         run: pnpm db:migrate
 
       - name: Seed
         run: pnpm db:seed
 
       - name: packages/db
+        timeout-minutes: 8
         run: pnpm --filter @yourtal/db test
 
       - name: packages/idempotency
+        timeout-minutes: 3
         run: pnpm --filter @yourtal/idempotency test
 
       # 5.1.e: the payment simulation's Postgres store, as the app role. Its
       # unit suite (no database) runs in quality.yml and in the sweep below;
       # the *.pg.test.ts files run only here, through their own test database.
       - name: packages/paysim (Postgres store)
+        timeout-minutes: 3
         run: pnpm --filter @yourtal/paysim test:pg
 
       # YT-0527. app.boot.test.ts boots the real AppModule and calls it over
       # a real HTTP round trip against the cerbos service above — the first
       # apps/api suite that talks to a live PDP rather than a mocked fetch.
       - name: apps/api (live PDP boot check)
+        timeout-minutes: 21
         run: |
           set -o pipefail
           pnpm --filter @yourtal/api test 2>&1 | tee /tmp/api-test.log
@@ -344,6 +351,7 @@ jobs:
       # any other. A SKIP means a suite could not reach Postgres and proved
       # nothing, so it fails the job.
       - name: Go ledger
+        timeout-minutes: 3
         run: |
           set -o pipefail
           pnpm --filter @yourtal/ledger-service test -v 2>&1 | tee /tmp/go-ledger.log
@@ -354,6 +362,7 @@ jobs:
           fi
 
       - name: Go voucher
+        timeout-minutes: 3
         run: |
           set -o pipefail
           pnpm --filter @yourtal/voucher-service test -v 2>&1 | tee /tmp/go-voucher.log
@@ -478,6 +487,7 @@ jobs:
       # targeted steps above exist for their SKIP guards and their tee'd
       # logs; this runs every suite they did not.
       - name: Every remaining suite
+        timeout-minutes: 16
         run: |
           set -o pipefail
           pnpm exec turbo run test --concurrency=1 --filter='!@yourtal/db' --filter='!@yourtal/idempotency' --filter='!@yourtal/api' --filter='!@yourtal/ledger-service' --filter='!@yourtal/voucher-service' 2>&1 | tee /tmp/sweep.log
@@ -517,6 +527,7 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
+        timeout-minutes: 5
         run: pnpm install --frozen-lockfile
 
       # One lab build serves both gates. The step starts each server itself:

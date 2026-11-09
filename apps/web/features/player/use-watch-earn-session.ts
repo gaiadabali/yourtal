@@ -136,41 +136,43 @@ function playNow(video: HTMLVideoElement) {
  * it. WebKit could sit on a black frame at 0.1s after Start over (5.13.y):
  * a seek (even to where the playhead already was) and play() in the same
  * breath raced the stream's first load. So it seeks only when that moves the
- * playhead, plays once the seek has landed, and if the playhead has not moved
- * after STALL_MS (and the viewer did not pause), seeks and plays once more.
+ * playhead, and only once the stream's metadata is in, and plays once the
+ * seek has landed. If after STALL_MS the playhead still sits at the target
+ * with data to play, it calls play() once more, unless the viewer paused or
+ * seeked meanwhile.
  */
 function playFrom(video: HTMLVideoElement, seekTo: number): () => void {
   const play = () => playNow(video);
   const off: (() => void)[] = [];
-  const once = (type: string, listener: () => void) => {
-    video.addEventListener(type, listener, { once: true });
+  const on = (type: string, listener: () => void, once = false) => {
+    video.addEventListener(type, listener, { once });
     off.push(() => video.removeEventListener(type, listener));
   };
-  const moves = () => Math.abs(video.currentTime - seekTo) > 0.5;
+  const atTarget = () => Math.abs(video.currentTime - seekTo) <= 0.5;
 
-  if (video.readyState < 1) {
-    // No stream yet (hls.js attaches after this runs): the seek is kept as the
-    // start position, no `seeked` follows, and a browser may still drop it.
+  let ownSeek = false;
+  let viewerActed = false;
+  const go = () => {
+    if (atTarget()) return play();
+    ownSeek = true;
+    on("seeked", play, true);
     video.currentTime = seekTo;
-    play();
-    once("loadedmetadata", () => {
-      if (moves()) video.currentTime = seekTo;
-    });
-  } else if (moves()) {
-    once("seeked", play);
-    video.currentTime = seekTo;
-  } else {
-    play();
-  }
+  };
+  // No stream yet (hls.js attaches after this runs): a seek now fires no `seeked`, and a browser may drop it.
+  if (video.readyState < 1 && !atTarget()) on("loadedmetadata", go, true);
+  else go();
 
-  let viewerPaused = false;
-  once("pause", () => {
-    viewerPaused = true;
+  on("seeking", () => {
+    if (ownSeek) ownSeek = false;
+    else viewerActed = true;
+  });
+  on("pause", () => {
+    viewerActed = true;
   });
   const timer = window.setTimeout(() => {
-    if (viewerPaused || video.ended || video.currentTime > seekTo + 0.5) return;
-    video.currentTime = seekTo;
-    play();
+    const stuck =
+      !viewerActed && !video.ended && !video.seeking && atTarget() && video.readyState >= 3;
+    if (stuck) play();
   }, STALL_MS);
   return () => {
     window.clearTimeout(timer);
@@ -229,6 +231,8 @@ export function useWatchEarnSession(campaignId: string) {
   const runRef = useRef({ from: 0, to: 0 });
   /** 5.13.ag: `video.played` from before a reload (the playback-error Retry), which empties it. */
   const playedBeforeRef = useRef<Span[]>([]);
+  /** 5.13.ag: set by `keepPlayed` until the reload empties the element; the old stream's last `timeupdate`s are not the new run's. */
+  const reloadingRef = useRef(false);
   const pendingReports = useRef(new Set<Promise<unknown>>());
   const questionsAsked = useRef(0);
   const checkpointBusy = useRef(false);
@@ -480,7 +484,10 @@ export function useWatchEarnSession(campaignId: string) {
     };
     const onSeeking = () => newRun(video.currentTime);
     const onTimeUpdate = () => {
-      if (!video.seeking) runRef.current.to = video.currentTime;
+      if (!video.seeking && !reloadingRef.current) runRef.current.to = video.currentTime;
+    };
+    const onReloaded = () => {
+      reloadingRef.current = false;
     };
     const onHidden = () => {
       if (document.hidden) video.pause();
@@ -488,12 +495,16 @@ export function useWatchEarnSession(campaignId: string) {
     video.addEventListener("ratechange", holdRate);
     video.addEventListener("seeking", onSeeking);
     video.addEventListener("timeupdate", onTimeUpdate);
+    video.addEventListener("emptied", onReloaded);
+    video.addEventListener("loadstart", onReloaded);
     document.addEventListener("visibilitychange", onHidden);
     return () => {
       window.clearInterval(timer);
       video.removeEventListener("ratechange", holdRate);
       video.removeEventListener("seeking", onSeeking);
       video.removeEventListener("timeupdate", onTimeUpdate);
+      video.removeEventListener("emptied", onReloaded);
+      video.removeEventListener("loadstart", onReloaded);
       document.removeEventListener("visibilitychange", onHidden);
     };
   }, [phase.kind, reportPlayed, tryPresentCheckpoint, newRun]);
@@ -518,9 +529,12 @@ export function useWatchEarnSession(campaignId: string) {
   const keepPlayed = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
+    // Stops the old stream growing `played` past what is kept here.
+    video.pause();
     playedBeforeRef.current = [...playedBeforeRef.current, ...rangesOf(video.played)];
     // The reloaded stream starts again at 0, with no seek.
     newRun(0);
+    reloadingRef.current = true;
   }, [newRun]);
 
   const answer = useCallback(

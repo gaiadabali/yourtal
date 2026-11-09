@@ -426,17 +426,21 @@ describe("V12b: a repeat visit that has earlier coverage waits for the viewer's 
     expect(actions.present).toHaveBeenCalledWith("session-1", 0);
   });
 
-  it("applies the resume position again once the stream's metadata arrives", async () => {
+  it("seeks to the resume position once the stream's metadata arrives, and plays once it lands", async () => {
+    playMock.mockClear();
     render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
     fireEvent.click(screen.getByRole("button", { name: /Test Campaign/ }));
     fireEvent.click(await screen.findByRole("button", { name: /Resume from 1:00/ }));
     await waitFor(() => expect(hls.mounts).toBe(1));
-    expect(video().currentTime).toBe(60);
+    // 5.13.y: no stream yet, so neither the seek nor play() races its first load.
+    expect(video().currentTime).toBe(0);
+    expect(playMock).not.toHaveBeenCalled();
 
-    // A browser may drop a seek made before the source is attached.
-    video().currentTime = 0;
     fireEvent.loadedMetadata(video());
     expect(video().currentTime).toBe(60);
+    expect(playMock).not.toHaveBeenCalled();
+    fireEvent.seeked(video());
+    expect(playMock).toHaveBeenCalledTimes(1);
   });
 
   describe("5.13.y: Start over and Resume once the stream is loaded behind the prompt", () => {
@@ -482,7 +486,7 @@ describe("V12b: a repeat visit that has earlier coverage waits for the viewer's 
       expect(playMock).toHaveBeenCalledTimes(1);
     });
 
-    it("kicks a Start over that sits still once: seeks back and plays again", async () => {
+    it("kicks a Start over that sits still, once, with play() alone", async () => {
       await atPrompt();
       fireEvent.click(screen.getByRole("button", { name: /Start over/ }));
       await flush();
@@ -492,12 +496,42 @@ describe("V12b: a repeat visit that has earlier coverage waits for the viewer's 
       await act(async () => {
         await vi.advanceTimersByTimeAsync(3_000);
       });
-      expect(seeks).toEqual([0]);
+      expect(seeks).toEqual([]);
       expect(playMock).toHaveBeenCalledTimes(2);
       await act(async () => {
         await vi.advanceTimersByTimeAsync(10_000);
       });
       expect(playMock).toHaveBeenCalledTimes(2);
+    });
+
+    it("never undoes a rewind made within the first seconds after Resume", async () => {
+      await atPrompt();
+      fireEvent.click(screen.getByRole("button", { name: /Resume from 1:00/ }));
+      await flush();
+      fireEvent.seeking(video());
+      fireEvent.seeked(video());
+      // The viewer drags back to 30s straight away.
+      position = 30;
+      fireEvent.seeking(video());
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(3_000);
+      });
+      expect(seeks).toEqual([60]);
+      expect(playMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("leaves a stream still buffering at its target alone", async () => {
+      await atPrompt();
+      fireEvent.click(screen.getByRole("button", { name: /Start over/ }));
+      await flush();
+      Object.defineProperty(video(), "readyState", { value: 2, configurable: true });
+      position = 0.1;
+      Object.defineProperty(video(), "paused", { value: false, configurable: true });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(3_000);
+      });
+      expect(seeks).toEqual([]);
+      expect(playMock).toHaveBeenCalledTimes(1);
     });
 
     it("leaves a playhead that moved, or that the viewer paused, alone", async () => {
@@ -785,6 +819,28 @@ describe("5.13.af: progress is reported from what the browser played", () => {
       expect(spans()).toEqual([
         [0, 4],
         [4, 6.5],
+      ]);
+    });
+
+    it("after Retry, the old stream's last moments never release a refused span", async () => {
+      actions.present.mockResolvedValue(notReached);
+      actions.report.mockResolvedValueOnce(httpError(403)).mockResolvedValue(accepted);
+      await startPlaying();
+      await tick([0, 4]);
+      played([0, 6.5]);
+      act(() => hls.onFatalError?.("Playback error: fragLoadError"));
+      fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+      await flush();
+      // The old stream ticks on to 6.5 before the reload empties it.
+      Object.defineProperty(video(), "currentTime", { value: 6.5, configurable: true });
+      fireEvent.timeUpdate(video());
+      fireEvent.emptied(video());
+      // Then the viewer skips ahead in the new stream.
+      seekTo(50);
+      await tickAt(52, [50, 52]);
+      expect(spans().slice(1)).toEqual([
+        [4, 6.5],
+        [50, 52],
       ]);
     });
 

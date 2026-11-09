@@ -153,48 +153,54 @@ async function ensurePayouts(
 interface WalletVoucher {
   readonly voucherId: string;
   readonly status?: string;
+  readonly partialRedemptionPolicy?: string;
 }
 
+/** Active single-use vouchers: the balance-carrying one stays with the viewer for the counter walk. */
 async function activeVouchers(viewer: DemoApi): Promise<string[]> {
   const body = ok(await viewer.get("/api/wallet/vouchers"), "wallet vouchers");
   return ((field(body, "vouchers") ?? []) as WalletVoucher[])
-    .filter((v) => v.status === "active")
+    .filter((v) => v.status === "active" && v.partialRedemptionPolicy !== "balance_carrying")
     .map((v) => v.voucherId);
 }
 
-/** Support credits one goodwill case and the member releases it at once. */
+/** Support credits one goodwill case and the member releases it at once. Says what was granted. */
 async function creditGoodwill(
   admin: DemoApi,
   member: DemoApi,
   userId: string,
   points: number,
-): Promise<void> {
+): Promise<string> {
   const credited = await admin.post(`/api/staff/users/${userId}/goodwill`, {
     points,
     reason: "Demo world starting balance",
   });
   // Already credited today (a re-run): spend what is there.
-  if (credited.status >= 400 && !JSON.stringify(credited.body).includes("velocity_capped")) {
-    ok(credited, "goodwill");
-  }
+  const capped = JSON.stringify(credited.body).includes("velocity_capped");
+  if (credited.status >= 400 && !capped) ok(credited, "goodwill");
   ok(await member.post("/api/dev/clock/release-pending"), "release pending");
+  return capped
+    ? `goodwill ${String(points)} refused (velocity_capped)`
+    : `goodwill ${String(points)} granted`;
 }
+
+export type Purchase = { readonly bought: true } | { readonly bought: false; readonly why: string };
 
 const availablePoints = async (member: DemoApi): Promise<number> =>
   Number(field(ok(await member.get("/api/wallet"), "wallet"), "availablePoints") ?? 0);
 
 /**
  * Support credits one goodwill case, the member releases it and buys the cheapest
- * adult-visible single-use voucher. True when one was bought.
+ * adult-visible single-use voucher. When nothing was bought, `why` says what was granted and the balance.
  */
 export async function buyOneVoucher(
   admin: DemoApi,
   viewer: DemoApi,
   userId: string,
   region: Region,
-): Promise<boolean> {
+): Promise<Purchase> {
   // Enough for the cheapest voucher, leaving room under the daily earn cap to watch.
-  await creditGoodwill(admin, viewer, userId, region === "AU" ? 300 : 3_000);
+  const granted = await creditGoodwill(admin, viewer, userId, region === "AU" ? 300 : 3_000);
   const balance = await availablePoints(viewer);
   const listings = DEMO_BRANDS.filter((b) => b.region === region).flatMap((brand) =>
     brand.listings
@@ -212,11 +218,13 @@ export async function buyOneVoucher(
     const bought = await viewer.post("/api/checkout", {
       checkoutId: field(quote.body, "checkoutId"),
     });
-    if (bought.status < 400) return true;
+    if (bought.status < 400) return { bought: true };
   }
   // Only after a same-day re-run on the same accounts; the steps below skip a missing voucher.
-  console.log("[demo:marketplace] no demo voucher was affordable");
-  return false;
+  return {
+    bought: false,
+    why: `${region}: ${granted}, balance ${String(balance)} pts, no demo voucher affordable or in stock`,
+  };
 }
 
 /** The region's balance-carrying demo listing, the one the counter can redeem in part. */
@@ -277,8 +285,10 @@ export async function runDemoMarketplace(
       ),
     );
     if (!adult || !guardian || !viewer || !member) throw new Error("demo logins missing");
-    for (const person of [adult, guardian, viewer, member])
-      await buyOneVoucher(admin, person, userIdOf(person), region);
+    for (const person of [adult, guardian, viewer, member]) {
+      const purchase = await buyOneVoucher(admin, person, userIdOf(person), region);
+      if (!purchase.bought) log(`[demo:marketplace] bought nothing: ${purchase.why}`);
+    }
     const first = async (api: DemoApi) => (await activeVouchers(api))[0];
 
     // Gifts: the adult's is accepted by the guardian; the viewer's waits for the adult.

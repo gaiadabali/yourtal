@@ -5,6 +5,7 @@ import { DEMO_BRANDS } from "./catalogue";
 import type { Audience } from "@yourtal/contracts/audience/audience";
 import type { Region } from "./catalogue";
 import { buyOneVoucher } from "./marketplace";
+import type { Purchase } from "./marketplace";
 import { businessIdFor, campaignIdFor, listingIdFor } from "./world";
 
 /**
@@ -146,7 +147,8 @@ export const KEEP_GIFTABLE = 2;
 /**
  * The one voucher to redeem today. A voucher this member cannot pass on (won at
  * an auction, or received) is the one to spend; a giftable one is spent only
- * when more than `KEEP_GIFTABLE` would stay.
+ * when more than `KEEP_GIFTABLE` plus the auction keeper's one spare would stay,
+ * so a spare the keeper bought but could not list is retried, not bought again.
  */
 export function pickToRedeem<T extends { status?: string; giftable?: boolean }>(
   vouchers: readonly T[],
@@ -155,7 +157,7 @@ export function pickToRedeem<T extends { status?: string; giftable?: boolean }>(
   const spendable = active.find((v) => v.giftable !== true);
   if (spendable !== undefined) return [spendable];
   const giftable = active.filter((v) => v.giftable === true);
-  return giftable.length > KEEP_GIFTABLE ? giftable.slice(0, 1) : [];
+  return giftable.length > KEEP_GIFTABLE + 1 ? giftable.slice(0, 1) : [];
 }
 
 /** The voucher to put up for a charity: a giftable one, only while more than KEEP_GIFTABLE remain. */
@@ -180,7 +182,7 @@ type WalletRow = { voucherId: string; status?: string; giftable?: boolean };
 export async function keepAuctionOpen(
   seller: DemoApi,
   region: Region,
-  topUp: () => Promise<boolean>,
+  topUp: () => Promise<Purchase>,
 ): Promise<string> {
   const open = (field(ok(await seller.get("/api/auctions"), "auctions"), "auctions") ??
     []) as unknown[];
@@ -195,7 +197,10 @@ export async function keepAuctionOpen(
       []) as WalletRow[];
   const before = await wallet();
   let voucher = pickToAuction(before);
-  if (voucher === undefined && (await topUp())) {
+  if (voucher === undefined) {
+    const purchase = await topUp();
+    if (!purchase.bought)
+      return `${region} no auction opened: top-up bought nothing (${purchase.why})`;
     const had = new Set(before.map((v) => v.voucherId));
     voucher = (await wallet()).find(
       (v) => !had.has(v.voucherId) && v.status === "active" && v.giftable === true,
@@ -275,6 +280,15 @@ async function redeemAtCounter(
   return redeemed;
 }
 
+/** Runs one step to its log line; a failure becomes the line, so the steps after it still run. */
+export async function settled(label: string, step: () => Promise<string>): Promise<string> {
+  try {
+    return await step();
+  } catch (e: unknown) {
+    return `${label}: ${String(e)}`;
+  }
+}
+
 export async function runDemoActivity(
   pool: pg.Pool,
   config: DemoActivityConfig,
@@ -302,12 +316,14 @@ export async function runDemoActivity(
       const bought = await buyOne(adult.api, adult.v);
       lines.push(`${adult.v.email} bought: ${bought ?? "nothing affordable"}`);
       // Before the counter visit, so today's purchase is listed rather than spent.
-      const { userId } = await loginAs(base, adult.v.email, config);
-      const admin = await login(base, "admin@demo.yourtal.test", config);
       lines.push(
-        await keepAuctionOpen(adult.api, region, () =>
-          buyOneVoucher(admin, adult.api, userId, region),
-        ).catch((e: unknown) => String(e)),
+        await settled(`${region} auction keeper`, async () => {
+          const { userId } = await loginAs(base, adult.v.email, config);
+          const admin = await login(base, "admin@demo.yourtal.test", config);
+          return keepAuctionOpen(adult.api, region, () =>
+            buyOneVoucher(admin, adult.api, userId, region),
+          );
+        }),
       );
       const owner = await login(base, `owner.${region.toLowerCase()}@demo.yourtal.test`, config);
       const redeemed = await redeemAtCounter(pool, owner, base, adult.api, region).catch(

@@ -1724,7 +1724,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.16.c Passkeys and authenticator-app codes on YourTal accounts, and `amr` in ID tokens (group 3.9.c) → d4687ad5 (PR #28)
   - [x] 14.16.d Teens: every client refuses them except SnapApp by a guardian's invite; the teen invite API (group 3.9.e) → cc1c5088 (PR #48); guardian lock at acceptance 31922ded (PR #55, group 3.10.g)
   - [x] 14.16.e Deletion and ended access reach every app as signed events, with the `connected_apps` data domain (group 3.9.f) → Y1 2563ff1a (#50), Y2 a0e3b8c5 (#52), Y3 31922ded (#55), Y4 26d21ef4 (#54), Y5 2d48e225 (#56); live after the lead's Helios step L1 (user's OK) → staging check C1 2026-11-04: SnapApp leg PASS (delete erases, remove keeps data); FTR leg waits on the FTR sign-in switch (group 3.7.m L4) → FTR leg PASS 2026-11-05 (live window), scripts 86f93893 (#64)
-  - [ ] 14.16.f Rate limits, a sign-in log per client, an uptime check and one restore test (group 3.9.h)
+  - [x] 14.16.f Rate limits, a sign-in log per client, an uptime check and one restore test (group 3.9.h) → 045eff11 (#68) + 51680c14 (#70, off-box uptime workflow)
   - [x] 14.16.g `max_age` and `prompt=login` on `/connect`; `auth_time` and `amr` from the YourTal session (group 3.9.i) → 724682a8 (PR #40)
   - [x] 14.16.h A sign-up started from an app goes back to the app after the consent step (group 3.9.j) → b1ba58e0 (PR #43)
   - [x] 14.16.i Transfer assertions for the SnapApp → Free Tax Returns direct send: create, approve, mint (group 4.8.b, docs/30) → 1f064cf2 (#60); Send screen is group 4.8.c
@@ -1767,7 +1767,7 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
   - [x] 14.22.j Staging's demo data: test content on public pages, "new viewer" logins not new (group 5.13.j) → 6cd56c7f (group 5.13.j; V5 is 14.22.r)
   - [x] 14.22.k Gifts and auctions cannot be done from the app: no Gift control and no reason, no way to list a voucher for a charity, wallet history links to "Voucher not found", stale balance after redeeming (group 5.13.k) → 916799ce (group 5.13.k, PR #37; N3, N4 partly and M6 moved to group 5.13.s)
   - [ ] 14.22.l Walk again the journeys the walkthrough could not finish (group 5.13.l)
-  - [ ] 14.22.m The player sometimes never starts on repeat visits (V12b): needs the founder's device and browser (group 5.13.m)
+  - [x] 14.22.m → 59f32d7a (#71, group 5.13.u): timed-out question no longer 500s; Start over asks at its position. The player sometimes never starts on repeat visits (V12b): needs the founder's device and browser (group 5.13.m)
   - [x] 14.22.s Left from 14.22.k and g (group 5.13.s) → 017f6e50 (PR #39)
   - [x] 14.22.n On staging: a dev-clock release shows "points unlocked" at once (V26); the demo reset gives the seeded questions their new prompts (group 5.13.n) → demo reset run 2026-10-26 (group 5.13.n; V26 live check in the re-walk)
   - [x] 14.22.o true_false and likert questions: render them or skip at once (group 5.13.o) → e852a44e (group 5.13.o, PR #38)

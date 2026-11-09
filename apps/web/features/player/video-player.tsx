@@ -291,7 +291,9 @@ export function VideoPlayer({
 
       {phase.kind === "failed" ? (
         <p role="alert" className="text-sm font-sans text-danger">
-          {t("errors.startFailed")}
+          {phase.unwatchedSeconds === undefined
+            ? t("errors.startFailed")
+            : t("errors.notFullyWatched", { seconds: phase.unwatchedSeconds })}
         </p>
       ) : null}
 

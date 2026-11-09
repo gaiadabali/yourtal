@@ -433,3 +433,172 @@ describe("V12b: a repeat visit that has earlier coverage waits for the viewer's 
     expect(video().currentTime).toBe(60);
   });
 });
+
+describe("5.13.af: one refused report never wedges the rest of the session", () => {
+  const refused = {
+    ok: false as const,
+    error: {
+      kind: "http" as const,
+      status: 400,
+      code: "bad_request",
+      message: "This session would have 5s of credited playback after 1s of real time.",
+    },
+  };
+
+  const notReached = {
+    ok: false as const,
+    error: { kind: "http" as const, status: 409, code: "checkpoint_not_reached", message: "" },
+  };
+
+  /** Every reported [from, to], in order. */
+  const spans = () => actions.report.mock.calls.map((call: unknown[]) => call.slice(1, 3));
+
+  /** Plays to each position in turn, one polling tick apiece. */
+  async function playTo(...positions: number[]) {
+    for (const seconds of positions) {
+      Object.defineProperty(video(), "currentTime", { value: seconds, configurable: true });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(4_000);
+      });
+    }
+  }
+
+  async function startPlaying() {
+    vi.useFakeTimers();
+    render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
+    fireEvent.click(screen.getByRole("button", { name: /Test Campaign/ }));
+    await flush();
+    Object.defineProperty(video(), "paused", { value: false, configurable: true });
+    Object.defineProperty(video(), "ended", { value: false, configurable: true });
+  }
+
+  it("starts the next span after a refused one, and the checkpoint is still asked at its position", async () => {
+    // A fake server: refuses the first span, credits every later one, and
+    // has a question due once 40s are covered.
+    let covered = 0;
+    actions.report.mockImplementation((_id: string, from: number, to: number) => {
+      if (actions.report.mock.calls.length === 1) return Promise.resolve(refused);
+      covered = Math.max(covered, to);
+      return Promise.resolve({ ok: true, data: { accepted: true, coveredSeconds: covered } });
+    });
+    const presentQuestion = actions.present.getMockImplementation();
+    actions.present.mockImplementation((): Promise<unknown> =>
+      covered >= 40 ? (presentQuestion?.() as Promise<unknown>) : Promise.resolve(notReached),
+    );
+    await startPlaying();
+
+    await playTo(4, 8, 12, 16, 20, 24, 28, 32, 36);
+    expect(spans()).toEqual([
+      [0, 4],
+      [4, 8],
+      [8, 12],
+      [12, 16],
+      [16, 20],
+      [20, 24],
+      [24, 28],
+      [28, 32],
+      [32, 36],
+    ]);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    await playTo(40);
+    expect(screen.getByRole("dialog")).toHaveTextContent("What did the video say?");
+  });
+
+  it("never claims the seconds a forward seek skipped", async () => {
+    actions.present.mockResolvedValue(notReached);
+    await startPlaying();
+    await playTo(4);
+    fireEvent.seeking(video());
+    await playTo(60, 64);
+    expect(spans()).toEqual([
+      [0, 4],
+      [60, 64],
+    ]);
+  });
+
+  it("a backward seek re-reports from where it landed", async () => {
+    actions.present.mockResolvedValue(notReached);
+    await startPlaying();
+    await playTo(4, 8, 12);
+    fireEvent.seeking(video());
+    await playTo(2, 6);
+    expect(spans().at(-1)).toEqual([2, 6]);
+  });
+});
+
+describe("5.13.af: a finish refused for skipped seconds says so", () => {
+  async function finishWithGaps(
+    locale: "en-AU" | "id-ID",
+    gaps: { fromSecond: number; toSecond: number }[],
+  ) {
+    actions.complete.mockResolvedValue({
+      ok: false,
+      error: { kind: "http", status: 403, code: "forbidden", message: "50s not watched" },
+    });
+    actions.get.mockResolvedValue({
+      ok: true,
+      data: {
+        session: { id: "session-1", nonEarning: false, nonEarningReason: null, questionsAsked: 0 },
+        durationSeconds: 90,
+        coveredSeconds: 90 - gaps.reduce((s, g) => s + g.toSecond - g.fromSecond, 0),
+        gaps,
+      },
+    });
+    render(<VideoPlayer campaign={campaign} terms={terms} locale={locale} />);
+    fireEvent.click(screen.getAllByRole("button")[0] as HTMLElement);
+    await waitFor(() => expect(actions.start).toHaveBeenCalled());
+    await flush();
+    await flush();
+    fireEvent.ended(video());
+    return screen.findByRole("alert");
+  }
+
+  it("in English", async () => {
+    // The first read (at start) has nothing covered; the one after the refusal has the gaps.
+    actions.get.mockResolvedValueOnce({
+      ok: true,
+      data: {
+        session: { id: "session-1", nonEarning: false, nonEarningReason: null, questionsAsked: 0 },
+        durationSeconds: 90,
+        coveredSeconds: 0,
+        gaps: [{ fromSecond: 0, toSecond: 90 }],
+      },
+    });
+    const alert = await finishWithGaps("en-AU", [
+      { fromSecond: 10, toSecond: 40 },
+      { fromSecond: 70, toSecond: 90 },
+    ]);
+    expect(alert).toHaveTextContent("50s of this video haven't been watched yet");
+    expect(alert).not.toHaveTextContent(/couldn't start/);
+  });
+
+  it("in Bahasa", async () => {
+    actions.get.mockResolvedValueOnce({
+      ok: true,
+      data: {
+        session: { id: "session-1", nonEarning: false, nonEarningReason: null, questionsAsked: 0 },
+        durationSeconds: 90,
+        coveredSeconds: 0,
+        gaps: [{ fromSecond: 0, toSecond: 90 }],
+      },
+    });
+    const alert = await finishWithGaps("id-ID", [{ fromSecond: 60, toSecond: 90 }]);
+    expect(alert).toHaveTextContent("30 detik dari video ini belum ditonton");
+    expect(alert).not.toHaveTextContent(/gagal dimulai/);
+  });
+
+  it("keeps the connection message when nothing is missing", async () => {
+    actions.get.mockResolvedValue({
+      ok: true,
+      data: {
+        session: { id: "session-1", nonEarning: false, nonEarningReason: null, questionsAsked: 0 },
+        durationSeconds: 90,
+        coveredSeconds: 0,
+        gaps: [{ fromSecond: 0, toSecond: 90 }],
+      },
+    });
+    const alert = await finishWithGaps("en-AU", []);
+    expect(alert).toHaveTextContent(/couldn't start/);
+  });
+});

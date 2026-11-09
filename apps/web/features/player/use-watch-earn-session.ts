@@ -72,9 +72,12 @@ export type WatchEarnPhase =
    * session -- the long-form mirror of `use-quick-earn.ts`'s same phase.
    * Kind, not a generic failure, and never a retry loop. */
   | { kind: "quiet_hours" }
-  | { kind: "failed" };
+  /** `unwatchedSeconds` (5.13.af): the claim was refused because part of the video has not been watched, per the server's own gaps. */
+  | { kind: "failed"; unwatchedSeconds?: number };
 
 const REPORT_EVERY_MS = 4_000;
+/** A seek that lands further than one tick's playback (plus slack) from the last tick is a jump, not a player nudge. */
+const JUMP_SECONDS = REPORT_EVERY_MS / 1_000 + 2;
 
 /**
  * The real reward session for the long-form watch page (11.5.b), replacing
@@ -110,6 +113,9 @@ export function useWatchEarnSession(campaignId: string) {
   const questionsAsked = useRef(0);
   const checkpointBusy = useRef(false);
   const pendingReport = useRef<Promise<unknown> | null>(null);
+  /** 5.13.af: the playhead at the last tick, and whether the viewer seeked since. */
+  const lastTickAt = useRef(0);
+  const seekedSinceTick = useRef(false);
   /** Set only when the viewer chose "resume" — applied once the video element (re-)mounts into the "watching" phase. */
   const pendingSeekRef = useRef<number | null>(null);
   /** 5.13.u: where an earlier attempt stopped. Server coverage already passes any question it left unanswered, so asking before the playhead is back here would show it at once. */
@@ -124,6 +130,7 @@ export function useWatchEarnSession(campaignId: string) {
       const detail = await getWatchSessionAction(sessionId);
       const coveredSoFar = detail.ok ? detail.data.coveredSeconds : 0;
       reportedTo.current = coveredSoFar;
+      lastTickAt.current = 0;
       coveredRef.current = coveredSoFar;
       const firstGap = detail.ok ? detail.data.gaps[0] : undefined;
       askFromRef.current = firstGap?.fromSecond ?? 0;
@@ -276,11 +283,17 @@ export function useWatchEarnSession(campaignId: string) {
     const from = Math.floor(reportedTo.current);
     const to = Math.min(durationRef.current, toSeconds);
     if (to - from < 1) return;
+    const base = reportedTo.current;
     const pending = reportWatchProgressAction(sessionId, from, to);
     pendingReport.current = pending;
     void pending.then((result) => {
-      if (result.ok && result.data.accepted) {
+      // 5.13.af: any server answer, accepted or refused, ends this span. A
+      // refused span is never claimed again (that wedged every later report);
+      // its seconds stay a server gap. Only a network failure retries it.
+      if ((result.ok || result.error.kind === "http") && reportedTo.current === base) {
         reportedTo.current = to;
+      }
+      if (result.ok && result.data.accepted) {
         coveredRef.current = result.data.coveredSeconds;
         setPhase((current) =>
           current.kind === "watching"
@@ -299,7 +312,16 @@ export function useWatchEarnSession(campaignId: string) {
     if (!video) return;
     const timer = window.setInterval(() => {
       if (!video.paused && !video.ended) {
-        report(video.currentTime);
+        const at = video.currentTime;
+        const jumped =
+          seekedSinceTick.current &&
+          (at < lastTickAt.current || at - lastTickAt.current > JUMP_SECONDS);
+        seekedSinceTick.current = false;
+        lastTickAt.current = at;
+        // 5.13.af: after a seek the next span starts at the playhead, so the
+        // seconds skipped over are never claimed as played.
+        if (jumped) reportedTo.current = at;
+        else report(at);
         if (video.currentTime >= askFromRef.current) tryPresentCheckpoint();
       }
     }, REPORT_EVERY_MS);
@@ -309,11 +331,16 @@ export function useWatchEarnSession(campaignId: string) {
     const onHidden = () => {
       if (document.hidden) video.pause();
     };
+    const onSeeking = () => {
+      seekedSinceTick.current = true;
+    };
     video.addEventListener("ratechange", holdRate);
+    video.addEventListener("seeking", onSeeking);
     document.addEventListener("visibilitychange", onHidden);
     return () => {
       window.clearInterval(timer);
       video.removeEventListener("ratechange", holdRate);
+      video.removeEventListener("seeking", onSeeking);
       document.removeEventListener("visibilitychange", onHidden);
     };
   }, [phase.kind, report, tryPresentCheckpoint]);
@@ -330,6 +357,9 @@ export function useWatchEarnSession(campaignId: string) {
     const video = videoRef.current;
     if (!video) return;
     video.currentTime = seekTo;
+    // Reports start at the chosen position, not at the server's covered total.
+    reportedTo.current = seekTo;
+    lastTickAt.current = seekTo;
     // The source loaded behind the prompt, so `autoPlay` turning on now
     // starts nothing by itself.
     video.play().then(
@@ -402,7 +432,13 @@ export function useWatchEarnSession(campaignId: string) {
     setPhase({ kind: "claiming" });
     const completed = await completeWatchSessionAction(sessionIdRef.current);
     if (!completed.ok) {
-      setPhase({ kind: "failed" });
+      // 5.13.af: a claim refused because part of the video was skipped says
+      // so, from the server's own gaps, rather than "couldn't start".
+      const detail = await getWatchSessionAction(sessionIdRef.current);
+      const unwatchedSeconds = detail.ok
+        ? detail.data.gaps.reduce((sum, gap) => sum + gap.toSecond - gap.fromSecond, 0)
+        : 0;
+      setPhase(unwatchedSeconds > 0 ? { kind: "failed", unwatchedSeconds } : { kind: "failed" });
       return;
     }
     const missing = completed.data.missing ?? identityCheckRef.current;

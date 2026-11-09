@@ -53,6 +53,7 @@
   },
   "errors": {
     "startFailed": "Video ini gagal dimulai. Periksa koneksimu dan coba lagi.",
+    "notFullyWatched": "{seconds} detik dari video ini belum ditonton, jadi belum bisa mendapat poin. Tekan putar untuk melanjutkan dari bagian yang terlewat.",
     "playbackFailed": "Pemutaran mengalami kendala. Coba lagi.",
     "retry": "Coba lagi"
   },

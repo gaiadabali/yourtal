@@ -53,6 +53,7 @@
   },
   "errors": {
     "startFailed": "This video couldn't start. Check your connection and try again.",
+    "notFullyWatched": "{seconds}s of this video haven't been watched yet, so it can't earn points. Press play to pick up where you missed.",
     "playbackFailed": "Playback hit a snag. Try again.",
     "retry": "Retry"
   },

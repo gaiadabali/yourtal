@@ -137,7 +137,7 @@ jobs:
       # supply-chain trust, and ubuntu-24.04's own repos carry a current
       # ffmpeg build (ffprobe ships in the same package).
       - name: Install ffmpeg (F50/F62)
-        timeout-minutes: 3
+        timeout-minutes: 6
         run: sudo timeout 150 apt-get -o Acquire::Retries=3 update -y && sudo timeout 150 apt-get -o Acquire::Retries=3 install -y ffmpeg
       #
       # It was a service container, and it could never have worked. GitHub

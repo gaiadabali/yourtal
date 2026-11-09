@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { QA } from "../../shared/testing/qa-key";
 import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
@@ -82,7 +83,7 @@ describe("7.1.d Check: AU business with an ABN, invited teammate accepted throug
     expect(invited.statusCode, invited.body).toBe(201);
     expect(invited.json()).not.toHaveProperty("token");
 
-    const inbox = await app.inject({ method: "GET", url: "/api/dev/inbox" });
+    const inbox = await app.inject({ method: "GET", headers: QA, url: "/api/dev/inbox" });
     expect(inbox.statusCode).toBe(200);
     const entries = inbox.json<{
       entries: Array<{

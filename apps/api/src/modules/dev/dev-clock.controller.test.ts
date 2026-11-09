@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { QA } from "../../shared/testing/qa-key";
 import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
@@ -89,7 +90,7 @@ async function latestAuditRow(
 
 describe("GET /api/dev/clock/jobs", () => {
   it("lists the one built job and refuses an anonymous caller with 401, not 403 (F30)", async () => {
-    const anon = await app.inject({ method: "GET", url: "/api/dev/clock/jobs" });
+    const anon = await app.inject({ method: "GET", headers: QA, url: "/api/dev/clock/jobs" });
     expect(anon.statusCode).toBe(401);
     expect(anon.json()).toMatchObject({ code: "no_session" });
 
@@ -97,7 +98,7 @@ describe("GET /api/dev/clock/jobs", () => {
     const response = await app.inject({
       method: "GET",
       url: "/api/dev/clock/jobs",
-      headers: { cookie: session.cookie },
+      headers: { ...QA, cookie: session.cookie },
     });
     expect(response.statusCode).toBe(200);
     const body = rawJson(response) as { jobs: { key: string; built: boolean }[] };
@@ -119,7 +120,7 @@ describe("POST /api/dev/clock/release-pending", () => {
     const response = await app.inject({
       method: "POST",
       url: "/api/dev/clock/release-pending",
-      headers: { cookie: session.cookie },
+      headers: { ...QA, cookie: session.cookie },
       payload: {},
     });
     expect(response.statusCode).toBe(200);
@@ -142,7 +143,7 @@ describe("POST /api/dev/clock/release-pending", () => {
     const none = await app.inject({
       method: "POST",
       url: "/api/dev/clock/release-pending",
-      headers: { cookie: session.cookie },
+      headers: { ...QA, cookie: session.cookie },
       payload: {},
     });
     expect(none.statusCode).toBe(200);
@@ -154,7 +155,7 @@ describe("POST /api/dev/clock/release-pending", () => {
     const released = await app.inject({
       method: "POST",
       url: "/api/dev/clock/release-pending",
-      headers: { cookie: session.cookie },
+      headers: { ...QA, cookie: session.cookie },
       payload: {},
     });
     expect(released.json()).toMatchObject({ released: 1 });
@@ -164,6 +165,7 @@ describe("POST /api/dev/clock/release-pending", () => {
   it("refuses an anonymous caller with 401, not 403 (F30)", async () => {
     const response = await app.inject({
       method: "POST",
+      headers: QA,
       url: "/api/dev/clock/release-pending",
       payload: {},
     });
@@ -181,7 +183,7 @@ describe("POST /api/dev/clock/advance-days", () => {
     const response = await app.inject({
       method: "POST",
       url: "/api/dev/clock/advance-days",
-      headers: { cookie: session.cookie },
+      headers: { ...QA, cookie: session.cookie },
       payload: { days: 1 },
     });
     expect(response.statusCode).toBe(200);
@@ -205,7 +207,7 @@ describe("POST /api/dev/clock/advance-days", () => {
     const response = await app.inject({
       method: "POST",
       url: "/api/dev/clock/advance-days",
-      headers: { cookie: session.cookie },
+      headers: { ...QA, cookie: session.cookie },
       payload: { days: 1 },
     });
     expect(response.statusCode).toBe(200);
@@ -221,7 +223,7 @@ describe("POST /api/dev/clock/advance-days", () => {
     const response = await app.inject({
       method: "POST",
       url: "/api/dev/clock/advance-days",
-      headers: { cookie: session.cookie },
+      headers: { ...QA, cookie: session.cookie },
       payload: { days: 1 },
     });
     expect(response.statusCode).toBe(200);
@@ -233,7 +235,7 @@ describe("POST /api/dev/clock/advance-days", () => {
     const response = await app.inject({
       method: "POST",
       url: "/api/dev/clock/advance-days",
-      headers: { cookie: session.cookie },
+      headers: { ...QA, cookie: session.cookie },
       payload: { days: 0 },
     });
     expect(response.statusCode).toBe(400);
@@ -246,7 +248,7 @@ describe("POST /api/dev/clock/run-job", () => {
     const response = await app.inject({
       method: "POST",
       url: "/api/dev/clock/run-job",
-      headers: { cookie: session.cookie },
+      headers: { ...QA, cookie: session.cookie },
       payload: { job: "points-unlocked" },
     });
     expect(response.statusCode).toBe(200);
@@ -267,7 +269,7 @@ describe("POST /api/dev/clock/run-job", () => {
     const response = await app.inject({
       method: "POST",
       url: "/api/dev/clock/run-job",
-      headers: { cookie: session.cookie },
+      headers: { ...QA, cookie: session.cookie },
       payload: { job: "holdback-release" },
     });
     expect(response.statusCode).toBe(400);

@@ -100,6 +100,7 @@ async function call(method, path, session, body, { binary = false } = {}) {
   const res = await fetch(`${API}${path}`, {
     method,
     headers: {
+      ...(path.startsWith("/api/dev/") ? { "x-qa-key": process.env.STAGING_QA_KEY ?? "" } : {}),
       ...(session ? { cookie: session.cookie } : {}),
       ...(body === undefined
         ? {}
@@ -1304,7 +1305,9 @@ const campaignAlerts = async (owner, biz, campaignId) =>
 async function devInbox() {
   // Off dev, the inbox needs a session; staff see every recipient's mail.
   const { cookie } = await login(staff("admin"));
-  const res = await fetch(`${API}/api/dev/inbox`, { headers: { cookie } });
+  const res = await fetch(`${API}/api/dev/inbox`, {
+    headers: { cookie, "x-qa-key": process.env.STAGING_QA_KEY ?? "" },
+  });
   return res.status === 200 ? (await res.json()).entries : null;
 }
 

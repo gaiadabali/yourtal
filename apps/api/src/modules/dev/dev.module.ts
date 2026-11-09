@@ -18,6 +18,7 @@ import { IdentityModule } from "../identity/identity.module";
 import { DevInboxController } from "./dev-inbox.controller";
 import { DevClockController } from "./dev-clock.controller";
 import { DemoResetController } from "./demo-reset.controller";
+import { DevQaKeyHook } from "./dev-qa-key";
 import { DEV_CLOCK_DB_POOL, DEV_CLOCK_QUEUE_CLIENT, DevClockService } from "./dev-clock.service";
 
 const DEV_CLOCK_APP_DB = Symbol("DEV_CLOCK_APP_DB");
@@ -46,6 +47,7 @@ class DevClockQueueShutdown implements OnApplicationShutdown {
   imports: [IdentityModule],
   controllers: [DevInboxController, DevClockController, DemoResetController],
   providers: [
+    DevQaKeyHook,
     {
       provide: SIM_OUTBOX_READER,
       useFactory: (config: AppConfig) =>

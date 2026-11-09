@@ -68,6 +68,10 @@ export class DemoApi {
       method,
       headers: {
         ...this.headers,
+        // /api/dev/* answers 404 without the QA key (apps/api dev-qa-key.ts).
+        ...(path.startsWith("/api/dev/")
+          ? { "x-qa-key": process.env["STAGING_QA_KEY"] ?? "" }
+          : {}),
         ...(body === undefined
           ? {}
           : { "content-type": "application/json", "idempotency-key": key }),

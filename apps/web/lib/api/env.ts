@@ -19,3 +19,9 @@ export function apiInternalUrl(): string {
   }
   return url;
 }
+
+/** Sent as `x-qa-key` on `/api/dev/*` calls, which the API answers 404 without it. Server-side only. */
+export function stagingQaKey(): string | undefined {
+  const key = process.env["STAGING_QA_KEY"];
+  return key === undefined || key === "" ? undefined : key;
+}

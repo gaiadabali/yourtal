@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { z } from "zod";
-import { apiInternalUrl } from "./env";
+import { apiInternalUrl, stagingQaKey } from "./env";
 import { readSessionToken } from "./session-cookies";
 import { forwardViewerAddress } from "./viewer-address";
 
@@ -63,6 +63,8 @@ export async function apiFetch<T>(
   const headers = new Headers(init.headers);
   headers.set("accept", "application/json");
   await forwardViewerAddress(headers);
+  const qaKey = stagingQaKey();
+  if (qaKey !== undefined && path.startsWith("/api/dev/")) headers.set("x-qa-key", qaKey);
 
   if (!headers.has("authorization")) {
     const token = await readSessionToken();

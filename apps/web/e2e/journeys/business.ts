@@ -12,6 +12,7 @@ import {
   testIp,
   type RegionCase,
 } from "./demo";
+import { QA_HEADERS } from "../qa-key";
 
 /**
  * 13.3.b: shared setup for the business-side journeys (1, 2, 3, 4, 8, 12),
@@ -95,7 +96,11 @@ export function callerFor(
     status?: number,
   ) => {
     const response = await request[method](`${API}${path}`, {
-      headers: { ...headers, "idempotency-key": randomUUID() },
+      headers: {
+        ...headers,
+        ...(path.startsWith("/api/dev/") ? QA_HEADERS : {}),
+        "idempotency-key": randomUUID(),
+      },
       data: body,
     });
     const text = await response.text();

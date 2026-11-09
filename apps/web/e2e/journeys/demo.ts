@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, type APIRequestContext, type BrowserContext, type Page } from "@playwright/test";
+import { QA_HEADERS } from "../qa-key";
 
 /**
  * 13.3.a: shared setup for the viewer journeys, run against a demo world (13.1).
@@ -76,7 +77,7 @@ export async function inboxToken(
   recipient: string,
   category: "email_verification" | "password_reset" | "team_invitation",
 ): Promise<string> {
-  const response = await request.get(`${API}/api/dev/inbox`);
+  const response = await request.get(`${API}/api/dev/inbox`, { headers: QA_HEADERS });
   expect(response.ok()).toBeTruthy();
   const { entries } = (await response.json()) as {
     entries: {

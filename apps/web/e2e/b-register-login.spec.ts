@@ -4,6 +4,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import type { APIRequestContext, Page } from "@playwright/test";
 import { Pool } from "pg";
+import { QA_HEADERS } from "./qa-key";
 
 /**
  * 6.2.a's own Check plus 6.2.c's, together: register (through the real
@@ -45,7 +46,7 @@ async function latestToken(
   recipient: string,
   category: "password_reset" | "email_verification",
 ): Promise<string> {
-  const response = await request.get(`${apiBaseUrl()}/api/dev/inbox`);
+  const response = await request.get(`${apiBaseUrl()}/api/dev/inbox`, { headers: QA_HEADERS });
   expect(response.ok()).toBeTruthy();
   const body = (await response.json()) as { entries: DevInboxEntry[] };
   const matches = body.entries

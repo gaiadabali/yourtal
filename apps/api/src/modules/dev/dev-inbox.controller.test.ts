@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { QA } from "../../shared/testing/qa-key";
 import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
@@ -43,7 +44,7 @@ describe("1.6.d's Check: register -> the verification email appears in /dev/inbo
     expect(requested.statusCode).toBeLessThan(300);
 
     // dev: open, with no session at all (local runs and the CI browser tests).
-    const inbox = await app.inject({ method: "GET", url: "/api/dev/inbox" });
+    const inbox = await app.inject({ method: "GET", headers: QA, url: "/api/dev/inbox" });
     expect(inbox.statusCode).toBe(200);
     const body: DevInboxResponse = inbox.json();
     expect(body.access).toBe("open");
@@ -70,6 +71,38 @@ describe("1.6.d's Check: register -> the verification email appears in /dev/inbo
   });
 });
 
+describe("every /api/dev route in the real app needs x-qa-key", () => {
+  it("answers 404, not 401, without it or with a wrong one", async () => {
+    for (const [method, url] of [
+      ["GET", "/api/dev/inbox"],
+      ["GET", "/api/dev/clock/jobs"],
+      ["POST", "/api/dev/clock/release-pending"],
+      ["POST", "/api/dev/demo/reset"],
+    ] as const) {
+      expect((await app.inject({ method, url })).statusCode, url).toBe(404);
+      const wrong = await app.inject({ method, url, headers: { "x-qa-key": "nope" } });
+      expect(wrong.statusCode, url).toBe(404);
+    }
+  });
+
+  it("answers 404 with any header when STAGING_QA_KEY is unset", async () => {
+    const { stagingQaKey: _unset, ...rest } = loadAppConfig();
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(APP_CONFIG)
+      .useValue({ ...rest, appEnv: "staging" } satisfies AppConfig)
+      .compile();
+    const keyless = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+    await keyless.init();
+    await keyless.getHttpAdapter().getInstance().ready();
+    try {
+      const res = await keyless.inject({ method: "GET", url: "/api/dev/inbox", headers: QA });
+      expect(res.statusCode).toBe(404);
+    } finally {
+      await keyless.close();
+    }
+  });
+});
+
 describe("APP_ENV gates /api/dev/inbox (1.6.b)", () => {
   let productionApp: NestFastifyApplication;
 
@@ -89,7 +122,11 @@ describe("APP_ENV gates /api/dev/inbox (1.6.b)", () => {
   });
 
   it("404s in production, rather than revealing the route exists", async () => {
-    const response = await productionApp.inject({ method: "GET", url: "/api/dev/inbox" });
+    const response = await productionApp.inject({
+      method: "GET",
+      headers: QA,
+      url: "/api/dev/inbox",
+    });
     expect(response.statusCode).toBe(404);
   });
 });
@@ -112,7 +149,7 @@ describe("staging needs a session for /api/dev/inbox, and shows a viewer only th
     return stagingApp.inject({
       method: "GET",
       url: "/api/dev/inbox",
-      ...(cookie === undefined ? {} : { headers: { cookie } }),
+      headers: cookie === undefined ? QA : { ...QA, cookie },
     });
   }
 

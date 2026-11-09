@@ -173,6 +173,13 @@ export const envSchema = z.object({
   APP_ENV: z.enum(["dev", "staging", "production"]).default("dev"),
 
   /**
+   * Opens `/api/dev/*`: every request there must carry it as `x-qa-key`.
+   * Unset, every `/api/dev/*` route answers 404, and production always does
+   * (`dev-qa-key.ts`). `loadAppConfig` refuses the local-only value outside dev.
+   */
+  STAGING_QA_KEY: z.string().min(32).optional(),
+
+  /**
    * 1.5.e / F12 "Sessions". `SessionService` used to hard-code these
    * (`SESSION_ABSOLUTE_TTL_MS`, `SESSION_IDLE_TTL_MS`) — 30 days for BOTH,
    * which is F12's ABSOLUTE number doing duty as the idle one too, an order

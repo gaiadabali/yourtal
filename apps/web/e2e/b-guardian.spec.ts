@@ -3,6 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import type { APIRequestContext, Browser, Page } from "@playwright/test";
 import { Pool } from "pg";
+import { QA_HEADERS } from "./qa-key";
 
 /**
  * 12.2.c's own Check, live: a real 14-year-old account (`TEEN_ACCOUNTS=true`
@@ -73,7 +74,7 @@ async function latestGuardianToken(
   request: APIRequestContext,
   guardianEmail: string,
 ): Promise<string> {
-  const response = await request.get(`${apiBaseUrl()}/api/dev/inbox`);
+  const response = await request.get(`${apiBaseUrl()}/api/dev/inbox`, { headers: QA_HEADERS });
   expect(response.ok()).toBeTruthy();
   const body = (await response.json()) as { entries: DevInboxEntry[] };
   const matches = body.entries

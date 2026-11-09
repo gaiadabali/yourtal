@@ -124,6 +124,8 @@ export default defineConfig({
       SNAP_APP_PARTNER_SECRET:
         process.env.SNAP_APP_PARTNER_SECRET ??
         "vitest-only-snap-app-partner-secret-not-a-real-secret",
+      /** Opens `/api/dev/*` (dev-qa-key.ts); tests send it with `QA` from shared/testing/qa-key.ts. */
+      STAGING_QA_KEY: process.env.STAGING_QA_KEY ?? "vitest-only-staging-qa-key-not-a-real-key",
     },
 
     /**

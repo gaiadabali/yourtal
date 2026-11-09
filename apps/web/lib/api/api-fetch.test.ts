@@ -64,6 +64,27 @@ describe("apiFetch (1.7.a)", () => {
     expect(headers.get("authorization")).toBe("Bearer session-token-123");
   });
 
+  it("sends STAGING_QA_KEY as x-qa-key on /api/dev/* only, and nothing when it is unset", async () => {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(new Response(JSON.stringify({ hello: "dev" }), { status: 200 })),
+    );
+    global.fetch = fetchMock;
+    const { apiFetch } = await loadApiFetch({});
+    const sent = (call: number) =>
+      ((fetchMock.mock.calls[call] as unknown as [string, RequestInit])[1].headers as Headers).get(
+        "x-qa-key",
+      );
+
+    vi.stubEnv("STAGING_QA_KEY", "qa-key-under-test");
+    await apiFetch("/api/dev/inbox", echoSchema);
+    await apiFetch("/api/me", echoSchema);
+    vi.stubEnv("STAGING_QA_KEY", "");
+    await apiFetch("/api/dev/inbox", echoSchema);
+    vi.unstubAllEnvs();
+
+    expect([sent(0), sent(1), sent(2)]).toEqual(["qa-key-under-test", null, null]);
+  });
+
   it("sends no authorization header when there is no session cookie", async () => {
     const fetchMock = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify({ hello: "anon" }), { status: 200 })),

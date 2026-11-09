@@ -95,6 +95,7 @@ async function req(method, path, token, body) {
   const response = await fetch(`${API_BASE}${path}`, {
     method,
     headers: {
+      ...(path.startsWith("/api/dev/") ? { "x-qa-key": process.env.STAGING_QA_KEY ?? "" } : {}),
       // Only when a body is actually being sent -- an empty DELETE with
       // content-type: application/json set anyway is refused 400 ("Body
       // cannot be empty..."), found running this script against

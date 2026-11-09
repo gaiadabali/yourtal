@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import type { APIRequestContext, Browser, BrowserContext, Page } from "@playwright/test";
+import { QA_HEADERS } from "./qa-key";
 
 /**
  * 7.8.b's Team-zone live wiring, proven end to end against a real
@@ -88,7 +89,7 @@ async function latestInvitationToken(
   request: APIRequestContext,
   recipient: string,
 ): Promise<string> {
-  const response = await request.get(`${apiBaseUrl()}/api/dev/inbox`);
+  const response = await request.get(`${apiBaseUrl()}/api/dev/inbox`, { headers: QA_HEADERS });
   expect(response.ok()).toBeTruthy();
   const body = (await response.json()) as { entries: DevInboxEntry[] };
   const matches = body.entries

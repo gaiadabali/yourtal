@@ -14,6 +14,7 @@ async function call(method, path, cookie, body) {
   const res = await fetch(`${API}${path}`, {
     method,
     headers: {
+      ...(path.startsWith("/api/dev/") ? { "x-qa-key": process.env.STAGING_QA_KEY ?? "" } : {}),
       ...(cookie ? { cookie } : {}),
       ...(body === undefined
         ? {}

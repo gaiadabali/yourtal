@@ -143,6 +143,7 @@ async function call(method, path, session, body) {
   const res = await fetch(`${API}${path}`, {
     method,
     headers: {
+      ...(path.startsWith("/api/dev/") ? { "x-qa-key": process.env.STAGING_QA_KEY ?? "" } : {}),
       ...(session ? { cookie: session.cookie } : {}),
       ...(body === undefined
         ? {}
@@ -797,7 +798,9 @@ async function earnedRecently(session, region) {
 async function devInbox() {
   // Outside dev the inbox needs a session, and only staff see every recipient (5.13.b).
   const { cookie } = await login(staff("finance"));
-  const res = await fetch(`${API}/api/dev/inbox`, { headers: { cookie } });
+  const res = await fetch(`${API}/api/dev/inbox`, {
+    headers: { cookie, "x-qa-key": process.env.STAGING_QA_KEY ?? "" },
+  });
   return res.status === 200 ? (await res.json()).entries : null;
 }
 

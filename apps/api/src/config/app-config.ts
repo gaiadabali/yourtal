@@ -38,6 +38,8 @@ export interface AppConfig {
   readonly teenAccounts: boolean;
   /** 1.6.b — gates `/api/dev/inbox`. Default `"dev"`, same as `Env["APP_ENV"]`. */
   readonly appEnv: Env["APP_ENV"];
+  /** Required as `x-qa-key` on every `/api/dev/*` request; absent, those routes are 404. */
+  readonly stagingQaKey?: string;
   /** 1.5.e, F12 "Sessions" — `SessionService`'s lifetimes, config rather than constants. */
   readonly session: {
     readonly consumerIdleTtlMs: number;
@@ -102,6 +104,9 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
       "TOTP_SECRET_ENCRYPTION_KEY is the local-only default; set a real one outside dev, or unset it.",
     );
   }
+  if (env.APP_ENV !== "dev" && env.STAGING_QA_KEY?.startsWith("local-only") === true) {
+    throw new Error("STAGING_QA_KEY is the local-only default; set a real one outside dev.");
+  }
   // 12.1.a: no static schema default (see env.schema.ts's own comment) —
   // staging's `.env` on Helios is written once and gets no new line for
   // this, so the fallback has to already be staging's real origin.
@@ -133,6 +138,7 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
     },
     teenAccounts,
     appEnv: env.APP_ENV,
+    ...(env.STAGING_QA_KEY === undefined ? {} : { stagingQaKey: env.STAGING_QA_KEY }),
     session: {
       consumerIdleTtlMs: env.SESSION_CONSUMER_IDLE_TTL_MS,
       consumerAbsoluteTtlMs: env.SESSION_CONSUMER_ABSOLUTE_TTL_MS,

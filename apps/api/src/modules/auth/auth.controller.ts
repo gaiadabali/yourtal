@@ -226,7 +226,7 @@ export class AuthController {
  * A session, or (an authenticator app being on) the pending token the code
  * step answers with: `passwordSignInResultSchema` in the contracts.
  */
-function passwordSignInBody(signIn: PasswordSignIn) {
+export function passwordSignInBody(signIn: PasswordSignIn) {
   return signIn.kind === "session"
     ? { token: signIn.token, userId: signIn.userId }
     : {

@@ -3,7 +3,9 @@
 import { redirect } from "next/navigation";
 import type { Route } from "next";
 import { apiFetch } from "./api-fetch";
-import type { ApiError } from "./api-fetch";
+import type { ApiError, ApiResult } from "./api-fetch";
+import type { z } from "zod";
+import { isStaging } from "@/features/shell/app-env";
 import { logoutResponseSchema, passwordSignInResponseSchema } from "./auth-schema";
 import { codeStepPath, finishSignIn } from "./finish-sign-in";
 import { meResponseSchema } from "./me-schema";
@@ -73,6 +75,33 @@ export async function loginAction(formData: FormData): Promise<void> {
     method: "POST",
     body: { email, password },
   });
+  // Only the real sign-in form asks for the passkey offer; the dev harness
+  // and any other caller of this action land straight on returnTo.
+  await completeSignIn(loginResult, returnTo, formData.get("offerPasskey") === "1");
+}
+
+/**
+ * Staging test kit: "Continue as <demo person>" on `/login`. The API refuses
+ * any non-demo account and is 404 off staging; this refuses off staging too.
+ */
+export async function demoSignInAction(formData: FormData): Promise<void> {
+  const returnTo = safeReturnTo(formData, "/");
+  const email = formData.get("email");
+  if (!isStaging() || typeof email !== "string" || email === "") {
+    redirectWithError("/login", returnTo, "unknown");
+  }
+  const result = await apiFetch("/api/auth/demo-sign-in", passwordSignInResponseSchema, {
+    method: "POST",
+    body: { email },
+  });
+  await completeSignIn(result, returnTo, false);
+}
+
+async function completeSignIn(
+  loginResult: ApiResult<z.infer<typeof passwordSignInResponseSchema>>,
+  returnTo: string,
+  offerPasskey: boolean,
+): Promise<never> {
   if (!loginResult.ok) {
     redirectWithError("/login", returnTo, errorCode(loginResult.error));
   }
@@ -84,13 +113,7 @@ export async function loginAction(formData: FormData): Promise<void> {
     redirect(codeStepPath(returnTo) as Route);
   }
 
-  // Only the real sign-in form asks for the passkey offer; the dev harness
-  // and any other caller of this action land straight on returnTo.
-  const finished = await finishSignIn({
-    token: loginResult.data.token,
-    returnTo,
-    offerPasskey: formData.get("offerPasskey") === "1",
-  });
+  const finished = await finishSignIn({ token: loginResult.data.token, returnTo, offerPasskey });
   if (!finished.ok) {
     redirectWithError("/login", returnTo, finished.code);
   }

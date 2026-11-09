@@ -85,6 +85,81 @@ describe("identity Server Actions (1.7.b)", () => {
     vi.doUnmock("next/navigation");
   });
 
+  describe("demoSignInAction (staging test kit)", () => {
+    afterEach(() => vi.unstubAllEnvs());
+
+    it.each(["dev", "production", ""])(
+      "APP_ENV=%s: refuses without calling the API",
+      async (appEnv) => {
+        vi.stubEnv("APP_ENV", appEnv);
+        const fetchMock = vi.fn(() => Promise.resolve(new Response("", { status: 200 })));
+        global.fetch = fetchMock;
+        const { demoSignInAction } = await loadActions(createCookieJar().api);
+        const url = await expectRedirectTo(
+          demoSignInAction(formData({ email: "adult.au@demo.yourtal.test" })),
+        );
+        expect(url).toBe("/login?error=unknown");
+        expect(fetchMock).not.toHaveBeenCalled();
+      },
+    );
+
+    it("on staging, signs in through POST /api/auth/demo-sign-in", async () => {
+      vi.stubEnv("APP_ENV", "staging");
+      const calls: string[] = [];
+      global.fetch = vi.fn((input: RequestInfo | URL) => {
+        const url = requestUrl(input);
+        calls.push(url);
+        if (url.endsWith("/api/auth/demo-sign-in")) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ token: "tok-demo", userId: "user-1" }), { status: 201 }),
+          );
+        }
+        if (url.endsWith("/api/me")) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                profile: {
+                  userId: "user-1",
+                  region: "AU",
+                  displayLocale: "en-AU",
+                  displayName: "Alex",
+                  ageBand: "adult",
+                  timezone: "Australia/Sydney",
+                },
+                businessMemberships: [],
+                staffRoles: [],
+              }),
+              { status: 200 },
+            ),
+          );
+        }
+        return Promise.reject(new Error(`unexpected fetch to ${url}`));
+      });
+      const { jar, api } = createCookieJar();
+      const { demoSignInAction } = await loadActions(api);
+      const url = await expectRedirectTo(
+        demoSignInAction(formData({ email: "adult.au@demo.yourtal.test", returnTo: "/wallet" })),
+      );
+      expect(url).toBe("/wallet");
+      expect(jar.get("yt_session")).toBe("tok-demo");
+      expect(calls.some((c) => c.endsWith("/api/auth/login"))).toBe(false);
+    });
+
+    it("on staging, a refusal from the API lands back on /login with its code", async () => {
+      vi.stubEnv("APP_ENV", "staging");
+      global.fetch = vi.fn(() =>
+        Promise.resolve(
+          new Response(JSON.stringify({ code: "not_a_demo_account", message: "no" }), {
+            status: 403,
+          }),
+        ),
+      );
+      const { demoSignInAction } = await loadActions(createCookieJar().api);
+      const url = await expectRedirectTo(demoSignInAction(formData({ email: "x@example.com" })));
+      expect(url).toBe("/login?error=not_a_demo_account");
+    });
+  });
+
   describe("loginAction", () => {
     it("sets yt_session, yt_region and yt_locale from the account's own profile, then redirects to returnTo", async () => {
       global.fetch = vi.fn((input: RequestInfo | URL) => {

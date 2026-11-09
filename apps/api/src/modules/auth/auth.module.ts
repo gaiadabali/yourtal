@@ -26,6 +26,7 @@ import { FACTOR_STORE, RedisFactorStore } from "./factors/factor-store";
 import { PasskeyService } from "./factors/passkey.service";
 import { TotpService } from "./factors/totp.service";
 import { SecondFactorGate } from "./factors/second-factor-gate";
+import { DemoSignInController } from "./demo-sign-in.controller";
 import { PasskeyController } from "./factors/passkey.controller";
 import { TotpController } from "./factors/totp.controller";
 import { SignInMethodsController } from "./factors/sign-in-methods.controller";
@@ -62,7 +63,13 @@ import { EmailFactorNotifier, FACTOR_NOTIFIER } from "./factors/factor-notifier"
  */
 @Module({
   imports: [RedisClientModule, IdentityModule, EmailDriverModule],
-  controllers: [AuthController, PasskeyController, TotpController, SignInMethodsController],
+  controllers: [
+    AuthController,
+    DemoSignInController,
+    PasskeyController,
+    TotpController,
+    SignInMethodsController,
+  ],
   providers: [
     AuthService,
     SessionService,

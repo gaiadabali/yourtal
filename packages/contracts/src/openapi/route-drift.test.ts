@@ -147,6 +147,10 @@ const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
     "2.1.c: nginx's auth_request target for signed HLS URLs, blocked on the public vhost, so not a published contract.",
   "POST /api/internal/studio/media/{assetId}/ready":
     "7.2.b: apps/worker's transcode-complete callback, HMAC-signed and blocked on the public vhost the same way hls-auth is, so not a published contract.",
+  "GET /api/auth/demo-sign-in":
+    "Staging test kit: the seeded demo people the sign-in page offers; 404 off staging, so not a published contract.",
+  "POST /api/auth/demo-sign-in":
+    "Staging test kit: password-less sign-in as a seeded demo person; 404 off staging, so not a published contract.",
   "POST /api/dev/demo/reset":
     "13.1.a: the staff console's demo-reset button, 404 in production, so not a published contract. It only enqueues the worker's demo-reset job.",
   "POST /api/watch/sessions/{sessionId}/checkpoints/{checkpointIndex}":

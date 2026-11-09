@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { campaignSchema } from "@yourtal/contracts/campaign";
 import { campaignTermsSchema } from "@yourtal/contracts/campaign/terms";
 import { VideoPlayer } from "./video-player";
@@ -12,11 +12,16 @@ import { VideoPlayer } from "./video-player";
  * (the completion refusal says what is missing). The state machine is driven
  * through the mocked actions, as in `video-player.test.tsx`.
  */
-const hls = vi.hoisted(() => ({ mounts: 0, unmounts: 0 }));
+const hls = vi.hoisted(() => ({
+  mounts: 0,
+  unmounts: 0,
+  onFatalError: undefined as ((message: string) => void) | undefined,
+}));
 vi.mock("./hls-attacher", async () => {
   const { useEffect } = await import("react");
   return {
-    HlsAttacher: () => {
+    HlsAttacher: ({ onFatalError }: { onFatalError?: (message: string) => void }) => {
+      hls.onFatalError = onFatalError;
       useEffect(() => {
         hls.mounts += 1;
         return () => {
@@ -52,6 +57,7 @@ const playMock = vi.fn().mockResolvedValue(undefined);
 beforeAll(() => {
   window.HTMLMediaElement.prototype.play = playMock;
   window.HTMLMediaElement.prototype.pause = vi.fn();
+  window.HTMLMediaElement.prototype.load = vi.fn();
 });
 
 const campaign = campaignSchema.parse({
@@ -432,6 +438,90 @@ describe("V12b: a repeat visit that has earlier coverage waits for the viewer's 
     fireEvent.loadedMetadata(video());
     expect(video().currentTime).toBe(60);
   });
+
+  describe("5.13.y: Start over and Resume once the stream is loaded behind the prompt", () => {
+    let position = 0;
+    let seeks: number[] = [];
+
+    /** A loaded stream at 0s whose seeks are recorded and land only when told. */
+    async function atPrompt() {
+      vi.useFakeTimers();
+      playMock.mockClear();
+      position = 0;
+      seeks = [];
+      render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
+      Object.defineProperty(video(), "readyState", { value: 4, configurable: true });
+      Object.defineProperty(video(), "currentTime", {
+        configurable: true,
+        get: () => position,
+        set: (value: number) => {
+          seeks.push(value);
+          position = value;
+        },
+      });
+      fireEvent.click(screen.getByRole("button", { name: /Test Campaign/ }));
+      await flush();
+      await flush();
+    }
+
+    it("Start over plays at once and does not seek to where the playhead already is", async () => {
+      await atPrompt();
+      fireEvent.click(screen.getByRole("button", { name: /Start over/ }));
+      await flush();
+      expect(seeks).toEqual([]);
+      expect(playMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("Resume plays only once its seek has landed", async () => {
+      await atPrompt();
+      fireEvent.click(screen.getByRole("button", { name: /Resume from 1:00/ }));
+      await flush();
+      expect(seeks).toEqual([60]);
+      expect(playMock).not.toHaveBeenCalled();
+      fireEvent.seeked(video());
+      expect(playMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("kicks a Start over that sits still once: seeks back and plays again", async () => {
+      await atPrompt();
+      fireEvent.click(screen.getByRole("button", { name: /Start over/ }));
+      await flush();
+      // WebKit, intermittently: not paused, yet stuck at 0.1s on a black frame.
+      position = 0.1;
+      Object.defineProperty(video(), "paused", { value: false, configurable: true });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(3_000);
+      });
+      expect(seeks).toEqual([0]);
+      expect(playMock).toHaveBeenCalledTimes(2);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(10_000);
+      });
+      expect(playMock).toHaveBeenCalledTimes(2);
+    });
+
+    it("leaves a playhead that moved, or that the viewer paused, alone", async () => {
+      await atPrompt();
+      fireEvent.click(screen.getByRole("button", { name: /Start over/ }));
+      await flush();
+      fireEvent.pause(video());
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(3_000);
+      });
+      expect(playMock).toHaveBeenCalledTimes(1);
+
+      cleanup();
+      await atPrompt();
+      fireEvent.click(screen.getByRole("button", { name: /Start over/ }));
+      await flush();
+      position = 2.9;
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(3_000);
+      });
+      expect(playMock).toHaveBeenCalledTimes(1);
+      expect(seeks).toEqual([]);
+    });
+  });
 });
 
 describe("5.13.af: progress is reported from what the browser played", () => {
@@ -619,6 +709,137 @@ describe("5.13.af: progress is reported from what the browser played", () => {
       [50, 52],
     ]);
     expect(nothingClaimedIn(10, 50)).toBe(true);
+  });
+
+  describe("5.13.ag", () => {
+    /** Like `tick`, with the playhead somewhere other than the end of what was played. */
+    async function tickAt(currentTime: number, ...ranges: [number, number][]) {
+      played(...ranges);
+      Object.defineProperty(video(), "currentTime", { value: currentTime, configurable: true });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(4_000);
+      });
+    }
+    function seekTo(seconds: number) {
+      Object.defineProperty(video(), "currentTime", { value: seconds, configurable: true });
+      fireEvent.seeking(video());
+    }
+
+    it("re-sends a refused span's seconds only once they are really played again", async () => {
+      actions.present.mockResolvedValue(notReached);
+      actions.report.mockResolvedValueOnce(httpError(403)).mockResolvedValue(accepted);
+      await startPlaying();
+      await tick([0, 4]);
+      await tick([0, 8]);
+      await tick([0, 12]);
+      // Rewound to 2 and replayed to 6: only 2-4 of the refused span is new.
+      seekTo(2);
+      await tickAt(6, [0, 12]);
+      expect(spans()).toEqual([
+        [0, 4],
+        [4, 8],
+        [8, 12],
+        [2, 4],
+      ]);
+    });
+
+    it("counts only what is replayed after the refusal arrived", async () => {
+      actions.present.mockResolvedValue(notReached);
+      let refuse: (value: unknown) => void = () => undefined;
+      actions.report
+        .mockReturnValueOnce(
+          new Promise((resolve) => {
+            refuse = resolve;
+          }),
+        )
+        .mockResolvedValue(accepted);
+      await startPlaying();
+      await tick([0, 4]);
+      // Rewound to 0 and played to 3 while [0-4] was in flight; then it was refused.
+      seekTo(0);
+      Object.defineProperty(video(), "currentTime", { value: 3, configurable: true });
+      refuse(httpError(403));
+      await flush();
+      // 3-4 was played again after the refusal; 0-3 only before it.
+      await tickAt(7, [0, 7]);
+      expect(spans()).toEqual([
+        [0, 4],
+        [3, 7],
+      ]);
+    });
+
+    it("a playback error then Retry keeps what was played before it", async () => {
+      actions.present.mockResolvedValue(notReached);
+      actions.report.mockResolvedValue(accepted);
+      await startPlaying();
+      await tick([0, 4]);
+      // Played to 6.5, then hls.js gave up.
+      played([0, 6.5]);
+      act(() => hls.onFatalError?.("Playback error: fragLoadError"));
+      expect(screen.getByRole("alert")).toHaveTextContent("Playback hit a snag");
+      fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+      await flush();
+      expect(hls.mounts).toBe(2);
+      // The reload emptied `video.played`, and the stream starts again at 0.
+      await tick([0, 2]);
+      expect(spans()).toEqual([
+        [0, 4],
+        [4, 6.5],
+      ]);
+    });
+
+    it("retries the final send on a server error before claiming", async () => {
+      actions.present.mockResolvedValue(notReached);
+      actions.report
+        .mockResolvedValueOnce(accepted)
+        .mockResolvedValueOnce(httpError(503))
+        .mockResolvedValue(accepted);
+      actions.complete.mockResolvedValue({
+        ok: true,
+        data: { completed: true, granted: true, pendingPoints: 100, unlockAt: null },
+      });
+      await startPlaying();
+      await tick([0, 4]);
+      played([0, 89.6]);
+      Object.defineProperty(video(), "ended", { value: true, configurable: true });
+      fireEvent.ended(video());
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5_000);
+      });
+      expect(spans()).toEqual([
+        [0, 4],
+        [4, 90],
+        [4, 90],
+      ]);
+      expect(actions.complete).toHaveBeenCalledTimes(1);
+      expect(actions.report.mock.invocationCallOrder.at(-1)).toBeLessThan(
+        actions.complete.mock.invocationCallOrder[0] ?? 0,
+      );
+    });
+
+    it("gives the final send three tries, then claims anyway", async () => {
+      actions.present.mockResolvedValue(notReached);
+      actions.report.mockResolvedValueOnce(accepted).mockResolvedValue(httpError(500));
+      actions.complete.mockResolvedValue({
+        ok: true,
+        data: { completed: true, granted: true, pendingPoints: 100, unlockAt: null },
+      });
+      await startPlaying();
+      await tick([0, 4]);
+      played([0, 89.6]);
+      Object.defineProperty(video(), "ended", { value: true, configurable: true });
+      fireEvent.ended(video());
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(10_000);
+      });
+      expect(spans()).toEqual([
+        [0, 4],
+        [4, 90],
+        [4, 90],
+        [4, 90],
+      ]);
+      expect(actions.complete).toHaveBeenCalledTimes(1);
+    });
   });
 });
 

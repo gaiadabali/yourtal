@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Campaign } from "@yourtal/contracts/campaign";
 import type { CampaignTerms } from "@yourtal/contracts/campaign/terms";
 import type { PublicListing } from "@yourtal/contracts/listing";
@@ -84,11 +84,15 @@ export function VideoPlayer({
     chooseResume,
     answer,
     finish,
+    keepPlayed,
   } = useWatchEarnSession(campaign.id);
   const captions = useCaptions(videoRef, campaign.captionsUrl !== null);
   const [nativeHls, setNativeHls] = useState<boolean | null>(null);
   const [currentSeconds, setCurrentSeconds] = useState(0);
   const [videoError, setVideoError] = useState(false);
+  /** Bumped by Retry: a fresh hls.js instance, since one that hit a fatal error does not recover by itself. */
+  const [hlsAttempt, setHlsAttempt] = useState(0);
+  const onHlsFatal = useCallback(() => setVideoError(true), []);
   // 12.2.e: a gentle, non-blocking nudge after ~45 continuous foreground
   // minutes -- teen-only, same threshold and "one nudge, never a nag" rule
   // as the feed's own (12.2.b). Never pauses or alters playback.
@@ -173,7 +177,13 @@ export function VideoPlayer({
             ) : null}
           </video>
           {manifestUrl !== null && nativeHls === false ? (
-            <HlsAttacher videoRef={videoRef} src={manifestUrl} desiredHeight={HLS_HEIGHT} />
+            <HlsAttacher
+              key={hlsAttempt}
+              videoRef={videoRef}
+              src={manifestUrl}
+              desiredHeight={HLS_HEIGHT}
+              onFatalError={onHlsFatal}
+            />
           ) : null}
 
           {campaign.captionsUrl !== null ? (
@@ -249,7 +259,9 @@ export function VideoPlayer({
                 size="sm"
                 onClick={() => {
                   setVideoError(false);
-                  videoRef.current?.load();
+                  keepPlayed();
+                  if (nativeHls === false) setHlsAttempt((attempt) => attempt + 1);
+                  else videoRef.current?.load();
                   videoRef.current?.play().then(
                     () => undefined,
                     () => undefined,

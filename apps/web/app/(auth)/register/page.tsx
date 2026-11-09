@@ -29,7 +29,11 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
   const returnTo = parseReturnTo(params["returnTo"]);
   const errorEntry = params["error"];
   const errorCode = typeof errorEntry === "string" ? errorEntry : undefined;
-  const draft = parseRegisterDraft((await cookies()).get(REGISTER_DRAFT_COOKIE)?.value);
+  // Only the guardian-email step uses the draft; the action deletes it on any other outcome.
+  const draft =
+    errorCode === "guardian_email_required"
+      ? parseRegisterDraft((await cookies()).get(REGISTER_DRAFT_COOKIE)?.value)
+      : {};
   const [defaultRegion, defaultLocale] = await Promise.all([getRegion(), getDisplayLocale()]);
 
   return (

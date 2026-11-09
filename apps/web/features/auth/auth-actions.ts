@@ -90,16 +90,26 @@ export async function registerAction(formData: FormData): Promise<void> {
     body,
   });
   if (!result.ok) {
-    // F4: keep what was typed (never the password) for the re-rendered form; it expires on its own.
-    const { password: _password, timezone: _timezone, ...draft } = body;
-    (await cookies()).set(REGISTER_DRAFT_COOKIE, JSON.stringify(draft), {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/register",
-      maxAge: 300,
-    });
+    const code = errorCode(result.error);
+    const store = await cookies();
+    if (code === "guardian_email_required") {
+      // F4: keep what was typed (never the password) for the guardian-email step only. After any
+      // other refusal (under age included) nothing is kept, so a refused date of birth is not prefilled.
+      const { password: _password, timezone: _timezone, ...draft } = body;
+      store.set(REGISTER_DRAFT_COOKIE, JSON.stringify(draft), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/register",
+        maxAge: 300,
+      });
+    } else {
+      store.delete({ name: REGISTER_DRAFT_COOKIE, path: "/register" });
+    }
     redirectTo("/register", paramsWithReturnTo(rawReturnTo, errorCode(result.error)));
   }
+
+  (await cookies()).delete({ name: REGISTER_DRAFT_COOKIE, path: "/register" });
 
   const meResult = await apiFetch("/api/me", meResponseSchema, {
     headers: { authorization: `Bearer ${result.data.token}` },

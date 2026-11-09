@@ -48,7 +48,8 @@ export class DemoApi {
   }
 
   private async send(method: string, path: string, body: unknown): Promise<ApiResponse> {
-    // One key for every attempt, so a retried POST cannot double-write.
+    // One key for every attempt: this 503 comes from PdpGuard, which runs before the idempotency
+    // interceptor, so it is never cached under the key and a retry cannot replay it.
     const key = randomUUID();
     for (let attempt = 0; ; attempt++) {
       const response = await this.attempt(method, path, body, key);

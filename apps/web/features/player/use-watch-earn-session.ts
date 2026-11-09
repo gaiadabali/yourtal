@@ -112,6 +112,8 @@ export function useWatchEarnSession(campaignId: string) {
   const pendingReport = useRef<Promise<unknown> | null>(null);
   /** Set only when the viewer chose "resume" — applied once the video element (re-)mounts into the "watching" phase. */
   const pendingSeekRef = useRef<number | null>(null);
+  /** 5.13.u: where an earlier attempt stopped. Server coverage already passes any question it left unanswered, so asking before the playhead is back here would show it at once. */
+  const askFromRef = useRef(0);
 
   /** Resume prompt or straight into playback, from the server's recorded coverage. */
   const beginPlayback = useCallback(
@@ -124,6 +126,7 @@ export function useWatchEarnSession(campaignId: string) {
       reportedTo.current = coveredSoFar;
       coveredRef.current = coveredSoFar;
       const firstGap = detail.ok ? detail.data.gaps[0] : undefined;
+      askFromRef.current = firstGap?.fromSecond ?? 0;
 
       if (coveredSoFar >= MIN_RESUMABLE_SECONDS && firstGap !== undefined) {
         setPhase({
@@ -297,7 +300,7 @@ export function useWatchEarnSession(campaignId: string) {
     const timer = window.setInterval(() => {
       if (!video.paused && !video.ended) {
         report(video.currentTime);
-        tryPresentCheckpoint();
+        if (video.currentTime >= askFromRef.current) tryPresentCheckpoint();
       }
     }, REPORT_EVERY_MS);
     const holdRate = () => {
@@ -327,6 +330,12 @@ export function useWatchEarnSession(campaignId: string) {
     const video = videoRef.current;
     if (!video) return;
     video.currentTime = seekTo;
+    // The source loaded behind the prompt, so `autoPlay` turning on now
+    // starts nothing by itself.
+    video.play().then(
+      () => undefined,
+      () => undefined,
+    );
     // The element has no source yet when hls.js attaches after this runs, and
     // a browser may drop a seek made before the stream's metadata is in.
     if (video.readyState < 1) {

@@ -1,7 +1,9 @@
+import { cookies } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { AuthCard } from "@/features/auth/auth-card";
 import { RegisterForm } from "@/features/auth/register-form";
+import { parseRegisterDraft, REGISTER_DRAFT_COOKIE } from "@/features/auth/register-draft";
 import { parseReturnTo } from "@/features/onboarding/onboarding-return-to";
 import { getRegion } from "@/features/region/get-region";
 import { getDisplayLocale } from "@/i18n/get-locale";
@@ -27,6 +29,11 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
   const returnTo = parseReturnTo(params["returnTo"]);
   const errorEntry = params["error"];
   const errorCode = typeof errorEntry === "string" ? errorEntry : undefined;
+  // Only the guardian-email step uses the draft; the action deletes it on any other outcome.
+  const draft =
+    errorCode === "guardian_email_required"
+      ? parseRegisterDraft((await cookies()).get(REGISTER_DRAFT_COOKIE)?.value)
+      : {};
   const [defaultRegion, defaultLocale] = await Promise.all([getRegion(), getDisplayLocale()]);
 
   return (
@@ -48,8 +55,9 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
     >
       <RegisterForm
         returnTo={returnTo}
-        defaultRegion={defaultRegion}
-        defaultLocale={defaultLocale}
+        defaultRegion={draft.region ?? defaultRegion}
+        defaultLocale={draft.locale ?? defaultLocale}
+        draft={draft}
         teenModeEnabled={isStaging()}
         {...(errorCode ? { errorCode } : {})}
       />

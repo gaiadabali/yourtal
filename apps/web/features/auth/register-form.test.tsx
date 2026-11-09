@@ -54,6 +54,16 @@ describe("RegisterForm — the neutral age gate (6.2.a, 12.4.d/#5)", () => {
     expect(screen.getByRole("button", { name: "Create account" })).toBeEnabled();
   });
 
+  it("after a guardian_email_required refusal: values typed before are refilled and the guardian field is focused", () => {
+    renderForm({
+      errorCode: "guardian_email_required",
+      draft: { email: "kid@example.test", displayName: "Kid", dateOfBirth: "2011-06-01" },
+    });
+    expect(screen.getByLabelText("Email")).toHaveValue("kid@example.test");
+    expect(screen.getByLabelText("Date of birth")).toHaveValue("2011-06-01");
+    expect(screen.getByLabelText(/parent or guardian/i)).toHaveFocus();
+  });
+
   it("the submit button is never disabled by anything typed client-side", () => {
     renderForm();
     fireEvent.change(screen.getByLabelText("Date of birth"), {

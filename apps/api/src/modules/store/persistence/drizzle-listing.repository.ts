@@ -6,7 +6,7 @@ import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-internal-client";
 import { applySettlementValueChange } from "./apply-settlement-value-change";
 import { priceListingPoints } from "./price-listing";
-import { browseConditions, PUBLIC_LIFECYCLE_STATE } from "./browse-listings-conditions";
+import { browseConditions, notExpired, PUBLIC_LIFECYCLE_STATE } from "./browse-listings-conditions";
 import {
   assembleListing,
   assembleListings,
@@ -95,7 +95,13 @@ export class DrizzleListingRepository implements ListingRepository {
     const [row] = await this.db
       .select()
       .from(listings)
-      .where(and(eq(listings.id, listingId), eq(listings.lifecycleState, PUBLIC_LIFECYCLE_STATE)))
+      .where(
+        and(
+          eq(listings.id, listingId),
+          eq(listings.lifecycleState, PUBLIC_LIFECYCLE_STATE),
+          notExpired(),
+        ),
+      )
       .limit(1);
     return row === undefined ? null : assemblePublicListing(this.db, row);
   }

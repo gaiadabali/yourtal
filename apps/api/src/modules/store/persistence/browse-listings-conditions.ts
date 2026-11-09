@@ -1,10 +1,13 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, gt, inArray, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { listingLocations, listings, merchantLocations } from "./schema/listing.table";
 import type { BrowseListingsFilter } from "./listing.repository";
 
 /** The one lifecycle state a customer may ever see (docs/17 section 2, Inventory). */
 export const PUBLIC_LIFECYCLE_STATE = "active";
+
+/** 5.13.x: an offer past its `expires_at` is no longer listed or openable, whatever its lifecycle state says. */
+export const notExpired = (): SQL => gt(listings.expiresAt, sql`now()`);
 
 /**
  * Builds the `WHERE` clause for the public catalogue — region (F2) and
@@ -33,6 +36,7 @@ export function browseConditions(
 ): SQL {
   const conditions = [
     eq(listings.lifecycleState, PUBLIC_LIFECYCLE_STATE),
+    notExpired(),
     eq(listings.region, filter.region),
     inArray(listings.audience, filter.audiences),
   ];

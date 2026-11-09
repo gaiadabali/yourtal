@@ -11,6 +11,7 @@ import { Button } from "@yourtal/ui/button";
 import { Notice } from "@yourtal/ui/notice";
 import { registerAction } from "./auth-actions";
 import { authErrorMessage } from "./auth-error-copy";
+import type { RegisterDraft } from "./register-draft";
 
 export interface RegisterFormProps {
   returnTo: string | null;
@@ -24,6 +25,8 @@ export interface RegisterFormProps {
    */
   teenModeEnabled: boolean;
   errorCode?: string;
+  /** What was typed before a failed submit (never the password). */
+  draft?: RegisterDraft;
 }
 
 /**
@@ -52,6 +55,7 @@ export function RegisterForm({
   defaultRegion,
   defaultLocale,
   errorCode,
+  draft = {},
 }: RegisterFormProps) {
   const t = useTranslations("auth.register");
   const timezoneRef = useRef<HTMLInputElement>(null);
@@ -89,7 +93,14 @@ export function RegisterForm({
         </Notice>
       ) : null}
 
-      <Input label={t("emailLabel")} name="email" type="email" autoComplete="email" required />
+      <Input
+        label={t("emailLabel")}
+        name="email"
+        type="email"
+        autoComplete="email"
+        defaultValue={draft.email}
+        required
+      />
       <Input
         label={t("passwordLabel")}
         name="password"
@@ -104,9 +115,16 @@ export function RegisterForm({
         name="displayName"
         type="text"
         autoComplete="name"
+        defaultValue={draft.displayName}
         required
       />
-      <Input label={t("dateOfBirthLabel")} name="dateOfBirth" type="date" required />
+      <Input
+        label={t("dateOfBirthLabel")}
+        name="dateOfBirth"
+        type="date"
+        defaultValue={draft.dateOfBirth}
+        required
+      />
 
       {needsGuardianEmail ? (
         <Input
@@ -114,6 +132,8 @@ export function RegisterForm({
           name="guardianEmail"
           type="email"
           autoComplete="email"
+          defaultValue={draft.guardianEmail}
+          autoFocus
           required
           helpText={t("guardianEmailHelp")}
         />

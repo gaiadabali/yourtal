@@ -19,8 +19,9 @@ export interface RateLimitOptions extends RateLimitPolicy {
   /** Stable identifier for this route's counters. Never the URL. */
   readonly routeId: string;
   /**
-   * Staging test kit: on `APP_ENV=staging` only, a body `email` ending
-   * `@example.test` skips the per-IP limit (every other limit still applies).
+   * Staging test kit: on `APP_ENV=staging` only, a request carrying a valid
+   * `x-qa-key` with a body `email` ending `@example.test` skips the per-IP
+   * limit (every other limit still applies).
    */
   readonly testAddressSkipsIpOnStaging?: true;
 }

@@ -338,6 +338,7 @@ export class InteractionService {
       policyVersionId: account === null ? undefined : currentPolicyVersion(account.region)?.id,
       teenInviteCode: typeof inviteCode === "string" ? inviteCode : undefined,
       teenInvites: this.teenInvites,
+      demoSession: signedIn !== null && signedIn.amr.includes("demo"),
       signInAgain:
         signedIn !== null &&
         signInTooOld({

@@ -86,7 +86,7 @@ discovery every 15 minutes from GitHub, off the box.
 
 nginx: `/oidc/` rate limits key on the IPv6 /64 (`$yt_ip_key`) and share a
 50 r/s site-wide ceiling (`yt_oidc_site`). The live vhost differs from
-`nginx/yourtal.gaiada.com.conf` (Certbot TLS blocks, `/api/dev/`), so apply
+`nginx/yourtal.gaiada.com.conf` (Certbot TLS blocks), so apply
 with `nginx/patch-3.9h.sh`, not by copying the file.
 
 ## Storage cut-over to RustFS (7.9.c, F58/F60)

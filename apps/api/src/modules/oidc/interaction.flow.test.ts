@@ -412,6 +412,35 @@ async function finish(
 const epoch = (date: Date) => Math.floor(date.getTime() / 1000);
 const TWELVE_HOURS = 12 * 3600;
 
+// Staging test kit (M3): a demo-made session (amr `demo`) reaches SnapApp staging only.
+describe("a demo-made session", () => {
+  it("is refused by ftr-web with the normal refusal, and goes back to the app", async () => {
+    SESSIONS.set("demo-token", { userId: ADULT.userId, amr: ["demo"], authTime: EARLIER });
+    const config = await rp("ftr-web", client.ClientSecretBasic(kit.keys.ftrSecret));
+    const started = await startSignIn(config, FTR_REDIRECT);
+    const at = http(started.browser, started.uid);
+    expect(await service.details(at, started.uid, "demo-token")).toMatchObject({
+      screen: "refused",
+      refusal: "demo_sign_in_not_allowed",
+    });
+    await expect(service.continue(at, started.uid, "demo-token", "consent")).rejects.toEqual(
+      new InteractionError("sign_in_refused", "demo_sign_in_not_allowed"),
+    );
+    const { redirectTo } = await service.cancel(at, started.uid, "demo-token");
+    const back = await followToApp(started, redirectTo);
+    expect(back.searchParams.get("error")).toBe("access_denied");
+  });
+
+  it("signs in to SnapApp staging with amr demo, never pwd", async () => {
+    SESSIONS.set("demo-token", { userId: ADULT.userId, amr: ["demo"], authTime: EARLIER });
+    const config = await webApp();
+    const claims = (
+      await finish(config, await startSignIn(config, WEB_REDIRECT), "demo-token")
+    ).claims();
+    expect(claims?.amr).toEqual(["demo"]);
+  });
+});
+
 describe("auth_time, amr and a fresh sign-in", () => {
   it("auth_time is when the person signed in to YourTal, and amr how", async () => {
     for (const amr of [["pwd"], ["hwk"], ["pwd", "otp", "mfa"]] as const) {

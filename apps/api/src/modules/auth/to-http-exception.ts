@@ -82,6 +82,8 @@ export function mapAuthErrorToHttpException(error: AuthDomainError): HttpExcepti
         },
         429,
       );
+    case "demo_session":
+      return demoSessionException();
     case "session_invalid":
       return new UnauthorizedException({
         code: "session_invalid",
@@ -111,4 +113,12 @@ export function mapAuthErrorToHttpException(error: AuthDomainError): HttpExcepti
       });
     }
   }
+}
+
+/** One 403 for every change a demo-made session is refused (staging test kit). */
+export function demoSessionException(): ForbiddenException {
+  return new ForbiddenException({
+    code: "demo_session",
+    message: "a test sign-in can't change how this account signs in",
+  });
 }

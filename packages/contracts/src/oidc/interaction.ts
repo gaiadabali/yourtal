@@ -18,6 +18,8 @@ export const signInRefusalSchema = z.enum([
   "teen_invite_required",
   // docs/30 §5: the app's send cannot go ahead; `sendProblem` says why.
   "send_refused",
+  // Staging test kit: a password-less demo sign-in reaches only SnapApp's staging apps.
+  "demo_sign_in_not_allowed",
 ]);
 export type SignInRefusal = z.infer<typeof signInRefusalSchema>;
 

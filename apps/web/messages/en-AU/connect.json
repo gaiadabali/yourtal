@@ -107,6 +107,10 @@
         "expired": "This has expired. Start again from {app}. Nothing was sent.",
         "not_allowed": "Free Tax Returns is for adults in Australia. Nothing was sent."
       }
+    },
+    "demo_sign_in_not_allowed": {
+      "title": "This test account can't sign in to {app}",
+      "body": "You signed in to YourTal as a test account without a password. Test accounts like this can only be used with SnapApp's test apps. Nothing from your account was shared with {app}."
     }
   },
   "continuing": {

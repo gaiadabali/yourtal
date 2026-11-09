@@ -82,7 +82,7 @@ export class TotpController {
   @Post("disable")
   async disable(@Req() request: FastifyRequest, @Body() body: TotpDisableDto) {
     const now = new Date();
-    const caller = await this.caller.resolve(request, now, "session");
+    const caller = await this.caller.resolve(request, now, "manage");
     if (caller.isErr()) throw mapFactorErrorToHttpException(caller.error);
     const { userId, sessionToken } = caller.value;
     if (!(await this.totp.isEnabled(userId))) {

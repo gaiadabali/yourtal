@@ -4,12 +4,19 @@
  * two factors were used. Apps that sign people in through YourTal may require
  * `hwk` or `mfa` for their staff, so these are stored on the session itself.
  */
-export const AUTH_METHODS = ["pwd", "hwk", "otp", "mfa"] as const;
+// `demo`: the staging-only demo sign-in, no password checked (never `pwd`).
+export const AUTH_METHODS = ["pwd", "hwk", "otp", "mfa", "demo"] as const;
 export type AuthMethod = (typeof AUTH_METHODS)[number];
 
 export const PASSWORD_AMR: readonly AuthMethod[] = ["pwd"];
 export const PASSKEY_AMR: readonly AuthMethod[] = ["hwk"];
 export const PASSWORD_AND_CODE_AMR: readonly AuthMethod[] = ["pwd", "otp", "mfa"];
+export const DEMO_AMR: readonly AuthMethod[] = ["demo"];
+
+/** A session from the staging demo sign-in: may not change how the account signs in, nor reach most OIDC clients. */
+export function isDemoSession(amr: readonly string[]): boolean {
+  return amr.includes("demo");
+}
 
 /** Unknown values are dropped rather than trusted; an empty result reads as `pwd`. */
 export function parseAmr(stored: readonly string[]): readonly AuthMethod[] {

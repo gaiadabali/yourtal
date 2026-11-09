@@ -68,7 +68,8 @@ describe("RateLimitGuard defaults", () => {
   });
 });
 
-// Staging test kit K1.2: on staging only, an @example.test sign-up skips the per-IP limit.
+// Staging test kit K1.2: on staging only, an @example.test sign-up with a valid x-qa-key skips the per-IP limit.
+const KEY = "qa-key-for-this-test-only-0123456789abcdef";
 describe("register's test-address exemption", () => {
   class Register {
     @RateLimit(REGISTER_RATE_LIMIT)
@@ -76,7 +77,11 @@ describe("register's test-address exemption", () => {
     register(): void {}
   }
 
-  async function dimensionsFor(appEnv: AppConfig["appEnv"] | undefined, email: unknown) {
+  async function dimensionsFor(
+    appEnv: AppConfig["appEnv"] | undefined,
+    email: unknown,
+    qaKey: string | null = KEY,
+  ) {
     const seen: string[][] = [];
     const service = {
       consume: (_subject: unknown, policy: Record<string, unknown>) => {
@@ -87,13 +92,19 @@ describe("register's test-address exemption", () => {
     const guard = new RateLimitGuard(
       new Reflector(),
       service,
-      ...(appEnv === undefined ? [] : [{ appEnv }]),
+      ...(appEnv === undefined ? [] : [{ appEnv, stagingQaKey: KEY }]),
     );
     await guard.canActivate({
       getHandler: () =>
         Object.getOwnPropertyDescriptor(Register.prototype, "register")?.value as unknown,
       getClass: () => Register,
-      switchToHttp: () => ({ getRequest: () => ({ ip: "203.0.113.9", body: { email } }) }),
+      switchToHttp: () => ({
+        getRequest: () => ({
+          ip: "203.0.113.9",
+          body: { email },
+          headers: qaKey === null ? {} : { "x-qa-key": qaKey },
+        }),
+      }),
     } as unknown as ExecutionContext);
     return seen[0]?.sort();
   }
@@ -101,6 +112,11 @@ describe("register's test-address exemption", () => {
   it("drops only the per-IP limit for @example.test on staging", async () => {
     expect(await dimensionsFor("staging", "qa+1@example.test")).toEqual(["route"]);
     expect(await dimensionsFor("staging", " QA@Example.TEST ")).toEqual(["route"]);
+  });
+
+  it("keeps the per-IP limit for @example.test without the QA key, or with a wrong one (M2)", async () => {
+    expect(await dimensionsFor("staging", "qa@example.test", null)).toEqual(["ip", "route"]);
+    expect(await dimensionsFor("staging", "qa@example.test", `${KEY}x`)).toEqual(["ip", "route"]);
   });
 
   it("keeps the per-IP limit for any other address on staging", async () => {

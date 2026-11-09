@@ -2,7 +2,8 @@ import { Inject, Injectable, Logger } from "@nestjs/common";
 import { err, ok } from "neverthrow";
 import type { Result } from "neverthrow";
 import { hashOpaqueToken, issueOpaqueToken } from "../crypto/opaque-token";
-import { PASSWORD_AMR, PASSWORD_AND_CODE_AMR } from "../session/amr";
+import { DEMO_AMR, PASSWORD_AMR, PASSWORD_AND_CODE_AMR, isDemoSession } from "../session/amr";
+import type { AuthMethod } from "../session/amr";
 import { SessionIssuer } from "../session/session-issuer";
 import { CEREMONY_TTL_SECONDS, PENDING_SIGN_IN_MAX_FAILURES } from "./factor-settings";
 import { FactorWindow } from "./factor-window";
@@ -40,7 +41,12 @@ export class SecondFactorGate {
     private readonly window: FactorWindow,
   ) {}
 
-  async afterPassword(userId: string, now: Date): Promise<PasswordSignIn> {
+  /** `amr` is DEMO_AMR for the staging demo sign-in, which checks no password. */
+  async afterPassword(
+    userId: string,
+    now: Date,
+    amr: readonly AuthMethod[] = PASSWORD_AMR,
+  ): Promise<PasswordSignIn> {
     const totpOn = await this.totp.isEnabled(userId);
     if (totpOn && !this.totp.available()) {
       // Only reachable in dev: outside it the boot refuses a missing key once
@@ -48,16 +54,16 @@ export class SecondFactorGate {
       this.logger.warn(`authenticator app on for ${userId} but codes are unavailable here`);
     }
     if (!this.totp.available()) {
-      const token = await this.sessions.issue(userId, now, PASSWORD_AMR);
+      const token = await this.sessions.issue(userId, now, amr);
       return { kind: "session", token, userId };
     }
     if (!totpOn) {
       // Null when the app was switched on since the read above: ask for a code.
-      const token = await this.sessions.issueUnlessAppOn(userId, now, PASSWORD_AMR);
+      const token = await this.sessions.issueUnlessAppOn(userId, now, amr);
       if (token !== null) return { kind: "session", token, userId };
     }
     const { token, hash } = issueOpaqueToken();
-    await this.store.putPending(hash, { userId, amr: PASSWORD_AMR }, CEREMONY_TTL_SECONDS);
+    await this.store.putPending(hash, { userId, amr }, CEREMONY_TTL_SECONDS);
     return { kind: "second_factor", pendingToken: token, expiresInSeconds: CEREMONY_TTL_SECONDS };
   }
 
@@ -108,7 +114,8 @@ export class SecondFactorGate {
     const token = await this.sessions.issueWhileFactorRemains(
       pending.userId,
       now,
-      PASSWORD_AND_CODE_AMR,
+      // A demo sign-in stays demo with a code: no password was ever checked.
+      isDemoSession(pending.amr) ? DEMO_AMR : PASSWORD_AND_CODE_AMR,
       { kind: "totp" },
     );
     if (token === null) return err({ type: "factor_invalid" });

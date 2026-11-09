@@ -23,12 +23,18 @@ import type { CredentialRepository } from "./persistence/credential.repository";
 import { SecondFactorGate } from "./factors/second-factor-gate";
 import { passwordSignInBody } from "./auth.controller";
 import { normalizeEmail } from "./email";
+import { DEMO_AMR } from "./session/amr";
 
 const demoSignInSchema = z.object({ email: z.string().trim().toLowerCase().max(320) });
 class DemoSignInDto extends createZodDto(demoSignInSchema) {}
 
-/** Only the people the demo-world reset creates; never any other account. */
-const DEMO_EMAILS: ReadonlySet<string> = new Set(DEMO_PEOPLE.map((p) => p.email));
+/**
+ * Only the non-staff people the demo-world reset creates. Staff demo accounts
+ * (admin, support, ...) keep needing their password: a password-less staff
+ * session would open the staff console and every inbox to the internet.
+ */
+const PASSWORDLESS_PEOPLE = DEMO_PEOPLE.filter((p) => p.staffRole === undefined);
+const DEMO_EMAILS: ReadonlySet<string> = new Set(PASSWORDLESS_PEOPLE.map((p) => p.email));
 
 /**
  * Staging test kit K1.1: sign in as a seeded demo person without a password,
@@ -37,6 +43,8 @@ const DEMO_EMAILS: ReadonlySet<string> = new Set(DEMO_PEOPLE.map((p) => p.email)
  * allow-list check it is the password path from "password correct" on
  * (`SecondFactorGate.afterPassword`), so an authenticator app is still asked
  * for and every session-time guard (teen, guardian, suspension) still applies.
+ * The session's amr is `demo`: it cannot change sign-in methods or the
+ * password, and OIDC refuses it for every client but SnapApp's staging ones.
  */
 @Controller("api/auth/demo-sign-in")
 export class DemoSignInController {
@@ -51,7 +59,11 @@ export class DemoSignInController {
   people() {
     this.assertStaging();
     return {
-      people: DEMO_PEOPLE.map(({ email, displayName, region }) => ({ email, displayName, region })),
+      people: PASSWORDLESS_PEOPLE.map(({ email, displayName, region }) => ({
+        email,
+        displayName,
+        region,
+      })),
     };
   }
 
@@ -75,7 +87,10 @@ export class DemoSignInController {
         message: "only the seeded demo accounts can sign in this way",
       });
     }
-    return passwordSignInBody(await this.secondFactor.afterPassword(credential.userId, new Date()));
+    // amr `demo`, never `pwd`: no password was checked (see session/amr.ts).
+    return passwordSignInBody(
+      await this.secondFactor.afterPassword(credential.userId, new Date(), DEMO_AMR),
+    );
   }
 
   private assertStaging(): void {

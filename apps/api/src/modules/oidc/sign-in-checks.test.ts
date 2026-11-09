@@ -271,3 +271,23 @@ describe("the send screen (docs/30 §5)", () => {
     expect(checkSend).not.toHaveBeenCalled();
   });
 });
+
+// Staging test kit (M3): a password-less demo session reaches SnapApp's staging clients only.
+describe("a demo-made session", () => {
+  it("is refused by FTR and by any client outside snapapp-staging-*", async () => {
+    expect(await screen({ client: FTR, demoSession: true })).toBe(
+      "refused:demo_sign_in_not_allowed",
+    );
+    for (const client of CLIENTS.filter(isSignInClient)) {
+      const expected = client.clientId.startsWith("snapapp-staging-")
+        ? "consent"
+        : "refused:demo_sign_in_not_allowed";
+      expect(await screen({ client, demoSession: true }), client.clientId).toBe(expected);
+    }
+  });
+
+  it("goes on to SnapApp staging, and a normal session still reaches FTR", async () => {
+    expect(await screen({ client: SNAPAPP, demoSession: true })).toBe("consent");
+    expect(await screen({ client: FTR, demoSession: false })).toBe("consent");
+  });
+});

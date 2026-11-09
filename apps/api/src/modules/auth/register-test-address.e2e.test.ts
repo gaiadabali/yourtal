@@ -8,6 +8,7 @@ import { APP_CONFIG } from "../../config/app-config.module";
 import { loadAppConfig } from "../../config/app-config";
 import type { AppConfig } from "../../config/app-config";
 import { REGISTER_RATE_LIMIT } from "../../shared/rate-limit/rate-limit.decorator";
+import { QA } from "../../shared/testing/qa-key";
 
 /** Staging test kit K1.2, through the real app: the guard really sees APP_ENV. */
 const PER_IP = REGISTER_RATE_LIMIT.ip?.max ?? 5;
@@ -26,7 +27,11 @@ async function appFor(appEnv: AppConfig["appEnv"]): Promise<NestFastifyApplicati
 }
 
 /** Status codes of `PER_IP + 1` sign-ups from one address. */
-async function signUps(app: NestFastifyApplication, domain: string): Promise<number[]> {
+async function signUps(
+  app: NestFastifyApplication,
+  domain: string,
+  withKey = true,
+): Promise<number[]> {
   const remoteAddress = `198.51.100.${String(Math.floor(Math.random() * 250) + 1)}`;
   const statuses: number[] = [];
   for (let i = 0; i <= PER_IP; i++) {
@@ -34,7 +39,7 @@ async function signUps(app: NestFastifyApplication, domain: string): Promise<num
       method: "POST",
       url: "/api/auth/register",
       remoteAddress,
-      headers: { "idempotency-key": randomUUID() },
+      headers: { "idempotency-key": randomUUID(), ...(withKey ? QA : {}) },
       payload: {
         email: `qa+${randomUUID()}@${domain}`,
         password: "test-address-not-a-real-secret-1",
@@ -63,7 +68,11 @@ afterAll(async () => {
 });
 
 describe("register's per-IP limit and @example.test", () => {
-  it("staging: an @example.test address is not held to the per-IP limit", async () => {
+  it("staging: without the QA key, @example.test is limited like everyone else (M2)", async () => {
+    expect((await signUps(staging, "example.test", false)).at(-1)).toBe(429);
+  });
+
+  it("staging: an @example.test address with the QA key is not held to the per-IP limit", async () => {
     const statuses = await signUps(staging, "example.test");
     expect(statuses.every((s) => s < 300)).toBe(true);
   });

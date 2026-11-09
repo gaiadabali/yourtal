@@ -13,6 +13,7 @@ import type { FastifyRequest } from "fastify";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import { PUBLIC_ROUTE_METADATA } from "../authz/authorize.decorator";
+import { qaKeyValid } from "../http/qa-key";
 import {
   NO_RATE_LIMIT_METADATA,
   PUBLIC_ROUTE_RATE_LIMIT,
@@ -57,7 +58,9 @@ export class RateLimitGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly rateLimit: RateLimitService,
     // Optional so a unit test can build the guard bare; absent means not staging.
-    @Optional() @Inject(APP_CONFIG) private readonly config?: Pick<AppConfig, "appEnv">,
+    @Optional()
+    @Inject(APP_CONFIG)
+    private readonly config?: Pick<AppConfig, "appEnv" | "stagingQaKey">,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -87,11 +90,11 @@ export class RateLimitGuard implements CanActivate {
     return true;
   }
 
-  /** Staging only: a test address (`@example.test`) is not held to the per-IP limit. */
+  /** Staging only, and only for a QA-key holder: a test address (`@example.test`) skips the per-IP limit. */
   private skipsIp(options: RateLimitOptions, request: FastifyRequest): boolean {
-    if (options.testAddressSkipsIpOnStaging !== true || this.config?.appEnv !== "staging") {
-      return false;
-    }
+    const config = this.config;
+    if (options.testAddressSkipsIpOnStaging !== true || config?.appEnv !== "staging") return false;
+    if (!qaKeyValid(config, request.headers["x-qa-key"])) return false;
     const email = (request.body as { email?: unknown } | undefined)?.email;
     return typeof email === "string" && email.trim().toLowerCase().endsWith("@example.test");
   }

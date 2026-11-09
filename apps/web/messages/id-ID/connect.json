@@ -107,6 +107,10 @@
         "expired": "Permintaan ini sudah kedaluwarsa. Mulai lagi dari {app}. Tidak ada yang terkirim.",
         "not_allowed": "Free Tax Returns untuk orang dewasa di Australia. Tidak ada yang terkirim."
       }
+    },
+    "demo_sign_in_not_allowed": {
+      "title": "Akun uji ini tidak bisa masuk ke {app}",
+      "body": "Kamu masuk ke YourTal sebagai akun uji tanpa kata sandi. Akun uji seperti ini hanya bisa dipakai di aplikasi uji SnapApp. Tidak ada data akunmu yang dibagikan ke {app}."
     }
   },
   "continuing": {

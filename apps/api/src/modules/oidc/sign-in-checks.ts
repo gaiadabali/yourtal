@@ -93,6 +93,8 @@ export interface SignInInput {
   readonly teenInvites: TeenInviteChecker;
   /** The app asked for a newer sign-in than the session's (`signInTooOld`). */
   readonly signInAgain: boolean;
+  /** The session came from the staging demo sign-in (amr `demo`). */
+  readonly demoSession?: boolean;
   /** Set when the app sent `transfer`: checks it for the signed-in person. */
   readonly checkSend?: (account: OidcAccount) => Promise<SendCheck>;
   readonly now: Date;
@@ -188,6 +190,9 @@ export async function signInBlock(
   return { ok: true, invite };
 }
 
+/** Staging test kit: the only clients a password-less demo session may sign in to. */
+export const DEMO_SIGN_IN_CLIENT = /^snapapp-staging-/;
+
 /**
  * docs/26 §1.5, in order, once the person is known and before any code is
  * issued; then a fresh sign-in when the app asked for one (§1.4).
@@ -206,6 +211,15 @@ export async function decideSignIn(input: SignInInput): Promise<SignInState> {
     const { block, inviteProblem } = check;
     if (block === "verify_email") return { screen: "verify_email", account };
     return { screen: "refused", account, refusal: block, inviteProblem, sendProblem: null };
+  }
+  if (input.demoSession === true && !DEMO_SIGN_IN_CLIENT.test(client.clientId)) {
+    return {
+      screen: "refused",
+      account,
+      refusal: "demo_sign_in_not_allowed",
+      inviteProblem: null,
+      sendProblem: null,
+    };
   }
   if (input.signInAgain) return { screen: "sign_in_again", account };
 

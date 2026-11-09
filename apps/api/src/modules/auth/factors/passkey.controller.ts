@@ -115,7 +115,7 @@ export class PasskeyController {
   @Authorize({ kind: "session", action: "manage_sign_in_methods" })
   @Post("step-up/options")
   async stepUpOptions(@Req() request: FastifyRequest) {
-    const caller = await this.caller.resolve(request, new Date(), "session");
+    const caller = await this.caller.resolve(request, new Date(), "manage");
     if (caller.isErr()) throw mapFactorErrorToHttpException(caller.error);
     const result = await this.passkeys.stepUpOptions(caller.value.userId);
     if (result.isErr()) throw mapFactorErrorToHttpException(result.error);

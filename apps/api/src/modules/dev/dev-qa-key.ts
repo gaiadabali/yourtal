@@ -1,10 +1,10 @@
-import { createHash, timingSafeEqual } from "node:crypto";
 import { Inject, Injectable } from "@nestjs/common";
 import type { OnModuleInit } from "@nestjs/common";
 import { HttpAdapterHost } from "@nestjs/core";
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
+import { qaKeyValid } from "../../shared/http/qa-key";
 
 const DEV_PREFIX = "/api/dev/";
 
@@ -16,21 +16,6 @@ const DEV_PREFIX = "/api/dev/";
  * `onRequest` hook, before the rate limiter and the PDP, so a caller without
  * the key cannot tell a dev route from a missing one.
  */
-export function devRouteOpen(
-  config: Pick<AppConfig, "appEnv" | "stagingQaKey">,
-  given: string | string[] | undefined,
-): boolean {
-  const key = config.stagingQaKey;
-  if (config.appEnv === "production" || key === undefined || key === "") return false;
-  if (typeof given !== "string") return false;
-  // Hash both sides so the compare is constant-time whatever the lengths.
-  return timingSafeEqual(digest(given), digest(key));
-}
-
-function digest(value: string): Buffer {
-  return createHash("sha256").update(value, "utf8").digest();
-}
-
 function isDevRoute(request: FastifyRequest): boolean {
   const matched = request.routeOptions.url;
   const path = (request.url.split("?")[0] ?? "").toLowerCase();
@@ -42,7 +27,7 @@ export function registerDevQaKey(
   config: Pick<AppConfig, "appEnv" | "stagingQaKey">,
 ): void {
   instance.addHook("onRequest", async (request, reply) => {
-    if (!isDevRoute(request) || devRouteOpen(config, request.headers["x-qa-key"])) return;
+    if (!isDevRoute(request) || qaKeyValid(config, request.headers["x-qa-key"])) return;
     await reply.code(404).send({ statusCode: 404, message: "Not Found" });
   });
 }

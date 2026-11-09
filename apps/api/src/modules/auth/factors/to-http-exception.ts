@@ -1,4 +1,5 @@
 import type { HttpException } from "@nestjs/common";
+import { demoSessionException } from "../to-http-exception";
 import {
   ConflictException,
   ForbiddenException,
@@ -23,6 +24,8 @@ export function mapFactorErrorToHttpException(error: FactorError): HttpException
         code: "reauthentication_required",
         message: "sign in again to change how you sign in",
       });
+    case "demo_session":
+      return demoSessionException();
     case "step_up_required":
       return new ForbiddenException({
         code: "step_up_required",

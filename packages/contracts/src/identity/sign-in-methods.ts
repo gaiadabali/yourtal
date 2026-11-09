@@ -14,7 +14,7 @@ const base64url = z
   .regex(/^[A-Za-z0-9_-]+$/);
 
 /** How the session was signed in to, as OIDC `amr` values. */
-export const authMethodSchema = z.enum(["pwd", "hwk", "otp", "mfa"]);
+export const authMethodSchema = z.enum(["pwd", "hwk", "otp", "mfa", "demo"]);
 export type AuthMethodValue = z.infer<typeof authMethodSchema>;
 
 /** A browser's answer to `navigator.credentials.create()`, JSON-encoded. */

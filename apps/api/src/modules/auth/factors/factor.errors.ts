@@ -1,4 +1,9 @@
-import type { PersistenceFailedError, SessionInvalidError, ThrottledError } from "../auth.errors";
+import type {
+  DemoSessionError,
+  PersistenceFailedError,
+  SessionInvalidError,
+  ThrottledError,
+} from "../auth.errors";
 
 /** A code, passkey response or challenge that did not check out. One shape for every cause. */
 export interface FactorInvalidError {
@@ -55,6 +60,7 @@ export type FactorError =
   | PasskeyNotFoundError
   | LastSignInMethodError
   | FactorsUnavailableError
+  | DemoSessionError
   | SessionInvalidError
   | ThrottledError
   | PersistenceFailedError;

@@ -5,6 +5,7 @@ import type { Result } from "neverthrow";
 import { presentedSessionToken } from "../bearer-token";
 import { hashOpaqueToken } from "../crypto/opaque-token";
 import { SessionService } from "../session/session.service";
+import { isDemoSession } from "../session/amr";
 import { FRESH_SIGN_IN_MS } from "./factor-settings";
 import { FACTOR_STORE } from "./factor-store";
 import type { FactorStore } from "./factor-store";
@@ -29,7 +30,12 @@ import { FactorWindow } from "./factor-window";
  * The first factor on an account can be added with a recent password sign-in
  * alone; that opens the account's factor window (`FactorWindow`).
  */
-export type CallerNeed = "session" | "add_factor" | "strong";
+/**
+ * `session`: any live session (reads). `manage`: a live session that may change
+ * how the account signs in. `add_factor`, `strong`: as `manage`, plus recency.
+ * Every need but `session` refuses a demo-made session (amr `demo`).
+ */
+export type CallerNeed = "session" | "manage" | "add_factor" | "strong";
 
 export interface Caller {
   readonly userId: string;
@@ -54,6 +60,8 @@ export class SignedInCaller {
     if (!session.valid) return err({ type: "session_invalid" });
     const caller = { userId: session.userId, sessionToken: token };
     if (need === "session") return ok(caller);
+    if (isDemoSession(session.amr)) return err({ type: "demo_session" });
+    if (need === "manage") return ok(caller);
 
     const steppedUp = await this.store.hasStepUp(hashOpaqueToken(token), session.userId);
     const recent = steppedUp || now.getTime() - session.authTime.getTime() <= FRESH_SIGN_IN_MS;

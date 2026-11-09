@@ -66,7 +66,7 @@ export class SignInMethodsController {
   @Post("step-up")
   async stepUp(@Req() request: FastifyRequest, @Body() body: StepUpDto) {
     const now = new Date();
-    const caller = await this.caller.resolve(request, now, "session");
+    const caller = await this.caller.resolve(request, now, "manage");
     if (caller.isErr()) throw mapFactorErrorToHttpException(caller.error);
     const { userId, sessionToken } = caller.value;
     const proved = await proveFactor(this.totp, this.passkeys, userId, body, now);

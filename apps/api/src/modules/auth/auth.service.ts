@@ -33,7 +33,7 @@ import { VERIFICATION_TOKEN_REPOSITORY } from "./persistence/verification-token.
 import type { VerificationTokenRepository } from "./persistence/verification-token.repository";
 import { SessionService } from "./session/session.service";
 import { SessionIssuer } from "./session/session-issuer";
-import { PASSWORD_AMR } from "./session/amr";
+import { PASSWORD_AMR, isDemoSession } from "./session/amr";
 import { SecondFactorGate } from "./factors/second-factor-gate";
 import type { PasswordSignIn } from "./factors/second-factor-gate";
 import {
@@ -349,6 +349,7 @@ export class AuthService {
       return err({ type: "session_invalid" });
     }
     const { userId, amr, authTime } = validation;
+    if (isDemoSession(amr)) return err({ type: "demo_session" });
 
     return this.guarded(async () => {
       const credential = await this.credentials.findByUserAndKind(userId, PASSWORD_CREDENTIAL_KIND);

@@ -88,8 +88,13 @@ export type LoginError = InvalidCredentialsError | ThrottledError | PersistenceF
 
 export type LogoutError = PersistenceFailedError;
 
+/** Staging test kit: a session from the password-less demo sign-in may not change how the account signs in. */
+export interface DemoSessionError {
+  readonly type: "demo_session";
+}
+
 export type ChangePasswordError =
-  SessionInvalidError | InvalidCredentialsError | PersistenceFailedError;
+  SessionInvalidError | InvalidCredentialsError | DemoSessionError | PersistenceFailedError;
 
 /**
  * No error case at all beyond persistence: this is intentionally the one

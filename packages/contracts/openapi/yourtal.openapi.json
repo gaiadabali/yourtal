@@ -13746,7 +13746,8 @@
                             "region_not_supported",
                             "teen_not_allowed",
                             "teen_invite_required",
-                            "send_refused"
+                            "send_refused",
+                            "demo_sign_in_not_allowed"
                           ]
                         },
                         {

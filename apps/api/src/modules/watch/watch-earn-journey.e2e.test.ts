@@ -499,6 +499,30 @@ describe("5.2: questions during the video, served and scored on the server", () 
       wasCorrect: false,
     });
   });
+
+  it("5.13.u: a question left to run out with no answer is scored wrong and the session moves on", async () => {
+    const viewer = await sessionFor(app);
+    const sessionId = await startFullyWatchedSession(viewer.cookie);
+    const present = () =>
+      app.inject({
+        method: "POST",
+        url: `/api/watch/sessions/${sessionId}/checkpoints/0`,
+        headers: { cookie: viewer.cookie },
+      });
+    const { token } = json<{ token: string }>(await present());
+
+    // What the player sends when its timer runs out: the token, no choice.
+    const answer = await app.inject({
+      method: "POST",
+      url: `/api/watch/sessions/${sessionId}/checkpoints/0/answer`,
+      headers: { cookie: viewer.cookie },
+      payload: { token },
+    });
+    expect(answer.statusCode).toBe(201);
+    expect(json<{ wasCorrect: boolean }>(answer).wasCorrect).toBe(false);
+    // Counted as asked, so the same question is not served again.
+    expect((await present()).statusCode).toBe(403);
+  });
 });
 
 describe("5.3: completion grants the reward", () => {

@@ -370,14 +370,54 @@ describe("V12b: a repeat visit that has earlier coverage waits for the viewer's 
   });
 
   it("shows the Continue watching dialog and plays nothing until it is answered", async () => {
+    playMock.mockClear();
     render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
     fireEvent.click(screen.getByRole("button", { name: /Test Campaign/ }));
     expect(await screen.findByRole("dialog")).toHaveTextContent(
       "You watched up to 1:00 last time.",
     );
-    expect(hls.mounts).toBe(0);
+    // 5.13.u: the source loads behind the dialog, so the frame shows rather
+    // than a dead player, but nothing plays.
+    expect(hls.mounts).toBe(1);
+    expect(video().autoplay).toBe(false);
+    expect(playMock).not.toHaveBeenCalled();
     expect(video().currentTime).toBe(0);
     expect(video().hasAttribute("controls")).toBe(false);
+  });
+
+  it("plays once a choice is made", async () => {
+    playMock.mockClear();
+    render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
+    fireEvent.click(screen.getByRole("button", { name: /Test Campaign/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /Start over/ }));
+    await waitFor(() => expect(playMock).toHaveBeenCalled());
+    expect(hls.mounts).toBe(1);
+  });
+
+  it("5.13.u: Start over asks the earlier attempt's question only where that attempt stopped", async () => {
+    vi.useFakeTimers();
+    render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
+    fireEvent.click(screen.getByRole("button", { name: /Test Campaign/ }));
+    await flush();
+    await flush();
+    fireEvent.click(screen.getByRole("button", { name: /Start over/ }));
+    await flush();
+    Object.defineProperty(video(), "paused", { value: false, configurable: true });
+    Object.defineProperty(video(), "ended", { value: false, configurable: true });
+    const at = (seconds: number) =>
+      Object.defineProperty(video(), "currentTime", { value: seconds, configurable: true });
+
+    at(4);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4_000);
+    });
+    expect(actions.present).not.toHaveBeenCalled();
+
+    at(60);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4_000);
+    });
+    expect(actions.present).toHaveBeenCalledWith("session-1", 0);
   });
 
   it("applies the resume position again once the stream's metadata arrives", async () => {

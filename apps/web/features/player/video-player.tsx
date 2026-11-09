@@ -117,7 +117,8 @@ export function VideoPlayer({
   const hasSource = phase.kind === "watching" || phase.kind === "checkpoint";
   const showStartOverlay =
     phase.kind === "idle" || phase.kind === "starting" || phase.kind === "failed";
-  const manifestUrl = hasSource ? phase.manifestUrl : null;
+  // 5.13.u: loaded behind the resume prompt too, so the frame shows instead of a dead player.
+  const manifestUrl = hasSource || phase.kind === "resume_prompt" ? phase.manifestUrl : null;
   const coveredSeconds = hasSource ? phase.coveredSeconds : 0;
   const alreadyEarnedNotice =
     (phase.kind === "watching" || phase.kind === "resume_prompt") &&

@@ -15,6 +15,8 @@ export interface Me {
   readonly businessMemberships: readonly BusinessMembershipSummary[];
   /** From `identity.staff_role` (1.5.b) — empty for the overwhelming majority of accounts. */
   readonly staffRoles: readonly string[];
+  /** 5.13.v: a teen whose guardian has not approved yet; such an account cannot earn (campaign_view.yaml). */
+  readonly awaitingGuardian: boolean;
 }
 
 export async function getMe(
@@ -34,16 +36,18 @@ export async function getMe(
     staffRoles.listForUser(userId),
   ]);
 
+  const ageBand = ageBandFrom(ageYearsFrom(stored.dateOfBirth, now));
   return ok({
     profile: {
       userId: stored.userId,
       region: stored.region,
       displayLocale: stored.displayLocale,
       displayName: stored.displayName,
-      ageBand: ageBandFrom(ageYearsFrom(stored.dateOfBirth, now)),
+      ageBand,
       timezone: stored.timezone,
     },
     businessMemberships: memberships,
     staffRoles: roles,
+    awaitingGuardian: ageBand === "teen" && stored.parentConsentStatus === "pending",
   });
 }

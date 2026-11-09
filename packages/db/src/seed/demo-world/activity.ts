@@ -4,6 +4,8 @@ import type { DemoPasswords } from "./api-client";
 import { DEMO_BRANDS } from "./catalogue";
 import type { Audience } from "@yourtal/contracts/audience/audience";
 import type { Region } from "./catalogue";
+import { buyOneVoucher } from "./marketplace";
+import type { Purchase } from "./marketplace";
 import { businessIdFor, campaignIdFor, listingIdFor } from "./world";
 
 /**
@@ -126,7 +128,7 @@ async function buyOne(api: DemoApi, viewer: Viewer): Promise<string | null> {
   const balance = Number(field(ok(await api.get("/api/wallet"), "wallet"), "availablePoints") ?? 0);
   const candidates = DEMO_BRANDS.filter((b) => b.region === viewer.region).flatMap((brand) =>
     brand.listings
-      .filter((l) => viewer.sees.includes(l.audience))
+      .filter((l) => viewer.sees.includes(l.audience) && l.partialRedemptionPolicy === undefined)
       .map((l) => listingIdFor(brand.slug, l.key)),
   );
   for (const listingId of candidates) {
@@ -145,7 +147,8 @@ export const KEEP_GIFTABLE = 2;
 /**
  * The one voucher to redeem today. A voucher this member cannot pass on (won at
  * an auction, or received) is the one to spend; a giftable one is spent only
- * when more than `KEEP_GIFTABLE` would stay.
+ * when more than `KEEP_GIFTABLE` plus the auction keeper's one spare would stay,
+ * so a spare the keeper bought but could not list is retried, not bought again.
  */
 export function pickToRedeem<T extends { status?: string; giftable?: boolean }>(
   vouchers: readonly T[],
@@ -154,7 +157,7 @@ export function pickToRedeem<T extends { status?: string; giftable?: boolean }>(
   const spendable = active.find((v) => v.giftable !== true);
   if (spendable !== undefined) return [spendable];
   const giftable = active.filter((v) => v.giftable === true);
-  return giftable.length > KEEP_GIFTABLE ? giftable.slice(0, 1) : [];
+  return giftable.length > KEEP_GIFTABLE + 1 ? giftable.slice(0, 1) : [];
 }
 
 /** The voucher to put up for a charity: a giftable one, only while more than KEEP_GIFTABLE remain. */
@@ -166,13 +169,21 @@ export function pickToAuction<T extends { status?: string; giftable?: boolean }>
   return giftable.length > KEEP_GIFTABLE ? giftable[0] : undefined;
 }
 
+type WalletRow = { voucherId: string; status?: string; giftable?: boolean };
+
 /**
  * The seeded auctions run 72 hours and nothing else opens one, so the auctions page would go
  * empty. When none is open in the region, the member lists one voucher for an approved charity.
+ * With nothing past the kept stock to list, `topUp` buys one more and that one is listed: the
+ * daily counter visit keeps the stock at KEEP_GIFTABLE, so without it nothing was ever listed.
  * Demo data only: this runs from the demo activity job, which is off in production.
  * ponytail: no bids placed here (a bid needs a saved card on AU); an auction without bids is still open.
  */
-async function keepAuctionOpen(seller: DemoApi, region: Region): Promise<string> {
+export async function keepAuctionOpen(
+  seller: DemoApi,
+  region: Region,
+  topUp: () => Promise<Purchase>,
+): Promise<string> {
   const open = (field(ok(await seller.get("/api/auctions"), "auctions"), "auctions") ??
     []) as unknown[];
   if (open.length > 0) return `${region} auctions open: ${String(open.length)}`;
@@ -180,11 +191,22 @@ async function keepAuctionOpen(seller: DemoApi, region: Region): Promise<string>
     ok(await seller.get(`/api/charities?region=${region}`), "charities"),
     "charities",
   ) ?? []) as { id: string }[];
-  const vouchers = (field(ok(await seller.get("/api/wallet/vouchers"), "vouchers"), "vouchers") ??
-    []) as { voucherId: string; status?: string; giftable?: boolean }[];
-  const voucher = pickToAuction(vouchers);
-  if (voucher === undefined || charities.length === 0)
-    return `${region} no auction opened: nothing to list`;
+  if (charities.length === 0) return `${region} no auction opened: no charity`;
+  const wallet = async () =>
+    (field(ok(await seller.get("/api/wallet/vouchers"), "vouchers"), "vouchers") ??
+      []) as WalletRow[];
+  const before = await wallet();
+  let voucher = pickToAuction(before);
+  if (voucher === undefined) {
+    const purchase = await topUp();
+    if (!purchase.bought)
+      return `${region} no auction opened: top-up bought nothing (${purchase.why})`;
+    const had = new Set(before.map((v) => v.voucherId));
+    voucher = (await wallet()).find(
+      (v) => !had.has(v.voucherId) && v.status === "active" && v.giftable === true,
+    );
+  }
+  if (voucher === undefined) return `${region} no auction opened: nothing to list`;
   // The first charity may not have finished payment onboarding (AU): try the next.
   let code = "";
   for (const charity of charities) {
@@ -258,6 +280,15 @@ async function redeemAtCounter(
   return redeemed;
 }
 
+/** Runs one step to its log line; a failure becomes the line, so the steps after it still run. */
+export async function settled(label: string, step: () => Promise<string>): Promise<string> {
+  try {
+    return await step();
+  } catch (e: unknown) {
+    return `${label}: ${String(e)}`;
+  }
+}
+
 export async function runDemoActivity(
   pool: pg.Pool,
   config: DemoActivityConfig,
@@ -284,6 +315,16 @@ export async function runDemoActivity(
     if (adult !== undefined) {
       const bought = await buyOne(adult.api, adult.v);
       lines.push(`${adult.v.email} bought: ${bought ?? "nothing affordable"}`);
+      // Before the counter visit, so today's purchase is listed rather than spent.
+      lines.push(
+        await settled(`${region} auction keeper`, async () => {
+          const { userId } = await loginAs(base, adult.v.email, config);
+          const admin = await login(base, "admin@demo.yourtal.test", config);
+          return keepAuctionOpen(adult.api, region, () =>
+            buyOneVoucher(admin, adult.api, userId, region),
+          );
+        }),
+      );
       const owner = await login(base, `owner.${region.toLowerCase()}@demo.yourtal.test`, config);
       const redeemed = await redeemAtCounter(pool, owner, base, adult.api, region).catch(
         (e: unknown) => {
@@ -292,7 +333,6 @@ export async function runDemoActivity(
         },
       );
       lines.push(`${region} counter redeemed ${String(redeemed)}`);
-      lines.push(await keepAuctionOpen(adult.api, region).catch((e: unknown) => String(e)));
     }
   }
   for (const line of lines) log(`[demo:activity] ${line}`);

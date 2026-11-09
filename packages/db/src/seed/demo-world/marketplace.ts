@@ -153,37 +153,62 @@ async function ensurePayouts(
 interface WalletVoucher {
   readonly voucherId: string;
   readonly status?: string;
+  readonly partialRedemptionPolicy?: string;
 }
 
+/** Active single-use vouchers: the balance-carrying one stays with the viewer for the counter walk. */
 async function activeVouchers(viewer: DemoApi): Promise<string[]> {
   const body = ok(await viewer.get("/api/wallet/vouchers"), "wallet vouchers");
   return ((field(body, "vouchers") ?? []) as WalletVoucher[])
-    .filter((v) => v.status === "active")
+    .filter((v) => v.status === "active" && v.partialRedemptionPolicy !== "balance_carrying")
     .map((v) => v.voucherId);
 }
 
-/**
- * Support credits one goodwill case, the viewer releases it and buys the cheapest
- * adult-visible voucher.
- */
-async function buyOneVoucher(admin: DemoApi, viewer: DemoApi, region: Region): Promise<void> {
-  // Enough for the cheapest voucher, leaving room under the daily earn cap to watch.
-  const points = region === "AU" ? 300 : 3_000;
-  const credited = await admin.post(`/api/staff/users/${userIdOf(viewer)}/goodwill`, {
+/** Support credits one goodwill case and the member releases it at once. Says what was granted. */
+async function creditGoodwill(
+  admin: DemoApi,
+  member: DemoApi,
+  userId: string,
+  points: number,
+): Promise<string> {
+  const credited = await admin.post(`/api/staff/users/${userId}/goodwill`, {
     points,
     reason: "Demo world starting balance",
   });
   // Already credited today (a re-run): spend what is there.
-  if (credited.status >= 400 && !JSON.stringify(credited.body).includes("velocity_capped")) {
-    ok(credited, "goodwill");
-  }
-  ok(await viewer.post("/api/dev/clock/release-pending"), "release pending");
-  const balance = Number(
-    field(ok(await viewer.get("/api/wallet"), "wallet"), "availablePoints") ?? 0,
-  );
+  const capped = JSON.stringify(credited.body).includes("velocity_capped");
+  if (credited.status >= 400 && !capped) ok(credited, "goodwill");
+  ok(await member.post("/api/dev/clock/release-pending"), "release pending");
+  return capped
+    ? `goodwill ${String(points)} refused (velocity_capped)`
+    : `goodwill ${String(points)} granted`;
+}
+
+export type Purchase = { readonly bought: true } | { readonly bought: false; readonly why: string };
+
+const availablePoints = async (member: DemoApi): Promise<number> =>
+  Number(field(ok(await member.get("/api/wallet"), "wallet"), "availablePoints") ?? 0);
+
+/**
+ * Support credits one goodwill case, the member releases it and buys the cheapest
+ * adult-visible single-use voucher. When nothing was bought, `why` says what was granted and the balance.
+ */
+export async function buyOneVoucher(
+  admin: DemoApi,
+  viewer: DemoApi,
+  userId: string,
+  region: Region,
+): Promise<Purchase> {
+  // Enough for the cheapest voucher, leaving room under the daily earn cap to watch.
+  const granted = await creditGoodwill(admin, viewer, userId, region === "AU" ? 300 : 3_000);
+  const balance = await availablePoints(viewer);
   const listings = DEMO_BRANDS.filter((b) => b.region === region).flatMap((brand) =>
     brand.listings
-      .filter((l) => l.audience === "all_ages" || l.audience === "adult")
+      .filter(
+        (l) =>
+          (l.audience === "all_ages" || l.audience === "adult") &&
+          l.partialRedemptionPolicy === undefined,
+      )
       .map((l) => ({ id: listingIdFor(brand.slug, l.key), face: l.faceValueMinor })),
   );
   for (const listing of listings.sort((a, b) => a.face - b.face)) {
@@ -193,10 +218,48 @@ async function buyOneVoucher(admin: DemoApi, viewer: DemoApi, region: Region): P
     const bought = await viewer.post("/api/checkout", {
       checkoutId: field(quote.body, "checkoutId"),
     });
-    if (bought.status < 400) return;
+    if (bought.status < 400) return { bought: true };
   }
   // Only after a same-day re-run on the same accounts; the steps below skip a missing voucher.
-  console.log("[demo:marketplace] no demo voucher was affordable");
+  return {
+    bought: false,
+    why: `${region}: ${granted}, balance ${String(balance)} pts, no demo voucher affordable or in stock`,
+  };
+}
+
+/** The region's balance-carrying demo listing, the one the counter can redeem in part. */
+export function partialListingId(region: Region): string {
+  for (const brand of DEMO_BRANDS.filter((b) => b.region === region)) {
+    const spec = brand.listings.find((l) => l.partialRedemptionPolicy !== undefined);
+    if (spec !== undefined) return listingIdFor(brand.slug, spec.key);
+  }
+  throw new Error(`no partial-redemption demo listing in ${region}`);
+}
+
+/**
+ * 5.13.ae: the viewer holds one unused balance-carrying voucher, so partial and
+ * over-amount redemptions can be walked at the counter. Kept while one is active.
+ */
+async function ensurePartialVoucher(
+  admin: DemoApi,
+  viewer: DemoApi,
+  userId: string,
+  region: Region,
+): Promise<void> {
+  const listingId = partialListingId(region);
+  const held = (field(
+    ok(await viewer.get("/api/wallet/vouchers"), "wallet vouchers"),
+    "vouchers",
+  ) ?? []) as { listingId?: string; status?: string }[];
+  if (held.some((v) => v.listingId === listingId && v.status === "active")) return;
+  const quote = ok(await viewer.post("/api/checkout/quote", { listingId }), "partial quote");
+  // Only the shortfall, so the day's goodwill stays under the earn cap.
+  const shortfall = Number(field(quote, "pricePoints")) - (await availablePoints(viewer));
+  if (shortfall > 0) await creditGoodwill(admin, viewer, userId, shortfall);
+  ok(
+    await viewer.post("/api/checkout", { checkoutId: field(quote, "checkoutId") }),
+    "partial checkout",
+  );
 }
 
 function userIdOf(api: DemoApi): string {
@@ -222,8 +285,10 @@ export async function runDemoMarketplace(
       ),
     );
     if (!adult || !guardian || !viewer || !member) throw new Error("demo logins missing");
-    for (const person of [adult, guardian, viewer, member])
-      await buyOneVoucher(admin, person, region);
+    for (const person of [adult, guardian, viewer, member]) {
+      const purchase = await buyOneVoucher(admin, person, userIdOf(person), region);
+      if (!purchase.bought) log(`[demo:marketplace] bought nothing: ${purchase.why}`);
+    }
     const first = async (api: DemoApi) => (await activeVouchers(api))[0];
 
     // Gifts: the adult's is accepted by the guardian; the viewer's waits for the adult.
@@ -302,6 +367,9 @@ export async function runDemoMarketplace(
       auctions += 1;
     }
 
+    // After the gifts, so the viewer's first voucher (the one it gifts) is never this one.
+    await ensurePartialVoucher(admin, viewer, userIdOf(viewer), region);
+
     // Boost: the owner bids on one long demo campaign for the next fortnight.
     const brand = DEMO_BRANDS.find(
       (b) => b.region === region && b.campaigns.some((c) => c.seconds > 60),
@@ -325,6 +393,8 @@ export async function runDemoMarketplace(
         "boost",
       );
     }
-    log(`[demo:marketplace] ${region}: 2 gifts, ${String(auctions)} auctions and a boost`);
+    log(
+      `[demo:marketplace] ${region}: 2 gifts, ${String(auctions)} auctions, a partial voucher and a boost`,
+    );
   }
 }

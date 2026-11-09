@@ -30,6 +30,8 @@ export interface DemoListingSpec {
   readonly description: string;
   /** Face value in minor units of the region's currency; settlement is 70 % of it. */
   readonly faceValueMinor: number;
+  /** Absent means single use. Balance-carrying stock is for walking partial redemption at the counter. */
+  readonly partialRedemptionPolicy?: "balance_carrying";
 }
 
 export interface DemoBrandSpec {
@@ -44,7 +46,13 @@ export interface DemoBrandSpec {
 }
 
 type Line = readonly [key: string, seconds: DemoLength, audience: Audience, title: string];
-type Offer = readonly [key: string, audience: Audience, title: string, faceValueMinor: number];
+type Offer = readonly [
+  key: string,
+  audience: Audience,
+  title: string,
+  faceValueMinor: number,
+  partialRedemptionPolicy?: "balance_carrying",
+];
 
 function brand(
   slug: string,
@@ -72,7 +80,7 @@ function brand(
         ? `${title}, from ${name}. Watch to the end and answer a question to earn points.`
         : `${title}, dari ${name}. Tonton sampai habis dan jawab satu pertanyaan untuk mendapatkan poin.`,
     })),
-    listings: offers.map(([key, audience, title, faceValueMinor]) => ({
+    listings: offers.map(([key, audience, title, faceValueMinor, partialRedemptionPolicy]) => ({
       key,
       audience,
       title,
@@ -80,6 +88,7 @@ function brand(
         ? `${title}. Show the code at ${name} to use it.`
         : `${title}. Tunjukkan kode di ${name} untuk memakainya.`,
       faceValueMinor,
+      ...(partialRedemptionPolicy === undefined ? {} : { partialRedemptionPolicy }),
     })),
   };
 }
@@ -100,6 +109,7 @@ const AU_BRANDS: readonly DemoBrandSpec[] = [
     [
       ["coffee", "all_ages", "A free coffee", 600],
       ["brunch", "adult", "$15 off brunch for two", 1_500],
+      ["credit", "all_ages", "$10 café credit", 1_000, "balance_carrying"],
     ],
   ),
   brand(
@@ -202,6 +212,7 @@ const ID_BRANDS: readonly DemoBrandSpec[] = [
     [
       ["kopi", "all_ages", "Kopi gratis", 25_000],
       ["sarapan", "adult", "Potongan Rp50.000 untuk sarapan berdua", 50_000],
+      ["saldo", "all_ages", "Saldo kafe Rp15.000", 15_000, "balance_carrying"],
     ],
   ),
   brand(

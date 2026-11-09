@@ -29,6 +29,17 @@ describe.each(["AU", "ID"] as const)("the %s demo world", (region) => {
     expect(listings.filter((l) => l.audience === "teen").length).toBeGreaterThanOrEqual(6);
   });
 
+  it("has one balance-carrying listing anyone may buy, for the counter's partial redemption", async () => {
+    const partial = listings.filter((l) => l.partialRedemptionPolicy !== undefined);
+    expect(partial).toHaveLength(1);
+    expect(partial[0]).toMatchObject({
+      audience: "all_ages",
+      partialRedemptionPolicy: "balance_carrying",
+    });
+    const { partialListingId } = await import("./marketplace");
+    expect(partialListingId(region)).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
   it("never puts a restricted category in front of a teen", () => {
     for (const brand of brands) {
       if (brand.campaigns.some((c) => c.audience === "teen")) {

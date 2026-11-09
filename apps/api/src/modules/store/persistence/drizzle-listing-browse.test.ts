@@ -70,6 +70,20 @@ describe("browsePublic filters", () => {
     expect(ids).not.toContain(coffee.id);
   });
 
+  it("hides an offer past its expiry from browse and from the detail read", async () => {
+    const live = await seededListing(MERCHANT_COFFEE, { title: "Live offer" });
+    const expired = await seededListing(MERCHANT_COFFEE, {
+      title: "Expired offer",
+      expiresAt: "2026-11-01T00:00:00.000Z",
+    });
+    const page = await repo.browsePublic({ region: "ID", audiences: ["all_ages"], limit: 100 });
+    const ids = page.listings.map((listing) => listing.id);
+    expect(ids).toContain(live.id);
+    expect(ids).not.toContain(expired.id);
+    expect(await repo.findPublicById(expired.id)).toBeNull();
+    expect(await repo.findPublicById(live.id)).not.toBeNull();
+  });
+
   it("filters by merchant", async () => {
     const mine = await seededListing(MERCHANT_COFFEE, { category: "digital_goods" });
     const page = await repo.browsePublic({

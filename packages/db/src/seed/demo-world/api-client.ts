@@ -10,6 +10,13 @@ export interface ApiResponse {
   readonly body: unknown;
 }
 
+/** Bounded backoff for a 503 `authorization_unavailable` (Cerbos blip): 5 s, 15 s, 45 s. */
+export const RETRY_DELAYS_MS: readonly number[] = [5_000, 15_000, 45_000];
+
+function isTransient(response: ApiResponse): boolean {
+  return response.status === 503 && field(response.body, "code") === "authorization_unavailable";
+}
+
 export class DemoApi {
   constructor(
     private readonly baseUrl: string,
@@ -41,13 +48,28 @@ export class DemoApi {
   }
 
   private async send(method: string, path: string, body: unknown): Promise<ApiResponse> {
+    // One key for every attempt, so a retried POST cannot double-write.
+    const key = randomUUID();
+    for (let attempt = 0; ; attempt++) {
+      const response = await this.attempt(method, path, body, key);
+      if (!isTransient(response) || attempt >= RETRY_DELAYS_MS.length) return response;
+      await sleep(RETRY_DELAYS_MS[attempt] ?? 0);
+    }
+  }
+
+  private async attempt(
+    method: string,
+    path: string,
+    body: unknown,
+    key: string,
+  ): Promise<ApiResponse> {
     const response = await fetch(`${this.baseUrl}${path}`, {
       method,
       headers: {
         ...this.headers,
         ...(body === undefined
           ? {}
-          : { "content-type": "application/json", "idempotency-key": randomUUID() }),
+          : { "content-type": "application/json", "idempotency-key": key }),
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });

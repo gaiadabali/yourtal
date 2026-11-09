@@ -54,6 +54,20 @@ describe("RegisterForm — the neutral age gate (6.2.a, 12.4.d/#5)", () => {
     expect(screen.getByRole("button", { name: "Create account" })).toBeEnabled();
   });
 
+  it("teen sign-up open: the guardian field appears up front for 13-17 only, and drafts refill", () => {
+    renderForm({
+      teenModeEnabled: true,
+      draft: { email: "kid@example.test", dateOfBirth: isoDateYearsAgo(30) },
+    });
+    expect(screen.getByLabelText("Email")).toHaveValue("kid@example.test");
+    expect(screen.queryByLabelText(/parent or guardian/i)).not.toBeInTheDocument();
+    const dob = screen.getByLabelText("Date of birth");
+    fireEvent.change(dob, { target: { value: isoDateYearsAgo(15) } });
+    expect(screen.getByLabelText(/parent or guardian/i)).toBeInTheDocument();
+    fireEvent.change(dob, { target: { value: isoDateYearsAgo(10) } });
+    expect(screen.queryByLabelText(/parent or guardian/i)).not.toBeInTheDocument();
+  });
+
   it("the submit button is never disabled by anything typed client-side", () => {
     renderForm();
     fireEvent.change(screen.getByLabelText("Date of birth"), {

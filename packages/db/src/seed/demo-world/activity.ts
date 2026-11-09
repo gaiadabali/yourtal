@@ -183,15 +183,19 @@ async function keepAuctionOpen(seller: DemoApi, region: Region): Promise<string>
   const vouchers = (field(ok(await seller.get("/api/wallet/vouchers"), "vouchers"), "vouchers") ??
     []) as { voucherId: string; status?: string; giftable?: boolean }[];
   const voucher = pickToAuction(vouchers);
-  const charity = charities[0];
-  if (voucher === undefined || charity === undefined)
+  if (voucher === undefined || charities.length === 0)
     return `${region} no auction opened: nothing to list`;
-  const listed = await seller.post(`/api/wallet/vouchers/${voucher.voucherId}/auction`, {
-    charityId: charity.id,
-  });
-  return listed.status < 400
-    ? `${region} opened an auction`
-    : `${region} no auction opened: ${String(field(listed.body, "code"))}`;
+  // The first charity may not have finished payment onboarding (AU): try the next.
+  let code = "";
+  for (const charity of charities) {
+    const listed = await seller.post(`/api/wallet/vouchers/${voucher.voucherId}/auction`, {
+      charityId: charity.id,
+    });
+    if (listed.status < 400) return `${region} opened an auction`;
+    code = String(field(listed.body, "code"));
+    if (code !== "charity_not_ready") break;
+  }
+  return `${region} no auction opened: ${code}`;
 }
 
 /** The owner pairs a till at the brand and redeems every unused demo voucher bought there. */

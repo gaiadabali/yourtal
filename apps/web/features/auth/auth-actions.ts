@@ -1,6 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { Route } from "next";
 import { apiFetch } from "@/lib/api/api-fetch";
@@ -10,6 +11,7 @@ import { codeStepPath, finishSignIn } from "@/lib/api/finish-sign-in";
 import { meResponseSchema } from "@/lib/api/me-schema";
 import { setMfaPendingCookie, setSessionCookies } from "@/lib/api/session-cookies";
 import { parseReturnTo, withReturnTo } from "@/features/onboarding/onboarding-return-to";
+import { REGISTER_DRAFT_COOKIE } from "./register-draft";
 import {
   emailVerificationConfirmedSchema,
   requestPasswordResetResponseSchema,
@@ -88,6 +90,14 @@ export async function registerAction(formData: FormData): Promise<void> {
     body,
   });
   if (!result.ok) {
+    // F4: keep what was typed (never the password) for the re-rendered form; it expires on its own.
+    const { password: _password, timezone: _timezone, ...draft } = body;
+    (await cookies()).set(REGISTER_DRAFT_COOKIE, JSON.stringify(draft), {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/register",
+      maxAge: 300,
+    });
     redirectTo("/register", paramsWithReturnTo(rawReturnTo, errorCode(result.error)));
   }
 

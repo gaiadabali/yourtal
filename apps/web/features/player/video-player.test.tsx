@@ -179,7 +179,10 @@ describe("VideoPlayer", () => {
       await screen.findByRole("progressbar", { name: "Progress toward the reward" }),
     ).toBeInTheDocument();
     const video = document.querySelector("video");
-    expect(video?.currentTime).toBe(40);
+    if (!video) throw new Error("expected a <video> element");
+    // 5.13.y: the seek waits for the stream's metadata.
+    fireEvent.loadedMetadata(video);
+    expect(video.currentTime).toBe(40);
   });
 
   it("shows the failed state and never starts a session when start is not tapped", () => {

@@ -291,9 +291,14 @@ export function VideoPlayer({
 
       {phase.kind === "failed" ? (
         <p role="alert" className="text-sm font-sans text-danger">
-          {phase.unwatchedSeconds === undefined
-            ? t("errors.startFailed")
-            : t("errors.notFullyWatched", { seconds: phase.unwatchedSeconds })}
+          {phase.unwatchedSeconds !== undefined
+            ? t("errors.notFullyWatched", {
+                minutes: Math.floor(phase.unwatchedSeconds / 60),
+                seconds: phase.unwatchedSeconds % 60,
+              })
+            : phase.questionsUnanswered
+              ? t("errors.questionsUnanswered")
+              : t("errors.startFailed")}
         </p>
       ) : null}
 

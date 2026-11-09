@@ -53,7 +53,8 @@
   },
   "errors": {
     "startFailed": "Video ini gagal dimulai. Periksa koneksimu dan coba lagi.",
-    "notFullyWatched": "{seconds} detik dari video ini belum ditonton, jadi belum bisa mendapat poin. Tekan putar untuk melanjutkan dari bagian yang terlewat.",
+    "notFullyWatched": "Kamu belum menonton {minutes, plural, =0 {} other {# menit}}{minutes, plural, =0 {{seconds, plural, other {# detik}}} other {{seconds, plural, =0 {} other { # detik}}}} dari video ini, jadi belum bisa mendapat poin. Tekan putar untuk melanjutkan dari bagian yang terlewat.",
+    "questionsUnanswered": "Kamu sudah menonton seluruh video, tapi belum semua pertanyaan dijawab, jadi belum bisa mendapat poin. Tekan putar untuk menjawab sisanya.",
     "playbackFailed": "Pemutaran mengalami kendala. Coba lagi.",
     "retry": "Coba lagi"
   },

@@ -434,33 +434,43 @@ describe("V12b: a repeat visit that has earlier coverage waits for the viewer's 
   });
 });
 
-describe("5.13.af: one refused report never wedges the rest of the session", () => {
-  const refused = {
+describe("5.13.af: progress is reported from what the browser played", () => {
+  const httpError = (status: number) => ({
     ok: false as const,
-    error: {
-      kind: "http" as const,
-      status: 400,
-      code: "bad_request",
-      message: "This session would have 5s of credited playback after 1s of real time.",
-    },
-  };
-
-  const notReached = {
-    ok: false as const,
-    error: { kind: "http" as const, status: 409, code: "checkpoint_not_reached", message: "" },
-  };
+    error: { kind: "http" as const, status, code: "error", message: "refused" },
+  });
+  const accepted = { ok: true as const, data: { accepted: true, coveredSeconds: 40 } };
+  const notReached = httpError(409);
 
   /** Every reported [from, to], in order. */
   const spans = () => actions.report.mock.calls.map((call: unknown[]) => call.slice(1, 3));
+  /** True when no reported span claims any second inside (from, to). */
+  const nothingClaimedIn = (from: number, to: number) =>
+    spans().every((span) => Number(span[1]) <= from || Number(span[0]) >= to);
 
-  /** Plays to each position in turn, one polling tick apiece. */
-  async function playTo(...positions: number[]) {
-    for (const seconds of positions) {
-      Object.defineProperty(video(), "currentTime", { value: seconds, configurable: true });
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(4_000);
-      });
-    }
+  /** What the browser has played, as `video.played` reports it. */
+  function played(...ranges: [number, number][]) {
+    Object.defineProperty(video(), "played", {
+      configurable: true,
+      value: {
+        length: ranges.length,
+        start: (i: number) => ranges[i]?.[0] ?? 0,
+        end: (i: number) => ranges[i]?.[1] ?? 0,
+      },
+    });
+  }
+
+  async function tick(...ranges: [number, number][]) {
+    played(...ranges);
+    const last = ranges.at(-1);
+    Object.defineProperty(video(), "currentTime", { value: last?.[1] ?? 0, configurable: true });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4_000);
+    });
+  }
+
+  function setPaused(paused: boolean) {
+    Object.defineProperty(video(), "paused", { value: paused, configurable: true });
   }
 
   async function startPlaying() {
@@ -468,7 +478,7 @@ describe("5.13.af: one refused report never wedges the rest of the session", () 
     render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
     fireEvent.click(screen.getByRole("button", { name: /Test Campaign/ }));
     await flush();
-    Object.defineProperty(video(), "paused", { value: false, configurable: true });
+    setPaused(false);
     Object.defineProperty(video(), "ended", { value: false, configurable: true });
   }
 
@@ -476,8 +486,8 @@ describe("5.13.af: one refused report never wedges the rest of the session", () 
     // A fake server: refuses the first span, credits every later one, and
     // has a question due once 40s are covered.
     let covered = 0;
-    actions.report.mockImplementation((_id: string, from: number, to: number) => {
-      if (actions.report.mock.calls.length === 1) return Promise.resolve(refused);
+    actions.report.mockImplementation((_id: string, _from: number, to: number) => {
+      if (actions.report.mock.calls.length === 1) return Promise.resolve(httpError(400));
       covered = Math.max(covered, to);
       return Promise.resolve({ ok: true, data: { accepted: true, coveredSeconds: covered } });
     });
@@ -487,7 +497,7 @@ describe("5.13.af: one refused report never wedges the rest of the session", () 
     );
     await startPlaying();
 
-    await playTo(4, 8, 12, 16, 20, 24, 28, 32, 36);
+    for (const at of [4, 8, 12, 16, 20, 24, 28, 32, 36]) await tick([0, at]);
     expect(spans()).toEqual([
       [0, 4],
       [4, 8],
@@ -501,50 +511,140 @@ describe("5.13.af: one refused report never wedges the rest of the session", () 
     ]);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
-    await playTo(40);
+    await tick([0, 40]);
     expect(screen.getByRole("dialog")).toHaveTextContent("What did the video say?");
   });
 
-  it("never claims the seconds a forward seek skipped", async () => {
+  it.each([500, 503, 401, 408, 429])("retries the same span after a %i", async (status) => {
     actions.present.mockResolvedValue(notReached);
+    actions.report.mockResolvedValueOnce(httpError(status)).mockResolvedValue(accepted);
     await startPlaying();
-    await playTo(4);
-    fireEvent.seeking(video());
-    await playTo(60, 64);
+    await tick([0, 4]);
+    await tick([0, 8]);
     expect(spans()).toEqual([
       [0, 4],
+      [0, 8],
+    ]);
+  });
+
+  it("retries after a network failure, but never re-sends a 403 refusal", async () => {
+    actions.present.mockResolvedValue(notReached);
+    actions.report
+      .mockResolvedValueOnce({ ok: false, error: { kind: "network", message: "offline" } })
+      .mockResolvedValueOnce(httpError(403))
+      .mockResolvedValue(accepted);
+    await startPlaying();
+    await tick([0, 4]);
+    await tick([0, 8]);
+    await tick([0, 12]);
+    expect(spans()).toEqual([
+      [0, 4],
+      [0, 8],
+      [8, 12],
+    ]);
+  });
+
+  it("a seek reports what was played before it, and the finish never claims what it skipped", async () => {
+    actions.present.mockResolvedValue(notReached);
+    actions.complete.mockResolvedValue({
+      ok: true,
+      data: { completed: true, granted: true, pendingPoints: 100, unlockAt: null },
+    });
+    await startPlaying();
+    await tick([0, 4]);
+    // Played on to 6.5, then seeked to 80 and played to the end.
+    played([0, 6.5], [80, 89.6]);
+    fireEvent.ended(video());
+    await flush();
+    await flush();
+    expect(spans()).toEqual([
+      [0, 4],
+      [4, 6.5],
+      [80, 90],
+    ]);
+    expect(nothingClaimedIn(6.5, 80)).toBe(true);
+  });
+
+  it("a rewind then a skip forward claims only what was played", async () => {
+    actions.present.mockResolvedValue(notReached);
+    actions.report.mockResolvedValue(accepted);
+    await startPlaying();
+    await tick([0, 12]);
+    // Rewound to 2 and replayed to 6: nothing new.
+    await tick([0, 12]);
+    // Then skipped to 60.
+    await tick([0, 12], [60, 64]);
+    expect(spans()).toEqual([
+      [0, 12],
       [60, 64],
     ]);
   });
 
-  it("a backward seek re-reports from where it landed", async () => {
+  it("a seek while a report is still in flight neither re-sends it nor claims the skip", async () => {
     actions.present.mockResolvedValue(notReached);
+    let answer: (value: unknown) => void = () => undefined;
+    actions.report
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+      )
+      .mockResolvedValue(accepted);
     await startPlaying();
-    await playTo(4, 8, 12);
-    fireEvent.seeking(video());
-    await playTo(2, 6);
-    expect(spans().at(-1)).toEqual([2, 6]);
+    await tick([0, 4]);
+    await tick([0, 5], [60, 64]);
+    answer(accepted);
+    await flush();
+    await tick([0, 5], [60, 68]);
+    expect(spans()).toEqual([
+      [0, 4],
+      [4, 5],
+      [60, 64],
+      [64, 68],
+    ]);
+  });
+
+  it("pause, seek, play: the seconds jumped while paused are never claimed", async () => {
+    actions.present.mockResolvedValue(notReached);
+    actions.report.mockResolvedValue(accepted);
+    await startPlaying();
+    await tick([0, 10]);
+    setPaused(true);
+    await tick([0, 10]);
+    await tick([0, 10]);
+    setPaused(false);
+    await tick([0, 10], [50, 52]);
+    expect(spans()).toEqual([
+      [0, 10],
+      [50, 52],
+    ]);
+    expect(nothingClaimedIn(10, 50)).toBe(true);
   });
 });
 
-describe("5.13.af: a finish refused for skipped seconds says so", () => {
-  async function finishWithGaps(
+describe("5.13.af: a refused finish says why", () => {
+  const detail = (gaps: { fromSecond: number; toSecond: number }[], questionsAsked = 0) => ({
+    ok: true,
+    data: {
+      session: { id: "session-1", nonEarning: false, nonEarningReason: null, questionsAsked },
+      durationSeconds: 90,
+      coveredSeconds: 90 - gaps.reduce((sum, gap) => sum + gap.toSecond - gap.fromSecond, 0),
+      gaps,
+    },
+  });
+
+  async function finishRefused(
     locale: "en-AU" | "id-ID",
-    gaps: { fromSecond: number; toSecond: number }[],
+    status: number,
+    after: ReturnType<typeof detail>,
   ) {
     actions.complete.mockResolvedValue({
       ok: false,
-      error: { kind: "http", status: 403, code: "forbidden", message: "50s not watched" },
+      error: { kind: "http", status, code: "forbidden", message: "refused" },
     });
-    actions.get.mockResolvedValue({
-      ok: true,
-      data: {
-        session: { id: "session-1", nonEarning: false, nonEarningReason: null, questionsAsked: 0 },
-        durationSeconds: 90,
-        coveredSeconds: 90 - gaps.reduce((s, g) => s + g.toSecond - g.fromSecond, 0),
-        gaps,
-      },
-    });
+    // The first read (at start) has nothing covered; the one after the refusal is `after`.
+    actions.get.mockResolvedValueOnce(detail([{ fromSecond: 0, toSecond: 90 }]));
+    actions.get.mockResolvedValue(after);
     render(<VideoPlayer campaign={campaign} terms={terms} locale={locale} />);
     fireEvent.click(screen.getAllByRole("button")[0] as HTMLElement);
     await waitFor(() => expect(actions.start).toHaveBeenCalled());
@@ -554,51 +654,49 @@ describe("5.13.af: a finish refused for skipped seconds says so", () => {
     return screen.findByRole("alert");
   }
 
-  it("in English", async () => {
-    // The first read (at start) has nothing covered; the one after the refusal has the gaps.
-    actions.get.mockResolvedValueOnce({
-      ok: true,
-      data: {
-        session: { id: "session-1", nonEarning: false, nonEarningReason: null, questionsAsked: 0 },
-        durationSeconds: 90,
-        coveredSeconds: 0,
-        gaps: [{ fromSecond: 0, toSecond: 90 }],
-      },
-    });
-    const alert = await finishWithGaps("en-AU", [
-      { fromSecond: 10, toSecond: 40 },
-      { fromSecond: 70, toSecond: 90 },
-    ]);
-    expect(alert).toHaveTextContent("50s of this video haven't been watched yet");
+  it.each([
+    [[{ fromSecond: 60, toSecond: 90 }], "You haven't watched 30 seconds of this video yet"],
+    [[{ fromSecond: 89, toSecond: 90 }], "You haven't watched 1 second of this video yet"],
+    [[{ fromSecond: 30, toSecond: 90 }], "You haven't watched 1 minute of this video yet"],
+    [
+      [
+        { fromSecond: 0, toSecond: 40 },
+        { fromSecond: 50, toSecond: 90 },
+      ],
+      "You haven't watched 1 minute 20 seconds of this video yet",
+    ],
+  ])("counts the gaps %j in English", async (gaps, text) => {
+    const alert = await finishRefused("en-AU", 403, detail(gaps));
+    expect(alert).toHaveTextContent(text);
     expect(alert).not.toHaveTextContent(/couldn't start/);
   });
 
   it("in Bahasa", async () => {
-    actions.get.mockResolvedValueOnce({
-      ok: true,
-      data: {
-        session: { id: "session-1", nonEarning: false, nonEarningReason: null, questionsAsked: 0 },
-        durationSeconds: 90,
-        coveredSeconds: 0,
-        gaps: [{ fromSecond: 0, toSecond: 90 }],
-      },
-    });
-    const alert = await finishWithGaps("id-ID", [{ fromSecond: 60, toSecond: 90 }]);
-    expect(alert).toHaveTextContent("30 detik dari video ini belum ditonton");
-    expect(alert).not.toHaveTextContent(/gagal dimulai/);
+    const alert = await finishRefused(
+      "id-ID",
+      403,
+      detail([
+        { fromSecond: 0, toSecond: 40 },
+        { fromSecond: 50, toSecond: 90 },
+      ]),
+    );
+    expect(alert).toHaveTextContent("Kamu belum menonton 1 menit 20 detik dari video ini");
   });
 
-  it("keeps the connection message when nothing is missing", async () => {
-    actions.get.mockResolvedValue({
-      ok: true,
-      data: {
-        session: { id: "session-1", nonEarning: false, nonEarningReason: null, questionsAsked: 0 },
-        durationSeconds: 90,
-        coveredSeconds: 0,
-        gaps: [{ fromSecond: 0, toSecond: 90 }],
-      },
-    });
-    const alert = await finishWithGaps("en-AU", []);
+  it("says the questions still need answering when the whole video is covered", async () => {
+    expect(await finishRefused("en-AU", 403, detail([]))).toHaveTextContent(
+      "not every question has been answered",
+    );
+  });
+
+  it("says it in Bahasa too", async () => {
+    expect(await finishRefused("id-ID", 403, detail([]))).toHaveTextContent(
+      "belum semua pertanyaan dijawab",
+    );
+  });
+
+  it("keeps the connection message for anything but a 403", async () => {
+    const alert = await finishRefused("en-AU", 500, detail([{ fromSecond: 60, toSecond: 90 }]));
     expect(alert).toHaveTextContent(/couldn't start/);
   });
 });

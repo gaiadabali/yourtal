@@ -2,7 +2,13 @@ import type { ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { describe, expect, it } from "vitest";
 import { PublicRoute } from "../authz/authorize.decorator";
-import { NoRateLimit, PUBLIC_ROUTE_RATE_LIMIT, RateLimit } from "./rate-limit.decorator";
+import type { AppConfig } from "../../config/app-config";
+import {
+  NoRateLimit,
+  PUBLIC_ROUTE_RATE_LIMIT,
+  REGISTER_RATE_LIMIT,
+  RateLimit,
+} from "./rate-limit.decorator";
 import { RateLimitGuard } from "./rate-limit.guard";
 import type { RateLimitService } from "./rate-limit.service";
 
@@ -59,5 +65,58 @@ describe("RateLimitGuard defaults", () => {
     await guard.canActivate(contextFor("exempt"));
     await guard.canActivate(contextFor("signedIn"));
     expect(seen).toEqual([]);
+  });
+});
+
+// Staging test kit K1.2: on staging only, an @example.test sign-up skips the per-IP limit.
+describe("register's test-address exemption", () => {
+  class Register {
+    @RateLimit(REGISTER_RATE_LIMIT)
+    @PublicRoute("test")
+    register(): void {}
+  }
+
+  async function dimensionsFor(appEnv: AppConfig["appEnv"] | undefined, email: unknown) {
+    const seen: string[][] = [];
+    const service = {
+      consume: (_subject: unknown, policy: Record<string, unknown>) => {
+        seen.push(Object.keys(policy).filter((k) => ["ip", "route", "identity"].includes(k)));
+        return Promise.resolve({ blocked: false });
+      },
+    } as unknown as RateLimitService;
+    const guard = new RateLimitGuard(
+      new Reflector(),
+      service,
+      ...(appEnv === undefined ? [] : [{ appEnv }]),
+    );
+    await guard.canActivate({
+      getHandler: () =>
+        Object.getOwnPropertyDescriptor(Register.prototype, "register")?.value as unknown,
+      getClass: () => Register,
+      switchToHttp: () => ({ getRequest: () => ({ ip: "203.0.113.9", body: { email } }) }),
+    } as unknown as ExecutionContext);
+    return seen[0]?.sort();
+  }
+
+  it("drops only the per-IP limit for @example.test on staging", async () => {
+    expect(await dimensionsFor("staging", "qa+1@example.test")).toEqual(["route"]);
+    expect(await dimensionsFor("staging", " QA@Example.TEST ")).toEqual(["route"]);
+  });
+
+  it("keeps the per-IP limit for any other address on staging", async () => {
+    for (const email of [
+      "qa@example.com",
+      "qa@example.test.evil.com",
+      "qa@sub.example.tester",
+      42,
+    ]) {
+      expect(await dimensionsFor("staging", email)).toEqual(["ip", "route"]);
+    }
+  });
+
+  it("keeps the per-IP limit off staging, and when no config is wired", async () => {
+    for (const appEnv of ["dev", "production", undefined] as const) {
+      expect(await dimensionsFor(appEnv, "qa@example.test")).toEqual(["ip", "route"]);
+    }
   });
 });

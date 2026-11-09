@@ -3,11 +3,15 @@ import {
   type ExecutionContext,
   HttpException,
   HttpStatus,
+  Inject,
   Injectable,
+  Optional,
   ServiceUnavailableException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import type { FastifyRequest } from "fastify";
+import { APP_CONFIG } from "../../config/app-config.module";
+import type { AppConfig } from "../../config/app-config";
 import { PUBLIC_ROUTE_METADATA } from "../authz/authorize.decorator";
 import {
   NO_RATE_LIMIT_METADATA,
@@ -52,13 +56,17 @@ export class RateLimitGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly rateLimit: RateLimitService,
+    // Optional so a unit test can build the guard bare; absent means not staging.
+    @Optional() @Inject(APP_CONFIG) private readonly config?: Pick<AppConfig, "appEnv">,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const options = this.policyFor(context);
-    if (!options) return true;
+    const declared = this.policyFor(context);
+    if (!declared) return true;
 
     const request = context.switchToHttp().getRequest<FastifyRequest>();
+    const { ip: _ip, ...withoutIp } = declared;
+    const options: RateLimitOptions = this.skipsIp(declared, request) ? withoutIp : declared;
 
     // `identityId` is spread in only when there is one, rather than set to
     // `undefined`: `exactOptionalPropertyTypes` is on in this repo, so an
@@ -77,6 +85,15 @@ export class RateLimitGuard implements CanActivate {
       options,
     );
     return true;
+  }
+
+  /** Staging only: a test address (`@example.test`) is not held to the per-IP limit. */
+  private skipsIp(options: RateLimitOptions, request: FastifyRequest): boolean {
+    if (options.testAddressSkipsIpOnStaging !== true || this.config?.appEnv !== "staging") {
+      return false;
+    }
+    const email = (request.body as { email?: unknown } | undefined)?.email;
+    return typeof email === "string" && email.trim().toLowerCase().endsWith("@example.test");
   }
 
   private policyFor(context: ExecutionContext): RateLimitOptions | undefined {

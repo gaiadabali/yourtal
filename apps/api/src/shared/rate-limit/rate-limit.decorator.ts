@@ -18,6 +18,11 @@ export const NO_RATE_LIMIT_METADATA = "yt:no-rate-limit";
 export interface RateLimitOptions extends RateLimitPolicy {
   /** Stable identifier for this route's counters. Never the URL. */
   readonly routeId: string;
+  /**
+   * Staging test kit: on `APP_ENV=staging` only, a body `email` ending
+   * `@example.test` skips the per-IP limit (every other limit still applies).
+   */
+  readonly testAddressSkipsIpOnStaging?: true;
 }
 
 export const RateLimit = (options: RateLimitOptions) => SetMetadata(RATE_LIMIT_METADATA, options);
@@ -58,6 +63,7 @@ export const PUBLIC_ROUTE_RATE_LIMIT: RateLimitPolicy = {
  */
 export const REGISTER_RATE_LIMIT: RateLimitOptions = {
   routeId: "auth.register",
+  testAddressSkipsIpOnStaging: true,
   ip: { max: 5, windowSeconds: 60 * 60 },
   route: { max: 500, windowSeconds: 60 * 60 },
 };

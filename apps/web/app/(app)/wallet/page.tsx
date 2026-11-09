@@ -11,6 +11,11 @@ import {
 } from "@/features/wallet/wallet-data";
 import { HISTORY_FILTERS, type HistoryFilter } from "@/features/wallet/wallet-history";
 import { WalletScreen } from "@/features/wallet/wallet-screen";
+import {
+  AwaitingGuardianNotice,
+  isAwaitingGuardian,
+} from "@/features/guardian/awaiting-guardian-notice";
+import { getMeProfile } from "@/features/me/me-data";
 import { getRegion } from "@/features/region/get-region";
 import { getDisplayLocale } from "@/i18n/get-locale";
 
@@ -31,13 +36,15 @@ export default async function WalletPage(props: PageProps<"/wallet">) {
     historyAfter: after && after.length <= 200 ? after : null,
   };
 
-  const [balanceResult, vouchersResult, historyResult, region, locale] = await Promise.all([
+  const [balanceResult, vouchersResult, historyResult, region, locale, me] = await Promise.all([
     getWalletBalance(),
     listWalletVouchers(),
     listWalletHistory(view.historyAfter ?? undefined),
     getRegion(),
     getDisplayLocale(),
+    getMeProfile(),
   ]);
+  if (isAwaitingGuardian(me)) return <AwaitingGuardianNotice headingLevel={1} />;
 
   if (!balanceResult.ok) {
     const t = await getTranslations("wallet");

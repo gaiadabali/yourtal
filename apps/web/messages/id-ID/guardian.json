@@ -64,5 +64,9 @@
     "heading": "Terjadi kesalahan",
     "body": "Kami tidak dapat menghubungi YourTal. Periksa koneksi Anda dan coba lagi.",
     "retryCta": "Coba lagi"
+  },
+  "teenWaiting": {
+    "heading": "Menunggu orang tua atau wali Anda",
+    "body": "Kami sudah mengirim email kepada mereka untuk menyetujui akun Anda. Setelah disetujui, Anda bisa menonton, mendapatkan poin, dan memakai dompet Anda di sini."
   }
 }

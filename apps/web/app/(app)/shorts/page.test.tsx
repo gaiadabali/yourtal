@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import feedMessages from "@/messages/en-AU/feed.json";
+import guardianMessages from "@/messages/en-AU/guardian.json";
 import type { ShortsFeedData } from "@/features/feed/feed-data";
 import ShortsPage from "./page";
 
@@ -39,7 +40,10 @@ const data = (overrides: Partial<ShortsFeedData> = {}): ShortsFeedData => ({
 
 async function renderPage() {
   render(
-    <NextIntlClientProvider locale="en-AU" messages={{ feed: feedMessages }}>
+    <NextIntlClientProvider
+      locale="en-AU"
+      messages={{ feed: feedMessages, guardian: guardianMessages }}
+    >
       {await ShortsPage()}
     </NextIntlClientProvider>,
   );
@@ -82,5 +86,31 @@ describe("the Shorts page", () => {
     await renderPage();
     expect(screen.getByText("Your feed didn't load")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Try again" })).toHaveAttribute("href", "/shorts");
+  });
+
+  // 5.13.v: the API refuses a teen's earning until their guardian approves.
+  it("shows a teen awaiting their guardian the waiting notice instead of the feed", async () => {
+    mocks.getShortsFeed.mockResolvedValue({
+      ok: true,
+      data: data({ items: [{ campaignId: "a" }] as never, awaitingGuardian: true }),
+    });
+    await renderPage();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Waiting for your parent or guardian" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("shorts-feed")).not.toBeInTheDocument();
+  });
+
+  it("shows an approved teen the feed", async () => {
+    mocks.getShortsFeed.mockResolvedValue({
+      ok: true,
+      data: data({
+        items: [{ campaignId: "a" }] as never,
+        ageBand: "teen",
+        awaitingGuardian: false,
+      }),
+    });
+    await renderPage();
+    expect(screen.getByTestId("shorts-feed")).toBeInTheDocument();
   });
 });

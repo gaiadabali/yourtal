@@ -10,6 +10,10 @@ import { getDisplayLocale } from "@/i18n/get-locale";
 // 12.2.e: gates the player's teen-only watch-time reminder -- same read
 // `app/(app)/me/page.tsx` already runs for its own teen-only section.
 import { getMeProfile } from "@/features/me/me-data";
+import {
+  AwaitingGuardianNotice,
+  isAwaitingGuardian,
+} from "@/features/guardian/awaiting-guardian-notice";
 
 interface WatchPageProps {
   params: Promise<{ campaignId: string }>;
@@ -47,6 +51,7 @@ export default async function WatchPage({ params }: WatchPageProps) {
   // already rendered before this prop existed, never narrows it (same
   // convention as `feed-data.ts`'s own `ageBand` fallback).
   const isTeen = profile.ok && profile.data.profile.ageBand === "teen";
+  if (isAwaitingGuardian(profile)) return <AwaitingGuardianNotice headingLevel={1} />;
 
   // `channelData` is `null` only on a lookup failure (business not found,
   // suspended, or the API unreachable) — the player and terms card still

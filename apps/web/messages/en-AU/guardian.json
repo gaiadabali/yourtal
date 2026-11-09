@@ -64,5 +64,9 @@
     "heading": "Something went wrong",
     "body": "We couldn't reach YourTal. Check your connection and try again.",
     "retryCta": "Try again"
+  },
+  "teenWaiting": {
+    "heading": "Waiting for your parent or guardian",
+    "body": "We've emailed them to approve your account. Once they do, you can watch, earn points and use your wallet here."
   }
 }

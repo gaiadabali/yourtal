@@ -6,6 +6,7 @@ import { feedResponseSchema } from "@yourtal/contracts/feed";
 import type { Region } from "@yourtal/contracts/region";
 import type { AgeBand } from "@yourtal/contracts/identity/user-profile";
 import { apiFetch } from "@/lib/api/api-fetch";
+import { isAwaitingGuardian } from "@/features/guardian/awaiting-guardian-notice";
 import { readSessionToken } from "@/lib/api/session-cookies";
 import { getAutoplaySetting, getMeProfile } from "@/features/me/me-data";
 import { earnedToday } from "@/features/wallet/wallet-data";
@@ -23,6 +24,8 @@ export interface ShortsFeedData {
   readonly autoplay: AutoplaySetting;
   /** 12.2.b: the teen watch-time reminder. `"adult"` when the profile read fails. */
   readonly ageBand: AgeBand;
+  /** 5.13.v: a teen whose guardian has not approved yet; the page shows the waiting notice instead. */
+  readonly awaitingGuardian?: boolean;
 }
 
 const savesResponseSchema = z.object({ campaignIds: z.array(z.uuid()) });
@@ -81,6 +84,7 @@ export async function getShortsFeed(
       earnedToday: today,
       autoplay: autoplay.ok ? autoplay.data.autoplay : "always",
       ageBand: profile.ok ? profile.data.profile.ageBand : "adult",
+      awaitingGuardian: isAwaitingGuardian(profile),
     },
   };
 }

@@ -3,6 +3,7 @@ import { Button } from "@yourtal/ui/button";
 import { EmptyState } from "@yourtal/ui/empty-state";
 import { ErrorState } from "@yourtal/ui/error-state";
 import { getShortsFeed } from "@/features/feed/feed-data";
+import { AwaitingGuardianNotice } from "@/features/guardian/awaiting-guardian-notice";
 import { ShortsFeed } from "@/features/feed/shorts-feed";
 import { SHORTS_SIGN_UP_HREF } from "@/features/feed/shorts-signup-href";
 import { PUBLIC_SITE_URL } from "@/features/public/public-locale";
@@ -26,6 +27,9 @@ export default async function ShortsPage() {
     getTranslations("feed"),
   ]);
   const result = await getShortsFeed(region);
+  if (result.ok && result.data.awaitingGuardian === true) {
+    return <AwaitingGuardianNotice headingLevel={1} />;
+  }
 
   return (
     <div className="flex flex-col gap-4 p-4">

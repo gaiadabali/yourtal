@@ -270,7 +270,7 @@ async function ensureListing(
       stockRemaining: VOUCHERS_PER_LISTING,
       stockTotal: VOUCHERS_PER_LISTING,
       transferable: true,
-      partialRedemptionPolicy: "single_use_forfeit",
+      partialRedemptionPolicy: spec.partialRedemptionPolicy ?? "single_use_forfeit",
       minimumSpendMinor: null,
       expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
       status: "available",
@@ -279,7 +279,8 @@ async function ensureListing(
       contentCategory: brand.contentCategory,
       imageUrl,
       channel: "in_store",
-      partialRedemption: "single_use",
+      partialRedemption:
+        spec.partialRedemptionPolicy === undefined ? "single_use" : "balance_carries",
     }),
   );
   return id;

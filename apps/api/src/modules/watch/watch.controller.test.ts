@@ -4,6 +4,7 @@ import type { Principal } from "@yourtal/authz/principal";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { coveredSeconds } from "@yourtal/contracts/watch/coverage";
 import { questionsAskedFor } from "@yourtal/contracts/question/question-bank";
+import { checkpointSchedule } from "@yourtal/contracts/watch/checkpoint-token";
 import type { EarningVerdict } from "@yourtal/contracts/identity/earning-check";
 import { createAppDb } from "../../shared/persistence/drizzle-client";
 import { FakeLedgerClient } from "../../shared/ledger-client/fake-ledger-client";
@@ -407,6 +408,39 @@ describe("a session belongs to one user", () => {
     await expect(controller.resume(request, started.session.id)).rejects.toThrow(
       /No such watch session/,
     );
+  });
+});
+
+/** 5.13.ag4: the resume detail carries the server's own question count, so the player need not guess it. */
+describe("the session detail says how many questions the server expects", () => {
+  it("reports the checkpoint schedule's length and how many are answered", async () => {
+    const started = await controller.start(request, { campaignId: longFormId });
+    // The seeded video is too short to be asked anything; a 15-minute one asks 3.
+    const real = campaigns.termsVersionDetails.bind(campaigns);
+    const spy = vi.spyOn(campaigns, "termsVersionDetails").mockImplementation(async (...args) => {
+      const terms = await real(...args);
+      return terms === null ? null : { ...terms, durationSeconds: 900 };
+    });
+    try {
+      const expected = checkpointSchedule({
+        sessionId: started.session.id,
+        durationSeconds: 900,
+        count: questionsAskedFor(900),
+        secret: "test-checkpoint-secret-not-a-real-one",
+      }).length;
+      expect(expected).toBeGreaterThan(0);
+
+      const before = await controller.resume(request, started.session.id);
+      expect(before).toMatchObject({ questionsExpected: expected, questionsAnswered: 0 });
+
+      await owner.execute(
+        `UPDATE watch.session SET questions_asked = 1 WHERE id = '${started.session.id}'`,
+      );
+      const after = await controller.resume(request, started.session.id);
+      expect(after).toMatchObject({ questionsExpected: expected, questionsAnswered: 1 });
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
 

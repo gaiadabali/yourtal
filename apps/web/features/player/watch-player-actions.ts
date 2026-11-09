@@ -71,6 +71,9 @@ const sessionDetailSchema = z.object({
   durationSeconds: z.number().int().positive(),
   coveredSeconds: z.number(),
   gaps: z.array(gapSchema),
+  /** 5.13.ag4: the server's own question count; optional so an older API still parses. */
+  questionsExpected: z.number().int().min(0).optional(),
+  questionsAnswered: z.number().int().min(0).optional(),
 });
 export type WatchSessionDetail = z.infer<typeof sessionDetailSchema>;
 

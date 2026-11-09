@@ -70,6 +70,16 @@ const SESSION_START_RETENTION_MS = 24 * 60 * 60 * 1_000;
 
 const CONTINUE_WATCHING_LIMIT = 20;
 
+/** How many checkpoint questions a session must answer: the schedule `complete` judges and `resume` reports. */
+function expectedQuestions(sessionId: string, durationSeconds: number, secret: string): number {
+  return checkpointSchedule({
+    sessionId,
+    durationSeconds,
+    count: questionsAskedFor(durationSeconds),
+    secret,
+  }).length;
+}
+
 /** 4.4.e's own formula: twice the video's length, plus an hour of slack. */
 function holdTtlSeconds(durationSeconds: number): number {
   return durationSeconds * 2 + 60 * 60;
@@ -279,6 +289,9 @@ export class WatchController {
     return {
       session,
       durationSeconds,
+      // The same schedule `complete` judges against, so the player never guesses it.
+      questionsExpected: expectedQuestions(session.id, durationSeconds, this.checkpointSecret),
+      questionsAnswered: session.questionsAsked,
       coverage: mergeCoverage(coverage),
       coveredSeconds: coveredSeconds(coverage),
       fraction: coverageFraction(coverage, durationSeconds),
@@ -342,18 +355,13 @@ export class WatchController {
     const { session, durationSeconds } = await this.loadOwnSession(request, sessionId);
     const coverage = await this.sessions.coverageFor(session.id);
 
-    const expectedQuestions = checkpointSchedule({
-      sessionId: session.id,
-      durationSeconds,
-      count: questionsAskedFor(durationSeconds),
-      secret: this.checkpointSecret,
-    }).length;
+    const owed = expectedQuestions(session.id, durationSeconds, this.checkpointSecret);
 
     const verdict = judgeCompletion({
       session,
       coverage,
       durationSeconds,
-      questionsAnswered: session.questionsAsked >= expectedQuestions,
+      questionsAnswered: session.questionsAsked >= owed,
       campaignIsLive: await this.campaigns.isLive(session.campaignId),
     });
     if (verdict !== "earned") {

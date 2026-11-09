@@ -615,8 +615,9 @@ export function useWatchEarnSession(campaignId: string) {
       setPhase(
         unwatchedSeconds > 0
           ? { kind: "failed", unwatchedSeconds }
-          : // The session detail has no server question count (5.13.ag), so this is the client's own schedule.
-            detail.data.session.questionsAsked < totalQuestionsRef.current
+          : // The server's own count when the detail carries it (5.13.ag4), else the client's schedule.
+            (detail.data.questionsAnswered ?? detail.data.session.questionsAsked) <
+              (detail.data.questionsExpected ?? totalQuestionsRef.current)
             ? { kind: "failed", questionsUnanswered: true }
             : { kind: "failed" },
       );

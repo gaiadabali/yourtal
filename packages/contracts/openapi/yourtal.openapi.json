@@ -2615,6 +2615,16 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "questionsExpected": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "How many checkpoint questions the server expects answered before a claim, from the same schedule the completion check uses."
+                    },
+                    "questionsAnswered": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "How many checkpoint questions this session has answered so far."
                     }
                   },
                   "required": [
@@ -2623,7 +2633,9 @@
                     "coverage",
                     "coveredSeconds",
                     "fraction",
-                    "gaps"
+                    "gaps",
+                    "questionsExpected",
+                    "questionsAnswered"
                   ],
                   "additionalProperties": false
                 }

@@ -26,6 +26,10 @@ type ApiWatchSessionsSessionIdGet200Response struct {
 	CoveredSeconds NullableInt32 `json:"coveredSeconds"`
 	Fraction float32 `json:"fraction"`
 	Gaps []ApiWatchSessionsSessionIdGet200ResponseGapsInner `json:"gaps"`
+	// How many checkpoint questions the server expects answered before a claim, from the same schedule the completion check uses.
+	QuestionsExpected int32 `json:"questionsExpected"`
+	// How many checkpoint questions this session has answered so far.
+	QuestionsAnswered int32 `json:"questionsAnswered"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -35,7 +39,7 @@ type _ApiWatchSessionsSessionIdGet200Response ApiWatchSessionsSessionIdGet200Res
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiWatchSessionsSessionIdGet200Response(session WatchSession, durationSeconds int32, coverage []ApiWatchSessionsSessionIdGet200ResponseCoverageInner, coveredSeconds NullableInt32, fraction float32, gaps []ApiWatchSessionsSessionIdGet200ResponseGapsInner) *ApiWatchSessionsSessionIdGet200Response {
+func NewApiWatchSessionsSessionIdGet200Response(session WatchSession, durationSeconds int32, coverage []ApiWatchSessionsSessionIdGet200ResponseCoverageInner, coveredSeconds NullableInt32, fraction float32, gaps []ApiWatchSessionsSessionIdGet200ResponseGapsInner, questionsExpected int32, questionsAnswered int32) *ApiWatchSessionsSessionIdGet200Response {
 	this := ApiWatchSessionsSessionIdGet200Response{}
 	this.Session = session
 	this.DurationSeconds = durationSeconds
@@ -43,6 +47,8 @@ func NewApiWatchSessionsSessionIdGet200Response(session WatchSession, durationSe
 	this.CoveredSeconds = coveredSeconds
 	this.Fraction = fraction
 	this.Gaps = gaps
+	this.QuestionsExpected = questionsExpected
+	this.QuestionsAnswered = questionsAnswered
 	return &this
 }
 
@@ -200,6 +206,54 @@ func (o *ApiWatchSessionsSessionIdGet200Response) SetGaps(v []ApiWatchSessionsSe
 	o.Gaps = v
 }
 
+// GetQuestionsExpected returns the QuestionsExpected field value
+func (o *ApiWatchSessionsSessionIdGet200Response) GetQuestionsExpected() int32 {
+	if o == nil {
+		var ret int32
+		return ret
+	}
+
+	return o.QuestionsExpected
+}
+
+// GetQuestionsExpectedOk returns a tuple with the QuestionsExpected field value
+// and a boolean to check if the value has been set.
+func (o *ApiWatchSessionsSessionIdGet200Response) GetQuestionsExpectedOk() (*int32, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.QuestionsExpected, true
+}
+
+// SetQuestionsExpected sets field value
+func (o *ApiWatchSessionsSessionIdGet200Response) SetQuestionsExpected(v int32) {
+	o.QuestionsExpected = v
+}
+
+// GetQuestionsAnswered returns the QuestionsAnswered field value
+func (o *ApiWatchSessionsSessionIdGet200Response) GetQuestionsAnswered() int32 {
+	if o == nil {
+		var ret int32
+		return ret
+	}
+
+	return o.QuestionsAnswered
+}
+
+// GetQuestionsAnsweredOk returns a tuple with the QuestionsAnswered field value
+// and a boolean to check if the value has been set.
+func (o *ApiWatchSessionsSessionIdGet200Response) GetQuestionsAnsweredOk() (*int32, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.QuestionsAnswered, true
+}
+
+// SetQuestionsAnswered sets field value
+func (o *ApiWatchSessionsSessionIdGet200Response) SetQuestionsAnswered(v int32) {
+	o.QuestionsAnswered = v
+}
+
 func (o ApiWatchSessionsSessionIdGet200Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -216,6 +270,8 @@ func (o ApiWatchSessionsSessionIdGet200Response) ToMap() (map[string]interface{}
 	toSerialize["coveredSeconds"] = o.CoveredSeconds.Get()
 	toSerialize["fraction"] = o.Fraction
 	toSerialize["gaps"] = o.Gaps
+	toSerialize["questionsExpected"] = o.QuestionsExpected
+	toSerialize["questionsAnswered"] = o.QuestionsAnswered
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -235,6 +291,8 @@ func (o *ApiWatchSessionsSessionIdGet200Response) UnmarshalJSON(data []byte) (er
 		"coveredSeconds",
 		"fraction",
 		"gaps",
+		"questionsExpected",
+		"questionsAnswered",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -270,6 +328,8 @@ func (o *ApiWatchSessionsSessionIdGet200Response) UnmarshalJSON(data []byte) (er
 		delete(additionalProperties, "coveredSeconds")
 		delete(additionalProperties, "fraction")
 		delete(additionalProperties, "gaps")
+		delete(additionalProperties, "questionsExpected")
+		delete(additionalProperties, "questionsAnswered")
 		o.AdditionalProperties = additionalProperties
 	}
 

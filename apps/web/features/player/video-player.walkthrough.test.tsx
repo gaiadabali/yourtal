@@ -900,10 +900,15 @@ describe("5.13.af: progress is reported from what the browser played", () => {
 });
 
 describe("5.13.af: a refused finish says why", () => {
-  const detail = (gaps: { fromSecond: number; toSecond: number }[], questionsAsked = 0) => ({
+  const detail = (
+    gaps: { fromSecond: number; toSecond: number }[],
+    questionsAsked = 0,
+    server: { questionsExpected?: number; questionsAnswered?: number } = {},
+  ) => ({
     ok: true,
     data: {
       session: { id: "session-1", nonEarning: false, nonEarningReason: null, questionsAsked },
+      ...server,
       durationSeconds: 90,
       coveredSeconds: 90 - gaps.reduce((sum, gap) => sum + gap.toSecond - gap.fromSecond, 0),
       gaps,
@@ -964,6 +969,27 @@ describe("5.13.af: a refused finish says why", () => {
     expect(await finishRefused("en-AU", 403, detail([]))).toHaveTextContent(
       "not every question has been answered",
     );
+  });
+
+  it("trusts the server's question count over the client's own (5.13.ag4)", async () => {
+    // The client's schedule for 90 s is 1 question and 1 is answered, but the server expects 2.
+    const more = await finishRefused(
+      "en-AU",
+      403,
+      detail([], 1, { questionsExpected: 2, questionsAnswered: 1 }),
+    );
+    expect(more).toHaveTextContent("not every question has been answered");
+  });
+
+  it("does not blame questions when the server expects none or all are answered", async () => {
+    // The client's schedule would say 1 is owed; the server says 0 are.
+    const none = await finishRefused(
+      "en-AU",
+      403,
+      detail([], 0, { questionsExpected: 0, questionsAnswered: 0 }),
+    );
+    expect(none).not.toHaveTextContent("not every question has been answered");
+    expect(none).toHaveTextContent(/couldn't start/);
   });
 
   it("says it in Bahasa too", async () => {

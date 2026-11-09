@@ -229,8 +229,28 @@ const resumeSessionResponseSchema: Record<string, unknown> = {
     coveredSeconds: { type: "integer", minimum: 0 },
     fraction: { type: "number", minimum: 0, maximum: 1 },
     gaps: { type: "array", items: coverageIntervalSchema },
+    questionsExpected: {
+      type: "integer",
+      minimum: 0,
+      description:
+        "How many checkpoint questions the server expects answered before a claim, from the same schedule the completion check uses.",
+    },
+    questionsAnswered: {
+      type: "integer",
+      minimum: 0,
+      description: "How many checkpoint questions this session has answered so far.",
+    },
   },
-  required: ["session", "durationSeconds", "coverage", "coveredSeconds", "fraction", "gaps"],
+  required: [
+    "session",
+    "durationSeconds",
+    "coverage",
+    "coveredSeconds",
+    "fraction",
+    "gaps",
+    "questionsExpected",
+    "questionsAnswered",
+  ],
   additionalProperties: false,
 };
 

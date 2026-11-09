@@ -21,12 +21,12 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "fastify": "5.12.7"
+    "fastify": "5.12.8"
   },
   "devDependencies": {
     "@types/pg": "8.23.1",
     "@yourtal/tsconfig": "workspace:*",
-    "pg": "8.23.0",
+    "pg": "8.23.1",
     "typescript": "6.0.3",
     "vitest": "5.0.5"
   }

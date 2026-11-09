@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import type { Region } from "@yourtal/contracts/region";
@@ -29,17 +29,6 @@ export interface RegisterFormProps {
   draft?: RegisterDraft;
 }
 
-/** Whole years since `dob` (YYYY-MM-DD), or null when it is not a full date. */
-function ageOf(dob: string): number | null {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dob);
-  if (m === null) return null;
-  const now = new Date();
-  const before =
-    now.getUTCMonth() + 1 < Number(m[2]) ||
-    (now.getUTCMonth() + 1 === Number(m[2]) && now.getUTCDate() < Number(m[3]));
-  return now.getUTCFullYear() - Number(m[1]) - (before ? 1 : 0);
-}
-
 /**
  * These two codes end the attempt outright (12.4.d/#5) — editing the date
  * of birth and resubmitting must never just quietly succeed.
@@ -48,9 +37,8 @@ const FINAL_REFUSAL_CODES: ReadonlySet<string> = new Set(["too_young", "below_mi
 
 /**
  * `/register`'s form (6.2.a), hardened by 12.4.d/#5 into a neutral age
- * gate: the date of birth is asked for once and no computed age is shown.
- * The one exception (5.13.x) is the guardian-email field, shown up front for
- * 13-17 while teen sign-up is open (`teenModeEnabled`, staging only). The server
+ * gate: the date of birth is asked for once, with no live feedback — no
+ * computed age shown, no field that reveals itself as you type. The server
  * alone decides what happens next, from `POST /api/auth/register`'s result
  * (`errorCode`, threaded back through `registerAction`'s `?error=` redirect):
  *
@@ -66,12 +54,10 @@ export function RegisterForm({
   returnTo,
   defaultRegion,
   defaultLocale,
-  teenModeEnabled,
   errorCode,
   draft = {},
 }: RegisterFormProps) {
   const t = useTranslations("auth.register");
-  const [dob, setDob] = useState(draft.dateOfBirth ?? "");
   const timezoneRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -90,11 +76,6 @@ export function RegisterForm({
     );
   }
 
-  const age = ageOf(dob);
-  // Up front for 13-17 while teen sign-up is open; the server stays the real gate.
-  const showGuardianEmail =
-    errorCode === "guardian_email_required" ||
-    (teenModeEnabled && age !== null && age >= 13 && age < 18);
   const needsGuardianEmail = errorCode === "guardian_email_required";
 
   return (
@@ -141,20 +122,18 @@ export function RegisterForm({
         label={t("dateOfBirthLabel")}
         name="dateOfBirth"
         type="date"
-        value={dob}
-        onChange={(e) => {
-          setDob(e.target.value);
-        }}
+        defaultValue={draft.dateOfBirth}
         required
       />
 
-      {showGuardianEmail ? (
+      {needsGuardianEmail ? (
         <Input
           label={t("guardianEmailLabel")}
           name="guardianEmail"
           type="email"
           autoComplete="email"
           defaultValue={draft.guardianEmail}
+          autoFocus
           required
           helpText={t("guardianEmailHelp")}
         />

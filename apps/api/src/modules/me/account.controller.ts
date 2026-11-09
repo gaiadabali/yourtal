@@ -20,6 +20,10 @@ import { Authorize } from "../../shared/authz/authorize.decorator";
 import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { PrincipalService } from "../../shared/authz/principal.service";
 import type { PrincipalResolver } from "../../shared/authz/principal-resolver";
+import { SessionService } from "../auth/session/session.service";
+import { isDemoSession } from "../auth/session/amr";
+import { presentedSessionToken } from "../auth/bearer-token";
+import { demoSessionException } from "../auth/to-http-exception";
 import { buildDataExportSections } from "./data-export";
 import { appsBySector } from "./connected-apps";
 import { ME_PG_POOL } from "./me.tokens";
@@ -68,6 +72,7 @@ async function settle<T>(result: ResultAsync<T, { code: string }>): Promise<T> {
 @Controller("api/me")
 export class AccountController {
   constructor(
+    private readonly sessions: SessionService,
     @Inject(PrincipalService) private readonly principals: PrincipalResolver,
     @Inject(ME_PG_POOL) private readonly pool: MePgPool,
     @Inject(CONSENT_RECORD_REPOSITORY) private readonly consents: ConsentRecordRepository,
@@ -128,6 +133,12 @@ export class AccountController {
   @Delete()
   async deleteAccount(@Req() request: FastifyRequest): Promise<DeletionReport> {
     const userId = (await this.principals.resolve(request)).id;
+    // Staging test kit: a password-less demo session may not delete the shared account.
+    const session = await this.sessions.validateWithSignIn(
+      presentedSessionToken(request),
+      new Date(),
+    );
+    if (session.valid && isDemoSession(session.amr)) throw demoSessionException();
     const handlers = deletionHandlers(
       this.pool,
       this.ledger,

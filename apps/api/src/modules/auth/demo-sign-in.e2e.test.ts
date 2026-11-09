@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { Test } from "@nestjs/testing";
 import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
@@ -171,5 +172,72 @@ describe("a demo-made session", () => {
       headers: auth,
     });
     expect(res.statusCode).toBe(200);
+  });
+});
+
+// Re-review N1, N2: shared password-less demo accounts are never reset or deleted on staging.
+describe("staging keeps the shared demo accounts", () => {
+  const resetRequest = (email: string) =>
+    staging.inject({
+      method: "POST",
+      url: "/api/auth/password/reset/request",
+      remoteAddress: `192.0.2.${String(Math.floor(Math.random() * 250) + 1)}`,
+      payload: { email },
+    });
+
+  async function resetMailsTo(email: string): Promise<number> {
+    const outbox = await testDb().execute<{ n: number }>(sql`
+      SELECT count(*)::int AS n FROM platform.sim_outbox
+       WHERE recipient = ${email} AND category = 'password_reset'`);
+    const tokens = await testDb().execute<{ n: number }>(sql`
+      SELECT count(*)::int AS n FROM identity.verification_token t
+        JOIN identity.credential c ON c.user_id = t.user_id
+       WHERE c.identifier = ${email} AND t.purpose = 'password_reset'`);
+    return (outbox.rows[0]?.n ?? 0) + (tokens.rows[0]?.n ?? 0);
+  }
+
+  it("a reset request for a demo person answers like an unknown email and sends nothing", async () => {
+    const demo = await resetRequest("adult.au@demo.yourtal.test");
+    const unknown = await resetRequest(`nobody+${String(Date.now())}@example.test`);
+    expect(demo.statusCode).toBe(unknown.statusCode);
+    expect(demo.json()).toEqual(unknown.json());
+    expect(await resetMailsTo("adult.au@demo.yourtal.test")).toBe(0);
+  });
+
+  it("a reset request for an ordinary account still sends its link (the check above can fail)", async () => {
+    const real = await sessionFor(staging);
+    await resetRequest(real.email);
+    expect(await resetMailsTo(real.email)).toBe(2);
+  });
+
+  it("DELETE /api/me refuses a demo-made session", async () => {
+    const signedIn = await demoSignIn(staging, "adult.au@demo.yourtal.test");
+    const res = await staging.inject({
+      method: "DELETE",
+      url: "/api/me",
+      headers: {
+        authorization: `Bearer ${signedIn.json<{ token: string }>().token}`,
+        "idempotency-key": randomUUID(),
+      },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(res.json()).toMatchObject({ code: "demo_session" });
+  });
+
+  it("the guardian's delete link refuses the demo teen", async () => {
+    const mail = await testDb().execute<{ token: string }>(sql`
+      SELECT metadata->>'token' AS token FROM platform.sim_outbox
+       WHERE recipient = 'guardian-of-teen@example.test' AND category = 'guardian_consent'
+       ORDER BY created_at DESC LIMIT 1`);
+    const token = mail.rows[0]?.token;
+    expect(token).toBeTypeOf("string");
+    const res = await staging.inject({
+      method: "POST",
+      url: `/api/guardian/${String(token)}/delete-account`,
+      headers: { "idempotency-key": randomUUID() },
+      payload: { confirm: true },
+    });
+    expect(res.statusCode).toBe(403);
+    expect(res.json()).toMatchObject({ code: "demo_account" });
   });
 });

@@ -24,6 +24,7 @@ import { hashPassword, verifyPassword } from "./crypto/password-hash";
 import { hashOpaqueToken, issueOpaqueToken } from "./crypto/opaque-token";
 import { DevTokenAccess } from "./dev-token-access";
 import { normalizeEmail } from "./email";
+import { isPasswordlessDemoEmail } from "./passwordless-demo";
 import {
   CREDENTIAL_REPOSITORY,
   PASSWORD_CREDENTIAL_KIND,
@@ -387,6 +388,11 @@ export class AuthService {
     now: Date,
   ): Promise<Result<void, RequestPasswordResetError>> {
     const identifier = normalizeEmail(email);
+    // Staging test kit: a shared password-less demo account is never reset, or
+    // anyone could turn a demo session into a password one through the inbox.
+    if (this.config.appEnv === "staging" && isPasswordlessDemoEmail(identifier)) {
+      return ok(undefined);
+    }
     return this.guarded(async () => {
       const credential = await this.credentials.findByKindAndIdentifier(
         PASSWORD_CREDENTIAL_KIND,

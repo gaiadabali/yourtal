@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { AuthModule } from "../auth/auth.module";
 import { createPool } from "../../shared/persistence/create-pool";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
@@ -77,6 +78,8 @@ export const ME_DB = Symbol("ME_DB");
  */
 @Module({
   imports: [
+    // The session's amr, so a demo-made session cannot delete the account.
+    AuthModule,
     IdentityModule,
     WalletModule,
     CampaignModule,

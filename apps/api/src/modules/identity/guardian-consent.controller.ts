@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, Post } from "@nestjs/common";
+import { Body, Controller, ForbiddenException, Get, Inject, Param, Post } from "@nestjs/common";
 import { receiversFor } from "@yourtal/contracts/oidc/event-receivers";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
@@ -30,6 +30,8 @@ import { getGuardianConsent } from "./use-cases/get-guardian-consent.use-case";
 import { approveGuardianConsent } from "./use-cases/approve-guardian-consent.use-case";
 import { revokeGuardianConsent } from "./use-cases/revoke-guardian-consent.use-case";
 import { deleteGuardianAccount } from "./use-cases/delete-guardian-account.use-case";
+import { hashOpaqueToken } from "../auth/crypto/opaque-token";
+import { isPasswordlessDemoEmail } from "../auth/passwordless-demo";
 import {
   APPROVE_GUARDIAN_CONSENT_RETENTION_MS,
   DELETE_GUARDIAN_ACCOUNT_RETENTION_MS,
@@ -126,6 +128,12 @@ export class GuardianConsentController {
   async deleteAccount(@Param("token") token: string, @Body() _body: DeleteGuardianAccountDto) {
     // `_body.confirm` is already proven `true` by the DTO's own schema, same
     // shape `approve`'s own `_body.confirmAdult` is above.
+    if (this.config.appEnv === "staging" && (await this.isPasswordlessDemoTeen(token))) {
+      throw new ForbiddenException({
+        code: "demo_account",
+        message: "a shared test account can't be deleted",
+      });
+    }
     const result = await deleteGuardianAccount(
       this.pool,
       this.consents,
@@ -136,5 +144,16 @@ export class GuardianConsentController {
     );
     if (result.isErr()) throw mapGuardianConsentErrorToHttpException(result.error);
     return result.value;
+  }
+
+  /** Staging test kit: the shared password-less demo teen is never deleted by link. */
+  private async isPasswordlessDemoTeen(token: string): Promise<boolean> {
+    const row = await this.consents.findByTokenHash(hashOpaqueToken(token));
+    if (row === null) return false;
+    const { rows } = await this.pool.query<{ identifier: string }>(
+      "SELECT identifier FROM identity.credential WHERE user_id = $1 AND kind = 'password'",
+      [row.userId],
+    );
+    return rows.some((r) => isPasswordlessDemoEmail(r.identifier));
   }
 }

@@ -14,7 +14,9 @@ const DEV_PREFIX = "/api/dev/";
  * configured, or on production, every such route answers 404 for everyone, so
  * nginx can pass `/api/dev/` through and the API alone decides. Runs as an
  * `onRequest` hook, before the rate limiter and the PDP, so a caller without
- * the key cannot tell a dev route from a missing one.
+ * the key cannot tell a dev route from a missing one. It gates direct API
+ * calls only: the web's /dev pages send the key server-side for every viewer
+ * and rely on each route's own session and role checks.
  */
 function isDevRoute(request: FastifyRequest): boolean {
   const matched = request.routeOptions.url;

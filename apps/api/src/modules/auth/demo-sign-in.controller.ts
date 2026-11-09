@@ -9,7 +9,6 @@ import {
 } from "@nestjs/common";
 import { createZodDto } from "nestjs-zod";
 import { z } from "zod";
-import { DEMO_PEOPLE } from "@yourtal/db/demo-world/people";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import { Authorize, PublicRoute } from "../../shared/authz/authorize.decorator";
@@ -23,18 +22,11 @@ import type { CredentialRepository } from "./persistence/credential.repository";
 import { SecondFactorGate } from "./factors/second-factor-gate";
 import { passwordSignInBody } from "./auth.controller";
 import { normalizeEmail } from "./email";
+import { PASSWORDLESS_DEMO_PEOPLE, isPasswordlessDemoEmail } from "./passwordless-demo";
 import { DEMO_AMR } from "./session/amr";
 
 const demoSignInSchema = z.object({ email: z.string().trim().toLowerCase().max(320) });
 class DemoSignInDto extends createZodDto(demoSignInSchema) {}
-
-/**
- * Only the non-staff people the demo-world reset creates. Staff demo accounts
- * (admin, support, ...) keep needing their password: a password-less staff
- * session would open the staff console and every inbox to the internet.
- */
-const PASSWORDLESS_PEOPLE = DEMO_PEOPLE.filter((p) => p.staffRole === undefined);
-const DEMO_EMAILS: ReadonlySet<string> = new Set(PASSWORDLESS_PEOPLE.map((p) => p.email));
 
 /**
  * Staging test kit K1.1: sign in as a seeded demo person without a password,
@@ -59,7 +51,7 @@ export class DemoSignInController {
   people() {
     this.assertStaging();
     return {
-      people: PASSWORDLESS_PEOPLE.map(({ email, displayName, region }) => ({
+      people: PASSWORDLESS_DEMO_PEOPLE.map(({ email, displayName, region }) => ({
         email,
         displayName,
         region,
@@ -78,7 +70,7 @@ export class DemoSignInController {
     this.assertStaging();
     // Normalised here too: the allow-list must not depend on the global pipe being wired.
     const email = typeof body.email === "string" ? normalizeEmail(body.email) : "";
-    const credential = DEMO_EMAILS.has(email)
+    const credential = isPasswordlessDemoEmail(email)
       ? await this.credentials.findByKindAndIdentifier(PASSWORD_CREDENTIAL_KIND, email)
       : null;
     if (credential === null) {

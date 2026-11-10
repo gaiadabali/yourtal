@@ -1274,6 +1274,9 @@ describe("ensureSnapAppScansListing (2.8 T7)", () => {
         transferable: false,
         redeem_partner_id: "snap-app",
       });
+      // 2.8.g: listed at 200 points, above the ledger's ceil(S ÷ B).
+      expect(Number(row?.min_price_points)).toBe(200);
+      expect(Number(row?.price_in_points)).toBe(200);
       expect(Number(row?.face_value_minor)).toBe(500);
       expect(Number(row?.settlement_value_minor)).toBe(500);
       expect(await voucherCount()).toBe(50);
@@ -1297,6 +1300,21 @@ describe("ensureSnapAppScansListing (2.8 T7)", () => {
       ]);
       await ensureSnapAppScansListing(owner, ledgerConfig, voucherConfig, () => undefined);
       expect((await listing())?.redeem_partner_id).toBe("snap-app");
+
+      // 2.8.g: a listing seeded before the staff price gets it on the next run,
+      // and a price staff changed since is kept.
+      await owner.query(
+        `UPDATE store.listings SET min_price_points = NULL, price_in_points = 167 WHERE id = $1`,
+        [SCANS_LISTING_ID],
+      );
+      await ensureSnapAppScansListing(owner, ledgerConfig, voucherConfig, () => undefined);
+      expect(Number((await listing())?.min_price_points)).toBe(200);
+      expect(Number((await listing())?.price_in_points)).toBe(200);
+      await owner.query(`UPDATE store.listings SET min_price_points = 250 WHERE id = $1`, [
+        SCANS_LISTING_ID,
+      ]);
+      await ensureSnapAppScansListing(owner, ledgerConfig, voucherConfig, () => undefined);
+      expect(Number((await listing())?.min_price_points)).toBe(250);
     } finally {
       await ledger.close();
     }

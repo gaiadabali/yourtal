@@ -14,12 +14,14 @@ import {
 /**
  * The "50 SnapApp scans" voucher on staging and in dev (2.8 T7, docs/28 4.6):
  * an online AU listing from Snap App Pty Ltd, A$5 face and settlement, bound to
- * the `snap-app` partner so only a linked SnapApp account redeems it. Priced by
- * the real ledger like every other seeded listing, and kept stocked with real
- * minted vouchers.
+ * the `snap-app` partner so only a linked SnapApp account redeems it. Listed at
+ * 200 points (F128, 2.8.g): checkout charges max(200, the ledger's quote), so
+ * the price never drops below the backing. Kept stocked with real minted
+ * vouchers.
  *
  * Idempotent: an existing listing is never rewritten except to set a missing
- * binding, and stock is only topped up to the target. Production is kept out by
+ * binding or a missing staff price (a price staff changed later is kept), and
+ * stock is only topped up to the target. Production is kept out by
  * where this runs (the staging deploy seed and the local dev seed only) and by
  * the demo Snap App AU business it needs: it does nothing without that. The
  * `snap-app` partner row exists everywhere, so it is no guard.
@@ -29,6 +31,8 @@ const LISTING_ID = "00000000-0000-4000-9000-000000000401";
 const LOCATION_ID = "00000000-0000-4000-9000-000000000402";
 const FACE_AND_SETTLEMENT_MINOR = 500;
 const STOCK_TARGET = 50;
+/** The founder's price (F128, 2026-10-22): above ceil(S ÷ B), so YourTal keeps the extra backing. */
+const LISTED_PRICE_POINTS = 200;
 
 const DESCRIPTION =
   "Adds 50 receipt scans to SnapApp. Link SnapApp under Me → Linked apps, then in SnapApp open " +
@@ -52,6 +56,21 @@ async function bindToPartner(pool: pg.Pool): Promise<void> {
   await pool.query(
     `UPDATE store.listings SET redeem_partner_id = $2 WHERE id = $1 AND redeem_partner_id IS NULL`,
     [LISTING_ID, PARTNER_ID],
+  );
+}
+
+/**
+ * Staff-only price (2.8.g), set only where none is: a listing seeded before
+ * 2.8.g gets it, and a price staff later changed through the two-person
+ * proposal is kept. (One staff cleared comes back at the next seed: NULL is all
+ * the seed can see.) The cached `price_in_points` is raised with it.
+ */
+async function setListedPrice(pool: pg.Pool): Promise<void> {
+  await pool.query(
+    `UPDATE store.listings
+        SET min_price_points = $2, price_in_points = GREATEST(price_in_points, $2)
+      WHERE id = $1 AND min_price_points IS NULL`,
+    [LISTING_ID, LISTED_PRICE_POINTS],
   );
 }
 
@@ -98,7 +117,7 @@ export async function ensureSnapAppScansListing(
           currency: "AUD",
           faceValueMinor: toMinorUnits(FACE_AND_SETTLEMENT_MINOR),
           settlementValueMinor: toMinorUnits(FACE_AND_SETTLEMENT_MINOR),
-          priceInPoints: priced.pricePoints,
+          priceInPoints: Math.max(priced.pricePoints, LISTED_PRICE_POINTS),
           stockRemaining: STOCK_TARGET,
           stockTotal: STOCK_TARGET,
           transferable: false,
@@ -114,8 +133,10 @@ export async function ensureSnapAppScansListing(
           partialRedemption: "single_use",
         });
         await insertListing(pool, listing);
-        // Bound at once, so a failure further on never leaves a live unbound online listing.
+        // Bound and priced at once, so a failure further on never leaves a live
+        // unbound online listing, or one on sale at the ledger's price.
         await bindToPartner(pool);
+        await setListedPrice(pool);
         return {
           ok: true,
           facts: {
@@ -131,5 +152,6 @@ export async function ensureSnapAppScansListing(
   );
 
   await bindToPartner(pool); // repairs a listing whose binding was lost
+  await setListedPrice(pool); // prices a listing seeded before 2.8.g
   return outcome;
 }

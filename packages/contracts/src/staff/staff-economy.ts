@@ -1,7 +1,7 @@
 import * as z from "zod";
 import { regionSchema } from "../region/region";
 import { currencySchema } from "../money/money-value";
-import { pointsSchema } from "../money/money";
+import { minorUnitsSchema, pointsSchema } from "../money/money";
 import { coverageSchema } from "../ledger-internal/economy";
 import { regionSettingSchema } from "../ledger-internal/settings";
 
@@ -31,6 +31,8 @@ export const economyProposalKindSchema = z.enum([
   "refund_purchase",
   /** 5.2.c: a new payout attempt for a disbursement the processor shows moved nothing. */
   "retry_disbursement",
+  /** 2.8.g: set or clear a listing's staff-set points price. */
+  "listing_price",
 ]);
 export type EconomyProposalKind = z.infer<typeof economyProposalKindSchema>;
 
@@ -184,3 +186,64 @@ export const decideProposalBodySchema = z.object({
   note: z.string().min(1).max(500).optional(),
 });
 export type DecideProposalBody = z.infer<typeof decideProposalBodySchema>;
+
+// -- listing prices (2.8.g) -- finance only, two-person --
+
+/** A staff-set points price: a whole number of points, at least 1. */
+export const listingMinPricePointsSchema = z.number().int().min(1).max(10_000_000);
+
+/**
+ * A price on the screen. Deliberately not `pointsSchema.nullable()`: the Go
+ * generator (openapi-generator 7.25) shares structurally equal integer schemas,
+ * so a nullable copy of `pointsSchema` turned every `Money.amountMinor` into a
+ * NullableInt64. A price is at least 1 point anyway.
+ */
+const listingPricePointsSchema = z.number().int().min(1).max(1_000_000_000);
+
+/**
+ * One listing on the price screen. The buyer pays `effectivePricePoints`,
+ * max(`minPricePoints`, `ledgerPricePoints`): a staff price below the ledger's
+ * quote has no effect. `ledgerPricePoints` is null when the ledger did not
+ * answer. Finance only: with the face value it shows roughly what B is.
+ */
+export const listingPriceRowSchema = z
+  .object({
+    listingId: z.uuid(),
+    title: z.string(),
+    merchantName: z.string(),
+    faceValueMinor: minorUnitsSchema,
+    currency: currencySchema,
+    lifecycleState: z.string(),
+    redeemPartnerId: z.string().nullable(),
+    ledgerPricePoints: listingPricePointsSchema.nullable(),
+    minPricePoints: listingPricePointsSchema.nullable(),
+    effectivePricePoints: listingPricePointsSchema.nullable(),
+    /** The open proposal for this listing, if any; `minPricePoints` null there means "clear". */
+    pending: z
+      .object({
+        proposal: economyProposalSchema,
+        minPricePoints: listingPricePointsSchema.nullable(),
+      })
+      .strict()
+      .nullable(),
+  })
+  .strict();
+export type ListingPriceRow = z.infer<typeof listingPriceRowSchema>;
+
+export const listingPricesScreenSchema = z
+  .object({
+    region: regionSchema,
+    /** The search the rows answer; null lists every listing with a staff price, a partner binding or an open proposal. */
+    query: z.string().nullable(),
+    rows: z.array(listingPriceRowSchema),
+  })
+  .strict();
+export type ListingPricesScreen = z.infer<typeof listingPricesScreenSchema>;
+
+/** `minPricePoints: null` proposes clearing the price. */
+export const proposeListingPriceBodySchema = z.object({
+  listingId: z.uuid(),
+  minPricePoints: listingMinPricePointsSchema.nullable(),
+  reason: z.string().trim().min(1).max(500),
+});
+export type ProposeListingPriceBody = z.infer<typeof proposeListingPriceBodySchema>;

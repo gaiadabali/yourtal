@@ -17,6 +17,9 @@ type quoteBody struct {
 	Region          string `json:"region"`
 	Currency        string `json:"currency"`
 	SettlementMinor int64  `json:"settlementMinor"`
+	// MinPricePoints is the listing's staff-set price (2.8.g), if any: the
+	// quote is never below it and never below ceil(S ÷ B).
+	MinPricePoints int64 `json:"minPricePoints,omitempty"`
 	// At is accepted only as "now": a quote is priced at the ledger's clock
 	// and never at a caller's instant (EM-19).
 	At string `json:"at,omitempty"`
@@ -55,7 +58,11 @@ func (a *API) quote(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	stored, err := a.pricing.NewQuote(r.Context(), ledger.Region(body.Region), body.Currency, body.SettlementMinor)
+	if body.MinPricePoints < 0 {
+		a.fail(w, fmt.Errorf("%w: minPricePoints cannot be negative", errBadRequest))
+		return
+	}
+	stored, err := a.pricing.NewQuote(r.Context(), ledger.Region(body.Region), body.Currency, body.SettlementMinor, body.MinPricePoints)
 	if err != nil {
 		a.fail(w, err)
 		return

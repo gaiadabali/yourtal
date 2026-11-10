@@ -230,6 +230,9 @@ export const RESOURCE_ACTIONS = {
     "check_payout",
     "propose_payout_retry",
     "approve_payout_retry",
+    // 2.8.g: a listing's staff-set points price, two-person like `approve`.
+    "propose_listing_price",
+    "approve_listing_price",
   ],
 
   moderation_item: ["view", "approve", "reject"],

@@ -13,6 +13,11 @@ import { StaffDisputesController } from "./staff-disputes.controller";
 import { StaffRiskQueueController } from "./staff-risk-queue.controller";
 import { StaffEconomyController } from "./economy/staff-economy.controller";
 import { StaffParkedPurchasesController } from "./economy/staff-parked-purchases.controller";
+import { StaffListingPricesController } from "./economy/staff-listing-prices.controller";
+import {
+  LISTING_PRICE_REPOSITORY,
+  PostgresListingPriceRepository,
+} from "./economy/persistence/listing-price.repository";
 import { ParkedPurchasesService } from "./economy/parked-purchases.service";
 import { StaffSettlementController } from "./settlement/staff-settlement.controller";
 import { StaffDisbursementsController } from "./settlement/staff-disbursements.controller";
@@ -76,6 +81,7 @@ class StaffPoolShutdown implements OnApplicationShutdown {
     StaffRiskQueueController,
     StaffEconomyController,
     StaffParkedPurchasesController,
+    StaffListingPricesController,
     StaffSettlementController,
     StaffDisbursementsController,
     StaffDisbursementRecoveryController,
@@ -122,6 +128,12 @@ class StaffPoolShutdown implements OnApplicationShutdown {
       // a domain module (this file's own header).
       provide: ECONOMY_PROPOSAL_REPOSITORY,
       useFactory: (pool: Pool) => new PostgresEconomyProposalRepository(pool),
+      inject: [STAFF_DB_POOL],
+    },
+    {
+      // 2.8.g: the staff listing price screen's reads and its one write.
+      provide: LISTING_PRICE_REPOSITORY,
+      useFactory: (pool: Pool) => new PostgresListingPriceRepository(pool),
       inject: [STAFF_DB_POOL],
     },
     ParkedPurchasesService,

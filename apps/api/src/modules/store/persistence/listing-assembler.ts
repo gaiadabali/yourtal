@@ -3,7 +3,11 @@ import { eq } from "drizzle-orm";
 import type { Listing, PublicListing } from "@yourtal/contracts/listing";
 import { listingSchema, publicListingSchema } from "@yourtal/contracts/listing";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
-import { pricePointsByListing, unallocatedStockByListing } from "./listing-live-values";
+import {
+  pricePointsByListing,
+  unallocatedStockByListing,
+  withStaffPrice,
+} from "./listing-live-values";
 import type { listings } from "./schema/listing.table";
 import { listingLocations, merchantLocations } from "./schema/listing.table";
 
@@ -55,8 +59,10 @@ export async function assembleListing(
     .innerJoin(merchantLocations, eq(merchantLocations.id, listingLocations.locationId))
     .where(eq(listingLocations.listingId, row.id));
 
-  const priceInPoints =
-    priceOverride ?? (await pricePointsByListing(db, [row.id])).get(row.id) ?? row.priceInPoints;
+  const priceInPoints = withStaffPrice(
+    priceOverride ?? (await pricePointsByListing(db, [row.id])).get(row.id) ?? row.priceInPoints,
+    row.minPricePoints,
+  );
   const stockRemaining =
     stockOverride ?? (await unallocatedStockByListing(db, [row.id])).get(row.id) ?? 0;
 

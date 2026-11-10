@@ -249,7 +249,9 @@ CREATE TABLE store.listings (
   created_at                timestamptz NOT NULL DEFAULT now(),
   -- Added by 20261022090000 (group 2.8 T1), mirrored for the drift guard only. The
   -- FK to platform.partner_credential and the bound-listing CHECK are not mirrored.
-  redeem_partner_id         text
+  redeem_partner_id         text,
+  -- Added by 20261111090000 (group 2.8.g), mirrored for the drift guard only; CHECK not mirrored.
+  min_price_points          bigint
 );
 
 CREATE TABLE store.listing_location (

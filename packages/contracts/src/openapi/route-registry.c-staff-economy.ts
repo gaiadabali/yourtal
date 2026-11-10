@@ -3,6 +3,8 @@ import {
   decideProposalBodySchema,
   economyOverviewSchema,
   economyProposalSchema,
+  listingPricesScreenSchema,
+  proposeListingPriceBodySchema,
   proposeManualPurchaseBodySchema,
   proposeMarketingFundingBodySchema,
   proposeRateBodySchema,
@@ -276,6 +278,84 @@ export const STAFF_ECONOMY_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     proposeBodySchema: proposeSettingBodySchema,
     proposeBodyDescription: "The setting's key (e.g. `daily_earn_cap`) and its new value.",
   }),
+
+  // -- 2.8.g: a listing's staff-set points price -- finance, two-person --
+  {
+    method: "get",
+    path: "/api/staff/economy/{region}/listing-prices",
+    summary:
+      "Listings with a staff price, a partner binding or an open price proposal, or a search (finance only)",
+    tags: ["staff-economy"],
+    pathParams: [REGION_PARAM],
+    queryParams: [
+      {
+        name: "q",
+        description: "Optional: a listing id, or part of a title or merchant name (up to 25 rows).",
+        schema: { type: "string" },
+        required: false,
+      },
+    ],
+    successStatus: 200,
+    successDescription:
+      "Each listing's ledger quote, staff price and the price a buyer pays (the larger of the two).",
+    successSchema: inlineSchema(listingPricesScreenSchema),
+    errors: [FORBIDDEN, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "post",
+    path: "/api/staff/economy/{region}/listing-prices/proposals",
+    summary: "Propose setting or clearing a listing's points price -- needs a second approver",
+    tags: ["staff-economy"],
+    pathParams: [REGION_PARAM],
+    requestBody: {
+      description: "The listing, the new price (null clears it) and the required reason.",
+      schema: inlineSchema(proposeListingPriceBodySchema),
+    },
+    successStatus: 201,
+    successDescription: "The new, pending proposal.",
+    successSchema: inlineSchema(economyProposalSchema),
+    errors: [
+      VALIDATION_400,
+      FORBIDDEN,
+      NOT_FOUND,
+      {
+        status: 409,
+        description: "This listing already has a price proposal waiting for approval.",
+        documented: true,
+      },
+    ],
+  },
+  {
+    method: "post",
+    path: "/api/staff/economy/{region}/listing-prices/proposals/{id}/approve",
+    summary: "Approve a listing price -- refused if the approver proposed it",
+    tags: ["staff-economy"],
+    pathParams: [REGION_PARAM, PROPOSAL_ID_PARAM],
+    requestBody: {
+      description: "An optional decision note.",
+      schema: inlineSchema(decideProposalBodySchema),
+    },
+    successStatus: 201,
+    successDescription:
+      "The decided proposal; the listing's price changed in the same transaction.",
+    successSchema: inlineSchema(economyProposalSchema),
+    errors: [VALIDATION_400, FORBIDDEN, SELF_APPROVAL, NOT_FOUND, ALREADY_DECIDED],
+  },
+  {
+    method: "post",
+    path: "/api/staff/economy/{region}/listing-prices/proposals/{id}/reject",
+    summary: "Decline or withdraw a listing price proposal",
+    tags: ["staff-economy"],
+    pathParams: [REGION_PARAM, PROPOSAL_ID_PARAM],
+    requestBody: {
+      description: "An optional decision note.",
+      schema: inlineSchema(decideProposalBodySchema),
+    },
+    successStatus: 201,
+    successDescription: "The rejected proposal.",
+    successSchema: inlineSchema(economyProposalSchema),
+    errors: [VALIDATION_400, FORBIDDEN, NOT_FOUND, ALREADY_DECIDED],
+  },
 
   // -- 9.5.c: kill switches -- ops only, single action, auditable --
   {

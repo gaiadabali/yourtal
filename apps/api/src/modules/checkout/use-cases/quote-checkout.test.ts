@@ -32,6 +32,7 @@ const listing = (redeemPartnerId: string | null): ListingForCheckout => ({
   channel: "online",
   buyable: true,
   redeemPartnerId,
+  minPricePoints: null,
 });
 
 const buyer = (dateOfBirth: string, trustTier: number): Buyer => ({
@@ -65,5 +66,27 @@ describe("quoteCheckout: online trust tier", () => {
     const result = await quoteCheckout(deps, buyer("2012-01-01", 3), open);
     expect(result._unsafeUnwrapErr()).toMatchObject({ code: "audience_blocked" });
     expect(quoteSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("quoteCheckout: a staff-set price (2.8.g)", () => {
+  it("asks the ledger for at least the listing's staff-set price", async () => {
+    const deps = makeDeps();
+    const priced = { ...listing("snap-app"), minPricePoints: 200 };
+    const result = await quoteCheckout(deps, buyer("1990-01-01", 0), priced);
+    expect(result._unsafeUnwrap().pricePoints).toBe(200);
+    expect(quoteSpy).toHaveBeenCalledWith({
+      region: "AU",
+      currency: "AUD",
+      settlementMinor: 500,
+      minPricePoints: 200,
+    });
+  });
+
+  it("sends no staff price for a listing without one", async () => {
+    const deps = makeDeps();
+    const result = await quoteCheckout(deps, buyer("1990-01-01", 0), listing("snap-app"));
+    expect(result.isOk()).toBe(true);
+    expect(quoteSpy).toHaveBeenCalledWith({ region: "AU", currency: "AUD", settlementMinor: 500 });
   });
 });

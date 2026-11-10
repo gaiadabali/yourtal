@@ -258,6 +258,14 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "9.5.d's settings screen -- documented inline (route-registry.c-staff-economy.ts GET .../settings).",
   proposeSettingBodySchema:
     "9.5.d's request body -- documented inline (route-registry.c-staff-economy.ts POST .../settings/proposals).",
+  listingPricesScreenSchema:
+    "2.8.g's staff listing price screen -- documented inline (route-registry.c-staff-economy.ts GET .../listing-prices); finance only, like the rate screen.",
+  listingPriceRowSchema:
+    "2.8.g's per-listing row, nested in listingPricesScreenSchema's own inline schema -- not a standalone component.",
+  proposeListingPriceBodySchema:
+    "2.8.g's request body -- documented inline (route-registry.c-staff-economy.ts POST .../listing-prices/proposals).",
+  listingMinPricePointsSchema:
+    "2.8.g's staff price field, nested in proposeListingPriceBodySchema -- not a standalone component.",
   decideProposalBodySchema:
     "9.5's shared approve-route request body -- documented inline everywhere an approve route appears (route-registry.c-staff-economy.ts).",
 

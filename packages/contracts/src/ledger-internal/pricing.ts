@@ -16,6 +16,12 @@ export const quoteRequestSchema = z.object({
   region: regionSchema,
   currency: currencySchema,
   settlementMinor: minorUnitsSchema,
+  /**
+   * 2.8.g: the listing's staff-set price, if it has one. The ledger quotes
+   * max(this, ceil(S ÷ B)): it can raise a price above the backing, never
+   * lower one below it.
+   */
+  minPricePoints: pointsSchema.optional(),
   /** RFC3339. Omitted means now — never a way to backdate past a rate change. */
   at: z.iso.datetime().optional(),
 });

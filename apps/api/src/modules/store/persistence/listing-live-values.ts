@@ -35,6 +35,15 @@ function idList(ids: readonly string[]) {
   );
 }
 
+/**
+ * 2.8.g: what a buyer pays is the ledger's price, or the listing's staff-set
+ * price when that is higher -- the same max checkout's quote takes, so a
+ * listing never reads one price and charges another.
+ */
+export function withStaffPrice(points: number, minPricePoints: number | null): number {
+  return minPricePoints === null ? points : Math.max(points, minPricePoints);
+}
+
 export async function pricePointsByListing(
   db: Db,
   listingIds: readonly string[],

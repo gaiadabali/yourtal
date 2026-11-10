@@ -3,6 +3,7 @@ import { err, ok, type Result } from "neverthrow";
 import { reachesAudience } from "@yourtal/contracts/audience/audience";
 import type { CheckoutQuote } from "@yourtal/contracts/checkout/checkout";
 import { ledgerError, type LedgerError } from "@yourtal/contracts/ledger-internal/ledger-error";
+import { toPoints } from "@yourtal/contracts/money";
 import { REGION_CONFIG, type Region } from "@yourtal/contracts/region";
 import { ageBandFrom, ageYearsFrom } from "@yourtal/jurisdiction/age";
 import type { ListingForCheckout } from "../persistence/listing-for-checkout";
@@ -59,10 +60,15 @@ export async function quoteCheckout(
     );
   }
 
+  // 2.8.g: the ledger prices max(the listing's staff-set price, ceil(S ÷ B)),
+  // and the burn takes exactly that quote, so what the buyer sees is what is spent.
   const quoted = await deps.ledger.quote({
     region: listing.region,
     currency: REGION_CONFIG[listing.region].currency,
     settlementMinor: listing.settlementMinor,
+    ...(listing.minPricePoints === null
+      ? {}
+      : { minPricePoints: toPoints(listing.minPricePoints) }),
   });
   if (quoted.isErr()) return err(quoted.error);
   const locked = await deps.ledger.lockQuote({ quoteId: quoted.value.quoteId });

@@ -53,3 +53,34 @@ func TestAQuoteIsPricedAtTheLedgersClock(t *testing.T) {
 		t.Errorf("a year-long quote was stored: %v", err)
 	}
 }
+
+// 2.8.g: a listing's staff-set price is the quote when it is above the
+// ledger's price, and ignored when it is below; never negative.
+func TestAQuoteTakesAStaffPriceOnlyAboveTheLedgersPrice(t *testing.T) {
+	s := newServer(t)
+	quote := func(minPricePoints any) (int, int64) {
+		body := map[string]any{"region": "ID", "currency": "IDR", "settlementMinor": 1_800}
+		if minPricePoints != nil {
+			body["minPricePoints"] = minPricePoints
+		}
+		var out struct {
+			PricePoints int64 `json:"pricePoints"`
+		}
+		return s.call("/pricing/quote", body, &out), out.PricePoints
+	}
+	for name, tc := range map[string]struct {
+		min  any
+		want int64
+	}{
+		"none":  {nil, 300}, // IDR 1,800 at B = IDR 6
+		"above": {400, 400},
+		"below": {200, 300},
+	} {
+		if code, points := quote(tc.min); code != http.StatusOK || points != tc.want {
+			t.Errorf("%s: %d, %d points, want 200 and %d", name, code, points, tc.want)
+		}
+	}
+	if code, _ := quote(-1); code != http.StatusBadRequest {
+		t.Errorf("a negative staff price: %d, want 400", code)
+	}
+}

@@ -17,6 +17,8 @@ export interface Me {
   readonly staffRoles: readonly string[];
   /** 5.13.v: a teen whose guardian has not approved yet; such an account cannot earn (campaign_view.yaml). */
   readonly awaitingGuardian: boolean;
+  /** 5.13.ai: a teen whose guardian withdrew approval (`revoked`); earning is refused the same way. */
+  readonly guardianWithdrawn: boolean;
 }
 
 export async function getMe(
@@ -49,5 +51,6 @@ export async function getMe(
     businessMemberships: memberships,
     staffRoles: roles,
     awaitingGuardian: ageBand === "teen" && stored.parentConsentStatus === "pending",
+    guardianWithdrawn: ageBand === "teen" && stored.parentConsentStatus === "revoked",
   });
 }

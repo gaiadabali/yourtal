@@ -78,10 +78,15 @@ function metadataFor(client: YourTalClient): ClientMetadata {
   return {
     ...base,
     application_type: client.kind,
-    redirect_uris: [client.redirectUri],
+    redirect_uris: [...client.redirectUris],
     response_types: ["code"],
     response_modes: ["query"],
     grant_types: ["authorization_code"],
+    // The library wants a sector when redirect hosts differ (the phone's scheme and App Link, 3.3.e);
+    // never fetched, like the machine clients' above.
+    ...(client.redirectUris.length > 1
+      ? { sector_identifier_uri: `https://${client.sector}.sector.yourtal.invalid/` }
+      : {}),
   };
 }
 

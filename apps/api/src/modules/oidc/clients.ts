@@ -37,8 +37,11 @@ interface ClientBase {
 export interface SignInClient extends ClientBase {
   readonly kind: "web" | "native";
   readonly auth: "private_key_jwt" | "client_secret_basic" | "none";
-  /** Exact, one per client (docs/26 §1.7). */
-  readonly redirectUri: string;
+  /**
+   * Exact matches only (docs/26 §1.7): one per client, except SnapApp's phone app,
+   * which also comes back on its verified App Link (3.3.e).
+   */
+  readonly redirectUris: readonly string[];
   readonly teens: "refuse" | "invite_only";
   readonly regions: readonly Region[];
   readonly privacyUrl: string;
@@ -90,14 +93,17 @@ const DEFINITIONS: readonly Definition<YourTalClient>[] = [
     clientId: "snapapp-staging-web",
     kind: "web",
     auth: "private_key_jwt",
-    redirectUri: "https://snap-apps.gaiada.com/auth/yourtal/callback",
+    redirectUris: ["https://snap-apps.gaiada.com/auth/yourtal/callback"],
   },
   {
     ...SNAPAPP,
     clientId: "snapapp-staging-mobile",
     kind: "native",
     auth: "none",
-    redirectUri: "au.com.snapapps.app:/oauth/yourtal",
+    redirectUris: [
+      "au.com.snapapps.app:/oauth/yourtal",
+      "https://snap-apps.gaiada.com/oauth/yourtal",
+    ],
   },
   {
     clientId: "snapapp-staging-server",
@@ -118,7 +124,7 @@ const DEFINITIONS: readonly Definition<YourTalClient>[] = [
     sector: "ftr",
     kind: "web",
     auth: "client_secret_basic",
-    redirectUri: "https://freetaxreturns.com.au/api/auth/oauth2/callback/yourtal",
+    redirectUris: ["https://freetaxreturns.com.au/api/auth/oauth2/callback/yourtal"],
     privacyUrl: "https://freetaxreturns.com.au/privacy",
     termsUrl: "https://freetaxreturns.com.au/terms",
     returnHost: "freetaxreturns.com.au",

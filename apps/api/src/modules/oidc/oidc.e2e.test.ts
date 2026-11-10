@@ -40,6 +40,7 @@ import { followToApp, startSignIn, webServerCall } from "./testing/sign-in-drive
  */
 const WEB_REDIRECT = "https://snap-apps.gaiada.com/auth/yourtal/callback";
 const MOBILE_REDIRECT = "au.com.snapapps.app:/oauth/yourtal";
+const MOBILE_APP_LINK = "https://snap-apps.gaiada.com/oauth/yourtal";
 const FTR_REDIRECT = "https://freetaxreturns.com.au/api/auth/oauth2/callback/yourtal";
 const ENV_KEYS = [
   "OIDC_ENABLED",
@@ -333,6 +334,14 @@ describe("sign in with YourTal, end to end", () => {
     expect(phone.tokens.claims()?.aud).toBe("snapapp-staging-mobile");
   });
 
+  it("SnapApp's phone app may come back on its verified App Link too (3.3.e), with the same sub", async () => {
+    const ana = await person();
+    const first = await signIn(await webApp(), WEB_REDIRECT, ana, "consent");
+    const phone = await signIn(await mobileApp(), MOBILE_APP_LINK, ana, "continue");
+    expect(phone.callback.origin + phone.callback.pathname).toBe(MOBILE_APP_LINK);
+    expect(phone.tokens.claims()?.sub).toBe(first.tokens.claims()?.sub);
+  });
+
   it("FTR (client_secret_basic) gets its own sub for the same person", async () => {
     const ana = await person();
     const snap = await signIn(await webApp(), WEB_REDIRECT, ana, "consent");
@@ -390,6 +399,26 @@ describe("what the provider refuses", () => {
     expect(response.status).toBe(400);
     expect(response.headers.get("location")).toBeNull();
     expect(await response.text()).toContain("YourTal");
+  });
+
+  it("the App Link only for the phone app, and only exactly (3.3.e)", async () => {
+    const attempts = [
+      [await webApp(), MOBILE_APP_LINK],
+      [await mobileApp(), `${MOBILE_APP_LINK}/`],
+      [await mobileApp(), "https://snap-apps.gaiada.com/oauth/yourtal2"],
+    ] as const;
+    for (const [config, redirect_uri] of attempts) {
+      const started = client.buildAuthorizationUrl(config, {
+        redirect_uri,
+        scope: "openid email profile account",
+        code_challenge: await client.calculatePKCECodeChallenge(client.randomPKCECodeVerifier()),
+        code_challenge_method: "S256",
+        state: "s",
+      });
+      const response = await fetch(started, { redirect: "manual" });
+      expect(response.status, redirect_uri).toBe(400);
+      expect(response.headers.get("location")).toBeNull();
+    }
   });
 
   it("an unknown client is shown on a YourTal page, never redirected", async () => {

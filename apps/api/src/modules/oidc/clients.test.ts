@@ -41,18 +41,35 @@ describe("the client registry (docs/26 §1.9)", () => {
     expect(clientsFor("production")).toEqual([]);
   });
 
-  it("gives every sign-in client one exact redirect URI: https for websites, reverse-DNS for the phone", () => {
+  it("gives every sign-in client exact redirect URIs: https for websites, reverse-DNS or the App Link for the phone", () => {
     for (const client of CLIENTS.filter(isSignInClient)) {
-      const uri = new URL(client.redirectUri);
-      expect(uri.hash).toBe("");
-      expect(uri.search).toBe("");
-      expect(client.redirectUri).not.toMatch(/localhost|127\.0\.0\.1|\*/);
-      if (client.kind === "web") {
-        expect(uri.protocol).toBe("https:");
-        expect(uri.host).toBe(client.returnHost);
-      } else {
-        expect(uri.protocol).toBe("au.com.snapapps.app:");
+      for (const redirectUri of client.redirectUris) {
+        const uri = new URL(redirectUri);
+        expect(uri.hash).toBe("");
+        expect(uri.search).toBe("");
+        expect(redirectUri).not.toMatch(/localhost|127\.0\.0\.1|\*/);
+        if (client.kind === "web") {
+          expect(uri.protocol).toBe("https:");
+          expect(uri.host).toBe(client.returnHost);
+        } else if (uri.protocol === "https:") {
+          expect(uri.host).toBe(client.returnHost);
+        } else {
+          expect(uri.protocol).toBe("au.com.snapapps.app:");
+        }
       }
+    }
+  });
+
+  it("gives the phone app its scheme and its App Link (3.3.e), and every other client exactly one", () => {
+    const uris = new Map(
+      CLIENTS.filter(isSignInClient).map((client) => [client.clientId, client.redirectUris]),
+    );
+    expect(uris.get("snapapp-staging-mobile")).toEqual([
+      "au.com.snapapps.app:/oauth/yourtal",
+      "https://snap-apps.gaiada.com/oauth/yourtal",
+    ]);
+    for (const [clientId, list] of uris) {
+      if (clientId !== "snapapp-staging-mobile") expect(list, clientId).toHaveLength(1);
     }
   });
 
@@ -196,6 +213,16 @@ describe("client credentials from the secrets directory", () => {
     expect(byId.get("snapapp-staging-web")?.jwks?.keys).toHaveLength(1);
     expect(byId.get("ftr-web")?.client_secret).toBe("s".repeat(40));
     expect(byId.get("snapapp-staging-mobile")?.token_endpoint_auth_method).toBe("none");
+    expect(byId.get("snapapp-staging-mobile")?.redirect_uris).toEqual([
+      "au.com.snapapps.app:/oauth/yourtal",
+      "https://snap-apps.gaiada.com/oauth/yourtal",
+    ]);
+    expect(byId.get("ftr-web")?.redirect_uris).toEqual([
+      "https://freetaxreturns.com.au/api/auth/oauth2/callback/yourtal",
+    ]);
+    // Two redirect hosts need a (never fetched) sector URI; one-URI clients stay as they were.
+    expect(byId.get("snapapp-staging-mobile")?.sector_identifier_uri).toBeDefined();
+    expect(byId.get("snapapp-staging-web")?.sector_identifier_uri).toBeUndefined();
     expect(byId.get("snapapp-staging-server")?.grant_types).toEqual(["client_credentials"]);
     expect(byId.get("snapapp-staging-web")?.grant_types).toEqual(["authorization_code"]);
   });

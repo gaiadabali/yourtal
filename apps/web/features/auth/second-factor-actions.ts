@@ -47,6 +47,7 @@ export async function totpSignInAction(formData: FormData): Promise<void> {
 
   const result = await apiFetch("/api/auth/totp/sign-in", signedInSchema, {
     method: "POST",
+    anonymous: true,
     body: { pendingToken, code },
   });
   if (!result.ok) failBackTo("/login/code", errorCode(result.error), returnTo);
@@ -59,7 +60,10 @@ export async function totpSignInAction(formData: FormData): Promise<void> {
 
 /** `POST /api/auth/passkeys/sign-in/options`: a challenge for the browser to sign. */
 export async function passkeySignInOptionsAction(): Promise<ApiResult<PasskeyCeremony>> {
-  return apiFetch("/api/auth/passkeys/sign-in/options", passkeyCeremonySchema, { method: "POST" });
+  return apiFetch("/api/auth/passkeys/sign-in/options", passkeyCeremonySchema, {
+    method: "POST",
+    anonymous: true,
+  });
 }
 
 /**
@@ -74,6 +78,7 @@ export async function passkeySignInAction(
   const returnTo = parseReturnTo(rawReturnTo) ?? "/";
   const result = await apiFetch("/api/auth/passkeys/sign-in", signedInSchema, {
     method: "POST",
+    anonymous: true,
     body: { challengeId, response },
   });
   if (!result.ok) return { ok: false, code: errorCode(result.error) };

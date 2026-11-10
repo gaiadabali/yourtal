@@ -111,6 +111,23 @@ describe("apiFetch (1.7.a)", () => {
     expect((init.headers as Headers).get("authorization")).toBe("Bearer fresh-token");
   });
 
+  it("anonymous: true never forwards the session cookie (a sign-in must not be refused for an old, ended session)", async () => {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(new Response(JSON.stringify({ hello: "signed-in" }), { status: 200 })),
+    );
+    global.fetch = fetchMock;
+
+    const { apiFetch } = await loadApiFetch({ yt_session: "revoked-session-token" });
+    await apiFetch("/api/auth/login", echoSchema, { method: "POST", anonymous: true });
+
+    const [, init] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      RequestInit & { anonymous?: unknown },
+    ];
+    expect((init.headers as Headers).has("authorization")).toBe(false);
+    expect(init.anonymous).toBeUndefined();
+  });
+
   it("serialises a JSON body and sets content-type", async () => {
     const fetchMock = vi.fn(() =>
       Promise.resolve(new Response(JSON.stringify({ hello: "posted" }), { status: 200 })),

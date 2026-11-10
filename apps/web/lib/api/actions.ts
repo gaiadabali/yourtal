@@ -73,6 +73,7 @@ export async function loginAction(formData: FormData): Promise<void> {
 
   const loginResult = await apiFetch("/api/auth/login", passwordSignInResponseSchema, {
     method: "POST",
+    anonymous: true,
     body: { email, password },
   });
   // Only the real sign-in form asks for the passkey offer; the dev harness
@@ -92,6 +93,7 @@ export async function demoSignInAction(formData: FormData): Promise<void> {
   }
   const result = await apiFetch("/api/auth/demo-sign-in", passwordSignInResponseSchema, {
     method: "POST",
+    anonymous: true,
     body: { email },
   });
   await completeSignIn(result, returnTo, false);

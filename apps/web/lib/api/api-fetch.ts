@@ -31,6 +31,12 @@ export type ApiResult<T> =
 export interface ApiFetchInit extends Omit<RequestInit, "body"> {
   /** JSON-serialisable request body. `apiFetch` stringifies it and sets `content-type`. */
   body?: unknown;
+  /**
+   * Never forward the `yt_session` cookie. For the sign-in calls: a cookie
+   * left from an ended session (a password reset ends them all) would
+   * otherwise make the api refuse the sign-in itself with `session_invalid`.
+   */
+  anonymous?: boolean;
 }
 
 /**
@@ -66,7 +72,7 @@ export async function apiFetch<T>(
   const qaKey = stagingQaKey();
   if (qaKey !== undefined && path.startsWith("/api/dev/")) headers.set("x-qa-key", qaKey);
 
-  if (!headers.has("authorization")) {
+  if (init.anonymous !== true && !headers.has("authorization")) {
     const token = await readSessionToken();
     if (token !== null) {
       headers.set("authorization", `Bearer ${token}`);
@@ -88,7 +94,7 @@ export async function apiFetch<T>(
   // `undefined`, so the key is only ever present when there is a body —
   // same convention as `update-me.schema.ts`'s `exactOptionalPropertyTypes`
   // comment.
-  const { body: _initBody, ...restInit } = init;
+  const { body: _initBody, anonymous: _anonymous, ...restInit } = init;
   let response: Response;
   try {
     response = await fetch(url, {

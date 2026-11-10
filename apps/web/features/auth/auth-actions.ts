@@ -81,6 +81,7 @@ export async function registerAction(formData: FormData): Promise<void> {
 
   const result = await apiFetch("/api/auth/register", loginResponseSchema, {
     method: "POST",
+    anonymous: true,
     // `@Idempotent` on `POST /api/auth/register` requires this header — a
     // fresh key per submission, since a genuine retry (the person clicking
     // submit twice) reaching the SAME key is exactly what `withoutToken`'s
@@ -169,6 +170,7 @@ export async function resetPasswordAction(formData: FormData): Promise<void> {
 
   const result = await apiFetch("/api/auth/password/reset/confirm", passwordSignInResponseSchema, {
     method: "POST",
+    anonymous: true,
     body: { token, newPassword },
   });
   if (!result.ok) {

@@ -12,8 +12,8 @@ import {
 import { HISTORY_FILTERS, type HistoryFilter } from "@/features/wallet/wallet-history";
 import { WalletScreen } from "@/features/wallet/wallet-screen";
 import {
-  AwaitingGuardianNotice,
-  isAwaitingGuardian,
+  GuardianNoticePanel,
+  guardianNoticeFor,
 } from "@/features/guardian/awaiting-guardian-notice";
 import { getMeProfile } from "@/features/me/me-data";
 import { getRegion } from "@/features/region/get-region";
@@ -44,7 +44,8 @@ export default async function WalletPage(props: PageProps<"/wallet">) {
     getDisplayLocale(),
     getMeProfile(),
   ]);
-  if (isAwaitingGuardian(me)) return <AwaitingGuardianNotice headingLevel={1} />;
+  const guardianNotice = guardianNoticeFor(me);
+  if (guardianNotice) return <GuardianNoticePanel notice={guardianNotice} headingLevel={1} />;
 
   if (!balanceResult.ok) {
     const t = await getTranslations("wallet");

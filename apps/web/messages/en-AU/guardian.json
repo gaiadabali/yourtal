@@ -68,5 +68,9 @@
   "teenWaiting": {
     "heading": "Waiting for your parent or guardian",
     "body": "We've emailed them to approve your account. Once they do, you can watch, earn points and use your wallet here."
+  },
+  "teenPaused": {
+    "heading": "Your parent or guardian has paused earning on your account",
+    "body": "Ask them if you think this is a mistake."
   }
 }

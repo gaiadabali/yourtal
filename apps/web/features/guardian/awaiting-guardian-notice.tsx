@@ -3,13 +3,24 @@ import { EmptyState } from "@yourtal/ui/empty-state";
 import type { ApiResult } from "@/lib/api/api-fetch";
 import type { MeResponse } from "@/lib/api/me-schema";
 
-/** 5.13.v: a teen whose guardian has not approved yet. The API refuses their earning, so earning pages show the notice below instead. */
-export function isAwaitingGuardian(me: ApiResult<MeResponse>): boolean {
-  return me.ok && me.data.awaitingGuardian === true;
+/** Which notice a teen sees instead of an earning page: waiting for approval (5.13.v) or approval withdrawn (5.13.ai). */
+export type GuardianNotice = "teenWaiting" | "teenPaused";
+
+/** The API refuses earning for both, so earning pages show the notice below instead. */
+export function guardianNoticeFor(me: ApiResult<MeResponse>): GuardianNotice | null {
+  if (!me.ok) return null;
+  if (me.data.awaitingGuardian === true) return "teenWaiting";
+  return me.data.guardianWithdrawn === true ? "teenPaused" : null;
 }
 
-export function AwaitingGuardianNotice({ headingLevel = 2 }: { headingLevel?: 1 | 2 }) {
-  const t = useTranslations("guardian.teenWaiting");
+export function GuardianNoticePanel({
+  notice,
+  headingLevel = 2,
+}: {
+  notice: GuardianNotice;
+  headingLevel?: 1 | 2;
+}) {
+  const t = useTranslations(`guardian.${notice}`);
   return (
     <div className="p-4">
       {headingLevel === 1 ? <h1 className="sr-only">{t("heading")}</h1> : null}

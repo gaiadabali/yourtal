@@ -25,6 +25,8 @@ export const meResponseSchema = z.object({
   emailVerified: z.boolean().optional(),
   /** 5.13.v: a teen whose guardian has not approved yet (cannot earn). Optional so older fixtures still parse. */
   awaitingGuardian: z.boolean().optional(),
+  /** 5.13.ai: a teen whose guardian withdrew approval (cannot earn). Optional so older fixtures still parse. */
+  guardianWithdrawn: z.boolean().optional(),
 });
 
 export type MeResponse = z.infer<typeof meResponseSchema>;

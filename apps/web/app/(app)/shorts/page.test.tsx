@@ -92,12 +92,29 @@ describe("the Shorts page", () => {
   it("shows a teen awaiting their guardian the waiting notice instead of the feed", async () => {
     mocks.getShortsFeed.mockResolvedValue({
       ok: true,
-      data: data({ items: [{ campaignId: "a" }] as never, awaitingGuardian: true }),
+      data: data({ items: [{ campaignId: "a" }] as never, guardianNotice: "teenWaiting" }),
     });
     await renderPage();
     expect(
       screen.getByRole("heading", { level: 1, name: "Waiting for your parent or guardian" }),
     ).toBeInTheDocument();
+    expect(screen.queryByTestId("shorts-feed")).not.toBeInTheDocument();
+  });
+
+  // 5.13.ai: withdrawn, the API refuses earning again.
+  it("shows a teen whose guardian withdrew the paused notice instead of the feed", async () => {
+    mocks.getShortsFeed.mockResolvedValue({
+      ok: true,
+      data: data({ items: [{ campaignId: "a" }] as never, guardianNotice: "teenPaused" }),
+    });
+    await renderPage();
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: "Your parent or guardian has paused earning on your account",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Ask them if you think this is a mistake.")).toBeInTheDocument();
     expect(screen.queryByTestId("shorts-feed")).not.toBeInTheDocument();
   });
 
@@ -107,7 +124,7 @@ describe("the Shorts page", () => {
       data: data({
         items: [{ campaignId: "a" }] as never,
         ageBand: "teen",
-        awaitingGuardian: false,
+        guardianNotice: null,
       }),
     });
     await renderPage();

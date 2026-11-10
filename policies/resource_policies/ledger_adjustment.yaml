@@ -47,13 +47,11 @@ resourcePolicy:
       # approved by a different one) -- covered by the same rule rather than
       # a second one, so there is only ever one place this check can drift.
       actions:
-        [
-          "approve",
-          "approve_payout",
-          "approve_refund",
-          "approve_payout_retry",
-          "approve_listing_price",
-        ]
+        - approve
+        - approve_payout
+        - approve_refund
+        - approve_payout_retry
+        - approve_listing_price
       effect: EFFECT_DENY
       roles: ["*"]
       condition:

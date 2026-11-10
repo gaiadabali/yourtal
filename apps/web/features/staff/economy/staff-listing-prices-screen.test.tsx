@@ -32,9 +32,9 @@ const row = (over: Partial<ListingPriceRow>): ListingPriceRow => ({
   currency: "AUD",
   lifecycleState: "active",
   redeemPartnerId: "snap-app",
-  ledgerPricePoints: 167 as Points,
-  minPricePoints: 200 as Points,
-  effectivePricePoints: 200 as Points,
+  ledgerPricePoints: 167,
+  minPricePoints: 200,
+  effectivePricePoints: 200,
   pending: null,
   ...over,
 });
@@ -86,7 +86,7 @@ describe("the listing points price screen (2.8.g)", () => {
   });
 
   it("says the ledger price wins when the staff price is below it", () => {
-    show([row({ minPricePoints: 150 as Points, effectivePricePoints: 167 as Points })]);
+    show([row({ minPricePoints: 150, effectivePricePoints: 167 })]);
     expect(
       screen.getByText(
         "The ledger price (167 points) is above the staff price, so buyers pay the ledger price.",
@@ -96,7 +96,7 @@ describe("the listing points price screen (2.8.g)", () => {
 
   it("warns while typing a price below the ledger price", async () => {
     const user = userEvent.setup();
-    show([row({ minPricePoints: null, effectivePricePoints: 167 as Points })]);
+    show([row({ minPricePoints: null, effectivePricePoints: 167 })]);
     const field = screen.getByLabelText("Points price");
     await user.type(field, "150");
     expect(
@@ -112,7 +112,7 @@ describe("the listing points price screen (2.8.g)", () => {
   it("proposes a price with its reason, and refreshes", async () => {
     vi.mocked(proposeListingPriceAction).mockResolvedValue({ ok: true });
     const user = userEvent.setup();
-    show([row({ minPricePoints: null, effectivePricePoints: 167 as Points })]);
+    show([row({ minPricePoints: null, effectivePricePoints: 167 })]);
     await user.type(screen.getByLabelText("Points price"), "200");
     await user.type(screen.getByLabelText(/Reason/), "Founder's price");
     await user.click(screen.getByRole("button", { name: "Propose price" }));

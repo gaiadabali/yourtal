@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
+import { ZodValidationPipe } from "nestjs-zod";
 import type { Pool } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { toMinorUnits } from "@yourtal/contracts/money";
@@ -28,6 +29,8 @@ const LOCATION = randomUUID();
 beforeAll(async () => {
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+  // Validation as in main.ts, so the 400 cases below reach the DTO schema.
+  app.useGlobalPipes(new ZodValidationPipe());
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
   owner = ownerPool();

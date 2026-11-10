@@ -3,11 +3,13 @@ import { forbidden } from "next/navigation";
 import {
   economyOverviewSchema,
   economyProposalSchema,
+  listingPricesScreenSchema,
   rateScreenSchema,
   receiptProgrammeRowsSchema,
   settingsScreenSchema,
   type EconomyOverview,
   type EconomyProposal,
+  type ListingPricesScreen,
   type RateScreen,
   type ReceiptProgrammeRows,
   type SettingsScreen,
@@ -99,4 +101,22 @@ export async function getParkedPurchases(region: "AU" | "ID"): Promise<ParkedPur
   );
   if (!result.ok) throwOrForbid("load parked purchases", result.error);
   return result.data;
+}
+
+/**
+ * 2.8.g: listing points prices, finance only. `null` on a 403, like
+ * `getRateScreen`: ops shares the economy zone and sees "not available".
+ */
+export async function getListingPrices(
+  region: "AU" | "ID",
+  query: string | undefined,
+): Promise<ListingPricesScreen | null> {
+  const search = query === undefined || query === "" ? "" : `?q=${encodeURIComponent(query)}`;
+  const result = await apiFetch(
+    `/api/staff/economy/${region}/listing-prices${search}`,
+    listingPricesScreenSchema,
+  );
+  if (result.ok) return result.data;
+  if (result.error.kind === "http" && result.error.status === 403) return null;
+  throw new Error(`Could not load listing prices: ${result.error.message}`);
 }

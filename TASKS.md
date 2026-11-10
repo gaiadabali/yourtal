@@ -1691,7 +1691,7 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
   - [x] 14.10.b The fraud checks rest on that, plus the holdback by trust tier and the earn caps; record it in docs/16 → F126 in docs/16, ef9fc40c
   - [x] 14.10.c The staff economy settings show the check's effective state (Required in production, On, Off) (group 5.9.d) → ef9fc40c
   - [x] 14.10.d Add the passkey to the check once group 3.9.c is on main, as a second switch (group 5.9.e) — moved to group 6.11, a launch gate (founder, 2026-10-22) — ✂️ cut: moved to group 6.11 → 3df31f6a (group 6.11.a, PR #41): `requirePasskey`, off everywhere until finance turns it on
-  - [ ] 14.10.f Before `requirePasskey` goes on (group 6.11.b): `/passkey` explains earning, with a way forward → 43f0f088 (PR #44); partners told about `add_passkey` still open
+  - [x] 14.10.f Before `requirePasskey` goes on (group 6.11.b): `/passkey` explains earning, with a way forward → 43f0f088 (PR #44); partners told about `add_passkey` still open → partners told → b8dd42d3 (PR #86): the partner guide documents the identity_check_required refusal with missing:[add_passkey]
   - [x] 14.10.e Loose ends: name what is missing in the completion response; the partner link made before a refused receipt (group 5.9.f) → 6716ddc3 (group 5.9.f: missing in the completion response; the partner link after a refused receipt stays, decided 2026-10-22)
 
 - [x] **14.11 Record the payment simulation** (group 0.7.g) · lead · needs: — — ✅ 2026-10-20 fbcd08d5
@@ -1713,8 +1713,8 @@ YourTal's share of the cross-app plan (SnapApp, Free Tax Returns). The plan of r
 - [ ] **14.23 The SnapApp scans voucher** (group 2.8, F128) · A + B + C · needs: 14.3 — 🔄 2026-10-22
   - [x] 14.23.a T1 partner-bound listings; T2 the holding read and code test vectors; T3 the merchant order lookup → T1 → ad0901b3; T3 → e8709598 (PR #30); T2 → 2fadd2d0 (PR #42); all three done (T2 2fadd2d0, T3 e8709598)
   - [x] 14.23.b T4 the partner ownership read; T5 wallet copy for vouchers used in an app; T6 the checkout tier exemption → T4 f05b75ba (PR #45); T5, T6 b553583e (PR #46)
-  - [ ] 14.23.c T7 the staging seed (200-point listing, stock, binding); the lead’s credential and secret steps → seed merged b553583e (PR #46), priced at the ledger quote (167) until group 2.8.g; runs on the next staging deploy
-  - [ ] 14.23.d T8 the staging check: Phases A, B and C pass
+  - [ ] 14.23.c T7 the staging seed (200-point listing, stock, binding); the lead’s credential and secret steps → seed merged b553583e (PR #46), priced at the ledger quote (167) until group 2.8.g; runs on the next staging deploy → group 2.8.g → 0b91b0de (PR #87): staff-set listing price (max(staff price, ledger quote)), seed sets 200, finance price screen; the seed re-run on staging waits for the office (group 2.11.b)
+  - [ ] 14.23.d T8 the staging check: Phases A, B and C pass → Phases A and B passed on staging 2026-11-10 (at the ledger quote, 143); Phase C (payout) is now in the script, waiting for the statement's dispute window or a backdate (group 2.11.c)
 - [x] **14.15 Account deletion: the last gaps** (group 1.24) · A · needs: — — ✅ 2026-10-21 0551286a
   - [x] 14.15.a Pending team invitations to an erased email are removed inside the identity domain, before the address goes (group 1.24.a) → 0551286a
   - [x] 14.15.b `DELETE /api/me` reports `complete: true`: research_answers and support_cases get a table and handler, or their declarations go (group 1.24.b) → 0551286a

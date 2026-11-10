@@ -61,13 +61,14 @@ export function parseGstPeriod(input: {
     const match = QUARTER.exec(input.quarter);
     if (match === null) return null;
     const year = Number(match[1]);
-    const startMonth = (Number(match[2]) - 1) * 3; // 0-based
-    const start = new Date(Date.UTC(year, startMonth, 1));
+    const quarter = Number(match[2]);
+    const startMonth = (quarter - 1) * 3; // 0-based
     const end = new Date(Date.UTC(year, startMonth + 3, 0));
+    // Rebuilt from numbers, so nothing the caller typed is echoed back.
     return {
-      from: start.toISOString().slice(0, 10),
-      to: end.toISOString().slice(0, 10),
-      label: `${String(year)}-Q${match[2] ?? ""}`,
+      from: ymd(year, startMonth + 1, 1),
+      to: ymd(year, end.getUTCMonth() + 1, end.getUTCDate()),
+      label: `${String(year)}-Q${String(quarter)}`,
     };
   }
   if (input.from === undefined || input.to === undefined) return null;
@@ -75,7 +76,19 @@ export function parseGstPeriod(input: {
   const days =
     (Date.parse(`${input.to}T00:00:00Z`) - Date.parse(`${input.from}T00:00:00Z`)) / 86_400_000;
   if (days >= MAX_RANGE_DAYS) return null;
-  return { from: input.from, to: input.to, label: `${input.from}_${input.to}` };
+  const from = ymd(...parts(input.from));
+  const to = ymd(...parts(input.to));
+  return { from, to, label: `${from}_${to}` };
+}
+
+/** `[year, month, day]` of a `YYYY-MM-DD` string already known to be a real date. */
+function parts(value: string): [number, number, number] {
+  return [Number(value.slice(0, 4)), Number(value.slice(5, 7)), Number(value.slice(8, 10))];
+}
+
+function ymd(year: number, month: number, day: number): string {
+  const two = (n: number): string => String(n).padStart(2, "0");
+  return `${String(year).padStart(4, "0")}-${two(month)}-${two(day)}`;
 }
 
 interface ReportDbRow {

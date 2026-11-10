@@ -23354,9 +23354,8 @@
                             "anyOf": [
                               {
                                 "type": "integer",
-                                "minimum": 0,
-                                "maximum": 10000000000,
-                                "format": "int64"
+                                "minimum": 1,
+                                "maximum": 1000000000
                               },
                               {
                                 "type": "null"
@@ -23367,9 +23366,8 @@
                             "anyOf": [
                               {
                                 "type": "integer",
-                                "minimum": 0,
-                                "maximum": 10000000000,
-                                "format": "int64"
+                                "minimum": 1,
+                                "maximum": 1000000000
                               },
                               {
                                 "type": "null"
@@ -23380,9 +23378,8 @@
                             "anyOf": [
                               {
                                 "type": "integer",
-                                "minimum": 0,
-                                "maximum": 10000000000,
-                                "format": "int64"
+                                "minimum": 1,
+                                "maximum": 1000000000
                               },
                               {
                                 "type": "null"
@@ -23491,9 +23488,8 @@
                                     "anyOf": [
                                       {
                                         "type": "integer",
-                                        "minimum": 0,
-                                        "maximum": 10000000000,
-                                        "format": "int64"
+                                        "minimum": 1,
+                                        "maximum": 1000000000
                                       },
                                       {
                                         "type": "null"

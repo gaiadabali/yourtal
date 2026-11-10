@@ -193,6 +193,14 @@ export type DecideProposalBody = z.infer<typeof decideProposalBodySchema>;
 export const listingMinPricePointsSchema = z.number().int().min(1).max(10_000_000);
 
 /**
+ * A price on the screen. Deliberately not `pointsSchema.nullable()`: the Go
+ * generator (openapi-generator 7.25) shares structurally equal integer schemas,
+ * so a nullable copy of `pointsSchema` turned every `Money.amountMinor` into a
+ * NullableInt64. A price is at least 1 point anyway.
+ */
+const listingPricePointsSchema = z.number().int().min(1).max(1_000_000_000);
+
+/**
  * One listing on the price screen. The buyer pays `effectivePricePoints`,
  * max(`minPricePoints`, `ledgerPricePoints`): a staff price below the ledger's
  * quote has no effect. `ledgerPricePoints` is null when the ledger did not
@@ -207,12 +215,15 @@ export const listingPriceRowSchema = z
     currency: currencySchema,
     lifecycleState: z.string(),
     redeemPartnerId: z.string().nullable(),
-    ledgerPricePoints: pointsSchema.nullable(),
-    minPricePoints: pointsSchema.nullable(),
-    effectivePricePoints: pointsSchema.nullable(),
+    ledgerPricePoints: listingPricePointsSchema.nullable(),
+    minPricePoints: listingPricePointsSchema.nullable(),
+    effectivePricePoints: listingPricePointsSchema.nullable(),
     /** The open proposal for this listing, if any; `minPricePoints` null there means "clear". */
     pending: z
-      .object({ proposal: economyProposalSchema, minPricePoints: pointsSchema.nullable() })
+      .object({
+        proposal: economyProposalSchema,
+        minPricePoints: listingPricePointsSchema.nullable(),
+      })
       .strict()
       .nullable(),
   })

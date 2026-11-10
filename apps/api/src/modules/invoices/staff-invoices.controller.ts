@@ -76,7 +76,7 @@ export class StaffInvoicesController {
     @Query() query: Record<string, string | string[] | undefined>,
     @Req() request: FastifyRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
-  ): Promise<string> {
+  ): Promise<Buffer> {
     const text = (value: string | string[] | undefined): string | undefined =>
       typeof value === "string" ? value : undefined;
     const period = parseGstPeriod({
@@ -101,7 +101,9 @@ export class StaffInvoicesController {
     reply.header("content-type", "text/csv; charset=utf-8");
     reply.header("content-disposition", `attachment; filename="gst-report-${period.label}.csv"`);
     reply.header("cache-control", "private, no-store");
-    return buildGstReportCsv(period, rows);
+    // A Buffer download, never markup: nosniff stops a browser treating it as HTML.
+    reply.header("x-content-type-options", "nosniff");
+    return Buffer.from(buildGstReportCsv(period, rows), "utf-8");
   }
 
   @Authorize({

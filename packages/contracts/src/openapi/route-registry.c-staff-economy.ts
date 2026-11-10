@@ -336,7 +336,8 @@ export const STAFF_ECONOMY_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       schema: inlineSchema(decideProposalBodySchema),
     },
     successStatus: 201,
-    successDescription: "The decided proposal; the listing's price changed in the same transaction.",
+    successDescription:
+      "The decided proposal; the listing's price changed in the same transaction.",
     successSchema: inlineSchema(economyProposalSchema),
     errors: [VALIDATION_400, FORBIDDEN, SELF_APPROVAL, NOT_FOUND, ALREADY_DECIDED],
   },

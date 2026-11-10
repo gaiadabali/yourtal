@@ -150,7 +150,9 @@ export function RegisterForm({
         <option value="id-ID">{t("languageOptionIdID")}</option>
       </NativeSelect>
 
-      <PendingSubmitButton>{needsGuardianEmail ? t("continueCta") : t("submitCta")}</PendingSubmitButton>
+      <PendingSubmitButton>
+        {needsGuardianEmail ? t("continueCta") : t("submitCta")}
+      </PendingSubmitButton>
     </form>
   );
 }

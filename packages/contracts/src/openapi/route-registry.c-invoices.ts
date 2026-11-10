@@ -85,6 +85,40 @@ export const INVOICE_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   },
   {
     method: "get",
+    path: "/api/staff/invoices/gst-report",
+    summary: "Staff (finance): the quarterly GST report as a CSV",
+    tags: ["staff", "invoices"],
+    pathParams: [],
+    queryParams: [
+      {
+        name: "quarter",
+        description:
+          "A calendar quarter as YYYY-Q1 to YYYY-Q4 (Oct to Dec is Q4). Or give from and to.",
+        required: false,
+        schema: { type: "string", pattern: "^\\d{4}-Q[1-4]$" },
+      },
+      {
+        name: "from",
+        description: "First day, YYYY-MM-DD, Australian time. With `to`; not with `quarter`.",
+        required: false,
+        schema: { type: "string", format: "date" },
+      },
+      {
+        name: "to",
+        description: "Last day, inclusive. The range is under a year.",
+        required: false,
+        schema: { type: "string", format: "date" },
+      },
+    ],
+    successStatus: 200,
+    successDescription:
+      "One row per AU invoice or credit note (amounts in integer minor units), then a totals block. Sent as an attachment; the call is audited.",
+    successContentType: "text/csv",
+    successSchema: { type: "string" },
+    errors: [FORBIDDEN, nestDefaultError(400, "Neither a quarter nor a valid from/to range.")],
+  },
+  {
+    method: "get",
     path: "/api/staff/invoices/{invoiceId}/pdf",
     summary: "Staff: download any invoice as a PDF",
     tags: ["staff", "invoices"],

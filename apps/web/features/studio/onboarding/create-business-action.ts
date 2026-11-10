@@ -28,7 +28,9 @@ export async function createBusinessAction(formData: FormData): Promise<void> {
   const parsed = createBusinessInputSchema.safeParse(raw);
   if (!parsed.success) {
     const firstIssue = parsed.error.issues[0];
-    const code = typeof firstIssue?.path[0] === "string" ? firstIssue.path[0] : "invalid_input";
+    const field = typeof firstIssue?.path[0] === "string" ? firstIssue.path[0] : "invalid_input";
+    // 6.10.b: an ABN that fails the check digit gets its own message.
+    const code = field === "taxIdValue" && formData.get("taxIdKind") === "ABN" ? "abn" : field;
     redirect(`${ONBOARDING_PATH}?error=${code}`);
   }
 

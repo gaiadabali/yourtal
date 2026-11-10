@@ -52,6 +52,19 @@ function toDetail(
     taxIdValue: row.taxIdValue,
     suspendedReason: row.suspendedReason,
     kybDocuments: documents.map(toDocument),
+    // Only counts while it still describes the ABN on the row.
+    abnConfirmation:
+      row.abnConfirmedAt === null ||
+      row.abnConfirmedAbn !== row.taxIdValue.replace(/\s/g, "") ||
+      row.abnEntityName === null ||
+      row.abnGstRegistered === null
+        ? null
+        : {
+            abn: row.abnConfirmedAbn,
+            entityName: row.abnEntityName,
+            gstRegistered: row.abnGstRegistered,
+            confirmedAt: row.abnConfirmedAt.toISOString(),
+          },
   };
 }
 
@@ -177,6 +190,29 @@ export class DrizzleStaffBusinessReviewRepository implements StaffBusinessReview
         suspendedAt: null,
         suspendedByUserId: null,
         suspendedReason: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(businessAccounts.id, businessId))
+      .returning();
+    if (row === undefined) return null;
+    const documents = await this.db
+      .select()
+      .from(kybDocuments)
+      .where(eq(kybDocuments.businessId, businessId));
+    return toDetail(row, documents);
+  }
+
+  async recordAbnConfirmation(
+    businessId: string,
+    confirmation: { abn: string; entityName: string; gstRegistered: boolean },
+  ): Promise<StaffBusinessDetail | null> {
+    const [row] = await this.db
+      .update(businessAccounts)
+      .set({
+        abnConfirmedAt: new Date(),
+        abnConfirmedAbn: confirmation.abn,
+        abnEntityName: confirmation.entityName,
+        abnGstRegistered: confirmation.gstRegistered,
         updatedAt: new Date(),
       })
       .where(eq(businessAccounts.id, businessId))

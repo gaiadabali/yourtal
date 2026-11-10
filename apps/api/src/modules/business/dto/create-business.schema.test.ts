@@ -20,7 +20,7 @@ const validAu = {
   legalName: "Wharf Espresso Pty Ltd",
   displayName: "Wharf Espresso",
   taxIdKind: "ABN",
-  taxIdValue: "12345678901",
+  taxIdValue: "51824753556", // the ATO's own example ABN
   addressState: "NSW",
   addressPostcode: "2000",
   addressCity: null,
@@ -38,6 +38,26 @@ describe("createBusinessSchema", () => {
 
   it("round-trips a valid AU request", () => {
     expect(createBusinessSchema.parse(validAu)).toMatchObject({ displayName: "Wharf Espresso" });
+  });
+
+  it("6.10.b: refuses an ABN that fails the check digit, with the en-AU message, on taxIdValue", () => {
+    for (const taxIdValue of ["51824753557", "12345678901", "00000000000"]) {
+      const result = createBusinessSchema.safeParse({ ...validAu, taxIdValue });
+      expect(result.success, taxIdValue).toBe(false);
+      const issue = result.error?.issues.find((i) => i.path[0] === "taxIdValue");
+      expect(issue?.message).toBe(
+        "That ABN doesn't look right. Check the 11 digits on your ABN record.",
+      );
+    }
+  });
+
+  it("6.10.b: accepts the ATO example typed with spaces, and leaves NPWP/NIB unchecked", () => {
+    expect(
+      createBusinessSchema.safeParse({ ...validAu, taxIdValue: "51 824 753 556" }).success,
+    ).toBe(true);
+    expect(
+      createBusinessSchema.safeParse({ ...valid, taxIdValue: "1234567890123456" }).success,
+    ).toBe(true);
   });
 
   it("defaults logoUrl to null when omitted", () => {

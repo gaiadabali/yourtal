@@ -42,7 +42,7 @@ async function seedBusiness(): Promise<string> {
     legalName: "8.3.a Test Business Pty Ltd",
     displayName: "8.3.a Test Business",
     taxIdKind: "ABN",
-    taxIdValue: "12345678901",
+    taxIdValue: "51824753556",
     addressState: "NSW",
     addressPostcode: "2000",
     addressCity: null,

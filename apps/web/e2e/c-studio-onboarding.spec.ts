@@ -123,7 +123,7 @@ test.describe
     await page.getByLabel("Display name").fill("C Studio E2E");
     await page.getByLabel("Handle").fill(businessHandle);
     // taxIdKind defaults to ABN (AU's only option) already selected.
-    await page.getByLabel("Tax ID number").fill("12345678901");
+    await page.getByLabel("Tax ID number").fill("51824753556");
     await page.getByLabel("State").selectOption("NSW");
     await page.getByLabel("Postcode").fill("2000");
     await page.getByRole("button", { name: "Create business" }).click();

@@ -1,12 +1,28 @@
-import { Body, Controller, Get, Inject, Param, Post, Query, Req } from "@nestjs/common";
+import {
+  BadGatewayException,
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Query,
+  Req,
+  ServiceUnavailableException,
+  UnprocessableEntityException,
+} from "@nestjs/common";
+import { abnWriteIssue } from "@yourtal/contracts/business";
 import type { FastifyRequest } from "fastify";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { AsyncPrincipalResolver } from "../../shared/authz/async-principal-resolver";
 import { Idempotent, NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { ONBOARDING_RETENTION_MS } from "../../shared/idempotency/retention";
 import { StaffAction, setStaffAuditContext } from "../staff/staff-action.decorator";
+import { ABR_LOOKUP } from "./abr/abr-lookup";
+import type { AbrLookup } from "./abr/abr-lookup";
 import {
   ApproveBusinessKybDto,
+  CheckBusinessAbnDto,
   ReinstateBusinessDto,
   RejectBusinessKybDto,
   SuspendBusinessDto,
@@ -39,6 +55,8 @@ export class StaffBusinessReviewController {
     private readonly principals: AsyncPrincipalResolver,
     @Inject(STAFF_BUSINESS_REVIEW_REPOSITORY)
     private readonly businesses: StaffBusinessReviewRepository,
+    /** `null` when `ABR_GUID` is unset: the lookup is off. */
+    @Inject(ABR_LOOKUP) private readonly abr: AbrLookup | null,
   ) {}
 
   @StaffAction("business.list")
@@ -78,7 +96,74 @@ export class StaffBusinessReviewController {
   async detail(@Param("businessId") businessId: string) {
     const result = await getBusinessForStaff(this.businesses, businessId);
     if (result.isErr()) throw mapBusinessErrorToHttpException(result.error);
-    return result.value;
+    return { ...result.value, abrLookupEnabled: this.abr !== null };
+  }
+
+  /**
+   * 6.10.b: asks the ABR about this business's ABN and records the entity name
+   * and GST status. Same ops gate as the KYB review; off (503) without `ABR_GUID`.
+   */
+  @StaffAction("business.abn.check")
+  @Authorize({
+    kind: "kyb_document",
+    action: "approve",
+    idFrom: (req) => (req.params as Record<string, string>)["businessId"] ?? "",
+    attrsFrom: (req) => ({ businessId: (req.params as Record<string, string>)["businessId"] }),
+  })
+  @Idempotent({ retentionMs: ONBOARDING_RETENTION_MS })
+  @Post(":businessId/abn/check")
+  async checkAbn(
+    @Param("businessId") businessId: string,
+    @Body() body: CheckBusinessAbnDto,
+    @Req() request: FastifyRequest,
+  ) {
+    if (this.abr === null) {
+      throw new ServiceUnavailableException({
+        code: "abr_lookup_off",
+        message: "The ABR lookup is not switched on (no ABR_GUID).",
+      });
+    }
+    const found = await getBusinessForStaff(this.businesses, businessId);
+    if (found.isErr()) throw mapBusinessErrorToHttpException(found.error);
+    const business = found.value;
+    const abn = business.taxIdValue.replace(/\s/g, "");
+    if (business.taxIdKind !== "ABN" || abnWriteIssue("ABN", abn) !== null) {
+      throw new UnprocessableEntityException({
+        code: "abn_not_checkable",
+        message:
+          "This business has no ABN that passes the check digit, so there is nothing to look up.",
+      });
+    }
+    let answer;
+    try {
+      answer = await this.abr.lookup(abn);
+    } catch {
+      throw new BadGatewayException({
+        code: "abr_unreachable",
+        message: "The ABR did not answer.",
+      });
+    }
+    if (!answer.found) {
+      throw new UnprocessableEntityException({
+        code: "abr_no_match",
+        message: "The ABR has no active ABN with this number.",
+      });
+    }
+    const saved = await this.businesses.recordAbnConfirmation(businessId, {
+      abn,
+      entityName: answer.entityName,
+      gstRegistered: answer.gstRegistered,
+    });
+    if (saved === null) {
+      throw mapBusinessErrorToHttpException({ type: "business_not_found", businessId });
+    }
+    setStaffAuditContext(request, {
+      targetKind: "business",
+      targetId: businessId,
+      region: saved.region,
+      reason: body.reason,
+    });
+    return { ...saved, abrLookupEnabled: true };
   }
 
   @StaffAction("business.kyb.approve")
@@ -104,7 +189,7 @@ export class StaffBusinessReviewController {
       region: result.value.region,
       reason: body.reason,
     });
-    return result.value;
+    return { ...result.value, abrLookupEnabled: this.abr !== null };
   }
 
   @StaffAction("business.kyb.reject")
@@ -130,7 +215,7 @@ export class StaffBusinessReviewController {
       region: result.value.region,
       reason: body.reason,
     });
-    return result.value;
+    return { ...result.value, abrLookupEnabled: this.abr !== null };
   }
 
   @StaffAction("business.suspend")
@@ -156,7 +241,7 @@ export class StaffBusinessReviewController {
       region: result.value.region,
       reason: body.reason,
     });
-    return result.value;
+    return { ...result.value, abrLookupEnabled: this.abr !== null };
   }
 
   @StaffAction("business.reinstate")
@@ -182,6 +267,6 @@ export class StaffBusinessReviewController {
       region: result.value.region,
       reason: body.reason,
     });
-    return result.value;
+    return { ...result.value, abrLookupEnabled: this.abr !== null };
   }
 }

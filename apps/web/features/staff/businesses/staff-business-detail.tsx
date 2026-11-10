@@ -12,6 +12,7 @@ import { Text } from "@yourtal/ui/text";
 import { StaffReasonDialogButton } from "../staff-reason-dialog-button";
 import {
   approveBusinessKybAction,
+  checkBusinessAbnAction,
   reinstateBusinessAction,
   rejectBusinessKybAction,
   suspendBusinessAction,
@@ -73,6 +74,22 @@ export function StaffBusinessDetailScreen({ initial }: StaffBusinessDetailScreen
                 label: t("businesses.taxId"),
                 value: `${business.taxIdKind} ${business.taxIdValue}`,
               },
+              ...(business.taxIdKind === "ABN"
+                ? [
+                    {
+                      key: "abnCheck",
+                      label: t("businesses.abnCheck"),
+                      value:
+                        business.abnConfirmation === null
+                          ? t("businesses.abnNotChecked")
+                          : `${t("businesses.abnConfirmed", { entity: business.abnConfirmation.entityName })} (${t(
+                              business.abnConfirmation.gstRegistered
+                                ? "businesses.abnGstRegistered"
+                                : "businesses.abnNotGstRegistered",
+                            )})`,
+                    },
+                  ]
+                : []),
               {
                 key: "status",
                 label: t("businesses.columnStatus"),
@@ -85,6 +102,18 @@ export function StaffBusinessDetailScreen({ initial }: StaffBusinessDetailScreen
               },
             ]}
           />
+          {business.taxIdKind === "ABN" && business.abrLookupEnabled ? (
+            <div className="mt-4">
+              <StaffReasonDialogButton
+                triggerLabel={t("businesses.checkAbnCta")}
+                triggerVariant="secondary"
+                dialogTitle={t("businesses.checkAbnDialogTitle")}
+                dialogBody={t("businesses.checkAbnDialogBody")}
+                submitLabel={t("businesses.checkAbnSubmit")}
+                onSubmit={(reason) => run(checkBusinessAbnAction, reason)}
+              />
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 

@@ -51,7 +51,7 @@ async function seedBusinessAndLocation(): Promise<{ businessId: string; location
     legalName: "8.1.c Test Business Pty Ltd",
     displayName: "8.1.c Test Business",
     taxIdKind: "ABN",
-    taxIdValue: "12345678901",
+    taxIdValue: "51824753556",
     addressState: "NSW",
     addressPostcode: "2000",
     addressCity: null,

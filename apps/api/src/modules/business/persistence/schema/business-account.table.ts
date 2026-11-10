@@ -33,4 +33,9 @@ export const businessAccounts = businessPgSchema.table("business_accounts", {
   suspendedAt: timestamp("suspended_at", { withTimezone: true }),
   suspendedByUserId: text("suspended_by_user_id"),
   suspendedReason: text("suspended_reason"),
+  // 6.10.b: what the ABR said about the ABN; all NULL until a staff check succeeds.
+  abnConfirmedAt: timestamp("abn_confirmed_at", { withTimezone: true }),
+  abnConfirmedAbn: text("abn_confirmed_abn"),
+  abnEntityName: text("abn_entity_name"),
+  abnGstRegistered: boolean("abn_gst_registered"),
 });

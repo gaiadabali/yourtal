@@ -33,6 +33,8 @@ type ApiStaffBusinessesBusinessIdGet200Response struct {
 	TaxIdValue string `json:"taxIdValue"`
 	SuspendedReason NullableString `json:"suspendedReason"`
 	KybDocuments []ApiStaffBusinessesBusinessIdGet200ResponseKybDocumentsInner `json:"kybDocuments"`
+	AbnConfirmation NullableApiStaffBusinessesBusinessIdGet200ResponseAbnConfirmation `json:"abnConfirmation"`
+	AbrLookupEnabled bool `json:"abrLookupEnabled"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -42,7 +44,7 @@ type _ApiStaffBusinessesBusinessIdGet200Response ApiStaffBusinessesBusinessIdGet
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiStaffBusinessesBusinessIdGet200Response(id NullableString, legalName string, displayName string, handle string, region NullableString, isVerified bool, suspendedAt NullableTime, createdAt time.Time, taxIdKind string, taxIdValue string, suspendedReason NullableString, kybDocuments []ApiStaffBusinessesBusinessIdGet200ResponseKybDocumentsInner) *ApiStaffBusinessesBusinessIdGet200Response {
+func NewApiStaffBusinessesBusinessIdGet200Response(id NullableString, legalName string, displayName string, handle string, region NullableString, isVerified bool, suspendedAt NullableTime, createdAt time.Time, taxIdKind string, taxIdValue string, suspendedReason NullableString, kybDocuments []ApiStaffBusinessesBusinessIdGet200ResponseKybDocumentsInner, abnConfirmation NullableApiStaffBusinessesBusinessIdGet200ResponseAbnConfirmation, abrLookupEnabled bool) *ApiStaffBusinessesBusinessIdGet200Response {
 	this := ApiStaffBusinessesBusinessIdGet200Response{}
 	this.Id = id
 	this.LegalName = legalName
@@ -56,6 +58,8 @@ func NewApiStaffBusinessesBusinessIdGet200Response(id NullableString, legalName 
 	this.TaxIdValue = taxIdValue
 	this.SuspendedReason = suspendedReason
 	this.KybDocuments = kybDocuments
+	this.AbnConfirmation = abnConfirmation
+	this.AbrLookupEnabled = abrLookupEnabled
 	return &this
 }
 
@@ -363,6 +367,56 @@ func (o *ApiStaffBusinessesBusinessIdGet200Response) SetKybDocuments(v []ApiStaf
 	o.KybDocuments = v
 }
 
+// GetAbnConfirmation returns the AbnConfirmation field value
+// If the value is explicit nil, the zero value for ApiStaffBusinessesBusinessIdGet200ResponseAbnConfirmation will be returned
+func (o *ApiStaffBusinessesBusinessIdGet200Response) GetAbnConfirmation() ApiStaffBusinessesBusinessIdGet200ResponseAbnConfirmation {
+	if o == nil || o.AbnConfirmation.Get() == nil {
+		var ret ApiStaffBusinessesBusinessIdGet200ResponseAbnConfirmation
+		return ret
+	}
+
+	return *o.AbnConfirmation.Get()
+}
+
+// GetAbnConfirmationOk returns a tuple with the AbnConfirmation field value
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ApiStaffBusinessesBusinessIdGet200Response) GetAbnConfirmationOk() (*ApiStaffBusinessesBusinessIdGet200ResponseAbnConfirmation, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.AbnConfirmation.Get(), o.AbnConfirmation.IsSet()
+}
+
+// SetAbnConfirmation sets field value
+func (o *ApiStaffBusinessesBusinessIdGet200Response) SetAbnConfirmation(v ApiStaffBusinessesBusinessIdGet200ResponseAbnConfirmation) {
+	o.AbnConfirmation.Set(&v)
+}
+
+// GetAbrLookupEnabled returns the AbrLookupEnabled field value
+func (o *ApiStaffBusinessesBusinessIdGet200Response) GetAbrLookupEnabled() bool {
+	if o == nil {
+		var ret bool
+		return ret
+	}
+
+	return o.AbrLookupEnabled
+}
+
+// GetAbrLookupEnabledOk returns a tuple with the AbrLookupEnabled field value
+// and a boolean to check if the value has been set.
+func (o *ApiStaffBusinessesBusinessIdGet200Response) GetAbrLookupEnabledOk() (*bool, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.AbrLookupEnabled, true
+}
+
+// SetAbrLookupEnabled sets field value
+func (o *ApiStaffBusinessesBusinessIdGet200Response) SetAbrLookupEnabled(v bool) {
+	o.AbrLookupEnabled = v
+}
+
 func (o ApiStaffBusinessesBusinessIdGet200Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -385,6 +439,8 @@ func (o ApiStaffBusinessesBusinessIdGet200Response) ToMap() (map[string]interfac
 	toSerialize["taxIdValue"] = o.TaxIdValue
 	toSerialize["suspendedReason"] = o.SuspendedReason.Get()
 	toSerialize["kybDocuments"] = o.KybDocuments
+	toSerialize["abnConfirmation"] = o.AbnConfirmation.Get()
+	toSerialize["abrLookupEnabled"] = o.AbrLookupEnabled
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -410,6 +466,8 @@ func (o *ApiStaffBusinessesBusinessIdGet200Response) UnmarshalJSON(data []byte) 
 		"taxIdValue",
 		"suspendedReason",
 		"kybDocuments",
+		"abnConfirmation",
+		"abrLookupEnabled",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -451,6 +509,8 @@ func (o *ApiStaffBusinessesBusinessIdGet200Response) UnmarshalJSON(data []byte) 
 		delete(additionalProperties, "taxIdValue")
 		delete(additionalProperties, "suspendedReason")
 		delete(additionalProperties, "kybDocuments")
+		delete(additionalProperties, "abnConfirmation")
+		delete(additionalProperties, "abrLookupEnabled")
 		o.AdditionalProperties = additionalProperties
 	}
 

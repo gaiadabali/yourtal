@@ -52,7 +52,7 @@ async function seedBusinessAndLocation(
     region === "AU"
       ? {
           taxIdKind: "ABN",
-          taxIdValue: "12345678901",
+          taxIdValue: "51824753556",
           addressState: "NSW",
           addressPostcode: "2000",
           addressCity: null,

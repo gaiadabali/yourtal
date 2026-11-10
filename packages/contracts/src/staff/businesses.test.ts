@@ -54,6 +54,26 @@ describe("staffBusinessDetailSchema", () => {
       taxIdValue: "12345678901",
       suspendedReason: null,
       kybDocuments: [],
+      abnConfirmation: null,
+      abrLookupEnabled: false,
+    };
+    expect(staffBusinessDetailSchema.safeParse(detail).success).toBe(true);
+  });
+
+  it("6.10.b: round-trips an ABN the ABR confirmed", () => {
+    const detail = {
+      ...summary,
+      taxIdKind: "ABN",
+      taxIdValue: "51824753556",
+      suspendedReason: null,
+      kybDocuments: [],
+      abnConfirmation: {
+        abn: "51824753556",
+        entityName: "EXAMPLE PTY LTD",
+        gstRegistered: true,
+        confirmedAt: "2026-11-11T01:00:00Z",
+      },
+      abrLookupEnabled: true,
     };
     expect(staffBusinessDetailSchema.safeParse(detail).success).toBe(true);
   });
@@ -66,6 +86,8 @@ describe("staffBusinessDetailSchema", () => {
       suspendedAt: "2026-02-01T00:00:00Z",
       suspendedReason: "fraudulent listings reported",
       kybDocuments: [],
+      abnConfirmation: null,
+      abrLookupEnabled: false,
     };
     expect(staffBusinessDetailSchema.safeParse(detail).success).toBe(true);
   });

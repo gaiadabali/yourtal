@@ -48,7 +48,7 @@ async function supplierWithMerchandiser() {
     legalName: `S Value Co ${handle}`,
     displayName: "S Value Co",
     taxIdKind: "ABN",
-    taxIdValue: "12345678901",
+    taxIdValue: "51824753556",
     addressState: "VIC",
     addressPostcode: "3000",
     roles: ["supplier"],

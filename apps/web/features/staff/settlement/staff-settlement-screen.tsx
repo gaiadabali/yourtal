@@ -3,6 +3,7 @@ import { Button } from "@yourtal/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { DataTable } from "@yourtal/ui/data-table";
 import { EmptyState } from "@yourtal/ui/empty-state";
+import { NativeSelect } from "@yourtal/ui/native-select";
 import { Notice } from "@yourtal/ui/notice";
 import { StatusBadge } from "@yourtal/ui/status-badge";
 import { formatMoneyAmount } from "@yourtal/ui/money-amount";
@@ -27,6 +28,10 @@ export interface StaffSettlementScreenProps {
   readonly disbursements: readonly StaffDisbursement[];
   readonly canResolveDispute: boolean;
   readonly canProposePayout: boolean;
+  /** 6.12.a: finance only; the control shows for AU, the only region that invoices. */
+  readonly canExportGstReport: boolean;
+  /** Calendar quarters to offer, newest first, as `2026-Q4`. */
+  readonly gstQuarters: readonly string[];
   readonly currentStaffId: string;
   readonly idempotencyKey: string;
   readonly flash: string | undefined;
@@ -58,6 +63,8 @@ export function StaffSettlementScreen({
   disbursements,
   canResolveDispute,
   canProposePayout,
+  canExportGstReport,
+  gstQuarters,
   currentStaffId,
   idempotencyKey,
   flash,
@@ -196,6 +203,37 @@ export function StaffSettlementScreen({
           )}
         </CardContent>
       </Card>
+
+      {canExportGstReport && region === "AU" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle as="h2">{t("settlement.gstReportTitle")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form
+              method="get"
+              action="/staff/settlement/gst-report"
+              className="flex flex-col gap-4"
+            >
+              <Text tone="muted">{t("settlement.gstReportDescription")}</Text>
+              <NativeSelect
+                name="quarter"
+                label={t("settlement.gstReportQuarterLabel")}
+                defaultValue={gstQuarters[0]}
+              >
+                {gstQuarters.map((quarter) => (
+                  <option key={quarter} value={quarter}>
+                    {quarter}
+                  </option>
+                ))}
+              </NativeSelect>
+              <Button type="submit" className="w-fit">
+                {t("settlement.gstReportDownload")}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <StaffApprovedPayouts
         t={t}

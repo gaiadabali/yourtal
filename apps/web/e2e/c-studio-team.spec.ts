@@ -122,7 +122,7 @@ test.describe.serial("7.8.b: Team — invite, accept via /dev/inbox, roster upda
     await page.getByLabel("Legal name").fill("C Studio Team E2E Pty Ltd");
     await page.getByLabel("Display name").fill("C Studio Team E2E");
     await page.getByLabel("Handle").fill(businessHandle);
-    await page.getByLabel("Tax ID number").fill("12345678901");
+    await page.getByLabel("Tax ID number").fill("51824753556");
     await page.getByLabel("State").selectOption("NSW");
     await page.getByLabel("Postcode").fill("2000");
     await page.getByRole("button", { name: "Create business" }).click();

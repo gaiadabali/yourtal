@@ -183,6 +183,9 @@ export const RESOURCE_ACTIONS = {
     // `staff-work-the-settlement-queue` rule).
     "view_statement_queue",
     "resolve_dispute",
+    // 6.12.a: the quarterly GST report CSV -- finance only (billing.yaml's
+    // `finance-exports-the-gst-report` rule).
+    "export_gst_report",
   ],
 
   team: [

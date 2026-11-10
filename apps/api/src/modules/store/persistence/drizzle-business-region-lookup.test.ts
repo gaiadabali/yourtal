@@ -24,7 +24,7 @@ beforeAll(async () => {
     legalName: "Wharf Espresso Pty Ltd",
     displayName: "Wharf Espresso",
     taxIdKind: "ABN",
-    taxIdValue: "12345678901",
+    taxIdValue: "51824753556",
     addressState: "NSW",
     addressPostcode: "2095",
     addressCity: null,

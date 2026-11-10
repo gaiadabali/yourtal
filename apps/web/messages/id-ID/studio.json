@@ -971,7 +971,8 @@
       "createFailed": "Gagal membuat bisnis — coba lagi.",
       "invalidInput": "Periksa kolom yang ditandai dan coba lagi.",
       "fieldFallback": "Periksa kolom \"{errorField}\" dan coba lagi.",
-      "roles": "Pilih setidaknya satu hal yang akan dilakukan bisnis Anda."
+      "roles": "Pilih setidaknya satu hal yang akan dilakukan bisnis Anda.",
+      "abn": "ABN ini tampaknya tidak valid. Periksa kembali 11 digit pada catatan ABN Anda."
     },
     "legalNameLabel": "Nama badan hukum",
     "displayNameLabel": "Nama tampilan",

@@ -1,6 +1,7 @@
 import { createZodDto } from "nestjs-zod";
 import {
   approveBusinessKybRequestSchema,
+  checkBusinessAbnRequestSchema,
   reinstateBusinessRequestSchema,
   rejectBusinessKybRequestSchema,
   suspendBusinessRequestSchema,
@@ -11,3 +12,4 @@ export class ApproveBusinessKybDto extends createZodDto(approveBusinessKybReques
 export class RejectBusinessKybDto extends createZodDto(rejectBusinessKybRequestSchema) {}
 export class SuspendBusinessDto extends createZodDto(suspendBusinessRequestSchema) {}
 export class ReinstateBusinessDto extends createZodDto(reinstateBusinessRequestSchema) {}
+export class CheckBusinessAbnDto extends createZodDto(checkBusinessAbnRequestSchema) {}

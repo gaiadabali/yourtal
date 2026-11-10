@@ -15,6 +15,8 @@ export interface ListingForCheckout {
   readonly buyable: boolean;
   /** Set when the code is redeemed in a partner's app (F128): the listing is then exempt from the online trust-tier rule. */
   readonly redeemPartnerId: string | null;
+  /** 2.8.g: a staff-set price; the ledger quotes max(this, ceil(S ÷ B)). Null for most listings. */
+  readonly minPricePoints: number | null;
 }
 
 interface Row extends Record<string, unknown> {
@@ -26,6 +28,7 @@ interface Row extends Record<string, unknown> {
   channel: string;
   buyable: boolean;
   redeem_partner_id: string | null;
+  min_price_points: string | number | null;
 }
 
 export async function findListingForCheckout(
@@ -35,7 +38,7 @@ export async function findListingForCheckout(
   const result = await db.execute<Row>(sql`
     SELECT id::text, region, currency, settlement_value_minor, audience, channel,
            (lifecycle_state = 'active' AND stock_remaining > 0 AND expires_at > now()) AS buyable,
-           redeem_partner_id
+           redeem_partner_id, min_price_points
       FROM store.listings WHERE id = ${listingId}::uuid
   `);
   const row = result.rows[0];
@@ -49,5 +52,6 @@ export async function findListingForCheckout(
     channel: row.channel,
     buyable: row.buyable,
     redeemPartnerId: row.redeem_partner_id,
+    minPricePoints: row.min_price_points === null ? null : Number(row.min_price_points),
   };
 }

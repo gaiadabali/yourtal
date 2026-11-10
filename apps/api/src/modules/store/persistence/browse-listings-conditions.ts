@@ -31,6 +31,17 @@ export const notExpired = (): SQL => gt(listings.expiresAt, sql`now()`);
  * listing everywhere except staging -- caught by this module's own
  * `drizzle-listing-browse.test.ts`, which runs against the fake.
  */
+/** The price a listing reads at: the live ledger price (or the cache), raised to any staff-set price (2.8.g). GREATEST ignores a NULL. */
+function listedPoints(): SQL {
+  return sql`greatest(
+    coalesce(
+      (select points from platform.listing_points lp where lp.listing_id = ${listings.id}),
+      ${listings.priceInPoints}
+    ),
+    ${listings.minPricePoints}
+  )`;
+}
+
 export function browseConditions(
   filter: Omit<BrowseListingsFilter, "category" | "startingAfter">,
 ): SQL {
@@ -51,18 +62,12 @@ export function browseConditions(
   if (filter.merchantId !== undefined) conditions.push(eq(listings.merchantId, filter.merchantId));
   if (filter.minPoints !== undefined) {
     conditions.push(
-      sql`coalesce(
-        (select points from platform.listing_points lp where lp.listing_id = ${listings.id}),
-        ${listings.priceInPoints}
-      ) >= ${filter.minPoints}`,
+      sql`${listedPoints()} >= ${filter.minPoints}`,
     );
   }
   if (filter.maxPoints !== undefined) {
     conditions.push(
-      sql`coalesce(
-        (select points from platform.listing_points lp where lp.listing_id = ${listings.id}),
-        ${listings.priceInPoints}
-      ) <= ${filter.maxPoints}`,
+      sql`${listedPoints()} <= ${filter.maxPoints}`,
     );
   }
   if (filter.search !== undefined && filter.search.length > 0) {

@@ -66,6 +66,8 @@ export const listings = storePgSchema.table("listings", {
   partialRedemption: text("partial_redemption").notNull(),
   /** 2.8: the partner whose linked account alone may redeem this listing's vouchers; null for an ordinary listing. Not read or written yet. */
   redeemPartnerId: text("redeem_partner_id"),
+  /** 2.8.g: a staff-set points price; checkout charges max(this, the ledger's quote). Null for most listings. */
+  minPricePoints: bigint("min_price_points", { mode: "number" }),
 });
 
 export const merchantLocations = storePgSchema.table("merchant_location", {

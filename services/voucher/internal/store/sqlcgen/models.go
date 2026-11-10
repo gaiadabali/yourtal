@@ -49,6 +49,7 @@ type StoreListing struct {
 	Tags                    []byte
 	CreatedAt               pgtype.Timestamptz
 	RedeemPartnerID         *string
+	MinPricePoints          *int64
 }
 
 type StoreListingLocation struct {

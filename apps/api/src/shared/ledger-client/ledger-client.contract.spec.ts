@@ -291,6 +291,20 @@ describe("pricing", () => {
     expect(minutesToExpiry).toBeLessThanOrEqual(15 + 1 / 60);
   });
 
+  it("quotes a staff-set price only when it is above ceil(S * 1e6 / B) (2.8.g)", async () => {
+    const quoted = async (minPricePoints: number) =>
+      (
+        await client.quote({
+          region: "ID",
+          currency: "IDR",
+          settlementMinor: toMinorUnits(54_000),
+          minPricePoints: toPoints(minPricePoints),
+        })
+      )._unsafeUnwrap().pricePoints;
+    expect(await quoted(12_000)).toBe(12_000);
+    expect(await quoted(5_000)).toBe(9_000);
+  });
+
   it("refuses a currency that does not match the region", async () => {
     const result = await client.quote({
       region: "ID",

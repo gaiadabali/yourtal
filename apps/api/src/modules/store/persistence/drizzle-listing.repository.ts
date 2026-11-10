@@ -16,7 +16,11 @@ import {
 import { listingLocations, listings, merchantLocations } from "./schema/listing.table";
 import type { ListingRow } from "./listing-assembler";
 import { listingFacets, matchesFacets, pageAfter, sortRows } from "./listing-browse-facets";
-import { pricePointsByListing, takenVouchersByListing } from "./listing-live-values";
+import {
+  pricePointsByListing,
+  takenVouchersByListing,
+  withStaffPrice,
+} from "./listing-live-values";
 import type { ListingSort } from "@yourtal/contracts/listing/browse";
 
 /** A region's walled, active catalogue is hundreds of rows; this bounds the in-memory browse. */
@@ -136,7 +140,8 @@ export class DrizzleListingRepository implements ListingRepository {
       takenVouchersByListing(this.db, ids),
     ]);
     return sortRows(rows, sort, {
-      priceOf: (row) => prices.get(row.id) ?? row.priceInPoints,
+      priceOf: (row) =>
+        withStaffPrice(prices.get(row.id) ?? row.priceInPoints, row.minPricePoints),
       takenOf: (row) => taken.get(row.id) ?? 0,
     });
   }

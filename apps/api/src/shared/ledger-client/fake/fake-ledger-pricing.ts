@@ -78,10 +78,13 @@ export function quote(db: AppDb, request: QuoteRequest): ResultAsync<Quote, Ledg
           ),
         );
       }
-      const pricePoints = priceInPoints(
+      const ledgerPoints = priceInPoints(
         request.settlementMinor,
         BigInt(rate.backing_rate_micros_per_pt),
       );
+      // 2.8.g: a staff-set price only ever raises the quote, as the live ledger does.
+      const floor = BigInt(request.minPricePoints ?? 0);
+      const pricePoints = floor > ledgerPoints ? floor : ledgerPoints;
       const now = new Date();
       const expiresAt = new Date(now.getTime() + QUOTE_TTL_MS);
       const id = randomUUID();

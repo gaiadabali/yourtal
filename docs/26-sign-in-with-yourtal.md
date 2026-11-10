@@ -64,7 +64,7 @@ Why pairwise rather than public:
 
 **Format.** 22 characters of base64url (128 random bits). Apps treat it as opaque, case-sensitive text of up to 255 characters, and never parse it.
 
-**Sectors** are named per app and environment (`snapapp-staging`, `ftr-staging`, later `snapapp` and `ftr`), so a staging database never holds a production identifier. Each client has one redirect host, so no `sector_identifier_uri` is needed; the hook reads the sector from YourTal's client registry (§1.9).
+**Sectors** are named per app and environment (`snapapp-staging`, `ftr-staging`, later `snapapp` and `ftr`), so a staging database never holds a production identifier. Each client has one redirect host except the phone app (scheme + App Link), which gets a placeholder `sector_identifier_uri` the provider never fetches; the hook reads the sector from YourTal's client registry (§1.9).
 
 ### 1.3 Claims
 
@@ -175,7 +175,7 @@ This refines group task 3.3.c: the phone app keeps **SnapApp's** refresh token i
 
 - **Authorization code flow only,** with `state` and PKCE `S256` on every request from every client. Apps also send `nonce` where their library supports it (openid-client does; Better Auth 1.6 does not, and PKCE covers code injection there).
 - **The `iss` response parameter** (RFC 9207) is on every authorization response, and apps check it: openid-client always does, and Better Auth does with `requireIssuerValidation: true`.
-- **Redirect URIs match exactly,** character for character: no wildcards, no prefixes, no extra path or query, no fragments, and one redirect host per client. Websites use `https` only. No staging or production client has an `http` or `localhost` address; a developer's local client lives only in local config. The phone app uses a private-use scheme in reverse-DNS form (RFC 8252 §7.1), and also its verified App Link (claimed `https`, RFC 8252 §7.2); it is the only client with two.
+- **Redirect URIs match exactly,** character for character: no wildcards, no prefixes, no extra path or query, no fragments, and one redirect URI per client, except the phone's custom scheme + App Link. Websites use `https` only. No staging or production client has an `http` or `localhost` address; a developer's local client lives only in local config. The phone app uses a private-use scheme in reverse-DNS form (RFC 8252 §7.1), and also its verified App Link (claimed `https`, RFC 8252 §7.2).
 - **Errors raised before the client and redirect URI are confirmed** (an unknown client, a wrong redirect URI) are shown on a YourTal page and never redirected, so YourTal cannot serve as an open redirect.
 - **Client authentication:** `private_key_jwt` where the app's library supports it (SnapApp, through openid-client); `client_secret_basic` where it does not (FTR: Better Auth 1.6 offers basic or post only); `none` for the phone app, which relies on PKCE.
 - **Codes are redeemed on servers.** No browser calls YourTal's token or userinfo endpoints, so CORS on them stays closed. SnapApp's phone app hands its code to SnapApp's server (§1.9).

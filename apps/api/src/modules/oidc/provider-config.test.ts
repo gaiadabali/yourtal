@@ -78,6 +78,10 @@ describe("docs/26 §1.1 provider settings", () => {
     expect(String(discovery["authorization_endpoint"])).toMatch(/\/oidc\/auth$/);
   });
 
+  it("never fetches a sector_identifier_uri (the phone's is a placeholder, 3.3.e)", () => {
+    expect(providerConfiguration(deps()).sectorIdentifierUriValidate?.({} as never)).toBe(false);
+  });
+
   it("devInteractions is off: no test login page exists", async () => {
     expect(providerConfiguration(deps()).features?.devInteractions?.enabled).toBe(false);
     const page = await kit.fastify.inject({ method: "GET", url: "/oidc/interaction/abc" });

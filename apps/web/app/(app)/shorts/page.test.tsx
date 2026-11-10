@@ -102,19 +102,19 @@ describe("the Shorts page", () => {
   });
 
   // 5.13.ai: withdrawn, the API refuses earning again.
-  it("shows a teen whose guardian withdrew the paused notice instead of the feed", async () => {
+  it("shows a teen whose guardian withdrew the turned-off notice instead of the feed", async () => {
     mocks.getShortsFeed.mockResolvedValue({
       ok: true,
-      data: data({ items: [{ campaignId: "a" }] as never, guardianNotice: "teenPaused" }),
+      data: data({ items: [{ campaignId: "a" }] as never, guardianNotice: "teenWithdrawn" }),
     });
     await renderPage();
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: "Your parent or guardian has paused earning on your account",
+        name: "Your parent or guardian has turned off earning on your account",
       }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Ask them if you think this is a mistake.")).toBeInTheDocument();
+    expect(screen.getByText("To start again, ask them to invite you again.")).toBeInTheDocument();
     expect(screen.queryByTestId("shorts-feed")).not.toBeInTheDocument();
   });
 

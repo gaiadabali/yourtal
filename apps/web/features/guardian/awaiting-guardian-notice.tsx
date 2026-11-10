@@ -4,13 +4,13 @@ import type { ApiResult } from "@/lib/api/api-fetch";
 import type { MeResponse } from "@/lib/api/me-schema";
 
 /** Which notice a teen sees instead of an earning page: waiting for approval (5.13.v) or approval withdrawn (5.13.ai). */
-export type GuardianNotice = "teenWaiting" | "teenPaused";
+export type GuardianNotice = "teenWaiting" | "teenWithdrawn";
 
 /** The API refuses earning for both, so earning pages show the notice below instead. */
 export function guardianNoticeFor(me: ApiResult<MeResponse>): GuardianNotice | null {
   if (!me.ok) return null;
   if (me.data.awaitingGuardian === true) return "teenWaiting";
-  return me.data.guardianWithdrawn === true ? "teenPaused" : null;
+  return me.data.guardianWithdrawn === true ? "teenWithdrawn" : null;
 }
 
 export function GuardianNoticePanel({

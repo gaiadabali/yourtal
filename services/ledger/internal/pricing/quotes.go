@@ -27,6 +27,8 @@ var (
 	ErrRegionMismatch = errors.New("pricing: region mismatch")
 	// ErrCurrencyMismatch — a currency that is not the region's.
 	ErrCurrencyMismatch = errors.New("pricing: currency is not the region's")
+	// ErrMinPriceNegative — a listing's staff-set price below zero.
+	ErrMinPriceNegative = errors.New("pricing: a listing's minimum price cannot be negative")
 )
 
 // StoredQuote is a quote as the contract returns it.
@@ -42,16 +44,24 @@ type StoredQuote struct {
 }
 
 // NewQuote prices S in the region's currency at the rate in force now and
-// stores the quote.
-func (e *Engine) NewQuote(ctx context.Context, region ledger.Region, currency string, settlementMinor int64) (StoredQuote, error) {
+// stores the quote. minPricePoints (0 for none) is a listing's staff-set
+// price (2.8.g): the quote is the larger of it and ceil(S ÷ B), so a listing
+// can be priced above its backing but never below it. The burn then takes
+// exactly this quote, and the points above S ÷ B leave the users' claims
+// while the reserve keeps the cash that backed them.
+func (e *Engine) NewQuote(ctx context.Context, region ledger.Region, currency string, settlementMinor, minPricePoints int64) (StoredQuote, error) {
 	if currency != string(region.Currency()) {
 		return StoredQuote{}, fmt.Errorf("%w: %s in %s", ErrCurrencyMismatch, currency, region)
+	}
+	if minPricePoints < 0 {
+		return StoredQuote{}, fmt.Errorf("%w: got %d", ErrMinPriceNegative, minPricePoints)
 	}
 	q := sqlcgen.New(e.pool)
 	points, rateID, err := priceNow(ctx, q, currency, settlementMinor)
 	if err != nil {
 		return StoredQuote{}, err
 	}
+	points = AtLeast(points, minPricePoints)
 	row, err := q.InsertQuote(ctx, sqlcgen.InsertQuoteParams{
 		ID: newUUID(), Region: string(region), Currency: currency,
 		SettlementMinor: settlementMinor, PricePoints: points, BackingRateID: rateID,
@@ -118,6 +128,12 @@ func (e *Engine) PriceListing(ctx context.Context, listingID string, region ledg
 	}
 	return ListingPrice{ListingID: listingID, Region: region, Currency: currency, SettlementMinor: row.SettlementMinor,
 		PricePoints: row.PricePoints, BackingRateID: row.BackingRateID}, nil
+}
+
+// AtLeast is the price a buyer pays: the ledger's price, or a listing's
+// staff-set price when that is higher. Never lower than the ledger's price.
+func AtLeast(ledgerPoints, minPricePoints int64) int64 {
+	return max(ledgerPoints, minPricePoints)
 }
 
 // priceNow is ceil(S × 1e6 / B) at the rate in force now, multiplier 1.00.

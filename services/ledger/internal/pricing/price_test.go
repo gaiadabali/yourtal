@@ -184,3 +184,18 @@ func TestLiabilityRoundsAgainstThePlatform(t *testing.T) {
 		t.Errorf("1.000001 minor units of liability must be carried as 2, got %d", rounded)
 	}
 }
+
+// 2.8.g: a staff-set price only ever raises the ledger's price.
+func TestAtLeastNeverGoesBelowTheLedgersPrice(t *testing.T) {
+	for _, tc := range []struct{ ledger, min, want int64 }{
+		{167, 0, 167},
+		{167, 200, 200},
+		{143, 200, 200},
+		{250, 200, 250},
+		{200, 200, 200},
+	} {
+		if got := pricing.AtLeast(tc.ledger, tc.min); got != tc.want {
+			t.Errorf("AtLeast(%d, %d) = %d, want %d", tc.ledger, tc.min, got, tc.want)
+		}
+	}
+}

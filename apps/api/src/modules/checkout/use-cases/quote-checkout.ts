@@ -66,7 +66,9 @@ export async function quoteCheckout(
     region: listing.region,
     currency: REGION_CONFIG[listing.region].currency,
     settlementMinor: listing.settlementMinor,
-    ...(listing.minPricePoints === null ? {} : { minPricePoints: toPoints(listing.minPricePoints) }),
+    ...(listing.minPricePoints === null
+      ? {}
+      : { minPricePoints: toPoints(listing.minPricePoints) }),
   });
   if (quoted.isErr()) return err(quoted.error);
   const locked = await deps.ledger.lockQuote({ quoteId: quoted.value.quoteId });

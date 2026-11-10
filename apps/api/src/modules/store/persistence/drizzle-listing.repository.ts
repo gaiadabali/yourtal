@@ -140,8 +140,7 @@ export class DrizzleListingRepository implements ListingRepository {
       takenVouchersByListing(this.db, ids),
     ]);
     return sortRows(rows, sort, {
-      priceOf: (row) =>
-        withStaffPrice(prices.get(row.id) ?? row.priceInPoints, row.minPricePoints),
+      priceOf: (row) => withStaffPrice(prices.get(row.id) ?? row.priceInPoints, row.minPricePoints),
       takenOf: (row) => taken.get(row.id) ?? 0,
     });
   }

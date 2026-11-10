@@ -61,14 +61,10 @@ export function browseConditions(
   }
   if (filter.merchantId !== undefined) conditions.push(eq(listings.merchantId, filter.merchantId));
   if (filter.minPoints !== undefined) {
-    conditions.push(
-      sql`${listedPoints()} >= ${filter.minPoints}`,
-    );
+    conditions.push(sql`${listedPoints()} >= ${filter.minPoints}`);
   }
   if (filter.maxPoints !== undefined) {
-    conditions.push(
-      sql`${listedPoints()} <= ${filter.maxPoints}`,
-    );
+    conditions.push(sql`${listedPoints()} <= ${filter.maxPoints}`);
   }
   if (filter.search !== undefined && filter.search.length > 0) {
     // `sql` template, parameterised — not the string-built SQL docs/13

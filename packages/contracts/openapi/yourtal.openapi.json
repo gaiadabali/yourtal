@@ -20879,7 +20879,8 @@
                               "setting_change",
                               "approve_payout",
                               "refund_purchase",
-                              "retry_disbursement"
+                              "retry_disbursement",
+                              "listing_price"
                             ]
                           },
                           "region": {
@@ -21234,7 +21235,8 @@
                               "setting_change",
                               "approve_payout",
                               "refund_purchase",
-                              "retry_disbursement"
+                              "retry_disbursement",
+                              "listing_price"
                             ]
                           },
                           "region": {
@@ -21416,7 +21418,8 @@
                         "setting_change",
                         "approve_payout",
                         "refund_purchase",
-                        "retry_disbursement"
+                        "retry_disbursement",
+                        "listing_price"
                       ]
                     },
                     "region": {
@@ -21598,7 +21601,8 @@
                         "setting_change",
                         "approve_payout",
                         "refund_purchase",
-                        "retry_disbursement"
+                        "retry_disbursement",
+                        "listing_price"
                       ]
                     },
                     "region": {
@@ -21764,7 +21768,8 @@
                           "setting_change",
                           "approve_payout",
                           "refund_purchase",
-                          "retry_disbursement"
+                          "retry_disbursement",
+                          "listing_price"
                         ]
                       },
                       "region": {
@@ -21936,7 +21941,8 @@
                         "setting_change",
                         "approve_payout",
                         "refund_purchase",
-                        "retry_disbursement"
+                        "retry_disbursement",
+                        "listing_price"
                       ]
                     },
                     "region": {
@@ -22128,7 +22134,8 @@
                         "setting_change",
                         "approve_payout",
                         "refund_purchase",
-                        "retry_disbursement"
+                        "retry_disbursement",
+                        "listing_price"
                       ]
                     },
                     "region": {
@@ -22339,7 +22346,8 @@
                         "setting_change",
                         "approve_payout",
                         "refund_purchase",
-                        "retry_disbursement"
+                        "retry_disbursement",
+                        "listing_price"
                       ]
                     },
                     "region": {
@@ -22531,7 +22539,8 @@
                         "setting_change",
                         "approve_payout",
                         "refund_purchase",
-                        "retry_disbursement"
+                        "retry_disbursement",
+                        "listing_price"
                       ]
                     },
                     "region": {
@@ -22754,7 +22763,8 @@
                               "setting_change",
                               "approve_payout",
                               "refund_purchase",
-                              "retry_disbursement"
+                              "retry_disbursement",
+                              "listing_price"
                             ]
                           },
                           "region": {
@@ -22935,7 +22945,8 @@
                         "setting_change",
                         "approve_payout",
                         "refund_purchase",
-                        "retry_disbursement"
+                        "retry_disbursement",
+                        "listing_price"
                       ]
                     },
                     "region": {
@@ -23127,7 +23138,8 @@
                         "setting_change",
                         "approve_payout",
                         "refund_purchase",
-                        "retry_disbursement"
+                        "retry_disbursement",
+                        "listing_price"
                       ]
                     },
                     "region": {
@@ -23238,6 +23250,873 @@
           },
           "503": {
             "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/economy/{region}/listing-prices": {
+      "get": {
+        "summary": "Listings with a staff price, a partner binding or an open price proposal, or a search (finance only)",
+        "tags": [
+          "staff-economy"
+        ],
+        "parameters": [
+          {
+            "name": "region",
+            "in": "path",
+            "required": true,
+            "description": "AU or ID (F2) -- each region's economy is shown, changed and approved separately.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "AU",
+                "ID"
+              ]
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "description": "Optional: a listing id, or part of a title or merchant name (up to 25 rows).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Each listing's ledger quote, staff price and the price a buyer pays (the larger of the two).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "AU",
+                        "ID"
+                      ]
+                    },
+                    "query": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "rows": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "listingId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "merchantName": {
+                            "type": "string"
+                          },
+                          "faceValueMinor": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 10000000000,
+                            "format": "int64"
+                          },
+                          "currency": {
+                            "type": "string",
+                            "enum": [
+                              "AUD",
+                              "IDR"
+                            ]
+                          },
+                          "lifecycleState": {
+                            "type": "string"
+                          },
+                          "redeemPartnerId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "ledgerPricePoints": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 10000000000,
+                                "format": "int64"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "minPricePoints": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 10000000000,
+                                "format": "int64"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "effectivePricePoints": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 10000000000,
+                                "format": "int64"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "pending": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "proposal": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "minLength": 1
+                                      },
+                                      "kind": {
+                                        "type": "string",
+                                        "enum": [
+                                          "rate_change",
+                                          "fund_marketing",
+                                          "manual_purchase",
+                                          "setting_change",
+                                          "approve_payout",
+                                          "refund_purchase",
+                                          "retry_disbursement",
+                                          "listing_price"
+                                        ]
+                                      },
+                                      "region": {
+                                        "type": "string",
+                                        "enum": [
+                                          "AU",
+                                          "ID"
+                                        ]
+                                      },
+                                      "summary": {
+                                        "type": "string",
+                                        "minLength": 1
+                                      },
+                                      "proposedBy": {
+                                        "type": "string",
+                                        "minLength": 1
+                                      },
+                                      "proposedByEmail": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      },
+                                      "approvedBy": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      },
+                                      "status": {
+                                        "type": "string",
+                                        "enum": [
+                                          "pending",
+                                          "approved",
+                                          "rejected"
+                                        ]
+                                      },
+                                      "reason": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      },
+                                      "createdAt": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                      },
+                                      "decidedAt": {
+                                        "anyOf": [
+                                          {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                                          },
+                                          {
+                                            "type": "null"
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "kind",
+                                      "region",
+                                      "summary",
+                                      "proposedBy",
+                                      "approvedBy",
+                                      "status",
+                                      "reason",
+                                      "createdAt",
+                                      "decidedAt"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "minPricePoints": {
+                                    "anyOf": [
+                                      {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 10000000000,
+                                        "format": "int64"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "proposal",
+                                  "minPricePoints"
+                                ],
+                                "additionalProperties": false
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "listingId",
+                          "title",
+                          "merchantName",
+                          "faceValueMinor",
+                          "currency",
+                          "lifecycleState",
+                          "redeemPartnerId",
+                          "ledgerPricePoints",
+                          "minPricePoints",
+                          "effectivePricePoints",
+                          "pending"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "region",
+                    "query",
+                    "rows"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/economy/{region}/listing-prices/proposals": {
+      "post": {
+        "summary": "Propose setting or clearing a listing's points price -- needs a second approver",
+        "tags": [
+          "staff-economy"
+        ],
+        "parameters": [
+          {
+            "name": "region",
+            "in": "path",
+            "required": true,
+            "description": "AU or ID (F2) -- each region's economy is shown, changed and approved separately.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "AU",
+                "ID"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The listing, the new price (null clears it) and the required reason.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "listingId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "minPricePoints": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 10000000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "listingId",
+                  "minPricePoints",
+                  "reason"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The new, pending proposal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "rate_change",
+                        "fund_marketing",
+                        "manual_purchase",
+                        "setting_change",
+                        "approve_payout",
+                        "refund_purchase",
+                        "retry_disbursement",
+                        "listing_price"
+                      ]
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "AU",
+                        "ID"
+                      ]
+                    },
+                    "summary": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "proposedBy": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "proposedByEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "approvedBy": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "approved",
+                        "rejected"
+                      ]
+                    },
+                    "reason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    "decidedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "region",
+                    "summary",
+                    "proposedBy",
+                    "approvedBy",
+                    "status",
+                    "reason",
+                    "createdAt",
+                    "decidedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such pending proposal (or business, for a manual purchase) in this region.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "This listing already has a price proposal waiting for approval.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/economy/{region}/listing-prices/proposals/{id}/approve": {
+      "post": {
+        "summary": "Approve a listing price -- refused if the approver proposed it",
+        "tags": [
+          "staff-economy"
+        ],
+        "parameters": [
+          {
+            "name": "region",
+            "in": "path",
+            "required": true,
+            "description": "AU or ID (F2) -- each region's economy is shown, changed and approved separately.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "AU",
+                "ID"
+              ]
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "A `staff.economy_proposal` row id (migration 20260929060100).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "An optional decision note.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The decided proposal; the listing's price changed in the same transaction.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "rate_change",
+                        "fund_marketing",
+                        "manual_purchase",
+                        "setting_change",
+                        "approve_payout",
+                        "refund_purchase",
+                        "retry_disbursement",
+                        "listing_price"
+                      ]
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "AU",
+                        "ID"
+                      ]
+                    },
+                    "summary": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "proposedBy": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "proposedByEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "approvedBy": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "approved",
+                        "rejected"
+                      ]
+                    },
+                    "reason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    "decidedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "region",
+                    "summary",
+                    "proposedBy",
+                    "approvedBy",
+                    "status",
+                    "reason",
+                    "createdAt",
+                    "decidedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here. OR: This proposal was already approved or rejected (business.errors' `already_decided`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time. OR: The approver is the same staff member who proposed this change -- F23's two-person rule, refused twice over (Cerbos AND, for rate/setting changes, a database CHECK/trigger too).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such pending proposal (or business, for a manual purchase) in this region.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/economy/{region}/listing-prices/proposals/{id}/reject": {
+      "post": {
+        "summary": "Decline or withdraw a listing price proposal",
+        "tags": [
+          "staff-economy"
+        ],
+        "parameters": [
+          {
+            "name": "region",
+            "in": "path",
+            "required": true,
+            "description": "AU or ID (F2) -- each region's economy is shown, changed and approved separately.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "AU",
+                "ID"
+              ]
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "A `staff.economy_proposal` row id (migration 20260929060100).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "An optional decision note.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The rejected proposal.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "rate_change",
+                        "fund_marketing",
+                        "manual_purchase",
+                        "setting_change",
+                        "approve_payout",
+                        "refund_purchase",
+                        "retry_disbursement",
+                        "listing_price"
+                      ]
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "AU",
+                        "ID"
+                      ]
+                    },
+                    "summary": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "proposedBy": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "proposedByEmail": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "approvedBy": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "approved",
+                        "rejected"
+                      ]
+                    },
+                    "reason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    "decidedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "region",
+                    "summary",
+                    "proposedBy",
+                    "approvedBy",
+                    "status",
+                    "reason",
+                    "createdAt",
+                    "decidedAt"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here. OR: This proposal was already approved or rejected (business.errors' `already_decided`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such pending proposal (or business, for a manual purchase) in this region.",
             "content": {
               "application/json": {
                 "schema": {
@@ -24410,7 +25289,8 @@
                           "setting_change",
                           "approve_payout",
                           "refund_purchase",
-                          "retry_disbursement"
+                          "retry_disbursement",
+                          "listing_price"
                         ]
                       },
                       "region": {
@@ -24583,7 +25463,8 @@
                         "setting_change",
                         "approve_payout",
                         "refund_purchase",
-                        "retry_disbursement"
+                        "retry_disbursement",
+                        "listing_price"
                       ]
                     },
                     "region": {
@@ -24758,7 +25639,8 @@
                         "setting_change",
                         "approve_payout",
                         "refund_purchase",
-                        "retry_disbursement"
+                        "retry_disbursement",
+                        "listing_price"
                       ]
                     },
                     "region": {
@@ -25056,7 +25938,8 @@
                                       "setting_change",
                                       "approve_payout",
                                       "refund_purchase",
-                                      "retry_disbursement"
+                                      "retry_disbursement",
+                                      "listing_price"
                                     ]
                                   },
                                   "region": {
@@ -25277,7 +26160,8 @@
                         "setting_change",
                         "approve_payout",
                         "refund_purchase",
-                        "retry_disbursement"
+                        "retry_disbursement",
+                        "listing_price"
                       ]
                     },
                     "region": {
@@ -25462,7 +26346,8 @@
                         "setting_change",
                         "approve_payout",
                         "refund_purchase",
-                        "retry_disbursement"
+                        "retry_disbursement",
+                        "listing_price"
                       ]
                     },
                     "region": {
@@ -25664,7 +26549,8 @@
                         "setting_change",
                         "approve_payout",
                         "refund_purchase",
-                        "retry_disbursement"
+                        "retry_disbursement",
+                        "listing_price"
                       ]
                     },
                     "region": {
@@ -25983,7 +26869,8 @@
                                     "setting_change",
                                     "approve_payout",
                                     "refund_purchase",
-                                    "retry_disbursement"
+                                    "retry_disbursement",
+                                    "listing_price"
                                   ]
                                 },
                                 "region": {
@@ -26213,7 +27100,8 @@
                         "setting_change",
                         "approve_payout",
                         "refund_purchase",
-                        "retry_disbursement"
+                        "retry_disbursement",
+                        "listing_price"
                       ]
                     },
                     "region": {
@@ -26408,7 +27296,8 @@
                         "setting_change",
                         "approve_payout",
                         "refund_purchase",
-                        "retry_disbursement"
+                        "retry_disbursement",
+                        "listing_price"
                       ]
                     },
                     "region": {
@@ -26610,7 +27499,8 @@
                         "setting_change",
                         "approve_payout",
                         "refund_purchase",
-                        "retry_disbursement"
+                        "retry_disbursement",
+                        "listing_price"
                       ]
                     },
                     "region": {
@@ -33873,7 +34763,8 @@
                       "setting_change",
                       "approve_payout",
                       "refund_purchase",
-                      "retry_disbursement"
+                      "retry_disbursement",
+                      "listing_price"
                     ]
                   },
                   "region": {

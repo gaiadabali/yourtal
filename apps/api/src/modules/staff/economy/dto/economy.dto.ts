@@ -1,6 +1,7 @@
 import { createZodDto } from "nestjs-zod";
 import {
   decideProposalBodySchema,
+  proposeListingPriceBodySchema,
   proposeManualPurchaseBodySchema,
   proposeMarketingFundingBodySchema,
   proposeRateBodySchema,
@@ -15,6 +16,7 @@ export class ProposeRateDto extends createZodDto(proposeRateBodySchema) {}
 export class ProposeMarketingFundingDto extends createZodDto(proposeMarketingFundingBodySchema) {}
 export class ProposeManualPurchaseDto extends createZodDto(proposeManualPurchaseBodySchema) {}
 export class ProposeSettingDto extends createZodDto(proposeSettingBodySchema) {}
+export class ProposeListingPriceDto extends createZodDto(proposeListingPriceBodySchema) {}
 export class DecideProposalDto extends createZodDto(decideProposalBodySchema) {}
 
 /** `scope`/`targetId`/`reason`/`active` from the client; `setBy` always comes from the principal. */

@@ -80,3 +80,50 @@ tests:
       - principal: finance_zaki
         resource: adjustment_by_yani
         actions: { check_payout: EFFECT_ALLOW }
+
+  - name: a listing price is proposed by finance and approved by a different finance person (2.8.g)
+    input:
+      principals: [finance_yani, finance_zaki]
+      resources: [adjustment_by_yani]
+      actions: [propose_listing_price, approve_listing_price]
+    expected:
+      - principal: finance_yani
+        resource: adjustment_by_yani
+        actions:
+          propose_listing_price: EFFECT_ALLOW
+          approve_listing_price: EFFECT_DENY
+      - principal: finance_zaki
+        resource: adjustment_by_yani
+        actions:
+          propose_listing_price: EFFECT_ALLOW
+          approve_listing_price: EFFECT_ALLOW
+
+  - name: only finance sets a listing price; no other staff role, no brand and no consumer does (2.8.g)
+    input:
+      principals: [ops_zul, risk_umi, moderator_tono, support_sari, budi_owner, wina, anon]
+      resources: [adjustment_by_yani]
+      actions: [propose_listing_price, approve_listing_price]
+    expected:
+      - principal: ops_zul
+        resource: adjustment_by_yani
+        actions: &price_denied
+          propose_listing_price: EFFECT_DENY
+          approve_listing_price: EFFECT_DENY
+      - principal: risk_umi
+        resource: adjustment_by_yani
+        actions: *price_denied
+      - principal: moderator_tono
+        resource: adjustment_by_yani
+        actions: *price_denied
+      - principal: support_sari
+        resource: adjustment_by_yani
+        actions: *price_denied
+      - principal: budi_owner
+        resource: adjustment_by_yani
+        actions: *price_denied
+      - principal: wina
+        resource: adjustment_by_yani
+        actions: *price_denied
+      - principal: anon
+        resource: adjustment_by_yani
+        actions: *price_denied

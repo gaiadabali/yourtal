@@ -85,7 +85,8 @@ describe("quoteCheckout: a staff-set price (2.8.g)", () => {
 
   it("sends no staff price for a listing without one", async () => {
     const deps = makeDeps();
-    await quoteCheckout(deps, buyer("1990-01-01", 0), listing("snap-app"));
+    const result = await quoteCheckout(deps, buyer("1990-01-01", 0), listing("snap-app"));
+    expect(result.isOk()).toBe(true);
     expect(quoteSpy).toHaveBeenCalledWith({ region: "AU", currency: "AUD", settlementMinor: 500 });
   });
 });

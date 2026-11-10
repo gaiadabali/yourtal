@@ -36,6 +36,8 @@ resourcePolicy:
         - check_payout
         - propose_payout_retry
         - approve_payout_retry
+        - propose_listing_price
+        - approve_listing_price
       effect: EFFECT_DENY
       roles: ["business_user", "store_device", "user", "anonymous"]
 
@@ -44,7 +46,8 @@ resourcePolicy:
       # `approve` (a statement payout, proposed by one finance staffer and
       # approved by a different one) -- covered by the same rule rather than
       # a second one, so there is only ever one place this check can drift.
-      actions: ["approve", "approve_payout", "approve_refund", "approve_payout_retry"]
+      actions:
+        ["approve", "approve_payout", "approve_refund", "approve_payout_retry", "approve_listing_price"]
       effect: EFFECT_DENY
       roles: ["*"]
       condition:
@@ -79,6 +82,15 @@ resourcePolicy:
         - check_payout
         - propose_payout_retry
         - approve_payout_retry
+      effect: EFFECT_ALLOW
+      roles: ["finance"]
+
+    - name: finance-sets-listing-prices
+      # 2.8.g: a listing's staff-set points price (checkout charges max(it,
+      # the ledger's quote)). It changes what users pay and how much backing
+      # the reserve keeps, so it is finance's and dual-approved by the rule
+      # above. A brand never sets it: the business roles are denied at the top.
+      actions: ["propose_listing_price", "approve_listing_price"]
       effect: EFFECT_ALLOW
       roles: ["finance"]
 

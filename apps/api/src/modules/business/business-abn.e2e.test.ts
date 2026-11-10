@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { FastifyAdapter } from "@nestjs/platform-fastify";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { Test } from "@nestjs/testing";
+import { ZodValidationPipe } from "nestjs-zod";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { AppModule } from "../../app.module";
 import { sessionFor } from "../../shared/testing/session-for";
@@ -20,6 +21,7 @@ async function boot(abr?: FakeAbrLookup): Promise<NestFastifyApplication> {
   if (abr !== undefined) builder = builder.overrideProvider(ABR_LOOKUP).useValue(abr);
   const moduleRef = await builder.compile();
   const app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+  app.useGlobalPipes(new ZodValidationPipe());
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
   return app;

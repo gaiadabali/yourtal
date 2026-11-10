@@ -80,7 +80,7 @@ async function createBusiness(request: APIRequestContext, owner: LiveAccount): P
       legalName: "Staff Listing Moderation E2E Pty Ltd",
       displayName: "Staff Listing Moderation E2E Co",
       taxIdKind: "ABN",
-      taxIdValue: "12345678901",
+      taxIdValue: "51824753556",
       addressState: "NSW",
       addressPostcode: "2000",
       roles: ["advertiser", "supplier"],

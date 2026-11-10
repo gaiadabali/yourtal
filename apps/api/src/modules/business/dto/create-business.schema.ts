@@ -3,6 +3,7 @@ import {
   auStateSchema,
   businessRoleSchema,
   businessHandleSchema,
+  abnWriteIssue,
   taxIdKindSchema,
 } from "@yourtal/contracts/business";
 import { regionSchema } from "@yourtal/contracts/region";
@@ -50,6 +51,11 @@ export const createBusinessSchema = z
     path: ["roles"],
   })
   .superRefine((value, ctx) => {
+    // 6.10.b: the ABN must pass the check digit on write (reads stay lenient).
+    const abnIssue = abnWriteIssue(value.taxIdKind, value.taxIdValue);
+    if (abnIssue !== null) {
+      ctx.addIssue({ code: "custom", message: abnIssue, path: ["taxIdValue"] });
+    }
     if (value.region === "AU") {
       if (value.taxIdKind !== "ABN") {
         ctx.addIssue({

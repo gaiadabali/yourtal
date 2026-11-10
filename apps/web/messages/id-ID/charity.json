@@ -41,7 +41,7 @@
     },
     "openConsole": "Buka konsol",
     "errors": {
-      "kyb_abn_invalid": "ABN tersebut tidak valid. Mohon periksa nomornya.",
+      "kyb_abn_invalid": "ABN ini tampaknya tidak valid. Periksa kembali 11 digit pada catatan ABN Anda.",
       "kyb_account_refused": "Kami tidak dapat memverifikasi rekening tersebut. Mohon periksa datanya.",
       "forbidden": "Hanya orang dewasa yang dapat mendaftarkan lembaga amal, di wilayahnya sendiri.",
       "generic": "Terjadi kesalahan. Mohon periksa formulir dan coba lagi."

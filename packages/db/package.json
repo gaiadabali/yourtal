@@ -8,6 +8,7 @@
     "./dsar-payment-handlers": "./src/dsar-payment-handlers.ts",
     "./invoicing/issue": "./src/invoicing/issue-invoice.ts",
     "./invoicing/sources": "./src/invoicing/sources.ts",
+    "./invoicing/gst-report": "./src/invoicing/gst-report.ts",
     "./invoicing/types": "./src/invoicing/types.ts",
     "./invoicing/fixtures": "./src/invoicing/invoice-fixtures.ts",
     "./demo-world/people": "./src/seed/demo-world/people.ts",

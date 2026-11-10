@@ -37,6 +37,7 @@ export function BusinessOnboardingForm({
     create_failed: t("onboarding.error.createFailed"),
     invalid_input: t("onboarding.error.invalidInput"),
     roles: t("onboarding.error.roles"),
+    abn: t("onboarding.error.abn"),
   };
 
   return (

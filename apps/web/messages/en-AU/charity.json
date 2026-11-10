@@ -41,7 +41,7 @@
     },
     "openConsole": "Open console",
     "errors": {
-      "kyb_abn_invalid": "That ABN doesn't check out. Please check the number.",
+      "kyb_abn_invalid": "That ABN doesn't look right. Check the 11 digits on your ABN record.",
       "kyb_account_refused": "We couldn't verify that account. Please check the details.",
       "forbidden": "Only adults can register a charity, in their own region.",
       "generic": "Something went wrong. Please check the form and try again."

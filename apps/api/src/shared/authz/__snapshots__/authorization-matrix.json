@@ -1965,12 +1965,14 @@
       "view_sign_in_methods"
     ],
     "billing-AU": [
+      "export_gst_report",
       "resolve_dispute",
       "view",
       "view_statement",
       "view_statement_queue"
     ],
     "billing-ID": [
+      "export_gst_report",
       "resolve_dispute",
       "view",
       "view_statement",
@@ -2159,12 +2161,14 @@
       "view_sign_in_methods"
     ],
     "billing-AU": [
+      "export_gst_report",
       "resolve_dispute",
       "view",
       "view_statement",
       "view_statement_queue"
     ],
     "billing-ID": [
+      "export_gst_report",
       "resolve_dispute",
       "view",
       "view_statement",

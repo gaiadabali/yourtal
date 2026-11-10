@@ -104,7 +104,16 @@
     "reinstateCta": "Reinstate business",
     "reinstateDialogTitle": "Reinstate this business?",
     "reinstateDialogBody": "Its campaigns become eligible for the feed again.",
-    "reinstateSubmit": "Reinstate"
+    "reinstateSubmit": "Reinstate",
+    "abnCheck": "ABN check",
+    "abnNotChecked": "Not checked",
+    "abnConfirmed": "ABN confirmed with the ABR: {entity}",
+    "abnGstRegistered": "registered for GST",
+    "abnNotGstRegistered": "not registered for GST",
+    "checkAbnCta": "Check with the ABR",
+    "checkAbnDialogTitle": "Check this ABN with the ABR?",
+    "checkAbnDialogBody": "This asks the Australian Business Register about the ABN and records the entity name and GST status it gives.",
+    "checkAbnSubmit": "Check ABN"
   },
   "moderation": {
     "pageTitle": "Moderation",
@@ -417,6 +426,10 @@
   "settlement": {
     "pageTitle": "Settlement",
     "pageDescription": "Weekly statements, disputes and payout approval -- one region at a time.",
+    "gstReportTitle": "GST report",
+    "gstReportDescription": "Everything YourTal invoiced in Australia in a quarter, as a CSV for the books. Amounts are in cents.",
+    "gstReportQuarterLabel": "Quarter",
+    "gstReportDownload": "Download GST report",
     "queueTitle": "Settlement queue",
     "queueEmptyTitle": "Nothing open or disputed right now",
     "columnBusiness": "Business",

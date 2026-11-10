@@ -1,5 +1,6 @@
 import * as z from "zod";
 import { currencySchema } from "../money/money-value";
+import { isValidAbn } from "../invoice/abn";
 import { REGION_CONFIG, regionSchema } from "../region/region";
 
 /**
@@ -41,16 +42,30 @@ export const taxIdKindSchema = z.enum(["ABN", "NIB", "NPWP"]);
 export type TaxIdKind = z.infer<typeof taxIdKindSchema>;
 
 /**
- * Digit-count only, not a checksum — an ABN's real check-digit algorithm
- * (and NPWP's) is a compliance detail for whoever actually integrates ABR/
- * DJP lookups (9.3's KYB review), not something this contract should assert
- * on the founder's behalf.
+ * Digit-count only, and it is what READS use, so a stored ABN that fails the
+ * check digit (old demo data) never breaks a read. WRITES also run
+ * `abnWriteIssue` below (6.10.b). NPWP and NIB stay digit-count only.
  */
 const TAX_ID_VALUE_PATTERN: Record<TaxIdKind, RegExp> = {
   ABN: /^\d{11}$/,
   NIB: /^\d{13}$/,
   NPWP: /^\d{15,16}$/,
 };
+
+/** 6.10.b: what a person is told when an ABN fails the ATO check-digit test (en-AU, the API's language). */
+export const ABN_CHECK_MESSAGE =
+  "That ABN doesn't look right. Check the 11 digits on your ABN record.";
+
+/**
+ * 6.10.b: the check-digit test for a business ABN typed by a person, run on
+ * WRITE only (business create and edit, charity applications). Spaces are
+ * allowed in what people type ("51 824 753 556"). `null` (no issue) for any
+ * other tax ID kind: NPWP and NIB have no check here.
+ */
+export function abnWriteIssue(kind: TaxIdKind, value: string): string | null {
+  if (kind !== "ABN") return null;
+  return isValidAbn(value.replace(/\s/g, "")) ? null : ABN_CHECK_MESSAGE;
+}
 
 export const AU_STATES = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"] as const;
 export const auStateSchema = z.enum(AU_STATES);

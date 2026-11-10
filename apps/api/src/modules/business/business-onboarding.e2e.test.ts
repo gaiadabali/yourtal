@@ -44,7 +44,7 @@ describe("7.1.d Check: AU business with an ABN, invited teammate accepted throug
         legalName: "Wharf Espresso Pty Ltd",
         displayName: "Wharf Espresso",
         taxIdKind: "ABN",
-        taxIdValue: "12345678901",
+        taxIdValue: "51824753556",
         addressState: "NSW",
         addressPostcode: "2000",
         roles: ["advertiser"],

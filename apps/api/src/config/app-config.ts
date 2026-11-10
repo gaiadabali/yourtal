@@ -40,6 +40,8 @@ export interface AppConfig {
   readonly appEnv: Env["APP_ENV"];
   /** Required as `x-qa-key` on every `/api/dev/*` request; absent, those routes are 404. */
   readonly stagingQaKey?: string;
+  /** 6.10.b: the ABR "ABN Lookup" GUID; absent means the lookup is off. */
+  readonly abrGuid?: string;
   /** 1.5.e, F12 "Sessions" — `SessionService`'s lifetimes, config rather than constants. */
   readonly session: {
     readonly consumerIdleTtlMs: number;
@@ -139,6 +141,7 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
     teenAccounts,
     appEnv: env.APP_ENV,
     ...(env.STAGING_QA_KEY === undefined ? {} : { stagingQaKey: env.STAGING_QA_KEY }),
+    ...(env.ABR_GUID === undefined ? {} : { abrGuid: env.ABR_GUID }),
     session: {
       consumerIdleTtlMs: env.SESSION_CONSUMER_IDLE_TTL_MS,
       consumerAbsoluteTtlMs: env.SESSION_CONSUMER_ABSOLUTE_TTL_MS,

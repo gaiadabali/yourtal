@@ -36,7 +36,7 @@ async function createBusiness(ownerCookie: string) {
       legalName: `9.2.a Test Co ${handle}`,
       displayName: "9.2.a Test Business",
       taxIdKind: "ABN",
-      taxIdValue: "12345678901",
+      taxIdValue: "51824753556",
       addressState: "NSW",
       addressPostcode: "2000",
       roles: ["advertiser", "supplier"],

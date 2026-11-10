@@ -1,4 +1,6 @@
 import type { Pool } from "pg";
+import { loadGstReportRows } from "@yourtal/db/invoicing/gst-report";
+import type { GstPeriod, GstReportRow } from "@yourtal/db/invoicing/gst-report";
 import { invoiceSchema } from "@yourtal/contracts/invoice";
 import type { Invoice } from "@yourtal/contracts/invoice";
 import type { Region } from "@yourtal/contracts/region";
@@ -124,5 +126,10 @@ export class InvoiceRepository {
   async findForStaff(id: string): Promise<Invoice | null> {
     const { rows } = await this.pool.query<InvoiceRow>(`${SELECT_INVOICES} WHERE i.id = $1`, [id]);
     return rows[0] === undefined ? null : toInvoice(rows[0]);
+  }
+
+  /** 6.12.a: the AU invoices (and any credit notes) dated in the period, for the GST report. */
+  gstReportRows(period: GstPeriod): Promise<GstReportRow[]> {
+    return loadGstReportRows(this.pool, period);
   }
 }

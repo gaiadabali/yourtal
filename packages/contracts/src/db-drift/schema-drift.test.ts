@@ -345,6 +345,11 @@ const MAPPINGS: readonly Mapping[] = [
         "TASKS.md 9.3.a: staff suspension. Deliberately not on the public businessSchema -- it is staff-only state, read and written through @yourtal/contracts/staff/businesses' StaffBusinessDetail (packages/contracts/src/staff/businesses.ts), not through a business's own view of itself.",
       suspended_by_user_id: "Same as suspended_at -- staff-only, see StaffBusinessDetail.",
       suspended_reason: "Same as suspended_at -- staff-only, see StaffBusinessDetail.",
+      abn_confirmed_at:
+        "6.10.b: what the ABR said about the ABN. Staff-only, read as StaffBusinessDetail.abnConfirmation, not part of the business's own view of itself.",
+      abn_confirmed_abn: "Same as abn_confirmed_at -- the ABN that was checked.",
+      abn_entity_name: "Same as abn_confirmed_at -- the entity name the ABR gave.",
+      abn_gst_registered: "Same as abn_confirmed_at -- the GST status the ABR gave.",
     },
   },
   {

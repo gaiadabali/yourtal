@@ -25,6 +25,13 @@ export interface StaffBusinessDetail extends StaffBusinessSummary {
   readonly taxIdValue: string;
   readonly suspendedReason: string | null;
   readonly kybDocuments: readonly KybDocument[];
+  /** 6.10.b: the ABR's answer for this ABN, or `null` for "not checked". */
+  readonly abnConfirmation: {
+    readonly abn: string;
+    readonly entityName: string;
+    readonly gstRegistered: boolean;
+    readonly confirmedAt: string;
+  } | null;
 }
 
 export interface ListStaffBusinessesFilter {
@@ -52,6 +59,11 @@ export interface StaffBusinessReviewRepository {
     reason: string,
   ): Promise<StaffBusinessDetail | null>;
   reinstate(businessId: string, staffUserId: string): Promise<StaffBusinessDetail | null>;
+  /** 6.10.b: records the ABR's answer. Never touches the ABN itself. `null` if no such business. */
+  recordAbnConfirmation(
+    businessId: string,
+    confirmation: { abn: string; entityName: string; gstRegistered: boolean },
+  ): Promise<StaffBusinessDetail | null>;
 }
 
 export const STAFF_BUSINESS_REVIEW_REPOSITORY = Symbol("STAFF_BUSINESS_REVIEW_REPOSITORY");

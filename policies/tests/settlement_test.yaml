@@ -32,6 +32,31 @@ tests:
         resource: billing_kopi
         actions: { view_statement_queue: EFFECT_DENY, resolve_dispute: EFFECT_DENY }
 
+  - name: only finance exports the quarterly GST report (6.12.a); ops, a business role and a consumer do not
+    input:
+      principals: [finance_yani, ops_zul, support_sari, budi_owner, wina, anon]
+      resources: [billing_kopi]
+      actions: [export_gst_report]
+    expected:
+      - principal: finance_yani
+        resource: billing_kopi
+        actions: { export_gst_report: EFFECT_ALLOW }
+      - principal: ops_zul
+        resource: billing_kopi
+        actions: { export_gst_report: EFFECT_DENY }
+      - principal: support_sari
+        resource: billing_kopi
+        actions: { export_gst_report: EFFECT_DENY }
+      - principal: budi_owner
+        resource: billing_kopi
+        actions: { export_gst_report: EFFECT_DENY }
+      - principal: wina
+        resource: billing_kopi
+        actions: { export_gst_report: EFFECT_DENY }
+      - principal: anon
+        resource: billing_kopi
+        actions: { export_gst_report: EFFECT_DENY }
+
   - name: moderator and risk_analyst are working staff roles too, but this is not their queue
     input:
       principals: [moderator_tono, risk_umi, support_sari]

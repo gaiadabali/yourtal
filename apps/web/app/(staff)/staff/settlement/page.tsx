@@ -8,6 +8,7 @@ import {
   getPayoutProposals,
   getSettlementQueue,
 } from "@/features/staff/settlement/staff-settlement-data";
+import { recentQuarters } from "@/features/staff/settlement/gst-quarters";
 import { StaffSettlementScreen } from "@/features/staff/settlement/staff-settlement-screen";
 
 function stringParam(value: string | string[] | undefined): string | undefined {
@@ -51,6 +52,8 @@ export default async function StaffSettlementPage(props: PageProps<"/staff/settl
         disbursements={disbursements}
         canResolveDispute={session.roles.includes("finance") || session.roles.includes("ops")}
         canProposePayout={session.roles.includes("finance")}
+        canExportGstReport={session.roles.includes("finance")}
+        gstQuarters={recentQuarters(new Date(), 8)}
         currentStaffId={session.userId}
         idempotencyKey={idempotencyKey}
         flash={flashFrom(searchParams, ["resolved", "proposed", "approved", "error", "invalid"])}

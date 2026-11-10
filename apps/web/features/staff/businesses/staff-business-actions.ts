@@ -47,3 +47,11 @@ export async function reinstateBusinessAction(
 ): Promise<StaffBusinessActionResult> {
   return post(`/api/staff/businesses/${businessId}/reinstate`, reason);
 }
+
+/** 6.10.b: asks the ABR about the business's ABN (the API says 503 when `ABR_GUID` is unset). */
+export async function checkBusinessAbnAction(
+  businessId: string,
+  reason: string,
+): Promise<StaffBusinessActionResult> {
+  return post(`/api/staff/businesses/${businessId}/abn/check`, reason);
+}

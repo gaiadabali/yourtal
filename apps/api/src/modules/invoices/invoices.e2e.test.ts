@@ -317,4 +317,49 @@ describe("Staff: /api/staff/invoices", () => {
     });
     expect(missing.statusCode).toBe(404);
   });
+
+  it("6.12.a: only finance downloads the GST report; ops, support and a business user are refused, and the download is audited", async () => {
+    const { cookie, businessId } = await businessOwner();
+    const purchaseId = await buyPoints(cookie, businessId);
+    await issuer.issueInvoice({ kind: "card_purchase", id: purchaseId });
+    const invoice = (await listFor(cookie, businessId)).body?.invoices[0];
+    if (invoice === undefined) throw new Error("no invoice was issued");
+    // Australian time can be a day ahead of UTC, so the range spans both.
+    const day = (offset: number) =>
+      new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
+    const [from, to] = [day(-1), day(1)];
+    const url = `/api/staff/invoices/gst-report?from=${from}&to=${to}`;
+
+    for (const role of ["ops", "support"] as const) {
+      const refused = await app.inject({
+        method: "GET",
+        url,
+        headers: { cookie: (await staffWith(role)).cookie },
+      });
+      expect(refused.statusCode, role).toBe(403);
+    }
+    expect((await app.inject({ method: "GET", url, headers: { cookie } })).statusCode).toBe(403);
+
+    const finance = await staffWith("finance");
+    const ok = await app.inject({ method: "GET", url, headers: { cookie: finance.cookie } });
+    expect(ok.statusCode).toBe(200);
+    expect(ok.headers["content-type"]).toContain("text/csv");
+    expect(ok.headers["content-disposition"]).toContain("attachment");
+    expect(ok.body).toContain(invoice.number);
+    expect(ok.body).toContain("gst_collected_minor,");
+
+    const bad = await app.inject({
+      method: "GET",
+      url: "/api/staff/invoices/gst-report?quarter=2026-Q9",
+      headers: { cookie: finance.cookie },
+    });
+    expect(bad.statusCode).toBe(400);
+
+    const audit = await owner.query<{ action: string; outcome: string }>(
+      `SELECT action, outcome FROM staff.audit_event
+        WHERE target_kind = 'gst_report' AND target_id = $1`,
+      [`${from}_${to}`],
+    );
+    expect(audit.rows).toContainEqual({ action: "invoices.gst_report", outcome: "succeeded" });
+  });
 });

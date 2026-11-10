@@ -11932,6 +11932,97 @@
         }
       }
     },
+    "/api/staff/invoices/gst-report": {
+      "get": {
+        "summary": "Staff (finance): the quarterly GST report as a CSV",
+        "tags": [
+          "staff",
+          "invoices"
+        ],
+        "parameters": [
+          {
+            "name": "quarter",
+            "in": "query",
+            "required": false,
+            "description": "A calendar quarter as YYYY-Q1 to YYYY-Q4 (Oct to Dec is Q4). Or give from and to.",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-Q[1-4]$"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "First day, YYYY-MM-DD, Australian time. With `to`; not with `quarter`.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "Last day, inclusive. The range is under a year.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One row per AU invoice or credit note (amounts in integer minor units), then a totals block. Sent as an attachment; the call is audited.",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Neither a quarter nor a valid from/to range.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Nest's own default HttpException body for a plain string message — not this API's {code,message} ErrorResponse envelope. See NEST_DEFAULT_ERROR_SCHEMA in route-registry-shared.ts.",
+                  "properties": {
+                    "statusCode": {
+                      "type": "integer"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "statusCode",
+                    "message",
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/staff/invoices/{invoiceId}/pdf": {
       "get": {
         "summary": "Staff: download any invoice as a PDF",
@@ -16811,6 +16902,43 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "abnConfirmation": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "abn": {
+                              "type": "string"
+                            },
+                            "entityName": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "gstRegistered": {
+                              "type": "boolean"
+                            },
+                            "confirmedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                            }
+                          },
+                          "required": [
+                            "abn",
+                            "entityName",
+                            "gstRegistered",
+                            "confirmedAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "abrLookupEnabled": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -16825,7 +16953,9 @@
                     "taxIdKind",
                     "taxIdValue",
                     "suspendedReason",
-                    "kybDocuments"
+                    "kybDocuments",
+                    "abnConfirmation",
+                    "abrLookupEnabled"
                   ],
                   "additionalProperties": false
                 }
@@ -17066,6 +17196,43 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "abnConfirmation": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "abn": {
+                              "type": "string"
+                            },
+                            "entityName": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "gstRegistered": {
+                              "type": "boolean"
+                            },
+                            "confirmedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                            }
+                          },
+                          "required": [
+                            "abn",
+                            "entityName",
+                            "gstRegistered",
+                            "confirmedAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "abrLookupEnabled": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -17080,7 +17247,9 @@
                     "taxIdKind",
                     "taxIdValue",
                     "suspendedReason",
-                    "kybDocuments"
+                    "kybDocuments",
+                    "abnConfirmation",
+                    "abrLookupEnabled"
                   ],
                   "additionalProperties": false
                 }
@@ -17324,6 +17493,43 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "abnConfirmation": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "abn": {
+                              "type": "string"
+                            },
+                            "entityName": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "gstRegistered": {
+                              "type": "boolean"
+                            },
+                            "confirmedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                            }
+                          },
+                          "required": [
+                            "abn",
+                            "entityName",
+                            "gstRegistered",
+                            "confirmedAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "abrLookupEnabled": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -17338,7 +17544,9 @@
                     "taxIdKind",
                     "taxIdValue",
                     "suspendedReason",
-                    "kybDocuments"
+                    "kybDocuments",
+                    "abnConfirmation",
+                    "abrLookupEnabled"
                   ],
                   "additionalProperties": false
                 }
@@ -17582,6 +17790,43 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "abnConfirmation": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "abn": {
+                              "type": "string"
+                            },
+                            "entityName": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "gstRegistered": {
+                              "type": "boolean"
+                            },
+                            "confirmedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                            }
+                          },
+                          "required": [
+                            "abn",
+                            "entityName",
+                            "gstRegistered",
+                            "confirmedAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "abrLookupEnabled": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -17596,7 +17841,9 @@
                     "taxIdKind",
                     "taxIdValue",
                     "suspendedReason",
-                    "kybDocuments"
+                    "kybDocuments",
+                    "abnConfirmation",
+                    "abrLookupEnabled"
                   ],
                   "additionalProperties": false
                 }
@@ -17618,6 +17865,323 @@
           },
           "404": {
             "description": "No business exists with this id (business/to-http-exception.ts's business_not_found).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Either the PDP could not be reached or returned something this app could not parse (authz-error.mapper.ts's pdp_unavailable/pdp_protocol_error, logged server-side and never detailed here per docs/14 section 8 A10), or the use-case's own persistence step failed (to-http-exception.ts's persistence_failed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/staff/businesses/{businessId}/abn/check": {
+      "post": {
+        "summary": "Ask the ABR about a business's ABN and record its entity name and GST status (ops only)",
+        "tags": [
+          "staff"
+        ],
+        "parameters": [
+          {
+            "name": "businessId",
+            "in": "path",
+            "required": true,
+            "description": "The business under staff review.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "Why -- required for the audit trail.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "reason"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The business, with the ABR's answer recorded as its ABN confirmation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "legalName": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "displayName": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "handle": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "region": {
+                      "type": "string",
+                      "enum": [
+                        "AU",
+                        "ID"
+                      ]
+                    },
+                    "isVerified": {
+                      "type": "boolean"
+                    },
+                    "suspendedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    },
+                    "taxIdKind": {
+                      "type": "string",
+                      "enum": [
+                        "ABN",
+                        "NIB",
+                        "NPWP"
+                      ]
+                    },
+                    "taxIdValue": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "suspendedReason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "kybDocuments": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "businessId": {
+                            "type": "string",
+                            "format": "uuid",
+                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                          },
+                          "documentType": {
+                            "type": "string",
+                            "enum": [
+                              "business_registration_certificate",
+                              "tax_registration_number",
+                              "director_identity",
+                              "proof_of_address"
+                            ]
+                          },
+                          "storageRef": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "submitted",
+                              "verified",
+                              "rejected",
+                              "expired"
+                            ]
+                          },
+                          "expiresAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "submittedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                          },
+                          "verifiedAt": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "format": "date-time",
+                                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "verifiedByUserId": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "businessId",
+                          "documentType",
+                          "storageRef",
+                          "status",
+                          "expiresAt",
+                          "submittedAt",
+                          "verifiedAt",
+                          "verifiedByUserId"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "abnConfirmation": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "abn": {
+                              "type": "string"
+                            },
+                            "entityName": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "gstRegistered": {
+                              "type": "boolean"
+                            },
+                            "confirmedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                            }
+                          },
+                          "required": [
+                            "abn",
+                            "entityName",
+                            "gstRegistered",
+                            "confirmedAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "abrLookupEnabled": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "legalName",
+                    "displayName",
+                    "handle",
+                    "region",
+                    "isVerified",
+                    "suspendedAt",
+                    "createdAt",
+                    "taxIdKind",
+                    "taxIdValue",
+                    "suspendedReason",
+                    "kybDocuments",
+                    "abnConfirmation",
+                    "abrLookupEnabled"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "403": {
+            "description": "The PDP denied this action (authz-error.mapper.ts's `forbidden` case). Also the fail-closed response for a route with no @Authorize/@PublicRoute at all — should never reach a real deployment; authorized-routes.test.ts catches that at build time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No business exists with this id (business/to-http-exception.ts's business_not_found).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The business has no ABN that passes the check digit (abn_not_checkable), or the ABR has no active ABN with this number (abr_no_match).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The ABR did not answer (abr_unreachable).",
             "content": {
               "application/json": {
                 "schema": {
@@ -17840,6 +18404,43 @@
                         ],
                         "additionalProperties": false
                       }
+                    },
+                    "abnConfirmation": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "abn": {
+                              "type": "string"
+                            },
+                            "entityName": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "gstRegistered": {
+                              "type": "boolean"
+                            },
+                            "confirmedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                            }
+                          },
+                          "required": [
+                            "abn",
+                            "entityName",
+                            "gstRegistered",
+                            "confirmedAt"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "abrLookupEnabled": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -17854,7 +18455,9 @@
                     "taxIdKind",
                     "taxIdValue",
                     "suspendedReason",
-                    "kybDocuments"
+                    "kybDocuments",
+                    "abnConfirmation",
+                    "abrLookupEnabled"
                   ],
                   "additionalProperties": false
                 }

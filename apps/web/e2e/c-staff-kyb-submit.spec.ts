@@ -189,7 +189,7 @@ test.describe.serial("9.3.b: approving KYB unblocks submit, through the real Stu
     await page.getByLabel("Legal name").fill("Staff KYB Submit E2E Pty Ltd");
     await page.getByLabel("Display name").fill("Staff KYB Submit E2E");
     await page.getByLabel("Handle").fill(businessHandle);
-    await page.getByLabel("Tax ID number").fill("12345678901");
+    await page.getByLabel("Tax ID number").fill("51824753556");
     await page.getByLabel("State").selectOption("NSW");
     await page.getByLabel("Postcode").fill("2000");
     await page.getByRole("button", { name: "Create business" }).click();

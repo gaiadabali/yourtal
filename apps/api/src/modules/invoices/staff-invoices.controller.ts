@@ -12,6 +12,7 @@ import {
 } from "@nestjs/common";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type { InvoiceList } from "@yourtal/contracts/invoice";
+import { buildGstReportCsv, parseGstPeriod } from "@yourtal/db/invoicing/gst-report";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 import { NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { StaffAction, setStaffAuditContext } from "../staff/staff-action.decorator";
@@ -57,6 +58,50 @@ export class StaffInvoicesController {
       ...(parsed.data.region === undefined ? {} : { region: parsed.data.region }),
     });
     return { invoices: await this.invoices.listForStaff(parsed.data) };
+  }
+
+  /**
+   * 6.12.a: the quarterly GST report as a CSV (`?quarter=2026-Q4`, or `from` and
+   * `to`). Finance only (`billing` `export_gst_report`); every download is audited.
+   */
+  @Authorize({
+    kind: "billing",
+    action: "export_gst_report",
+    attrsFrom: () => ({ businessId: "staff", region: "AU" }),
+  })
+  @StaffAction("invoices.gst_report")
+  @NotValueMoving("A read.")
+  @Get("gst-report")
+  async gstReport(
+    @Query() query: Record<string, string | string[] | undefined>,
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ): Promise<string> {
+    const text = (value: string | string[] | undefined): string | undefined =>
+      typeof value === "string" ? value : undefined;
+    const period = parseGstPeriod({
+      quarter: text(query["quarter"]),
+      from: text(query["from"]),
+      to: text(query["to"]),
+    });
+    if (period === null) {
+      throw new BadRequestException({
+        code: "invalid_period",
+        message:
+          "Give quarter=YYYY-Q1..Q4, or from and to as YYYY-MM-DD (from not after to, under a year).",
+      });
+    }
+    const rows = await this.invoices.gstReportRows(period);
+    setStaffAuditContext(request, {
+      targetKind: "gst_report",
+      targetId: period.label,
+      region: "AU",
+      detail: { from: period.from, to: period.to, rows: rows.length },
+    });
+    reply.header("content-type", "text/csv; charset=utf-8");
+    reply.header("content-disposition", `attachment; filename="gst-report-${period.label}.csv"`);
+    reply.header("cache-control", "private, no-store");
+    return buildGstReportCsv(period, rows);
   }
 
   @Authorize({

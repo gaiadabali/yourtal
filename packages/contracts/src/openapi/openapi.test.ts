@@ -175,6 +175,10 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "9.3.a's staff Businesses zone: POST .../suspend's request body, documented inline in route-registry.c-staff-businesses.ts.",
   reinstateBusinessRequestSchema:
     "9.3.a's staff Businesses zone: POST .../reinstate's request body, documented inline in route-registry.c-staff-businesses.ts.",
+  checkBusinessAbnRequestSchema:
+    "6.10.b: POST .../abn/check's request body, documented inline in route-registry.c-staff-businesses.ts.",
+  abnConfirmationSchema:
+    "6.10.b: the ABR's answer inside the staff business detail, documented inline in route-registry.c-staff-businesses.ts.",
   staffVoucherBatchRequestSchema:
     "9.2.c's staff moderation queue: documented inline in route-registry.c-staff-moderation.ts, same treatment as staffSessionSchema above.",
   listPendingVoucherBatchesResponseSchema:

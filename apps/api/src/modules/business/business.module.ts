@@ -4,6 +4,7 @@ import { PdpClientModule } from "../../shared/pdp/pdp-client.module";
 import { EmailDriverModule } from "../../shared/drivers/email-driver.module";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
+import { ABR_LOOKUP, createAbrLookup } from "./abr/abr-lookup";
 import { BillingContactController } from "./billing-contact.controller";
 import { BusinessController } from "./business.controller";
 import { CreateBusinessController } from "./create-business.controller";
@@ -120,6 +121,11 @@ const BUSINESS_DB = Symbol("BUSINESS_DB");
       provide: STAFF_BUSINESS_REVIEW_REPOSITORY,
       useFactory: (db: BusinessDb) => new DrizzleStaffBusinessReviewRepository(db),
       inject: [BUSINESS_DB],
+    },
+    {
+      provide: ABR_LOOKUP,
+      useFactory: (config: AppConfig) => createAbrLookup(config.abrGuid),
+      inject: [APP_CONFIG],
     },
     {
       provide: KYB_OBJECT_STORAGE,

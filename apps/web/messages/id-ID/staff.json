@@ -104,7 +104,16 @@
     "reinstateCta": "Pulihkan bisnis",
     "reinstateDialogTitle": "Pulihkan bisnis ini?",
     "reinstateDialogBody": "Kampanyenya kembali memenuhi syarat untuk tampil di feed.",
-    "reinstateSubmit": "Pulihkan"
+    "reinstateSubmit": "Pulihkan",
+    "abnCheck": "Pengecekan ABN",
+    "abnNotChecked": "Belum dicek",
+    "abnConfirmed": "ABN terkonfirmasi di ABR: {entity}",
+    "abnGstRegistered": "terdaftar GST",
+    "abnNotGstRegistered": "tidak terdaftar GST",
+    "checkAbnCta": "Cek ke ABR",
+    "checkAbnDialogTitle": "Cek ABN ini ke ABR?",
+    "checkAbnDialogBody": "Kami menanyakan nomor ABN ini ke Australian Business Register (ABR), lalu menyimpan nama entitas dan status GST yang diberikan.",
+    "checkAbnSubmit": "Cek ABN"
   },
   "moderation": {
     "pageTitle": "Moderasi",
@@ -417,6 +426,10 @@
   "settlement": {
     "pageTitle": "Penyelesaian",
     "pageDescription": "Laporan mingguan, sengketa dan persetujuan pencairan -- satu wilayah pada satu waktu.",
+    "gstReportTitle": "Laporan GST",
+    "gstReportDescription": "Semua yang ditagihkan YourTal di Australia dalam satu kuartal, dalam bentuk CSV untuk pembukuan. Nilainya dalam sen.",
+    "gstReportQuarterLabel": "Kuartal",
+    "gstReportDownload": "Unduh laporan GST",
     "queueTitle": "Antrean penyelesaian",
     "queueEmptyTitle": "Tidak ada yang terbuka atau disengketakan saat ini",
     "columnBusiness": "Bisnis",

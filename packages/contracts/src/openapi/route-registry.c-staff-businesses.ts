@@ -1,5 +1,6 @@
 import {
   approveBusinessKybRequestSchema,
+  checkBusinessAbnRequestSchema,
   reinstateBusinessRequestSchema,
   rejectBusinessKybRequestSchema,
   staffBusinessDetailSchema,
@@ -144,6 +145,38 @@ export const STAFF_BUSINESSES_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     successDescription: "The business, now suspended.",
     successSchema: detailSchema,
     errors: [VALIDATION_400, FORBIDDEN, BUSINESS_NOT_FOUND, SERVICE_UNAVAILABLE],
+  },
+  {
+    method: "post",
+    path: "/api/staff/businesses/{businessId}/abn/check",
+    summary:
+      "Ask the ABR about a business's ABN and record its entity name and GST status (ops only)",
+    tags: ["staff"],
+    pathParams: [BUSINESS_ID_PARAM],
+    requestBody: {
+      description: "Why -- required for the audit trail.",
+      schema: inlineSchema(checkBusinessAbnRequestSchema),
+    },
+    successStatus: 201,
+    successDescription: "The business, with the ABR's answer recorded as its ABN confirmation.",
+    successSchema: detailSchema,
+    errors: [
+      VALIDATION_400,
+      FORBIDDEN,
+      BUSINESS_NOT_FOUND,
+      {
+        status: 422,
+        description:
+          "The business has no ABN that passes the check digit (abn_not_checkable), or the ABR has no active ABN with this number (abr_no_match).",
+        documented: true,
+      },
+      {
+        status: 502,
+        description: "The ABR did not answer (abr_unreachable).",
+        documented: true,
+      },
+      SERVICE_UNAVAILABLE,
+    ],
   },
   {
     method: "post",

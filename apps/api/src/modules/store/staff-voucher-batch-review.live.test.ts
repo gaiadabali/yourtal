@@ -167,7 +167,7 @@ async function createBusiness(ownerCookie: string): Promise<string> {
       legalName: `9.2.c Live Test Co ${handle}`,
       displayName: "9.2.c Live Test Business",
       taxIdKind: "ABN",
-      taxIdValue: "12345678901",
+      taxIdValue: "51824753556",
       addressState: "NSW",
       addressPostcode: "2000",
       roles: ["advertiser", "supplier"],

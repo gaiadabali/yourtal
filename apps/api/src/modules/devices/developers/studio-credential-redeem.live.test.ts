@@ -158,7 +158,7 @@ async function seedBusiness(region: "AU" | "ID"): Promise<string> {
     legalName: "8.3.f Test Business",
     displayName: "8.3.f Test Business",
     taxIdKind: region === "AU" ? "ABN" : "NPWP",
-    taxIdValue: "12345678901",
+    taxIdValue: "51824753556",
     addressState: region === "AU" ? "NSW" : null,
     addressPostcode: region === "AU" ? "2000" : null,
     addressCity: region === "AU" ? null : "Jakarta",

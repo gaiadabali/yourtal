@@ -287,6 +287,12 @@ export const envSchema = z.object({
   STRIPE_API_BASE: z.url().default("https://api.stripe.com"),
 
   /**
+   * 6.10.b: the GUID for the ABR's free "ABN Lookup" web service. Unset: the
+   * lookup is OFF and nothing calls the ABR.
+   */
+  ABR_GUID: z.string().min(1).optional(),
+
+  /**
    * Group 3.9 (docs/26): the OpenID Connect provider at `/oidc`. Off by
    * default so the code can reach staging before the keys are on Helios.
    */

@@ -1,5 +1,6 @@
 import * as z from "zod";
 import {
+  abnWriteIssue,
   auStateSchema,
   businessHandleSchema,
   businessRoleSchema,
@@ -66,6 +67,10 @@ export const createBusinessInputSchema = z
   )
   .refine((input) => isValidTaxIdValue(input.taxIdKind, input.taxIdValue), {
     message: "tax id value is not a plausible number for this kind",
+    path: ["taxIdValue"],
+  })
+  .refine((input) => abnWriteIssue(input.taxIdKind, input.taxIdValue) === null, {
+    message: "that ABN fails the check digit",
     path: ["taxIdValue"],
   })
   .refine(

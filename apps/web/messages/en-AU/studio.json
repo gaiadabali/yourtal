@@ -971,7 +971,8 @@
       "createFailed": "Could not create the business — try again.",
       "invalidInput": "Check the highlighted fields and try again.",
       "fieldFallback": "Check the \"{errorField}\" field and try again.",
-      "roles": "Choose at least one thing your business will do."
+      "roles": "Choose at least one thing your business will do.",
+      "abn": "That ABN doesn't look right. Check the 11 digits on your ABN record."
     },
     "legalNameLabel": "Legal name",
     "displayNameLabel": "Display name",

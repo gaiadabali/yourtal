@@ -3,8 +3,8 @@
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Input } from "@yourtal/ui/input";
-import { Button } from "@yourtal/ui/button";
 import { Notice } from "@yourtal/ui/notice";
+import { PendingSubmitButton } from "@/features/auth/pending-submit-button";
 import { authErrorMessage } from "@/features/auth/auth-error-copy";
 import { loginAction } from "@/lib/api/actions";
 import { clearSessionScopedServiceWorkerCache } from "@/features/shell/clear-session-cache";
@@ -54,7 +54,7 @@ export function LoginForm({ returnTo, errorCode }: LoginFormProps) {
         autoComplete="current-password"
         required
       />
-      <Button type="submit">{t("submitCta")}</Button>
+      <PendingSubmitButton>{t("submitCta")}</PendingSubmitButton>
       <Link
         href="/forgot"
         className="text-body-sm font-sans text-accent underline underline-offset-4"

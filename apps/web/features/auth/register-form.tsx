@@ -9,6 +9,7 @@ import { Input } from "@yourtal/ui/input";
 import { NativeSelect } from "@yourtal/ui/native-select";
 import { Button } from "@yourtal/ui/button";
 import { Notice } from "@yourtal/ui/notice";
+import { PendingSubmitButton } from "./pending-submit-button";
 import { registerAction } from "./auth-actions";
 import { authErrorMessage } from "./auth-error-copy";
 import type { RegisterDraft } from "./register-draft";
@@ -149,7 +150,7 @@ export function RegisterForm({
         <option value="id-ID">{t("languageOptionIdID")}</option>
       </NativeSelect>
 
-      <Button type="submit">{needsGuardianEmail ? t("continueCta") : t("submitCta")}</Button>
+      <PendingSubmitButton>{needsGuardianEmail ? t("continueCta") : t("submitCta")}</PendingSubmitButton>
     </form>
   );
 }

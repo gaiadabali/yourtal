@@ -2,8 +2,8 @@
 
 import { useTranslations } from "next-intl";
 import { Input } from "@yourtal/ui/input";
-import { Button } from "@yourtal/ui/button";
 import { Notice } from "@yourtal/ui/notice";
+import { PendingSubmitButton } from "@/features/auth/pending-submit-button";
 import { authErrorMessage } from "@/features/auth/auth-error-copy";
 import { totpSignInAction } from "@/features/auth/second-factor-actions";
 
@@ -33,7 +33,7 @@ export function LoginCodeForm({ returnTo, errorCode }: LoginCodeFormProps) {
         autoFocus
         required
       />
-      <Button type="submit">{t("submitCta")}</Button>
+      <PendingSubmitButton>{t("submitCta")}</PendingSubmitButton>
     </form>
   );
 }

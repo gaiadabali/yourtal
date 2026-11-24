@@ -9,6 +9,10 @@ import { randomUUID } from "node:crypto";
 const API = process.env.DEMO_API_BASE_URL ?? "http://127.0.0.1:26301";
 const PASSWORD = process.env.STAGING_DEMO_PASSWORD;
 if (!PASSWORD) throw new Error("needs STAGING_DEMO_PASSWORD");
+// Non-staff demo logins (a region in the address: viewer.au@, owner.id@) use the review
+// password when staging sets one (accounts.ts hashFor); staff (admin@, finance@) keep the demo one.
+const REVIEW_PASSWORD = process.env.STAGING_REVIEW_PASSWORD || PASSWORD;
+const passwordFor = (email) => (/.(au|id)@/.test(email) ? REVIEW_PASSWORD : PASSWORD);
 
 async function call(method, path, cookie, body) {
   const res = await fetch(`${API}${path}`, {
@@ -34,7 +38,7 @@ async function call(method, path, cookie, body) {
 
 async function login(email) {
   for (;;) {
-    const res = await call("POST", "/api/auth/login", undefined, { email, password: PASSWORD });
+    const res = await call("POST", "/api/auth/login", undefined, { email, password: passwordFor(email) });
     if (res.status === 429) {
       await new Promise((r) => setTimeout(r, (res.body?.retryAfterSeconds ?? 60) * 1000));
       continue;

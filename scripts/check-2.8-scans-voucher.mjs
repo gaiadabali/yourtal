@@ -87,7 +87,7 @@ async function ytLogin(email, password = PASSWORD) {
   const res = await http(YT, "POST", "/api/auth/login", {}, { email, password });
   if (res.status !== 200 && res.status !== 201)
     throw new Error(`login ${email}: HTTP ${res.status} ${short(res.body)}`);
-  return { cookie: { cookie: `yt_session=${res.body.token}` }, email };
+  return { cookie: { cookie: `yt_session=${res.body.token}` }, email, userId: res.body.userId };
 }
 const yt = (s, method, path, body) => http(YT, method, path, s.cookie, body);
 function staffLogin(who) {
@@ -227,15 +227,44 @@ async function priceScreenRow(listingId) {
 const credits = async (s) => (await snap(s, "GET", "/v1/credits")).body?.creditsRemaining;
 const points = async (u) => (await yt(u, "GET", "/api/wallet")).body?.availablePoints;
 
+/**
+ * The demo world spends each adult's starting goodwill on a demo voucher, so a buyer may hold less
+ * than the 200-point price (2.11). Credit only the shortfall, as the demo marketplace does: admin
+ * goodwill, then the dev clock releases it. Needs STAGING_DEMO_PASSWORD and STAGING_QA_KEY (the
+ * /api/dev routes answer only on the internal API, e.g. YOURTAL_API=http://127.0.0.1:26301).
+ */
+async function topUp(user, price) {
+  const shortfall = price - Number((await points(user)) ?? 0);
+  if (shortfall <= 0) return;
+  const qaKey = process.env.STAGING_QA_KEY;
+  if (!STAFF_PASSWORD || !qaKey) {
+    note(`${user.email} holds less than ${price}`, "set STAGING_DEMO_PASSWORD and STAGING_QA_KEY to top up");
+    return;
+  }
+  const userId = user.userId;
+  const admin = await staffLogin("admin");
+  const credited = await yt(admin, "POST", `/api/staff/users/${userId}/goodwill`, {
+    points: shortfall,
+    reason: "check-2.8 phase-b top-up",
+  });
+  if (credited.status >= 400) throw new Error(`goodwill for ${user.email}: HTTP ${credited.status} ${short(credited.body)}`);
+  const released = await http(YT, "POST", "/api/dev/clock/release-pending", { ...user.cookie, "x-qa-key": qaKey }, {});
+  if (released.status >= 400) throw new Error(`release pending: HTTP ${released.status} ${short(released.body)}`);
+  note(`topped up ${user.email}`, `+${shortfall} goodwill, released`);
+}
+
 async function buy(user, listingId) {
   const q = await yt(user, "POST", "/api/checkout/quote", { listingId });
   if (q.status !== 201) throw new Error(`${user.email} quote: HTTP ${q.status} ${short(q.body)}`);
+  await topUp(user, Number(q.body.pricePoints));
+  // Read after any top-up, so the burn is measured against what the buyer held at checkout.
+  const before = Number((await points(user)) ?? 0);
   const done = await yt(user, "POST", "/api/checkout", { checkoutId: q.body.checkoutId });
   if (done.status !== 200)
     throw new Error(`${user.email} checkout: HTTP ${done.status} ${short(done.body)}`);
   for (let i = 0; i < 20; i += 1) {
     const v = await yt(user, "GET", `/api/wallet/vouchers/${done.body.voucherId}`);
-    if (v.body?.code) return { id: done.body.voucherId, price: q.body.pricePoints, detail: v.body };
+    if (v.body?.code) return { id: done.body.voucherId, price: q.body.pricePoints, before, detail: v.body };
     await new Promise((r) => setTimeout(r, 1500));
   }
   throw new Error(`${user.email}: voucher ${done.body.voucherId} never showed a code`);
@@ -276,18 +305,14 @@ async function phaseB() {
     )
       return;
 
-    const [pointsA0, pointsB0, creditsBefore] = [
-      await points(a),
-      await points(b),
-      await credits(s),
-    ];
+    const creditsBefore = await credits(s);
     const va = await buy(a, listing.id);
     const vb = await buy(b, listing.id);
     const [pointsA1, pointsB1] = [await points(a), await points(b)];
     expect(
-      pointsA0 - pointsA1 === va.price && pointsB0 - pointsB1 === vb.price,
+      va.before - pointsA1 === va.price && vb.before - pointsB1 === vb.price,
       "buying burns the quoted points",
-      `A ${pointsA0} -> ${pointsA1}, B ${pointsB0} -> ${pointsB1}, price ${va.price}`,
+      `A ${va.before} -> ${pointsA1}, B ${vb.before} -> ${pointsB1}, price ${va.price}`,
     );
     expect(
       va.detail.redeemIn?.partnerId === "snap-app" && va.detail.status === "active",

@@ -238,7 +238,10 @@ async function topUp(user, price) {
   if (shortfall <= 0) return;
   const qaKey = process.env.STAGING_QA_KEY;
   if (!STAFF_PASSWORD || !qaKey) {
-    note(`${user.email} holds less than ${price}`, "set STAGING_DEMO_PASSWORD and STAGING_QA_KEY to top up");
+    note(
+      `${user.email} holds less than ${price}`,
+      "set STAGING_DEMO_PASSWORD and STAGING_QA_KEY to top up",
+    );
     return;
   }
   const userId = user.userId;
@@ -247,9 +250,17 @@ async function topUp(user, price) {
     points: shortfall,
     reason: "check-2.8 phase-b top-up",
   });
-  if (credited.status >= 400) throw new Error(`goodwill for ${user.email}: HTTP ${credited.status} ${short(credited.body)}`);
-  const released = await http(YT, "POST", "/api/dev/clock/release-pending", { ...user.cookie, "x-qa-key": qaKey }, {});
-  if (released.status >= 400) throw new Error(`release pending: HTTP ${released.status} ${short(released.body)}`);
+  if (credited.status >= 400)
+    throw new Error(`goodwill for ${user.email}: HTTP ${credited.status} ${short(credited.body)}`);
+  const released = await http(
+    YT,
+    "POST",
+    "/api/dev/clock/release-pending",
+    { ...user.cookie, "x-qa-key": qaKey },
+    {},
+  );
+  if (released.status >= 400)
+    throw new Error(`release pending: HTTP ${released.status} ${short(released.body)}`);
   note(`topped up ${user.email}`, `+${shortfall} goodwill, released`);
 }
 
@@ -264,7 +275,8 @@ async function buy(user, listingId) {
     throw new Error(`${user.email} checkout: HTTP ${done.status} ${short(done.body)}`);
   for (let i = 0; i < 20; i += 1) {
     const v = await yt(user, "GET", `/api/wallet/vouchers/${done.body.voucherId}`);
-    if (v.body?.code) return { id: done.body.voucherId, price: q.body.pricePoints, before, detail: v.body };
+    if (v.body?.code)
+      return { id: done.body.voucherId, price: q.body.pricePoints, before, detail: v.body };
     await new Promise((r) => setTimeout(r, 1500));
   }
   throw new Error(`${user.email}: voucher ${done.body.voucherId} never showed a code`);

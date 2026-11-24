@@ -38,7 +38,10 @@ async function call(method, path, cookie, body) {
 
 async function login(email) {
   for (;;) {
-    const res = await call("POST", "/api/auth/login", undefined, { email, password: passwordFor(email) });
+    const res = await call("POST", "/api/auth/login", undefined, {
+      email,
+      password: passwordFor(email),
+    });
     if (res.status === 429) {
       await new Promise((r) => setTimeout(r, (res.body?.retryAfterSeconds ?? 60) * 1000));
       continue;

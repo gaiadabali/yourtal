@@ -194,12 +194,12 @@ This refines group task 3.3.c: the phone app keeps **SnapApp's** refresh token i
 
 Clients are registered statically in `apps/api/src/modules/oidc/clients.ts`, reviewed in a pull request; there is no dynamic registration. Secrets and public keys are read from `/opt/yourtal/secrets/oidc/`. Each client also carries YourTal's own fields: `sector`, `teens` (`refuse` or `invite_only`), `regions`, `operator` (the company named on the consent screen) and, for receivers, `events_endpoint`.
 
-| Client id                | What                           | Type and authentication                  | Redirect URI                                                                                                | Grants             | Teens       | Regions | Events go to                                         |
-| ------------------------ | ------------------------------ | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------ | ----------- | ------- | ---------------------------------------------------- |
-| `snapapp-staging-web`    | SnapApp website                | Web, confidential, `private_key_jwt`     | `https://snap-apps.gaiada.com/auth/yourtal/callback`                                                        | Code               | Invite only | AU, ID  | The server client                                    |
-| `snapapp-staging-mobile` | SnapApp phone app              | Native, public, `none`                   | `au.com.snapapps.app:/oauth/yourtal`, and its App Link `https://snap-apps.gaiada.com/oauth/yourtal` (3.3.e) | Code               | Invite only | AU, ID  | The server client                                    |
-| `snapapp-staging-server` | SnapApp server                 | Machine, `private_key_jwt`               | None                                                                                                        | Client credentials | —           | —       | `https://snap-apps-api.gaiada.com/v1/yourtal/events` |
-| `ftr-web`                | FTR at `freetaxreturns.com.au` | Web, confidential, `client_secret_basic` | `https://freetaxreturns.com.au/api/auth/oauth2/callback/yourtal`                                            | Code               | Refuse      | AU      | `https://freetaxreturns.com.au/api/yourtal/events`   |
+| Client id                | What                           | Type and authentication                  | Redirect URI                                                                                              | Grants             | Teens       | Regions | Events go to                                         |
+| ------------------------ | ------------------------------ | ---------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------ | ----------- | ------- | ---------------------------------------------------- |
+| `snapapp-staging-web`    | SnapApp website                | Web, confidential, `private_key_jwt`     | `https://snapapp.gaiada.com/auth/yourtal/callback`                                                        | Code               | Invite only | AU, ID  | The server client                                    |
+| `snapapp-staging-mobile` | SnapApp phone app              | Native, public, `none`                   | `au.com.snapapps.app:/oauth/yourtal`, and its App Link `https://snapapp.gaiada.com/oauth/yourtal` (3.3.e) | Code               | Invite only | AU, ID  | The server client                                    |
+| `snapapp-staging-server` | SnapApp server                 | Machine, `private_key_jwt`               | None                                                                                                      | Client credentials | —           | —       | `https://snap-apps-api.gaiada.com/v1/yourtal/events` |
+| `ftr-web`                | FTR at `freetaxreturns.com.au` | Web, confidential, `client_secret_basic` | `https://freetaxreturns.com.au/api/auth/oauth2/callback/yourtal`                                          | Code               | Refuse      | AU      | `https://freetaxreturns.com.au/api/yourtal/events`   |
 
 The three SnapApp clients share the `snapapp-staging` sector. FTR has no staging site, so `ftr-web` (sector `ftr`) is registered now, on `freetaxreturns.com.au` behind FTR's own switch, which stays off for real users until §6 Q1 allows them (F124). SnapApp's production clients follow once SnapApp has a production domain. The Expo web export (`snap-apps-app.gaiada.com`) gets no client of its own; people sign in on the website.
 
@@ -370,7 +370,7 @@ The clock starts when YourTal first delivers the event.
 >
 > [Continue] [Cancel]
 >
-> You'll go back to snap-apps.gaiada.com.
+> You'll go back to snapapp.gaiada.com.
 
 For an Indonesian account the third line reads "that your YourTal account is for Indonesia". If §6 Q6 is answered A, adults also see an unticked line: "Earn YourTal points for receipts you scan in SnapApp (1 point a receipt)", or 10 points in Indonesia.
 

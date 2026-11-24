@@ -87,7 +87,7 @@
     },
     "reward": {
       "scoringRuleBaseOnly": "Fixed reward — same for every viewer who watches and answers",
-      "scoringRuleBaseBonus": "Base + accuracy bonus — scales up to 40% more for correct answers",
+      "scoringRuleBaseBonus": "Base + accuracy bonus — the bonus (up to 40% extra) is paid only when every answer is correct",
       "rewardLabel": "Reward (points)",
       "scoringRuleLabel": "Scoring rule",
       "ratioPending": "Ratio pending",

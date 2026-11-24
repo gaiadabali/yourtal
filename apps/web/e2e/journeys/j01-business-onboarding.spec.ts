@@ -4,13 +4,13 @@ import {
   API,
   REGIONS,
   apiRegister,
+  inboxHeaders,
   testIp,
   useSession,
   type RegionCase,
   type inboxToken,
 } from "./demo";
 import { callerFor, closeDb, msg, one, requireBusinessEnv, staffCaller } from "./business";
-import { QA_HEADERS } from "../qa-key";
 
 const STAFF = REGIONS[0]; // the staff console runs in en-AU
 
@@ -253,7 +253,9 @@ for (const r of REGIONS) {
 
 /** The invitation code from the newest team invitation email to `email`. */
 async function inboxTokenOf(request: Parameters<typeof inboxToken>[0], email: string) {
-  const response = await request.get(`${API}/api/dev/inbox`, { headers: QA_HEADERS });
+  const response = await request.get(`${API}/api/dev/inbox`, {
+    headers: await inboxHeaders(request),
+  });
   expect(response.ok()).toBeTruthy();
   const { entries } = (await response.json()) as {
     entries: {

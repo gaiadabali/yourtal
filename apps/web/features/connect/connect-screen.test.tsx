@@ -145,11 +145,11 @@ describe("consent", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Privacy policy" })).toHaveAttribute(
       "href",
-      "https://snap-apps.gaiada.com/privacy",
+      "https://snapapp.gaiada.com/privacy",
     );
     expect(screen.getByRole("link", { name: "Terms" })).toHaveAttribute(
       "href",
-      "https://snap-apps.gaiada.com/terms",
+      "https://snapapp.gaiada.com/terms",
     );
     expect(screen.getByRole("link", { name: "Terms" })).toHaveAttribute(
       "rel",
@@ -158,7 +158,7 @@ describe("consent", () => {
     expect(
       screen.getByText("You can remove SnapApp at any time in YourTal, under Me → Linked apps."),
     ).toBeInTheDocument();
-    expect(screen.getByText("You'll go back to snap-apps.gaiada.com.")).toBeInTheDocument();
+    expect(screen.getByText("You'll go back to snapapp.gaiada.com.")).toBeInTheDocument();
   });
 
   it("shows the teen line and the Indonesia line from sharing", () => {
@@ -547,7 +547,7 @@ describe("a teen at SnapApp", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Privacy policy" })).toHaveAttribute(
       "href",
-      "https://snap-apps.gaiada.com/privacy",
+      "https://snapapp.gaiada.com/privacy",
     );
     expect(screen.getByRole("link", { name: "Terms" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
@@ -600,7 +600,7 @@ describe("Indonesian", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Lanjutkan" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Batal" })).toBeInTheDocument();
-    expect(screen.getByText("Kamu akan kembali ke snap-apps.gaiada.com.")).toBeInTheDocument();
+    expect(screen.getByText("Kamu akan kembali ke snapapp.gaiada.com.")).toBeInTheDocument();
   });
 });
 

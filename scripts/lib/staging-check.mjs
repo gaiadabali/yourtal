@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 const sameOrigin = (url, base) => new URL(String(url)).origin === new URL(base).origin;
 
 export const YT = process.env.CHECK_YT ?? "https://yourtal.gaiada.com";
-export const SNAP_WEB = process.env.CHECK_SNAP_WEB ?? "https://snap-apps.gaiada.com";
+export const SNAP_WEB = process.env.CHECK_SNAP_WEB ?? "https://snapapp.gaiada.com";
 export const SNAP_API = process.env.CHECK_SNAP_API ?? "https://snap-apps-api.gaiada.com";
 export const FTR = process.env.CHECK_FTR ?? "https://freetaxreturns.com.au";
 const SSH = process.env.CHECK_SSH ?? "helios";

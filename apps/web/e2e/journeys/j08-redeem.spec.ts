@@ -72,8 +72,9 @@ async function onlineReward(request: APIRequestContext, owner: Caller, r: Region
     description: "Redeemed on the merchant's web shop.",
     category: "retail",
     locationIds: [base.location_id],
-    faceValueMinor: au ? 1_000 : 30_000, // within a demo adult's balance after one goodwill credit
-    settlementValueMinor: au ? 700 : 21_000,
+    // Rp15.000 is about 1,750 points: within one demo adult's daily goodwill cap even after a reset's demo activity.
+    faceValueMinor: au ? 1_000 : 15_000,
+    settlementValueMinor: au ? 700 : 10_500,
     stockTotal: 2,
     transferable: false,
     partialRedemptionPolicy: "single_use_forfeit",
@@ -116,10 +117,17 @@ async function customerWithVoucher(
       ? await demoCaller(request, "adult", r)
       : callerFor(request, await apiRegister(request, r, `j08-${tag}`));
   const admin = await staffCaller(request, "admin");
-  const credit = admin.post(`/api/staff/users/${viewer.userId}/goodwill`, {
-    points: r.region === "AU" ? 500 : 5_000,
-    reason: "Journey 8 customer balance.",
-  });
+  // Only the shortfall: a flat credit can exceed the day's goodwill cap and be refused whole.
+  const price = (await viewer.post<{ pricePoints: number }>("/api/checkout/quote", { listingId }))
+    .pricePoints;
+  const held = (await viewer.get<{ availablePoints: number }>("/api/wallet")).availablePoints;
+  const credit =
+    price > held
+      ? admin.post(`/api/staff/users/${viewer.userId}/goodwill`, {
+          points: price - held,
+          reason: "Journey 8 customer balance.",
+        })
+      : Promise.resolve(undefined);
   // The demo adult may already have had today's credit (the day's earn cap); its balance covers the reward.
   if (tag === "online") await credit.catch(() => undefined);
   else await credit;

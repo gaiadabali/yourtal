@@ -196,8 +196,8 @@ Clients are registered statically in `apps/api/src/modules/oidc/clients.ts`, rev
 
 | Client id                | What                           | Type and authentication                  | Redirect URI                                                                                                | Grants             | Teens       | Regions | Events go to                                         |
 | ------------------------ | ------------------------------ | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------ | ----------- | ------- | ---------------------------------------------------- |
-| `snapapp-staging-web`    | SnapApp website                | Web, confidential, `private_key_jwt`     | `https://snap-apps.gaiada.com/auth/yourtal/callback`                                                        | Code               | Invite only | AU, ID  | The server client                                    |
-| `snapapp-staging-mobile` | SnapApp phone app              | Native, public, `none`                   | `au.com.snapapps.app:/oauth/yourtal`, and its App Link `https://snap-apps.gaiada.com/oauth/yourtal` (3.3.e) | Code               | Invite only | AU, ID  | The server client                                    |
+| `snapapp-staging-web`    | SnapApp website                | Web, confidential, `private_key_jwt`     | `https://snapapp.gaiada.com/auth/yourtal/callback`                                                        | Code               | Invite only | AU, ID  | The server client                                    |
+| `snapapp-staging-mobile` | SnapApp phone app              | Native, public, `none`                   | `au.com.snapapps.app:/oauth/yourtal`, and its App Link `https://snapapp.gaiada.com/oauth/yourtal` (3.3.e) | Code               | Invite only | AU, ID  | The server client                                    |
 | `snapapp-staging-server` | SnapApp server                 | Machine, `private_key_jwt`               | None                                                                                                        | Client credentials | —           | —       | `https://snap-apps-api.gaiada.com/v1/yourtal/events` |
 | `ftr-web`                | FTR at `freetaxreturns.com.au` | Web, confidential, `client_secret_basic` | `https://freetaxreturns.com.au/api/auth/oauth2/callback/yourtal`                                            | Code               | Refuse      | AU      | `https://freetaxreturns.com.au/api/yourtal/events`   |
 
@@ -370,7 +370,7 @@ The clock starts when YourTal first delivers the event.
 >
 > [Continue] [Cancel]
 >
-> You'll go back to snap-apps.gaiada.com.
+> You'll go back to snapapp.gaiada.com.
 
 For an Indonesian account the third line reads "that your YourTal account is for Indonesia". If §6 Q6 is answered A, adults also see an unticked line: "Earn YourTal points for receipts you scan in SnapApp (1 point a receipt)", or 10 points in Indonesia.
 

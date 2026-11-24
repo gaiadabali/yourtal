@@ -233,16 +233,16 @@ export function approveCampaignModeration(
             )
           : ResultAsync.fromSafePromise(Promise.resolve(draft));
 
-      return applyOverrides.andThen(() =>
-        approveScreenedQuestions(deps.bank, campaignId),
-      ).andThen(() =>
-        transitionCampaignLifecycle(deps, draft.businessId, campaignId, "live").mapErr(
-          (error): ModerateCampaignError =>
-            error.type === "campaign_not_found"
-              ? { type: "campaign_not_found", campaignId: error.campaignId }
-              : error,
-        ),
-      );
+      return applyOverrides
+        .andThen(() => approveScreenedQuestions(deps.bank, campaignId))
+        .andThen(() =>
+          transitionCampaignLifecycle(deps, draft.businessId, campaignId, "live").mapErr(
+            (error): ModerateCampaignError =>
+              error.type === "campaign_not_found"
+                ? { type: "campaign_not_found", campaignId: error.campaignId }
+                : error,
+          ),
+        );
     });
   });
 }

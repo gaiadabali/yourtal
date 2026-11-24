@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | ✅ done | 23/23 | 105/105 | `██████████` 100% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 20/25 | 102/111 | `█████████░`  92% |
-| **All** | | | **126/131** | **649/658** | `██████████`  99% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 22/28 | 115/121 | `██████████`  95% |
+| **All** | | | **128/134** | **662/668** | `██████████`  99% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1779,6 +1779,13 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
 - [x] **14.25 A patched Next.js** (group 1.32) · A + B · needs: 14.24 — 🔄 2026-11-02 — ✅ 2026-11-02 136b2b50
   - [x] 14.25.a `next` 16.4.3 or later (the daily Security audit flags 16.3.8), zod ≥ 4.6.6 and undici, through pnpm; Security passes → 7574bd07
   - [x] 14.25.b The Performance budget workflow is red on main (initial JS over 170 KB gz): find since when and why → 098a89ff: since ef9fc40c (F126) zod reached the player; fixed, /watch/[campaignId] 195.9 KB gz
+- [x] **14.26 Next 16.4.5** (group 1.34) · A + B · needs: — — ✅ 2026-11-24 48c8fded
+  - [x] 14.26.a `next` and `@next/*` 16.4.3 → 16.4.5 (seven moderate advisories, Dependency audit red since 11-23) → 48c8fded (#96)
+- [x] **14.27 SnapApp's new address in the sign-in clients** (group 1.35) · A · needs: — — ✅ 2026-11-24 fe8b62d8
+  - [x] 14.27.a SnapApp's web callback, App Link, privacy/terms and return host on snapapp.gaiada.com (hosts swapped, pairwise sub unchanged) → fe8b62d8 (#95)
+- [ ] **14.28 Live end-to-end across the group** (group 1.36) · A + B + C · needs: 14.27 — 🔄 2026-11-24
+  - [x] 14.28.a Staging checks and journeys match today's app (demo review password, inbox as staff, package cards, budget before reward, shortfall top-ups, Rp15.000 J8 voucher); the Reward tab says the accuracy bonus is all-or-nothing (F96) → 695db85e (#97)
+  - [ ] 14.28.b A brand-new business and viewer end to end through the UI, recorded for the promo videos (group 1.36.e)
 
 ## Not in this plan (deferred)
 

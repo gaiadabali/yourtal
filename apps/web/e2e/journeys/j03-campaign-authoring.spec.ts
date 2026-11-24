@@ -175,12 +175,21 @@ for (const r of REGIONS) {
       .selectOption("base_plus_accuracy_bonus");
     await page.getByLabel(t("reward.rewardLabel"), { exact: true }).fill("5");
     await page.getByLabel(t("reward.accuracyBonusLabel"), { exact: true }).fill("2");
+    // A reward saves only against a saved budget that covers one completion, and the budget
+    // needs the funded points chosen above: Budget tab, then back to save the reward.
+    await page.getByRole("tab", { name: t("sections.budget") }).click();
+    await page.getByLabel(t("budget.totalLabel"), { exact: true }).fill("1000");
+    await page.getByRole("button", { name: t("budget.save") }).click();
+    await expect(page.getByText(t("budget.saved"))).toBeVisible();
+    await page.getByRole("tab", { name: t("sections.reward") }).click();
+    await page.getByLabel(t("reward.rewardLabel"), { exact: true }).fill("5");
+    await page.getByLabel(t("reward.accuracyBonusLabel"), { exact: true }).fill("2");
     await page.getByRole("button", { name: t("reward.saveReward") }).click();
     await expect(page.getByText(t("reward.rewardValueLabel"))).toBeVisible();
 
     // The automated screen refuses the blocked title; it stays a draft.
     await page.getByRole("button", { name: t("status.submitForReview") }).click();
-    await expect(page.getByText(/content rules/)).toBeVisible();
+    await expect(page.getByText(t("submit.refusal.creativeBlocked"))).toBeVisible();
     const blocked = await one<{ state: string; title: string }>(
       `SELECT lifecycle_state AS state, title FROM campaign.campaigns WHERE id = $1`,
       [campaignId],

@@ -83,7 +83,11 @@ for (const r of REGIONS) {
     const tier = page.getByRole("radio", { name: msg(r, "studio", `billing.tier.${TIER}`) });
     await page.locator(`label[for="${await tier.getAttribute("id")}"]`).click();
     await expect(tier).toBeChecked();
-    await page.getByRole("button", { name: msg(r, "studio", "billing.buy") }).click();
+    // Each programme has its own package form and Buy button: press the one holding the choice.
+    await tier
+      .locator("xpath=ancestor::form")
+      .getByRole("button", { name: msg(r, "studio", "billing.buy") })
+      .click();
     await page.waitForURL(/purchased=1|error=|\/checkout\/cs_/);
     if (page.url().includes("error=")) {
       await expect(page.getByText(msg(r, "studio", "billing.purchaseFailed"))).toBeVisible();

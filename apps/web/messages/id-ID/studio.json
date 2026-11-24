@@ -87,7 +87,7 @@
     },
     "reward": {
       "scoringRuleBaseOnly": "Reward tetap — sama untuk setiap penonton yang menonton dan menjawab",
-      "scoringRuleBaseBonus": "Dasar + bonus akurasi — bertambah hingga 40% lebih banyak untuk jawaban benar",
+      "scoringRuleBaseBonus": "Dasar + bonus akurasi — bonus (maksimal 40% tambahan) hanya diberikan kalau semua jawaban benar",
       "rewardLabel": "Reward (poin)",
       "scoringRuleLabel": "Aturan penilaian",
       "ratioPending": "Rasio belum tersedia",

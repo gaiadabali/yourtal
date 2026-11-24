@@ -197,6 +197,15 @@ describe("9.2.a/9.2.b: staff campaign moderation", () => {
     expect(approved.statusCode, approved.body).toBe(201);
     expect(approved.json<{ lifecycleState: string }>().lifecycleState).toBe("live");
 
+    // The approval is the bank's review: every screened question becomes askable
+    // (a live campaign with an all-draft bank asked nobody anything, 2026-11-25).
+    const bank = await ownerPool().query<{ status: string }>(
+      `SELECT status FROM campaign.question WHERE campaign_id = $1`,
+      [campaignId],
+    );
+    expect(bank.rows.length).toBeGreaterThanOrEqual(12);
+    expect(new Set(bank.rows.map((row) => row.status))).toEqual(new Set(["approved"]));
+
     const viewer = await sessionFor(app, { jurisdiction: "AU" });
     const feed = await app.inject({
       method: "GET",

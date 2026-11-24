@@ -91,6 +91,33 @@ async function flagsFor(
   return flags;
 }
 
+/**
+ * The moderator's approval is the bank's human review: every `draft` question
+ * the automated screen cleared becomes `approved`, the only status a viewer is
+ * ever asked (`askableBank`). Without this a Studio-authored campaign went live
+ * with an all-draft bank, so no checkpoint could be answered and nobody earned
+ * (found 2026-11-25). Runs before the `live` transition, so a failure here can
+ * never leave a live campaign with nothing askable. Retired rows stay retired;
+ * a question the screen did not clear stays `draft` (the CHECK
+ * `status <> 'approved' OR pii_screen = 'clear'` would refuse it anyway).
+ */
+function approveScreenedQuestions(
+  bank: QuestionBankRepository,
+  campaignId: string,
+): ResultAsync<void, ModerateCampaignError> {
+  return ResultAsync.fromPromise(
+    (async () => {
+      const questions = await bank.listByCampaign(campaignId);
+      for (const record of questions) {
+        if (record.status === "draft" && record.piiScreen === "clear") {
+          await bank.updateStatus(record.question.id, "approved", null);
+        }
+      }
+    })(),
+    (cause): ModerateCampaignError => ({ type: "persistence_failed", cause: String(cause) }),
+  );
+}
+
 export function listCampaignModerationQueue(
   deps: Pick<StaffModerationDeps, "drafts" | "bank">,
 ): ResultAsync<readonly CampaignModerationQueueItem[], ListCampaignModerationQueueError> {
@@ -207,6 +234,8 @@ export function approveCampaignModeration(
           : ResultAsync.fromSafePromise(Promise.resolve(draft));
 
       return applyOverrides.andThen(() =>
+        approveScreenedQuestions(deps.bank, campaignId),
+      ).andThen(() =>
         transitionCampaignLifecycle(deps, draft.businessId, campaignId, "live").mapErr(
           (error): ModerateCampaignError =>
             error.type === "campaign_not_found"

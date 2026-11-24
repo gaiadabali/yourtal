@@ -72,12 +72,24 @@ export async function signIn(page: Page, email: string, password = DEMO_PASSWORD
 }
 
 /** The newest simulated email of a kind (the dev inbox), for its token. */
+/**
+ * Headers for `GET /api/dev/inbox`. Outside local dev the inbox needs a session (5.13.b) and
+ * shows a non-staff viewer only their own mail, so the journeys read it as staff, who see all.
+ */
+export async function inboxHeaders(request: APIRequestContext): Promise<Record<string, string>> {
+  const password = process.env["STAFF_PASSWORD"] ?? DEMO_PASSWORD;
+  const { token } = await apiLogin(request, "ops@demo.yourtal.test", password);
+  return { ...QA_HEADERS, cookie: `yt_session=${token}` };
+}
+
 export async function inboxToken(
   request: APIRequestContext,
   recipient: string,
   category: "email_verification" | "password_reset" | "team_invitation",
 ): Promise<string> {
-  const response = await request.get(`${API}/api/dev/inbox`, { headers: QA_HEADERS });
+  const response = await request.get(`${API}/api/dev/inbox`, {
+    headers: await inboxHeaders(request),
+  });
   expect(response.ok()).toBeTruthy();
   const { entries } = (await response.json()) as {
     entries: {

@@ -79,7 +79,10 @@ for (const r of REGIONS) {
     // Finance picks the Grow package in Studio Billing and buys it.
     await useSession(page.context(), baseURL!, finance.token, r);
     await page.goto(`/studio/billing?business=${businessId}`);
-    await page.getByRole("radio", { name: msg(r, "studio", `billing.tier.${TIER}`) }).check();
+    // The package is a card: its label stretches over the radio, so pick it the way a person does.
+    const tier = page.getByRole("radio", { name: msg(r, "studio", `billing.tier.${TIER}`) });
+    await page.locator(`label[for="${await tier.getAttribute("id")}"]`).click();
+    await expect(tier).toBeChecked();
     await page.getByRole("button", { name: msg(r, "studio", "billing.buy") }).click();
     await page.waitForURL(/purchased=1|error=|\/checkout\/cs_/);
     if (page.url().includes("error=")) {

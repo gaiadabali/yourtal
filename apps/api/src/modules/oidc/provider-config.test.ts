@@ -23,7 +23,7 @@ let discovery: Record<string, unknown>;
 
 const WEB = {
   client_id: "snapapp-staging-web",
-  redirect_uri: "https://snap-apps.gaiada.com/auth/yourtal/callback",
+  redirect_uri: "https://snapapp.gaiada.com/auth/yourtal/callback",
 };
 const CHALLENGE = "E9Melhoe2OwvFrEMTJguCQaoeKelZ6Tfxtc-bk7xKMs";
 
@@ -297,7 +297,7 @@ describe("authorization requests", () => {
     for (const redirect_uri of [
       `${WEB.redirect_uri}/`,
       `${WEB.redirect_uri}?x=1`,
-      "https://snap-apps.gaiada.com/auth/yourtal/callbacks",
+      "https://snapapp.gaiada.com/auth/yourtal/callbacks",
       "https://evil.example/auth/yourtal/callback",
     ]) {
       const response = await authorize({ redirect_uri });

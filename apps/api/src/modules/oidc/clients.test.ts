@@ -66,7 +66,7 @@ describe("the client registry (docs/26 §1.9)", () => {
     );
     expect(uris.get("snapapp-staging-mobile")).toEqual([
       "au.com.snapapps.app:/oauth/yourtal",
-      "https://snap-apps.gaiada.com/oauth/yourtal",
+      "https://snapapp.gaiada.com/oauth/yourtal",
     ]);
     for (const [clientId, list] of uris) {
       if (clientId !== "snapapp-staging-mobile") expect(list, clientId).toHaveLength(1);
@@ -215,7 +215,7 @@ describe("client credentials from the secrets directory", () => {
     expect(byId.get("snapapp-staging-mobile")?.token_endpoint_auth_method).toBe("none");
     expect(byId.get("snapapp-staging-mobile")?.redirect_uris).toEqual([
       "au.com.snapapps.app:/oauth/yourtal",
-      "https://snap-apps.gaiada.com/oauth/yourtal",
+      "https://snapapp.gaiada.com/oauth/yourtal",
     ]);
     expect(byId.get("ftr-web")?.redirect_uris).toEqual([
       "https://freetaxreturns.com.au/api/auth/oauth2/callback/yourtal",

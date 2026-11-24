@@ -38,9 +38,9 @@ import { followToApp, startSignIn, webServerCall } from "./testing/sign-in-drive
  * provider on a real port, openid-client as each app, and the interaction API
  * driven with the browser's cookies the way YourTal's /connect page will.
  */
-const WEB_REDIRECT = "https://snap-apps.gaiada.com/auth/yourtal/callback";
+const WEB_REDIRECT = "https://snapapp.gaiada.com/auth/yourtal/callback";
 const MOBILE_REDIRECT = "au.com.snapapps.app:/oauth/yourtal";
-const MOBILE_APP_LINK = "https://snap-apps.gaiada.com/oauth/yourtal";
+const MOBILE_APP_LINK = "https://snapapp.gaiada.com/oauth/yourtal";
 const FTR_REDIRECT = "https://freetaxreturns.com.au/api/auth/oauth2/callback/yourtal";
 const ENV_KEYS = [
   "OIDC_ENABLED",
@@ -405,7 +405,7 @@ describe("what the provider refuses", () => {
     const attempts = [
       [await webApp(), MOBILE_APP_LINK],
       [await mobileApp(), `${MOBILE_APP_LINK}/`],
-      [await mobileApp(), "https://snap-apps.gaiada.com/oauth/yourtal2"],
+      [await mobileApp(), "https://snapapp.gaiada.com/oauth/yourtal2"],
     ] as const;
     for (const [config, redirect_uri] of attempts) {
       const started = client.buildAuthorizationUrl(config, {

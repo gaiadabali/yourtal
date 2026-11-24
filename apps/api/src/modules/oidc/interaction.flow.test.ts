@@ -24,7 +24,7 @@ import type { AppTransfer, TransferStore } from "./transfers";
  * same sign-in as oidc.e2e.test.ts, over an in-memory store, so a broken flow
  * shows up in seconds rather than in the Integration run.
  */
-const WEB_REDIRECT = "https://snap-apps.gaiada.com/auth/yourtal/callback";
+const WEB_REDIRECT = "https://snapapp.gaiada.com/auth/yourtal/callback";
 const FTR_REDIRECT = "https://freetaxreturns.com.au/api/auth/oauth2/callback/yourtal";
 
 function memoryStore(accounts: Map<string, OidcAccount>) {

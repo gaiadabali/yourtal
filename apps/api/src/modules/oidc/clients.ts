@@ -68,9 +68,9 @@ const SNAPAPP = {
   app: "snapapp",
   externalOperator: false,
   sector: "snapapp-staging",
-  privacyUrl: "https://snap-apps.gaiada.com/legal/privacy",
-  termsUrl: "https://snap-apps.gaiada.com/legal/terms",
-  returnHost: "snap-apps.gaiada.com",
+  privacyUrl: "https://snapapp.gaiada.com/legal/privacy",
+  termsUrl: "https://snapapp.gaiada.com/legal/terms",
+  returnHost: "snapapp.gaiada.com",
   teens: "invite_only",
   regions: ["AU", "ID"],
   allowedScopes: SIGN_IN_SCOPES,
@@ -93,7 +93,7 @@ const DEFINITIONS: readonly Definition<YourTalClient>[] = [
     clientId: "snapapp-staging-web",
     kind: "web",
     auth: "private_key_jwt",
-    redirectUris: ["https://snap-apps.gaiada.com/auth/yourtal/callback"],
+    redirectUris: ["https://snapapp.gaiada.com/auth/yourtal/callback"],
   },
   {
     ...SNAPAPP,
@@ -102,7 +102,7 @@ const DEFINITIONS: readonly Definition<YourTalClient>[] = [
     auth: "none",
     redirectUris: [
       "au.com.snapapps.app:/oauth/yourtal",
-      "https://snap-apps.gaiada.com/oauth/yourtal",
+      "https://snapapp.gaiada.com/oauth/yourtal",
     ],
   },
   {

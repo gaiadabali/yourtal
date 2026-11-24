@@ -72,8 +72,9 @@ async function onlineReward(request: APIRequestContext, owner: Caller, r: Region
     description: "Redeemed on the merchant's web shop.",
     category: "retail",
     locationIds: [base.location_id],
-    faceValueMinor: au ? 1_000 : 30_000, // within a demo adult's balance after one goodwill credit
-    settlementValueMinor: au ? 700 : 21_000,
+    // Rp15.000 is about 1,750 points: within one demo adult's daily goodwill cap even after a reset's demo activity.
+    faceValueMinor: au ? 1_000 : 15_000,
+    settlementValueMinor: au ? 700 : 10_500,
     stockTotal: 2,
     transferable: false,
     partialRedemptionPolicy: "single_use_forfeit",

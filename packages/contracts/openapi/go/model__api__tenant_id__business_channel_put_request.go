@@ -20,7 +20,7 @@ var _ MappedNullable = &ApiTenantIdBusinessChannelPutRequest{}
 
 // ApiTenantIdBusinessChannelPutRequest struct for ApiTenantIdBusinessChannelPutRequest
 type ApiTenantIdBusinessChannelPutRequest struct {
-	DisplayName string `json:"displayName"`
+	DisplayName NullableString `json:"displayName"`
 	Handle string `json:"handle" validate:"regexp=^[a-z0-9]+(-[a-z0-9]+)*$"`
 	LogoUrl NullableString `json:"logoUrl"`
 	CoverUrl NullableString `json:"coverUrl"`
@@ -33,7 +33,7 @@ type _ApiTenantIdBusinessChannelPutRequest ApiTenantIdBusinessChannelPutRequest
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiTenantIdBusinessChannelPutRequest(displayName string, handle string, logoUrl NullableString, coverUrl NullableString) *ApiTenantIdBusinessChannelPutRequest {
+func NewApiTenantIdBusinessChannelPutRequest(displayName NullableString, handle string, logoUrl NullableString, coverUrl NullableString) *ApiTenantIdBusinessChannelPutRequest {
 	this := ApiTenantIdBusinessChannelPutRequest{}
 	this.DisplayName = displayName
 	this.Handle = handle
@@ -51,27 +51,29 @@ func NewApiTenantIdBusinessChannelPutRequestWithDefaults() *ApiTenantIdBusinessC
 }
 
 // GetDisplayName returns the DisplayName field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *ApiTenantIdBusinessChannelPutRequest) GetDisplayName() string {
-	if o == nil {
+	if o == nil || o.DisplayName.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.DisplayName
+	return *o.DisplayName.Get()
 }
 
 // GetDisplayNameOk returns a tuple with the DisplayName field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ApiTenantIdBusinessChannelPutRequest) GetDisplayNameOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.DisplayName, true
+	return o.DisplayName.Get(), o.DisplayName.IsSet()
 }
 
 // SetDisplayName sets field value
 func (o *ApiTenantIdBusinessChannelPutRequest) SetDisplayName(v string) {
-	o.DisplayName = v
+	o.DisplayName.Set(&v)
 }
 
 // GetHandle returns the Handle field value
@@ -160,7 +162,7 @@ func (o ApiTenantIdBusinessChannelPutRequest) MarshalJSON() ([]byte, error) {
 
 func (o ApiTenantIdBusinessChannelPutRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["displayName"] = o.DisplayName
+	toSerialize["displayName"] = o.DisplayName.Get()
 	toSerialize["handle"] = o.Handle
 	toSerialize["logoUrl"] = o.LogoUrl.Get()
 	toSerialize["coverUrl"] = o.CoverUrl.Get()

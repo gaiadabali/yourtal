@@ -179,7 +179,6 @@ if (checkOnly) {
       readFileSync(path.join(goDir, name), "utf8") !==
         readFileSync(path.join(scratchDir, name), "utf8"),
   );
-  for (const name of stale) console.error(`@@@BEGIN ${name} ${readFileSync(path.join(scratchDir, name), "base64")} @@@END`);
   const removed = existsSync(goDir)
     ? readdirSync(goDir).filter((name) => name.endsWith(".go") && !generated.includes(name))
     : [];

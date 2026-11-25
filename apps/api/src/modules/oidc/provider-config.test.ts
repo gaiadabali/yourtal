@@ -293,7 +293,9 @@ describe("authorization requests", () => {
       "https://snapapp.gaiada.com/oauth/yourtal",
       "https://snapapp.app.gaiada.com/oauth/yourtal",
     ]) {
-      expect((await mobile(redirect_uri)).headers.location ?? "", redirect_uri).toContain("/connect/");
+      expect((await mobile(redirect_uri)).headers.location ?? "", redirect_uri).toContain(
+        "/connect/",
+      );
     }
     for (const redirect_uri of [
       "https://snapapp.app.gaiada.com/oauth/yourtal/",

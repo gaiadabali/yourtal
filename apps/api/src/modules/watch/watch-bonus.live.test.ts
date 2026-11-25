@@ -59,7 +59,7 @@ async function bonusCampaign(): Promise<string> {
       (id, legal_name, display_name, roles, is_verified, region, currency, handle,
        tax_id_kind, tax_id_value, address_state, address_postcode)
     VALUES (${businessId}, 'Bonus Check', 'Bonus Check', '["advertiser"]'::jsonb, true, 'AU', 'AUD',
-            ${`bonus-check-${campaignId.slice(0, 8)}`}, 'ABN', '51824753556', 'NSW', '2000')`);
+            ${`bonus-check-${campaignId.slice(0, 8)}`}, 'ABN', '24872547145', 'NSW', '2000')`);
   await owner.execute(sql`
     INSERT INTO campaign.campaigns
       (id, kind, title, merchant_id, merchant_name, synopsis, duration_seconds, estimated_data_mb,

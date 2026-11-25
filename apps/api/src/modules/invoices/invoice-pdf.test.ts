@@ -19,7 +19,7 @@ const BASE: Invoice = invoiceSchema.parse({
   isTaxInvoice: true,
   issuer: {
     legalName: "YourTal Pty Ltd",
-    abn: "51824753556",
+    abn: "24872547145",
     address: "1 Example Street, Sydney NSW 2000",
     email: "billing@yourtal.example",
   },
@@ -59,7 +59,7 @@ describe("renderInvoicePdf", () => {
     expect(text).toContain("Number: YT-AU-000042");
     expect(text).toContain("Date of issue: 20 October 2026");
     expect(text).toContain("YourTal Pty Ltd");
-    expect(text).toContain("ABN 51 824 753 556");
+    expect(text).toContain("ABN 24 872 547 145");
     expect(text).toContain("Bondi Beans Pty Ltd");
     expect(text).toContain("ABN 12 345 678 901");
     expect(text).toContain("1,000,000 YourTal points");
@@ -101,7 +101,7 @@ describe("renderInvoicePdf", () => {
     expect(demo).toContain("Not valid for GST or any other tax purpose.");
     expect(demo).toContain("DEMO");
     // Everything a real one carries is still there.
-    expect(demo).toContain("ABN 51 824 753 556");
+    expect(demo).toContain("ABN 24 872 547 145");
     expect(demo).toContain("Total price includes GST of A$4,500.00.");
     expect(pdfText(await renderInvoicePdf(BASE, PRODUCTION))).not.toContain("Demo document");
   });

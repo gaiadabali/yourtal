@@ -315,7 +315,7 @@ describe("Stripe Connect payouts through the simulation (5.2)", () => {
         region: "AU",
         cause: "children_youth",
         summary: "Breakfast programmes in local schools.",
-        registration: { kind: "au_acnc", abn: "51824753556", acncRegistered: true },
+        registration: { kind: "au_acnc", abn: "24872547145", acncRegistered: true },
         payoutAccount: {
           accountName: "Harbour Kids Ltd",
           bankCode: "062000",

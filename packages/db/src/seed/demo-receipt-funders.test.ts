@@ -19,7 +19,7 @@ const KEY = "receipt_funder.snap-app";
 beforeAll(async () => {
   owner = new Pool({ connectionString: OWNER_URL, max: 2 });
   const fixtures = [
-    [SNAP_APP_AU_ID, "AU", "AUD", "ABN", "51824753556", "NSW", "2010", null, "snap-app-au"],
+    [SNAP_APP_AU_ID, "AU", "AUD", "ABN", "24872547145", "NSW", "2010", null, "snap-app-au"],
     [
       SNAP_APP_ID_ID,
       "ID",

@@ -77,7 +77,7 @@ describe("InvoicesScreen", () => {
             isTaxInvoice: true,
             issuer: {
               legalName: "YourTal Pty Ltd",
-              abn: "51824753556",
+              abn: "24872547145",
               address: "1 Example Street",
               email: "billing@yourtal.example",
             },

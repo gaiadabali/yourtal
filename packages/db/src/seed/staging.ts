@@ -455,7 +455,7 @@ function snapApp(region: "AU" | "ID"): Business {
         legalName: "Snap App Pty Ltd",
         displayName: "Snap App",
         taxIdKind: "ABN",
-        taxIdValue: "51824753556",
+        taxIdValue: "24872547145",
         addressState: "NSW",
         addressPostcode: "2010",
         addressCity: null,

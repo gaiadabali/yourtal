@@ -603,7 +603,7 @@ async function ensureBusiness(
 
   const currency = entry.region === "AU" ? "AUD" : "IDR";
   const taxIdKind = entry.region === "AU" ? "ABN" : "NPWP";
-  const taxIdValue = entry.region === "AU" ? "51824753556" : "012345678901234";
+  const taxIdValue = entry.region === "AU" ? "24872547145" : "012345678901234";
   await pool.query(
     `INSERT INTO business.business_accounts
        (id, legal_name, display_name, roles, is_verified, logo_url, region, currency, handle,

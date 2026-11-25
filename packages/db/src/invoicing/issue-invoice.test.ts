@@ -350,7 +350,7 @@ describe("Tax invoice or Invoice", () => {
 
   it("is a tax invoice when the issuer's ABN is set and valid, snapshotting the issuer", async () => {
     expect(isValidAbn(VALID_ABN)).toBe(true);
-    await setIssuer(app, "51 824 753 556", "YourTal Pty Ltd");
+    await setIssuer(app, "24 872 547 145", "YourTal Pty Ltd");
     const buyer = await seedBusiness(app);
     const purchase = await seedCardPurchase(app, buyer.id);
     await issueInvoice(app, { kind: "card_purchase", id: purchase.id });

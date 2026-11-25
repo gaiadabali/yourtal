@@ -45,7 +45,7 @@ async function ownerWithBusiness(request: APIRequestContext): Promise<Owner> {
     headers: { cookie, "idempotency-key": crypto.randomUUID() },
     data: {
       ...{ legalName: "Harbour Beans Pty Ltd", displayName: "Harbour Beans" },
-      ...{ taxIdKind: "ABN", taxIdValue: "51824753556", addressState: "NSW" },
+      ...{ taxIdKind: "ABN", taxIdValue: "24872547145", addressState: "NSW" },
       ...{ addressPostcode: "2000", roles: ["advertiser"], region: "AU" },
       handle: `editor-${suffix}`.slice(0, 40),
     },

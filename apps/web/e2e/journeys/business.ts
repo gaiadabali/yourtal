@@ -168,7 +168,7 @@ export function exact(text: string): RegExp {
 const TAX_IDS = {
   AU: {
     taxIdKind: "ABN",
-    taxIdValue: "51824753556",
+    taxIdValue: "24872547145",
     addressState: "VIC",
     addressPostcode: "3000",
     addressCity: null,

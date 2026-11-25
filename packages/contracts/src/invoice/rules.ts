@@ -28,7 +28,7 @@ export function invoiceNumberOf(region: "AU" | "ID", seq: number): string {
   return `YT-${region}-${String(seq).padStart(6, "0")}`;
 }
 
-/** An ABN written the way the ATO prints it: `51 824 753 556`. */
+/** An ABN written the way the ATO prints it: `24 872 547 145`. */
 export function formatAbn(abn: string): string {
   return /^\d{11}$/.test(abn)
     ? `${abn.slice(0, 2)} ${abn.slice(2, 5)} ${abn.slice(5, 8)} ${abn.slice(8)}`

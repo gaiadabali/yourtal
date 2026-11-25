@@ -16,7 +16,7 @@ const STAFF = REGIONS[0]; // the staff console runs in en-AU
 
 /** A plausible tax id per region (13.3.b: ABN in AU, NIB in ID). */
 const TAX_ID = {
-  AU: { kind: "ABN", value: "51824753556" },
+  AU: { kind: "ABN", value: "24872547145" },
   ID: { kind: "NIB", value: "9120001234567" },
 };
 
@@ -126,13 +126,16 @@ for (const r of REGIONS) {
     expect(crossed.status(), await crossed.text()).toBe(403);
 
     // KYB: the owner uploads a document from the overview's banner.
-    await page.getByLabel(msg(r, "studio", "chrome.verification.fileLabel")).setInputFiles({
+    const registration = page.getByRole("form", {
+      name: msg(r, "studio", "chrome.verification.documentType.business_registration_certificate"),
+    });
+    await registration.getByLabel(/./).setInputFiles({
       name: "registration.pdf",
       mimeType: "application/pdf",
       buffer: Buffer.from("%PDF-1.4\n% journey 1 registration certificate\n%%EOF\n"),
     });
-    await page
-      .getByRole("button", { name: msg(r, "studio", "chrome.verification.submit") })
+    await registration
+      .getByRole("button", { name: msg(r, "studio", "chrome.verification.upload") })
       .click();
     await expect(
       page.getByText(msg(r, "studio", "chrome.verification.submittedMessage")),

@@ -109,7 +109,7 @@ export const auBusinessFixture: Business = businessSchema.parse({
   legalName: "Harbour Roasters Pty Ltd",
   displayName: "Harbour Roasters",
   taxIdKind: "ABN",
-  taxIdValue: "51824753556",
+  taxIdValue: "24872547145",
   addressState: "NSW",
   addressPostcode: "2010",
   addressCity: null,

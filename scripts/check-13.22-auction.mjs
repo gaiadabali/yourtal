@@ -19,7 +19,7 @@ async function charity(region, admin) {
   const payout = `simpayout_${randomUUID().slice(0, 12)}`;
   const registration =
     region === "AU"
-      ? { kind: "au_acnc", abn: "51824753556", acncRegistered: true }
+      ? { kind: "au_acnc", abn: "24872547145", acncRegistered: true }
       : { kind: "id_yayasan", deedNumber: "AHU-0001", fundraisingPermitNumber: "PUB-0001" };
   await db.query(
     `INSERT INTO charity.charity (id, region, name, cause, summary, registration,

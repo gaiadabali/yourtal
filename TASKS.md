@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | ✅ done | 23/23 | 105/105 | `██████████` 100% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 22/28 | 116/124 | `█████████░`  94% |
-| **All** | | | **128/134** | **663/671** | `██████████`  99% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 22/28 | 117/125 | `█████████░`  94% |
+| **All** | | | **128/134** | **664/672** | `██████████`  99% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1786,9 +1786,10 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
 - [ ] **14.28 Live end-to-end across the group** (group 1.36) · A + B + C · needs: 14.27 — 🔄 2026-11-24
   - [x] 14.28.a Staging checks and journeys match today's app (demo review password, inbox as staff, package cards, budget before reward, shortfall top-ups, Rp15.000 J8 voucher); the Reward tab says the accuracy bonus is all-or-nothing (F96) → 695db85e (#97)
   - [x] 14.28.c Moderator approval approves the screened question bank (Studio-authored campaigns went live with an all-draft bank, so no viewer could earn), plus a backfill for live/paused campaigns → d790cbcf (#98)
-  - [ ] 14.28.b A brand-new business and viewer end to end through the UI, recorded for the promo videos (group 1.36.e)
+  - [x] 14.28.b A brand-new business and viewer end to end through the UI, recorded for the promo videos (group 1.36.e) → Harbour & Bean live after d790cbcf; a fresh viewer answered 1/1 and holds 10 points pending to 2026-11-28 (2026-11-25)
   - [ ] 14.28.d Channel settings cannot be saved (`updateChannelSettings` was never built, no API route) — found 2026-11-25
   - [ ] 14.28.e The KYB form names four documents but closes after the first upload — found 2026-11-25
+  - [ ] 14.28.f On a short video the checkpoint question appears only after the viewer presses play again at the end ("Press play to answer the rest"): the checkpoint poll in `use-watch-earn-session.ts` runs only while playing — found 2026-11-25
 
 ## Not in this plan (deferred)
 

@@ -9,7 +9,7 @@ module github.com/yourtal/services/ledger
 
 go 1.27.0
 
-toolchain go1.27.3
+toolchain go1.27.4
 
 require (
 	github.com/go-chi/chi/v5 v5.3.2

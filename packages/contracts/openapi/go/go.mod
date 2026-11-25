@@ -11,6 +11,6 @@ module github.com/yourtal/contracts
 
 go 1.27
 
-toolchain go1.27.3
+toolchain go1.27.4
 
 require gopkg.in/validator.v2 v2.0.1

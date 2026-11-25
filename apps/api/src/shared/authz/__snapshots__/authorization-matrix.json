@@ -541,6 +541,7 @@
     "billing-ID": [],
     "business-AU": [
       "create",
+      "edit",
       "list_own",
       "view"
     ],
@@ -758,6 +759,7 @@
     "business-ID": [
       "create",
       "list_own",
+      "edit",
       "view"
     ],
     "kyb_document-AU": [],

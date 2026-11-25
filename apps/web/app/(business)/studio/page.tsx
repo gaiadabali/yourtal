@@ -85,7 +85,7 @@ export default async function StudioOverviewPage(props: PageProps<"/studio">) {
         {!business.isVerified ? (
           <StudioVerificationBanner
             businessId={business.id}
-            underReview={kybDocuments.some((doc) => doc.status === "submitted")}
+            documents={kybDocuments}
             locale={locale}
           />
         ) : null}

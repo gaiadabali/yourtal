@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, Param } from "@nestjs/common";
+import { Body, Controller, Get, Inject, Param, Put } from "@nestjs/common";
 import { PrincipalService } from "../../shared/authz/principal.service";
 import { BILLING_CONTACT_REPOSITORY } from "./persistence/billing-contact.repository";
 import type { BillingContactRepository } from "./persistence/billing-contact.repository";
@@ -9,7 +9,10 @@ import type { BusinessMemberRepository } from "./persistence/business-member.rep
 import { KYB_DOCUMENT_REPOSITORY } from "./persistence/kyb-document.repository";
 import type { KybDocumentRepository } from "./persistence/kyb-document.repository";
 import { mapBusinessErrorToHttpException } from "./to-http-exception";
+import { UpdateChannelSettingsDto } from "./dto/update-channel-settings.schema";
 import { getBusinessProfile } from "./use-cases/get-business-profile.use-case";
+import { updateChannelSettings } from "./use-cases/update-channel-settings.use-case";
+import { NotValueMoving } from "../../shared/idempotency/idempotent.decorator";
 import { Authorize } from "../../shared/authz/authorize.decorator";
 
 /**
@@ -43,6 +46,25 @@ export class BusinessController {
       this.kybDocuments,
       tenantId,
     );
+    if (result.isErr()) {
+      throw mapBusinessErrorToHttpException(result.error);
+    }
+    return result.value;
+  }
+
+  @NotValueMoving(
+    "A full-replacement PUT of the channel identity. Replaying it writes the same values.",
+  )
+  @Authorize({ kind: "business", action: "edit" })
+  @Put("channel")
+  async updateChannel(@Param("tenantId") tenantId: string, @Body() body: UpdateChannelSettingsDto) {
+    const result = await updateChannelSettings(this.businesses, {
+      businessId: tenantId,
+      displayName: body.displayName,
+      handle: body.handle,
+      logoUrl: body.logoUrl,
+      coverUrl: body.coverUrl,
+    });
     if (result.isErr()) {
       throw mapBusinessErrorToHttpException(result.error);
     }

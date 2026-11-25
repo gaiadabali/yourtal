@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { KybDocument } from "@yourtal/contracts/business/kyb-document";
 import type { BusinessDb } from "./drizzle-client";
 import type { KybDocumentRepository, SubmitKybDocumentInput } from "./kyb-document.repository";
@@ -13,6 +13,24 @@ export class DrizzleKybDocumentRepository implements KybDocumentRepository {
   constructor(private readonly db: BusinessDb) {}
 
   async submit(input: SubmitKybDocumentInput): Promise<KybDocument> {
+    // A new file of a type still waiting for review replaces it, so ops never
+    // sees two pending copies of one document.
+    const [replaced] = await this.db
+      .update(kybDocuments)
+      .set({
+        storageRef: input.storageRef,
+        expiresAt: input.expiresAt === null ? null : new Date(input.expiresAt),
+        submittedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(kybDocuments.businessId, input.businessId),
+          eq(kybDocuments.documentType, input.documentType),
+          eq(kybDocuments.status, "submitted"),
+        ),
+      )
+      .returning();
+    if (replaced !== undefined) return toDomain(replaced);
     const [row] = await this.db
       .insert(kybDocuments)
       .values({

@@ -342,7 +342,7 @@
       "unfinished": "Pertanyaan ini belum selesai."
     },
     "bankRules": {
-      "notRequired": "Video ini terlalu pendek untuk pertanyaan pemeriksaan (minimal 5 menit). Bank pertanyaan tidak diperlukan.",
+      "notRequired": "Video ini kurang dari satu menit, jadi tidak ada pertanyaan pemeriksaan. Bank pertanyaan tidak diperlukan.",
       "ok": "Setiap percobaan, penonton diberi {asked} pertanyaan yang dipilih acak dari bank Anda yang berisi {actual}. Jumlah itu sudah memenuhi minimum anti-berbagi 3x ({required}), sehingga kunci jawaban yang bocor hanya mencakup sebagian kecil dari yang dilihat satu penonton.",
       "short": "Setiap percobaan, penonton diberi {asked} pertanyaan. Bank Anda membutuhkan minimal {required} pertanyaan lengkap (3x jumlah yang ditanyakan) agar kunci jawaban yang dibagikan tidak dapat mencakup semua penonton — saat ini Anda punya {actual}. Tambahkan {missing} lagi sebelum kampanye ini dapat ditinjau."
     },
@@ -619,9 +619,17 @@
     "verification": {
       "heading": "Verifikasi bisnis Anda sebelum dapat mengirimkan kampanye",
       "submittedMessage": "Dokumen terkirim dan menunggu peninjauan. Anda dapat mengirim kampanye setelah bisnis Anda terverifikasi.",
-      "documentTypeLabel": "Jenis dokumen",
-      "fileLabel": "Berkas",
-      "submit": "Kirim untuk ditinjau",
+      "intro": "Tambahkan setiap dokumen di bawah ini. Dokumen yang masih menunggu peninjauan bisa Anda ganti.",
+      "fileFor": "Berkas untuk {type}",
+      "upload": "Unggah",
+      "replace": "Ganti",
+      "status": {
+        "missing": "Belum diunggah",
+        "submitted": "Menunggu peninjauan",
+        "verified": "Disetujui",
+        "rejected": "Ditolak, unggah yang baru",
+        "expired": "Kedaluwarsa, unggah yang baru"
+      },
       "documentType": {
         "business_registration_certificate": "Akta pendirian usaha",
         "tax_registration_number": "Dokumen NPWP",
@@ -767,6 +775,7 @@
     "error": {
       "invalidInput": "Periksa kolom yang ditandai dan coba lagi.",
       "saveFailed": "Gagal menyimpan perubahan Anda — coba lagi.",
+      "handleTaken": "Handel itu sudah dipakai. Pilih yang lain.",
       "default": "Periksa kolom yang ditandai dan coba lagi."
     },
     "displayNameLabel": "Nama tampilan",

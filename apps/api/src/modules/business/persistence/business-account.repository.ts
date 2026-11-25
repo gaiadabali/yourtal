@@ -16,8 +16,21 @@ export interface CreateBusinessAccountInput {
   readonly coverUrl: string | null;
 }
 
+export interface UpdateChannelInput {
+  readonly businessId: string;
+  readonly displayName: string;
+  readonly handle: string;
+  readonly logoUrl: string | null;
+  readonly coverUrl: string | null;
+}
+
+/** `null`: no such business. `handle_taken`: another business already owns the handle. */
+export type UpdateChannelOutcome = Business | null | "handle_taken";
+
 export interface BusinessAccountRepository {
   findById(businessId: string): Promise<Business | null>;
+  /** Region, tax ID and every other field stay as they are. */
+  updateChannel(input: UpdateChannelInput): Promise<UpdateChannelOutcome>;
 }
 
 export const BUSINESS_ACCOUNT_REPOSITORY = Symbol("BUSINESS_ACCOUNT_REPOSITORY");

@@ -23,6 +23,7 @@ export function ChannelSettingsScreen({
   const errorMessages: Record<string, string> = {
     invalid_input: t("channel.error.invalidInput"),
     save_failed: t("channel.error.saveFailed"),
+    handle_taken: t("channel.error.handleTaken"),
   };
 
   return (

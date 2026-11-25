@@ -1,11 +1,13 @@
 import { Card, CardContent } from "@yourtal/ui/card";
 import { getStudioTranslator, type SupportedLocale } from "./studio-i18n";
-import { KybUploadForm } from "./onboarding/kyb-upload-form";
+import type { KybDocument } from "@yourtal/contracts/business/kyb-document";
+import { KybDocumentList } from "./onboarding/kyb-upload-form";
+import { kybRows } from "./onboarding/kyb-status";
 
 export interface StudioVerificationBannerProps {
   businessId: string;
-  /** Documents already sent and waiting for ops (read from the API, so it survives a reload). */
-  underReview: boolean;
+  /** Documents already sent (read from the API, so it survives a reload). */
+  documents: readonly KybDocument[];
   locale: SupportedLocale;
 }
 
@@ -16,7 +18,7 @@ export interface StudioVerificationBannerProps {
  */
 export function StudioVerificationBanner({
   businessId,
-  underReview,
+  documents,
   locale,
 }: StudioVerificationBannerProps) {
   const t = getStudioTranslator(locale);
@@ -26,13 +28,14 @@ export function StudioVerificationBanner({
         <p className="text-body font-sans font-semibold text-fg">
           {t("chrome.verification.heading")}
         </p>
-        {underReview ? (
+        {documents.some((doc) => doc.status === "submitted") ? (
           <p className="text-body-sm text-fg-muted" role="status">
             {t("chrome.verification.submittedMessage")}
           </p>
         ) : (
-          <KybUploadForm businessId={businessId} />
+          <p className="text-body-sm text-fg-muted">{t("chrome.verification.intro")}</p>
         )}
+        <KybDocumentList businessId={businessId} rows={kybRows(documents)} />
       </CardContent>
     </Card>
   );

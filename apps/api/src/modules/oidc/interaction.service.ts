@@ -13,7 +13,7 @@ import { currentPolicyVersion } from "@yourtal/consent/policy-version";
 import type { SessionSignIn } from "../auth/session/session.service";
 import type { OidcAccount } from "./claims";
 import type { SignInClient } from "./clients";
-import { clientById, isSignInClient } from "./clients";
+import { clientById, isSignInClient, returnHostFor } from "./clients";
 import { OIDC_RUNTIME, OidcRuntime } from "./oidc-runtime";
 import type { OidcStore } from "./oidc-store";
 import type { SendCheck, SignInState, TeenInviteChecker } from "./sign-in-checks";
@@ -45,7 +45,7 @@ export class InteractionError extends Error {
 }
 
 /** What a screen says about an app, from the registry. */
-function publicClient(client: SignInClient): InteractionClient {
+function publicClient(client: SignInClient, redirectUri?: unknown): InteractionClient {
   return {
     clientId: client.clientId,
     name: client.name,
@@ -53,7 +53,7 @@ function publicClient(client: SignInClient): InteractionClient {
     externalOperator: client.externalOperator,
     privacyUrl: client.privacyUrl,
     termsUrl: client.termsUrl,
-    returnHost: client.returnHost,
+    returnHost: returnHostFor(client, redirectUri),
   };
 }
 
@@ -109,7 +109,7 @@ export class InteractionService {
     return {
       uid,
       screen: state.screen,
-      client: publicClient(loaded.client),
+      client: publicClient(loaded.client, loaded.params["redirect_uri"]),
       account:
         "account" in state
           ? { name: state.account.displayName, email: state.account.email ?? "" }

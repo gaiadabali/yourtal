@@ -7,7 +7,14 @@ import {
 } from "@yourtal/contracts/oidc/event-receivers";
 import { describe, expect, it } from "vitest";
 import { loadClients } from "./client-keys";
-import { CLIENTS, TRANSFER_ROUTES, clientsFor, isSignInClient, transferRoutesFor } from "./clients";
+import {
+  CLIENTS,
+  TRANSFER_ROUTES,
+  clientsFor,
+  isSignInClient,
+  returnHostFor,
+  transferRoutesFor,
+} from "./clients";
 
 const DIR = "/opt/yourtal/secrets/oidc/clients";
 
@@ -265,5 +272,31 @@ describe("client credentials from the secrets directory", () => {
         files({ ...ALL_FILES, [path.join(DIR, "ftr-web.secret")]: "short" }),
       ),
     ).toThrow(/32 characters/);
+  });
+});
+
+describe("returnHostFor (the host the consent screen names)", () => {
+  const phone = CLIENTS.filter(isSignInClient).find((c) => c.clientId === "snapapp-staging-mobile");
+  if (phone === undefined) throw new Error("the SnapApp phone client is registered");
+
+  it("names the PWA's own host when the PWA's redirect is used", () => {
+    expect(returnHostFor(phone, "https://snapapp.app.gaiada.com/oauth/yourtal")).toBe(
+      "snapapp.app.gaiada.com",
+    );
+  });
+
+  it("names the App Link host for the App Link redirect", () => {
+    expect(returnHostFor(phone, "https://snapapp.gaiada.com/oauth/yourtal")).toBe(
+      "snapapp.gaiada.com",
+    );
+  });
+
+  it("keeps the configured host for the app's own custom-scheme redirect", () => {
+    expect(returnHostFor(phone, "au.com.snapapps.app:/oauth/yourtal")).toBe(phone.returnHost);
+  });
+
+  it("keeps the configured host when the redirect is missing or not registered", () => {
+    expect(returnHostFor(phone, undefined)).toBe(phone.returnHost);
+    expect(returnHostFor(phone, "https://evil.example/oauth/yourtal")).toBe(phone.returnHost);
   });
 });

@@ -97,3 +97,12 @@ export type SubmitKybDocumentError =
   BusinessNotFoundError | StorageRefNotUploadedError | PersistenceFailedError;
 
 export type ListKybDocumentsError = BusinessNotFoundError | PersistenceFailedError;
+
+/** Another business already uses this public handle. */
+export interface HandleTakenError {
+  readonly type: "handle_taken";
+  readonly handle: string;
+}
+
+export type UpdateChannelSettingsError =
+  BusinessNotFoundError | HandleTakenError | PersistenceFailedError;

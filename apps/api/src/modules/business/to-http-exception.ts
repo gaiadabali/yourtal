@@ -10,6 +10,7 @@ import type {
   BusinessNotFoundError,
   CannotChangeOwnerRoleError,
   CannotRemoveOwnerError,
+  HandleTakenError,
   InvitationAlreadyOpenError,
   InvitationInvalidError,
   MemberNotFoundError,
@@ -31,6 +32,7 @@ const logger = new Logger("BusinessErrorMapper");
  */
 export type BusinessDomainError =
   | BusinessNotFoundError
+  | HandleTakenError
   | InvitationAlreadyOpenError
   | InvitationInvalidError
   | StorageRefNotUploadedError
@@ -46,6 +48,11 @@ export function mapBusinessErrorToHttpException(error: BusinessDomainError): Htt
       return new NotFoundException({
         code: "business_not_found",
         message: `business ${error.businessId} was not found`,
+      });
+    case "handle_taken":
+      return new ConflictException({
+        code: "handle_taken",
+        message: "another business already uses this handle",
       });
     case "invitation_already_open":
       return new ConflictException({

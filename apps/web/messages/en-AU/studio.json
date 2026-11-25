@@ -342,7 +342,7 @@
       "unfinished": "This question is not finished yet."
     },
     "bankRules": {
-      "notRequired": "This video is too short to ask a checkpoint question (minimum 5 minutes for one). No question bank is required.",
+      "notRequired": "This video is under a minute, so no checkpoint question is asked. No question bank is required.",
       "ok": "A viewer is asked {asked, plural, one {# question} other {# questions}} per attempt, drawn at random from your bank of {actual}. That is at or above the 3x anti-sharing minimum ({required}), so a leaked answer key can only ever cover a fraction of what any one viewer sees.",
       "short": "A viewer is asked {asked, plural, one {# question} other {# questions}} per attempt. Your bank needs at least {required} complete questions (3x the asked count) so a shared answer key can't cover everyone who watches — you currently have {actual}. Add {missing} more before this campaign can go to review."
     },
@@ -619,9 +619,17 @@
     "verification": {
       "heading": "Verify your business before you can submit a campaign",
       "submittedMessage": "Documents submitted and waiting for review. You can submit campaigns once your business is verified.",
-      "documentTypeLabel": "Document type",
-      "fileLabel": "File",
-      "submit": "Submit for review",
+      "intro": "Add each document below. You can replace one while it is waiting for review.",
+      "fileFor": "File for {type}",
+      "upload": "Upload",
+      "replace": "Replace",
+      "status": {
+        "missing": "Not uploaded",
+        "submitted": "Waiting for review",
+        "verified": "Approved",
+        "rejected": "Rejected, upload a new one",
+        "expired": "Expired, upload a new one"
+      },
       "documentType": {
         "business_registration_certificate": "Business registration certificate",
         "tax_registration_number": "Tax registration document",
@@ -767,6 +775,7 @@
     "error": {
       "invalidInput": "Check the highlighted fields and try again.",
       "saveFailed": "Could not save your changes — try again.",
+      "handleTaken": "That handle is already taken. Choose another one.",
       "default": "Check the highlighted field and try again."
     },
     "displayNameLabel": "Display name",

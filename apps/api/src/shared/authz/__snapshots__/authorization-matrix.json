@@ -757,9 +757,9 @@
     ],
     "business-AU": [],
     "business-ID": [
-      "edit",
       "create",
       "edit",
+      "list_own",
       "view"
     ],
     "kyb_document-AU": [],

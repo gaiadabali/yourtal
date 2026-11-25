@@ -1,5 +1,10 @@
 import * as z from "zod";
-import { auStateSchema, businessRoleSchema, taxIdKindSchema } from "../business/business";
+import {
+  auStateSchema,
+  businessHandleSchema,
+  businessRoleSchema,
+  taxIdKindSchema,
+} from "../business/business";
 import { businessTeamRoleSchema } from "../business/business-team-role";
 import { billingContactSchema } from "../business/billing-contact";
 import { kybDocumentTypeSchema } from "../business/kyb-document";
@@ -182,6 +187,27 @@ const changeMemberRoleRequestSchema = inlineSchema(z.object({ role: grantableTea
 const setBillingContactRequestSchema = inlineSchema(
   billingContactSchema.omit({ businessId: true, updatedAt: true }),
 );
+
+const updateChannelSettingsRequestSchema = inlineSchema(
+  z.object({
+    displayName: z.string().trim().min(1).max(120),
+    handle: businessHandleSchema,
+    logoUrl: z
+      .url({ protocol: /^https$/ })
+      .max(2048)
+      .nullable(),
+    coverUrl: z
+      .url({ protocol: /^https$/ })
+      .max(2048)
+      .nullable(),
+  }),
+);
+
+const HANDLE_TAKEN: RouteErrorResponse = {
+  status: 409,
+  description: "Another business already uses this handle (to-http-exception.ts's handle_taken).",
+  documented: true,
+};
 
 const createKybUploadUrlRequestSchema = inlineSchema(
   z.object({ contentType: z.enum(["application/pdf", "image/jpeg", "image/png"]) }),
@@ -446,6 +472,25 @@ export const BUSINESS_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       MEMBER_NOT_FOUND,
       SERVICE_UNAVAILABLE,
     ],
+  },
+
+  // --- business.controller.ts (channel) ---
+  {
+    method: "put",
+    path: "/api/{tenantId}/business/channel",
+    summary: "Replace a business's channel identity",
+    tags: ["business"],
+    pathParams: [TENANT_ID_PARAM],
+    requestBody: {
+      description:
+        "A full replacement of display name, handle, logo and cover (idempotent PUT — see " +
+        "@NotValueMoving). Region never changes.",
+      schema: updateChannelSettingsRequestSchema,
+    },
+    successStatus: 200,
+    successDescription: "The business as stored.",
+    successSchema: ref("Business"),
+    errors: [VALIDATION_400, FORBIDDEN, BUSINESS_NOT_FOUND, HANDLE_TAKEN, SERVICE_UNAVAILABLE],
   },
 
   // --- billing-contact.controller.ts ---

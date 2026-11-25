@@ -43,8 +43,9 @@ vi.mock("./watch-player-actions", () => ({
   answerCheckpointAction: answerCheckpointActionMock,
 }));
 
+const playMock = vi.fn().mockResolvedValue(undefined);
 beforeAll(() => {
-  window.HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined);
+  window.HTMLMediaElement.prototype.play = playMock;
   window.HTMLMediaElement.prototype.pause = vi.fn();
 });
 
@@ -265,6 +266,95 @@ describe("VideoPlayer", () => {
     });
     expect(answerCheckpointActionMock).toHaveBeenCalledWith("session-1", 0, "tok-1", "option-a");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("asks an owed question when the video ends, and claims after the answer without a replay", async () => {
+    presentCheckpointActionMock.mockResolvedValue({
+      ok: true,
+      data: {
+        question: {
+          id: "question-1",
+          campaignId: campaign.id,
+          prompt: "What did the video say?",
+          timerSeconds: 30,
+          type: "multiple_choice" as const,
+          options: [
+            { id: "option-a", label: "Fact A" },
+            { id: "option-b", label: "Fact B" },
+          ],
+        },
+        token: "tok-1",
+        expiresAt: "2026-09-19T09:01:30.000Z",
+        atSecond: 40,
+        answerTimerMs: 30_000,
+      },
+    });
+    answerCheckpointActionMock.mockResolvedValue({
+      ok: true,
+      data: { answered: true, wasCorrect: true },
+    });
+    completeWatchSessionActionMock.mockResolvedValue({
+      ok: true,
+      data: { completed: true, granted: true, pendingPoints: 100, unlockAt: null },
+    });
+    render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
+    fireEvent.click(screen.getByRole("button", { name: "Play Test Campaign" }));
+    await vi.waitFor(() => expect(startWatchSessionActionMock).toHaveBeenCalled());
+
+    const video = document.querySelector("video");
+    if (!video) throw new Error("expected a <video> element");
+    Object.defineProperty(video, "ended", { value: true, configurable: true });
+    fireEvent.ended(video);
+
+    expect(await screen.findByRole("dialog")).toHaveTextContent("What did the video say?");
+    expect(presentCheckpointActionMock).toHaveBeenCalledWith("session-1", 0);
+    expect(completeWatchSessionActionMock).not.toHaveBeenCalled();
+
+    playMock.mockClear();
+    fireEvent.click(screen.getByRole("radio", { name: "Fact A" }));
+    await waitFor(() => expect(completeWatchSessionActionMock).toHaveBeenCalledWith("session-1"));
+    expect(playMock).not.toHaveBeenCalled();
+    expect(await screen.findByText("+100")).toBeInTheDocument();
+  });
+
+  it("shows a question owed to a viewer who is paused past the checkpoint", async () => {
+    presentCheckpointActionMock.mockResolvedValue({
+      ok: true,
+      data: {
+        question: {
+          id: "question-1",
+          campaignId: campaign.id,
+          prompt: "What did the video say?",
+          timerSeconds: 30,
+          type: "multiple_choice" as const,
+          options: [
+            { id: "option-a", label: "Fact A" },
+            { id: "option-b", label: "Fact B" },
+          ],
+        },
+        token: "tok-1",
+        expiresAt: "2026-09-19T09:01:30.000Z",
+        atSecond: 40,
+        answerTimerMs: 30_000,
+      },
+    });
+    vi.useFakeTimers();
+    render(<VideoPlayer campaign={campaign} terms={terms} locale="en-AU" />);
+    fireEvent.click(screen.getByRole("button", { name: "Play Test Campaign" }));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    const video = document.querySelector("video");
+    if (!video) throw new Error("expected a <video> element");
+    Object.defineProperty(video, "paused", { value: true, configurable: true });
+    Object.defineProperty(video, "ended", { value: false, configurable: true });
+    Object.defineProperty(video, "currentTime", { value: 45, configurable: true });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4_000);
+    });
+    expect(screen.getByRole("dialog")).toHaveTextContent("What did the video say?");
   });
 
   it("shows the real earn moment once the server grants the completion", async () => {

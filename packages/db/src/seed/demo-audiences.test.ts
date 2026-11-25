@@ -42,7 +42,7 @@ async function seedBusiness(business: (typeof businesses)[number]): Promise<void
       currency,
       `test-demo-audiences-${business.slug}`,
       business.region === "AU" ? "ABN" : "NPWP",
-      business.region === "AU" ? "51824753556" : "012345678901234",
+      business.region === "AU" ? "24872547145" : "012345678901234",
       business.region === "AU" ? "NSW" : null,
       business.region === "AU" ? "2000" : null,
       business.region === "ID" ? "Jakarta" : null,

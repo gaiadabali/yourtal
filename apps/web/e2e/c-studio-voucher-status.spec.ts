@@ -58,7 +58,7 @@ test("Reports shows a supplier's vouchers by status, floored", async ({
       headers: { cookie: `yt_session=${token}`, "idempotency-key": crypto.randomUUID() },
       data: {
         ...{ legalName: "Harbour Beans Pty Ltd", displayName: "Harbour Beans" },
-        ...{ taxIdKind: "ABN", taxIdValue: "51824753556", addressState: "NSW" },
+        ...{ taxIdKind: "ABN", taxIdValue: "24872547145", addressState: "NSW" },
         ...{ addressPostcode: "2000", roles: ["supplier"], region: "AU" },
         handle: `harbour-vstatus-${suffix}`.slice(0, 40),
       },

@@ -180,6 +180,29 @@ function playFrom(video: HTMLVideoElement, seekTo: number): () => void {
   };
 }
 
+/**
+ * Whether the checkpoint poll should ask the server for the next question
+ * now. Playing, it asks once the playhead is past where an earlier attempt
+ * stopped. Paused or ended it asks as well: a viewer who pauses at the
+ * checkpoint, or lets a short video run to its end, must not have to press
+ * play again to be shown a question still owed. The server decides whether
+ * the checkpoint is really reached (409 otherwise), so asking early is safe.
+ */
+export function checkpointPollDue(video: {
+  paused: boolean;
+  ended: boolean;
+  currentTime: number;
+  askFrom: number;
+  asked: number;
+  total: number;
+}): boolean {
+  if (video.asked >= video.total) return false;
+  if (video.ended) return true;
+  // Paused before anything has played, nothing can be owed yet.
+  if (video.paused && video.currentTime <= 0) return false;
+  return video.currentTime >= video.askFrom;
+}
+
 /** An answer that ends a span: accepted, or refused for the report itself (4xx). Auth (401), timeout (408), rate limit (429), a server failure or no answer at all keep it to retry. */
 function closesSpan(result: Awaited<ReturnType<typeof reportWatchProgressAction>>): boolean {
   if (result.ok) return true;
@@ -236,6 +259,9 @@ export function useWatchEarnSession(campaignId: string) {
   const pendingReports = useRef(new Set<Promise<unknown>>());
   const questionsAsked = useRef(0);
   const checkpointBusy = useRef(false);
+  /** Set once the video has ended; the question that appears then is answered without a replay. */
+  const endedRef = useRef(false);
+  const finishRef = useRef<() => Promise<void>>(() => Promise.resolve());
   /** Set only when the viewer chose "resume" — applied once the video element (re-)mounts into the "watching" phase. */
   const pendingSeekRef = useRef<number | null>(null);
   /** 5.13.u: where an earlier attempt stopped. Server coverage already passes any question it left unanswered, so asking before the playhead is back here would show it at once. */
@@ -306,6 +332,7 @@ export function useWatchEarnSession(campaignId: string) {
     nonEarningReasonRef.current = session.nonEarningReason;
     identityCheckRef.current = identityCheck?.missing;
     setQuestionTimedOut(false);
+    endedRef.current = false;
     totalQuestionsRef.current = earning ? questionsAskedFor(durationSeconds) : 0;
 
     // A repeat visit (already earned) just plays; any other refusal is told to
@@ -363,40 +390,41 @@ export function useWatchEarnSession(campaignId: string) {
     });
   }, []);
 
-  const tryPresentCheckpoint = useCallback(() => {
+  /** Asks the server for the next due question and shows it. Resolves `true` when one was shown. */
+  const tryPresentCheckpoint = useCallback(async (): Promise<boolean> => {
     const sessionId = sessionIdRef.current;
     if (
       sessionId === null ||
       checkpointBusy.current ||
       questionsAsked.current >= totalQuestionsRef.current
     ) {
-      return;
+      return false;
     }
     checkpointBusy.current = true;
     const index = questionsAsked.current;
-    void presentCheckpointAction(sessionId, index).then((result) => {
-      checkpointBusy.current = false;
-      if (!result.ok) {
-        // 409 "not reached yet" is the ordinary case — just try again on
-        // the next tick. Any other failure is left for the next tick too;
-        // a checkpoint that never becomes presentable is a seeding gap
-        // (checkpoint.controller.ts's own 404 case), not something a retry
-        // loop should surface as fatal mid-video.
-        return;
-      }
-      videoRef.current?.pause();
-      setPhase({
-        kind: "checkpoint",
-        sessionId,
-        manifestUrl: manifestUrlRef.current,
-        coveredSeconds: coveredRef.current,
-        checkpointIndex: index,
-        totalQuestions: totalQuestionsRef.current,
-        question: result.data.question,
-        token: result.data.token,
-        answerTimerMs: result.data.answerTimerMs,
-      });
+    const result = await presentCheckpointAction(sessionId, index);
+    checkpointBusy.current = false;
+    if (!result.ok) {
+      // 409 "not reached yet" is the ordinary case — just try again on
+      // the next tick. Any other failure is left for the next tick too;
+      // a checkpoint that never becomes presentable is a seeding gap
+      // (checkpoint.controller.ts's own 404 case), not something a retry
+      // loop should surface as fatal mid-video.
+      return false;
+    }
+    videoRef.current?.pause();
+    setPhase({
+      kind: "checkpoint",
+      sessionId,
+      manifestUrl: manifestUrlRef.current,
+      coveredSeconds: coveredRef.current,
+      checkpointIndex: index,
+      totalQuestions: totalQuestionsRef.current,
+      question: result.data.question,
+      token: result.data.token,
+      answerTimerMs: result.data.answerTimerMs,
     });
+    return true;
   }, []);
 
   /** Refused seconds played again in the current run are claimable again; a run is unbroken playback, so they really were re-played. */
@@ -474,9 +502,19 @@ export function useWatchEarnSession(campaignId: string) {
     const video = videoRef.current;
     if (!video) return;
     const timer = window.setInterval(() => {
-      if (!video.paused && !video.ended) {
-        reportPlayed();
-        if (video.currentTime >= askFromRef.current) tryPresentCheckpoint();
+      if (!video.paused && !video.ended) reportPlayed();
+      // Also while paused or ended: an owed question is shown without a replay.
+      if (
+        checkpointPollDue({
+          paused: video.paused,
+          ended: video.ended,
+          currentTime: video.currentTime,
+          askFrom: askFromRef.current,
+          asked: questionsAsked.current,
+          total: totalQuestionsRef.current,
+        })
+      ) {
+        void tryPresentCheckpoint();
       }
     }, REPORT_EVERY_MS);
     const holdRate = () => {
@@ -560,6 +598,12 @@ export function useWatchEarnSession(campaignId: string) {
       // advanced, so the next tick's `tryPresentCheckpoint` re-asks for the
       // SAME index and gets a fresh token.
       backToWatching();
+      // The question was asked at the end of the video: carry on to the next
+      // one or the claim, never replay from the start.
+      if (endedRef.current && videoRef.current?.ended === true) {
+        void finishRef.current();
+        return;
+      }
       videoRef.current?.play().then(
         () => undefined,
         () => undefined,
@@ -595,6 +639,9 @@ export function useWatchEarnSession(campaignId: string) {
       if (!retry || tries === FINAL_SEND_TRIES) break;
       await new Promise((resolve) => window.setTimeout(resolve, 1_000));
     }
+    // A question still owed is asked now, at the end, not after a replay.
+    endedRef.current = true;
+    if (await tryPresentCheckpoint()) return;
     setPhase({ kind: "claiming" });
     const completed = await completeWatchSessionAction(sessionIdRef.current);
     if (!completed.ok) {
@@ -637,7 +684,10 @@ export function useWatchEarnSession(campaignId: string) {
             ...(missing === undefined ? {} : { identityCheck: missing }),
           },
     );
-  }, [reportPlayed]);
+  }, [reportPlayed, tryPresentCheckpoint]);
+  useEffect(() => {
+    finishRef.current = finish;
+  }, [finish]);
 
   return {
     phase,

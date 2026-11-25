@@ -31,7 +31,7 @@ afterAll(async () => {
   else process.env["TEEN_ACCOUNTS"] = originalTeen;
 });
 
-const AU_REGISTRATION = { kind: "au_acnc", abn: "51824753556", acncRegistered: true };
+const AU_REGISTRATION = { kind: "au_acnc", abn: "24872547145", acncRegistered: true };
 const ID_REGISTRATION = {
   kind: "id_yayasan",
   deedNumber: "AHU-0012",

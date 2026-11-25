@@ -17,7 +17,7 @@ let app: NestFastifyApplication;
 let owner: Pool;
 const GOOD = {
   legalName: "YourTal Pty Ltd",
-  abn: "51824753556",
+  abn: "24872547145",
   address: "1 Example St, Sydney NSW 2000",
   email: "billing@yourtal.example",
 };
@@ -109,7 +109,7 @@ describe("invoice_issuer (5.3.c)", () => {
     expect(refused.statusCode).toBe(400);
     expect(refused.json<{ code: string }>().code).toBe("invalid_setting");
 
-    const withAbn = await propose(a.cookie, { ...GOOD, abn: "51 824 753 556" });
+    const withAbn = await propose(a.cookie, { ...GOOD, abn: "24 872 547 145" });
     expect(withAbn.statusCode).toBe(201);
     expect((await approve(a.cookie, withAbn.json<{ id: string }>().id)).statusCode).toBe(403);
     expect((await approve(b.cookie, withAbn.json<{ id: string }>().id)).statusCode).toBe(201);

@@ -9,20 +9,20 @@ import {
   isTaxInvoiceFor,
 } from "./rules";
 
-/** The ATO's own example ABN, 51 824 753 556, passes the checksum. */
+/** A sample ABN (no ABN Lookup record), 24 872 547 145, passes the checksum. */
 describe("isValidAbn", () => {
   it("accepts a well-formed ABN and refuses a wrong digit, a wrong length and non-digits", () => {
-    expect(isValidAbn("51824753556")).toBe(true);
+    expect(isValidAbn("24872547145")).toBe(true);
     expect(isValidAbn("51824753557")).toBe(false);
     expect(isValidAbn("5182475355")).toBe(false);
-    expect(isValidAbn("51 824 753 556")).toBe(false);
+    expect(isValidAbn("24 872 547 145")).toBe(false);
     expect(isValidAbn("00000000000")).toBe(false);
   });
 });
 
 describe("Tax invoice or Invoice", () => {
   it("is a tax invoice only for a set and valid issuer ABN", () => {
-    expect(invoiceTitle(isTaxInvoiceFor("51824753556"))).toBe("Tax invoice");
+    expect(invoiceTitle(isTaxInvoiceFor("24872547145"))).toBe("Tax invoice");
     expect(invoiceTitle(isTaxInvoiceFor(null))).toBe("Invoice");
     expect(invoiceTitle(isTaxInvoiceFor("12345678901"))).toBe("Invoice");
   });
@@ -44,6 +44,6 @@ describe("numbering and display", () => {
   });
 
   it("writes an ABN the way the ATO prints it", () => {
-    expect(formatAbn("51824753556")).toBe("51 824 753 556");
+    expect(formatAbn("24872547145")).toBe("24 872 547 145");
   });
 });

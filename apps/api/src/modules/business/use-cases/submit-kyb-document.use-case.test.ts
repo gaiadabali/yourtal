@@ -85,6 +85,40 @@ describe("submitKybDocument", () => {
     expect(document).toMatchObject({ status: "submitted", expiresAt: "2027-01-01T00:00:00.000Z" });
   });
 
+  it("lets all four types be added, and replaces a pending one instead of duplicating it", async () => {
+    const { businesses, kybDocuments, businessId } = await setup();
+    const types = [
+      "business_registration_certificate",
+      "tax_registration_number",
+      "director_identity",
+      "proof_of_address",
+    ] as const;
+    for (const documentType of types) {
+      (
+        await submitKybDocument(businesses, kybDocuments, alwaysUploaded(), {
+          businessId,
+          documentType,
+          storageRef: `kms://kyb/${documentType}-1`,
+          expiresAt: null,
+        })
+      )._unsafeUnwrap();
+    }
+    (
+      await submitKybDocument(businesses, kybDocuments, alwaysUploaded(), {
+        businessId,
+        documentType: "director_identity",
+        storageRef: "kms://kyb/director_identity-2",
+        expiresAt: null,
+      })
+    )._unsafeUnwrap();
+
+    const documents = await kybDocuments.listByBusiness(businessId);
+    expect(documents).toHaveLength(4);
+    expect(documents.find((d) => d.documentType === "director_identity")?.storageRef).toBe(
+      "kms://kyb/director_identity-2",
+    );
+  });
+
   it("rejects submitting a document for a business that does not exist", async () => {
     const { kybDocuments } = await setup();
     const db = testBusinessDb();

@@ -45,6 +45,16 @@ let MOCK_MEMBERSHIPS: BusinessMembership[] = [
   { business: AU_BUSINESS, myRole: "owner", roster: AU_BUSINESS_ROSTER },
 ];
 
+/** A refused channel save; `handle_taken` is the one cause the owner can fix themselves. */
+export class ChannelSettingsError extends Error {
+  constructor(
+    readonly reason: "handle_taken" | "save_failed",
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
 export interface ChannelSettingsInput {
   displayName: string;
   handle: string;
@@ -108,9 +118,6 @@ const myBusinessMembershipsResponseSchema = z.array(
   z.object({ business: businessSchema, role: businessTeamRoleSchema, joinedAt: z.iso.datetime() }),
 );
 
-const NOT_IMPLEMENTED_MESSAGE =
-  "Live Studio data source does not support this yet — no channel-settings-update endpoint exists on main (7.1 only covers create, list and team management).";
-
 /**
  * Live: `GET /api/me/businesses` (7.1.b) and `POST /api/businesses`
  * (7.1.b). `updateChannelSettings` has no real endpoint yet — fails
@@ -156,7 +163,21 @@ const liveDataSource: StudioDataSource = {
     if (!result.ok) throw new Error(`Could not create the business: ${result.error.message}`);
     return result.data;
   },
-  updateChannelSettings: () => Promise.reject(new Error(NOT_IMPLEMENTED_MESSAGE)),
+  updateChannelSettings: async (businessId, input) => {
+    const result = await apiFetch(
+      `/api/${encodeURIComponent(businessId)}/business/channel`,
+      businessSchema,
+      { method: "PUT", body: input },
+    );
+    if (!result.ok) {
+      const handleTaken = result.error.kind === "http" && result.error.code === "handle_taken";
+      throw new ChannelSettingsError(
+        handleTaken ? "handle_taken" : "save_failed",
+        `Could not save the channel settings: ${result.error.message}`,
+      );
+    }
+    return result.data;
+  },
   getCurrentUserId: async () => {
     const result = await apiFetch("/api/me", meResponseSchema);
     if (!result.ok)

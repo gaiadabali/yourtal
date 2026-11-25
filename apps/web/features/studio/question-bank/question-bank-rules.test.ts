@@ -11,8 +11,10 @@ const t = getStudioTranslator("en-AU");
 
 describe("computeMaxAskedQuestions", () => {
   const table: Array<{ durationSeconds: number; expected: number }> = [
-    { durationSeconds: 60, expected: 0 },
-    { durationSeconds: 4 * 60, expected: 0 },
+    { durationSeconds: 59, expected: 0 },
+    { durationSeconds: 60, expected: 1 },
+    { durationSeconds: 75, expected: 1 },
+    { durationSeconds: 4 * 60, expected: 1 },
     { durationSeconds: 5 * 60, expected: 1 },
     { durationSeconds: 15 * 60, expected: 3 },
     { durationSeconds: 25 * 60, expected: 5 },
@@ -38,10 +40,20 @@ describe("computeMinBankSize", () => {
 
 describe("evaluateBankSize", () => {
   it("passes a video too short to ask any question at all, with an explanatory message", () => {
-    const result = evaluateBankSize(60, 0);
+    const result = evaluateBankSize(59, 0);
     expect(result.meetsRequirement).toBe(true);
     expect(result.askedCount).toBe(0);
-    expect(describeBankSize(result, t).length).toBeGreaterThan(0);
+    expect(describeBankSize(result, t)).toContain("under a minute");
+  });
+
+  it("asks one question from a minute up, so a 75-second video needs a bank of 3 and never says it is too short", () => {
+    const result = evaluateBankSize(75, 0);
+    expect(result.kind).toBe("short");
+    expect(result.askedCount).toBe(1);
+    expect(result.requiredBankSize).toBe(3);
+    expect(result.meetsRequirement).toBe(false);
+    expect(describeBankSize(result, t)).not.toMatch(/too short|minimum 5/i);
+    expect(describeBankSize(result, getStudioTranslator("id-ID"))).not.toMatch(/terlalu pendek/i);
   });
 
   it("fails an under-sized bank and explains exactly how many more are needed", () => {

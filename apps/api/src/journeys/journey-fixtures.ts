@@ -97,7 +97,7 @@ export async function shop(j: Journey, region: Region): Promise<Shop> {
        tax_id_kind, tax_id_value, address_state, address_postcode, address_city)
     VALUES (${businessId}, 'Journey Shop', 'Journey Shop', '["advertiser","redeemer"]'::jsonb, true,
             ${region}, ${currency}, ${`journey-${businessId.slice(0, 8)}`},
-            ${region === "AU" ? "ABN" : "NPWP"}, '51824753556',
+            ${region === "AU" ? "ABN" : "NPWP"}, '24872547145',
             ${region === "AU" ? "NSW" : null}, ${region === "AU" ? "2000" : null},
             ${region === "AU" ? null : "Jakarta"})`);
   await j.owner.execute(sql`

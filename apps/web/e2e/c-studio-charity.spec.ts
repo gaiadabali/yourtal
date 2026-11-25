@@ -79,7 +79,7 @@ test("a charity applies, ops approve it, it lists, and its member opens the cons
     await page.goto("/charity/apply");
     await page.getByLabel("Charity name").fill(name);
     await page.getByLabel("What your charity does").fill("Breakfast programmes in local schools.");
-    await page.getByLabel("ABN").fill("51 824 753 556");
+    await page.getByLabel("ABN").fill("24 872 547 145");
     await page.getByRole("switch", { name: "We are registered with the ACNC" }).click();
     await page.getByLabel("Account name").fill("Harbour Kids Ltd");
     await page.getByLabel("BSB").fill("062000");

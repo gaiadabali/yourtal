@@ -342,6 +342,18 @@ describe("sign in with YourTal, end to end", () => {
     expect(phone.tokens.claims()?.sub).toBe(first.tokens.claims()?.sub);
   });
 
+  it("the consent screen names the site the redirect really returns to", async () => {
+    const ana = await person();
+    for (const [redirect, host] of [
+      [MOBILE_APP_LINK, "snapapp.gaiada.com"],
+      ["https://snapapp.app.gaiada.com/oauth/yourtal", "snapapp.app.gaiada.com"],
+    ] as const) {
+      const started = await startSignIn(await mobileApp(), redirect);
+      const shown = await webServerCall(base, started, ana.token, "");
+      expect((await details(shown)).client.returnHost).toBe(host);
+    }
+  });
+
   it("FTR (client_secret_basic) gets its own sub for the same person", async () => {
     const ana = await person();
     const snap = await signIn(await webApp(), WEB_REDIRECT, ana, "consent");

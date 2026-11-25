@@ -180,12 +180,12 @@ describe("Studio: GET /api/:tenantId/studio/invoices/:id/pdf", () => {
   });
 
   it("is a Tax invoice with the ABN once the company's ABN is approved", async () => {
-    await setIssuerAbn("51 824 753 556");
+    await setIssuerAbn("24 872 547 145");
     try {
       const { cookie, businessId } = await businessOwner();
       await issuer.issueInvoice({ kind: "card_purchase", id: await buyPoints(cookie, businessId) });
       const invoice = (await listFor(cookie, businessId)).body?.invoices[0];
-      expect(invoice).toMatchObject({ isTaxInvoice: true, issuer: { abn: "51824753556" } });
+      expect(invoice).toMatchObject({ isTaxInvoice: true, issuer: { abn: "24872547145" } });
       const response = await app.inject({
         method: "GET",
         url: `/api/${businessId}/studio/invoices/${invoice?.id ?? ""}/pdf`,
@@ -193,7 +193,7 @@ describe("Studio: GET /api/:tenantId/studio/invoices/:id/pdf", () => {
       });
       const text = pdfText(response.rawPayload);
       expect(text).toContain("Tax invoice");
-      expect(text).toContain("ABN 51 824 753 556");
+      expect(text).toContain("ABN 24 872 547 145");
       expect(text).not.toContain("not a tax invoice");
     } finally {
       await setIssuerAbn(null);

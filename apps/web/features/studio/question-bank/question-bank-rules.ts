@@ -15,15 +15,17 @@
  * with an explanation, not a silent block."
  */
 
-const MAX_ASKED_QUESTIONS = 5;
-const SECONDS_PER_ASKED_QUESTION_SLOT = 5 * 60;
+import { questionsAskedFor } from "../../player/question-schedule";
+
 const BANK_SIZE_MULTIPLE = 3;
 
-/** How many questions a viewer is asked per attempt, driven by video length: one slot per 5 minutes, capped at 5. */
-export function computeMaxAskedQuestions(durationSeconds: number): number {
-  const slots = Math.floor(durationSeconds / SECONDS_PER_ASKED_QUESTION_SLOT);
-  return Math.max(0, Math.min(MAX_ASKED_QUESTIONS, slots));
-}
+/**
+ * How many questions a viewer is asked per attempt: none under a minute,
+ * one from a minute, then one per 5 minutes capped at 5. The player's own
+ * mirror of `questionsAskedFor`, so this screen cannot disagree with the
+ * server's rule (it once did: it said "none" for anything under 5 minutes).
+ */
+export const computeMaxAskedQuestions = questionsAskedFor;
 
 /** The anti-sharing minimum bank size for a given asked count: at least 3x, so no single shared answer key covers every viewer. */
 export function computeMinBankSize(askedCount: number): number {

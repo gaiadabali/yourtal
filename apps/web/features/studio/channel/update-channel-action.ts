@@ -3,14 +3,17 @@
 import { redirect } from "next/navigation";
 import { businessHandleSchema } from "@yourtal/contracts/business";
 import * as z from "zod";
-import { updateChannelSettings } from "../studio-data";
+import { ChannelSettingsError, updateChannelSettings } from "../studio-data";
+
+/** Pasted image links must be https, the same rule the API enforces. */
+const httpsUrl = z.url({ protocol: /^https$/ });
 
 const channelSettingsFormSchema = z.object({
   businessId: z.uuid(),
   displayName: z.string().min(1).max(120),
   handle: businessHandleSchema,
-  logoUrl: z.union([z.url(), z.literal("")]),
-  coverUrl: z.union([z.url(), z.literal("")]),
+  logoUrl: z.union([httpsUrl, z.literal("")]),
+  coverUrl: z.union([httpsUrl, z.literal("")]),
 });
 
 /**
@@ -35,8 +38,9 @@ export async function updateChannelAction(formData: FormData): Promise<void> {
       logoUrl: logoUrl === "" ? null : logoUrl,
       coverUrl: coverUrl === "" ? null : coverUrl,
     });
-  } catch {
-    redirect("/studio/channel?error=save_failed");
+  } catch (error) {
+    const reason = error instanceof ChannelSettingsError ? error.reason : "save_failed";
+    redirect(`/studio/channel?error=${reason}`);
   }
 
   redirect("/studio/channel?saved=1");

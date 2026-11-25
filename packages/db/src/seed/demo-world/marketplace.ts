@@ -32,7 +32,7 @@ async function login(base: DemoApi, address: string, passwords: DemoPasswords): 
 }
 
 // Checksum-valid ABNs (the simulated KYB checks them, like the real ABR).
-const DEMO_ABNS = ["51824753524", "51824753556"];
+const DEMO_ABNS = ["51824753524", "24872547145"];
 
 const CHARITIES: Readonly<
   Record<Region, readonly { local: string; name: string; cause: string; summary: string }[]>

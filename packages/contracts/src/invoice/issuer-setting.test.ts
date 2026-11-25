@@ -3,7 +3,7 @@ import { invoiceIssuerSettingSchema } from "./issuer-setting";
 
 const GOOD = {
   legalName: "YourTal Pty Ltd",
-  abn: "51824753556",
+  abn: "24872547145",
   address: "1 Example St, Sydney NSW 2000",
   email: "billing@yourtal.example",
 };
@@ -16,7 +16,7 @@ const issues = (value: unknown) => {
 describe("invoice_issuer setting", () => {
   it("accepts a full company with an ABN, with spaces in it, or with none", () => {
     expect(invoiceIssuerSettingSchema.safeParse(GOOD).success).toBe(true);
-    expect(invoiceIssuerSettingSchema.safeParse({ ...GOOD, abn: "51 824 753 556" }).success).toBe(
+    expect(invoiceIssuerSettingSchema.safeParse({ ...GOOD, abn: "24 872 547 145" }).success).toBe(
       true,
     );
     expect(invoiceIssuerSettingSchema.safeParse({ ...GOOD, abn: null }).success).toBe(true);

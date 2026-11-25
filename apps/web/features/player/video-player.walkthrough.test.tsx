@@ -133,6 +133,19 @@ const question = {
   ],
 };
 
+function questionDue() {
+  actions.present.mockResolvedValue({
+    ok: true,
+    data: {
+      question,
+      token: "tok-1",
+      expiresAt: "2026-09-19T09:01:30.000Z",
+      atSecond: 40,
+      answerTimerMs: 30_000,
+    },
+  });
+}
+
 beforeEach(() => {
   hls.mounts = 0;
   hls.unmounts = 0;
@@ -152,15 +165,10 @@ beforeEach(() => {
     .mockReset()
     .mockResolvedValue({ ok: true, data: { accepted: true, coveredSeconds: 40 } });
   actions.complete.mockReset();
+  // Not reached yet, the ordinary answer; a test that needs a question due calls `questionDue()`.
   actions.present.mockReset().mockResolvedValue({
-    ok: true,
-    data: {
-      question,
-      token: "tok-1",
-      expiresAt: "2026-09-19T09:01:30.000Z",
-      atSecond: 40,
-      answerTimerMs: 30_000,
-    },
+    ok: false,
+    error: { kind: "http", status: 409, code: "checkpoint_not_reached", message: "not yet" },
   });
   actions.answer
     .mockReset()
@@ -187,6 +195,7 @@ async function flush() {
 
 /** Fake timers before the session starts (the polling interval is created then), then plays until the question is due. */
 async function playUntilQuestion(locale: "en-AU" | "id-ID" = "en-AU") {
+  questionDue();
   vi.useFakeTimers();
   render(<VideoPlayer campaign={campaign} terms={terms} locale={locale} />);
   fireEvent.click(screen.getByRole("button", { name: /Test Campaign/ }));
@@ -615,6 +624,7 @@ describe("5.13.af: progress is reported from what the browser played", () => {
       covered = Math.max(covered, to);
       return Promise.resolve({ ok: true, data: { accepted: true, coveredSeconds: covered } });
     });
+    questionDue();
     const presentQuestion = actions.present.getMockImplementation();
     actions.present.mockImplementation((): Promise<unknown> =>
       covered >= 40 ? (presentQuestion?.() as Promise<unknown>) : Promise.resolve(notReached),

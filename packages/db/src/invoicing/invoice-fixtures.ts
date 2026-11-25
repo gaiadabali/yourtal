@@ -4,7 +4,7 @@ import type pg from "pg";
 /** Rows for the invoice tests, written the way the billing code writes them. */
 
 /** The ATO's own example ABN: it passes the checksum. */
-export const VALID_ABN = "51824753556";
+export const VALID_ABN = "24872547145";
 
 export interface Buyer {
   readonly id: string;

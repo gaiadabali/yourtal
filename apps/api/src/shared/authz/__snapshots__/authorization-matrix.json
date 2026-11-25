@@ -541,6 +541,7 @@
     "billing-ID": [],
     "business-AU": [
       "create",
+      "edit",
       "list_own",
       "view"
     ],
@@ -757,6 +758,7 @@
     "business-AU": [],
     "business-ID": [
       "create",
+      "edit",
       "list_own",
       "view"
     ],

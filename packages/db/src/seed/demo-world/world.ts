@@ -60,7 +60,7 @@ async function ensureBusiness(pool: pg.Pool, brand: DemoBrandSpec): Promise<void
       au ? "AUD" : "IDR",
       brand.slug.replace(/^(au|id)-/, ""),
       au ? "ABN" : "NPWP",
-      au ? "51824753556" : "012345678901234",
+      au ? "24872547145" : "012345678901234",
       au ? state : null,
       au ? postcode : null,
       au ? null : brand.city,

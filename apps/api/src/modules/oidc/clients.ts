@@ -171,6 +171,22 @@ export function clientById(
 }
 
 /**
+ * The site the consent screen says the person goes back to. One client can
+ * have several https return sites (SnapApp's phone client returns to its App
+ * Link host or to the PWA's own host), so it is the host of the redirect URI
+ * this sign-in actually uses, never a guess from the client. A custom-scheme
+ * redirect (the app itself), or anything not registered, keeps the client's
+ * configured `returnHost`.
+ */
+export function returnHostFor(client: SignInClient, redirectUri: unknown): string {
+  if (typeof redirectUri !== "string" || !client.redirectUris.includes(redirectUri)) {
+    return client.returnHost;
+  }
+  const uri = new URL(redirectUri);
+  return uri.protocol === "https:" ? uri.host : client.returnHost;
+}
+
+/**
  * Group 4.8.a (docs/30 §5): which app's server may send what to which app.
  * Reviewed like the clients; a route is live only where its destination is
  * registered as a sign-in client.

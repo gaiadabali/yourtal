@@ -285,6 +285,25 @@ describe("authorization requests", () => {
     expect(errorOf(response.headers.location)).toBe("invalid_scope");
   });
 
+  it("the phone app may return on each of its three URIs, and only those", async () => {
+    const mobile = (redirect_uri: string) =>
+      authorize({ client_id: "snapapp-staging-mobile", redirect_uri });
+    for (const redirect_uri of [
+      "au.com.snapapps.app:/oauth/yourtal",
+      "https://snapapp.gaiada.com/oauth/yourtal",
+      "https://snapapp.app.gaiada.com/oauth/yourtal",
+    ]) {
+      expect((await mobile(redirect_uri)).headers.location ?? "", redirect_uri).toContain("/connect/");
+    }
+    for (const redirect_uri of [
+      "https://snapapp.app.gaiada.com/oauth/yourtal/",
+      "https://snapapp.app.gaiada.com/auth/yourtal/callback",
+      "https://evil.app.gaiada.com/oauth/yourtal",
+    ]) {
+      expect((await mobile(redirect_uri)).headers.location, redirect_uri).toBeUndefined();
+    }
+  });
+
   it("an unknown client gets YourTal's error page, never a redirect", async () => {
     const response = await authorize({ client_id: "not-a-client" });
     expect(response.statusCode).toBe(400);

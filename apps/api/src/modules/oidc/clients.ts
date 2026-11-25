@@ -39,7 +39,8 @@ export interface SignInClient extends ClientBase {
   readonly auth: "private_key_jwt" | "client_secret_basic" | "none";
   /**
    * Exact matches only (docs/26 §1.7): one per client, except SnapApp's phone app,
-   * which also comes back on its verified App Link (3.3.e).
+   * which also comes back on its verified App Link (3.3.e) and, in a browser (the PWA),
+   * on its own return page there.
    */
   readonly redirectUris: readonly string[];
   readonly teens: "refuse" | "invite_only";
@@ -103,6 +104,9 @@ const DEFINITIONS: readonly Definition<YourTalClient>[] = [
     redirectUris: [
       "au.com.snapapps.app:/oauth/yourtal",
       "https://snapapp.gaiada.com/oauth/yourtal",
+      // The phone app's browser build (PWA): the popup returns to its own origin and hands
+      // the code back to the tab that opened it. Same client, same sector, same `sub`.
+      "https://snapapp.app.gaiada.com/oauth/yourtal",
     ],
   },
   {

@@ -52,7 +52,8 @@ describe("the client registry (docs/26 §1.9)", () => {
           expect(uri.protocol).toBe("https:");
           expect(uri.host).toBe(client.returnHost);
         } else if (uri.protocol === "https:") {
-          expect(uri.host).toBe(client.returnHost);
+          // The App Link on the app's own host, or the phone app's browser build (PWA).
+          expect([client.returnHost, "snapapp.app.gaiada.com"]).toContain(uri.host);
         } else {
           expect(uri.protocol).toBe("au.com.snapapps.app:");
         }
@@ -60,13 +61,14 @@ describe("the client registry (docs/26 §1.9)", () => {
     }
   });
 
-  it("gives the phone app its scheme and its App Link (3.3.e), and every other client exactly one", () => {
+  it("gives the phone app its scheme, its App Link (3.3.e) and its PWA page, and every other client exactly one", () => {
     const uris = new Map(
       CLIENTS.filter(isSignInClient).map((client) => [client.clientId, client.redirectUris]),
     );
     expect(uris.get("snapapp-staging-mobile")).toEqual([
       "au.com.snapapps.app:/oauth/yourtal",
       "https://snapapp.gaiada.com/oauth/yourtal",
+      "https://snapapp.app.gaiada.com/oauth/yourtal",
     ]);
     for (const [clientId, list] of uris) {
       if (clientId !== "snapapp-staging-mobile") expect(list, clientId).toHaveLength(1);
@@ -216,12 +218,16 @@ describe("client credentials from the secrets directory", () => {
     expect(byId.get("snapapp-staging-mobile")?.redirect_uris).toEqual([
       "au.com.snapapps.app:/oauth/yourtal",
       "https://snapapp.gaiada.com/oauth/yourtal",
+      "https://snapapp.app.gaiada.com/oauth/yourtal",
     ]);
     expect(byId.get("ftr-web")?.redirect_uris).toEqual([
       "https://freetaxreturns.com.au/api/auth/oauth2/callback/yourtal",
     ]);
     // Two redirect hosts need a (never fetched) sector URI; one-URI clients stay as they were.
-    expect(byId.get("snapapp-staging-mobile")?.sector_identifier_uri).toBeDefined();
+    // Pinned: it comes from the registry's sector, so adding a redirect URI never moves it.
+    expect(byId.get("snapapp-staging-mobile")?.sector_identifier_uri).toBe(
+      "https://snapapp-staging.sector.yourtal.invalid/",
+    );
     expect(byId.get("snapapp-staging-web")?.sector_identifier_uri).toBeUndefined();
     expect(byId.get("snapapp-staging-server")?.grant_types).toEqual(["client_credentials"]);
     expect(byId.get("snapapp-staging-web")?.grant_types).toEqual(["authorization_code"]);

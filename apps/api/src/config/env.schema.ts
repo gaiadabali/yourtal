@@ -300,6 +300,7 @@ export const envSchema = z.object({
   /** F125: the company named on each app's consent screen. Brand names until the legal names arrive. */
   OIDC_OPERATOR_SNAPAPP: z.string().min(1).max(120).default("SnapApp"),
   OIDC_OPERATOR_FTR: z.string().min(1).max(120).default("Free Tax Returns"),
+  OIDC_OPERATOR_GOD: z.string().min(1).max(120).default("Global Omni Data"),
 });
 
 export type Env = z.infer<typeof envSchema>;

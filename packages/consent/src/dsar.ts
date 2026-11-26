@@ -107,6 +107,14 @@ const DOMAINS: readonly DataDomain[] = [
     onDeletion: "erase",
   },
   {
+    id: "spambank",
+    holds:
+      "The Spambank mailbox: its address, the mail account and the mail in it, its app passwords, and what the service noted about the mail (which brands wrote, statements offered, unsubscribes). The address is retired for good",
+    service: "spambank",
+    owner: "ops",
+    onDeletion: "erase",
+  },
+  {
     id: "me_data",
     holds:
       "What the viewer declared, saved or was told: interests, followed businesses, saved campaigns, 'show me less' choices, streak, notifications and their settings, autoplay and theme, voucher-expiry warnings",

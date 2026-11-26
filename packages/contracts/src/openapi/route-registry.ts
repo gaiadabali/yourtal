@@ -30,6 +30,10 @@ import {
   OIDC_TRANSFER_ROUTE_DEFINITIONS,
 } from "./route-registry.a-oidc";
 import { SIGN_IN_METHOD_ROUTE_DEFINITIONS } from "./route-registry.a-auth";
+import {
+  SPAMBANK_MACHINE_ROUTE_DEFINITIONS,
+  SPAMBANK_ME_ROUTE_DEFINITIONS,
+} from "./route-registry.a-spambank";
 import { COUNTER_ROUTE_DEFINITIONS } from "./route-registry.c-counter";
 import { DEVELOPERS_ROUTE_DEFINITIONS } from "./route-registry.c-developers";
 import { PARTNERS_ROUTE_DEFINITIONS } from "./route-registry.c-partners";
@@ -140,6 +144,8 @@ export const ALL_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   ...STAFF_SETTLEMENT_ROUTE_DEFINITIONS,
   ...STAFF_OPS_ROUTE_DEFINITIONS,
   ...SIGN_IN_METHOD_ROUTE_DEFINITIONS,
+  ...SPAMBANK_ME_ROUTE_DEFINITIONS,
+  ...SPAMBANK_MACHINE_ROUTE_DEFINITIONS,
 ];
 
 /** Builds the `paths` object `build-document.ts` embeds in the document. */

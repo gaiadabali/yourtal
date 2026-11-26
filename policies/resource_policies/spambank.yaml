@@ -1,0 +1,68 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  Spambank, the YourTal mailbox (spambank/BUILD.md section 5.1): the caller's OWN mailbox, switched
+  on, opened, given app passwords and deleted from a YourTal session. Same "caller IS the resource"
+  shape as `me.yaml`: no route here names a `:userId`, so the resource has no attributes and every
+  rule reads the principal.
+
+  Adults only (the owner's answer to Q2, 2026-11-27; YourTal keeps no user-to-user interaction for
+  teens). `view` is open to any signed-in identity, so a screen can say "not available" instead of
+  failing, and it reads nothing but the caller's own state. Everything else needs an adult in good
+  standing: a teen, an account on hold and a principal with no age band at all (the fail-closed case
+  `auction.yaml` names) are all refused.
+
+  Staff roles are the same people with a YourTal account of their own, so they follow the same rule
+  as a viewer; this says nothing about their staff surface. `admin` and `store_device` are absent
+  for the structural reasons `me.yaml` gives. The apps' own servers do not come through Cerbos: they
+  use a client-credentials token (`/api/oidc-clients/spambank`) and the use-case repeats the adult
+  check there.
+resourcePolicy:
+  version: default
+  resource: spambank
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/spambank.json
+  rules:
+    - name: a-signed-in-identity-sees-its-own-mailbox-state
+      actions: [view]
+      effect: EFFECT_ALLOW
+      roles:
+        [
+          "user",
+          "business_user",
+          "charity_admin",
+          "support",
+          "moderator",
+          "risk_analyst",
+          "finance",
+          "ops",
+        ]
+
+    - name: adults-in-good-standing-use-their-mailbox
+      actions: [enable, open, manage_app_passwords, delete]
+      effect: EFFECT_ALLOW
+      roles:
+        [
+          "user",
+          "business_user",
+          "charity_admin",
+          "support",
+          "moderator",
+          "risk_analyst",
+          "finance",
+          "ops",
+        ]
+      condition:
+        match:
+          all:
+            of:
+              - expr: P.attr.isSuspended == false
+              - expr: has(P.attr.ageBand) && P.attr.ageBand == "adult"
+
+    - name: anonymous-has-no-mailbox
+      actions: [view, enable, open, manage_app_passwords, delete]
+      effect: EFFECT_DENY
+      roles: ["anonymous"]

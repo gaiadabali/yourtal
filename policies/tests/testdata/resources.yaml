@@ -530,6 +530,13 @@ resources:
     id: self
     attr: {}
 
+  # Spambank (spambank/BUILD.md 5.1): the caller's own mailbox, the same "caller IS the resource" shape as
+  # me_self above -- see _schemas/resource/spambank.json and resource_policies/spambank.yaml.
+  spambank_self:
+    kind: spambank
+    id: self
+    attr: {}
+
   # TASKS.md 7.1.c: same "caller IS the resource" shape as session_self/
   # me_self above -- see _schemas/resource/team_invitation.json and
   # resource_policies/team_invitation.yaml.

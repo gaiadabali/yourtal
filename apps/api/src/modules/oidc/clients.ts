@@ -121,7 +121,7 @@ const DEFINITIONS: readonly Definition<YourTalClient>[] = [
     sector: SNAPAPP.sector,
     kind: "machine",
     auth: "private_key_jwt",
-    allowedScopes: ["teen_invites", "app_transfers"],
+    allowedScopes: ["teen_invites", "app_transfers", "spambank"],
     environments: ["dev", "staging"],
   },
   {
@@ -136,6 +136,20 @@ const DEFINITIONS: readonly Definition<YourTalClient>[] = [
     privacyUrl: "https://freetaxreturns.com.au/privacy",
     termsUrl: "https://freetaxreturns.com.au/terms",
     returnHost: "freetaxreturns.com.au",
+    environments: ["dev", "staging"],
+  },
+  {
+    // Spambank (spambank/BUILD.md 5.2): FTR's server names a person by FTR's own `sub` to switch
+    // on, open and manage their mailbox. Its public key is `ftr-server.jwks.json` in the client
+    // directory; without the file the client is simply not registered.
+    clientId: "ftr-server",
+    name: FTR.name,
+    app: FTR.app,
+    externalOperator: FTR.externalOperator,
+    sector: "ftr",
+    kind: "machine",
+    auth: "private_key_jwt",
+    allowedScopes: ["spambank"],
     environments: ["dev", "staging"],
   },
   {

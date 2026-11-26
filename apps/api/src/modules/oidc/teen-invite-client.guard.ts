@@ -16,6 +16,7 @@ import { OIDC_RUNTIME, OidcRuntime } from "./oidc-runtime";
 export const VERIFIED_OIDC_CLIENT_KEY = "verifiedOidcClientId";
 export const TEEN_INVITES_SCOPE = "teen_invites";
 export const APP_TRANSFERS_SCOPE = "app_transfers";
+export const SPAMBANK_SCOPE = "spambank";
 
 /**
  * docs/26 §3.3, docs/30 §5: the client APIs take only a client-credentials
@@ -62,6 +63,8 @@ export function OidcClientGuard(scope: string): Type<CanActivate> {
 
 export const TeenInviteClientGuard = OidcClientGuard(TEEN_INVITES_SCOPE);
 export const TransferClientGuard = OidcClientGuard(APP_TRANSFERS_SCOPE);
+/** Spambank's management API for the apps' servers (spambank/BUILD.md 5.2). */
+export const SpambankClientGuard = OidcClientGuard(SPAMBANK_SCOPE);
 
 /** The client the guard verified; never re-verifies. */
 export function verifiedClient(request: FastifyRequest, runtime: OidcRuntime): MachineClient {

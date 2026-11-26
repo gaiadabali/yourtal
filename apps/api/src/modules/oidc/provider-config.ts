@@ -55,6 +55,7 @@ export const SCOPES = [
   "account",
   "teen_invites",
   "app_transfers",
+  "spambank",
 ] as const;
 
 /**

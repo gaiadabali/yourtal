@@ -120,6 +120,9 @@ function principal(role: Role, region: string) {
 
 type Matrix = Record<string, Record<string, string[]>>;
 
+/** Cerbos's default limit is 50 resources per check; stay well under it. */
+const PDP_BATCH = 40;
+
 async function allowMatrix(): Promise<Matrix> {
   const actions = authorizedActions();
   const matrix: Matrix = {};
@@ -136,29 +139,36 @@ async function allowMatrix(): Promise<Matrix> {
           },
         })),
       );
-      const response = await fetch(`${PDP}/api/check/resources`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ requestId: `matrix-${role}-${region}`, principal: who, resources }),
-      });
-      const text = await response.text();
-      expect(response.ok, text).toBe(true);
-      const body = JSON.parse(text) as {
-        results: {
-          resource: { id: string };
-          actions: Record<string, string>;
-          validationErrors?: unknown[];
-        }[];
-      };
       const cell: Record<string, string[]> = {};
-      for (const result of body.results) {
-        expect(result.validationErrors ?? [], `${role}/${region} ${result.resource.id}`).toEqual(
-          [],
-        );
-        cell[result.resource.id] = Object.entries(result.actions)
-          .filter(([, effect]) => effect === "EFFECT_ALLOW")
-          .map(([action]) => action)
-          .sort();
+      // Cerbos refuses a batch of more than 50 resources, so ask in slices and keep the order.
+      for (let from = 0; from < resources.length; from += PDP_BATCH) {
+        const response = await fetch(`${PDP}/api/check/resources`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            requestId: `matrix-${role}-${region}-${String(from)}`,
+            principal: who,
+            resources: resources.slice(from, from + PDP_BATCH),
+          }),
+        });
+        const text = await response.text();
+        expect(response.ok, text).toBe(true);
+        const body = JSON.parse(text) as {
+          results: {
+            resource: { id: string };
+            actions: Record<string, string>;
+            validationErrors?: unknown[];
+          }[];
+        };
+        for (const result of body.results) {
+          expect(result.validationErrors ?? [], `${role}/${region} ${result.resource.id}`).toEqual(
+            [],
+          );
+          cell[result.resource.id] = Object.entries(result.actions)
+            .filter(([, effect]) => effect === "EFFECT_ALLOW")
+            .map(([action]) => action)
+            .sort();
+        }
       }
       matrix[`${role}@${region}`] = cell;
     }

@@ -1,0 +1,145 @@
+---
+name: SpambankSuite
+description: |-
+  Spambank (spambank/BUILD.md section 5.1): the caller's own mailbox. Adults in good standing use
+  it; a teen, an account on hold and a principal with no age band see only their own state
+  (`view`); anonymous, admin and store devices reach nothing. See
+  resource_policies/spambank.yaml.
+tests:
+  - name: an adult in good standing uses their own mailbox, in either region
+    input:
+      principals: [adi_adult, adi_adult_au, ops_zul_adult]
+      resources: [spambank_self]
+      actions: [view, enable, open, manage_app_passwords, delete]
+    expected:
+      - principal: adi_adult
+        resource: spambank_self
+        actions:
+          {
+            view: EFFECT_ALLOW,
+            enable: EFFECT_ALLOW,
+            open: EFFECT_ALLOW,
+            manage_app_passwords: EFFECT_ALLOW,
+            delete: EFFECT_ALLOW,
+          }
+      - principal: adi_adult_au
+        resource: spambank_self
+        actions:
+          {
+            view: EFFECT_ALLOW,
+            enable: EFFECT_ALLOW,
+            open: EFFECT_ALLOW,
+            manage_app_passwords: EFFECT_ALLOW,
+            delete: EFFECT_ALLOW,
+          }
+      - principal: ops_zul_adult
+        resource: spambank_self
+        actions:
+          {
+            view: EFFECT_ALLOW,
+            enable: EFFECT_ALLOW,
+            open: EFFECT_ALLOW,
+            manage_app_passwords: EFFECT_ALLOW,
+            delete: EFFECT_ALLOW,
+          }
+
+  - name: a teen, an account on hold and a principal with no age band only see their state
+    input:
+      principals: [teo_granted, teo_pending, teo_au, adi_suspended, wina_no_ageband]
+      resources: [spambank_self]
+      actions: [view, enable, open, manage_app_passwords, delete]
+    expected:
+      - principal: teo_granted
+        resource: spambank_self
+        actions:
+          {
+            view: EFFECT_ALLOW,
+            enable: EFFECT_DENY,
+            open: EFFECT_DENY,
+            manage_app_passwords: EFFECT_DENY,
+            delete: EFFECT_DENY,
+          }
+      - principal: teo_pending
+        resource: spambank_self
+        actions:
+          {
+            view: EFFECT_ALLOW,
+            enable: EFFECT_DENY,
+            open: EFFECT_DENY,
+            manage_app_passwords: EFFECT_DENY,
+            delete: EFFECT_DENY,
+          }
+      - principal: teo_au
+        resource: spambank_self
+        actions:
+          {
+            view: EFFECT_ALLOW,
+            enable: EFFECT_DENY,
+            open: EFFECT_DENY,
+            manage_app_passwords: EFFECT_DENY,
+            delete: EFFECT_DENY,
+          }
+      - principal: adi_suspended
+        resource: spambank_self
+        actions:
+          {
+            view: EFFECT_ALLOW,
+            enable: EFFECT_DENY,
+            open: EFFECT_DENY,
+            manage_app_passwords: EFFECT_DENY,
+            delete: EFFECT_DENY,
+          }
+      - principal: wina_no_ageband
+        resource: spambank_self
+        actions:
+          {
+            view: EFFECT_ALLOW,
+            enable: EFFECT_DENY,
+            open: EFFECT_DENY,
+            manage_app_passwords: EFFECT_DENY,
+            delete: EFFECT_DENY,
+          }
+
+  - name: anonymous has no mailbox
+    input:
+      principals: [anon]
+      resources: [spambank_self]
+      actions: [view, enable, open, manage_app_passwords, delete]
+    expected:
+      - principal: anon
+        resource: spambank_self
+        actions:
+          {
+            view: EFFECT_DENY,
+            enable: EFFECT_DENY,
+            open: EFFECT_DENY,
+            manage_app_passwords: EFFECT_DENY,
+            delete: EFFECT_DENY,
+          }
+
+  - name: a store device and admin reach nothing here (docs/17 section 5)
+    input:
+      principals: [counter_kemang, admin_root]
+      resources: [spambank_self]
+      actions: [view, enable, open, manage_app_passwords, delete]
+    expected:
+      - principal: counter_kemang
+        resource: spambank_self
+        actions:
+          {
+            view: EFFECT_DENY,
+            enable: EFFECT_DENY,
+            open: EFFECT_DENY,
+            manage_app_passwords: EFFECT_DENY,
+            delete: EFFECT_DENY,
+          }
+      - principal: admin_root
+        resource: spambank_self
+        actions:
+          {
+            view: EFFECT_DENY,
+            enable: EFFECT_DENY,
+            open: EFFECT_DENY,
+            manage_app_passwords: EFFECT_DENY,
+            delete: EFFECT_DENY,
+          }

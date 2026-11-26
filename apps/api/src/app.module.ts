@@ -28,6 +28,7 @@ import { AreasModule } from "./modules/areas/areas.module";
 import { AuctionModule } from "./modules/auction/auction.module";
 import { AuctionAttributeLoader } from "./modules/auction/auction-attribute-loader";
 import { OidcModule } from "./modules/oidc/oidc.module";
+import { SpambankManagementModule } from "./modules/spambank/spambank-management.module";
 import { SpambankModule } from "./modules/spambank/spambank.module";
 import { AuthzModule } from "./shared/authz/authz.module";
 import { PdpGuard } from "./shared/authz/pdp.guard";
@@ -82,6 +83,7 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
     AreasModule,
     OidcModule,
     SpambankModule,
+    SpambankManagementModule,
   ],
   // Global rather than per-controller: a new module inherits idempotency
   // instead of having to remember it. It acts only on routes carrying

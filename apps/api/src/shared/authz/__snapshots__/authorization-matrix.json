@@ -50,6 +50,8 @@
     "me-ID": [],
     "report-AU": [],
     "report-ID": [],
+    "spambank-AU": [],
+    "spambank-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],
@@ -124,6 +126,8 @@
     "me-ID": [],
     "report-AU": [],
     "report-ID": [],
+    "spambank-AU": [],
+    "spambank-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],
@@ -286,6 +290,20 @@
     ],
     "report-AU": [],
     "report-ID": [],
+    "spambank-AU": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
+    "spambank-ID": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],
@@ -452,6 +470,20 @@
     ],
     "report-AU": [],
     "report-ID": [],
+    "spambank-AU": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
+    "spambank-ID": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],
@@ -643,6 +675,20 @@
       "view"
     ],
     "report-ID": [],
+    "spambank-AU": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
+    "spambank-ID": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],
@@ -859,6 +905,20 @@
     "report-ID": [
       "view"
     ],
+    "spambank-AU": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
+    "spambank-ID": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],
@@ -940,6 +1000,8 @@
     "me-ID": [],
     "report-AU": [],
     "report-ID": [],
+    "spambank-AU": [],
+    "spambank-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],
@@ -992,6 +1054,8 @@
     "me-ID": [],
     "report-AU": [],
     "report-ID": [],
+    "spambank-AU": [],
+    "spambank-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],
@@ -1124,6 +1188,20 @@
       "view"
     ],
     "report-ID": [
+      "view"
+    ],
+    "spambank-AU": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
+    "spambank-ID": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
       "view"
     ],
     "ledger_adjustment-AU": [],
@@ -1278,6 +1356,20 @@
     "report-ID": [
       "view"
     ],
+    "spambank-AU": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
+    "spambank-ID": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [
@@ -1426,6 +1518,20 @@
     ],
     "report-AU": [],
     "report-ID": [],
+    "spambank-AU": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
+    "spambank-ID": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [
@@ -1576,6 +1682,20 @@
     ],
     "report-AU": [],
     "report-ID": [],
+    "spambank-AU": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
+    "spambank-ID": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [
@@ -1728,6 +1848,20 @@
       "view"
     ],
     "report-ID": [
+      "view"
+    ],
+    "spambank-AU": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
+    "spambank-ID": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
       "view"
     ],
     "ledger_adjustment-AU": [],
@@ -1884,6 +2018,20 @@
       "view"
     ],
     "report-ID": [
+      "view"
+    ],
+    "spambank-AU": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
+    "spambank-ID": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
       "view"
     ],
     "ledger_adjustment-AU": [],
@@ -2064,6 +2212,20 @@
       "view"
     ],
     "report-ID": [
+      "view"
+    ],
+    "spambank-AU": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
+    "spambank-ID": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
       "view"
     ],
     "ledger_adjustment-AU": [
@@ -2258,6 +2420,20 @@
       "view"
     ],
     "report-ID": [
+      "view"
+    ],
+    "spambank-AU": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
+    "spambank-ID": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
       "view"
     ],
     "ledger_adjustment-AU": [
@@ -2468,6 +2644,20 @@
     "report-ID": [
       "view"
     ],
+    "spambank-AU": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
+    "spambank-ID": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [
@@ -2652,6 +2842,20 @@
     "report-ID": [
       "view"
     ],
+    "spambank-AU": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
+    "spambank-ID": [
+      "delete",
+      "enable",
+      "manage_app_passwords",
+      "open",
+      "view"
+    ],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [
@@ -2724,6 +2928,8 @@
     "me-ID": [],
     "report-AU": [],
     "report-ID": [],
+    "spambank-AU": [],
+    "spambank-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],
@@ -2784,6 +2990,8 @@
     "me-ID": [],
     "report-AU": [],
     "report-ID": [],
+    "spambank-AU": [],
+    "spambank-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],

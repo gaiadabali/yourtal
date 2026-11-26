@@ -176,6 +176,7 @@ describe("docs/26 §1.1 provider settings", () => {
       "account",
       "teen_invites",
       "app_transfers",
+      "spambank",
     ]);
     expect(new Set(discovery["claims_supported"] as string[])).toEqual(
       new Set([

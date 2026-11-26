@@ -165,4 +165,4 @@ Shared files: SnapApp `teens/invite-api.ts` (S2 moves code out; 3.10 work rebase
 
 ## 14. Open question for the founder
 
-- **Q1. Free Tax Returns receiving sends.** FTR is Benjamin Charles Group's. With 4.8 it accepts deduction bundles posted by SnapApp's server, on YourTal's word that the account is the person's, behind its own switch, and its privacy policy says so. **A (recommended):** ask BCG together with 4.6.e's privacy line; build now, and switch it on in production only with their yes. B: FTR keeps to file uploads, and 4.8 stops at YourTal and SnapApp.
+- **Q1. Free Tax Returns receiving sends.** FTR is run by GOD (Global Omni Data). With 4.8 it accepts deduction bundles posted by SnapApp's server, on YourTal's word that the account is the person's, behind its own switch, and its privacy policy says so. **A (recommended):** ask GOD together with 4.6.e's privacy line; build now, and switch it on in production only with their yes. B: FTR keeps to file uploads, and 4.8 stops at YourTal and SnapApp.

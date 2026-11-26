@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   CONFIG,
+  STALWART_PROBE_NONE,
+  STALWART_RELAY_PASS,
   gmailPass,
   newsletter,
   newsletterFrom,
@@ -212,6 +214,29 @@ describe("classifySender: checks 2–7 and the lead rule, from JMAP fields", () 
     const r = classify(email);
     expect(r.autoreply.eligible ? r.autoreply.target : r.autoreply.code).toBe(autoreply);
     expect(r.lead.eligible ? r.lead.orgDomain : r.lead.code).toBe(lead);
+  });
+
+  it("live samples: relay mail passes DMARC, is never replied to and is no lead; the probe fails", () => {
+    const real = classify(
+      newsletter({
+        from: [{ email: "no-reply@yourtal.gaiada.com" }],
+        "header:From:asAddresses:all": [[{ email: "no-reply@yourtal.gaiada.com" }]],
+        "header:Authentication-Results:asText:all": [STALWART_RELAY_PASS],
+      }),
+    );
+    expect(real).toMatchObject({ dmarcPass: true, fromOrgDomain: "gaiada.com" });
+    // Check 5 (no-reply@) comes before check 6; the lead rule skips 5 and stops at 6.
+    expect(real.autoreply).toMatchObject({ eligible: false, code: "noreply_address" });
+    expect(real.lead).toMatchObject({ eligible: false, code: "own_domain" });
+    const probe = classify(
+      newsletter({
+        from: [{ email: "probe@server-f.gaiada.com" }],
+        "header:From:asAddresses:all": [[{ email: "probe@server-f.gaiada.com" }]],
+        "header:Authentication-Results:asText:all": [STALWART_PROBE_NONE],
+      }),
+    );
+    expect(probe).toMatchObject({ dmarcPass: false });
+    expect(probe.autoreply).toMatchObject({ eligible: false, code: "unauthenticated" });
   });
 
   it("reports the row facts for ingested_message", () => {

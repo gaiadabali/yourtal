@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   AUTHSERV,
+  STALWART_PROBE_NONE,
+  STALWART_RELAY_PASS,
   gmailPass,
   microsoftPass,
   oursDmarc,
@@ -110,6 +112,38 @@ describe("parseAuthenticationResults", () => {
     expect(authservIdOf(`(x) ${AUTHSERV.toUpperCase()}; dmarc=pass`)).toBe(AUTHSERV);
     expect(authservIdOf(`${AUTHSERV}; dmarc=pass (broken`)).toBe(AUTHSERV);
     expect(authservIdOf(microsoftPass("a.com"))).toBe("spf");
+  });
+});
+
+describe("live Stalwart samples (U5, 2026-11-27)", () => {
+  it("parses the relay sample: two spf clauses, one dmarc", () => {
+    const r = parseAuthenticationResults(STALWART_RELAY_PASS);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.field.authservId).toBe("mail.yourtal.gaiada.com");
+    expect(r.field.results.map((e) => `${e.method}=${e.result}`)).toEqual([
+      "dkim=pass",
+      "spf=none",
+      "spf=fail",
+      "iprev=permerror",
+      "dmarc=pass",
+    ]);
+    expect(r.field.results[4]?.props.get("policy.dmarc")).toBe("none");
+  });
+
+  it("relay mail is authenticated for yourtal.gaiada.com", () => {
+    expect(
+      check([STALWART_RELAY_PASS], [{ name: "YourTal", email: "no-reply@yourtal.gaiada.com" }]),
+    ).toEqual({ ok: true, fromDomain: "yourtal.gaiada.com" });
+  });
+
+  it("the probe (dmarc=none) is unauthenticated", () => {
+    expect(parseAuthenticationResults(STALWART_PROBE_NONE).ok).toBe(true);
+    expect(check([STALWART_PROBE_NONE], [{ email: "probe@server-f.gaiada.com" }])).toEqual({
+      ok: false,
+      code: "unauthenticated",
+      detail: "dmarc_not_pass",
+    });
   });
 });
 

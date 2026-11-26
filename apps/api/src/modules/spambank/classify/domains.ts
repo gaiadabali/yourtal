@@ -56,7 +56,8 @@ export function isFreemail(orgDomain: string): boolean {
 }
 
 export function isOwnDomain(orgDomain: string, ownOrgDomains: readonly string[]): boolean {
-  return ownOrgDomains.includes(orgDomain);
+  // Exact match on whole registrable domains (an array lookup, not a substring test).
+  return ownOrgDomains.some((d) => d === orgDomain);
 }
 
 /**

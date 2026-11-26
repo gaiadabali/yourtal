@@ -1,8 +1,9 @@
 /**
  * Realistic header samples for the classify tests. Values are what JMAP
- * `asText` returns: unfolded, trimmed. The authserv-id and the exact shape of
- * Stalwart's own field are [UNVERIFIED] until T0 records U5 in
- * spambank/stalwart-fixtures/; swap them in here when it does.
+ * `asText` returns: unfolded (CRLF removed, the folding tab kept), trimmed.
+ * The authserv-id and the two STALWART_* samples are verbatim from the live
+ * Stalwart v1.2.1 on Helios (T0, U5, 2026-11-27); the builders below follow
+ * that layout.
  */
 import type { JmapSenderFields } from "../jmap-input";
 import type { ClassifyConfig } from "../sender-checks";
@@ -14,6 +15,14 @@ export const CONFIG: ClassifyConfig = {
   authservId: AUTHSERV,
   ownOrgDomains: parseOwnDomains(undefined),
 };
+
+/** Relay mail signed by our opendkim: DMARC passes for yourtal.gaiada.com. */
+export const STALWART_RELAY_PASS =
+  "mail.yourtal.gaiada.com;	dkim=pass header.d=yourtal.gaiada.com header.s=helios header.b=SlIrtC/r;	spf=none (mail.yourtal.gaiada.com: no SPF records found for postmaster@srv1700943.hstgr.cloud) smtp.helo=srv1700943.hstgr.cloud;	spf=fail (mail.yourtal.gaiada.com: domain of no-reply@yourtal.gaiada.com does not designate 172.17.0.1 as permitted sender) smtp.mailfrom=no-reply@yourtal.gaiada.com;	iprev=permerror (dns record not found) policy.iprev=172.17.0.1;	dmarc=pass header.from=yourtal.gaiada.com policy.dmarc=none";
+
+/** An external probe without SPF, DKIM or a DMARC record. */
+export const STALWART_PROBE_NONE =
+  "mail.yourtal.gaiada.com;	spf=none (mail.yourtal.gaiada.com: no SPF records found for postmaster@server-f.test) smtp.helo=server-f.test;	spf=none (mail.yourtal.gaiada.com: no SPF records found for probe@server-f.gaiada.com) smtp.mailfrom=probe@server-f.gaiada.com;	iprev=pass policy.iprev=72.62.127.204;	dmarc=none header.from=server-f.gaiada.com policy.dmarc=none";
 
 /** Stalwart-style field (mail-auth crate layout) for a DMARC-aligned sender. */
 export function oursPass(fromDomain: string, mailFrom = `bounce-7781@em.${fromDomain}`): string {

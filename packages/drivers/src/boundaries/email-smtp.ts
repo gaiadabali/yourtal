@@ -187,7 +187,11 @@ export function classifySmtpError(error: unknown): BoundaryFailure {
 }
 
 function messageIdFor(idempotencyKey: string, from: string): string {
-  const domain = /@([^>\s]+)>?\s*$/.exec(from)?.[1] ?? "yourtal.invalid";
+  // String ops, not a regex: `from` is config, but a backtracking pattern on it is a ReDoS finding.
+  const trimmed = from.trim().replace(/>$/, "");
+  const at = trimmed.lastIndexOf("@");
+  const candidate = at === -1 ? "" : trimmed.slice(at + 1).trim();
+  const domain = candidate === "" || /\s/.test(candidate) ? "yourtal.invalid" : candidate;
   const digest = createHash("sha256").update(idempotencyKey).digest("hex").slice(0, 32);
   return `<${digest}@${domain}>`;
 }

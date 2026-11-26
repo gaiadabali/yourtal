@@ -46,8 +46,8 @@ Rebuilt from the checkboxes by `node C:/Users/Hansel/Documents/Hansel/Projects/g
 | **Phase 11** Viewer feed & public site | B | ✅ done | 7/7 | 44/44 | `██████████` 100% |
 | **Phase 12** Teen & family mode | A + B + C | ✅ done | 4/4 | 24/24 | `██████████` 100% |
 | **Phase 13** Ready for live review | all | ✅ done | 23/23 | 105/105 | `██████████` 100% |
-| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 22/28 | 121/126 | `██████████`  96% |
-| **All** | | | **128/134** | **668/673** | `██████████`  99% |
+| **Phase 14** Group plan · from god/TASKS.md | — | 🔄 in progress | 22/29 | 121/127 | `██████████`  95% |
+| **All** | | | **128/135** | **668/674** | `██████████`  99% |
 <!-- progress:end -->
 
 ## Running order: which phases to start
@@ -1791,6 +1791,8 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
   - [x] 14.28.e The KYB form names four documents but closes after the first upload — found 2026-11-25 → eec77013 (#100)
   - [x] 14.28.g Questions-tab "minimum 5 minutes" copy, consent return host per redirect, the ATO ABN out of every fixture → eec77013 (#100); Go 1.27.4 for GO-2026-6859 → b939b6b3 (#101)
   - [x] 14.28.f On a short video the checkpoint question appears only after the viewer presses play again at the end ("Press play to answer the rest"): the checkpoint poll in `use-watch-earn-session.ts` runs only while playing — found 2026-11-25 → eec77013 (#100)
+- [ ] **14.29 Sign in with YourTal for the GOD dashboard** (group 9.4) · A · needs: 14.16 — 🔄 2026-11-26
+  - [ ] 14.29.a The `god-dashboard` client: private_key_jwt, redirect `https://dashboard.god.gaiada.com/auth/callback`, sector `god-staging`, teens refused, its event receiver (group 9.4.a) → PR #103; live once the lead puts `god-dashboard.jwks.json` on Helios and deploys
 
 ## Not in this plan (deferred)
 

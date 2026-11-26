@@ -44,7 +44,8 @@
   },
   "dependencies": {
     "@yourtal/contracts": "workspace:*",
-    "neverthrow": "8.2.0"
+    "neverthrow": "8.2.0",
+    "nodemailer": "10.6.1"
   },
   "devDependencies": {
     "@yourtal/paysim": "workspace:*",

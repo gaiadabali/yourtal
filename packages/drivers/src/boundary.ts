@@ -52,6 +52,11 @@ export interface BoundaryDefinition {
   readonly modeEnvVar: string;
   /** Every variable `live` needs. Missing any of them is a boot failure. */
   readonly liveCredentialEnvVars: readonly string[];
+  /**
+   * Optional: `live` also needs at least one of these (a boundary with two
+   * interchangeable vendors, e.g. email's Resend key or SMTP URL).
+   */
+  readonly liveCredentialAnyOf?: readonly string[];
   /** Who we expect to integrate with, and what is unresolved about them. */
   readonly liveVendor: string;
   /** The ticket that will implement the live driver. */
@@ -152,8 +157,10 @@ export const BOUNDARIES: Record<BoundaryName, BoundaryDefinition> = {
       "platform.sim_outbox, so /api/dev/inbox (1.6.b) can show a reviewer exactly what would " +
       "have gone out.",
     modeEnvVar: "EMAIL_DRIVER",
-    liveCredentialEnvVars: ["EMAIL_API_KEY", "EMAIL_FROM"],
-    liveVendor: "Resend (F103), over its REST API.",
+    liveCredentialEnvVars: ["EMAIL_FROM"],
+    liveCredentialAnyOf: ["EMAIL_API_KEY", "EMAIL_SMTP_URL"],
+    liveVendor:
+      "Our own SMTP relay when EMAIL_SMTP_URL is set (it wins), otherwise Resend (F103), over its REST API.",
     liveTicket: "1.6",
   },
   push: {

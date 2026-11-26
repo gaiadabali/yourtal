@@ -188,6 +188,15 @@ describe("the allow-list sits above the SMTP vendor (F115)", () => {
     expect(server?.recipients).toStrictEqual([]);
   });
 
+  it("with the everyone entry (*) sends any recipient through the relay, nothing to sim_outbox", async () => {
+    const { driver, recorded } = await stagingDriver("*");
+    const result = await driver.send(msg("someone@outlook.com"));
+
+    expect(result._unsafeUnwrap().route).toBe("live");
+    expect(server?.recipients).toStrictEqual(["someone@outlook.com"]);
+    expect(recorded).toStrictEqual([]);
+  });
+
   it("handles a mixed batch: only the listed address reaches the relay", async () => {
     const { driver, recorded } = await stagingDriver("@gaiada.com");
     expect((await driver.send(msg("in@gaiada.com"))).isOk()).toBe(true);

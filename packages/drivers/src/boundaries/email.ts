@@ -102,9 +102,9 @@ export function createEmailDriver(
     selectEmailVendor(env) === "smtp"
       ? createSmtpEmail(smtpConfigFromEnv(env))
       : createResendEmail(resendConfigFromEnv(env));
-  // F115: a non-empty `EMAIL_LIVE_ALLOWLIST` limits real sends (staging); empty or unset is production.
+  // F115: a non-empty `EMAIL_LIVE_ALLOWLIST` limits real sends (staging); empty or unset is production; `*` is everyone.
   const list = parseEmailAllowList(env.EMAIL_LIVE_ALLOWLIST);
-  return isAllowListEmpty(list)
+  return isAllowListEmpty(list) || list.everyone
     ? live
     : createAllowListEmail(live, createSimulatedEmail(store, faultPlan), list);
 }

@@ -338,11 +338,14 @@ jobs:
       # its summary when the count is nonzero, so this catches a test that
       # opted out (`it.skip`, `describe.skip`) rather than actually reaching
       # Cerbos — which would otherwise report success for work it never did.
+      # It matches the summary's "<n> skipped", not the bare word: Atlas echoes
+      # every migration's SQL into this log, and a CHECK that lists a value
+      # named skipped (spambank.statement_offer.outcome) is not a skipped test.
       - name: Assert apps/api reported nothing skipped
         run: |
-          if grep -qi "skipped" /tmp/api-test.log; then
+          if grep -qiE "[0-9]+ skipped" /tmp/api-test.log; then
             echo "::error::A live-PDP test skipped. It did not run, so its result means nothing."
-            grep -i "skipped" /tmp/api-test.log
+            grep -iE "[0-9]+ skipped" /tmp/api-test.log
             exit 1
           fi
 

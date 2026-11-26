@@ -56,7 +56,7 @@ YourTal becomes an OpenID Connect provider. SnapApp and Free Tax Returns (FTR) s
 
 Why pairwise rather than public:
 
-- **FTR is run by another company.** A public `sub` would be a permanent key that lets Benjamin Charles Group and our group join their records about a person without YourTal and without the person. Purpose limits in the Privacy Act (APP 6) and UU PDP point the other way. The apps also share an email, but an email is consented, visible and changeable; a `sub` lasts forever.
+- **FTR is run by another company.** A public `sub` would be a permanent key that lets GOD (Global Omni Data) and our group join their records about a person without YourTal and without the person. Purpose limits in the Privacy Act (APP 6) and UU PDP point the other way. The apps also share an email, but an email is consented, visible and changeable; a `sub` lasts forever.
 - **Nothing needs a shared identifier.** When two apps must refer to the same person (group task 4.8, SnapApp sending a deduction bundle to FTR), YourTal brokers it: SnapApp's server opens a transfer at YourTal, the person confirms it on YourTal's screen, and YourTal gives SnapApp a short-lived assertion, encrypted to FTR, that names FTR's own `sub` and the bundle's hash (docs/30; it replaces the RFC 8693 token exchange planned here, which oidc-provider does not offer). FTR checks it against its own `sub`. The link always goes through YourTal, with the person signed in.
 - **YourTal's user id never leaves YourTal.** It is the join key into the ledger, whose rows are never deleted (F88), so no app should hold anything that joins into it.
 

@@ -21,7 +21,7 @@ const FTR = {
   ...SNAP,
   app: "ftr" as const,
   name: "Free Tax Returns",
-  operator: "Benjamin Charles Group",
+  operator: "GOD (Global Omni Data)",
 };
 
 function renderSection(props: Parameters<typeof MeConnectedAppsSection>[0]) {
@@ -43,7 +43,7 @@ describe("MeConnectedAppsSection (docs/29 Y5)", () => {
     expect(screen.getByText("Free Tax Returns")).toBeInTheDocument();
     expect(
       screen.getByText(
-        /Run by Benjamin Charles Group\. Signed in since 20 Oct 2026\. Gets your name, email, age group and country\./,
+        /Run by GOD \(Global Omni Data\)\. Signed in since 20 Oct 2026\. Gets your name, email, age group and country\./,
       ),
     ).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /^Remove / })).toHaveLength(2);

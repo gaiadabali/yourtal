@@ -218,13 +218,13 @@ describe("consent", () => {
         client: {
           ...base,
           name: "Free Tax Returns",
-          operator: "Benjamin Charles Group",
+          operator: "GOD (Global Omni Data)",
           externalOperator: true,
         },
       }),
     );
     expect(
-      screen.getByText(/^Free Tax Returns is run by Benjamin Charles Group, not by YourTal\./),
+      screen.getByText(/^Free Tax Returns is run by GOD \(Global Omni Data\), not by YourTal\./),
     ).toBeInTheDocument();
   });
 
@@ -372,7 +372,7 @@ const sendDetails = (overrides: Partial<InteractionDetails> = {}) =>
       to: {
         clientId: "ftr-web",
         name: "Free Tax Returns",
-        operator: "Benjamin Charles Group",
+        operator: "GOD (Global Omni Data)",
         externalOperator: true,
         privacyUrl: "https://ftr.test/privacy",
         termsUrl: "https://ftr.test/terms",
@@ -398,7 +398,7 @@ describe("send", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/It arrives as an import for you to check\./)).toBeInTheDocument();
     expect(
-      screen.getByText(/Free Tax Returns is run by Benjamin Charles Group, not by YourTal\./),
+      screen.getByText(/Free Tax Returns is run by GOD \(Global Omni Data\), not by YourTal\./),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Privacy policy" })).toHaveAttribute(
       "href",

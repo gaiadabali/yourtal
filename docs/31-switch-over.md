@@ -20,7 +20,7 @@ No step in section 3 starts until the gates marked **hard** are closed. State on
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | Red line 11 / F108, **6.2.c**, **6.7.b** | YourTal runs on Helios; docs/26 §6 Q1 says real users wait for the hosting document and the APP 8 position. Helios was measured in Jakarta (2026-11-03).                                                                | open                                                                                                 | hard, founder + counsel                                                               |
 | **6.2**                                  | YourTal legal review (privacy, consent wording)                                                                                                                                                                         | open, 0/5                                                                                            | hard for production (legal never blocks dev, but this is production)                  |
-| **BCG**                                  | Free Tax Returns is run by Benjamin Charles Group. They must agree to the switch and the privacy-policy line.                                                                                                           | to confirm                                                                                           | hard for FTR                                                                          |
+| **GOD**                                  | Free Tax Returns is run by GOD (Global Omni Data). They must agree to the switch and the privacy-policy line.                                                                                                           | to confirm                                                                                           | hard for FTR                                                                          |
 | **3.8.b**                                | Phase 3 "Done when" passed on staging, then on production                                                                                                                                                               | staging leg partly done (SnapApp 3.7.b legs PASS, FTR leg F 8/8 on 2026-11-05); the full run is open | hard                                                                                  |
 | **3.9.h**                                | Uptime check on discovery, one restore test, IPv6 /64 and a site-wide rate ceiling                                                                                                                                      | partly (nginx limit and sign-in log live on staging)                                                 | hard: every sign-in now depends on YourTal                                            |
 | Production issuer (docs/26 §6 Q2)        | Founder chose C: `https://yourtal.gaiada.com/oidc` stays the issuer in production (F109)                                                                                                                                | decided                                                                                              | done                                                                                  |
@@ -33,7 +33,7 @@ No step in section 3 starts until the gates marked **hard** are closed. State on
 | **6.9 / 6.5.i-k**                        | FTR tax figures for a tax agent                                                                                                                                                                                         | open                                                                                                 | not a sign-in gate; do not mix into this switch                                       |
 | Deletion path live                       | YourTal L1 (sender), L2 (SnapApp server client id), L3 (FTR 0017-0021) done on staging 2026-11-04. Production needs the same, with production client ids                                                                | to confirm for production                                                                            | hard: "delete everywhere" is part of Done when                                        |
 
-Who closes the hard gates: the founder (6.2, 6.7, F108, BCG, 6.9), the lead session (Helios work, with the user's OK for each write).
+Who closes the hard gates: the founder (6.2, 6.7, F108, GOD, 6.9), the lead session (Helios work, with the user's OK for each write).
 
 ## 3. Order of switches
 
@@ -44,7 +44,7 @@ Rule: one app at a time, SnapApp first (it has the fewer legacy users and no tax
 1. Confirm gates in section 2.
 2. Back up YourTal's and each app's database. **To confirm** the current restore test result (3.9.h).
 3. Tell the support inbox owners the date and time (section 7, staff note).
-4. Pick a quiet window. FTR: outside tax-time peaks. **To confirm** the date with BCG.
+4. Pick a quiet window. FTR: outside tax-time peaks. **To confirm** the date with GOD.
 
 ### Step 1. YourTal provider on, production clients registered
 
@@ -105,7 +105,7 @@ Do first, in this order (PRE-LIVE-SETTINGS §1a): migrations `0017` to `0021` on
 | `YOURTAL_CLIENT_ID`                                      | `ftr-web`                                                                                    |
 | `YOURTAL_CLIENT_SECRET`                                  | the secret from YourTal's `ftr-web.secret`; letters and digits only; never paste it anywhere |
 | `YOURTAL_SIGN_IN_ENABLED`                                | `1` (exact value)                                                                            |
-| `DEDUCTION_IMPORT_ENABLED`, `DEDUCTION_TRANSFER_ENABLED` | stay `0`. They are separate (4.6, 4.8) and need BCG. Not part of this switch                 |
+| `DEDUCTION_IMPORT_ENABLED`, `DEDUCTION_TRANSFER_ENABLED` | stay `0`. They are separate (4.6, 4.8) and need GOD. Not part of this switch                 |
 
 Apply: edit `.env`, then re-parse pm2 as in PRE-LIVE-SETTINGS §5 "Changing .env" (`pm2 delete` then `pm2 start ecosystem.config.cjs`, then `pm2 save`). A plain `pm2 reload ... --update-env` does **not** re-read `.env`. The poller deploy only reloads, so code deploys do not change the switch.
 
@@ -163,7 +163,7 @@ Every sign-in depends on YourTal. People already signed in to an app keep their 
 
 ## 7. Messages (en-AU, short)
 
-Plain text. Use the same words in the app banner and the email. Reviewed by BCG for FTR (**to confirm**). Do not name any vendor. Do not mention the data location until 6.7 decides the wording.
+Plain text. Use the same words in the app banner and the email. Reviewed by GOD for FTR (**to confirm**). Do not name any vendor. Do not mention the data location until 6.7 decides the wording.
 
 ### SnapApp, in-app banner (before the day)
 
@@ -226,7 +226,7 @@ Note: the last line is true only for people who had not linked yet. For a linked
 ## 8. Who decides go
 
 - **Go for production:** the founder, in writing, after the hard gates in section 2 are closed. Who "the founder" is now is itself still an open question in STATUS.md: **to confirm**.
-- **FTR specifically:** the founder and BCG together (BCG runs FTR and owns its privacy policy and customers).
+- **FTR specifically:** the founder and GOD together (GOD runs FTR and owns its privacy policy and customers).
 - **Each Helios write:** the user's OK at the time, as always. The lead session runs the steps, not subagents.
 - **Rollback:** the lead may switch an app off on their own call if sign-in fails for real users; the founder is told the same hour.
 - **No go** if any hard gate is open, if the 3.8.b production check has a failure, or if a restore test has not passed.
@@ -234,7 +234,7 @@ Note: the last line is true only for people who had not linked yet. For a linked
 ## 9. To confirm (list)
 
 1. Production client ids for SnapApp web, mobile and server, and their YourTal registration and `event-receivers.ts` rows.
-2. Who the founder is for the go decision; BCG's written agreement for FTR and their date window.
+2. Who the founder is for the go decision; GOD's written agreement for FTR and their date window.
 3. (Done: the 3.6.e email-mismatch warning is merged, snap-apps@73c2d36.)
 4. An unlink or recovery step for people who link and then need a rollback.
 5. Whether FTR linked users can use phone or email codes with the switch off.

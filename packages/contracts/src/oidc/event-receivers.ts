@@ -32,6 +32,13 @@ export const EVENT_RECEIVERS: readonly EventReceiver[] = [
     endpoint: "https://freetaxreturns.com.au/api/yourtal/events",
     environments: ["dev", "staging"],
   },
+  {
+    // Group 9.4.a: GOD's staff dashboard ends the person's dashboard sessions.
+    sector: "god-staging",
+    clientId: "god-dashboard",
+    endpoint: "https://dashboard.god.gaiada.com/auth/yourtal/events",
+    environments: ["dev", "staging"],
+  },
 ];
 
 export function receiversFor(environment: ReceiverEnvironment): readonly EventReceiver[] {

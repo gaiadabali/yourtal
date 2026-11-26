@@ -9,11 +9,15 @@ import type { AppConfig } from "../../config/app-config";
  * comes from this file, never from a request.
  */
 export type Region = "AU" | "ID";
-export type OperatedApp = "snapapp" | "ftr";
+export type OperatedApp = "snapapp" | "ftr" | "god";
 
 /** F125: the name on each app's consent screen. Settings, so legal names need no code change. */
 export type Operators = Readonly<Record<OperatedApp, string>>;
-export const DEFAULT_OPERATORS: Operators = { snapapp: "SnapApp", ftr: "Free Tax Returns" };
+export const DEFAULT_OPERATORS: Operators = {
+  snapapp: "SnapApp",
+  ftr: "Free Tax Returns",
+  god: "Global Omni Data",
+};
 
 interface ClientBase {
   readonly clientId: string;
@@ -132,6 +136,28 @@ const DEFINITIONS: readonly Definition<YourTalClient>[] = [
     privacyUrl: "https://freetaxreturns.com.au/privacy",
     termsUrl: "https://freetaxreturns.com.au/terms",
     returnHost: "freetaxreturns.com.au",
+    environments: ["dev", "staging"],
+  },
+  {
+    // Group 9.4.a: GOD's staff dashboard, allow-listed staff only. The dashboard itself
+    // refuses a sign-in without a passkey (`amr` hwk) and any teen, and sends `max_age=0`
+    // for its fresh passkey checks. No localhost redirect here: a developer's client lives
+    // in local config only (docs/26 §1.7).
+    clientId: "god-dashboard",
+    name: "GOD dashboard",
+    app: "god",
+    externalOperator: false,
+    sector: "god-staging",
+    kind: "web",
+    auth: "private_key_jwt",
+    redirectUris: ["https://dashboard.god.gaiada.com/auth/callback"],
+    teens: "refuse",
+    regions: ["AU", "ID"],
+    allowedScopes: SIGN_IN_SCOPES,
+    // GOD publishes a privacy page and no terms; staff sign a paper agreement instead.
+    privacyUrl: "https://god.gaiada.com/privacy/",
+    termsUrl: "https://god.gaiada.com/privacy/",
+    returnHost: "dashboard.god.gaiada.com",
     environments: ["dev", "staging"],
   },
 ];

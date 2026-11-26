@@ -34,6 +34,7 @@ const ALL_FILES = {
   [path.join(DIR, "snapapp-staging-web.jwks.json")]: publicJwks(),
   [path.join(DIR, "snapapp-staging-server.jwks.json")]: publicJwks(),
   [path.join(DIR, "ftr-web.secret")]: `${"s".repeat(40)}\n`,
+  [path.join(DIR, "god-dashboard.jwks.json")]: publicJwks(),
 };
 
 describe("the client registry (docs/26 §1.9)", () => {
@@ -43,6 +44,7 @@ describe("the client registry (docs/26 §1.9)", () => {
       "snapapp-staging-mobile",
       "snapapp-staging-server",
       "ftr-web",
+      "god-dashboard",
     ]);
     // SnapApp's production clients wait for its production domain.
     expect(clientsFor("production")).toEqual([]);
@@ -98,6 +100,8 @@ describe("the client registry (docs/26 §1.9)", () => {
 
   it("refuses teens at FTR and takes Australia only there; SnapApp is invite-only for teens", () => {
     for (const client of CLIENTS.filter(isSignInClient)) {
+      // The GOD dashboard has its own test below.
+      if (client.app === "god") continue;
       if (client.sector.startsWith("ftr")) {
         expect(client.teens).toBe("refuse");
         expect(client.regions).toEqual(["AU"]);
@@ -109,18 +113,24 @@ describe("the client registry (docs/26 §1.9)", () => {
   });
 
   it("names each app's operator from the settings (F125), brand names by default", () => {
-    const named = clientsFor("staging", { snapapp: "SnapApp Pty Ltd", ftr: "FTR Pty Ltd" });
+    const named = clientsFor("staging", {
+      snapapp: "SnapApp Pty Ltd",
+      ftr: "FTR Pty Ltd",
+      god: "GOD Pty Ltd",
+    });
     expect(named.map((client) => client.operator)).toEqual([
       "SnapApp Pty Ltd",
       "SnapApp Pty Ltd",
       "SnapApp Pty Ltd",
       "FTR Pty Ltd",
+      "GOD Pty Ltd",
     ]);
     expect(clientsFor("staging").map((client) => client.operator)).toEqual([
       "SnapApp",
       "SnapApp",
       "SnapApp",
       "Free Tax Returns",
+      "Global Omni Data",
     ]);
     expect(named.find((client) => client.clientId === "ftr-web")?.externalOperator).toBe(true);
   });
@@ -138,6 +148,43 @@ describe("the client registry (docs/26 §1.9)", () => {
     expect(
       CLIENTS.find((client) => client.clientId === "snapapp-staging-server")?.allowedScopes,
     ).toEqual(["teen_invites", "app_transfers"]);
+  });
+});
+
+describe("the GOD dashboard client (group 9.4.a)", () => {
+  const god = CLIENTS.filter(isSignInClient).find((client) => client.clientId === "god-dashboard");
+  if (god === undefined) throw new Error("the GOD dashboard client is registered");
+
+  it("is a confidential web client on private_key_jwt with one exact https redirect", () => {
+    expect(god.kind).toBe("web");
+    expect(god.auth).toBe("private_key_jwt");
+    expect(god.redirectUris).toEqual(["https://dashboard.god.gaiada.com/auth/callback"]);
+    expect(god.returnHost).toBe("dashboard.god.gaiada.com");
+    expect(god.environments).toEqual(["dev", "staging"]);
+  });
+
+  it("has a sector of its own, refuses teens, and asks for the four sign-in scopes", () => {
+    const others = CLIENTS.filter((client) => client.clientId !== "god-dashboard");
+    expect(others.map((client) => client.sector)).not.toContain(god.sector);
+    expect(god.sector).toBe("god-staging");
+    expect(god.teens).toBe("refuse");
+    expect(god.allowedScopes).toEqual(["openid", "email", "profile", "account"]);
+    expect(god.externalOperator).toBe(false);
+  });
+
+  it("loads its public JWKS from <client_id>.jwks.json: pairwise, RS256, code flow only", () => {
+    const loaded = loadClients(clientsFor("staging"), DIR, files(ALL_FILES));
+    const metadata = loaded.metadata.find((one) => one.client_id === "god-dashboard");
+    expect(metadata?.token_endpoint_auth_method).toBe("private_key_jwt");
+    expect(metadata?.jwks?.keys).toHaveLength(1);
+    expect(metadata?.subject_type).toBe("pairwise");
+    expect(metadata?.id_token_signed_response_alg).toBe("RS256");
+    expect(metadata?.grant_types).toEqual(["authorization_code"]);
+    expect(metadata?.sector_identifier_uri).toBeUndefined();
+  });
+
+  it("is told about deletions and ended access at the dashboard's own receiver", () => {
+    expect(god.eventsEndpoint).toBe("https://dashboard.god.gaiada.com/auth/yourtal/events");
   });
 });
 
@@ -210,6 +257,7 @@ describe("the event receivers (docs/29 §5)", () => {
     expect(receiversFor("staging").map((receiver) => receiver.sector)).toEqual([
       "snapapp-staging",
       "ftr",
+      "god-staging",
     ]);
   });
 });
@@ -247,6 +295,7 @@ describe("client credentials from the secrets directory", () => {
       "snapapp-staging-web",
       "snapapp-staging-server",
       "ftr-web",
+      "god-dashboard",
     ]);
   });
 

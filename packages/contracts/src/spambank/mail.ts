@@ -111,12 +111,19 @@ export const unsubscribeResultSchema = z.object({
 });
 export type UnsubscribeResult = z.infer<typeof unsubscribeResultSchema>;
 
+/** `value` without trailing slashes (a loop, not a regex: it reads caller input). */
+export function withoutTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 47) end -= 1;
+  return value.slice(0, end);
+}
+
 /**
  * The public URLs a mail session names (§5.1 `sessionUrl`, `helpersBase`), from the public origin
  * of the API (`https://yourtal.gaiada.com`).
  */
 export function mailUrlsFor(publicOrigin: string): { sessionUrl: string; helpersBase: string } {
-  const origin = publicOrigin.replace(/\/+$/, "");
+  const origin = withoutTrailingSlashes(publicOrigin);
   return {
     sessionUrl: `${origin}${SPAMBANK_JMAP_PREFIX}/session`,
     helpersBase: `${origin}${SPAMBANK_MAIL_PREFIX}`,

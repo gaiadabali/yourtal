@@ -454,7 +454,10 @@ describe("the EventSource (check 1)", () => {
     const decoder = new TextDecoder();
     let text = "";
     stalwart.push(accountA, "e42");
-    while (!text.includes("e42")) text += decoder.decode((await reader.read()).value);
+    while (!text.includes("e42")) {
+      const chunk: Uint8Array | undefined = (await reader.read()).value;
+      text += decoder.decode(chunk);
+    }
     expect(text).toContain('"Email":"e42"');
 
     const second = await open();

@@ -210,14 +210,35 @@ export function sanitizeMailHtml(input: SanitizeInput): SanitizeOutput {
     exclusiveFilter: (frame) => frame.tag === "img" && (frame.attribs.src ?? "") === "",
   };
 
-  let html = sanitizeHtml(input.html, options);
-  // Text and attributes come out escaped, so a literal `<style>` here is always a real block.
-  html = html.replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gi, (_block, css: string) => {
-    const cleaned = cleanCss(css);
-    remoteImagesBlocked += cleaned.remote;
-    return cleaned.css.trim() === "" ? "" : `<style>${cleaned.css}</style>`;
+  const html = cleanStyleBlocks(sanitizeHtml(input.html, options), (remote) => {
+    remoteImagesBlocked += remote;
   });
   return { html: `<div>${html}</div>`, remoteImagesBlocked, inlineImagesDropped };
+}
+
+/**
+ * Runs every `<style>` block of sanitised output through `cleanCss`. Text and attributes come out of
+ * the sanitiser escaped, so a literal `<style` is always a real block, and the sanitiser always
+ * closes it. A scan rather than a regex replace, so nothing a replacement emits is read again.
+ */
+export function cleanStyleBlocks(html: string, onRemote: (count: number) => void): string {
+  const lower = html.toLowerCase();
+  const CLOSE = "</style>";
+  let out = "";
+  let at = 0;
+  for (;;) {
+    const open = lower.indexOf("<style", at);
+    if (open === -1) break;
+    out += html.slice(at, open);
+    const bodyStart = lower.indexOf(">", open) + 1;
+    const close = bodyStart === 0 ? -1 : lower.indexOf(CLOSE, bodyStart);
+    if (close === -1) return out; // unterminated: drop the rest rather than guess
+    const cleaned = cleanCss(html.slice(bodyStart, close));
+    onRemote(cleaned.remote);
+    if (cleaned.css.trim() !== "") out += `<style>${cleaned.css}</style>`;
+    at = close + CLOSE.length;
+  }
+  return out + html.slice(at);
 }
 
 /** Plain text as HTML that shows it as written. */

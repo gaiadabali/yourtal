@@ -1,7 +1,11 @@
 import { err, ok } from "neverthrow";
 import type { Result } from "neverthrow";
 import type { SpambankAccountClient, SpambankFailure } from "@yourtal/drivers/spambank";
-import { ALLOWED_JMAP_CAPABILITIES, SPAMBANK_JMAP_PREFIX } from "@yourtal/contracts/spambank/mail";
+import {
+  ALLOWED_JMAP_CAPABILITIES,
+  SPAMBANK_JMAP_PREFIX,
+  withoutTrailingSlashes,
+} from "@yourtal/contracts/spambank/mail";
 
 /**
  * The mailbox's JMAP session on Stalwart (RFC 8620 §2), read as the account and kept for a few
@@ -86,7 +90,7 @@ export function rewriteSession(
   session: UpstreamSession,
   publicOrigin: string,
 ): Record<string, unknown> {
-  const base = `${publicOrigin.replace(/\/+$/, "")}${SPAMBANK_JMAP_PREFIX}`;
+  const base = `${withoutTrailingSlashes(publicOrigin)}${SPAMBANK_JMAP_PREFIX}`;
   const raw = session.raw;
   const accounts = isRecord(raw.accounts) ? raw.accounts : {};
   const own = accounts[session.accountId];

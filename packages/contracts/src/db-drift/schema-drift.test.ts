@@ -619,6 +619,37 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "Group 3.9: signed events waiting for an app. Leaves YourTal only as a Security Event Token (docs/26 §2.3), never as a row.",
   "oidc.sign_in_log":
     "Group 3.9: one row per completed sign-in and per refusal, for staff and rate limits. Server-internal.",
+  // Spambank Stage 1 (20261128090000_spambank.sql, BUILD.md section 6). The
+  // mail API's contracts (packages/contracts/src/spambank/*) are the wire
+  // shapes, written by T2, T4, T5, T6 and T7; none mirrors one of these rows.
+  "spambank.mailbox":
+    "Spambank T1: one mailbox per account. The management API returns a derived status (state, address, quota), never the row.",
+  "spambank.retired_name":
+    "Spambank T1: names that were ever given out, so none is reused. Server-internal; never returned.",
+  "spambank.ingested_message":
+    "Spambank T1: ingest idempotency and the auto-reply decision per message, purged after 30 days. Server-internal.",
+  "spambank.lead":
+    "Spambank T1: brands that mailed users, one list per region. The staff leads API (spambank/staff.ts) returns a derived view with recipient counts, not the row.",
+  "spambank.lead_sighting":
+    "Spambank T1: which mailbox saw which brand; only ever counted into a lead's recipients. Server-internal.",
+  "spambank.autoreply_domain":
+    "Spambank T1: per-domain throttle and opt-out for the counter-spam reply. Server-internal; the opt-out page takes a signed link, not a row.",
+  "spambank.autoreply":
+    "Spambank T1: one row per counter-spam reply, for audit and bounce matching. Server-internal.",
+  "spambank.autoreply_day":
+    "Spambank T1: the global daily cap's counter and the bounce and complaint tallies the auto-pause reads. The staff API returns today's totals, not the row.",
+  "spambank.control":
+    "Spambank T1: the singleton pause and daily-cap state. The staff auto-reply API returns a derived view.",
+  "spambank.blocklist_check":
+    "Spambank T1: one row per DNS blocklist lookup. The staff API returns the latest results derived from it.",
+  "spambank.send_count":
+    "Spambank T1: recipients a mailbox sent to per UTC day, for the 100-a-day cap. Server-internal.",
+  "spambank.unsubscribe":
+    "Spambank T1: one row per one-tap unsubscribe. Only counted (marketersUnsubscribed); the unsubscribe API returns a status, not the row.",
+  "spambank.statement_offer":
+    "Spambank T1: attachments offered to SnapApp. Reaches SnapApp only as a signed event and the attachments/fetch route, never as a row.",
+  "spambank.app_event_outbox":
+    "Spambank T1: signed mail events waiting for SnapApp (B8). Leaves YourTal only as a Security Event Token, never as a row.",
   "platform.idempotency":
     "The @yourtal/idempotency package's own dedupe store (packages/idempotency/src/postgres-store.ts) — infrastructure, not a domain contract.",
   "platform.region_setting":

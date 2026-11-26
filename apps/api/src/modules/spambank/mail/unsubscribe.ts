@@ -13,6 +13,7 @@ import {
   isRecord,
   sessionOf,
 } from "./account-jmap";
+import { orgDomainOf } from "../classify/org-domain";
 import { parseMailto, sendMailto } from "./mailto";
 
 /**
@@ -25,23 +26,26 @@ import { parseMailto, sendMailto } from "./mailto";
 export const UNSUBSCRIBED_KEYWORD = "$spambank_unsubscribed";
 const ONE_CLICK_VALUE = "list-unsubscribe=one-click";
 
-/** The marketer's domain for the counter: the From address's, else the unsubscribe link's host. */
-export function orgDomainOf(from: unknown, urls: readonly string[]): string {
+/**
+ * The marketer's registrable domain for the counter (T3's PSL rule): the From address's, else the
+ * unsubscribe link's host.
+ */
+export function marketerDomain(from: unknown, urls: readonly string[]): string {
+  const candidates: string[] = [];
   if (Array.isArray(from) && isRecord(from[0]) && typeof from[0].email === "string") {
     const at = from[0].email.lastIndexOf("@");
-    if (at !== -1)
-      return from[0].email
-        .slice(at + 1)
-        .toLowerCase()
-        .slice(0, 253);
+    if (at !== -1) candidates.push(from[0].email.slice(at + 1));
   }
   for (const url of urls) {
     try {
-      const host = new URL(url).hostname;
-      if (host !== "") return host.toLowerCase();
+      candidates.push(new URL(url).hostname);
     } catch {
-      // try the next one
+      // not a URL; try the next one
     }
+  }
+  for (const candidate of candidates) {
+    const domain = orgDomainOf(candidate);
+    if (domain !== null) return domain;
   }
   return "unknown";
 }
@@ -90,7 +94,7 @@ export async function unsubscribe(
   const https = urls.find((u) => /^https:\/\//i.test(u));
   const mailto = urls.map(parseMailto).find((m) => m !== undefined);
   const already = isRecord(email.keywords) && email.keywords[UNSUBSCRIBED_KEYWORD] === true;
-  const orgDomain = orgDomainOf(email.from, urls);
+  const orgDomain = marketerDomain(email.from, urls);
   const record = (row: Omit<UnsubscribeRecord, "mailboxId" | "orgDomain">): Promise<void> =>
     ctx.store.recordUnsubscribe({ mailboxId: principal.mailboxId, orgDomain, ...row });
 

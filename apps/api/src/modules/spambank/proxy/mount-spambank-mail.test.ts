@@ -537,7 +537,7 @@ describe("unsubscribe (check 4)", () => {
       id: "N1",
       mailboxIds: { "mb-inbox": true },
       keywords: {},
-      from: [{ email: "news@Shop.Example" }],
+      from: [{ email: "news@mail.Shop.co.uk" }],
       ...extra,
     };
   }
@@ -566,7 +566,7 @@ describe("unsubscribe (check 4)", () => {
     expect(store.unsubscribes).toEqual([
       {
         mailboxId: expect.any(String),
-        orgDomain: "shop.example",
+        orgDomain: "shop.co.uk",
         method: "one_click",
         status: "done",
         httpStatus: 200,

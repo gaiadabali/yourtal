@@ -159,7 +159,10 @@ describe("staging posture (2.3.b)", () => {
       const definition = BOUNDARIES[boundary];
       return [
         [definition.modeEnvVar, "live"],
-        ...definition.liveCredentialEnvVars.map((name): [string, string] => [name, "present"]),
+        ...[
+          ...definition.liveCredentialEnvVars,
+          ...(definition.liveCredentialAnyOf?.slice(0, 1) ?? []),
+        ].map((name): [string, string] => [name, "present"]),
       ];
     }),
   );

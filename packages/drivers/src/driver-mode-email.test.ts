@@ -45,6 +45,16 @@ describe("staging email allow-list exception (F115)", () => {
     expect(modes.email).toBe("live");
   });
 
+  it("boots on staging with the everyone entry (*), which counts as non-empty", () => {
+    const env = { ...emailLive, EMAIL_LIVE_ALLOWLIST: "*" };
+    expect(assertDriversConfiguredForBoot(env, "staging").email).toBe("live");
+  });
+
+  it("refuses staging when * is mixed with other entries (malformed, fails the boot)", () => {
+    const env = { ...emailLive, EMAIL_LIVE_ALLOWLIST: "*,ops@example.org" };
+    expect(() => assertDriversConfiguredForBoot(env, "staging")).toThrow(/must be the only entry/);
+  });
+
   it("refuses staging with email live and an unset or empty allow-list", () => {
     for (const env of [
       emailLive,

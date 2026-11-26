@@ -89,7 +89,11 @@ export function resolveDriverMode(
     return ok("simulated");
   }
 
-  const missing = definition.liveCredentialEnvVars.filter((name) => !present(env, name));
+  const missing: string[] = definition.liveCredentialEnvVars.filter((name) => !present(env, name));
+  const anyOf = definition.liveCredentialAnyOf;
+  if (anyOf !== undefined && !anyOf.some((name) => present(env, name))) {
+    missing.push(anyOf.join(" or "));
+  }
   if (missing.length > 0) {
     return err({
       kind: "missing_credentials",

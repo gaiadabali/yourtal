@@ -3,6 +3,7 @@ import { type BoundaryFailure, FaultEngine, failureFor } from "../fault-engine";
 import type { FaultPlan } from "../faults";
 import type { DriverMode, Environment } from "../driver-mode";
 import { createResendEmail, resendConfigFromEnv } from "./email-resend";
+import { createSmtpEmail, smtpConfigFromEnv } from "./email-smtp";
 import { createAllowListEmail, isAllowListEmpty, parseEmailAllowList } from "./email-allowlist";
 import { type SimOutboxStore, createInMemorySimOutboxStore } from "../sim-outbox";
 
@@ -78,6 +79,18 @@ export function createSimulatedEmail(
   };
 }
 
+export type EmailVendor = "smtp" | "resend";
+
+/**
+ * Which live vendor sends. `EMAIL_SMTP_URL` set (non-blank) means our own SMTP
+ * relay; otherwise Resend. If both are set, SMTP wins: the URL is the newer,
+ * deliberate switch, and Resend's key can stay in the env as an instant rollback
+ * (unset `EMAIL_SMTP_URL`, restart). The F115 allow-list sits above this choice.
+ */
+export function selectEmailVendor(env: Environment): EmailVendor {
+  return (env.EMAIL_SMTP_URL?.trim() ?? "") === "" ? "resend" : "smtp";
+}
+
 export function createEmailDriver(
   mode: DriverMode,
   env: Environment,
@@ -85,10 +98,13 @@ export function createEmailDriver(
   store?: SimOutboxStore,
 ): EmailDriver {
   if (mode === "simulated") return createSimulatedEmail(store, faultPlan);
-  const live = createResendEmail(resendConfigFromEnv(env));
-  // F115: a non-empty `EMAIL_LIVE_ALLOWLIST` limits real sends (staging); empty or unset is production.
+  const live =
+    selectEmailVendor(env) === "smtp"
+      ? createSmtpEmail(smtpConfigFromEnv(env))
+      : createResendEmail(resendConfigFromEnv(env));
+  // F115: a non-empty `EMAIL_LIVE_ALLOWLIST` limits real sends (staging); empty or unset is production; `*` is everyone.
   const list = parseEmailAllowList(env.EMAIL_LIVE_ALLOWLIST);
-  return isAllowListEmpty(list)
+  return isAllowListEmpty(list) || list.everyone
     ? live
     : createAllowListEmail(live, createSimulatedEmail(store, faultPlan), list);
 }

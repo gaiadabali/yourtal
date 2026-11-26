@@ -1,7 +1,7 @@
 import { ok } from "neverthrow";
 import { describe, expect, it, vi } from "vitest";
 import { createEmailDriver, type EmailDriver, type EmailMessage } from "./email";
-import { createAllowListEmail, parseEmailAllowList } from "./email-allowlist";
+import { createAllowListEmail, isAllowListEmpty, parseEmailAllowList } from "./email-allowlist";
 import { createInMemorySimOutboxStore } from "../sim-outbox";
 
 const msg = (to: string): EmailMessage => ({
@@ -58,6 +58,66 @@ describe("email allow-list routing", () => {
 
   it("reports the live mode", () => {
     expect(setup("a@example.org").driver.mode).toBe("live");
+  });
+});
+
+describe("the everyone entry (*)", () => {
+  it("sends every recipient live and never touches the simulated driver", async () => {
+    const { live, sim, driver } = setup("*");
+    await sendOk(driver, "someone@outlook.com");
+    await sendOk(driver, "other@staging.test");
+    expect(live.send).toHaveBeenCalledTimes(2);
+    expect(sim.send).not.toHaveBeenCalled();
+  });
+
+  it("tolerates spaces and blank items around the single entry", () => {
+    expect(parseEmailAllowList(" * ,").everyone).toBe(true);
+    expect(parseEmailAllowList("a@example.org").everyone).toBe(false);
+  });
+
+  it("is not an empty list, but an empty one still is", () => {
+    expect(isAllowListEmpty(parseEmailAllowList("*"))).toBe(false);
+    expect(isAllowListEmpty(parseEmailAllowList(""))).toBe(true);
+    expect(isAllowListEmpty(parseEmailAllowList(undefined))).toBe(true);
+  });
+
+  it.each(["*,a@example.org", "a@example.org,*", "@example.org,*", "*,*"])(
+    "refuses mixing it with other entries (%s)",
+    (raw) => {
+      expect(() => parseEmailAllowList(raw)).toThrow(/must be the only entry/);
+    },
+  );
+
+  it("does not treat wildcard-looking entries as everyone", () => {
+    for (const raw of ["*.com", "@*"]) {
+      expect(() => parseEmailAllowList(raw)).toThrow(/malformed/);
+    }
+  });
+
+  it("createEmailDriver with * sends an arbitrary recipient through Resend, nothing to the outbox", async () => {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(new Response(JSON.stringify({ id: "re_9" }), { status: 200 })),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const record = vi.fn();
+      const driver = createEmailDriver(
+        "live",
+        {
+          EMAIL_API_KEY: "k",
+          EMAIL_FROM: "YourTal <no-reply@example.test>",
+          EMAIL_LIVE_ALLOWLIST: "*",
+        },
+        undefined,
+        { record },
+      );
+      const result = await driver.send(msg("someone@outlook.com"));
+      expect(result._unsafeUnwrap()).toStrictEqual({ id: "re_9", route: "live" });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(record).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
 

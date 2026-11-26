@@ -684,6 +684,19 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "me/notification.ts's GET /api/me/notifications response envelope — same gap as notificationSchema above.",
   notificationMarkReadResponseSchema:
     "me/notification.ts's PATCH .../:id/read response — same gap as notificationSchema above.",
+
+  // --- spambank mail API (BUILD.md §5.3, T5): raw Fastify routes like /oidc's protocol routes,
+  // spoken by the vendored mail engine, not Nest controllers with route-registry entries ---
+  mailApiErrorSchema:
+    "spambank/mail.ts's { code, message } refusal of the mail proxy (/api/spambank/jmap/*, /mail/*) — raw Fastify routes outside the route registry, like /oidc.",
+  mailSummarySchema:
+    "spambank/mail.ts's GET /api/spambank/mail/summary response — same as mailApiErrorSchema.",
+  safeHtmlSchema:
+    "spambank/mail.ts's GET /api/spambank/mail/messages/{id}/safe-html response — same as mailApiErrorSchema.",
+  unsubscribeRequestSchema:
+    "spambank/mail.ts's POST .../unsubscribe body — same as mailApiErrorSchema.",
+  unsubscribeResultSchema:
+    "spambank/mail.ts's POST .../unsubscribe response — same as mailApiErrorSchema.",
 };
 
 function exportedSchemaNames(): string[] {

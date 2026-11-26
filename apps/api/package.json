@@ -44,6 +44,7 @@
     "pg-boss": "12.34.0",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
+    "sanitize-html": "2.18.2",
     "tldts": "7.4.13",
     "zod": "4.6.7"
   },
@@ -54,6 +55,7 @@
     "@types/oidc-provider": "9.12.1",
     "@types/pdfkit": "0.17.6",
     "@types/pg": "8.23.1",
+    "@types/sanitize-html": "2.16.2",
     "@yourtal/tsconfig": "workspace:*",
     "openid-client": "6.8.8",
     "typescript": "6.0.3",

@@ -99,6 +99,7 @@
     "./oidc/event-receivers": "./src/oidc/event-receivers.ts",
     "./spambank/common": "./src/spambank/common.ts",
     "./spambank/management": "./src/spambank/management.ts",
+    "./spambank/mail": "./src/spambank/mail.ts",
     "./identity/sign-in-methods": "./src/identity/sign-in-methods.ts",
     "./mock-source": "./src/mock-source.ts",
     "./mock-seed": "./src/mock-seed.ts",

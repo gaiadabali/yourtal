@@ -322,6 +322,12 @@ principals:
     roles: ["ops"]
     attr: { jurisdiction: "ID", businessRoles: {}, isSuspended: false }
 
+  # A staff person is also an adult with a YourTal account of their own (spambank.yaml).
+  ops_zul_adult:
+    id: zul
+    roles: ["ops"]
+    attr: { jurisdiction: "ID", businessRoles: {}, isSuspended: false, ageBand: "adult" }
+
   admin_root:
     id: root
     roles: ["admin"]

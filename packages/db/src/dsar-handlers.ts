@@ -3,6 +3,7 @@ import type { EventReceiver } from "@yourtal/contracts/oidc/event-receivers";
 import type { DomainHandler, HandlerRegistry } from "@yourtal/consent/dsar-orchestrator";
 import { meHandlers } from "./dsar-me-handlers";
 import { type ProcessorCustomerDeleter, paymentHandlers } from "./dsar-payment-handlers";
+import { eraseSpambank } from "./dsar-spambank-handlers";
 
 /**
  * The deletion handlers for domains this database actually holds. YT-0036.
@@ -332,6 +333,9 @@ export function postgresHandlers(
     ...(options.receivers === undefined
       ? {}
       : { connected_apps: forgetConnectedApps(pool, options.receivers) }),
+    // Spambank (BUILD.md 4.11): the mailbox row goes `erasing` and its name is retired; the worker
+    // destroys the mail account.
+    spambank: eraseSpambank(pool),
     // 1.20: me.*, account-security tokens, org memberships and watch sessions.
     ...meHandlers(pool),
     // 5.1.d, 5.1.h: a bidder's saved card, here and at the processor. Without a deleter the

@@ -392,6 +392,15 @@ export const RESOURCE_ACTIONS = {
    * scope a `user_account.view` check to.
    */
   risk_flag: ["view", "release", "suspend"],
+
+  /**
+   * Spambank (spambank/BUILD.md section 5.1): the caller's own mailbox. Same "caller IS the resource"
+   * shape as `me`: no route names a `:userId`, so the resource carries no attributes and the policy
+   * reads the principal. `view` is open to any signed-in identity, so a screen can say why a teen
+   * has no mailbox; every other action is for an adult in good standing only
+   * (`policies/resource_policies/spambank.yaml`).
+   */
+  spambank: ["view", "enable", "open", "manage_app_passwords", "delete"],
 } as const satisfies Record<string, readonly string[]>;
 
 /** Every resource kind the PDP answers for. */

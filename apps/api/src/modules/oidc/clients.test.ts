@@ -34,6 +34,7 @@ const ALL_FILES = {
   [path.join(DIR, "snapapp-staging-web.jwks.json")]: publicJwks(),
   [path.join(DIR, "snapapp-staging-server.jwks.json")]: publicJwks(),
   [path.join(DIR, "ftr-web.secret")]: `${"s".repeat(40)}\n`,
+  [path.join(DIR, "ftr-server.jwks.json")]: publicJwks(),
   [path.join(DIR, "god-dashboard.jwks.json")]: publicJwks(),
 };
 
@@ -44,6 +45,7 @@ describe("the client registry (docs/26 §1.9)", () => {
       "snapapp-staging-mobile",
       "snapapp-staging-server",
       "ftr-web",
+      "ftr-server",
       "god-dashboard",
     ]);
     // SnapApp's production clients wait for its production domain.
@@ -123,12 +125,14 @@ describe("the client registry (docs/26 §1.9)", () => {
       "SnapApp Pty Ltd",
       "SnapApp Pty Ltd",
       "FTR Pty Ltd",
+      "FTR Pty Ltd",
       "GOD Pty Ltd",
     ]);
     expect(clientsFor("staging").map((client) => client.operator)).toEqual([
       "SnapApp",
       "SnapApp",
       "SnapApp",
+      "Free Tax Returns",
       "Free Tax Returns",
       "Global Omni Data",
     ]);
@@ -138,7 +142,7 @@ describe("the client registry (docs/26 §1.9)", () => {
   it("allows sign-in clients the four sign-in scopes, and the client APIs to machine clients only", () => {
     for (const client of CLIENTS) {
       if (client.kind === "machine") {
-        expect(["teen_invites", "app_transfers"]).toEqual(
+        expect(["teen_invites", "app_transfers", "spambank"]).toEqual(
           expect.arrayContaining([...client.allowedScopes]),
         );
       } else {
@@ -147,7 +151,39 @@ describe("the client registry (docs/26 §1.9)", () => {
     }
     expect(
       CLIENTS.find((client) => client.clientId === "snapapp-staging-server")?.allowedScopes,
-    ).toEqual(["teen_invites", "app_transfers"]);
+    ).toEqual(["teen_invites", "app_transfers", "spambank"]);
+  });
+});
+
+describe("the Spambank machine clients (spambank/BUILD.md 5.2)", () => {
+  it("lets SnapApp's and FTR's servers use the spambank scope, in their own sectors", () => {
+    const server = (clientId: string) => CLIENTS.find((client) => client.clientId === clientId);
+    expect(server("snapapp-staging-server")?.allowedScopes).toContain("spambank");
+    expect(server("ftr-server")).toMatchObject({
+      kind: "machine",
+      app: "ftr",
+      sector: "ftr",
+      auth: "private_key_jwt",
+      allowedScopes: ["spambank"],
+      environments: ["dev", "staging"],
+    });
+  });
+
+  it("gives no other client the scope", () => {
+    expect(
+      CLIENTS.filter((client) => client.allowedScopes.includes("spambank")).map(
+        (client) => client.clientId,
+      ),
+    ).toEqual(["snapapp-staging-server", "ftr-server"]);
+  });
+
+  it("registers FTR's server as a client-credentials client when its public key file is there", () => {
+    const loaded = loadClients(clientsFor("staging"), DIR, files(ALL_FILES));
+    const metadata = loaded.metadata.find((one) => one.client_id === "ftr-server");
+    expect(metadata?.grant_types).toEqual(["client_credentials"]);
+    expect(metadata?.token_endpoint_auth_method).toBe("private_key_jwt");
+    expect(metadata?.scope).toBe("spambank");
+    expect(metadata?.jwks?.keys).toHaveLength(1);
   });
 });
 
@@ -295,6 +331,7 @@ describe("client credentials from the secrets directory", () => {
       "snapapp-staging-web",
       "snapapp-staging-server",
       "ftr-web",
+      "ftr-server",
       "god-dashboard",
     ]);
   });

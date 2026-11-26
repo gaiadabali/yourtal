@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "spambank",
+  "description": "The caller's own Spambank mailbox (spambank/BUILD.md 5.1). No attributes: every action is about the caller's OWN mailbox, so there is nothing about the resource instance for a rule to read; the policy reads the principal's age band and standing. See policies/resource_policies/spambank.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {}
+}

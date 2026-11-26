@@ -623,7 +623,33 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   mailTokenPayloadSchema:
     "spambank/common.ts's signed JSON inside the mail token â€” an internal credential format, not a request/response shape.",
   mailSessionSchema:
-    "spambank/common.ts's response for POST /api/spambank/me/session; published with the routes (T4).",
+    "spambank/common.ts's response for POST /api/spambank/me/session and /api/oidc-clients/spambank/session — documented inline (route-registry.a-spambank.ts).",
+  mailboxQuotaSchema: "spambank/management.ts's nested object on MailboxStatus.quota.",
+  mailboxStatusSchema:
+    "spambank/management.ts's response for GET /api/spambank/me — documented inline (route-registry.a-spambank.ts).",
+  mailboxSettingsSchema:
+    "spambank/management.ts's nested object on the machine status, and the settings a machine route reads.",
+  machineMailboxStatusSchema:
+    "spambank/management.ts's response for POST /api/oidc-clients/spambank/status and /settings — documented inline (route-registry.a-spambank.ts).",
+  enableMailboxResultSchema:
+    "spambank/management.ts's response for both enable routes — documented inline (route-registry.a-spambank.ts).",
+  appPasswordSummarySchema: "spambank/management.ts's nested item of AppPasswordList.",
+  appPasswordListSchema:
+    "spambank/management.ts's response for the app-password list routes — documented inline (route-registry.a-spambank.ts).",
+  createAppPasswordRequestSchema:
+    "spambank/management.ts's body for POST /api/spambank/me/app-passwords — documented inline (route-registry.a-spambank.ts).",
+  appPasswordCreatedSchema:
+    "spambank/management.ts's response for both app-password create routes — documented inline (route-registry.a-spambank.ts).",
+  machineSubRequestSchema:
+    "spambank/management.ts's body for the machine status, enable and session routes — documented inline (route-registry.a-spambank.ts).",
+  machineSettingsRequestSchema:
+    "spambank/management.ts's body for POST /api/oidc-clients/spambank/settings — documented inline (route-registry.a-spambank.ts).",
+  machineCreateAppPasswordRequestSchema:
+    "spambank/management.ts's body for POST /api/oidc-clients/spambank/app-passwords — documented inline (route-registry.a-spambank.ts).",
+  appPasswordIdSchema:
+    "spambank/management.ts's nested string: the app password id in a path and in the machine revoke body.",
+  machineRevokeAppPasswordRequestSchema:
+    "spambank/management.ts's body for POST /api/oidc-clients/spambank/app-passwords/revoke — documented inline (route-registry.a-spambank.ts).",
 
   // --- merchant: Studio Developers (TASKS.md 8.3.a/c) ---
   merchantCredentialStateSchema:

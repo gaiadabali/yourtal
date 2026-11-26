@@ -17,6 +17,7 @@ import { type EmailDriver, createEmailDriver } from "./boundaries/email";
 import { type PushDriver, createPushDriver } from "./boundaries/push";
 import { type WebhookDriver, createWebhookDriver } from "./boundaries/webhook";
 import { type AppEventsDriver, createAppEventsDriver } from "./boundaries/app-events";
+import { type SpambankDriver, createSpambankDriver } from "./boundaries/spambank";
 
 /**
  * Every external boundary, constructed together. YT-0535.
@@ -56,6 +57,7 @@ export interface Drivers {
   readonly push: PushDriver;
   readonly webhook: WebhookDriver;
   readonly appEvents: AppEventsDriver;
+  readonly spambank: SpambankDriver;
 }
 
 export type FaultPlans = Partial<Record<BoundaryName, FaultPlan>>;
@@ -91,6 +93,7 @@ export function createDrivers(env: Environment, faults: FaultPlans = {}): Driver
     push: createPushDriver(modes.push, env, faults.push),
     webhook: createWebhookDriver(modes.webhook, env, faults.webhook),
     appEvents: createAppEventsDriver(modes.app_events, faults.app_events),
+    spambank: createSpambankDriver(modes.spambank, env, faults.spambank),
   };
 }
 
@@ -109,4 +112,5 @@ export const DRIVER_KEY_TO_BOUNDARY: Record<keyof Drivers, BoundaryName> = {
   push: "push",
   webhook: "webhook",
   appEvents: "app_events",
+  spambank: "spambank",
 };

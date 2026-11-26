@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BOUNDARIES, BOUNDARY_NAMES } from "./boundary";
+import type { BoundaryName } from "./boundary";
 import {
   AppEventsLiveError,
   DriverConfigurationError,
@@ -151,6 +152,9 @@ describe("the boot check", () => {
   });
 });
 
+/** The boundaries `assertStagingDriversSimulated` never refuses live on staging. */
+const ALWAYS_ALLOWED_ON_STAGING: readonly BoundaryName[] = ["app_events", "spambank"];
+
 describe("staging posture (2.3.b)", () => {
   // Fully-configured live credentials for every boundary — the case
   // `assertDriversConfigured` alone would happily allow, in any environment.
@@ -191,9 +195,9 @@ describe("staging posture (2.3.b)", () => {
     }
     expect(thrown).toBeInstanceOf(StagingDriverModeError);
     const failure = thrown as StagingDriverModeError;
-    // Every boundary was live, so every boundary but app_events (always allowed on staging) is named.
+    // Every boundary was live, so every boundary but the always-allowed ones is named.
     expect(failure.boundaries).toStrictEqual(
-      BOUNDARY_NAMES.filter((name) => name !== "app_events"),
+      BOUNDARY_NAMES.filter((name) => !ALWAYS_ALLOWED_ON_STAGING.includes(name)),
     );
     expect(failure.message).toContain("simulated");
   });
@@ -254,7 +258,46 @@ describe("staging posture (2.3.b)", () => {
     }
     expect(thrown).toBeInstanceOf(StagingDriverModeError);
     expect((thrown as StagingDriverModeError).boundaries).not.toContain("app_events");
-    expect((thrown as StagingDriverModeError).boundaries).toHaveLength(BOUNDARY_NAMES.length - 1);
+    expect((thrown as StagingDriverModeError).boundaries).toHaveLength(
+      BOUNDARY_NAMES.length - ALWAYS_ALLOWED_ON_STAGING.length,
+    );
+  });
+
+  it("staging boots with Spambank live (the 4th exception) and still refuses every other live driver", () => {
+    const spambankLive: Environment = {
+      ...allSimulated,
+      SPAMBANK_DRIVER: "live",
+      ...Object.fromEntries(
+        BOUNDARIES.spambank.liveCredentialEnvVars.map((name): [string, string] => [
+          name,
+          "present",
+        ]),
+      ),
+    };
+    expect(assertDriversConfiguredForBoot(spambankLive, "staging").spambank).toBe("live");
+    let thrown: unknown;
+    try {
+      assertDriversConfiguredForBoot(
+        { ...spambankLive, OTP_DRIVER: "live", OTP_API_KEY: "k", OTP_SENDER_ID: "s" },
+        "staging",
+      );
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(StagingDriverModeError);
+    expect((thrown as StagingDriverModeError).boundaries).toStrictEqual(["otp"]);
+  });
+
+  it("Spambank live needs the URL, the API key, the credential key and the other secrets", () => {
+    expect(() => assertDriversConfiguredForBoot({ SPAMBANK_DRIVER: "live" }, "staging")).toThrow(
+      /SPAMBANK_STALWART_URL, SPAMBANK_STALWART_API_KEY, SPAMBANK_CREDENTIAL_KEY/,
+    );
+    expect(() =>
+      assertDriversConfiguredForBoot(
+        { SPAMBANK_DRIVER: "live", SPAMBANK_STALWART_URL: "http://x" },
+        "dev",
+      ),
+    ).toThrow(DriverConfigurationError);
   });
 
   it("refuses app events live anywhere but staging and production: dev's receivers are real apps", () => {

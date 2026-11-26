@@ -130,7 +130,9 @@ export function describeProblem(problem: DriverConfigProblem): string {
  * test-mode key (`sk_test_`), never a live one (F106). Email may be live
  * behind a non-empty `EMAIL_LIVE_ALLOWLIST` (F115). App events may be live
  * (docs/26 §2.4, docs/29 §5): the sender posts only to the receivers in
- * `event-receivers.ts`, our own sister apps, never an address from the database. `assertDriversConfigured`
+ * `event-receivers.ts`, our own sister apps, never an address from the database. Spambank may be live
+ * (spambank/BUILD.md C2): staging's testers use real mailboxes on our own Stalwart, and the driver only
+ * ever calls the address in `SPAMBANK_STALWART_URL`. `assertDriversConfigured`
  * alone would let a correctly configured live boundary through in every
  * environment, staging included; this is the additional, staging-only rule.
  * Not folded into `resolveDriverMode`/`assertDriversConfigured` because those
@@ -156,7 +158,7 @@ export class StagingDriverModeError extends Error {
         : boundary === "email"
           ? "EMAIL_LIVE_ALLOWLIST is empty"
           : "no staging exception";
-    // app_events is always exempt on staging, so it never reaches this message.
+    // app_events and spambank are always exempt on staging, so they never reach this message.
     super(
       `APP_ENV=staging requires every external driver to be simulated, but ` +
         `${boundaries.length === 1 ? "this one is" : "these are"} live: ` +
@@ -170,7 +172,7 @@ export class StagingDriverModeError extends Error {
         `real vendor with simulated money. Set ${boundaries.map((boundary) => BOUNDARIES[boundary].modeEnvVar).join("/")} to "simulated". ` +
         `The only exceptions: PAYMENTS_DRIVER and DISBURSEMENT_DRIVER with a test-mode STRIPE_SECRET_KEY (the payment ` +
         `simulation's, or Stripe test mode; F106), email when EMAIL_LIVE_ALLOWLIST is a non-empty list (F115), ` +
-        `and APP_EVENTS_DRIVER (docs/29 §5).`,
+        `APP_EVENTS_DRIVER (docs/29 §5), and SPAMBANK_DRIVER (spambank/BUILD.md C2).`,
     );
     this.name = "StagingDriverModeError";
     this.boundaries = boundaries;
@@ -197,7 +199,8 @@ export function assertStagingDriversSimulated(
   const exempt = (boundary: BoundaryName) =>
     (testKey && STRIPE_BOUNDARIES.includes(boundary)) ||
     (boundary === "email" && emailAllowed) ||
-    boundary === "app_events";
+    boundary === "app_events" ||
+    boundary === "spambank";
   const refused = BOUNDARY_NAMES.filter(
     (boundary) => modes[boundary] === "live" && !exempt(boundary),
   );
@@ -319,6 +322,7 @@ export function assertDriversConfigured(env: Environment): Record<BoundaryName, 
     push: modeOf("push"),
     webhook: modeOf("webhook"),
     app_events: modeOf("app_events"),
+    spambank: modeOf("spambank"),
   };
 }
 

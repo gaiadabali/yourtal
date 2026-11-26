@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { spambankEnvShape } from "./spambank-config";
 
 /**
  * The one Zod-parsed config object (docs/13b section 7). Every field this
@@ -301,6 +302,9 @@ export const envSchema = z.object({
   OIDC_OPERATOR_SNAPAPP: z.string().min(1).max(120).default("SnapApp"),
   OIDC_OPERATOR_FTR: z.string().min(1).max(120).default("Free Tax Returns"),
   OIDC_OPERATOR_GOD: z.string().min(1).max(120).default("Global Omni Data"),
+
+  /** Spambank (spambank/BUILD.md §5.8): its own file, `spambank-config.ts`. */
+  ...spambankEnvShape,
 });
 
 export type Env = z.infer<typeof envSchema>;

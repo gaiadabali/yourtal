@@ -1,6 +1,12 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { assertDriversConfiguredForBoot } from "@yourtal/drivers/driver-mode";
+import {
+  assertDriversConfiguredForBoot,
+  describeProblem,
+  resolveDriverMode,
+} from "@yourtal/drivers/driver-mode";
+import { createSpambankDriver } from "@yourtal/drivers/spambank";
+import { pingSpambank } from "./spambank-ping";
 import { loadWorkerConfig } from "./config";
 import { loadJobs } from "./job-loader";
 import { startWorker } from "./worker";
@@ -24,6 +30,14 @@ async function bootstrap(): Promise<void> {
   const config = loadWorkerConfig();
   // The API's boot rule (2.3.b), now that the worker sends app events itself (3.7 Y4).
   assertDriversConfiguredForBoot(process.env, config.appEnv);
+  // spambank/BUILD.md T2: asks Stalwart for its domains and exits. Run by hand, never by the boot check.
+  if (process.argv.includes("--spambank-ping")) {
+    const mode = resolveDriverMode("spambank", process.env);
+    if (mode.isErr()) throw new Error(describeProblem(mode.error));
+    const result = await pingSpambank(createSpambankDriver(mode.value, process.env), process.env);
+    for (const line of result.lines) console.log(line);
+    process.exit(result.ok ? 0 : 1);
+  }
   // 13.8: the deploy's boot check. Parses config and imports every job, so a
   // missing dependency or variable fails before the release goes live, but
   // starts no queue and so takes no job from the running worker.

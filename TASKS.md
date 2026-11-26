@@ -1793,6 +1793,9 @@ Group 5.7, the founder's walkthrough, is 13.6 here.
   - [x] 14.28.g Questions-tab "minimum 5 minutes" copy, consent return host per redirect, the ATO ABN out of every fixture → eec77013 (#100); Go 1.27.4 for GO-2026-6859 → b939b6b3 (#101)
   - [x] 14.28.f On a short video the checkpoint question appears only after the viewer presses play again at the end ("Press play to answer the rest"): the checkpoint poll in `use-watch-earn-session.ts` runs only while playing — found 2026-11-25 → eec77013 (#100)
 
+- [ ] **14.30 Spambank stage 1: a mailbox for every account, as a module of this API** (group 10.2) · A · needs: — — 🔄 2026-11-27
+  - [ ] 14.30.b (T2) The `spambank` driver boundary (live Stalwart management + as-the-account JMAP/HTTP, simulated twin; the 4th staging exception), every `SPAMBANK_*` setting, the 30-minute mail-token library, `SpambankModule` skeleton, the worker's `--spambank-ping`. Design in `god/spambank/BUILD.md` §4.3, §5.8, T2.
+
 ## Not in this plan (deferred)
 
 These come after the finish line, per `docs/audit/2026-09-25/product-intent.md` §7:

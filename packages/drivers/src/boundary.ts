@@ -40,6 +40,7 @@ export const BOUNDARY_NAMES = [
   "push",
   "webhook",
   "app_events",
+  "spambank",
 ] as const;
 
 export type BoundaryName = (typeof BOUNDARY_NAMES)[number];
@@ -195,6 +196,25 @@ export const BOUNDARIES: Record<BoundaryName, BoundaryDefinition> = {
       "No vendor: our own sister apps' receivers, and only those in event-receivers.ts. Never live in dev " +
       "or CI, whose receivers are real endpoints.",
     liveTicket: "3.7",
+  },
+  spambank: {
+    name: "spambank",
+    purpose:
+      "The mail server behind Spambank (BUILD.md §4.3): accounts, app passwords and every mailbox's JMAP. " +
+      "Real people's mail, so a live driver reaches a real server; simulated has none (the proxy answers 503).",
+    modeEnvVar: "SPAMBANK_DRIVER",
+    liveCredentialEnvVars: [
+      "SPAMBANK_STALWART_URL",
+      "SPAMBANK_STALWART_API_KEY",
+      "SPAMBANK_CREDENTIAL_KEY",
+      "SPAMBANK_TOKEN_KEY",
+      "SPAMBANK_WEBHOOK_SECRET",
+      "SPAMBANK_OPTOUT_KEY",
+    ],
+    liveVendor:
+      "Our own Stalwart v1.2.1 on Helios, reached on loopback (SPAMBANK_STALWART_URL). Allowed live on " +
+      "staging: it is the one boundary whose real mail is the point (spambank/BUILD.md C2).",
+    liveTicket: "10.2",
   },
 };
 

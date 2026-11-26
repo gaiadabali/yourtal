@@ -1,5 +1,7 @@
 import { envSchema } from "./env.schema";
 import type { Env } from "./env.schema";
+import { spambankConfigFrom } from "./spambank-config";
+import type { SpambankConfig } from "./spambank-config";
 
 /**
  * The shape every provider in this app injects. Deliberately narrower than
@@ -88,6 +90,8 @@ export interface AppConfig {
     /** F125: the name on each app's consent screen. */
     readonly operators: { readonly snapapp: string; readonly ftr: string; readonly god: string };
   };
+  /** Spambank (spambank/BUILD.md §5.8). Optional so hand-built test configs need not name it. */
+  readonly spambank?: SpambankConfig;
 }
 
 /**
@@ -180,6 +184,7 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
         god: env.OIDC_OPERATOR_GOD,
       },
     },
+    spambank: spambankConfigFrom(env),
   };
 }
 

@@ -35,7 +35,8 @@
     "./email": "./src/boundaries/email.ts",
     "./push": "./src/boundaries/push.ts",
     "./webhook": "./src/boundaries/webhook.ts",
-    "./app-events": "./src/boundaries/app-events.ts"
+    "./app-events": "./src/boundaries/app-events.ts",
+    "./spambank": "./src/boundaries/spambank/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

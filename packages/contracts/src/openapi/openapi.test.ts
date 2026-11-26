@@ -617,6 +617,14 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   transferProblemSchema:
     "oidc/transfer.ts's send-screen problem codes; joins InteractionDetails with the send screen (4.8 Y2).",
 
+  // --- spambank (spambank/BUILD.md section 5; routes arrive with T4/T5) ---
+  spambankErrorSchema:
+    "spambank/common.ts's { code, message } error body, shared by every Spambank route; published with the routes (T4/T5).",
+  mailTokenPayloadSchema:
+    "spambank/common.ts's signed JSON inside the mail token — an internal credential format, not a request/response shape.",
+  mailSessionSchema:
+    "spambank/common.ts's response for POST /api/spambank/me/session; published with the routes (T4).",
+
   // --- merchant: Studio Developers (TASKS.md 8.3.a/c) ---
   merchantCredentialStateSchema:
     "merchant/merchant-developer-credential.ts's nested enum on the published MerchantDeveloperCredential.state — not a standalone component.",

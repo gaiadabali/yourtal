@@ -162,6 +162,16 @@ const EXERCISES: readonly Exercise[] = [
         token: "a.b.c",
       }),
   },
+  {
+    boundary: "spambank",
+    describe: "creating a mailbox's mail account",
+    call: (fault) =>
+      driversWith("spambank", fault).spambank.createAccount({
+        localPart: "geewizduck",
+        domain: "yourtal.gaiada.com",
+        quotaBytes: 2_147_483_648,
+      }),
+  },
 ];
 
 describe("every boundary is covered", () => {
@@ -318,6 +328,16 @@ function boundCall(
         drivers.appEvents.post({
           endpoint: `https://app.example.test/${nextKey()}`,
           token: "a.b.c",
+        });
+    case "spambank":
+      return () =>
+        drivers.spambank.createAccount({
+          // A fresh name per call: a repeat would be `already_exists`, not the injected fault.
+          localPart: `geewizduck${nextKey()}`
+            .replaceAll(/\d/g, (digit) => "abcdefghij".charAt(Number(digit)))
+            .replaceAll("-", ""),
+          domain: "yourtal.gaiada.com",
+          quotaBytes: 2_147_483_648,
         });
   }
 }

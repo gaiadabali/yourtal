@@ -1,0 +1,25 @@
+Subject: Your email reached a Spambank inbox. Here's a better way to know your customers
+
+Hi there,
+
+This is an automatic reply from Spambank, a service of GOD (Global Omni Data).
+
+Your email arrived at a Spambank address. The person who owns it filters promotional email, so your message was filed away and won't be read.
+
+If you want to reach the right customers, start by knowing them.
+
+GOD (Global Omni Data) is the group behind YourTal, SnapApp and Free Tax Returns. We turn real-world behaviour (what Australians watch, buy and spend) into market insight for brands. Insight is aggregated: brands never see an individual person.
+
+  - See what your market actually buys, not just what it clicks
+  - Understand who engages with brands like yours, by age group and area
+  - Put your brand in front of people who chose to see it, through YourTal
+
+Let's talk. Contact us: {{CONTACT_EMAIL}}
+
+The GOD team
+
+--
+Sent by GOD (Global Omni Data). ABN: {{ABN}}
+Contact: {{CONTACT_EMAIL}}
+Why you got this: a message from your domain reached a Spambank mailbox. We send at most one reply to your domain every 30 days.
+Don't want these replies? Unsubscribe in one click: {{OPTOUT_URL}}

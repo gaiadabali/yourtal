@@ -57,6 +57,8 @@ export interface JmapSession {
   readonly accountId: string;
   /** The `downloadUrl` template, if the session has one. */
   readonly downloadUrl: string | null;
+  /** The `uploadUrl` template, if the session has one. */
+  readonly uploadUrl?: string | null;
 }
 
 /** The account's own JMAP session: its primary mail account id and the download URL template. */
@@ -83,7 +85,12 @@ export async function readSession(client: SpambankAccountClient): Promise<JmapSe
   if (accountId === undefined)
     throw new JmapProblem("unavailable", "the JMAP session names no account");
   const template = body["downloadUrl"];
-  return { accountId, downloadUrl: typeof template === "string" ? template : null };
+  const upload = body["uploadUrl"];
+  return {
+    accountId,
+    downloadUrl: typeof template === "string" ? template : null,
+    uploadUrl: typeof upload === "string" ? upload : null,
+  };
 }
 
 const accountIds = new Map<string, string>();
@@ -124,4 +131,20 @@ export function downloadPath(
     }
   }
   return fill(fallback);
+}
+
+/** The path (on Stalwart's own address) of a blob upload, from the session's URL template when it has one. */
+export function uploadPath(session: JmapSession): string {
+  const fill = (template: string): string =>
+    template.replace(/\{accountId\}/g, encodeURIComponent(session.accountId));
+  for (const template of [session.uploadUrl ?? null, "/jmap/upload/{accountId}/"]) {
+    if (template === null) continue;
+    try {
+      const url = new URL(fill(template), "http://stalwart.invalid");
+      return `${url.pathname}${url.search}`;
+    } catch {
+      continue;
+    }
+  }
+  return fill("/jmap/upload/{accountId}/");
 }

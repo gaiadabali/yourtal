@@ -79,6 +79,25 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "spambank/events.ts's pg-boss job data for spambank.ingest; not an HTTP shape.",
   spambankAutoreplyJobSchema:
     "spambank/events.ts's pg-boss job data for spambank.autoreply (T7); not an HTTP shape.",
+  // --- spambank staff API and the auto-reply opt-out (BUILD.md 5.4, T7) ---
+  leadStatusSchema:
+    "spambank/staff.ts's nested enum on the lead and its update body — documented inline (route-registry.a-spambank-staff.ts).",
+  spambankLeadSchema:
+    "spambank/staff.ts's response for PATCH /api/staff/spambank/leads/{orgDomain} and the list's item — documented inline (route-registry.a-spambank-staff.ts).",
+  spambankLeadPageSchema:
+    "spambank/staff.ts's response for GET /api/staff/spambank/leads — documented inline (route-registry.a-spambank-staff.ts).",
+  spambankLeadQuerySchema:
+    "spambank/staff.ts's query string for GET /api/staff/spambank/leads and its export.csv — documented inline as query parameters (route-registry.a-spambank-staff.ts).",
+  spambankLeadUpdateSchema:
+    "spambank/staff.ts's body for PATCH /api/staff/spambank/leads/{orgDomain} — documented inline (route-registry.a-spambank-staff.ts).",
+  blocklistCheckSchema:
+    "spambank/staff.ts's nested item of the auto-reply state's lastBlocklist — documented inline (route-registry.a-spambank-staff.ts).",
+  spambankAutoreplySchema:
+    "spambank/staff.ts's response for GET and POST /api/staff/spambank/autoreply — documented inline (route-registry.a-spambank-staff.ts).",
+  spambankAutoreplyChangeSchema:
+    "spambank/staff.ts's body for POST /api/staff/spambank/autoreply — documented inline (route-registry.a-spambank-staff.ts).",
+  optoutStatusSchema:
+    "spambank/staff.ts's response for GET /api/spambank/optout/{domain}/{sig}, a raw Fastify route outside the registry like /oidc (T7).",
   attachmentFetchRequestSchema:
     "spambank/events.ts's body for POST /api/oidc-clients/spambank/attachments/fetch — documented inline (route-registry.a-spambank-ingest.ts).",
   statementAckRequestSchema:

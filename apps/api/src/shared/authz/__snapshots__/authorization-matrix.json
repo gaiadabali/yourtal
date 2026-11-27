@@ -52,6 +52,8 @@
     "report-ID": [],
     "spambank-AU": [],
     "spambank-ID": [],
+    "spambank_lead-AU": [],
+    "spambank_lead-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],
@@ -128,6 +130,8 @@
     "report-ID": [],
     "spambank-AU": [],
     "spambank-ID": [],
+    "spambank_lead-AU": [],
+    "spambank_lead-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],
@@ -304,6 +308,8 @@
       "open",
       "view"
     ],
+    "spambank_lead-AU": [],
+    "spambank_lead-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],
@@ -484,6 +490,8 @@
       "open",
       "view"
     ],
+    "spambank_lead-AU": [],
+    "spambank_lead-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],
@@ -689,6 +697,8 @@
       "open",
       "view"
     ],
+    "spambank_lead-AU": [],
+    "spambank_lead-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],
@@ -919,6 +929,8 @@
       "open",
       "view"
     ],
+    "spambank_lead-AU": [],
+    "spambank_lead-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],
@@ -1002,6 +1014,8 @@
     "report-ID": [],
     "spambank-AU": [],
     "spambank-ID": [],
+    "spambank_lead-AU": [],
+    "spambank_lead-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],
@@ -1056,6 +1070,8 @@
     "report-ID": [],
     "spambank-AU": [],
     "spambank-ID": [],
+    "spambank_lead-AU": [],
+    "spambank_lead-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],
@@ -1202,6 +1218,12 @@
       "enable",
       "manage_app_passwords",
       "open",
+      "view"
+    ],
+    "spambank_lead-AU": [
+      "view"
+    ],
+    "spambank_lead-ID": [
       "view"
     ],
     "ledger_adjustment-AU": [],
@@ -1370,6 +1392,12 @@
       "open",
       "view"
     ],
+    "spambank_lead-AU": [
+      "view"
+    ],
+    "spambank_lead-ID": [
+      "view"
+    ],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [
@@ -1532,6 +1560,8 @@
       "open",
       "view"
     ],
+    "spambank_lead-AU": [],
+    "spambank_lead-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [
@@ -1696,6 +1726,8 @@
       "open",
       "view"
     ],
+    "spambank_lead-AU": [],
+    "spambank_lead-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [
@@ -1864,6 +1896,8 @@
       "open",
       "view"
     ],
+    "spambank_lead-AU": [],
+    "spambank_lead-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [
@@ -2034,6 +2068,8 @@
       "open",
       "view"
     ],
+    "spambank_lead-AU": [],
+    "spambank_lead-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [
@@ -2228,6 +2264,8 @@
       "open",
       "view"
     ],
+    "spambank_lead-AU": [],
+    "spambank_lead-ID": [],
     "ledger_adjustment-AU": [
       "approve",
       "approve_listing_price",
@@ -2436,6 +2474,8 @@
       "open",
       "view"
     ],
+    "spambank_lead-AU": [],
+    "spambank_lead-ID": [],
     "ledger_adjustment-AU": [
       "approve",
       "approve_listing_price",
@@ -2658,6 +2698,14 @@
       "open",
       "view"
     ],
+    "spambank_lead-AU": [
+      "update",
+      "view"
+    ],
+    "spambank_lead-ID": [
+      "update",
+      "view"
+    ],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [
@@ -2856,6 +2904,14 @@
       "open",
       "view"
     ],
+    "spambank_lead-AU": [
+      "update",
+      "view"
+    ],
+    "spambank_lead-ID": [
+      "update",
+      "view"
+    ],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [
@@ -2930,6 +2986,8 @@
     "report-ID": [],
     "spambank-AU": [],
     "spambank-ID": [],
+    "spambank_lead-AU": [],
+    "spambank_lead-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],
@@ -2992,6 +3050,8 @@
     "report-ID": [],
     "spambank-AU": [],
     "spambank-ID": [],
+    "spambank_lead-AU": [],
+    "spambank_lead-ID": [],
     "ledger_adjustment-AU": [],
     "ledger_adjustment-ID": [],
     "staff_console-AU": [],

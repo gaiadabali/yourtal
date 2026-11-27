@@ -59,6 +59,12 @@ export const SPAMBANK_QUEUES = {
   autoreply: "spambank.autoreply",
   eventDelivery: "spambank.app-event-delivery",
   purge: "spambank.purge",
+  /** T7: re-queues `queued` decisions whose job was lost. */
+  autoreplySweep: "spambank.autoreply-sweep",
+  /** T7: system accounts, the daily cap, the auto-pause thresholds, housekeeping. */
+  health: "spambank.health",
+  /** T7: the daily DNS blocklist check. */
+  blocklist: "spambank.blocklist",
 } as const;
 
 /** §5.4: the webhook's per-mailbox ingest jobs are debounced to one per 2 seconds. */

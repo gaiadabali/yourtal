@@ -7,6 +7,7 @@ import {
 } from "@yourtal/drivers/driver-mode";
 import { createSpambankDriver } from "@yourtal/drivers/spambank";
 import { pingSpambank } from "./spambank-ping";
+import { loadSpambankConfig } from "./spambank-runtime";
 import { loadWorkerConfig } from "./config";
 import { loadJobs } from "./job-loader";
 import { startWorker } from "./worker";
@@ -30,6 +31,9 @@ async function bootstrap(): Promise<void> {
   const config = loadWorkerConfig();
   // The API's boot rule (2.3.b), now that the worker sends app events itself (3.7 Y4).
   assertDriversConfiguredForBoot(process.env, config.appEnv);
+  // Spambank's settings, as the API checks them at boot: e.g. production refuses auto-reply `live`
+  // without a real ABN and contact address (BUILD.md 12.3), and the boot check must see that.
+  loadSpambankConfig();
   // spambank/BUILD.md T2: asks Stalwart for its domains and exits. Run by hand, never by the boot check.
   if (process.argv.includes("--spambank-ping")) {
     const mode = resolveDriverMode("spambank", process.env);
@@ -37,6 +41,17 @@ async function bootstrap(): Promise<void> {
     const result = await pingSpambank(createSpambankDriver(mode.value, process.env), process.env);
     for (const line of result.lines) console.log(line);
     process.exit(result.ok ? 0 : 1);
+  }
+  // spambank/BUILD.md T7: the blocklist check on demand (the job runs it daily at 02:00 UTC).
+  if (process.argv.includes("--spambank-blocklist")) {
+    const { checkBlocklists } = await import("./jobs/spambank-blocklist");
+    const { createPool } = await import("./pool");
+    const pool = createPool(config.databaseUrl);
+    const run = await checkBlocklists(pool);
+    await pool.end();
+    for (const row of run.rows)
+      console.log(`${row.target} ${row.list} ${row.result} ${row.detail ?? ""}`);
+    process.exit(run.listed.length > 0 ? 1 : 0);
   }
   // 13.8: the deploy's boot check. Parses config and imports every job, so a
   // missing dependency or variable fails before the release goes live, but

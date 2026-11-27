@@ -35,6 +35,7 @@ import {
   SPAMBANK_ME_ROUTE_DEFINITIONS,
 } from "./route-registry.a-spambank";
 import { SPAMBANK_INGEST_ROUTE_DEFINITIONS } from "./route-registry.a-spambank-ingest";
+import { SPAMBANK_STAFF_ROUTE_DEFINITIONS } from "./route-registry.a-spambank-staff";
 import { COUNTER_ROUTE_DEFINITIONS } from "./route-registry.c-counter";
 import { DEVELOPERS_ROUTE_DEFINITIONS } from "./route-registry.c-developers";
 import { PARTNERS_ROUTE_DEFINITIONS } from "./route-registry.c-partners";
@@ -148,6 +149,7 @@ export const ALL_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
   ...SPAMBANK_ME_ROUTE_DEFINITIONS,
   ...SPAMBANK_MACHINE_ROUTE_DEFINITIONS,
   ...SPAMBANK_INGEST_ROUTE_DEFINITIONS,
+  ...SPAMBANK_STAFF_ROUTE_DEFINITIONS,
 ];
 
 /** Builds the `paths` object `build-document.ts` embeds in the document. */

@@ -16,9 +16,10 @@ import {
 } from "./ingest/ingest-machine.controller";
 import { SpambankMachineService } from "./ingest/machine.service";
 import { SpambankDb } from "./spambank-db";
-import { SPAMBANK_CONFIG, SPAMBANK_DRIVER } from "./spambank.tokens";
+import type { OptoutContext } from "./autoreply/mount-optout";
+import { SPAMBANK_CONFIG, SPAMBANK_DRIVER, SPAMBANK_OPTOUT_CONTEXT } from "./spambank.tokens";
 
-export { SPAMBANK_CONFIG, SPAMBANK_DRIVER };
+export { SPAMBANK_CONFIG, SPAMBANK_DRIVER, SPAMBANK_OPTOUT_CONTEXT };
 
 /**
  * Spambank (spambank/BUILD.md B1): the mail service inside the YourTal API. This is the skeleton the
@@ -48,6 +49,14 @@ function spambankConfig(config: AppConfig): SpambankConfig {
     { provide: SPAMBANK_CONFIG, useFactory: spambankConfig, inject: [APP_CONFIG] },
     SpambankDb,
     {
+      provide: SPAMBANK_OPTOUT_CONTEXT,
+      useFactory: (db: SpambankDb, config: SpambankConfig): OptoutContext => ({
+        pool: db.pool,
+        optoutKey: config.optoutKey,
+      }),
+      inject: [SpambankDb, SPAMBANK_CONFIG],
+    },
+    {
       provide: SPAMBANK_JOB_QUEUE,
       useFactory: (config: AppConfig) => new PgBossSpambankJobQueue(config.databaseUrl),
       inject: [APP_CONFIG],
@@ -57,7 +66,7 @@ function spambankConfig(config: AppConfig): SpambankConfig {
     SpambankIngestClientGuard,
     OidcClientRateLimitGuard,
   ],
-  exports: [SPAMBANK_DRIVER, SPAMBANK_CONFIG],
+  exports: [SPAMBANK_DRIVER, SPAMBANK_CONFIG, SpambankDb, SPAMBANK_OPTOUT_CONTEXT],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata
 export class SpambankModule {}

@@ -1,0 +1,54 @@
+---
+name: SpambankLeadSuite
+description: |-
+  Spambank leads (spambank/BUILD.md 4.7, 5.4): `ops` reads and edits, `support` reads, nobody else
+  touches the list, and `admin` has no data access (docs/17 section 5). See
+  resource_policies/spambank_lead.yaml.
+tests:
+  - name: ops reads and edits the leads
+    input:
+      principals: [ops_zul]
+      resources: [spambank_lead_self]
+      actions: [view, update]
+    expected:
+      - principal: ops_zul
+        resource: spambank_lead_self
+        actions: { view: EFFECT_ALLOW, update: EFFECT_ALLOW }
+
+  - name: support reads the leads but cannot edit them
+    input:
+      principals: [support_sari]
+      resources: [spambank_lead_self]
+      actions: [view, update]
+    expected:
+      - principal: support_sari
+        resource: spambank_lead_self
+        actions: { view: EFFECT_ALLOW, update: EFFECT_DENY }
+
+  - name: admin, a consumer, a business user, a signed-out visitor and the other staff roles are refused
+    input:
+      principals: [admin_root, wina, budi_owner, anon, risk_umi, finance_yani, moderator_tono]
+      resources: [spambank_lead_self]
+      actions: [view, update]
+    expected:
+      - principal: admin_root
+        resource: spambank_lead_self
+        actions: { view: EFFECT_DENY, update: EFFECT_DENY }
+      - principal: wina
+        resource: spambank_lead_self
+        actions: { view: EFFECT_DENY, update: EFFECT_DENY }
+      - principal: budi_owner
+        resource: spambank_lead_self
+        actions: { view: EFFECT_DENY, update: EFFECT_DENY }
+      - principal: anon
+        resource: spambank_lead_self
+        actions: { view: EFFECT_DENY, update: EFFECT_DENY }
+      - principal: risk_umi
+        resource: spambank_lead_self
+        actions: { view: EFFECT_DENY, update: EFFECT_DENY }
+      - principal: finance_yani
+        resource: spambank_lead_self
+        actions: { view: EFFECT_DENY, update: EFFECT_DENY }
+      - principal: moderator_tono
+        resource: spambank_lead_self
+        actions: { view: EFFECT_DENY, update: EFFECT_DENY }

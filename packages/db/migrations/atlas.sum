@@ -1,4 +1,4 @@
-h1:PADKXThV9I8uZ9dSsi68LNBFPswCCyU4M+VHX6qoGxY=
+h1:Vn1iLNVZ3TLTCvnrtA9f3Cf5KckRiMRpiKy0cH2vj2E=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -152,3 +152,4 @@ h1:PADKXThV9I8uZ9dSsi68LNBFPswCCyU4M+VHX6qoGxY=
 20261111090000_listing_min_price_points.sql h1:vdtLmSCSiQ5emA8fEyeV5QFjnqLdwDjCqJyROVAZKDg=
 20261125090000_approve_live_campaign_questions.sql h1:HJrH3hhJK6VGFT6LPtr4MvX2y0ALwt0GExK6SNpd5UQ=
 20261128090000_spambank.sql h1:cfNOeG2BVBRqBVI9nqs1RLbK8OndJSuoZbOl/m1WzRI=
+20261128120000_spambank_autoreply.sql h1:JgnwcMn79bJ3TmvWbjDslTJ7ADDNawjP63ZihUrlJvs=

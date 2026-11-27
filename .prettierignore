@@ -45,3 +45,8 @@ packages/contracts/data/areas/au.json
 # Vendored copy of snap-app's mail engine (spambank/BUILD.md B4): it must stay
 # byte-identical to the source, so no formatter may touch it.
 packages/mail-engine/src/
+
+# Spambank T7: the owner's auto-reply drafts (shipped as written) and the
+# module that embeds them, written by scripts/gen-spambank-autoreply-content.mjs.
+apps/api/src/modules/spambank/autoreply/content/
+apps/api/src/modules/spambank/autoreply/content.generated.ts

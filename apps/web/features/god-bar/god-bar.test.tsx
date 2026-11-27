@@ -36,7 +36,7 @@ describe("the GOD app switcher", () => {
     const { button } = await openPanel(true);
     expect(button).toHaveAttribute("aria-expanded", "true");
     const dialog = screen.getByRole("dialog", { name: "GOD apps" });
-    expect(dialog).toHaveTextContent("Watch, earn and spend locally");
+    expect(dialog).toHaveTextContent("Scan and keep every receipt");
     expect(screen.getByRole("link", { name: /SnapApps/ })).toHaveAttribute(
       "href",
       "https://app.snapapps.gaiada.com",

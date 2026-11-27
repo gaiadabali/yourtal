@@ -19,7 +19,7 @@ export interface AuthCardProps {
  */
 export function AuthCard({ title, description, children, footer }: AuthCardProps) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-8 px-gutter-sm py-12">
+    <main className="flex flex-1 flex-col items-center justify-center gap-8 px-gutter-sm py-12">
       {/* Not a link: "/" resolves through `route-redirects.ts` depending on
           sign-in state, and every (auth) screen is reached in exactly the
           state that redirect is for — nothing here to navigate to instead. */}
@@ -42,6 +42,6 @@ export function AuthCard({ title, description, children, footer }: AuthCardProps
       {footer ? (
         <div className="text-center text-body-sm font-sans text-fg-muted">{footer}</div>
       ) : null}
-    </div>
+    </main>
   );
 }

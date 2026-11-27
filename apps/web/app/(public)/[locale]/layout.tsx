@@ -93,6 +93,9 @@ export default async function PublicLocaleLayout({ children, params }: PublicLoc
         // comment on `ViewerShellProps`) — 0 rather than left undefined so
         // the prop stays required for every existing signed-in caller.
         availablePoints={0}
+        // The GOD switcher and "A GOD company" footer, as on the signed-out app shell. `adult: false`
+        // keeps the Spambank tile away from anyone who is not signed in.
+        godBar={{ adult: false }}
         signedOut={{
           homeHref: `/${locale}`,
           hrefs: {
@@ -107,7 +110,8 @@ export default async function PublicLocaleLayout({ children, params }: PublicLoc
         }}
       >
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4">{children}</div>
-        <PublicFooter locale={config.intlLocale}>
+        {/* The shell's own GOD footer (godBar above) already carries the link. */}
+        <PublicFooter locale={config.intlLocale} godLink={false}>
           <PublicInfoLinks locale={config.intlLocale} basePath={`/${locale}`} />
         </PublicFooter>
       </ViewerShell>

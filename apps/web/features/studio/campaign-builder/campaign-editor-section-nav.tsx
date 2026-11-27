@@ -11,6 +11,8 @@ import { CAMPAIGN_EDITOR_SECTIONS } from "./campaign-editor-sections";
 export interface CampaignEditorSectionNavProps {
   active: CampaignEditorSection;
   onChange: (section: CampaignEditorSection) => void;
+  /** Tabs holding a field that needs fixing: marked so the author knows where to look. */
+  flagged?: readonly CampaignEditorSection[];
 }
 
 /**
@@ -24,7 +26,11 @@ export interface CampaignEditorSectionNavProps {
  * rather than pay for a general-purpose primitive this one screen does not
  * need the rest of.
  */
-export function CampaignEditorSectionNav({ active, onChange }: CampaignEditorSectionNavProps) {
+export function CampaignEditorSectionNav({
+  active,
+  onChange,
+  flagged = [],
+}: CampaignEditorSectionNavProps) {
   const t = useTranslations("studio");
   const buttonRefs = useRef(new Map<CampaignEditorSection, HTMLButtonElement>());
   const sectionLabels: Record<CampaignEditorSection, string> = {
@@ -64,6 +70,7 @@ export function CampaignEditorSectionNav({ active, onChange }: CampaignEditorSec
     >
       {CAMPAIGN_EDITOR_SECTIONS.map((section, index) => {
         const isActive = section === active;
+        const needsAttention = flagged.includes(section);
         return (
           <Button
             key={section}
@@ -85,9 +92,20 @@ export function CampaignEditorSectionNav({ active, onChange }: CampaignEditorSec
             className={cn(
               "h-8 px-3 font-medium text-fg-muted",
               isActive && "bg-surface text-fg shadow-sm",
+              needsAttention && "text-danger",
             )}
           >
             {sectionLabels[section]}
+            {needsAttention ? (
+              <>
+                <span
+                  aria-hidden="true"
+                  data-testid={`campaign-editor-tab-${section}-flag`}
+                  className="ml-1.5 inline-block size-2 rounded-full bg-danger"
+                />
+                <span className="sr-only">{t("campaignBuilder.sections.needsAttention")}</span>
+              </>
+            ) : null}
           </Button>
         );
       })}

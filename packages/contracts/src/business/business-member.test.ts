@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { businessMemberSchema } from "./business-member";
+import { businessMemberSchema, teamMemberSchema } from "./business-member";
 import {
   generateBusinessMember,
   generateBusinessMembers,
@@ -51,5 +51,26 @@ describe("generateBusinessMember determinism", () => {
 
   it("generates a batch that is itself deterministic", () => {
     expect(generateBusinessMembers(8, 7_000)).toStrictEqual(mockBusinessMembers);
+  });
+});
+
+describe("teamMemberSchema", () => {
+  it("carries the account's real name and email alongside the membership", () => {
+    const parsed = teamMemberSchema.parse({
+      ...valid,
+      displayName: "Hansel",
+      email: "hansel@example.com",
+    });
+    expect(parsed).toMatchObject({ displayName: "Hansel", email: "hansel@example.com" });
+  });
+
+  it("allows either to be null, but not to be missing or empty", () => {
+    expect(teamMemberSchema.safeParse({ ...valid, displayName: null, email: null }).success).toBe(
+      true,
+    );
+    expect(teamMemberSchema.safeParse(valid).success).toBe(false);
+    expect(teamMemberSchema.safeParse({ ...valid, displayName: "", email: null }).success).toBe(
+      false,
+    );
   });
 });

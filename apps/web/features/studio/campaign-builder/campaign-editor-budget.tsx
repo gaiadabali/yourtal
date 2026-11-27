@@ -1,31 +1,23 @@
 "use client";
 
 import type { ChangeEvent } from "react";
-import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { UseFormReturn } from "react-hook-form";
 import { Button } from "@yourtal/ui/button";
 import { Input } from "@yourtal/ui/input";
-import { setRewardConfigLive } from "./campaign-builder-actions";
 import type { CampaignDraft, CampaignDraftFormValues } from "./campaign-draft";
 import { campaignFormErrorText } from "./campaign-draft";
-import {
-  draftBudgetIssue,
-  oneCompletionPoints,
-  rewardConfigPatchFor,
-  rewardErrorText,
-  savedRewardPatch,
-} from "./campaign-reward-patch";
+import { draftBudgetIssue, oneCompletionPoints } from "./campaign-reward-patch";
+import type { RewardConfigSave } from "./use-reward-config-save";
 
 export interface CampaignEditorBudgetProps {
   draft: CampaignDraft;
   form: UseFormReturn<CampaignDraftFormValues>;
   onChange: (draft: CampaignDraft) => void;
-  /** Applies a change on top of the latest draft, for results that arrive after a wait. */
-  onPatch: (patch: Partial<CampaignDraft>) => void;
+  /** The reward-and-budget save the editor owns, shared with the Reward tab. */
+  rewardSave: RewardConfigSave;
   disabled?: boolean;
   isLiveMode: boolean;
-  merchantName: string;
 }
 
 /** A whole number of points, positive or negative — see the matching helper's comment in `campaign-editor-reward.tsx`: the non-positive check now lives in `campaign-draft.ts`'s validator and actually fires, instead of a clamp silently rewriting the value. */
@@ -33,8 +25,6 @@ function toWholePoints(raw: string): number {
   const parsed = Number(raw);
   return Number.isFinite(parsed) ? Math.round(parsed) : NaN;
 }
-
-type SaveState = { status: "idle" | "saving" | "saved" } | { status: "error"; message: string };
 
 /**
  * Total budget and an optional daily cap, in points — the pool this campaign
@@ -55,37 +45,18 @@ export function CampaignEditorBudget({
   draft,
   form,
   onChange,
-  onPatch,
+  rewardSave,
   disabled,
   isLiveMode,
-  merchantName,
 }: CampaignEditorBudgetProps) {
   const t = useTranslations("studio");
-  const [saveState, setSaveState] = useState<SaveState>({ status: "idle" });
+  const saveState = rewardSave.state;
   const { budget } = draft;
   const issue = draftBudgetIssue(draft);
 
   function change(next: CampaignDraft["budget"]) {
-    setSaveState({ status: "idle" });
+    rewardSave.clear();
     onChange({ ...draft, budget: next });
-  }
-
-  async function saveBudget() {
-    const patch = rewardConfigPatchFor(draft);
-    if (patch === null) {
-      setSaveState({ status: "error", message: t("campaignBuilder.budget.needsReward") });
-      return;
-    }
-    if (issue !== null) return;
-    setSaveState({ status: "saving" });
-    const result = await setRewardConfigLive(draft.businessId, draft.id, merchantName, patch);
-    if (!result.ok) {
-      setSaveState({ status: "error", message: rewardErrorText(result, t) });
-      return;
-    }
-    // Keep the author's unsaved edits, including any typed while this saved; take the saved reward and budget back.
-    onPatch(savedRewardPatch(result.value));
-    setSaveState({ status: "saved" });
   }
 
   return (
@@ -112,7 +83,9 @@ export function CampaignEditorBudget({
                     form.formState.errors.totalBudgetPoints.message,
                   ),
                 }
-              : {})}
+              : saveState.status === "error" && saveState.field === "budget"
+                ? { errorMessage: saveState.message }
+                : {})}
           />
         </div>
         <div className="flex-1">
@@ -138,7 +111,9 @@ export function CampaignEditorBudget({
         </div>
       </div>
 
-      {issue !== null && budget.totalBudgetPoints > 0 ? (
+      {issue !== null &&
+      budget.totalBudgetPoints > 0 &&
+      !(saveState.status === "error" && saveState.field === "budget") ? (
         <p role="alert" className="text-xs font-sans text-danger">
           {t(`campaignBuilder.budget.${issue}`, { points: oneCompletionPoints(draft) })}
         </p>
@@ -146,7 +121,7 @@ export function CampaignEditorBudget({
 
       {isLiveMode ? (
         <>
-          {saveState.status === "error" ? (
+          {saveState.status === "error" && saveState.field === "save" ? (
             <p role="alert" className="text-xs font-sans text-danger">
               {saveState.message}
             </p>
@@ -160,8 +135,8 @@ export function CampaignEditorBudget({
             type="button"
             size="sm"
             className="w-fit"
-            disabled={disabled || issue !== null || saveState.status === "saving"}
-            onClick={() => void saveBudget()}
+            disabled={disabled || saveState.status === "saving"}
+            onClick={() => void rewardSave.save()}
           >
             {t("campaignBuilder.budget.save")}
           </Button>

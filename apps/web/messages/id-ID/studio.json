@@ -18,7 +18,6 @@
       "hint": "Reward berhenti saat total anggaran habis. Batas harian menghentikannya untuk sisa hari itu; reward dimulai lagi keesokan harinya.",
       "save": "Simpan anggaran",
       "saved": "Anggaran tersimpan.",
-      "needsReward": "Pilih poin berdana yang membayar reward di tab Reward, lalu simpan anggaran.",
       "budgetBelowOneCompletion": "Total anggaran harus mencukupi setidaknya reward penuh satu penonton ({points} poin).",
       "dailyCapBelowOneCompletion": "Batas harian harus mencukupi setidaknya reward penuh satu penonton ({points} poin).",
       "dailyCapAboveBudget": "Batas harian tidak boleh melebihi total anggaran."
@@ -115,7 +114,7 @@
         "ceilingWithBonus": "Video {seconds} detik paling banyak membayar {max} poin per penonton, reward dan bonus akurasi digabung. Turunkan keduanya agar jumlahnya {max} atau kurang.",
         "ceilingTooShort": "Video {seconds} detik terlalu pendek untuk membayar reward.",
         "bonusTooHigh": "Bonus akurasi paling banyak 40% dari reward.",
-        "budgetNeeded": "Atur total anggaran di tab Anggaran terlebih dahulu. Anggaran harus mencukupi setidaknya reward penuh satu penonton."
+        "budgetNeeded": "Total anggaran harus mencukupi setidaknya reward penuh satu penonton."
       }
     },
     "sections": {
@@ -126,7 +125,10 @@
       "targeting": "Target",
       "budget": "Anggaran",
       "questions": "Pertanyaan",
-      "boost": "Boost"
+      "boost": "Boost",
+      "needsAttention": "Perlu diperiksa",
+      "issueElsewhere": "Tab {tab}: {message}",
+      "openTab": "Buka tab {tab}"
     },
     "status": {
       "label": {
@@ -517,6 +519,7 @@
     }
   },
   "team": {
+    "unknownMember": "Anggota tim",
     "cancel": "Batal",
     "audit": {
       "empty": "Belum ada aktivitas tim yang tercatat.",

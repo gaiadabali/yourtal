@@ -179,11 +179,12 @@ test.describe.serial("7.8.b: Team — invite, accept via /dev/inbox, roster upda
     const { context, page } = await newSessionContext(browser, baseURL as string, owner.cookie);
     await page.goto(`/studio/team?business=${businessId}`);
 
-    const shortId = invitee.userId.slice(0, 8);
     await expect(page.getByRole("row")).toHaveCount(3); // header + owner + the newly-accepted invitee
-    // The invitee's own row shows their real invited role and "Active" status.
-    const inviteeRow = page.getByRole("row").filter({ hasText: shortId });
+    // Each row shows the account's real email (10.7.d), never a placeholder built from the user id.
+    const inviteeRow = page.getByRole("row").filter({ hasText: invitee.email });
     await expect(inviteeRow).toBeVisible();
+    await expect(page.getByRole("row").filter({ hasText: owner.email })).toBeVisible();
+    await expect(page.locator("body")).not.toContainText("example.invalid");
     await expect(inviteeRow.getByText("Marketer")).toBeVisible();
     await expect(inviteeRow.getByText("Active")).toBeVisible();
 

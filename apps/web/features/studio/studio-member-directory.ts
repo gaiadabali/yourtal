@@ -1,24 +1,22 @@
-import { hashStringToSeed } from "@yourtal/contracts/mock-seed";
+import type { BusinessMember, TeamMember } from "@yourtal/contracts/business/member";
 
 /**
- * `@yourtal/contracts/business/member`'s `BusinessMember` carries only a
- * bare `userId` — there is no profile contract reachable from the console
- * yet, and inventing one is exactly the kind of schema decision this
- * ticket is told to leave to the architect. Rather than render raw UUIDs
- * in a team roster (unusable) or silently invent a `displayName` field on
- * `BusinessMember` (which `docs/13b-typescript-standards.md`'s "do not
- * invent fields" rule and the task brief both forbid), this is a
- * studio-local, display-only lookup: real for the fixed demo cast this
- * console's mock fixtures use, and a deterministic (never random)
- * fallback for any other id, so a member outside the fixed cast still
- * renders a stable, plausible name instead of a UUID or "undefined".
+ * Who a team member is, for the Team page and its audit trail.
+ *
+ * Live, the API sends each member's real display name and sign-in email
+ * (`GET .../business/team`, `teamMemberSchema`). Mock mode has no accounts, so it keeps a
+ * fixed demo cast. Anyone neither source knows gets a plain "Team member" label and no email,
+ * never an invented name or address.
  */
 export interface MemberProfile {
   name: string;
   email: string;
 }
 
-const KNOWN_MEMBERS: Record<string, MemberProfile> = {
+/** A lookup by user id; a person missing from it is shown with the unknown-member label. */
+export type MemberProfiles = Readonly<Record<string, MemberProfile>>;
+
+const DEMO_CAST: MemberProfiles = {
   "00000000-0000-4000-8000-000000000701": {
     name: "Dewi Marketer",
     email: "dewi@kopikenangan.example",
@@ -45,29 +43,31 @@ const KNOWN_MEMBERS: Record<string, MemberProfile> = {
   },
 };
 
-const FALLBACK_FIRST_NAMES = [
-  "Alex",
-  "Sam",
-  "Jordan",
-  "Taylor",
-  "Morgan",
-  "Casey",
-  "Riley",
-  "Wina",
-] as const;
-
-/**
- * Looks up a member's display profile. Falls back to a name deterministically
- * derived from the id (never `Math.random()`) so the same id always renders
- * the same name across a session and across test runs.
- */
-export function getMemberProfile(userId: string): MemberProfile {
-  const known = KNOWN_MEMBERS[userId];
-  if (known) {
-    return known;
+/** Live: the real name and email off each row. A name never set falls back to the email; a row with neither is left out. */
+export function profilesFromTeam(members: readonly TeamMember[]): MemberProfiles {
+  const profiles: Record<string, MemberProfile> = {};
+  for (const member of members) {
+    const name = member.displayName ?? member.email;
+    if (name !== null) profiles[member.userId] = { name, email: member.email ?? "" };
   }
-  const seed = hashStringToSeed(userId);
-  const firstName = FALLBACK_FIRST_NAMES[seed % FALLBACK_FIRST_NAMES.length] ?? "Member";
-  const shortId = userId.slice(0, 8);
-  return { name: `${firstName} (${shortId})`, email: `${shortId}@example.invalid` };
+  return profiles;
+}
+
+/** Mock: the demo cast, for whichever of these members it knows. */
+export function demoProfiles(roster: readonly BusinessMember[]): MemberProfiles {
+  const profiles: Record<string, MemberProfile> = {};
+  for (const member of roster) {
+    const known = DEMO_CAST[member.userId];
+    if (known) profiles[member.userId] = known;
+  }
+  return profiles;
+}
+
+/** The profile for an id, or the unknown-member label with no email. */
+export function resolveMemberProfile(
+  profiles: MemberProfiles,
+  userId: string,
+  unknownLabel: string,
+): MemberProfile {
+  return profiles[userId] ?? { name: unknownLabel, email: "" };
 }

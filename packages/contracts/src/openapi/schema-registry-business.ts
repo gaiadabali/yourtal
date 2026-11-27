@@ -6,7 +6,7 @@ import {
   taxIdKindSchema,
 } from "../business/business";
 import { businessTeamRoleSchema } from "../business/business-team-role";
-import { businessMemberSchema } from "../business/business-member";
+import { businessMemberSchema, teamMemberSchema } from "../business/business-member";
 import { billingContactSchema } from "../business/billing-contact";
 import {
   kybDocumentSchema,
@@ -91,6 +91,13 @@ export const BUSINESS_CONTRACT_COMPONENTS: readonly ContractComponent[] = [
     schema: businessMemberSchema,
     description:
       "A person's membership at one business (docs/17 section 2.1's six roles). NOT the Business-level `BusinessRole` above — this is the per-person team role, sourced from @yourtal/authz/roles so it cannot drift from the authorization model.",
+    crossFieldRules: [],
+  },
+  {
+    id: "TeamMember",
+    schema: teamMemberSchema,
+    description:
+      "One row of the Team directory: a `BusinessMember` plus the person's real display name and sign-in email, each null when the account has none.",
     crossFieldRules: [],
   },
   {

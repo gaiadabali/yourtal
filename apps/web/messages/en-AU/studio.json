@@ -18,7 +18,6 @@
       "hint": "Rewards stop when the total budget is spent. A daily cap stops them for the rest of the day; they start again the next day.",
       "save": "Save budget",
       "saved": "Budget saved.",
-      "needsReward": "Choose which funded points pay for the reward on the Reward tab, then save the budget.",
       "budgetBelowOneCompletion": "The total budget must cover at least one viewer's full reward ({points} points).",
       "dailyCapBelowOneCompletion": "The daily cap must cover at least one viewer's full reward ({points} points).",
       "dailyCapAboveBudget": "The daily cap cannot be more than the total budget."
@@ -115,7 +114,7 @@
         "ceilingWithBonus": "A {seconds}-second video can pay at most {max, plural, one {# point} other {# points}} to each viewer, reward and accuracy bonus together. Lower them so they add up to {max} or less.",
         "ceilingTooShort": "A {seconds}-second video is too short to pay a reward.",
         "bonusTooHigh": "The accuracy bonus can be at most 40% of the reward.",
-        "budgetNeeded": "Set the total budget on the Budget tab first. It must cover at least one viewer's full reward."
+        "budgetNeeded": "The total budget must cover at least one viewer's full reward."
       }
     },
     "sections": {
@@ -126,7 +125,10 @@
       "targeting": "Targeting",
       "budget": "Budget",
       "questions": "Questions",
-      "boost": "Boost"
+      "boost": "Boost",
+      "needsAttention": "Needs attention",
+      "issueElsewhere": "{tab} tab: {message}",
+      "openTab": "Go to {tab}"
     },
     "status": {
       "label": {
@@ -517,6 +519,7 @@
     }
   },
   "team": {
+    "unknownMember": "Team member",
     "cancel": "Cancel",
     "audit": {
       "empty": "No team actions recorded yet.",

@@ -4,6 +4,7 @@ import { buildTeamAuditTrail, describeAuditEntry } from "./studio-audit";
 import { getStudioTranslator } from "./studio-i18n";
 
 const OWNER_ID = "00000000-0000-4000-8000-000000000710";
+const profileOf = (userId: string) => ({ name: `name-${userId.slice(-3)}`, email: "" });
 
 describe("buildTeamAuditTrail", () => {
   it("emits an invite entry and a join entry for a member who has joined", () => {
@@ -16,10 +17,27 @@ describe("buildTeamAuditTrail", () => {
       joinedAt: "2025-02-02T10:00:00.000Z",
     });
 
-    const trail = buildTeamAuditTrail([member]);
+    const trail = buildTeamAuditTrail([member], profileOf);
 
     expect(trail).toHaveLength(2);
     expect(trail.map((entry) => entry.action)).toEqual(["joined", "invited"]);
+  });
+
+  it("words each entry with the names it is given, so a real name or email shows rather than a placeholder", () => {
+    const member = businessMemberSchema.parse({
+      businessId: "00000000-0000-4000-8000-000000000601",
+      userId: "00000000-0000-4000-8000-000000000711",
+      role: "admin",
+      invitedAt: "2025-02-01T09:00:00.000Z",
+      invitedByUserId: OWNER_ID,
+      joinedAt: null,
+    });
+    const names: Record<string, string> = {
+      [OWNER_ID]: "Hansel",
+      [member.userId]: "ana@example.com",
+    };
+    const [entry] = buildTeamAuditTrail([member], (id) => ({ name: names[id] ?? "?", email: "" }));
+    expect(entry?.params).toMatchObject({ actor: "Hansel", name: "ana@example.com" });
   });
 
   it("emits only an invite entry for a pending member — no join entry invented", () => {
@@ -32,7 +50,7 @@ describe("buildTeamAuditTrail", () => {
       joinedAt: null,
     });
 
-    const trail = buildTeamAuditTrail([pending]);
+    const trail = buildTeamAuditTrail([pending], profileOf);
 
     expect(trail).toHaveLength(1);
     expect(trail[0]?.action).toBe("invited");
@@ -56,7 +74,7 @@ describe("buildTeamAuditTrail", () => {
       joinedAt: null,
     });
 
-    const trail = buildTeamAuditTrail([older, newer]);
+    const trail = buildTeamAuditTrail([older, newer], profileOf);
 
     expect(trail[0]?.id).toBe("invite-00000000-0000-4000-8000-000000000712");
     expect(trail[1]?.id).toBe("invite-00000000-0000-4000-8000-000000000711");

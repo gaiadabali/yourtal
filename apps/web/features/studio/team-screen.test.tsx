@@ -263,3 +263,41 @@ describe("TeamScreen", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe("TeamScreen names (10.7.d)", () => {
+  it("shows each member's real name and email from the profiles it is given, and no placeholder", () => {
+    const UNKNOWN_ID = "11111111-2222-4333-8444-555555555555";
+    const roster = [
+      ...baseRoster().slice(0, 2),
+      businessMemberSchema.parse({
+        businessId: BUSINESS_ID,
+        userId: UNKNOWN_ID,
+        role: "analyst",
+        invitedAt: "2025-01-04T00:00:00.000Z",
+        invitedByUserId: OWNER_ID,
+        joinedAt: "2025-01-05T00:00:00.000Z",
+      }),
+    ];
+    renderWithIntl(
+      <TeamScreen
+        businessId={BUSINESS_ID}
+        businessDisplayName="Kopi Kenangan"
+        currentUserId={OWNER_ID}
+        initialViewerRole="owner"
+        initialRoster={roster}
+        initialProfiles={{
+          [OWNER_ID]: { name: "Hansel Clement", email: "hansel@example.com" },
+          [ADMIN_ID]: { name: "ana@example.com", email: "ana@example.com" },
+        }}
+        isLiveMode
+      />,
+    );
+
+    const ownerRow = screen.getByRole("row", { name: /Hansel Clement/ });
+    expect(within(ownerRow).getByText("hansel@example.com")).toBeInTheDocument();
+    expect(screen.getAllByText("ana@example.com").length).toBeGreaterThan(0);
+    // Someone the directory does not know is labelled plainly, with no made-up name or address.
+    expect(screen.getByRole("row", { name: /Team member/ })).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/example\.invalid|Casey|Alex \(|11111111/);
+  });
+});

@@ -93,7 +93,7 @@ async function StudioTeamScreenData({
   viewerRole,
   fallbackRoster,
 }: StudioTeamScreenDataProps) {
-  const [currentUserId, roster] = await Promise.all([
+  const [currentUserId, directory] = await Promise.all([
     getCurrentUserId(),
     listTeam(businessId, fallbackRoster),
   ]);
@@ -104,7 +104,8 @@ async function StudioTeamScreenData({
       businessDisplayName={businessDisplayName}
       currentUserId={currentUserId}
       initialViewerRole={viewerRole}
-      initialRoster={roster}
+      initialRoster={directory.roster}
+      initialProfiles={directory.profiles}
       isLiveMode={studioDataSourceMode === "live"}
     />
   );

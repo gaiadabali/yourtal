@@ -394,8 +394,9 @@ export const BUSINESS_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
     tags: ["business", "team"],
     pathParams: [TENANT_ID_PARAM],
     successStatus: 200,
-    successDescription: "Every member of this business's team.",
-    successSchema: arrayOf("BusinessMember"),
+    successDescription:
+      "Every member of this business's team, each with their real display name and sign-in email.",
+    successSchema: arrayOf("TeamMember"),
     errors: [FORBIDDEN, BUSINESS_NOT_FOUND, SERVICE_UNAVAILABLE],
   },
 

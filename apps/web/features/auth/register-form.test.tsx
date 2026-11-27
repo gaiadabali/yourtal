@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import enAU from "@/messages/en-AU/auth.json";
+import godNoticeEnAU from "@/messages/en-AU/godNotice.json";
 import { RegisterForm } from "./register-form";
 
 // `registerAction` is a `"use server"` export backed by `next/headers` and
@@ -14,7 +15,7 @@ vi.mock("./auth-actions", () => ({ registerAction: vi.fn() }));
 
 function renderForm(props: Partial<React.ComponentProps<typeof RegisterForm>> = {}) {
   return render(
-    <NextIntlClientProvider locale="en-AU" messages={{ auth: enAU }}>
+    <NextIntlClientProvider locale="en-AU" messages={{ auth: enAU, godNotice: godNoticeEnAU }}>
       <RegisterForm
         returnTo={null}
         defaultRegion="AU"
@@ -114,6 +115,31 @@ describe("RegisterForm — the neutral age gate (6.2.a, 12.4.d/#5)", () => {
     renderForm({ errorCode: "some_future_code" });
     expect(
       screen.getByText("Something wasn't quite right. Check your details and try again."),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("RegisterForm: the GOD Group Privacy Notice (god/TASKS.md 9.1.b)", () => {
+  it("asks for the tick, unticked and required, with the notice linked", () => {
+    renderForm();
+    const tick = screen.getByRole("checkbox");
+    expect(tick).not.toBeChecked();
+    expect(tick).toBeRequired();
+    expect(tick).toHaveAttribute("name", "acceptGodNotice");
+    expect(tick.closest("label")).toHaveTextContent(
+      "I have read and accept the GOD Group Privacy Notice. I understand that my activity in YourTal, SnapApp and Free Tax Returns is combined into one profile, and that businesses receive reports about groups of people, never about me.",
+    );
+    expect(screen.getByRole("link", { name: "GOD Group Privacy Notice" })).toHaveAttribute(
+      "href",
+      "https://god.gaiada.com/privacy-notice/",
+    );
+  });
+
+  it("on the guardian step, shows the teen what GOD means instead of a tick", () => {
+    renderForm({ errorCode: "guardian_email_required" });
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("We never use anything about alcohol, vapes, gambling or health for teens."),
     ).toBeInTheDocument();
   });
 });

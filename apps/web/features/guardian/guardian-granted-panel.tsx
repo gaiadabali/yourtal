@@ -17,12 +17,15 @@ import { getGuardianTranslator, type GuardianLocale } from "./guardian-i18n";
 import { guardianErrorKeyFor } from "./guardian-error-copy";
 import { revokeGuardianConsentAction } from "./guardian-actions";
 import { GuardianDeleteAccountSection } from "./guardian-delete-account-section";
+import { GuardianGodNoticeDecision } from "./guardian-god-notice";
 
 export interface GuardianGrantedPanelProps {
   token: string;
   displayName: string;
   locale: GuardianLocale;
   idempotencyKey: string;
+  /** god/TASKS.md 9.1.c: whether to ask for the GOD notice decision on this approved account. */
+  askGodNotice?: boolean;
   /** `?action=revoke` (12.2.c) — the SAME link, later, lands straight on the withdraw confirm rather than making a guardian find the button again. */
   openConfirmOnMount: boolean;
 }
@@ -40,6 +43,7 @@ export function GuardianGrantedPanel({
   locale,
   idempotencyKey,
   openConfirmOnMount,
+  askGodNotice = false,
 }: GuardianGrantedPanelProps) {
   const t = getGuardianTranslator(locale);
   const router = useRouter();
@@ -62,6 +66,15 @@ export function GuardianGrantedPanel({
   return (
     <div className="flex flex-col gap-5">
       <Text tone="muted">{t("granted.body", { displayName })}</Text>
+
+      {askGodNotice ? (
+        <GuardianGodNoticeDecision
+          token={token}
+          displayName={displayName}
+          locale={locale}
+          idempotencyKey={idempotencyKey}
+        />
+      ) : null}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>

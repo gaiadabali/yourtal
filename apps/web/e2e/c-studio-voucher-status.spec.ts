@@ -48,7 +48,7 @@ test("Reports shows a supplier's vouchers by status, floored", async ({
       headers: { "idempotency-key": crypto.randomUUID() },
       data: {
         ...{ email, password, region: "AU", locale: "en-AU", displayName: "Status E2E" },
-        ...{ dateOfBirth: "1990-01-01", timezone: "Australia/Sydney" },
+        ...{ dateOfBirth: "1990-01-01", timezone: "Australia/Sydney", acceptGodNotice: true },
       },
     });
     expect(registered.ok(), await registered.text()).toBeTruthy();

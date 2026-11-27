@@ -1,0 +1,24 @@
+{
+  "tick": {
+    "before": "I have read and accept the",
+    "link": "GOD Group Privacy Notice",
+    "after": ". I understand that my activity in YourTal, SnapApp and Free Tax Returns is combined into one profile, and that businesses receive reports about groups of people, never about me."
+  },
+  "prompt": {
+    "title": "YourTal is now part of GOD",
+    "intro": "YourTal, SnapApp and Free Tax Returns belong to one group called GOD. Read the notice, then tell us if you're happy for your activity to be combined.",
+    "acceptCta": "Accept",
+    "notNowCta": "Not now",
+    "notNowHint": "Not now keeps your account exactly as it is. Nothing is combined, and we'll only ask again if the notice changes.",
+    "failed": "That didn't save. Try again."
+  },
+  "teen": {
+    "heading": "How GOD uses your activity",
+    "bullet1": "YourTal, SnapApp and Free Tax Returns belong to one group called GOD.",
+    "bullet2": "If you use more than one of them, we put your activity together: the area you chose, the things you like and watch, and what you buy and where (from your receipts).",
+    "bullet3": "We use it to tell businesses about groups of young people, like \"teens near Parramatta often buy at these kinds of shops\". We only do this for groups of at least 20.",
+    "bullet4": "No business ever sees you, your name or your own activity. Nobody uses this to pick ads for you.",
+    "bullet5": "We never use anything about alcohol, vapes, gambling or health for teens.",
+    "bullet6": "Your parent or guardian agreed to this when they set up your account. Either of you can ask us about it or delete your account at any time."
+  }
+}

@@ -9,6 +9,9 @@ import * as z from "zod";
 import { apiFetch } from "@/lib/api/api-fetch";
 import { readThemeCookie } from "@/lib/api/session-cookies";
 import { getMailboxStatus, mailNavState } from "@/features/spambank/spambank-data";
+import { getGodConsentStatus } from "@/features/god-notice/god-notice-data";
+import { GodNoticePrompt } from "@/features/god-notice/god-notice-prompt";
+import { ClientMessages } from "./client-messages";
 
 const STAFF_CONSOLE_ROLES: ReadonlySet<string> = new Set([
   "support",
@@ -41,7 +44,7 @@ export interface AppShellProps {
  * than a broken shell if `GET /api/me/notifications` errors.
  */
 export async function AppShell({ children }: AppShellProps) {
-  const [locale, wallet, notifications, me, theme, streak, mailbox] = await Promise.all([
+  const [locale, wallet, notifications, me, theme, streak, mailbox, god] = await Promise.all([
     getDisplayLocale(),
     getWalletBalance(),
     getNotifications(),
@@ -49,6 +52,7 @@ export async function AppShell({ children }: AppShellProps) {
     readThemeCookie(),
     apiFetch("/api/me/streak", streakResponseSchema),
     getMailboxStatus(),
+    getGodConsentStatus(),
   ]);
   // Spambank: adults only. The API already answers a teen with `not_allowed`; the age band check is a
   // second guard so a stale status can never put Mail in a teen's shell.
@@ -100,6 +104,14 @@ export async function AppShell({ children }: AppShellProps) {
       </>
     );
   }
+  // god/TASKS.md 9.1.b: an existing adult is asked once, on their next visit after
+  // signing in. A failed read asks nothing: the prompt must never block the app.
+  const godPrompt =
+    god.ok && god.data.ask ? (
+      <ClientMessages namespaces={["godNotice"]}>
+        <GodNoticePrompt noticeVersion={god.data.notice.version} />
+      </ClientMessages>
+    ) : null;
   return (
     <>
       <RumReporterLoader />
@@ -114,6 +126,7 @@ export async function AppShell({ children }: AppShellProps) {
       >
         {children}
       </ViewerShell>
+      {godPrompt}
     </>
   );
 }

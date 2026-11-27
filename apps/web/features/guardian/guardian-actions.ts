@@ -3,11 +3,13 @@
 import type { ApiResult } from "@/lib/api/api-fetch";
 import type {
   ApproveGuardianConsentResult,
+  DecideGuardianGodNoticeResult,
   DeleteGuardianAccountResult,
   RevokeGuardianConsentResult,
 } from "@yourtal/contracts/identity/guardian";
 import {
   approveGuardianConsent,
+  decideGuardianGodNotice,
   deleteGuardianAccount,
   revokeGuardianConsent,
 } from "./guardian-api";
@@ -25,6 +27,15 @@ export async function approveGuardianConsentAction(
   idempotencyKey: string,
 ): Promise<ApiResult<ApproveGuardianConsentResult>> {
   return approveGuardianConsent(token, idempotencyKey);
+}
+
+/** `POST /api/guardian/:token/god-notice` (9.1.c), same idempotency-key contract as approve. */
+export async function decideGuardianGodNoticeAction(
+  token: string,
+  decision: "accepted" | "declined",
+  idempotencyKey: string,
+): Promise<ApiResult<DecideGuardianGodNoticeResult>> {
+  return decideGuardianGodNotice(token, decision, idempotencyKey);
 }
 
 /** `POST /api/guardian/:token/revoke` — same idempotency-key contract as approve, above. */

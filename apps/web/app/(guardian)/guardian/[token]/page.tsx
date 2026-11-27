@@ -92,6 +92,7 @@ export default async function GuardianPage({ params, searchParams }: GuardianPag
           locale={view.locale}
           idempotencyKey={idempotencyKey}
           openConfirmOnMount={action === "revoke"}
+          askGodNotice={view.godNotice.ask}
         />
         <GuardianPrivacyNotice
           displayName={view.displayName}

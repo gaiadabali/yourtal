@@ -72,5 +72,17 @@
   "teenWithdrawn": {
     "heading": "Your parent or guardian has turned off earning on your account",
     "body": "To start again, ask them to invite you again."
+  },
+  "godNotice": {
+    "before": "I am this teen's parent or guardian. I have read the",
+    "link": "GOD Group Privacy Notice for teens",
+    "after": " and agree that my teen's activity may be combined and used, in groups of 20 or more, to give businesses insight about young people. No business receives anything about my teen individually.",
+    "heading": "The GOD group",
+    "body": "YourTal is part of a group called GOD, together with SnapApp and Free Tax Returns. Tell us whether you agree for {displayName}. Either way, {displayName} keeps using YourTal as now.",
+    "acceptCta": "Accept",
+    "notNowCta": "Not now",
+    "accepted": "You've agreed. Thank you.",
+    "declined": "Noted. Nothing about {displayName} is combined, and we'll only ask again if the notice changes.",
+    "failed": "That didn't save. Try again."
   }
 }

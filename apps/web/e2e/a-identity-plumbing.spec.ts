@@ -58,6 +58,7 @@ async function registerAccount(request: APIRequestContext, account: TestAccount)
       displayName: account.displayName,
       dateOfBirth: "1990-01-01",
       timezone: "Australia/Sydney",
+      acceptGodNotice: true,
     },
   });
   expect(response.ok(), `register failed: ${await response.text()}`).toBeTruthy();

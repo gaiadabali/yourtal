@@ -36,6 +36,8 @@ import { MeTeenCapSection } from "@/features/me/me-teen-cap-section";
 import { MeSectionError } from "@/features/me/me-section-states";
 import { LazyMeMailSection } from "@/features/spambank/me-mail-lazy";
 import { getMailboxStatus } from "@/features/spambank/spambank-data";
+import { MeGodGroupSection } from "@/features/me/me-god-group-section";
+import { getGodConsentStatus } from "@/features/god-notice/god-notice-data";
 
 /**
  * `/me` (TASKS.md 6.7.a), replacing the Phase U placeholder wholesale — see
@@ -63,6 +65,7 @@ export default async function MePage() {
     linkedApps,
     connectedApps,
     signInMethods,
+    god,
   ] = await Promise.all([
     getMeProfile(),
     listConsents(),
@@ -73,6 +76,7 @@ export default async function MePage() {
     listLinkedApps(),
     listConnectedApps(),
     getSignInMethods(),
+    getGodConsentStatus(),
   ]);
 
   // 12.2.b: the teen daily-cap meter is its own, teen-only read -- most
@@ -164,6 +168,12 @@ export default async function MePage() {
           <MeSectionError title={t("consent.heading")} error={consents.error} />
         )}
 
+        {god.ok ? (
+          <MeGodGroupSection initialStatus={god.data} />
+        ) : (
+          <MeSectionError title={t("godGroup.heading")} error={god.error} />
+        )}
+
         <MeSecuritySection />
         {signInMethods.ok ? (
           <>
@@ -204,7 +214,7 @@ export default async function MePage() {
           <MeSectionError title={t("linkedApps.heading")} error={linkedApps.error} />
         )}
         <MeDataExportSection />
-        <MeDeleteAccountSection />
+        <MeDeleteAccountSection inGod={god.ok ? god.data.inGod : null} />
       </div>
     </PageContainer>
   );

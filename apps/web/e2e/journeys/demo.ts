@@ -131,6 +131,7 @@ export async function apiRegister(request: APIRequestContext, r: RegionCase, pre
       region: r.region,
       locale: r.locale,
       timezone: r.region === "AU" ? "Australia/Sydney" : "Asia/Jakarta",
+      acceptGodNotice: true,
     },
   });
   expect(response.ok(), `register: ${await response.text()}`).toBeTruthy();

@@ -72,5 +72,17 @@
   "teenWithdrawn": {
     "heading": "Orang tua atau wali Anda telah menonaktifkan perolehan poin di akun Anda",
     "body": "Untuk mulai lagi, minta mereka mengundang Anda kembali."
+  },
+  "godNotice": {
+    "before": "Saya adalah orang tua atau wali remaja ini. Saya sudah membaca",
+    "link": "GOD Group Privacy Notice untuk remaja",
+    "after": " dan setuju bahwa aktivitas anak saya boleh digabungkan dan dipakai, dalam kelompok berisi minimal 20 orang, untuk memberi bisnis gambaran tentang anak muda. Tidak ada bisnis yang menerima apa pun tentang anak saya secara pribadi.",
+    "heading": "Grup GOD",
+    "body": "YourTal tergabung dalam grup bernama GOD, bersama SnapApp dan Free Tax Returns. Beri tahu kami apakah Anda setuju untuk {displayName}. Apa pun pilihan Anda, {displayName} tetap bisa memakai YourTal seperti biasa.",
+    "acceptCta": "Setuju",
+    "notNowCta": "Nanti saja",
+    "accepted": "Terima kasih, persetujuan Anda sudah kami catat.",
+    "declined": "Baik. Tidak ada data {displayName} yang digabungkan, dan kami baru akan bertanya lagi kalau pemberitahuannya berubah.",
+    "failed": "Belum tersimpan. Silakan coba lagi."
   }
 }

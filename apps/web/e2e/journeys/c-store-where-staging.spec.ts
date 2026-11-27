@@ -28,6 +28,7 @@ for (const region of ["AU", "ID"] as const) {
           ...{ email, password, region, displayName: "Store check", dateOfBirth: "1990-01-01" },
           locale: region === "AU" ? "en-AU" : "id-ID",
           timezone: region === "AU" ? "Australia/Sydney" : "Asia/Jakarta",
+          acceptGodNotice: true,
         },
       });
     }

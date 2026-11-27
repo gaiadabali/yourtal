@@ -27,7 +27,7 @@ async function ownerWithBusiness(request: APIRequestContext) {
     headers: { "idempotency-key": crypto.randomUUID() },
     data: {
       ...{ email, password, region: "AU", locale: "en-AU", displayName: "Boost E2E" },
-      ...{ dateOfBirth: "1990-01-01", timezone: "Australia/Sydney" },
+      ...{ dateOfBirth: "1990-01-01", timezone: "Australia/Sydney", acceptGodNotice: true },
     },
   });
   expect(registered.ok(), await registered.text()).toBeTruthy();

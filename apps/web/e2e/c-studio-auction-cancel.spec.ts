@@ -28,6 +28,7 @@ async function account(request: APIRequestContext, region: "AU" | "ID") {
       ...{ email, password, region, locale: region === "AU" ? "en-AU" : "id-ID" },
       ...{ displayName: "Auction E2E", dateOfBirth: "1990-01-01" },
       timezone: region === "AU" ? "Australia/Sydney" : "Asia/Jakarta",
+      acceptGodNotice: true,
     },
   });
   expect(registered.ok(), await registered.text()).toBeTruthy();

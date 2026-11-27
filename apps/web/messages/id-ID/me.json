@@ -253,5 +253,28 @@
     "confirmTurnOffCta": "Matikan aplikasi autentikator",
     "usePasskeyCta": "Pakai passkey saja",
     "turnedOff": "Aplikasi autentikator nonaktif."
+  },
+  "godGroup": {
+    "heading": "Grup GOD",
+    "intro": "YourTal, SnapApp, dan Free Tax Returns tergabung dalam satu grup bernama GOD.",
+    "readNotice": "Baca GOD Group Privacy Notice",
+    "statusInGod": "Kamu sudah setuju. Aktivitasmu digabungkan menjadi satu profil, yang hanya dipakai untuk laporan tentang kelompok.",
+    "statusDeclined": "Kamu memilih nanti saja. Tidak ada datamu yang digabungkan.",
+    "statusWithdrawn": "Kamu sudah minta kami berhenti. Tidak ada datamu yang digabungkan.",
+    "statusNone": "Kamu belum memilih. Tidak ada datamu yang digabungkan.",
+    "teenGuardianAgreed": "Orang tua atau walimu sudah menyetujui ini.",
+    "teenNotAgreed": "Orang tua atau walimu belum menyetujui, jadi tidak ada datamu yang digabungkan.",
+    "acceptCta": "Setuju",
+    "failed": "Belum tersimpan. Coba lagi."
+  },
+  "godWithdraw": {
+    "heading": "Berhenti menggabungkan dataku dengan GOD",
+    "body": "Kami akan berhenti menggabungkan aktivitasmu dengan GOD. Akun YourTal-mu tetap seperti biasa.",
+    "startCta": "Berhenti menggabungkan dataku dengan GOD",
+    "confirmCta": "Kirim permintaan",
+    "cancelCta": "Batal",
+    "done": "Beres. Datamu tidak lagi digabungkan dengan GOD.",
+    "notCombined": "Datamu tidak digabungkan dengan GOD.",
+    "failed": "Permintaannya belum terkirim. Coba lagi."
   }
 }

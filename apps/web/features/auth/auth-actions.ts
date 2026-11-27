@@ -77,6 +77,8 @@ export async function registerAction(formData: FormData): Promise<void> {
     dateOfBirth: stringField(formData, "dateOfBirth"),
     timezone: stringField(formData, "timezone") || "Australia/Sydney",
     ...(guardianEmail === "" ? {} : { guardianEmail }),
+    // god/TASKS.md 9.1.b: the GOD notice tick. The API refuses an adult without it.
+    acceptGodNotice: formData.get("acceptGodNotice") === "on",
   };
 
   const result = await apiFetch("/api/auth/register", loginResponseSchema, {
@@ -96,7 +98,12 @@ export async function registerAction(formData: FormData): Promise<void> {
     if (code === "guardian_email_required") {
       // F4: keep what was typed (never the password) for the guardian-email step only. After any
       // other refusal (under age included) nothing is kept, so a refused date of birth is not prefilled.
-      const { password: _password, timezone: _timezone, ...draft } = body;
+      const {
+        password: _password,
+        timezone: _timezone,
+        acceptGodNotice: _acceptGodNotice,
+        ...draft
+      } = body;
       store.set(REGISTER_DRAFT_COOKIE, JSON.stringify(draft), {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",

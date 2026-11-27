@@ -36,7 +36,7 @@ import { MeTeenCapSection } from "@/features/me/me-teen-cap-section";
 import { MeSectionError } from "@/features/me/me-section-states";
 import { LazyMeMailSection } from "@/features/spambank/me-mail-lazy";
 import { getMailboxStatus } from "@/features/spambank/spambank-data";
-import { MeGodGroupSection } from "@/features/me/me-god-group-section";
+import { MeGodGroupSection } from "@/features/me/me-god-group-lazy";
 import { getGodConsentStatus } from "@/features/god-notice/god-notice-data";
 
 /**

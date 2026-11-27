@@ -10,7 +10,7 @@ import { apiFetch } from "@/lib/api/api-fetch";
 import { readThemeCookie } from "@/lib/api/session-cookies";
 import { getMailboxStatus, mailNavState } from "@/features/spambank/spambank-data";
 import { getGodConsentStatus } from "@/features/god-notice/god-notice-data";
-import { GodNoticePrompt } from "@/features/god-notice/god-notice-prompt";
+import { GodNoticePrompt } from "@/features/god-notice/god-notice-prompt-lazy";
 import { ClientMessages } from "./client-messages";
 
 const STAFF_CONSOLE_ROLES: ReadonlySet<string> = new Set([

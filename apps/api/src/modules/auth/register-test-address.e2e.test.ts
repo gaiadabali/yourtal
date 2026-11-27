@@ -48,6 +48,7 @@ async function signUps(
         displayName: "QA",
         dateOfBirth: "1990-01-01",
         timezone: "Australia/Sydney",
+        acceptGodNotice: true,
       },
     });
     statuses.push(res.statusCode);

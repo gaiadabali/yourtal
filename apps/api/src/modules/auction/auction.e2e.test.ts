@@ -52,6 +52,7 @@ async function person(region: "AU" | "ID", teen = false): Promise<Person> {
       displayName: "Bidder",
       dateOfBirth: "1990-01-01",
       timezone: region === "AU" ? "Australia/Sydney" : "Asia/Jakarta",
+      acceptGodNotice: true,
     },
   });
   expect(response.statusCode, response.body).toBeLessThan(300);

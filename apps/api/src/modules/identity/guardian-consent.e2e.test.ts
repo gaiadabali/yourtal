@@ -141,6 +141,7 @@ describe("12.1.a — guardian consent: register -> pending -> outbox -> approve 
       displayName: "Guardian Consent Teen",
       region: "AU",
       locale: "en-AU",
+      godNotice: { ask: false, decision: null },
     });
     // 12.1.a: no date of birth, no email address anywhere in this response.
     expect(view.body).not.toContain("2012-01-01");
@@ -151,7 +152,7 @@ describe("12.1.a — guardian consent: register -> pending -> outbox -> approve 
       url: `/api/guardian/${email!.token}/approve`,
       remoteAddress: randomTestIp(),
       headers: { "idempotency-key": randomUUID() },
-      payload: { confirmAdult: true },
+      payload: { confirmAdult: true, acceptGodNotice: true },
     });
     // 201 — NestJS's own default for a bare @Post with no @HttpCode, same
     // convention `staff-users.controller.ts`'s suspend/release already use
@@ -235,7 +236,7 @@ describe("12.1.a — guardian consent: revoke", () => {
       url: `/api/guardian/${email!.token}/approve`,
       remoteAddress: randomTestIp(),
       headers: { "idempotency-key": randomUUID() },
-      payload: { confirmAdult: true },
+      payload: { confirmAdult: true, acceptGodNotice: true },
     });
     expect(approveAfterRevoke.statusCode).toBe(409);
     expect(await parentConsentStatusFor(userId)).toBe("revoked");
@@ -281,7 +282,7 @@ describe("12.1.a — guardian consent: revoke", () => {
       url: `/api/guardian/${email!.token}/approve`,
       remoteAddress: randomTestIp(),
       headers: { "idempotency-key": randomUUID() },
-      payload: { confirmAdult: true },
+      payload: { confirmAdult: true, acceptGodNotice: true },
     });
     expect(approve.statusCode).toBe(201);
     expect(await parentConsentStatusFor(userId)).toBe("granted");
@@ -365,7 +366,7 @@ describe("12.4.b (#6): guardian-triggered account deletion", () => {
           url: `/api/guardian/${email!.token}/approve`,
           remoteAddress: randomTestIp(),
           headers: { "idempotency-key": randomUUID() },
-          payload: { confirmAdult: true },
+          payload: { confirmAdult: true, acceptGodNotice: true },
         }),
       () =>
         app.inject({

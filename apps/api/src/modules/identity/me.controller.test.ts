@@ -199,6 +199,7 @@ describe("1.4.g's Check: the age policy at registration, TEEN_ACCOUNTS off (the 
         // Comfortably 15 today, whenever "today" is.
         dateOfBirth: "2011-01-01",
         timezone: "Australia/Sydney",
+        acceptGodNotice: true,
       },
     });
     expect(response.statusCode).toBe(403);
@@ -221,6 +222,7 @@ describe("1.4.g's Check: the age policy at registration, TEEN_ACCOUNTS off (the 
           displayName: "Twelve",
           dateOfBirth: "2015-01-01",
           timezone: "Australia/Sydney",
+          acceptGodNotice: true,
         },
       });
 
@@ -256,6 +258,7 @@ describe("1.4.g's Check: the age policy at registration, TEEN_ACCOUNTS off (the 
         // its answer from this submission at all.
         dateOfBirth: "2020-01-01",
         timezone: "Australia/Sydney",
+        acceptGodNotice: true,
       },
     });
     expect(retry.statusCode).toBe(403);
@@ -298,6 +301,7 @@ describe("1.4.b: TEEN_ACCOUNTS on", () => {
         displayName: "Fifteen",
         dateOfBirth: "2011-01-01",
         timezone: "Australia/Sydney",
+        acceptGodNotice: true,
       },
     });
     expect(response.statusCode).toBe(400);
@@ -319,6 +323,7 @@ describe("1.4.b: TEEN_ACCOUNTS on", () => {
         displayName: "Fifteen",
         dateOfBirth: "2011-01-01",
         timezone: "Australia/Sydney",
+        acceptGodNotice: true,
         guardianEmail: "guardian@example.test",
       },
     });
@@ -350,6 +355,7 @@ describe("1.4.b: TEEN_ACCOUNTS on", () => {
         displayName: "Twelve",
         dateOfBirth: "2015-01-01",
         timezone: "Australia/Sydney",
+        acceptGodNotice: true,
         guardianEmail: "guardian@example.test",
       },
     });

@@ -792,6 +792,10 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
   // instead.
   "identity.consent_record":
     "Mirrored by @yourtal/consent's consentRecordSchema — a DIFFERENT package's contract, by that package's own design (its consent-record.ts header). This gate only ever compares packages/contracts schemas against migrations, so it cannot see that mapping and needs it named here instead of there.",
+  "identity.god_group_consent":
+    "god/TASKS.md 9.1: mirrored by @yourtal/consent's godConsentRecordSchema (god-group-notice.ts), a different package's contract for the same reason identity.consent_record's is.",
+  "identity.god_group_consent_status":
+    "god/TASKS.md 9.1: the trigger-kept current row of identity.god_group_consent, read back as the same godConsentRecordSchema (decided_at as recordedAt); consent_id is internal bookkeeping.",
   "me.interest":
     "MeModule -- TASKS.md 5.4, this pass's own ticket. GET/PUT /api/me/interests returns/accepts only `nodeIds: string[]` (interests.controller.ts) — no schema mirrors the row's own user_id/created_at.",
   "me.follow":

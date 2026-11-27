@@ -21,19 +21,24 @@ import { IDENTITY_PG_POOL } from "./persistence/identity-pg-pool.token";
 import type { IdentityPgPool } from "./persistence/identity-pg-pool.token";
 import { GUARDIAN_CONSENT_REPOSITORY } from "./persistence/guardian-consent.repository";
 import type { GuardianConsentRepository } from "./persistence/guardian-consent.repository";
+import { GOD_CONSENT_REPOSITORY } from "./persistence/god-consent.repository";
+import type { GodConsentRepository } from "./persistence/god-consent.repository";
 import { USER_PROFILE_REPOSITORY } from "./persistence/user-profile.repository";
 import type { UserProfileRepository } from "./persistence/user-profile.repository";
 import { ApproveGuardianConsentDto } from "./dto/approve-guardian-consent.schema";
 import { DeleteGuardianAccountDto } from "./dto/delete-guardian-account.schema";
+import { DecideGuardianGodNoticeDto } from "./dto/decide-guardian-god-notice.schema";
 import { mapGuardianConsentErrorToHttpException } from "./to-http-exception";
 import { getGuardianConsent } from "./use-cases/get-guardian-consent.use-case";
 import { approveGuardianConsent } from "./use-cases/approve-guardian-consent.use-case";
 import { revokeGuardianConsent } from "./use-cases/revoke-guardian-consent.use-case";
 import { deleteGuardianAccount } from "./use-cases/delete-guardian-account.use-case";
+import { decideGuardianGodNotice } from "./use-cases/decide-guardian-god-notice.use-case";
 import { hashOpaqueToken } from "../auth/crypto/opaque-token";
 import { isPasswordlessDemoEmail } from "../auth/passwordless-demo";
 import {
   APPROVE_GUARDIAN_CONSENT_RETENTION_MS,
+  DECIDE_GUARDIAN_GOD_NOTICE_RETENTION_MS,
   DELETE_GUARDIAN_ACCOUNT_RETENTION_MS,
   REVOKE_GUARDIAN_CONSENT_RETENTION_MS,
 } from "./guardian-consent-retention";
@@ -62,13 +67,14 @@ export class GuardianConsentController {
     @Inject(LEDGER_INTERNAL_CLIENT) private readonly ledger: LedgerInternalClient,
     @Inject(PAYMENT_PROVIDERS) private readonly payments: RegionPaymentProviders,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
+    @Inject(GOD_CONSENT_REPOSITORY) private readonly god: GodConsentRepository,
   ) {}
 
   @RateLimit(GUARDIAN_CONSENT_VIEW_RATE_LIMIT)
   @PublicRoute("no principal exists yet; the hashed guardian token is the real credential")
   @Get(":token")
   async view(@Param("token") token: string) {
-    const result = await getGuardianConsent(this.consents, this.profiles, token);
+    const result = await getGuardianConsent(this.consents, this.profiles, token, this.god);
     if (result.isErr()) throw mapGuardianConsentErrorToHttpException(result.error);
     return result.value;
   }
@@ -78,14 +84,15 @@ export class GuardianConsentController {
   @PublicRoute("no principal exists yet; the hashed guardian token is the real credential")
   @Post(":token/approve")
   async approve(@Param("token") token: string, @Body() _body: ApproveGuardianConsentDto) {
-    // `_body.confirmAdult` is already proven `true` by the DTO's own schema
-    // (a literal, not a domain rule) — nothing left to branch on here.
+    // `_body.confirmAdult` and `_body.acceptGodNotice` (9.1.c) are already
+    // proven `true` by the DTO's own schema (literals, not domain rules).
     const result = await approveGuardianConsent(
       this.db,
       this.consents,
       this.profiles,
       token,
       new Date(),
+      this.god,
     );
     if (result.isErr()) throw mapGuardianConsentErrorToHttpException(result.error);
     return result.value;
@@ -104,6 +111,28 @@ export class GuardianConsentController {
       token,
       new Date(),
       receiversFor(this.config.appEnv),
+      this.god,
+    );
+    if (result.isErr()) throw mapGuardianConsentErrorToHttpException(result.error);
+    return result.value;
+  }
+
+  /**
+   * `POST /api/guardian/:token/god-notice` (god/TASKS.md 9.1.c): the guardian
+   * of an already-approved teen decides on the GOD Group Privacy Notice for
+   * teens. `declined` changes nothing for the teen's use of the app.
+   */
+  @Idempotent({ retentionMs: DECIDE_GUARDIAN_GOD_NOTICE_RETENTION_MS })
+  @RateLimit(GUARDIAN_CONSENT_APPROVE_RATE_LIMIT)
+  @PublicRoute("no principal exists yet; the hashed guardian token is the real credential")
+  @Post(":token/god-notice")
+  async decideGodNotice(@Param("token") token: string, @Body() body: DecideGuardianGodNoticeDto) {
+    const result = await decideGuardianGodNotice(
+      this.consents,
+      this.god,
+      token,
+      body.decision,
+      new Date(),
     );
     if (result.isErr()) throw mapGuardianConsentErrorToHttpException(result.error);
     return result.value;

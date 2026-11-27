@@ -21,6 +21,7 @@ var _ MappedNullable = &ApiGuardianTokenApprovePostRequest{}
 // ApiGuardianTokenApprovePostRequest struct for ApiGuardianTokenApprovePostRequest
 type ApiGuardianTokenApprovePostRequest struct {
 	ConfirmAdult bool `json:"confirmAdult"`
+	AcceptGodNotice bool `json:"acceptGodNotice"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -30,9 +31,10 @@ type _ApiGuardianTokenApprovePostRequest ApiGuardianTokenApprovePostRequest
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiGuardianTokenApprovePostRequest(confirmAdult bool) *ApiGuardianTokenApprovePostRequest {
+func NewApiGuardianTokenApprovePostRequest(confirmAdult bool, acceptGodNotice bool) *ApiGuardianTokenApprovePostRequest {
 	this := ApiGuardianTokenApprovePostRequest{}
 	this.ConfirmAdult = confirmAdult
+	this.AcceptGodNotice = acceptGodNotice
 	return &this
 }
 
@@ -68,6 +70,30 @@ func (o *ApiGuardianTokenApprovePostRequest) SetConfirmAdult(v bool) {
 	o.ConfirmAdult = v
 }
 
+// GetAcceptGodNotice returns the AcceptGodNotice field value
+func (o *ApiGuardianTokenApprovePostRequest) GetAcceptGodNotice() bool {
+	if o == nil {
+		var ret bool
+		return ret
+	}
+
+	return o.AcceptGodNotice
+}
+
+// GetAcceptGodNoticeOk returns a tuple with the AcceptGodNotice field value
+// and a boolean to check if the value has been set.
+func (o *ApiGuardianTokenApprovePostRequest) GetAcceptGodNoticeOk() (*bool, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.AcceptGodNotice, true
+}
+
+// SetAcceptGodNotice sets field value
+func (o *ApiGuardianTokenApprovePostRequest) SetAcceptGodNotice(v bool) {
+	o.AcceptGodNotice = v
+}
+
 func (o ApiGuardianTokenApprovePostRequest) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -79,6 +105,7 @@ func (o ApiGuardianTokenApprovePostRequest) MarshalJSON() ([]byte, error) {
 func (o ApiGuardianTokenApprovePostRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["confirmAdult"] = o.ConfirmAdult
+	toSerialize["acceptGodNotice"] = o.AcceptGodNotice
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -93,6 +120,7 @@ func (o *ApiGuardianTokenApprovePostRequest) UnmarshalJSON(data []byte) (err err
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"confirmAdult",
+		"acceptGodNotice",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -123,6 +151,7 @@ func (o *ApiGuardianTokenApprovePostRequest) UnmarshalJSON(data []byte) (err err
 
 	if err = json.Unmarshal(data, &additionalProperties); err == nil {
 		delete(additionalProperties, "confirmAdult")
+		delete(additionalProperties, "acceptGodNotice")
 		o.AdditionalProperties = additionalProperties
 	}
 

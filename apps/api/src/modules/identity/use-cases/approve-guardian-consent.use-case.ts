@@ -5,6 +5,7 @@ import { hashOpaqueToken } from "../../auth/crypto/opaque-token";
 import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import type { GuardianConsentRepository } from "../persistence/guardian-consent.repository";
 import type { UserProfileRepository } from "../persistence/user-profile.repository";
+import type { GodConsentRepository } from "../persistence/god-consent.repository";
 import type { ApproveGuardianConsentError } from "../guardian-consent.errors";
 
 /**
@@ -26,6 +27,7 @@ export async function approveGuardianConsent(
   profiles: UserProfileRepository,
   rawToken: string,
   now: Date,
+  god: Pick<GodConsentRepository, "append">,
 ): Promise<Result<ApproveGuardianConsentResult, ApproveGuardianConsentError>> {
   const tokenHash = hashOpaqueToken(rawToken);
 
@@ -34,6 +36,19 @@ export async function approveGuardianConsent(
 
     if (transition.transitioned) {
       await profiles.setParentConsentStatus(transition.userId, "granted", tx);
+      // 9.1.c: the guardian's GOD notice tick (required by the DTO) is
+      // recorded with the approval, on the sealed teen track.
+      await god.append(
+        {
+          userId: transition.userId,
+          region: transition.region,
+          decision: "accepted",
+          method: "guardian",
+          track: "teen",
+        },
+        now,
+        tx,
+      );
       return ok({ approved: true as const });
     }
 

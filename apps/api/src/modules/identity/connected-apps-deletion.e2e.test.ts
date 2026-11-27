@@ -18,6 +18,8 @@ import { USER_PROFILE_REPOSITORY } from "./persistence/user-profile.repository";
 import type { UserProfileRepository } from "./persistence/user-profile.repository";
 import { createPgOidcStore } from "../oidc/oidc-store";
 import { revokeGuardianConsent } from "./use-cases/revoke-guardian-consent.use-case";
+import { GOD_CONSENT_REPOSITORY } from "./persistence/god-consent.repository";
+import type { GodConsentRepository } from "./persistence/god-consent.repository";
 
 /**
  * Group 3.7 Y2 (docs/29 §5), against the real app and Postgres: a deletion,
@@ -72,6 +74,7 @@ async function teen(): Promise<{ userId: string; token: string }> {
       displayName: "Connected Apps Teen",
       dateOfBirth: "2012-01-01",
       timezone: "Australia/Sydney",
+      acceptGodNotice: true,
       guardianEmail,
     },
   });
@@ -279,6 +282,7 @@ describe("the guardian's withdrawal ends the teen's app access", () => {
         person.token,
         new Date(),
         RECEIVERS,
+        app.get<GodConsentRepository>(GOD_CONSENT_REPOSITORY, { strict: false }),
       ),
     ).rejects.toThrow("forced rollback");
 
@@ -341,6 +345,7 @@ describe("3.10.g: a withdrawal racing a teen's acceptance leaves no live consent
       token,
       new Date(),
       RECEIVERS,
+      app.get<GodConsentRepository>(GOD_CONSENT_REPOSITORY, { strict: false }),
     );
 
   /** Waits until `count` sessions are blocked on a lock whose statement matches `pattern`. */

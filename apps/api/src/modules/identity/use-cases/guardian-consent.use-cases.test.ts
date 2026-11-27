@@ -20,6 +20,9 @@ import type {
 import { getGuardianConsent } from "./get-guardian-consent.use-case";
 import { approveGuardianConsent } from "./approve-guardian-consent.use-case";
 import { revokeGuardianConsent } from "./revoke-guardian-consent.use-case";
+import { decideGuardianGodNotice } from "./decide-guardian-god-notice.use-case";
+import type { GodConsentRecord } from "@yourtal/consent/god-group-notice";
+import type { GodConsentRepository, NewGodConsent } from "../persistence/god-consent.repository";
 
 /**
  * Unit tests for the guardian consent use-cases (12.1.a), against
@@ -112,6 +115,48 @@ function fakeProfiles(profile: StoredUserProfile | null): UserProfileRepository 
   };
 }
 
+/** 9.1: an in-memory GOD consent log; `current` is the newest append. */
+function fakeGod(initial: GodConsentRecord | null = null): GodConsentRepository & {
+  appended: NewGodConsent[];
+} {
+  const appended: NewGodConsent[] = [];
+  let current = initial;
+  return {
+    appended,
+    append: (input, now) => {
+      appended.push(input);
+      current = {
+        userId: input.userId,
+        region: input.region,
+        noticeId: "god-group-notice",
+        noticeVersion: "1.0",
+        decision: input.decision,
+        method: input.method,
+        track: input.track,
+        guardianUserId: input.guardianUserId ?? null,
+        recordedAt: now.toISOString(),
+      };
+      return Promise.resolve();
+    },
+    current: () => Promise.resolve(current),
+    history: () => Promise.resolve(current === null ? [] : [current]),
+  };
+}
+
+function guardianAccepted(): GodConsentRecord {
+  return {
+    userId: USER_ID,
+    region: "AU",
+    noticeId: "god-group-notice",
+    noticeVersion: "1.0",
+    decision: "accepted",
+    method: "guardian",
+    track: "teen",
+    guardianUserId: null,
+    recordedAt: "2026-01-02T00:00:00.000Z",
+  };
+}
+
 const FAKE_DB: AppDb = {
   transaction: async <T>(cb: (tx: AppDb) => Promise<T>): Promise<T> => cb(FAKE_DB),
   // The withdrawal's list of live app consents: none.
@@ -155,7 +200,7 @@ describe("getGuardianConsent", () => {
     const consents = fakeConsents(baseRow());
     const profiles = fakeProfiles(fakeProfile());
 
-    const result = await getGuardianConsent(consents, profiles, RAW_TOKEN);
+    const result = await getGuardianConsent(consents, profiles, RAW_TOKEN, fakeGod());
 
     expect(result.isOk()).toBe(true);
     expect(result._unsafeUnwrap()).toStrictEqual({
@@ -163,14 +208,32 @@ describe("getGuardianConsent", () => {
       displayName: "Teen Tester",
       region: "AU",
       locale: "en-AU",
+      // Pending decides the GOD notice on approval, so nothing is asked separately.
+      godNotice: { ask: false, decision: null },
     });
+  });
+
+  it("asks the guardian of an approved teen who has no GOD decision yet, and not once decided", async () => {
+    const consents = fakeConsents(baseRow({ approvedAt: new Date("2026-01-02T00:00:00Z") }));
+    const profiles = fakeProfiles(fakeProfile({ parentConsentStatus: "granted" }));
+
+    const before = await getGuardianConsent(consents, profiles, RAW_TOKEN, fakeGod());
+    expect(before._unsafeUnwrap().godNotice).toStrictEqual({ ask: true, decision: null });
+
+    const after = await getGuardianConsent(
+      consents,
+      profiles,
+      RAW_TOKEN,
+      fakeGod(guardianAccepted()),
+    );
+    expect(after._unsafeUnwrap().godNotice).toStrictEqual({ ask: false, decision: "accepted" });
   });
 
   it("refuses an unknown token with not_found", async () => {
     const consents = fakeConsents(null);
     const profiles = fakeProfiles(null);
 
-    const result = await getGuardianConsent(consents, profiles, "some-other-token");
+    const result = await getGuardianConsent(consents, profiles, "some-other-token", fakeGod());
 
     expect(result.isErr()).toBe(true);
     expect(result._unsafeUnwrapErr()).toStrictEqual({ type: "not_found" });
@@ -182,25 +245,39 @@ describe("approveGuardianConsent", () => {
     const consents = fakeConsents(baseRow());
     const profiles = fakeProfiles(fakeProfile());
 
+    const god = fakeGod();
+
     const result = await approveGuardianConsent(
       FAKE_DB,
       consents,
       profiles,
       RAW_TOKEN,
       new Date("2026-02-01T00:00:00Z"),
+      god,
     );
 
     expect(result.isOk()).toBe(true);
     expect(result._unsafeUnwrap()).toStrictEqual({ approved: true });
     // eslint-disable-next-line @typescript-eslint/unbound-method -- expect() reads the mock fn's calls, never invokes it as a method
     expect(profiles.setParentConsentStatus).toHaveBeenCalledWith(USER_ID, "granted", FAKE_DB);
+    // 9.1.c: the guardian's GOD acceptance lands with the approval, on the teen track.
+    expect(god.appended).toStrictEqual([
+      { userId: USER_ID, region: "AU", decision: "accepted", method: "guardian", track: "teen" },
+    ]);
   });
 
   it("is idempotent — a second approve of an already-granted link still succeeds", async () => {
     const consents = fakeConsents(baseRow({ approvedAt: new Date("2026-01-02T00:00:00Z") }));
     const profiles = fakeProfiles(fakeProfile({ parentConsentStatus: "granted" }));
 
-    const result = await approveGuardianConsent(FAKE_DB, consents, profiles, RAW_TOKEN, new Date());
+    const result = await approveGuardianConsent(
+      FAKE_DB,
+      consents,
+      profiles,
+      RAW_TOKEN,
+      new Date(),
+      fakeGod(),
+    );
 
     expect(result.isOk()).toBe(true);
     expect(result._unsafeUnwrap()).toStrictEqual({ approved: true });
@@ -213,7 +290,14 @@ describe("approveGuardianConsent", () => {
     const consents = fakeConsents(baseRow({ revokedAt: new Date("2026-01-03T00:00:00Z") }));
     const profiles = fakeProfiles(fakeProfile({ parentConsentStatus: "revoked" }));
 
-    const result = await approveGuardianConsent(FAKE_DB, consents, profiles, RAW_TOKEN, new Date());
+    const result = await approveGuardianConsent(
+      FAKE_DB,
+      consents,
+      profiles,
+      RAW_TOKEN,
+      new Date(),
+      fakeGod(),
+    );
 
     expect(result.isErr()).toBe(true);
     expect(result._unsafeUnwrapErr()).toStrictEqual({ type: "already_revoked" });
@@ -225,7 +309,14 @@ describe("approveGuardianConsent", () => {
     const consents = fakeConsents(null);
     const profiles = fakeProfiles(null);
 
-    const result = await approveGuardianConsent(FAKE_DB, consents, profiles, RAW_TOKEN, new Date());
+    const result = await approveGuardianConsent(
+      FAKE_DB,
+      consents,
+      profiles,
+      RAW_TOKEN,
+      new Date(),
+      fakeGod(),
+    );
 
     expect(result._unsafeUnwrapErr()).toStrictEqual({ type: "not_found" });
   });
@@ -254,6 +345,7 @@ describe("revokeGuardianConsent", () => {
       RAW_TOKEN,
       new Date("2026-02-01T00:00:00Z"),
       [],
+      fakeGod(),
     );
 
     expect(result.isOk()).toBe(true);
@@ -282,6 +374,7 @@ describe("revokeGuardianConsent", () => {
       RAW_TOKEN,
       new Date(),
       [],
+      fakeGod(),
     );
 
     expect(result._unsafeUnwrap()).toStrictEqual({ revoked: true, escrowedPoints: 0 });
@@ -307,6 +400,7 @@ describe("revokeGuardianConsent", () => {
       RAW_TOKEN,
       new Date(),
       [],
+      fakeGod(),
     );
 
     expect(result._unsafeUnwrap()).toStrictEqual({ revoked: true, escrowedPoints: 0 });
@@ -328,8 +422,80 @@ describe("revokeGuardianConsent", () => {
       RAW_TOKEN,
       new Date(),
       [],
+      fakeGod(),
     );
 
     expect(result._unsafeUnwrapErr()).toStrictEqual({ type: "not_found" });
+  });
+});
+
+describe("9.1: the GOD notice on the guardian's link", () => {
+  it("withdrawing approval also withdraws an accepted GOD notice", async () => {
+    const consents = fakeConsents(baseRow({ approvedAt: new Date("2026-01-02T00:00:00Z") }));
+    const profiles = fakeProfiles(fakeProfile({ parentConsentStatus: "granted" }));
+    const { client } = fakeLedger(zeroBalance());
+    const god = fakeGod(guardianAccepted());
+
+    const result = await revokeGuardianConsent(
+      FAKE_DB,
+      consents,
+      profiles,
+      client,
+      RAW_TOKEN,
+      new Date(),
+      [],
+      god,
+    );
+
+    expect(result.isOk()).toBe(true);
+    expect(god.appended).toStrictEqual([
+      { userId: USER_ID, region: "AU", decision: "withdrawn", method: "guardian", track: "teen" },
+    ]);
+  });
+
+  it.each(["accepted", "declined"] as const)(
+    "records the guardian's %s for an approved teen",
+    async (decision) => {
+      const consents = fakeConsents(baseRow({ approvedAt: new Date("2026-01-02T00:00:00Z") }));
+      const god = fakeGod();
+
+      const result = await decideGuardianGodNotice(consents, god, RAW_TOKEN, decision, new Date());
+
+      expect(result._unsafeUnwrap()).toStrictEqual({ decision });
+      expect(god.appended).toStrictEqual([
+        { userId: USER_ID, region: "AU", decision, method: "guardian", track: "teen" },
+      ]);
+    },
+  );
+
+  it("refuses a pending or revoked link, and an unknown token", async () => {
+    const god = fakeGod();
+    const pending = await decideGuardianGodNotice(
+      fakeConsents(baseRow()),
+      god,
+      RAW_TOKEN,
+      "accepted",
+      new Date(),
+    );
+    expect(pending._unsafeUnwrapErr()).toStrictEqual({ type: "not_granted" });
+
+    const revoked = await decideGuardianGodNotice(
+      fakeConsents(baseRow({ revokedAt: new Date("2026-01-03T00:00:00Z") })),
+      god,
+      RAW_TOKEN,
+      "accepted",
+      new Date(),
+    );
+    expect(revoked._unsafeUnwrapErr()).toStrictEqual({ type: "not_granted" });
+
+    const unknown = await decideGuardianGodNotice(
+      fakeConsents(null),
+      god,
+      RAW_TOKEN,
+      "accepted",
+      new Date(),
+    );
+    expect(unknown._unsafeUnwrapErr()).toStrictEqual({ type: "not_found" });
+    expect(god.appended).toEqual([]);
   });
 });

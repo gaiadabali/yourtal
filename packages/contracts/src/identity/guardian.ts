@@ -20,11 +20,24 @@ export type GuardianConsentStatus = z.infer<typeof guardianConsentStatusSchema>;
  * instruction) — just enough for the guardian-facing page (12.2.c) to
  * greet the teen by name and show the right language/copy.
  */
+/**
+ * god/TASKS.md 9.1.c: where the guardian stands on the GOD Group Privacy
+ * Notice for this teen. `ask` is true when an approved account still needs
+ * their decision on the current version (approved before the notice existed,
+ * or a new version); a pending link decides it on approval.
+ */
+export const guardianGodNoticeSchema = z.object({
+  ask: z.boolean(),
+  decision: z.enum(["accepted", "declined", "withdrawn"]).nullable(),
+});
+export type GuardianGodNotice = z.infer<typeof guardianGodNoticeSchema>;
+
 export const guardianConsentViewSchema = z.object({
   status: guardianConsentStatusSchema,
   displayName: z.string().min(1).max(120),
   region: regionSchema,
   locale: displayLocaleSchema,
+  godNotice: guardianGodNoticeSchema,
 });
 export type GuardianConsentView = z.infer<typeof guardianConsentViewSchema>;
 
@@ -35,11 +48,31 @@ export type GuardianConsentView = z.infer<typeof guardianConsentViewSchema>;
  */
 export const approveGuardianConsentRequestSchema = z.object({
   confirmAdult: z.literal(true),
+  /**
+   * god/TASKS.md 9.1.c: the guardian's tick on the GOD Group Privacy Notice
+   * for teens. Required, like the adult's at registration: a teen account is
+   * approved together with it.
+   */
+  acceptGodNotice: z.literal(true),
 });
 export type ApproveGuardianConsentRequest = z.infer<typeof approveGuardianConsentRequestSchema>;
 
 export const approveGuardianConsentResultSchema = z.object({ approved: z.literal(true) });
 export type ApproveGuardianConsentResult = z.infer<typeof approveGuardianConsentResultSchema>;
+
+/**
+ * `POST /api/guardian/:token/god-notice`'s body (9.1.c): the guardian of an
+ * already-approved teen accepts the notice, or says not now.
+ */
+export const decideGuardianGodNoticeRequestSchema = z.object({
+  decision: z.enum(["accepted", "declined"]),
+});
+export type DecideGuardianGodNoticeRequest = z.infer<typeof decideGuardianGodNoticeRequestSchema>;
+
+export const decideGuardianGodNoticeResultSchema = z.object({
+  decision: z.enum(["accepted", "declined"]),
+});
+export type DecideGuardianGodNoticeResult = z.infer<typeof decideGuardianGodNoticeResultSchema>;
 
 /**
  * `POST /api/guardian/:token/revoke`'s response. `escrowedPoints` is

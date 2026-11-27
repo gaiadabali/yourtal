@@ -185,6 +185,7 @@ describe("a teen cannot link (F101, F105)", () => {
         displayName: "Teen Partner Link Test",
         dateOfBirth: "2012-01-01",
         timezone: "Australia/Sydney",
+        acceptGodNotice: true,
         guardianEmail: `guardian+${randomUUID()}@example.test`,
       },
     });

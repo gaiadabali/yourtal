@@ -9,6 +9,7 @@
     "./consent-record": "./src/consent-record.ts",
     "./policy-version": "./src/policy-version.ts",
     "./decision": "./src/decision.ts",
+    "./god-group-notice": "./src/god-group-notice.ts",
     "./consent-query": "./src/consent-query.ts",
     "./dsar": "./src/dsar.ts",
     "./dsar-orchestrator": "./src/dsar-orchestrator.ts"

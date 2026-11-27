@@ -3,6 +3,7 @@ import type { HttpException } from "@nestjs/common";
 import type { GetMeError } from "./me.errors";
 import type {
   ApproveGuardianConsentError,
+  DecideGuardianGodNoticeError,
   GetGuardianConsentError,
   RevokeGuardianConsentError,
 } from "./guardian-consent.errors";
@@ -50,7 +51,11 @@ export function mapMeErrorToHttpException(error: GetMeError): HttpException {
  * satisfies `GetGuardianConsentError` structurally, so nothing is lost.
  */
 export function mapGuardianConsentErrorToHttpException(
-  error: GetGuardianConsentError | ApproveGuardianConsentError | RevokeGuardianConsentError,
+  error:
+    | GetGuardianConsentError
+    | ApproveGuardianConsentError
+    | RevokeGuardianConsentError
+    | DecideGuardianGodNoticeError,
 ): HttpException {
   switch (error.type) {
     case "not_found":
@@ -62,5 +67,10 @@ export function mapGuardianConsentErrorToHttpException(
       });
     case "ledger_unavailable":
       return new BadGatewayException({ code: "ledger_unavailable", message: error.cause });
+    case "not_granted":
+      return new ConflictException({
+        code: "not_granted",
+        message: "Approve the account first; the notice is decided with the approval.",
+      });
   }
 }

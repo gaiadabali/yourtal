@@ -18,6 +18,8 @@ import { USER_PROFILE_REPOSITORY } from "../identity/persistence/user-profile.re
 import type { UserProfileRepository } from "../identity/persistence/user-profile.repository";
 import { GUARDIAN_CONSENT_REPOSITORY } from "../identity/persistence/guardian-consent.repository";
 import type { GuardianConsentRepository } from "../identity/persistence/guardian-consent.repository";
+import { GOD_CONSENT_REPOSITORY } from "../identity/persistence/god-consent.repository";
+import type { GodConsentRepository } from "../identity/persistence/god-consent.repository";
 import { accountEmailContent, describeTtl } from "./account-email";
 import { guardianConsentEmailContent } from "./guardian-consent-email";
 import { hashPassword, verifyPassword } from "./crypto/password-hash";
@@ -63,6 +65,12 @@ export interface RegisterProfile {
   readonly dateOfBirth: string;
   readonly timezone: string;
   readonly guardianEmail?: string;
+  /**
+   * god/TASKS.md 9.1.b: the GOD Group Privacy Notice tick box. Required for an
+   * adult; a teen's own tick is not consent (their guardian decides), so it is
+   * ignored for them.
+   */
+  readonly acceptGodNotice?: boolean;
 }
 
 /**
@@ -106,6 +114,7 @@ export class AuthService {
     private readonly devTokenAccess: DevTokenAccess,
     @Inject(EMAIL_DRIVER) private readonly email: EmailDriver,
     private readonly secondFactor: SecondFactorGate,
+    @Inject(GOD_CONSENT_REPOSITORY) private readonly godConsents: GodConsentRepository,
   ) {}
 
   /**
@@ -144,6 +153,11 @@ export class AuthService {
     }
 
     const isAdult = meetsMinimumAge(profile.region, ageYears).allowed;
+    // 9.1.b: a new adult account cannot be finished without accepting the
+    // GOD Group Privacy Notice. Checked before anything is written.
+    if (isAdult && profile.acceptGodNotice !== true) {
+      return err({ type: "god_notice_required" });
+    }
     if (!isAdult) {
       if (!this.config.teenAccounts) {
         return err({ type: "below_minimum_age" });
@@ -226,6 +240,22 @@ export class AuthService {
               guardianEmail: profile.guardianEmail as string,
               region: profile.region,
             },
+            tx,
+          );
+        }
+
+        // 9.1.b: the adult's acceptance lands with the account, or neither
+        // does. A teen has none yet: their guardian decides on approval.
+        if (isAdult) {
+          await this.godConsents.append(
+            {
+              userId,
+              region: profile.region,
+              decision: "accepted",
+              method: "registration",
+              track: "adult",
+            },
+            now,
             tx,
           );
         }

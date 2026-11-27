@@ -1665,13 +1665,42 @@
                         "en-AU",
                         "id-ID"
                       ]
+                    },
+                    "godNotice": {
+                      "type": "object",
+                      "properties": {
+                        "ask": {
+                          "type": "boolean"
+                        },
+                        "decision": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "enum": [
+                                "accepted",
+                                "declined",
+                                "withdrawn"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "ask",
+                        "decision"
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
                     "status",
                     "displayName",
                     "region",
-                    "locale"
+                    "locale",
+                    "godNotice"
                   ],
                   "additionalProperties": false
                 }
@@ -1719,10 +1748,15 @@
                   "confirmAdult": {
                     "type": "boolean",
                     "const": true
+                  },
+                  "acceptGodNotice": {
+                    "type": "boolean",
+                    "const": true
                   }
                 },
                 "required": [
-                  "confirmAdult"
+                  "confirmAdult",
+                  "acceptGodNotice"
                 ],
                 "additionalProperties": false
               }
@@ -1908,6 +1942,97 @@
           },
           "404": {
             "description": "No such guardian link — an unknown token and a spent/expired one look identical.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/guardian/{token}/god-notice": {
+      "post": {
+        "summary": "The guardian of an approved teen decides on the GOD Group Privacy Notice",
+        "tags": [
+          "guardian"
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "description": "The guardian consent link's token (never the hash stored server-side).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "accepted or declined. Declined keeps the teen out of GOD and changes nothing else.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "decision": {
+                    "type": "string",
+                    "enum": [
+                      "accepted",
+                      "declined"
+                    ]
+                  }
+                },
+                "required": [
+                  "decision"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Recorded, on the sealed teen track.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "decision": {
+                      "type": "string",
+                      "enum": [
+                        "accepted",
+                        "declined"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "decision"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "404": {
+            "description": "No such guardian link — an unknown token and a spent/expired one look identical.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The link is pending or revoked (not_granted): the notice is decided with the approval.",
             "content": {
               "application/json": {
                 "schema": {

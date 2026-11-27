@@ -57,6 +57,13 @@ export const processingPurposeSchema = z.enum([
   "marketing_communications",
   /** Sharing profile attributes with a sister app over YourtalID. */
   "sister_app_profile_sharing",
+  /**
+   * god/TASKS.md 9.1: combining the person's activity across YourTal, SnapApp
+   * and Free Tax Returns into one GOD profile, used only for reports about
+   * groups. Recorded against the GOD Group Privacy Notice (`god-group-notice.ts`),
+   * not a per-jurisdiction policy, and for a teen only their guardian can grant it.
+   */
+  "god_group_insights",
 ]);
 
 export type ProcessingPurpose = z.infer<typeof processingPurposeSchema>;

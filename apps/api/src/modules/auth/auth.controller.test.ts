@@ -84,6 +84,7 @@ describe("register", () => {
       displayName: "Register Redact Test",
       dateOfBirth: "1990-01-01",
       timezone: "Australia/Sydney",
+      acceptGodNotice: true,
     };
 
     const registered = await app.inject({

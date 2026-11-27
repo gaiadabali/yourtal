@@ -79,6 +79,15 @@ export class ConsentController {
       });
     }
 
+    // god/TASKS.md 9.1: the GOD notice has its own record and its own flow
+    // (`/api/me/god-consent`, registration and the guardian page).
+    if (parsed.data.purpose === "god_group_insights") {
+      throw new BadRequestException({
+        code: "god_consent_not_here",
+        message: "The GOD Group Privacy Notice is accepted or withdrawn on its own screen.",
+      });
+    }
+
     const principal = await this.principals.resolve(request);
 
     // 12.4.b (#2): a teen may not self-consent to these purposes -- checked

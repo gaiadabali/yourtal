@@ -15,7 +15,14 @@ export interface GuardianLedgerUnavailableError {
   readonly cause: string;
 }
 
+/** 9.1.c: the GOD notice is decided on approval; this route is for an already-approved teen. */
+export interface GuardianConsentNotGrantedError {
+  readonly type: "not_granted";
+}
+
 export type GetGuardianConsentError = GuardianTokenNotFoundError;
+export type DecideGuardianGodNoticeError =
+  GuardianTokenNotFoundError | GuardianConsentNotGrantedError;
 export type ApproveGuardianConsentError =
   GuardianTokenNotFoundError | GuardianConsentAlreadyRevokedError;
 export type RevokeGuardianConsentError =

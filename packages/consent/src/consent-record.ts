@@ -47,6 +47,10 @@ export const consentSourceSchema = z.enum([
   "parent_ended",
   "teen_removed",
   "inviter_deleted",
+  /** A teen's guardian decided on the GOD Group Privacy Notice (god-group-notice.ts). */
+  "guardian_consent",
+  /** Withdrawn through the request form, not a toggle (god/TASKS.md 9.1, founder Q4). */
+  "withdrawal_request",
 ]);
 
 export type ConsentSource = z.infer<typeof consentSourceSchema>;

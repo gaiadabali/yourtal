@@ -2,6 +2,7 @@ import { jurisdictionCodeSchema } from "@yourtal/jurisdiction/jurisdiction-code"
 import { latestPerPurpose } from "./consent-record";
 import type { ConsentRecord } from "./consent-record";
 import { currentPolicyVersion } from "./policy-version";
+import { GOD_GROUP_NOTICE, godPolicyVersionId } from "./god-group-notice";
 import { definitionFor, isProhibitedIn } from "./purpose-catalogue";
 import type { ConsentPhase } from "./purpose-catalogue";
 import { requiresConsent } from "./purpose";
@@ -169,8 +170,8 @@ export function mayUseSignalFor(query: ConsentQuery): ConsentDecision {
   }
 
   // 6. The ordinary path.
-  const version = currentPolicyVersion(jurisdiction.data);
-  if (version === undefined) {
+  const versionId = currentVersionIdFor(definition.purpose, jurisdiction.data);
+  if (versionId === undefined) {
     // Unreachable while step 2 passed, but a missing version must never be
     // read as "no version required".
     return {
@@ -189,18 +190,46 @@ export function mayUseSignalFor(query: ConsentQuery): ConsentDecision {
       reason: { type: "consent_withdrawn", withdrawnAt: record.recordedAt },
     };
   }
-  if (record.policyVersionId !== version.id) {
+  // 6.5. god/TASKS.md 9.1.c: a teen's GOD consent counts only when their
+  // guardian gave it. A grant from any other source (the teen themselves, an
+  // import) cannot reach an allow.
+  if (
+    query.ageBand === "teen" &&
+    GUARDIAN_ONLY_FOR_TEENS.includes(definition.purpose) &&
+    record.source !== "guardian_consent"
+  ) {
+    return { allowed: false, reason: { type: "teen_consent_not_allowed" } };
+  }
+  if (record.policyVersionId !== versionId) {
     return {
       allowed: false,
       reason: {
         type: "consent_stale",
         consentedVersionId: record.policyVersionId,
-        currentVersionId: version.id,
+        currentVersionId: versionId,
       },
     };
   }
 
-  return { allowed: true, basis: { type: "consent", policyVersionId: version.id } };
+  return { allowed: true, basis: { type: "consent", policyVersionId: versionId } };
+}
+
+/**
+ * Purposes a teen may hold only through their guardian: the teen cannot
+ * grant them, but the guardian can, in the guardian-consent flow.
+ */
+export const GUARDIAN_ONLY_FOR_TEENS: readonly ProcessingPurpose[] = ["god_group_insights"];
+
+/**
+ * The wording version a record must match. `god_group_insights` is agreed to
+ * against the GOD Group Privacy Notice, shared by the three apps, rather than
+ * YourTal's own per-jurisdiction policy.
+ */
+function currentVersionIdFor(purpose: ProcessingPurpose, jurisdiction: string): string | undefined {
+  if (purpose === "god_group_insights") {
+    return godPolicyVersionId(GOD_GROUP_NOTICE.id, GOD_GROUP_NOTICE.version);
+  }
+  return currentPolicyVersion(jurisdiction)?.id;
 }
 
 function phaseReached(current: ConsentPhase, required: ConsentPhase): boolean {

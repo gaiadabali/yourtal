@@ -29,6 +29,8 @@ import { appsBySector } from "./connected-apps";
 import { ME_PG_POOL } from "./me.tokens";
 import type { MePgPool } from "./me.tokens";
 import { CONSENT_RECORD_REPOSITORY } from "./persistence/consent-record.repository";
+import { GOD_CONSENT_REPOSITORY } from "../identity/persistence/god-consent.repository";
+import type { GodConsentRepository } from "../identity/persistence/god-consent.repository";
 import type { ConsentRecordRepository } from "./persistence/consent-record.repository";
 import { INTEREST_REPOSITORY } from "./persistence/interest.repository";
 import type { InterestRepository } from "./persistence/interest.repository";
@@ -86,6 +88,7 @@ export class AccountController {
     @Inject(DATA_EXPORT_READER) private readonly exportReader: DataExportReader,
     @Inject(PAYMENT_PROVIDERS) private readonly payments: RegionPaymentProviders,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
+    @Inject(GOD_CONSENT_REPOSITORY) private readonly godConsents: GodConsentRepository,
   ) {}
 
   /** Every ledger entry for the caller, newest first, page by page. */
@@ -164,6 +167,7 @@ export class AccountController {
       vouchers,
       sessions,
       declaredArea,
+      godGroupConsent,
     ] = await Promise.all([
       this.consents.listForUser(userId),
       this.interests.listForUser(userId),
@@ -175,6 +179,7 @@ export class AccountController {
       this.allVouchers(userId),
       this.exportReader.watchSessions(userId, EXPORT_MAX_SESSIONS),
       this.settings.areaFor(userId),
+      this.godConsents.history(userId),
     ]);
     const now = new Date();
     const held = buildDataExportSections({ now, account, history, vouchers, sessions });
@@ -189,6 +194,8 @@ export class AccountController {
       vouchers: held.vouchers,
       watchSessions: held.watchSessions,
       consents,
+      // 9.1: every decision on the GOD Group Privacy Notice, newest first.
+      godGroupConsent: godGroupConsent.map(({ userId: _userId, ...decision }) => decision),
       interests,
       follows: followed,
       saves: saved,

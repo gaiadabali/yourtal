@@ -22,6 +22,10 @@ import {
 } from "./persistence/account-email-reader";
 import { DrizzleGuardianConsentRepository } from "./persistence/drizzle-guardian-consent.repository";
 import { GUARDIAN_CONSENT_REPOSITORY } from "./persistence/guardian-consent.repository";
+import {
+  DrizzleGodConsentRepository,
+  GOD_CONSENT_REPOSITORY,
+} from "./persistence/god-consent.repository";
 import { IDENTITY_DB } from "./persistence/identity-db.token";
 import { MeController } from "./me.controller";
 import { GuardianConsentController } from "./guardian-consent.controller";
@@ -75,6 +79,12 @@ export { IDENTITY_DB };
       useFactory: (db: AppDb) => new DrizzleGuardianConsentRepository(db),
       inject: [IDENTITY_DB],
     },
+    // god/TASKS.md 9.1: registration, the guardian page and the Me surface all record GOD decisions.
+    {
+      provide: GOD_CONSENT_REPOSITORY,
+      useFactory: (db: AppDb) => new DrizzleGodConsentRepository(db),
+      inject: [IDENTITY_DB],
+    },
     // 12.1.a: `GuardianConsentController.revoke` escrows the teen's balance.
     // A second instance, on IDENTITY_DB's own pool — same physical database
     // as WALLET_DB (`config.databaseUrl`), so `fake` mode's
@@ -107,6 +117,7 @@ export { IDENTITY_DB };
     // 5.13.b: `/api/dev/inbox` shows a non-staff viewer only mail sent to this address.
     ACCOUNT_EMAIL_READER,
     GUARDIAN_CONSENT_REPOSITORY,
+    GOD_CONSENT_REPOSITORY,
   ],
 })
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- NestJS module classes carry only decorator metadata, YT-0100

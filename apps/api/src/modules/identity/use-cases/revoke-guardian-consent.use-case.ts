@@ -9,6 +9,7 @@ import type { AppDb } from "../../../shared/persistence/drizzle-client";
 import type { LedgerInternalClient } from "../../../shared/ledger-client/ledger-internal-client";
 import type { GuardianConsentRepository } from "../persistence/guardian-consent.repository";
 import type { UserProfileRepository } from "../persistence/user-profile.repository";
+import type { GodConsentRepository } from "../persistence/god-consent.repository";
 import type { RevokeGuardianConsentError } from "../guardian-consent.errors";
 
 /**
@@ -43,6 +44,7 @@ export async function revokeGuardianConsent(
   rawToken: string,
   now: Date,
   receivers: readonly EventReceiver[],
+  god: Pick<GodConsentRepository, "append" | "current">,
 ): Promise<Result<RevokeGuardianConsentResult, RevokeGuardianConsentError>> {
   const tokenHash = hashOpaqueToken(rawToken);
 
@@ -79,6 +81,9 @@ export async function revokeGuardianConsent(
   // A lost race here (a concurrent call already flipped this row) still
   // escrowed exactly once above — the ledger call is idempotent on the same
   // derived key regardless of which caller's DB write actually lands.
+  // 9.1.f: withdrawing approval also takes the teen out of GOD.
+  const godCurrent = await god.current(row.userId);
+
   await db.transaction(async (tx) => {
     const transition = await consents.revoke(tokenHash, now, tx);
     if (transition.transitioned) {
@@ -97,6 +102,19 @@ export async function revokeGuardianConsent(
         );
       }
       await profiles.setParentConsentStatus(transition.userId, "revoked", tx);
+      if (godCurrent?.decision === "accepted") {
+        await god.append(
+          {
+            userId: transition.userId,
+            region: transition.region,
+            decision: "withdrawn",
+            method: "guardian",
+            track: "teen",
+          },
+          now,
+          tx,
+        );
+      }
     }
   });
 

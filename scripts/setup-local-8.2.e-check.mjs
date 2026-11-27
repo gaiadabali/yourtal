@@ -61,6 +61,7 @@ async function main() {
     displayName: "8.2.e Check Viewer",
     dateOfBirth: "1990-01-01",
     timezone: "Australia/Sydney",
+    acceptGodNotice: true,
   });
   if (viewerRegister.status >= 400) {
     console.error(
@@ -79,6 +80,7 @@ async function main() {
     displayName: "8.2.e Check Owner",
     dateOfBirth: "1990-01-01",
     timezone: "Australia/Sydney",
+    acceptGodNotice: true,
   });
   if (ownerRegister.status >= 400) {
     console.error(

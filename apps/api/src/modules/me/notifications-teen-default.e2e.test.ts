@@ -60,6 +60,7 @@ async function registerTeen(): Promise<{ cookie: string }> {
       // 14 years old as of any date after 2026-01-01 -- well inside 13-17.
       dateOfBirth: "2012-01-01",
       timezone: "Australia/Sydney",
+      acceptGodNotice: true,
       guardianEmail: `guardian+${randomUUID()}@example.test`,
     },
   });

@@ -105,6 +105,7 @@ export async function person(region, role) {
       displayName,
       dateOfBirth: "1990-01-01",
       timezone: r.timezone,
+      acceptGodNotice: true,
     });
     expect(reg.status < 400, `register ${email}: ${reg.status} ${JSON.stringify(reg.json)}`);
     userId = reg.json.userId;

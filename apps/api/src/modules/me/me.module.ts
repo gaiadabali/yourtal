@@ -54,6 +54,7 @@ import {
   DrizzleAutoplaySettingReader,
 } from "./persistence/viewer-setting.repository";
 import { ConsentController } from "./consent.controller";
+import { GodConsentController } from "./god-consent.controller";
 import { InterestsController } from "./interests.controller";
 import { FollowsController } from "./follows.controller";
 import { SavesController } from "./saves.controller";
@@ -89,6 +90,7 @@ export const ME_DB = Symbol("ME_DB");
   ],
   controllers: [
     ConsentController,
+    GodConsentController,
     InterestsController,
     FollowsController,
     SavesController,

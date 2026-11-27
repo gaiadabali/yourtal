@@ -16,6 +16,7 @@ import { DrizzleUserProfileRepository } from "../identity/persistence/drizzle-us
 import type { UserProfileRepository } from "../identity/persistence/user-profile.repository";
 import { DrizzleStaffRoleReader } from "../identity/persistence/drizzle-staff-role-reader";
 import { DrizzleGuardianConsentRepository } from "../identity/persistence/drizzle-guardian-consent.repository";
+import { DrizzleGodConsentRepository } from "../identity/persistence/god-consent.repository";
 import type { RegisterProfile } from "./auth.service";
 import { AuthService } from "./auth.service";
 import { DevTokenAccess } from "./dev-token-access";
@@ -87,6 +88,7 @@ const verificationTokens = new DrizzleVerificationTokenRepository(db);
 const profiles = new DrizzleUserProfileRepository(db);
 const staffRoles = new DrizzleStaffRoleReader(db);
 const guardianConsents = new DrizzleGuardianConsentRepository(db);
+const godConsents = new DrizzleGodConsentRepository(db);
 const sessionService = new SessionService(sessionRepo, CONFIG);
 const throttle = new ThrottleService(redis);
 const devTokenAccess = new DevTokenAccess();
@@ -116,6 +118,7 @@ const auth = new AuthService(
   devTokenAccess,
   emailDriver,
   secondFactor,
+  godConsents,
 );
 
 const pgPool = new pg.Pool({ connectionString: DATABASE_URL, max: 2 });
@@ -127,6 +130,7 @@ const ADULT_PROFILE: RegisterProfile = {
   displayName: "Auth Test",
   dateOfBirth: "1990-01-01",
   timezone: "Australia/Sydney",
+  acceptGodNotice: true,
 };
 
 function freshEmail(): string {
@@ -239,6 +243,7 @@ describe("register — 2.5/F31: credential and profile are one transaction", () 
       devTokenAccess,
       emailDriver,
       secondFactor,
+      godConsents,
     );
 
     const failed = await authWithFailingProfile.register(
@@ -267,6 +272,78 @@ describe("register — 2.5/F31: credential and profile are one transaction", () 
       new Date(),
     );
     expect(retried.isOk()).toBe(true);
+  });
+});
+
+describe("9.1.b: the GOD Group Privacy Notice at registration", () => {
+  it("refuses a new adult account without the tick, and writes nothing", async () => {
+    const email = freshEmail();
+    const { acceptGodNotice: _tick, ...withoutTick } = ADULT_PROFILE;
+    const result = await auth.register(email, "the-original-password", withoutTick, new Date());
+    expect(result.isErr() && result.error.type).toBe("god_notice_required");
+
+    const unticked = await auth.register(
+      email,
+      "the-original-password",
+      { ...ADULT_PROFILE, acceptGodNotice: false },
+      new Date(),
+    );
+    expect(unticked.isErr() && unticked.error.type).toBe("god_notice_required");
+
+    expect(await credentials.findByKindAndIdentifier(PASSWORD_CREDENTIAL_KIND, email)).toBeNull();
+  });
+
+  it("records the adult's acceptance with the account", async () => {
+    const result = await auth.register(
+      freshEmail(),
+      "the-original-password",
+      ADULT_PROFILE,
+      new Date(),
+    );
+    if (result.isErr()) throw new Error(`register failed: ${result.error.type}`);
+
+    expect(await godConsents.current(result.value.userId)).toMatchObject({
+      userId: result.value.userId,
+      region: "AU",
+      noticeId: "god-group-notice",
+      noticeVersion: "1.0",
+      decision: "accepted",
+      method: "registration",
+      track: "adult",
+      guardianUserId: null,
+    });
+  });
+
+  it("records nothing for a teen: their guardian decides", async () => {
+    const teenAuth = new AuthService(
+      { ...CONFIG, teenAccounts: true },
+      db,
+      credentials,
+      verificationTokens,
+      profiles,
+      sessionIssuer,
+      guardianConsents,
+      sessionService,
+      throttle,
+      devTokenAccess,
+      emailDriver,
+      secondFactor,
+      godConsents,
+    );
+    const result = await teenAuth.register(
+      freshEmail(),
+      "the-original-password",
+      {
+        ...ADULT_PROFILE,
+        dateOfBirth: `${String(new Date().getUTCFullYear() - 15)}-06-15`,
+        guardianEmail: `guardian-${randomUUID()}@example.com`,
+      },
+      new Date(),
+    );
+    if (result.isErr()) throw new Error(`register failed: ${result.error.type}`);
+
+    expect(await godConsents.current(result.value.userId)).toBeNull();
+    expect(await godConsents.history(result.value.userId)).toEqual([]);
   });
 });
 
@@ -665,6 +742,7 @@ describe("1.6.a: deliver() actually sends, against the real platform.sim_outbox"
       devTokenAccess,
       realEmailDriver,
       secondFactor,
+      godConsents,
     );
 
     const emailAddress = freshEmail();
@@ -883,6 +961,7 @@ describe("1.3.c: the emails registration sends, and what is logged when one fail
       devTokenAccess,
       driver,
       secondFactor,
+      godConsents,
     );
   }
 

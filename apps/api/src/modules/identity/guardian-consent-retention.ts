@@ -13,3 +13,6 @@ export const REVOKE_GUARDIAN_CONSENT_RETENTION_MS = 24 * 60 * 60 * 1000;
 
 /** 12.4.b (#6): same window again — a guardian re-submitting a stuck "Delete account" tap. */
 export const DELETE_GUARDIAN_ACCOUNT_RETENTION_MS = 24 * 60 * 60 * 1000;
+
+/** 9.1.c: a guardian re-submitting a stuck GOD notice Accept or Not now tap. */
+export const DECIDE_GUARDIAN_GOD_NOTICE_RETENTION_MS = 24 * 60 * 60 * 1000;

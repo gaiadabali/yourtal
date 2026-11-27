@@ -271,6 +271,10 @@ const KNOWN_OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   // are this ticket's verification instead.
   "GET /api/me/consents": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
   "POST /api/me/consents": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
+  // god/TASKS.md 9.1: same reasoning as /api/me/consents above; god-consent.e2e.test.ts verifies them.
+  "GET /api/me/god-consent": "MeModule -- god/TASKS.md 9.1.b, same as /api/me/consents.",
+  "POST /api/me/god-consent": "MeModule -- god/TASKS.md 9.1.b, same as /api/me/consents.",
+  "POST /api/me/god-consent/withdraw": "MeModule -- god/TASKS.md 9.1.f, same as /api/me/consents.",
   "GET /api/me/interests": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
   "PUT /api/me/interests": "MeModule -- TASKS.md 5.4, this pass's own ticket.",
   "GET /api/me/follows": "MeModule -- TASKS.md 5.4, this pass's own ticket.",

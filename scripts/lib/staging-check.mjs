@@ -131,6 +131,7 @@ export async function newAccount(tag) {
         displayName: `QA C1 ${tag.toUpperCase()}`,
         dateOfBirth: "1990-01-01",
         timezone: "Australia/Sydney",
+        acceptGodNotice: true,
       },
     });
   let reg = await register();

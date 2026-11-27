@@ -208,6 +208,22 @@ export function eraseInvitationsToSubject(pool: pg.Pool): DomainHandler {
 }
 
 /**
+ * god/TASKS.md 9.1: the person's current GOD Group Privacy Notice decision,
+ * through `identity.forget_god_group_status` (SECURITY DEFINER; the app has
+ * no write grant on that table). Losing the status row takes them out of
+ * GOD's view; the decisions themselves stay, under `consent_records`' retain rule.
+ */
+export function forgetGodGroupStatus(pool: pg.Pool): DomainHandler {
+  return async (subjectId: string): Promise<number> => {
+    const { rows } = await pool.query<{ forgotten: number }>(
+      "SELECT identity.forget_god_group_status($1) AS forgotten",
+      [subjectId],
+    );
+    return rows[0]?.forgotten ?? 0;
+  };
+}
+
+/**
  * The `identity` domain's full erasure, 1.4.f: business membership plus the
  * three tables above. All four are `erase`, not `anonymise`, for the same
  * reason membership already was: none of them records an obligation to
@@ -234,6 +250,7 @@ export function eraseIdentity(pool: pg.Pool): DomainHandler {
   // it goes with the account.
   const viewerArea = eraseViewerArea(pool);
   const invitations = eraseInvitationsToSubject(pool);
+  const godStatus = forgetGodGroupStatus(pool);
   return async (subjectId: string): Promise<number> => {
     // 1.24.a: first, while the credential still holds the address.
     const invited = await invitations(subjectId);
@@ -244,6 +261,7 @@ export function eraseIdentity(pool: pg.Pool): DomainHandler {
       sessions(subjectId),
       guardianConsent(subjectId),
       viewerArea(subjectId),
+      godStatus(subjectId),
     ]);
     return counts.reduce((total, n) => total + n, invited);
   };

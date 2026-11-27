@@ -1,13 +1,14 @@
 import * as React from "react";
 import { cn } from "../cn";
-import {
-  LOCKUP_HEIGHT,
-  LOCKUP_PATH,
-  LOCKUP_WIDTH,
-  MARK_HEIGHT,
-  MARK_PATH,
-  MARK_WIDTH,
-} from "./brand-paths";
+import { LOCKUP_HEIGHT, LOCKUP_WIDTH, MARK_HEIGHT, MARK_WIDTH } from "./brand-sizes";
+
+/**
+ * The artwork is served as static Play Yellow SVG files from the app's `/brand/` folder
+ * (written by `apps/web/scripts/build-brand-icons.mjs` from `brand-paths.ts`), not inlined:
+ * 15 KB of path data in the shared client bundle would cost every page its first load.
+ */
+const LOCKUP_SRC = "/brand/yourtal-lockup.svg";
+const MARK_SRC = "/brand/yourtal-mark.svg";
 
 /**
  * Rendered heights in px. The artwork keeps its own proportions at every size. The
@@ -50,15 +51,13 @@ export const BrandMark = React.forwardRef<HTMLSpanElement, BrandMarkProps>(funct
       aria-hidden="true"
       className={cn(ground ? [PLATE, PLATE_PAD[size]] : "inline-flex shrink-0", className)}
     >
-      <svg
-        focusable="false"
-        viewBox={`0 0 ${MARK_WIDTH} ${MARK_HEIGHT}`}
+      <img
+        src={MARK_SRC}
+        alt=""
         width={Math.round((height * MARK_WIDTH) / MARK_HEIGHT)}
         height={height}
-        className="text-brand-logo"
-      >
-        <path fill="currentColor" fillRule="evenodd" d={MARK_PATH} />
-      </svg>
+        decoding="async"
+      />
     </span>
   );
 });
@@ -93,32 +92,26 @@ export const BrandWordmark = React.forwardRef<HTMLSpanElement, WordmarkProps>(
         ref={ref}
         className={cn(ground ? [PLATE, PLATE_PAD[size]] : "inline-flex shrink-0", className)}
       >
-        <svg
-          role="img"
-          aria-label={ariaLabel}
-          viewBox={`0 0 ${LOCKUP_WIDTH} ${LOCKUP_HEIGHT}`}
+        <img
+          src={LOCKUP_SRC}
+          alt={ariaLabel}
           width={Math.round((height * LOCKUP_WIDTH) / LOCKUP_HEIGHT)}
           height={height}
-          className="h-auto max-w-full text-brand-logo"
-        >
-          <path fill="currentColor" fillRule="evenodd" d={LOCKUP_PATH} />
-        </svg>
+          decoding="async"
+          className="h-auto max-w-full"
+        />
       </span>
     );
   },
 );
 BrandWordmark.displayName = "BrandWordmark";
 
-export interface BrandLogoProps {
-  className?: string | undefined;
-}
-
 /**
  * The logo for a tight header: the full lockup from 420 px wide, the submark below it.
  * The brand guide (p9) sets a 120 px floor for the lockup and says to use the icon under
  * it. One image with one name, whichever of the two drawings the width shows.
  */
-export function BrandLogo({ className }: BrandLogoProps) {
+export function BrandLogo({ className }: { className?: string | undefined }) {
   return (
     <span role="img" aria-label="YourTal" className={className}>
       <BrandMark size="sm" className="min-[420px]:hidden" />

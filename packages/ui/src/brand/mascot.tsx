@@ -1,6 +1,9 @@
 import * as React from "react";
 import { cn } from "../cn";
-import { MASCOT_HEIGHT, MASCOT_PATH, MASCOT_WIDTH } from "./brand-paths";
+import { MASCOT_HEIGHT, MASCOT_WIDTH } from "./brand-sizes";
+
+/** The official line art as a static Play Yellow SVG, from the app's `/brand/` folder. */
+const MASCOT_SRC = "/brand/yourtal-mascot.svg";
 
 /** Artwork widths in px, before the plate's padding. */
 const WIDTHS = { sm: 40, md: 64, lg: 96, xl: 140 } as const;
@@ -49,18 +52,14 @@ export const Mascot = React.forwardRef<HTMLSpanElement, MascotProps>(function Ma
         className,
       )}
     >
-      <svg
-        role={named ? "img" : undefined}
-        aria-label={named ? label : undefined}
+      <img
+        src={MASCOT_SRC}
+        alt={named ? label : ""}
         aria-hidden={named ? undefined : true}
-        focusable="false"
-        viewBox={`0 0 ${MASCOT_WIDTH} ${MASCOT_HEIGHT}`}
         width={width}
         height={Math.round((width * MASCOT_HEIGHT) / MASCOT_WIDTH)}
-        className="text-brand-logo"
-      >
-        <path fill="currentColor" fillRule="evenodd" d={MASCOT_PATH} />
-      </svg>
+        decoding="async"
+      />
     </span>
   );
 });

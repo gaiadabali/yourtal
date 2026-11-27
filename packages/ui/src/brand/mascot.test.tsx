@@ -7,7 +7,7 @@ import { Mascot } from "./mascot";
 describe("Mascot", () => {
   it("is hidden from assistive technology when it has no label", () => {
     const { container } = render(<Mascot />);
-    expect(container.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(container.querySelector("img")).toHaveAttribute("aria-hidden", "true");
     expect(screen.queryByRole("img")).toBeNull();
   });
 
@@ -16,18 +16,17 @@ describe("Mascot", () => {
     expect(screen.getByRole("img", { name: "Maskot YourTal" })).toBeInTheDocument();
   });
 
-  it("draws the official line art in the brand yellow on the Charcoal plate", () => {
+  it("draws the official line art, unaltered, on the Charcoal plate", () => {
     const { container } = render(<Mascot />);
     expect(container.firstElementChild).toHaveClass("bg-brand-ground");
-    expect(container.querySelector("svg")).toHaveClass("text-brand-logo");
-    // No fill added to the body: one path, `currentColor`, nothing else.
-    expect(container.querySelectorAll("path")).toHaveLength(1);
-    expect(container.querySelector("path")).toHaveAttribute("fill", "currentColor");
+    // The art is one static yellow file: nothing is filled, outlined or recoloured here.
+    expect(container.querySelector("img")).toHaveAttribute("src", "/brand/yourtal-mascot.svg");
+    expect(container.querySelector("svg")).toBeNull();
   });
 
   it("keeps the artwork's own proportions", () => {
     const { container } = render(<Mascot size="lg" />);
-    const svg = container.querySelector("svg");
+    const svg = container.querySelector("img");
     const ratio = Number(svg?.getAttribute("width")) / Number(svg?.getAttribute("height"));
     expect(ratio).toBeCloseTo(1641 / 1247, 1);
   });

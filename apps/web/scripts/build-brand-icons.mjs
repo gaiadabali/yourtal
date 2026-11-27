@@ -44,6 +44,12 @@ const pick = (name) => {
   return match[1] ?? Number(match[2]);
 };
 const MARK = { w: pick("MARK_WIDTH"), h: pick("MARK_HEIGHT"), d: pick("MARK_PATH") };
+const LOCKUP = { w: pick("LOCKUP_WIDTH"), h: pick("LOCKUP_HEIGHT"), d: pick("LOCKUP_PATH") };
+const MASCOT = { w: pick("MASCOT_WIDTH"), h: pick("MASCOT_HEIGHT"), d: pick("MASCOT_PATH") };
+
+/** The artwork as a standalone Play Yellow SVG, served from /brand/ (no JS cost). */
+const artSvg = ({ w, h, d }) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}"><path fill="${YELLOW}" fill-rule="evenodd" d="${d}"/></svg>`;
 
 /**
  * The submark centred in a square `box`, `fill` of the box wide (the guide's 60% for app
@@ -98,6 +104,12 @@ async function main() {
 
   // `icon.svg` is served as-is (no rasterisation): vector, so it is crisp at
   // every size a browser tab or bookmark bar asks for.
+  const brandDir = path.join(appDir, "public", "brand");
+  await mkdir(brandDir, { recursive: true });
+  await writeFile(path.join(brandDir, "yourtal-lockup.svg"), artSvg(LOCKUP), "utf8");
+  await writeFile(path.join(brandDir, "yourtal-mark.svg"), artSvg(MARK), "utf8");
+  await writeFile(path.join(brandDir, "yourtal-mascot.svg"), artSvg(MASCOT), "utf8");
+
   const svgIcon = iconSvg({ box: 32, fill: 0.72, radius: 7 });
   await writeFile(path.join(appDir, "app", "icon.svg"), svgIcon, "utf8");
 
@@ -137,7 +149,7 @@ async function main() {
     await browser.close();
   }
 
-  console.log("[build-brand-icons] wrote app/icon.svg, app/favicon.ico, app/apple-icon.png,");
+  console.log("[build-brand-icons] wrote public/brand/yourtal-{lockup,mark,mascot}.svg, app/icon.svg, app/favicon.ico, app/apple-icon.png,");
   console.log(
     "[build-brand-icons]   public/icons/icon-192.png, icon-512.png, icon-512-maskable.png",
   );

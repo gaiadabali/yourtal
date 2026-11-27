@@ -19,9 +19,10 @@ describe("BrandMark", () => {
 
   it("keeps the artwork's own proportions", () => {
     const { container } = render(<BrandMark size="lg" />);
-    const svg = container.querySelector("svg");
+    const svg = container.querySelector("img");
     const ratio = Number(svg?.getAttribute("width")) / Number(svg?.getAttribute("height"));
     expect(ratio).toBeCloseTo(736 / 446, 1);
+    expect(svg).toHaveAttribute("src", "/brand/yourtal-mark.svg");
   });
 });
 
@@ -31,22 +32,22 @@ describe("BrandWordmark", () => {
     expect(screen.getByRole("img", { name: "YourTal" })).toBeInTheDocument();
   });
 
-  it("draws in the brand yellow on the Charcoal plate, never in a caller's colour", () => {
+  it("draws the official yellow artwork on the Charcoal plate", () => {
     const { container } = render(<BrandWordmark />);
     expect(container.firstElementChild).toHaveClass("bg-brand-ground");
-    expect(container.querySelector("svg")).toHaveClass("text-brand-logo");
+    expect(container.querySelector("img")).toHaveAttribute("src", "/brand/yourtal-lockup.svg");
   });
 
   it("keeps the artwork's own proportions", () => {
     const { container } = render(<BrandWordmark size="sm" />);
-    const svg = container.querySelector("svg");
+    const svg = container.querySelector("img");
     const ratio = Number(svg?.getAttribute("width")) / Number(svg?.getAttribute("height"));
     expect(ratio).toBeCloseTo(2940 / 468, 1);
   });
 
   it("is at least the guide's 120 px wide at its smallest size", () => {
     const { container } = render(<BrandWordmark size="sm" />);
-    expect(Number(container.querySelector("svg")?.getAttribute("width"))).toBeGreaterThanOrEqual(
+    expect(Number(container.querySelector("img")?.getAttribute("width"))).toBeGreaterThanOrEqual(
       120,
     );
   });

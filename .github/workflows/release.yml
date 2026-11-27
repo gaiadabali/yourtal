@@ -127,7 +127,8 @@ jobs:
         env:
           APP_ENV: staging
           # Canonical, OG and sitemap URLs are baked at build time too (2.3.h).
-          SITE_URL: https://yourtal.gaiada.com
+          # The repo variable moves them with the app's host (member.yourtal.gaiada.com, 2026-11).
+          SITE_URL: ${{ vars.YOURTAL_APP_ORIGIN || 'https://yourtal.gaiada.com' }}
         run: |
           pnpm --filter @yourtal/web build
           pnpm --filter @yourtal/api build

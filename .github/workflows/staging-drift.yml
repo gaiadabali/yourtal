@@ -51,12 +51,14 @@ jobs:
           echo "ts=$ts" >> "$GITHUB_OUTPUT"
 
       - name: Compare against the deployed revision
+        env:
+          APP_ORIGIN: ${{ vars.YOURTAL_APP_ORIGIN || 'https://yourtal.gaiada.com' }}
         run: |
           set -euo pipefail
           expected="${{ steps.main_head.outputs.sha }}"
           committed_at="${{ steps.main_head.outputs.ts }}"
 
-          deployed=$(curl -fsS --max-time 10 https://yourtal.gaiada.com/api/health | jq -r '.revision')
+          deployed=$(curl -fsS --max-time 10 "$APP_ORIGIN/api/health" | jq -r '.revision')
           echo "staging is running $deployed; main's latest release-relevant commit is $expected"
 
           if [ "$deployed" = "$expected" ]; then

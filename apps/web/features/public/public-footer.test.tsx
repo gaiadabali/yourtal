@@ -25,6 +25,20 @@ describe("PublicFooter", () => {
     expect(screen.getByRole("link", { name: "Indonesia (Bahasa Indonesia)" })).toBeInTheDocument();
   });
 
+  it("links back to GOD, in each language, unless asked not to", () => {
+    const { unmount } = render(<PublicFooter locale="en-AU" />);
+    expect(screen.getByRole("link", { name: "A GOD company" })).toHaveAttribute(
+      "href",
+      "https://god.gaiada.com",
+    );
+    unmount();
+    const second = render(<PublicFooter locale="id-ID" />);
+    expect(screen.getByRole("link", { name: "Bagian dari GOD" })).toBeInTheDocument();
+    second.unmount();
+    render(<PublicFooter locale="en-AU" godLink={false} />);
+    expect(screen.queryByRole("link", { name: "A GOD company" })).toBeNull();
+  });
+
   it("renders the info links under the region's prefix", () => {
     render(
       <PublicFooter locale="en-AU">

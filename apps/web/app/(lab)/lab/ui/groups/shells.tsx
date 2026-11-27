@@ -100,7 +100,7 @@ export function ShellsGroup() {
           <div className="p-6">
             <p className="text-body-sm text-fg-muted">Public page content renders here.</p>
           </div>
-          <PublicFooter locale="en-AU" />
+          <PublicFooter locale="en-AU" godLink={false} />
         </div>
       </GallerySection>
     </>

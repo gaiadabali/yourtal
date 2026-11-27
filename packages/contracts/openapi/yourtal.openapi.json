@@ -30804,6 +30804,303 @@
           }
         }
       }
+    },
+    "/api/spambank/hooks/stalwart": {
+      "post": {
+        "summary": "Stalwart's webhook: mail was delivered, read it now",
+        "tags": [
+          "spambank"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Stalwart's own JSON (events with a type and data). Read defensively: a shape nobody understands only delays the mail by the one-minute reconcile. Signed with an X-Signature HMAC-SHA256 of the raw body; at most 64 KB.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted. Always 202 once the signature is good, whatever the payload says.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accepted": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "accepted"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The X-Signature is missing or wrong, or no webhook secret is set (unauthorized).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The body is over 64 KB (too_large).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/oidc-clients/spambank/attachments/fetch": {
+      "post": {
+        "summary": "Fetch the bytes of one mailed statement that was offered to this app",
+        "tags": [
+          "spambank"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The person's sub in this app, and the offered message and file ids.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sub": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "emailId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255,
+                    "pattern": "^[A-Za-z0-9_-]+$"
+                  },
+                  "blobId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255,
+                    "pattern": "^[A-Za-z0-9_-]+$"
+                  }
+                },
+                "required": [
+                  "sub",
+                  "emailId",
+                  "blobId"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The file, with the Content-Type of the part, Content-Disposition attachment, nosniff and Cache-Control no-store. SnapApp only.",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "401": {
+            "description": "No valid client-credentials access token from a registered machine client (invalid_token).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token lacks the spambank scope (insufficient_scope), the client is not SnapApp's (not_allowed), or the person ended their access to the app or the mailbox is suspended (not_allowed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such person (unknown_subject), or this person was never offered that file, or the mail server no longer has it (not_found).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The person has no mailbox yet (not_enabled).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The mail server refused our login or the file (upstream_auth).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The mail server could not be reached (spambank_unavailable); try again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/oidc-clients/spambank/statements/ack": {
+      "post": {
+        "summary": "Report what SnapApp did with an offered statement",
+        "tags": [
+          "spambank"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "The person's sub, the offered message and file ids, and imported, duplicate, failed or skipped.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sub": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "emailId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255,
+                    "pattern": "^[A-Za-z0-9_-]+$"
+                  },
+                  "blobId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255,
+                    "pattern": "^[A-Za-z0-9_-]+$"
+                  },
+                  "outcome": {
+                    "type": "string",
+                    "enum": [
+                      "imported",
+                      "duplicate",
+                      "failed",
+                      "skipped"
+                    ]
+                  },
+                  "detail": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "sub",
+                  "emailId",
+                  "blobId",
+                  "outcome"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Recorded. The same outcome twice is the same row.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body failed Zod validation (nestjs-zod's global ZodValidationPipe, apps/api/src/main.ts). Its exact response shape is nestjs-zod's own and is not modelled here."
+          },
+          "401": {
+            "description": "No valid client-credentials access token from a registered machine client (invalid_token).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The token lacks the spambank scope (insufficient_scope), the client is not SnapApp's (not_allowed), or the person ended their access to the app or the mailbox is suspended (not_allowed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such person (unknown_subject), or no such offer for them (not_found).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The person has no mailbox yet (not_enabled).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

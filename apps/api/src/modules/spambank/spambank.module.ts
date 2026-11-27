@@ -5,6 +5,17 @@ import type { SpambankDriver } from "@yourtal/drivers/spambank";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import type { SpambankConfig } from "../../config/spambank-config";
+import { OidcClientRateLimitGuard } from "../oidc/client-rate-limit.guard";
+import { OidcModule } from "../oidc/oidc.module";
+import { PgBossSpambankJobQueue, SPAMBANK_JOB_QUEUE } from "./hooks/job-queue";
+import { StalwartWebhookController } from "./hooks/stalwart-webhook.controller";
+import { StalwartWebhookService } from "./hooks/stalwart-webhook.service";
+import {
+  SpambankIngestClientGuard,
+  SpambankIngestMachineController,
+} from "./ingest/ingest-machine.controller";
+import { SpambankMachineService } from "./ingest/machine.service";
+import { SpambankDb } from "./spambank-db";
 import { SPAMBANK_CONFIG, SPAMBANK_DRIVER } from "./spambank.tokens";
 
 export { SPAMBANK_CONFIG, SPAMBANK_DRIVER };
@@ -30,9 +41,21 @@ function spambankConfig(config: AppConfig): SpambankConfig {
 }
 
 @Module({
+  imports: [OidcModule],
+  controllers: [StalwartWebhookController, SpambankIngestMachineController],
   providers: [
     { provide: SPAMBANK_DRIVER, useFactory: buildDriver },
     { provide: SPAMBANK_CONFIG, useFactory: spambankConfig, inject: [APP_CONFIG] },
+    SpambankDb,
+    {
+      provide: SPAMBANK_JOB_QUEUE,
+      useFactory: (config: AppConfig) => new PgBossSpambankJobQueue(config.databaseUrl),
+      inject: [APP_CONFIG],
+    },
+    StalwartWebhookService,
+    SpambankMachineService,
+    SpambankIngestClientGuard,
+    OidcClientRateLimitGuard,
   ],
   exports: [SPAMBANK_DRIVER, SPAMBANK_CONFIG],
 })

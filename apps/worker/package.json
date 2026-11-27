@@ -28,6 +28,7 @@
     "pg": "8.23.0",
     "pg-boss": "12.34.0",
     "sanitize-html": "2.18.2",
+    "tldts": "7.4.13",
     "zod": "4.6.7"
   },
   "devDependencies": {

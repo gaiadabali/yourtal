@@ -61,6 +61,14 @@ export const HLS_LADDER: readonly HlsRendition[] = [
 const SEGMENT_SECONDS = 6;
 
 /**
+ * What Studio shows when a transcode fails. ffmpeg's own message carries the
+ * whole command line (paths, maps), so it is logged server-side and never
+ * sent to the user (10.7.a).
+ */
+export const TRANSCODE_FAILURE_MESSAGE =
+  "We couldn't process this video. Please check the file plays on your device and try uploading it again.";
+
+/**
  * Renders the whole ABR ladder plus its master playlist into `outputDir` in
  * one ffmpeg pass — the same `split`+`scale`+`-var_stream_map` shape
  * `packages/media/scripts/generate-fixture.mjs` already uses for the
@@ -74,10 +82,21 @@ export interface HlsRenditionBytes {
   readonly v720: number;
 }
 
-export async function renderHlsLadder(
-  inputPath: string,
-  outputDir: string,
-): Promise<HlsRenditionBytes> {
+/** True when the source carries at least one audio stream (10.7.a). */
+export async function probeHasAudio(filePath: string): Promise<boolean> {
+  const { stdout } = await execFileAsync("ffprobe", [
+    ...["-v", "error", "-select_streams", "a", "-show_entries", "stream=index"],
+    ...["-of", "csv=p=0", filePath],
+  ]);
+  return stdout.trim() !== "";
+}
+
+/**
+ * The ffmpeg argument list for the ladder. A source with no audio track gets
+ * video-only variants: `-map a:0?` plus an `a:N` entry in `-var_stream_map`
+ * made ffmpeg refuse the whole job (10.7.a, found 2026-11-27).
+ */
+export function buildHlsArgs(inputPath: string, outputDir: string, hasAudio: boolean): string[] {
   const scaleGraph = [
     `[0:v]split=${String(HLS_LADDER.length)}${HLS_LADDER.map((_, i) => `[s${String(i)}]`).join("")}`,
     ...HLS_LADDER.map(
@@ -96,7 +115,7 @@ export async function renderHlsLadder(
     `${String(rung.videoBitrateKbps * 2)}k`,
   ]);
 
-  await execFileAsync("ffmpeg", [
+  return [
     "-hide_banner",
     "-loglevel",
     "error",
@@ -106,13 +125,10 @@ export async function renderHlsLadder(
     "-filter_complex",
     scaleGraph,
     ...rungArgs,
-    ...HLS_LADDER.flatMap(() => ["-map", "a:0?"]),
+    ...(hasAudio ? HLS_LADDER.flatMap(() => ["-map", "a:0"]) : []),
     "-c:v",
     "libx264",
-    "-c:a",
-    "aac",
-    "-b:a",
-    "96k",
+    ...(hasAudio ? ["-c:a", "aac", "-b:a", "96k"] : []),
     "-preset",
     "veryfast",
     "-profile:v",
@@ -143,7 +159,9 @@ export async function renderHlsLadder(
     "-hls_segment_type",
     "mpegts",
     "-var_stream_map",
-    HLS_LADDER.map((_, i) => `v:${String(i)},a:${String(i)}`).join(" "),
+    HLS_LADDER.map((_, i) => (hasAudio ? `v:${String(i)},a:${String(i)}` : `v:${String(i)}`)).join(
+      " ",
+    ),
     "-master_pl_name",
     "index.m3u8",
     // Forward slashes always: ffmpeg copies the separator it is given into
@@ -152,7 +170,14 @@ export async function renderHlsLadder(
     "-hls_segment_filename",
     `${outputDir.split(path.sep).join("/")}/v%v/segment%d.ts`,
     `${outputDir.split(path.sep).join("/")}/v%v/index.m3u8`,
-  ]);
+  ];
+}
+
+export async function renderHlsLadder(
+  inputPath: string,
+  outputDir: string,
+): Promise<HlsRenditionBytes> {
+  await execFileAsync("ffmpeg", buildHlsArgs(inputPath, outputDir, await probeHasAudio(inputPath)));
 
   function bytesOf(dir: string): number {
     const full = path.join(outputDir, dir);

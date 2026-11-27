@@ -4,6 +4,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SpambankDriver } from "@yourtal/drivers/spambank";
 import { APP_CONFIG } from "../../config/app-config.module";
 import { loadAppConfig } from "../../config/app-config";
+import { RateLimitService } from "../../shared/rate-limit/rate-limit.service";
+import { OIDC_RUNTIME } from "../oidc/oidc-runtime";
+import { OidcModule } from "../oidc/oidc.module";
 import { SPAMBANK_CONFIG, SPAMBANK_DRIVER, SpambankModule } from "./spambank.module";
 
 const BASE_ENV = {
@@ -21,7 +24,22 @@ async function compile() {
   })
   // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- test double of AppConfigModule
   class ConfigForTest {}
-  return Test.createTestingModule({ imports: [ConfigForTest, SpambankModule] }).compile();
+  // What the real app provides globally or through the OIDC module: the routes' guards need them to
+  // resolve, but nothing here calls them.
+  @Global()
+  @Module({
+    providers: [
+      { provide: RateLimitService, useValue: {} },
+      { provide: OIDC_RUNTIME, useValue: {} },
+    ],
+    exports: [RateLimitService, OIDC_RUNTIME],
+  })
+  // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- test double of the OIDC runtime
+  class OidcForTest {}
+  return Test.createTestingModule({ imports: [ConfigForTest, SpambankModule] })
+    .overrideModule(OidcModule)
+    .useModule(OidcForTest)
+    .compile();
 }
 
 afterEach(() => {

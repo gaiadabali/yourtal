@@ -70,6 +70,19 @@ const LEDGER_AND_VOUCHER_INTERNAL_REASON =
 const NOT_PUBLISHED: Readonly<Record<string, string>> = {
   createListingImageUploadUrlRequestSchema:
     "13.3.v: POST /api/{tenantId}/store/listing-images/upload-url's body; StoreModule routes wait for their contract (see route-drift.test.ts's ledger).",
+  // --- spambank inbound pipeline (BUILD.md T6) ---
+  spambankMailEventSchema:
+    "spambank/events.ts's `spambank-mail` SET claim, sent to SnapApp over signed events (docs/29 §4.1), not an HTTP route here.",
+  spambankStatementEventSchema:
+    "spambank/events.ts's `spambank-statement` SET claim, sent to SnapApp over signed events, not an HTTP route here.",
+  spambankIngestJobSchema:
+    "spambank/events.ts's pg-boss job data for spambank.ingest; not an HTTP shape.",
+  spambankAutoreplyJobSchema:
+    "spambank/events.ts's pg-boss job data for spambank.autoreply (T7); not an HTTP shape.",
+  attachmentFetchRequestSchema:
+    "spambank/events.ts's body for POST /api/oidc-clients/spambank/attachments/fetch — documented inline (route-registry.a-spambank-ingest.ts).",
+  statementAckRequestSchema:
+    "spambank/events.ts's body for POST /api/oidc-clients/spambank/statements/ack — documented inline (route-registry.a-spambank-ingest.ts).",
   listingImageUploadSchema:
     "Same as createListingImageUploadUrlRequestSchema above, for the response.",
   voucherBatchRequestStateSchema:

@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { GOD_GROUP_NOTICE } from "@yourtal/consent/god-group-notice";
+import { GOD_GROUP_NOTICE } from "@yourtal/consent/god-group-notice-constants";
 import { Text } from "@yourtal/ui/text";
 
 const BULLETS = ["bullet1", "bullet2", "bullet3", "bullet4", "bullet5", "bullet6"] as const;

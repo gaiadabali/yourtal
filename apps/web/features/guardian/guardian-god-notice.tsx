@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { GOD_GROUP_NOTICE } from "@yourtal/consent/god-group-notice";
+import { GOD_GROUP_NOTICE } from "@yourtal/consent/god-group-notice-constants";
 import { Button } from "@yourtal/ui/button";
 import { Text } from "@yourtal/ui/text";
 import { getGuardianTranslator, type GuardianLocale } from "./guardian-i18n";

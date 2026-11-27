@@ -10,6 +10,7 @@
     "./policy-version": "./src/policy-version.ts",
     "./decision": "./src/decision.ts",
     "./god-group-notice": "./src/god-group-notice.ts",
+    "./god-group-notice-constants": "./src/god-group-notice-constants.ts",
     "./consent-query": "./src/consent-query.ts",
     "./dsar": "./src/dsar.ts",
     "./dsar-orchestrator": "./src/dsar-orchestrator.ts"

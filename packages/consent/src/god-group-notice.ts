@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { jurisdictionCodeSchema } from "@yourtal/jurisdiction/jurisdiction-code";
 import type { ConsentRecord, ConsentSource } from "./consent-record";
+import { GOD_GROUP_NOTICE } from "./god-group-notice-constants";
 
 /**
  * The GOD Group Privacy Notice (god/TASKS.md 9.1). YourTal, SnapApp and Free
@@ -13,13 +14,7 @@ import type { ConsentRecord, ConsentSource } from "./consent-record";
  * version no longer counts, the same "material change" rule
  * `policy-version.ts` applies to the per-purpose consents.
  */
-export const GOD_GROUP_NOTICE = {
-  id: "god-group-notice",
-  version: "1.0",
-  effectiveFrom: "2026-11-27",
-  url: "https://god.gaiada.com/privacy-notice/",
-  teensUrl: "https://god.gaiada.com/privacy-notice/#teens",
-} as const;
+export { GOD_GROUP_NOTICE };
 
 export interface GodGroupNotice {
   readonly id: string;

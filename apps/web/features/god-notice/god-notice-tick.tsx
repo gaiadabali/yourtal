@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { GOD_GROUP_NOTICE } from "@yourtal/consent/god-group-notice";
+import { GOD_GROUP_NOTICE } from "@yourtal/consent/god-group-notice-constants";
 
 export interface GodNoticeTickProps {
   /** Set for a plain `<form>` (registration); left out when the caller holds the state. */

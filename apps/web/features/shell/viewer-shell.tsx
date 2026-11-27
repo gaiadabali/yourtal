@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "@yourtal/ui/cn";
 import type { Notification } from "@yourtal/contracts/me/notification";
 import type { ThemeSetting } from "@yourtal/contracts/me/theme-setting";
+import type { MailNavState } from "@/features/spambank/spambank-data";
 import type { AccountSummary } from "./account-menu";
 import { BottomNav } from "./bottom-nav";
 import type { SupportedLocale } from "./nav-i18n";
@@ -43,6 +44,11 @@ export interface ViewerShellProps {
   forceTheme?: "light" | "dark";
   /** 13.18.b: the signed-in account for the header's avatar menu. */
   account?: AccountSummary;
+  /**
+   * Spambank: shows the Mail entry (top bar, side rail, account menu). `on` also runs the live unread
+   * badge, which needs the `MailRoot` that `app-shell.tsx` mounts above this shell. Omit to hide Mail.
+   */
+  mail?: NonNullable<MailNavState>;
   signedOut?: ViewerShellSignedOutProps;
   children: ReactNode;
 }
@@ -78,6 +84,7 @@ export function ViewerShell({
   forceTheme,
   streakDays = null,
   account,
+  mail,
   signedOut,
   children,
 }: ViewerShellProps) {
@@ -97,7 +104,9 @@ export function ViewerShell({
   // Same `exactOptionalPropertyTypes` reasoning as above: omit the key
   // entirely rather than pass `notifications: undefined` when there is none.
   const topBarNotificationsProps = notifications ? { notifications } : {};
-  const topBarAccountProps = account && !signedOut ? { account } : {};
+  const topBarAccountProps =
+    account && !signedOut ? { account: mail ? { ...account, mail } : account } : {};
+  const mailProps = mail && !signedOut ? { mail } : {};
 
   return (
     <ShellBalanceProvider serverPoints={availablePoints}>
@@ -119,11 +128,13 @@ export function ViewerShell({
           {...topBarSignedOutProps}
           {...topBarNotificationsProps}
           {...topBarAccountProps}
+          {...mailProps}
         />
         <SideNav
           locale={locale}
           {...navSignedOutProps}
           {...(signedOut ? { homeHref: signedOut.homeHref } : {})}
+          {...mailProps}
         />
         <main
           className={cn(

@@ -24,5 +24,7 @@
   "logOut": "Log out",
   "themeSaveFailed": "Your theme couldn't be saved. Try again.",
   "streak": "{count}-day streak",
-  "auctions": "Charity auctions"
+  "auctions": "Charity auctions",
+  "mail": "Mail",
+  "mailUnread": "{count, plural, one {# unread message} other {# unread messages}}"
 }

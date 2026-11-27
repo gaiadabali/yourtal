@@ -6,7 +6,7 @@ import type { NextConfig } from "next";
 const config: NextConfig = {
   reactStrictMode: true,
   // packages/* ship TypeScript source via subpath exports (no barrel files, 13b §5).
-  transpilePackages: ["@yourtal/ui", "@yourtal/contracts"],
+  transpilePackages: ["@yourtal/ui", "@yourtal/contracts", "@yourtal/mail-engine"],
   typedRoutes: true,
   // Several root layouts, so unmatched URLs need app/global-not-found.tsx.
   // authInterrupts: `forbidden()` for a true 403 on /staff/* (F53, added by Phase 9).

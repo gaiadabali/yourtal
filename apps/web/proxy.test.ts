@@ -27,6 +27,8 @@ describe("proxy (1.7.c)", () => {
     "/wallet",
     "/wallet/voucher",
     "/me",
+    "/mail",
+    "/mail/message/abc",
     "/onboarding",
     "/onboarding/AU",
     "/quick",

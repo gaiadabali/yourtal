@@ -1,0 +1,44 @@
+name: mail-engine-sync
+# packages/mail-engine/src is a byte-for-byte copy of SnapApp's packages/mail-engine/src, and the
+# SnapApp copy is the source (spambank/BUILD.md B4). Kept apart from quality.yml so the signal
+# stays visible on its own. The daily run catches a snap-app change that was never copied here.
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mail-engine-sync:
+    name: mail-engine-sync
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Checkout snap-app main (public, sparse)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: gaiadabali/snap-app
+          ref: main
+          path: .snap-app
+          sparse-checkout: packages/mail-engine/src
+          persist-credentials: false
+
+      - name: packages/mail-engine/src matches SnapApp's mail engine
+        run: |
+          if ! diff -r --strip-trailing-cr packages/mail-engine/src .snap-app/packages/mail-engine/src; then
+            echo "::error::packages/mail-engine/src differs from gaiadabali/snap-app packages/mail-engine/src on main."
+            echo "The SnapApp copy is the SOURCE; this folder is the copy."
+            echo "To fix: change snap-app first and merge it, then run: node scripts/sync-mail-engine.mjs"
+            echo "Do not edit packages/mail-engine/src on its own."
+            exit 1
+          fi
+          echo "packages/mail-engine/src matches snap-app main."

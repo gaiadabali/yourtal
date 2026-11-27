@@ -24,5 +24,7 @@
   "logOut": "Keluar",
   "themeSaveFailed": "Tema belum tersimpan. Coba lagi.",
   "streak": "Beruntun {count} hari",
-  "auctions": "Lelang amal"
+  "auctions": "Lelang amal",
+  "mail": "Email",
+  "mailUnread": "{count} email belum dibaca"
 }

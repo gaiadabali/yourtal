@@ -28,6 +28,12 @@ export const registerSchema = z.object({
   timezone: z.string().min(1).max(100),
   /** Required only for a 13-17-year-old registering under `TEEN_ACCOUNTS`; ignored otherwise. */
   guardianEmail: z.string().trim().toLowerCase().max(320).pipe(z.email()).optional(),
+  /**
+   * god/TASKS.md 9.1.b: the GOD Group Privacy Notice tick box. Optional in
+   * shape because a teen's tick is ignored; `AuthService.register` refuses an
+   * adult without `true` (`god_notice_required`).
+   */
+  acceptGodNotice: z.boolean().optional(),
 });
 
 export type RegisterRequest = z.infer<typeof registerSchema>;

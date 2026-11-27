@@ -60,6 +60,11 @@ export function mapAuthErrorToHttpException(error: AuthDomainError): HttpExcepti
         code: "guardian_email_required",
         message: "a parent or guardian's email is required for this age",
       });
+    case "god_notice_required":
+      return new BadRequestException({
+        code: "god_notice_required",
+        message: "accept the GOD Group Privacy Notice to create an account",
+      });
     case "guardian_email_same_as_own":
       return new BadRequestException({
         code: "guardian_email_same_as_own",

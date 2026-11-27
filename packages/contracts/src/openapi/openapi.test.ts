@@ -157,6 +157,12 @@ const NOT_PUBLISHED: Readonly<Record<string, string>> = {
     "12.4.b (#6): POST /api/guardian/:token/delete-account's body, documented inline in route-registry.a.ts.",
   deleteGuardianAccountResultSchema:
     "12.4.b (#6): POST /api/guardian/:token/delete-account's response, documented inline in route-registry.a.ts.",
+  guardianGodNoticeSchema:
+    "god 9.1.c: a field of guardianConsentViewSchema, documented inline with it in route-registry.a.ts.",
+  decideGuardianGodNoticeRequestSchema:
+    "god 9.1.c: POST /api/guardian/:token/god-notice's body, documented inline in route-registry.a.ts.",
+  decideGuardianGodNoticeResultSchema:
+    "god 9.1.c: POST /api/guardian/:token/god-notice's response, documented inline in route-registry.a.ts.",
   authMethodSchema:
     "Passkeys and codes: an OIDC amr value; a leaf the provider's ID tokens use, not yet on any HTTP route.",
   passkeyRegistrationResponseSchema:

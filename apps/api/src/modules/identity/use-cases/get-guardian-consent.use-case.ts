@@ -7,6 +7,8 @@ import {
   type GuardianConsentRepository,
 } from "../persistence/guardian-consent.repository";
 import type { UserProfileRepository } from "../persistence/user-profile.repository";
+import { guardianShouldBeAsked } from "@yourtal/consent/god-group-notice";
+import type { GodConsentRepository } from "../persistence/god-consent.repository";
 import type { GetGuardianConsentError } from "../guardian-consent.errors";
 
 /**
@@ -19,6 +21,7 @@ export async function getGuardianConsent(
   consents: GuardianConsentRepository,
   profiles: UserProfileRepository,
   rawToken: string,
+  god: Pick<GodConsentRepository, "current">,
 ): Promise<Result<GuardianConsentView, GetGuardianConsentError>> {
   const row = await consents.findByTokenHash(hashOpaqueToken(rawToken));
   if (row === null) return err({ type: "not_found" });
@@ -30,10 +33,17 @@ export async function getGuardianConsent(
   // already uses for the same kind of "should not happen" pairing.
   if (profile === null) return err({ type: "not_found" });
 
+  const status = guardianConsentStatusOf(row);
+  const current = await god.current(row.userId);
   return ok({
-    status: guardianConsentStatusOf(row),
+    status,
     displayName: profile.displayName,
     region: row.region,
     locale: profile.displayLocale,
+    // 9.1.c: only an approved account is asked here; pending decides on approval.
+    godNotice: {
+      ask: status === "granted" && guardianShouldBeAsked(current),
+      decision: current?.decision ?? null,
+    },
   });
 }

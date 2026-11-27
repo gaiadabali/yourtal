@@ -26,7 +26,7 @@ test("a long campaign title wraps without its status badge landing on the tags",
     headers: { "idempotency-key": crypto.randomUUID() },
     data: {
       ...{ email, password, region: "AU", locale: "en-AU", displayName: "List E2E" },
-      ...{ dateOfBirth: "1990-01-01", timezone: "Australia/Sydney" },
+      ...{ dateOfBirth: "1990-01-01", timezone: "Australia/Sydney", acceptGodNotice: true },
     },
   });
   const login = await request.post(`${api()}/api/auth/login`, { data: { email, password } });

@@ -9,6 +9,7 @@ import { getGuardianTranslator, type GuardianLocale } from "./guardian-i18n";
 import { guardianErrorKeyFor } from "./guardian-error-copy";
 import { approveGuardianConsentAction } from "./guardian-actions";
 import { GuardianDeleteAccountSection } from "./guardian-delete-account-section";
+import { GuardianGodNoticeTick } from "./guardian-god-notice";
 
 export interface GuardianApproveFormProps {
   token: string;
@@ -38,6 +39,8 @@ export function GuardianApproveForm({
   const t = getGuardianTranslator(locale);
   const router = useRouter();
   const [confirmed, setConfirmed] = useState(false);
+  // god/TASKS.md 9.1.c: the teen account is approved together with the GOD notice for teens.
+  const [godAccepted, setGodAccepted] = useState(false);
   const [errorKey, setErrorKey] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -82,13 +85,15 @@ export function GuardianApproveForm({
         {t("pending.confirmLabel", { displayName })}
       </label>
 
+      <GuardianGodNoticeTick locale={locale} checked={godAccepted} onChange={setGodAccepted} />
+
       {errorKey ? (
         <Notice tone="danger">{t(`pending.errors.${errorKey}`, { displayName })}</Notice>
       ) : null}
 
       <Button
         type="button"
-        disabled={!confirmed || isPending}
+        disabled={!confirmed || !godAccepted || isPending}
         loading={isPending}
         onClick={handleApprove}
       >

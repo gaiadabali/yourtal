@@ -90,6 +90,8 @@ export async function sessionFor(
       dateOfBirth,
       timezone: "Australia/Sydney",
       ...(options.guardianEmail === undefined ? {} : { guardianEmail: options.guardianEmail }),
+      // god/TASKS.md 9.1.b: a new adult account needs the GOD notice tick; a teen's is ignored.
+      acceptGodNotice: true,
     },
   });
   if (registered.statusCode >= 400) {

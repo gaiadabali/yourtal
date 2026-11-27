@@ -253,5 +253,28 @@
     "confirmTurnOffCta": "Turn off authenticator app",
     "usePasskeyCta": "Use a passkey instead",
     "turnedOff": "Authenticator app is off."
+  },
+  "godGroup": {
+    "heading": "GOD group",
+    "intro": "YourTal, SnapApp and Free Tax Returns belong to one group called GOD.",
+    "readNotice": "Read the GOD Group Privacy Notice",
+    "statusInGod": "You've agreed. Your activity is combined into one profile, used only for reports about groups.",
+    "statusDeclined": "You chose not now. Nothing about you is combined.",
+    "statusWithdrawn": "You asked us to stop. Nothing about you is combined.",
+    "statusNone": "You haven't decided yet. Nothing about you is combined.",
+    "teenGuardianAgreed": "Your parent or guardian agreed to this.",
+    "teenNotAgreed": "Your parent or guardian hasn't agreed, so nothing about you is combined.",
+    "acceptCta": "Accept",
+    "failed": "That didn't save. Try again."
+  },
+  "godWithdraw": {
+    "heading": "Stop combining my data with GOD",
+    "body": "We'll stop combining your activity with GOD. Your YourTal account stays exactly as it is.",
+    "startCta": "Stop combining my data with GOD",
+    "confirmCta": "Send request",
+    "cancelCta": "Cancel",
+    "done": "Done. Your data is no longer combined with GOD.",
+    "notCombined": "Your data isn't combined with GOD.",
+    "failed": "The request didn't go through. Try again."
   }
 }

@@ -6,8 +6,12 @@ import { NextIntlClientProvider } from "next-intl";
 import enAU from "@/messages/en-AU/me.json";
 import { MeDeleteAccountSection } from "./me-delete-account-section";
 import { deleteAccountAction } from "./me-actions";
+import { withdrawGodNoticeAction } from "@/features/god-notice/god-notice-actions";
 
 vi.mock("./me-actions", () => ({ deleteAccountAction: vi.fn().mockResolvedValue({ ok: false }) }));
+vi.mock("@/features/god-notice/god-notice-actions", () => ({
+  withdrawGodNoticeAction: vi.fn().mockResolvedValue({ ok: true, data: { inGod: false } }),
+}));
 
 function renderWithIntl(ui: React.ReactElement) {
   return render(
@@ -44,5 +48,31 @@ describe("MeDeleteAccountSection", () => {
     expect(deleteAccountAction).toHaveBeenCalledOnce();
     // A refusal keeps the viewer here and says nothing changed.
     expect(await within(dialog).findByRole("alert")).toHaveTextContent("wasn't deleted");
+  });
+});
+
+describe("MeDeleteAccountSection: Stop combining my data with GOD (9.1.f)", () => {
+  it("sends the withdrawal request without deleting the account", async () => {
+    vi.mocked(deleteAccountAction).mockClear();
+    const user = userEvent.setup();
+    renderWithIntl(<MeDeleteAccountSection inGod />);
+
+    await user.click(screen.getByRole("button", { name: "Stop combining my data with GOD" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Send request" }));
+
+    expect(withdrawGodNoticeAction).toHaveBeenCalledOnce();
+    expect(deleteAccountAction).not.toHaveBeenCalled();
+    expect(
+      await screen.findByText("Done. Your data is no longer combined with GOD."),
+    ).toBeInTheDocument();
+  });
+
+  it("says so, with no request button, when nothing is combined", () => {
+    renderWithIntl(<MeDeleteAccountSection inGod={false} />);
+    expect(screen.getByText("Your data isn't combined with GOD.")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Stop combining my data with GOD" }),
+    ).not.toBeInTheDocument();
   });
 });

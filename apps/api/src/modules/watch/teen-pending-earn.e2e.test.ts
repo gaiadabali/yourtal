@@ -51,6 +51,7 @@ async function registerPendingTeen(
       displayName: "Pending Teen",
       dateOfBirth: "2012-01-01",
       timezone: noonTimezone(),
+      acceptGodNotice: true,
       guardianEmail,
     },
   });
@@ -212,7 +213,7 @@ describe("a teen whose guardian withdrew approval (5.13.ai)", () => {
         url: `/api/guardian/${token}/${action}`,
         remoteAddress: randomTestIp(),
         headers: { "idempotency-key": randomUUID() },
-        ...(action === "approve" ? { payload: { confirmAdult: true } } : {}),
+        ...(action === "approve" ? { payload: { confirmAdult: true, acceptGodNotice: true } } : {}),
       });
     const me = () =>
       app.inject({ method: "GET", url: "/api/me", headers: { cookie: teen.cookie } });

@@ -91,6 +91,7 @@ export class AuthController {
         dateOfBirth: body.dateOfBirth,
         timezone: body.timezone,
         ...(body.guardianEmail === undefined ? {} : { guardianEmail: body.guardianEmail }),
+        ...(body.acceptGodNotice === undefined ? {} : { acceptGodNotice: body.acceptGodNotice }),
       },
       new Date(),
     );

@@ -1,6 +1,8 @@
 import * as z from "zod";
 import { displayLocaleSchema } from "../identity/user-profile";
 import {
+  decideGuardianGodNoticeRequestSchema,
+  decideGuardianGodNoticeResultSchema,
   approveGuardianConsentRequestSchema,
   approveGuardianConsentResultSchema,
   deleteGuardianAccountRequestSchema,
@@ -646,5 +648,30 @@ export const GUARDIAN_ROUTE_DEFINITIONS: readonly RouteDefinition[] = [
       "one again, now 404s the same way an unknown token always has.",
     successSchema: inlineSchema(deleteGuardianAccountResultSchema),
     errors: [VALIDATION_400, GUARDIAN_NOT_FOUND],
+  },
+  {
+    method: "post",
+    path: "/api/guardian/{token}/god-notice",
+    summary: "The guardian of an approved teen decides on the GOD Group Privacy Notice",
+    tags: ["guardian"],
+    pathParams: [GUARDIAN_TOKEN_PARAM],
+    requestBody: {
+      description:
+        "accepted or declined. Declined keeps the teen out of GOD and changes nothing else.",
+      schema: inlineSchema(decideGuardianGodNoticeRequestSchema),
+    },
+    successStatus: 201,
+    successDescription: "Recorded, on the sealed teen track.",
+    successSchema: inlineSchema(decideGuardianGodNoticeResultSchema),
+    errors: [
+      VALIDATION_400,
+      GUARDIAN_NOT_FOUND,
+      {
+        status: 409,
+        description:
+          "The link is pending or revoked (not_granted): the notice is decided with the approval.",
+        documented: true,
+      },
+    ],
   },
 ];

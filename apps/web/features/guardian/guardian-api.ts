@@ -5,12 +5,14 @@ import type { z } from "zod";
 import {
   guardianConsentViewSchema,
   approveGuardianConsentResultSchema,
+  decideGuardianGodNoticeResultSchema,
   revokeGuardianConsentResultSchema,
   deleteGuardianAccountResultSchema,
 } from "@yourtal/contracts/identity/guardian";
 import type {
   GuardianConsentView,
   ApproveGuardianConsentResult,
+  DecideGuardianGodNoticeResult,
   RevokeGuardianConsentResult,
   DeleteGuardianAccountResult,
 } from "@yourtal/contracts/identity/guardian";
@@ -104,10 +106,27 @@ export async function approveGuardianConsent(
   const result = await guardianFetch(path, {
     method: "POST",
     headers: { "content-type": "application/json", "idempotency-key": idempotencyKey },
-    body: JSON.stringify({ confirmAdult: true }),
+    // god/TASKS.md 9.1.c: the approve button is enabled only once the GOD notice box is ticked too.
+    body: JSON.stringify({ confirmAdult: true, acceptGodNotice: true }),
   });
   if (!isResponse(result)) return result;
   return parseAgainst(result, approveGuardianConsentResultSchema, path);
+}
+
+/** `POST /api/guardian/:token/god-notice` (9.1.c): an approved teen's guardian decides on the GOD notice. */
+export async function decideGuardianGodNotice(
+  token: string,
+  decision: "accepted" | "declined",
+  idempotencyKey: string,
+): Promise<ApiResult<DecideGuardianGodNoticeResult>> {
+  const path = `/api/guardian/${encodeURIComponent(token)}/god-notice`;
+  const result = await guardianFetch(path, {
+    method: "POST",
+    headers: { "content-type": "application/json", "idempotency-key": idempotencyKey },
+    body: JSON.stringify({ decision }),
+  });
+  if (!isResponse(result)) return result;
+  return parseAgainst(result, decideGuardianGodNoticeResultSchema, path);
 }
 
 /** `POST /api/guardian/:token/revoke`. No body — the token alone identifies which link is withdrawing. */

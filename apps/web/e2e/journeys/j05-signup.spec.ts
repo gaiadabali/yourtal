@@ -39,6 +39,8 @@ for (const r of REGIONS) {
     // en-AU is the default; an Indonesian viewer picks Bahasa themselves.
     await expect(language).toHaveValue("en-AU");
     if (r.locale !== "en-AU") await language.selectOption({ label: r.language });
+    // god/TASKS.md 9.1.b: the GOD Group Privacy Notice tick is required to finish.
+    await page.getByRole("checkbox").check();
     await page.getByRole("button", { name: /Create account|Buat akun/ }).click();
 
     // Consents, per purpose: personalisation on, marketing left off.

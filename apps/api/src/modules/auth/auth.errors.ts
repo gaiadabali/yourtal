@@ -76,8 +76,17 @@ export interface GuardianEmailSameAsOwnError {
   readonly type: "guardian_email_same_as_own";
 }
 
+/**
+ * god/TASKS.md 9.1.b: an adult registered without ticking the GOD Group
+ * Privacy Notice box. Refused before anything is written.
+ */
+export interface GodNoticeRequiredError {
+  readonly type: "god_notice_required";
+}
+
 export type RegisterError =
   | EmailAlreadyRegisteredError
+  | GodNoticeRequiredError
   | TooYoungError
   | BelowMinimumAgeError
   | GuardianEmailRequiredError

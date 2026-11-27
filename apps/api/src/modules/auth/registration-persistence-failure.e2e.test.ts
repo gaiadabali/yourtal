@@ -113,6 +113,7 @@ describe("2.5.c (F31) — a profile-write failure leaves no row, and the same em
       displayName: "F31 Test",
       dateOfBirth: "1990-01-01",
       timezone: "Australia/Sydney",
+      acceptGodNotice: true,
     };
 
     failProfileWrites = true;

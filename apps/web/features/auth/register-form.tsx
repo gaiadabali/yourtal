@@ -13,6 +13,8 @@ import { PendingSubmitButton } from "./pending-submit-button";
 import { registerAction } from "./auth-actions";
 import { authErrorMessage } from "./auth-error-copy";
 import type { RegisterDraft } from "./register-draft";
+import { GodNoticeTick } from "@/features/god-notice/god-notice-tick";
+import { GodTeenExplanation } from "@/features/god-notice/god-teen-explanation";
 
 export interface RegisterFormProps {
   returnTo: string | null;
@@ -149,6 +151,14 @@ export function RegisterForm({
         <option value="en-AU">{t("languageOptionEnAU")}</option>
         <option value="id-ID">{t("languageOptionIdID")}</option>
       </NativeSelect>
+
+      {/* god/TASKS.md 9.1: an adult must tick the GOD notice to finish. On the guardian
+          step the account is a teen's, whose guardian decides, so the teen sees what it means. */}
+      {needsGuardianEmail ? (
+        <GodTeenExplanation />
+      ) : (
+        <GodNoticeTick name="acceptGodNotice" required />
+      )}
 
       <PendingSubmitButton>
         {needsGuardianEmail ? t("continueCta") : t("submitCta")}

@@ -47,6 +47,7 @@ async function registerAndLogIn(
       displayName: `Staff Users E2E ${tag}`,
       dateOfBirth: "1990-01-01",
       timezone: region === "AU" ? "Australia/Sydney" : "Asia/Jakarta",
+      acceptGodNotice: true,
     },
   });
   expect(registered.ok(), await registered.text()).toBeTruthy();

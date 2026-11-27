@@ -113,6 +113,7 @@ export async function accountFor(
       displayName: "Factors E2E",
       dateOfBirth: "1990-01-01",
       timezone: "Australia/Sydney",
+      acceptGodNotice: true,
     },
     new Date(),
   );

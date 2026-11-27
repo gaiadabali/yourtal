@@ -83,6 +83,7 @@ async function registerTeen(): Promise<{ cookie: string; userId: string }> {
       displayName: "Spambank Teen",
       dateOfBirth: "2012-01-01",
       timezone: "Australia/Sydney",
+      acceptGodNotice: true,
       guardianEmail: `guardian+${randomUUID()}@example.test`,
     },
   });

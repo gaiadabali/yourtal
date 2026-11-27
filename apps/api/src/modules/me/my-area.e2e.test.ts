@@ -59,6 +59,7 @@ async function registerTeen(): Promise<{ userId: string; cookie: string }> {
       displayName: "Teen Area Test",
       dateOfBirth: "2012-01-01",
       timezone: "Australia/Sydney",
+      acceptGodNotice: true,
       guardianEmail: `guardian+${randomUUID()}@example.test`,
     },
   });

@@ -39,6 +39,7 @@ async function registerAndLogIn(request: APIRequestContext, tag: string): Promis
       displayName: "Staff Businesses E2E",
       dateOfBirth: "1990-01-01",
       timezone: "Australia/Sydney",
+      acceptGodNotice: true,
     },
   });
   expect(registered.ok(), await registered.text()).toBeTruthy();

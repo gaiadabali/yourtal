@@ -132,6 +132,7 @@ test.describe.serial("12.2.c: /guardian/[token] — pending -> granted -> revoke
         // 14 years old as of any date after 2026-01-01 (12.1.a's own fixture uses the same date).
         dateOfBirth: "2012-01-01",
         timezone: "Australia/Sydney",
+        acceptGodNotice: true,
         guardianEmail,
       },
     });
@@ -161,7 +162,8 @@ test.describe.serial("12.2.c: /guardian/[token] — pending -> granted -> revoke
     await page.goto(`/guardian/${token}`);
     const approveButton = page.getByRole("button", { name: "Approve" });
     await expect(approveButton).toBeDisabled();
-    await page.getByRole("checkbox").check();
+    // The adult confirmation and (god/TASKS.md 9.1.c) the GOD notice for teens.
+    for (const box of await page.getByRole("checkbox").all()) await box.check();
     await expect(approveButton).toBeEnabled();
     await approveButton.click();
 

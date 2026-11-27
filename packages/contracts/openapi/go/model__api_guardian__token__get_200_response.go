@@ -24,6 +24,7 @@ type ApiGuardianTokenGet200Response struct {
 	DisplayName NullableString `json:"displayName"`
 	Region NullableString `json:"region"`
 	Locale string `json:"locale"`
+	GodNotice ApiGuardianTokenGet200ResponseGodNotice `json:"godNotice"`
 	AdditionalProperties map[string]interface{}
 }
 
@@ -33,12 +34,13 @@ type _ApiGuardianTokenGet200Response ApiGuardianTokenGet200Response
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewApiGuardianTokenGet200Response(status string, displayName NullableString, region NullableString, locale string) *ApiGuardianTokenGet200Response {
+func NewApiGuardianTokenGet200Response(status string, displayName NullableString, region NullableString, locale string, godNotice ApiGuardianTokenGet200ResponseGodNotice) *ApiGuardianTokenGet200Response {
 	this := ApiGuardianTokenGet200Response{}
 	this.Status = status
 	this.DisplayName = displayName
 	this.Region = region
 	this.Locale = locale
+	this.GodNotice = godNotice
 	return &this
 }
 
@@ -150,6 +152,30 @@ func (o *ApiGuardianTokenGet200Response) SetLocale(v string) {
 	o.Locale = v
 }
 
+// GetGodNotice returns the GodNotice field value
+func (o *ApiGuardianTokenGet200Response) GetGodNotice() ApiGuardianTokenGet200ResponseGodNotice {
+	if o == nil {
+		var ret ApiGuardianTokenGet200ResponseGodNotice
+		return ret
+	}
+
+	return o.GodNotice
+}
+
+// GetGodNoticeOk returns a tuple with the GodNotice field value
+// and a boolean to check if the value has been set.
+func (o *ApiGuardianTokenGet200Response) GetGodNoticeOk() (*ApiGuardianTokenGet200ResponseGodNotice, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.GodNotice, true
+}
+
+// SetGodNotice sets field value
+func (o *ApiGuardianTokenGet200Response) SetGodNotice(v ApiGuardianTokenGet200ResponseGodNotice) {
+	o.GodNotice = v
+}
+
 func (o ApiGuardianTokenGet200Response) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -164,6 +190,7 @@ func (o ApiGuardianTokenGet200Response) ToMap() (map[string]interface{}, error) 
 	toSerialize["displayName"] = o.DisplayName.Get()
 	toSerialize["region"] = o.Region.Get()
 	toSerialize["locale"] = o.Locale
+	toSerialize["godNotice"] = o.GodNotice
 
 	for key, value := range o.AdditionalProperties {
 		toSerialize[key] = value
@@ -181,6 +208,7 @@ func (o *ApiGuardianTokenGet200Response) UnmarshalJSON(data []byte) (err error) 
 		"displayName",
 		"region",
 		"locale",
+		"godNotice",
 	}
 
 	allProperties := make(map[string]interface{})
@@ -214,6 +242,7 @@ func (o *ApiGuardianTokenGet200Response) UnmarshalJSON(data []byte) (err error) 
 		delete(additionalProperties, "displayName")
 		delete(additionalProperties, "region")
 		delete(additionalProperties, "locale")
+		delete(additionalProperties, "godNotice")
 		o.AdditionalProperties = additionalProperties
 	}
 

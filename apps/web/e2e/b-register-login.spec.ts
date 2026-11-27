@@ -104,6 +104,8 @@ async function registerThroughUi(
   await page.getByLabel("Date of birth").fill("1990-01-01");
   await page.getByLabel("Region").selectOption({ label: region });
   await page.getByLabel("Language").selectOption({ label: language });
+  // god/TASKS.md 9.1.b: the GOD Group Privacy Notice tick is required to finish.
+  await page.getByRole("checkbox").check();
   await page.getByRole("button", { name: "Create account" }).click();
 }
 
@@ -422,6 +424,7 @@ test.describe("12.4.d/#5: the neutral age gate", () => {
     // register-form.test.tsx's own "no computed age" case.)
     await expect(page.getByLabel(/parent or guardian/i)).toHaveCount(0);
 
+    await page.getByRole("checkbox").check();
     await page.getByRole("button", { name: "Create account" }).click();
 
     await expect(page).toHaveURL(/error=guardian_email_required/);
@@ -451,6 +454,7 @@ test.describe("12.4.d/#5: the neutral age gate", () => {
     await page.getByLabel("Password", { exact: true }).fill(account.password);
     await page.getByLabel("Display name").fill(account.displayName);
     await page.getByLabel("Date of birth").fill(isoDateYearsAgo(12));
+    await page.getByRole("checkbox").check();
     await page.getByRole("button", { name: "Create account" }).click();
 
     await expect(page).toHaveURL(/error=too_young/);

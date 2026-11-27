@@ -227,7 +227,10 @@ describe("9.1.b: an existing user on their next sign-in", () => {
     const after = await status(session);
     expect(after.current).toMatchObject({ decision: "accepted", method: "next_sign_in" });
     expect(after.inGod).toBe(true);
-    expect(await logFor(session.userId)).toHaveLength(1);
+    // The registration row plus the acceptance; the refused decline added nothing.
+    const log = await logFor(session.userId);
+    expect(log).toHaveLength(2);
+    expect(log.at(-1)).toMatchObject({ decision: "accepted", method: "next_sign_in" });
   });
 
   it("asks again when the notice version changes, and refuses a decision on an old version", async () => {

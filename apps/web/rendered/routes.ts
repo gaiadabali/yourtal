@@ -13,7 +13,6 @@ export const GATE_ROUTES = [
   "/lab/shell",
   "/lab/mail",
   "/lab/mail/spam",
-  "/lab/mail/message/m2",
 ] as const;
 
 export const THEMES = ["light", "dark"] as const;

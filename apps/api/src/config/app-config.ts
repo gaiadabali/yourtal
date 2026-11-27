@@ -184,7 +184,7 @@ export function loadAppConfig(source: NodeJS.ProcessEnv = process.env): AppConfi
         god: env.OIDC_OPERATOR_GOD,
       },
     },
-    spambank: spambankConfigFrom(env),
+    spambank: spambankConfigFrom(env, { appEnv: env.APP_ENV, webOrigin }),
   };
 }
 

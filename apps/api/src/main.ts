@@ -12,6 +12,9 @@ import { mountOidc } from "./modules/oidc/mount-oidc";
 import { OIDC_RUNTIME } from "./modules/oidc/oidc-runtime";
 import type { OidcRuntime } from "./modules/oidc/oidc-runtime";
 import { mountSpambankMail } from "./modules/spambank/proxy/mount-spambank-mail";
+import { mountSpambankOptout } from "./modules/spambank/autoreply/mount-optout";
+import type { OptoutContext } from "./modules/spambank/autoreply/mount-optout";
+import { SPAMBANK_OPTOUT_CONTEXT } from "./modules/spambank/spambank.tokens";
 import { SPAMBANK_PROXY_CONTEXT } from "./modules/spambank/proxy/spambank-mail.module";
 import type { ProxyContext } from "./modules/spambank/proxy/proxy-context";
 import { TRUSTED_PROXIES } from "./shared/http/trusted-proxies";
@@ -75,6 +78,11 @@ async function bootstrap(): Promise<void> {
   await mountSpambankMail(
     app.getHttpAdapter().getInstance(),
     app.get<ProxyContext>(SPAMBANK_PROXY_CONTEXT),
+  );
+  // The auto-reply's RFC 8058 one-click opt-out (BUILD.md §4.6): form bodies, outside Nest's JSON pipeline.
+  await mountSpambankOptout(
+    app.getHttpAdapter().getInstance(),
+    app.get<OptoutContext>(SPAMBANK_OPTOUT_CONTEXT),
   );
   await app.listen(config.port, config.host ?? "127.0.0.1");
 }

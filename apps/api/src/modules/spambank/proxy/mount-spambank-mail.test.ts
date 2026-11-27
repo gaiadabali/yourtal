@@ -41,6 +41,8 @@ const config: SpambankConfig = {
   ownDomains: [],
   alertEmails: [],
   bannerUrl: `${ORIGIN}/studio/onboarding`,
+  sender: { abn: null, contactEmail: "hello@god.gaiada.com", publicOrigin: ORIGIN },
+  blocklist: { ips: [], domains: [] },
 };
 
 function mailbox(localPart: string, overrides: Partial<MailboxRecord> = {}): MailboxRecord {

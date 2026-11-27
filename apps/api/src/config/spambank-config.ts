@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { AUTOREPLY_MODES } from "@yourtal/contracts/spambank/common";
 import type { AutoreplyMode } from "@yourtal/contracts/spambank/common";
+import { abnDigits, isValidAbn } from "../modules/spambank/autoreply/abn";
 
 /**
  * Spambank's settings (spambank/BUILD.md §5.8), kept out of `env.schema.ts` and `app-config.ts` so
@@ -81,7 +82,21 @@ export const spambankEnvShape = {
   /** Who is emailed when auto-reply pauses itself. */
   SPAMBANK_ALERT_EMAILS: list(""),
   SPAMBANK_BANNER_URL: z.url().default("https://yourtal.gaiada.com/studio/onboarding"),
+  /**
+   * GOD's ABN for the auto-reply's Spam Act footer (11 digits, spaces allowed). Unset shows the owner's
+   * mock line; production refuses `SPAMBANK_AUTOREPLY_MODE=live` until it is set (BUILD.md §12.3).
+   */
+  SPAMBANK_SENDER_ABN: z.string().max(20).optional(),
+  /** The auto-reply's contact address and call to action. Production `live` needs it set explicitly. */
+  SPAMBANK_CONTACT_EMAIL: z.email().max(254).optional(),
+  /** Sending IPs the daily blocklist check looks up (Helios's, BUILD.md §4.6). */
+  SPAMBANK_BLOCKLIST_IPS: list("187.77.116.133"),
+  /** Domains the daily blocklist check looks up in the Spamhaus DBL. */
+  SPAMBANK_BLOCKLIST_DOMAINS: list("spambank.yourtal.gaiada.com,yourtal.gaiada.com,gaiada.com"),
 };
+
+/** The owner's contact address for the reply (BUILD.md §12.3), used while the setting is unset. */
+export const DEFAULT_CONTACT_EMAIL = "hello@god.gaiada.com";
 
 type SpambankEnv = z.output<z.ZodObject<typeof spambankEnvShape>>;
 
@@ -108,9 +123,51 @@ export interface SpambankConfig {
   readonly ownDomains: readonly string[];
   readonly alertEmails: readonly string[];
   readonly bannerUrl: string;
+  /** What the auto-reply says about its sender (Spam Act footer) and where its opt-out links point. */
+  readonly sender: {
+    /** 11 digits, or null: the reply then shows the mock line (refused for `live` in production). */
+    readonly abn: string | null;
+    readonly contactEmail: string;
+    /** Origin of the opt-out links (`/api/spambank/optout/...` and the `/spambank/optout/...` page). */
+    readonly publicOrigin: string;
+  };
+  readonly blocklist: {
+    readonly ips: readonly string[];
+    readonly domains: readonly string[];
+  };
 }
 
-export function spambankConfigFrom(env: SpambankEnv): SpambankConfig {
+/** Where the config is loaded: the API passes its own web origin; the worker derives the same one. */
+export interface SpambankConfigContext {
+  readonly appEnv?: "dev" | "staging" | "production";
+  /** `AppConfig.webOrigin` (yourtal.gaiada.com serves both the web app and `/api`). */
+  readonly webOrigin?: string;
+}
+
+/**
+ * The owner's rule for mode `live` (2026-11-27): staging may send live replies with the mock ABN, for
+ * testing; production refuses to boot in `live` until a real (checksum-valid) ABN and the contact
+ * address are both configured. Exported for the test and the worker, which apply it the same way.
+ */
+export function liveRefusal(
+  env: SpambankEnv,
+  appEnv: SpambankConfigContext["appEnv"],
+): string | null {
+  if (env.SPAMBANK_AUTOREPLY_MODE !== "live" || appEnv !== "production") return null;
+  const missing: string[] = [];
+  if (env.SPAMBANK_SENDER_ABN === undefined || !isValidAbn(env.SPAMBANK_SENDER_ABN)) {
+    missing.push("a real SPAMBANK_SENDER_ABN");
+  }
+  if (env.SPAMBANK_CONTACT_EMAIL === undefined) missing.push("SPAMBANK_CONTACT_EMAIL");
+  return missing.length === 0
+    ? null
+    : `SPAMBANK_AUTOREPLY_MODE=live is refused in production without ${missing.join(" and ")} (Spam Act sender identity).`;
+}
+
+export function spambankConfigFrom(
+  env: SpambankEnv,
+  context: SpambankConfigContext = {},
+): SpambankConfig {
   const secrets = [
     ["SPAMBANK_CREDENTIAL_KEY", env.SPAMBANK_CREDENTIAL_KEY],
     ["SPAMBANK_TOKEN_KEY", env.SPAMBANK_TOKEN_KEY],
@@ -131,6 +188,27 @@ export function spambankConfigFrom(env: SpambankEnv): SpambankConfig {
     env.SPAMBANK_AUTOREPLY_REDIRECT_TO === undefined
   ) {
     throw new Error("SPAMBANK_AUTOREPLY_MODE=redirect needs SPAMBANK_AUTOREPLY_REDIRECT_TO.");
+  }
+  const sendsMail =
+    env.SPAMBANK_AUTOREPLY_MODE === "redirect" || env.SPAMBANK_AUTOREPLY_MODE === "live";
+  if (sendsMail && env.SPAMBANK_OPTOUT_KEY === undefined) {
+    // Every reply carries a one-click opt-out (D2 5); without the key there is none to sign.
+    throw new Error(
+      `SPAMBANK_AUTOREPLY_MODE=${env.SPAMBANK_AUTOREPLY_MODE} needs SPAMBANK_OPTOUT_KEY.`,
+    );
+  }
+  if (env.SPAMBANK_SENDER_ABN !== undefined && !isValidAbn(env.SPAMBANK_SENDER_ABN)) {
+    throw new Error("SPAMBANK_SENDER_ABN is not a valid ABN (11 digits with the ATO checksum).");
+  }
+  const refusal = liveRefusal(env, context.appEnv);
+  if (refusal !== null) throw new Error(refusal);
+  const publicOrigin =
+    context.webOrigin ??
+    (context.appEnv === "staging" ? "https://yourtal.gaiada.com" : "http://localhost:3000");
+  if (sendsMail && context.appEnv !== undefined && context.appEnv !== "dev") {
+    if (!publicOrigin.startsWith("https://")) {
+      throw new Error("Auto-replies outside dev need an https web origin for their opt-out links.");
+    }
   }
   if (env.SPAMBANK_MAIL_DOMAIN === env.SPAMBANK_REPLY_DOMAIN) {
     throw new Error(
@@ -180,5 +258,14 @@ export function spambankConfigFrom(env: SpambankEnv): SpambankConfig {
     ownDomains: env.SPAMBANK_OWN_DOMAINS,
     alertEmails: env.SPAMBANK_ALERT_EMAILS,
     bannerUrl: env.SPAMBANK_BANNER_URL,
+    sender: {
+      abn: env.SPAMBANK_SENDER_ABN === undefined ? null : abnDigits(env.SPAMBANK_SENDER_ABN),
+      contactEmail: env.SPAMBANK_CONTACT_EMAIL ?? DEFAULT_CONTACT_EMAIL,
+      publicOrigin: new URL(publicOrigin).origin,
+    },
+    blocklist: {
+      ips: env.SPAMBANK_BLOCKLIST_IPS,
+      domains: env.SPAMBANK_BLOCKLIST_DOMAINS,
+    },
   };
 }

@@ -648,6 +648,8 @@ const TABLES_WITH_NO_MAPPING: Readonly<Record<string, string>> = {
     "Spambank T1: one row per one-tap unsubscribe. Only counted (marketersUnsubscribed); the unsubscribe API returns a status, not the row.",
   "spambank.statement_offer":
     "Spambank T1: attachments offered to SnapApp. Reaches SnapApp only as a signed event and the attachments/fetch route, never as a row.",
+  "spambank.reply_inbox_message":
+    "Spambank T7 (20261128120000_spambank_autoreply.sql): which bounce, complaint or answer to the reply address was already counted, purged after 30 days. Server-internal.",
   "spambank.app_event_outbox":
     "Spambank T1: signed mail events waiting for SnapApp (B8). Leaves YourTal only as a Security Event Token, never as a row.",
   "platform.idempotency":

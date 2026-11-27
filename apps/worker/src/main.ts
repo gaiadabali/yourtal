@@ -38,6 +38,17 @@ async function bootstrap(): Promise<void> {
     for (const line of result.lines) console.log(line);
     process.exit(result.ok ? 0 : 1);
   }
+  // spambank/BUILD.md T7: the blocklist check on demand (the job runs it daily at 02:00 UTC).
+  if (process.argv.includes("--spambank-blocklist")) {
+    const { checkBlocklists } = await import("./jobs/spambank-blocklist");
+    const { createPool } = await import("./pool");
+    const pool = createPool(config.databaseUrl);
+    const run = await checkBlocklists(pool);
+    await pool.end();
+    for (const row of run.rows)
+      console.log(`${row.target} ${row.list} ${row.result} ${row.detail ?? ""}`);
+    process.exit(run.listed.length > 0 ? 1 : 0);
+  }
   // 13.8: the deploy's boot check. Parses config and imports every job, so a
   // missing dependency or variable fails before the release goes live, but
   // starts no queue and so takes no job from the running worker.

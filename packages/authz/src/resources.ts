@@ -401,6 +401,13 @@ export const RESOURCE_ACTIONS = {
    * (`policies/resource_policies/spambank.yaml`).
    */
   spambank: ["view", "enable", "open", "manage_app_passwords", "delete"],
+
+  /**
+   * Spambank leads (spambank/BUILD.md 4.7, 5.4): the staff sales list of brands that mailed Spambank
+   * users. No attributes: the region wall is enforced in SQL from the caller's own jurisdiction.
+   * `ops` and `support` view, `ops` updates; `admin` is absent (`policies/resource_policies/spambank_lead.yaml`).
+   */
+  spambank_lead: ["view", "update"],
 } as const satisfies Record<string, readonly string[]>;
 
 /** Every resource kind the PDP answers for. */

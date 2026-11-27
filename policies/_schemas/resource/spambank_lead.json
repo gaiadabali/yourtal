@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "spambank_lead",
+  "description": "The staff leads list (spambank/BUILD.md 5.4). No attributes: the region wall is enforced in SQL from the caller's own jurisdiction (principal.attr.jurisdiction, never a request parameter), so the resource names nothing a rule could read. See policies/resource_policies/spambank_lead.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {}
+}

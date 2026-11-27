@@ -41,6 +41,9 @@ export default tseslint.config(
       // executed: 72 errors there, 0 locally, because every package's lint
       // script was scoped to `src` and never looked at `fixtures`.
       "packages/media/fixtures/**",
+      // Spambank T7: the auto-reply's content embedded as strings by
+      // scripts/gen-spambank-autoreply-content.mjs (a 330 KB base64 banner).
+      "apps/api/src/modules/spambank/autoreply/content.generated.ts",
       // Stand-ins for the worker's built dist/jobs/*.js; not in any tsconfig.
       "apps/worker/src/job-loader.fixtures/**/*.js",
       // YT-0424: the Serwist service worker. `apps/web/app/sw.ts` runs in a

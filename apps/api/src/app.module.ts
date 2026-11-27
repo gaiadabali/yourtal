@@ -31,6 +31,7 @@ import { OidcModule } from "./modules/oidc/oidc.module";
 import { SpambankManagementModule } from "./modules/spambank/spambank-management.module";
 import { SpambankModule } from "./modules/spambank/spambank.module";
 import { SpambankMailModule } from "./modules/spambank/proxy/spambank-mail.module";
+import { SpambankStaffModule } from "./modules/spambank/staff/spambank-staff.module";
 import { AuthzModule } from "./shared/authz/authz.module";
 import { PdpGuard } from "./shared/authz/pdp.guard";
 import { RESOURCE_ATTRIBUTE_LOADERS } from "./shared/authz/resource-attribute-loader";
@@ -86,6 +87,7 @@ import { RateLimitModule } from "./shared/rate-limit/rate-limit.module";
     SpambankModule,
     SpambankManagementModule,
     SpambankMailModule,
+    SpambankStaffModule,
   ],
   // Global rather than per-controller: a new module inherits idempotency
   // instead of having to remember it. It acts only on routes carrying

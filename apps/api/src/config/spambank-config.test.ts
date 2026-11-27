@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 import { loadAppConfig } from "./app-config";
+import { spambankConfigFrom, spambankEnvShape } from "./spambank-config";
 
 const BASE = {
   DATABASE_URL: "postgres://yourtal_app:app_local_only@127.0.0.1:26432/yourtal",
@@ -91,8 +93,91 @@ describe("Spambank settings", () => {
       spambank({
         SPAMBANK_AUTOREPLY_MODE: "redirect",
         SPAMBANK_AUTOREPLY_REDIRECT_TO: "tester@example.com",
+        SPAMBANK_OPTOUT_KEY: key("d"),
       }).autoreply.redirectTo,
     ).toBe("tester@example.com");
+  });
+
+  it("a mode that sends needs the opt-out key: every reply carries a one-click opt-out", () => {
+    expect(() =>
+      spambank({
+        SPAMBANK_AUTOREPLY_MODE: "redirect",
+        SPAMBANK_AUTOREPLY_REDIRECT_TO: "tester@example.com",
+      }),
+    ).toThrow(/SPAMBANK_OPTOUT_KEY/);
+    expect(() => spambank({ SPAMBANK_AUTOREPLY_MODE: "live" })).toThrow(/SPAMBANK_OPTOUT_KEY/);
+  });
+
+  it("defaults the sender to the mock ABN line and hello@god.gaiada.com", () => {
+    const s = spambank();
+    expect(s.sender).toStrictEqual({
+      abn: null,
+      contactEmail: "hello@god.gaiada.com",
+      publicOrigin: "http://localhost:3000",
+    });
+    expect(s.blocklist.ips).toStrictEqual(["187.77.116.133"]);
+    expect(s.blocklist.domains).toStrictEqual([
+      "spambank.yourtal.gaiada.com",
+      "yourtal.gaiada.com",
+      "gaiada.com",
+    ]);
+    expect(spambank({ SPAMBANK_SENDER_ABN: "51 824 753 556" }).sender.abn).toBe("51824753556");
+    expect(() => spambank({ SPAMBANK_SENDER_ABN: "00 000 000 000" })).toThrow(/ABN/);
+  });
+});
+
+describe("mode live (owner decision 2026-11-27)", () => {
+  const live = {
+    SPAMBANK_AUTOREPLY_MODE: "live",
+    SPAMBANK_OPTOUT_KEY: key("d"),
+  };
+  const parse = (env: Record<string, string>, appEnv: "dev" | "staging" | "production") =>
+    spambankConfigFrom(z.object(spambankEnvShape).parse(env), {
+      appEnv,
+      webOrigin: "https://yourtal.gaiada.com",
+    });
+
+  it("is allowed on staging with the mock ABN, for the owner's live test", () => {
+    const s = parse(live, "staging");
+    expect(s.autoreply.mode).toBe("live");
+    expect(s.sender.abn).toBeNull();
+    expect(s.sender.publicOrigin).toBe("https://yourtal.gaiada.com");
+  });
+
+  it("is refused in production without a real ABN and an explicit contact address", () => {
+    expect(() => parse(live, "production")).toThrow(
+      /SPAMBANK_SENDER_ABN and SPAMBANK_CONTACT_EMAIL/,
+    );
+    expect(() => parse({ ...live, SPAMBANK_SENDER_ABN: "51824753556" }, "production")).toThrow(
+      /SPAMBANK_CONTACT_EMAIL/,
+    );
+    expect(() =>
+      parse({ ...live, SPAMBANK_CONTACT_EMAIL: "hello@god.gaiada.com" }, "production"),
+    ).toThrow(/SPAMBANK_SENDER_ABN/);
+    const ok = parse(
+      {
+        ...live,
+        SPAMBANK_SENDER_ABN: "51 824 753 556",
+        SPAMBANK_CONTACT_EMAIL: "hello@god.gaiada.com",
+      },
+      "production",
+    );
+    expect(ok.autoreply.mode).toBe("live");
+  });
+
+  it("dry_run and redirect stay allowed in production without them", () => {
+    expect(parse({ SPAMBANK_AUTOREPLY_MODE: "dry_run" }, "production").autoreply.mode).toBe(
+      "dry_run",
+    );
+  });
+
+  it("refuses sending outside dev with a plain-http origin for the opt-out links", () => {
+    expect(() =>
+      spambankConfigFrom(z.object(spambankEnvShape).parse(live), {
+        appEnv: "staging",
+        webOrigin: "http://yourtal.gaiada.com",
+      }),
+    ).toThrow(/https/);
   });
 
   it("keeps the reply domain apart from the mailbox domain", () => {

@@ -537,6 +537,13 @@ resources:
     id: self
     attr: {}
 
+  # Spambank leads (spambank/BUILD.md 5.4): no attributes, the region is cut in SQL -- see
+  # _schemas/resource/spambank_lead.json and resource_policies/spambank_lead.yaml.
+  spambank_lead_self:
+    kind: spambank_lead
+    id: self
+    attr: {}
+
   # TASKS.md 7.1.c: same "caller IS the resource" shape as session_self/
   # me_self above -- see _schemas/resource/team_invitation.json and
   # resource_policies/team_invitation.yaml.

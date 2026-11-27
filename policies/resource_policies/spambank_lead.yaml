@@ -1,0 +1,28 @@
+---
+apiVersion: api.cerbos.dev/v1
+description: |-
+  Spambank leads (spambank/BUILD.md 4.7, 5.4): the brands that mailed Spambank users, as GOD's sales
+  list. Staff only. `ops` reads and edits the status and note; `support` reads. The region wall is not
+  a rule here: the list is cut to the signed-in staff member's own region in SQL, from the session
+  (`principal.attr.jurisdiction`), and the resource carries no region to compare.
+
+  `admin` is absent on purpose: it appears only in platform_setting.yaml (docs/17 section 5, no direct
+  data access), and packages/authz has a drift test that fails if it is added anywhere else.
+resourcePolicy:
+  version: default
+  resource: spambank_lead
+  schemas:
+    principalSchema:
+      ref: cerbos:///principal.json
+    resourceSchema:
+      ref: cerbos:///resource/spambank_lead.json
+  rules:
+    - name: ops-and-support-read-the-leads
+      actions: ["view"]
+      effect: EFFECT_ALLOW
+      roles: ["ops", "support"]
+
+    - name: ops-edits-a-lead
+      actions: ["update"]
+      effect: EFFECT_ALLOW
+      roles: ["ops"]

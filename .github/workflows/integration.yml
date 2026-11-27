@@ -561,11 +561,4 @@ jobs:
         run: |
           pnpm start --port 3105 -H 0.0.0.0 > /tmp/web-visual.log 2>&1 &
           timeout 90 bash -c 'until curl -sf http://127.0.0.1:3105/lab/ui > /dev/null; do sleep 1; done'
-          pnpm test:visual --update-snapshots=all
-
-      - name: TEMP upload regenerated baselines
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: visual-baselines
-          path: apps/web/visual/__screenshots__
+          pnpm test:visual

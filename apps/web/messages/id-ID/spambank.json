@@ -179,17 +179,17 @@
   },
   "switchOn": {
     "title": "Punya kotak masuk Spambank sendiri",
-    "lede": "Alamat email sungguhan yang menjauhkan email promosi dari kotak masukmu. Satu kotak masuk untuk SnapApp, YourTal, dan Free Tax Returns.",
+    "lede": "Alamat email sungguhan yang menjauhkan email promosi dari kotak masukmu. Satu kotak masuk untuk SnapApps, YourTal, dan Free Tax Returns.",
     "points": {
       "address": "Kamu dapat alamat yang dibuatkan otomatis, misalnya geewizduck@yourtal.gaiada.com. Alamatnya dipilihkan dan tetap jadi milikmu.",
       "filing": "Email promosi dan email massal disaring ke Spam dan Promosi, jadi kotak masukmu tinggal untuk orang dan tagihan.",
-      "statements": "Mutasi rekening yang dikirim ke alamat ini bisa diimpor ke SnapApp. Fitur ini mati sampai kamu menyalakannya di SnapApp."
+      "statements": "Mutasi rekening yang dikirim ke alamat ini bisa diimpor ke SnapApps. Fitur ini mati sampai kamu menyalakannya di SnapApps."
     },
     "working": "Menyiapkan kotak masukmu…",
     "cta": "Aktifkan email",
     "adultsOnly": "Untuk orang dewasa. Bisa berhenti kapan saja.",
     "doneTitle": "Kotak masukmu sudah siap",
-    "doneBody": "Ini alamat barumu. Alamat ini berlaku di SnapApp, YourTal, dan Free Tax Returns.",
+    "doneBody": "Ini alamat barumu. Alamat ini berlaku di SnapApps, YourTal, dan Free Tax Returns.",
     "yourAddress": "Alamatmu",
     "doneHint": "Pakai alamat ini untuk toko dan newsletter yang biasanya kamu beri alamat email utama.",
     "openInbox": "Buka kotak masuk",

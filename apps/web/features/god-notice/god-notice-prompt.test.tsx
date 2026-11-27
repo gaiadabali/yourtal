@@ -14,7 +14,7 @@ vi.mock("./god-notice-actions", () => ({ decideGodNoticeAction: vi.fn() }));
 const decideMock = vi.mocked(decideGodNoticeAction);
 
 const TICK_TEXT =
-  "I have read and accept the GOD Group Privacy Notice. I understand that my activity in YourTal, SnapApp and Free Tax Returns is combined into one profile, and that businesses receive reports about groups of people, never about me.";
+  "I have read and accept the GOD Group Privacy Notice. I understand that my activity in YourTal, SnapApps and Free Tax Returns is combined into one profile, and that businesses receive reports about groups of people, never about me.";
 
 function renderPrompt() {
   return render(

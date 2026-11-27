@@ -179,17 +179,17 @@
   },
   "switchOn": {
     "title": "Get your own Spambank inbox",
-    "lede": "A real email address that keeps marketing mail out of your way. One inbox, shared by SnapApp, YourTal and Free Tax Returns.",
+    "lede": "A real email address that keeps marketing mail out of your way. One inbox, shared by SnapApps, YourTal and Free Tax Returns.",
     "points": {
       "address": "You get a friendly generated address, such as geewizduck@yourtal.gaiada.com. It's chosen for you and stays yours.",
       "filing": "Marketing and bulk mail is filed into Spam and Junk, so your Inbox is left for people and bills.",
-      "statements": "Statements sent to this address can be imported into SnapApp. That's off until you turn it on in SnapApp."
+      "statements": "Statements sent to this address can be imported into SnapApps. That's off until you turn it on in SnapApps."
     },
     "working": "Setting up your inbox…",
     "cta": "Switch on mail",
     "adultsOnly": "For adults. You can stop using it at any time.",
     "doneTitle": "Your inbox is ready",
-    "doneBody": "This is your new address. It works in SnapApp, YourTal and Free Tax Returns.",
+    "doneBody": "This is your new address. It works in SnapApps, YourTal and Free Tax Returns.",
     "yourAddress": "Your address",
     "doneHint": "Give this address to the shops and newsletters you'd otherwise give your real one to.",
     "openInbox": "Open your inbox",

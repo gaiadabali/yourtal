@@ -146,7 +146,7 @@
   },
   "linkedApps": {
     "heading": "Linked apps",
-    "intro": "Link this account in another app, such as SnapApp, to earn points there. Generate a one-time code and enter it in that app within 10 minutes.",
+    "intro": "Link this account in another app, such as SnapApps, to earn points there. Generate a one-time code and enter it in that app within 10 minutes.",
     "generateCta": "Generate code",
     "codeLabel": "Your code",
     "expiresPrefix": "Expires at",
@@ -156,7 +156,7 @@
     "teenRefused": "Teen accounts can't link other apps to earn points.",
     "failed": "That didn't work. Try again.",
     "apps": {
-      "snap-app": "SnapApp"
+      "snap-app": "SnapApps"
     }
   },
   "dataExport": {
@@ -169,7 +169,7 @@
     "intro": "This permanently removes your YourTal account. Before you confirm, here is exactly what happens — there is no cash refund for any of it.",
     "bulletPoints": "Unspent points are forfeited, including anything on hold, and can't be moved to anyone else.",
     "bulletVouchers": "Vouchers already in your wallet keep their code and can still be redeemed by the merchant until they expire — but you won't be able to log back in to view them, so save or screenshot any you plan to use first.",
-    "bulletConnectedApps": "Apps you sign in to with YourTal, such as SnapApp and Free Tax Returns, are told, and delete what they hold about you within 3 days. They keep only records the law requires. Download anything you need from them first.",
+    "bulletConnectedApps": "Apps you sign in to with YourTal, such as SnapApps and Free Tax Returns, are told, and delete what they hold about you within 3 days. They keep only records the law requires. Download anything you need from them first.",
     "bulletIrreversible": "This can't be undone.",
     "confirmCheckboxLabel": "I understand my unspent points will be forfeited and this can't be undone.",
     "startCta": "Delete my account",
@@ -256,7 +256,7 @@
   },
   "godGroup": {
     "heading": "GOD group",
-    "intro": "YourTal, SnapApp and Free Tax Returns belong to one group called GOD.",
+    "intro": "YourTal, SnapApps and Free Tax Returns belong to one group called GOD.",
     "readNotice": "Read the GOD Group Privacy Notice",
     "statusInGod": "You've agreed. Your activity is combined into one profile, used only for reports about groups.",
     "statusDeclined": "You chose not now. Nothing about you is combined.",

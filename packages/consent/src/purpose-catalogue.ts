@@ -164,8 +164,8 @@ const DEFINITIONS: readonly PurposeDefinition[] = [
     purpose: "god_group_insights",
     lawfulBasis: "consent",
     description:
-      "Combine your activity in YourTal, SnapApp and Free Tax Returns into one GOD profile, used only for reports to businesses about groups of people, never about you.",
-    // It includes what you buy and where (SnapApp receipts), the same
+      "Combine your activity in YourTal, SnapApps and Free Tax Returns into one GOD profile, used only for reports to businesses about groups of people, never about you.",
+    // It includes what you buy and where (SnapApps receipts), the same
     // inference risk purchase_history_targeting carries.
     sensitive: true,
     // Group reports only, never advertising aimed at the person, so the AU

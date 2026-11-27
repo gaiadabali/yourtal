@@ -146,7 +146,7 @@
   },
   "linkedApps": {
     "heading": "Aplikasi tertaut",
-    "intro": "Tautkan akun ini di aplikasi lain, seperti SnapApp, untuk mendapatkan poin di sana. Buat kode sekali pakai dan masukkan di aplikasi itu dalam 10 menit.",
+    "intro": "Tautkan akun ini di aplikasi lain, seperti SnapApps, untuk mendapatkan poin di sana. Buat kode sekali pakai dan masukkan di aplikasi itu dalam 10 menit.",
     "generateCta": "Buat kode",
     "codeLabel": "Kodemu",
     "expiresPrefix": "Berlaku sampai",
@@ -156,7 +156,7 @@
     "teenRefused": "Akun remaja tidak bisa menautkan aplikasi lain untuk mendapatkan poin.",
     "failed": "Gagal. Coba lagi.",
     "apps": {
-      "snap-app": "SnapApp"
+      "snap-app": "SnapApps"
     }
   },
   "dataExport": {
@@ -169,7 +169,7 @@
     "intro": "Ini menghapus akun YourTal-mu secara permanen. Sebelum kamu konfirmasi, ini yang akan terjadi persis — tidak ada pengembalian dana tunai untuk apa pun di bawah ini.",
     "bulletPoints": "Poin yang belum dipakai hangus, termasuk yang masih ditahan, dan tidak bisa dipindahkan ke orang lain.",
     "bulletVouchers": "Voucher yang sudah ada di walletmu tetap punya kode dan masih bisa ditukarkan merchant sampai kedaluwarsa — tapi kamu tidak bisa login lagi untuk melihatnya, jadi simpan atau screenshot dulu voucher yang ingin kamu pakai.",
-    "bulletConnectedApps": "Aplikasi yang kamu masuki dengan YourTal, seperti SnapApp dan Free Tax Returns, diberi tahu dan menghapus data tentangmu yang mereka simpan dalam 3 hari. Mereka hanya menyimpan catatan yang diwajibkan hukum. Unduh dulu apa pun yang kamu perlukan dari mereka.",
+    "bulletConnectedApps": "Aplikasi yang kamu masuki dengan YourTal, seperti SnapApps dan Free Tax Returns, diberi tahu dan menghapus data tentangmu yang mereka simpan dalam 3 hari. Mereka hanya menyimpan catatan yang diwajibkan hukum. Unduh dulu apa pun yang kamu perlukan dari mereka.",
     "bulletIrreversible": "Tindakan ini tidak bisa dibatalkan.",
     "confirmCheckboxLabel": "Saya paham poin yang belum dipakai akan hangus dan ini tidak bisa dibatalkan.",
     "startCta": "Hapus akun saya",
@@ -256,7 +256,7 @@
   },
   "godGroup": {
     "heading": "Grup GOD",
-    "intro": "YourTal, SnapApp, dan Free Tax Returns tergabung dalam satu grup bernama GOD.",
+    "intro": "YourTal, SnapApps, dan Free Tax Returns tergabung dalam satu grup bernama GOD.",
     "readNotice": "Baca GOD Group Privacy Notice",
     "statusInGod": "Kamu sudah setuju. Aktivitasmu digabungkan menjadi satu profil, yang hanya dipakai untuk laporan tentang kelompok.",
     "statusDeclined": "Kamu memilih nanti saja. Tidak ada datamu yang digabungkan.",

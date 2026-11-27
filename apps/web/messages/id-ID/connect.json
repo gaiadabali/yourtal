@@ -110,7 +110,7 @@
     },
     "demo_sign_in_not_allowed": {
       "title": "Akun uji ini tidak bisa masuk ke {app}",
-      "body": "Kamu masuk ke YourTal sebagai akun uji tanpa kata sandi. Akun uji seperti ini hanya bisa dipakai di aplikasi uji SnapApp. Tidak ada data akunmu yang dibagikan ke {app}."
+      "body": "Kamu masuk ke YourTal sebagai akun uji tanpa kata sandi. Akun uji seperti ini hanya bisa dipakai di aplikasi uji SnapApps. Tidak ada data akunmu yang dibagikan ke {app}."
     }
   },
   "continuing": {

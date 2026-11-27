@@ -28,16 +28,16 @@ function renderWithIntl(ui: React.ReactElement) {
 const SNAP_APP = { linkId: LINK_ID, partnerId: "snap-app", linkedAt: "2026-10-20T01:00:00Z" };
 
 describe("MeLinkedAppsSection (14.3.c)", () => {
-  it("shows SnapApp as linked and unlinks it", async () => {
+  it("shows SnapApps as linked and unlinks it", async () => {
     const user = userEvent.setup();
     renderWithIntl(<MeLinkedAppsSection initialLinkedApps={[SNAP_APP]} isTeen={false} />);
 
-    expect(screen.getByText("SnapApp linked")).toBeInTheDocument();
+    expect(screen.getByText("SnapApps linked")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Unlink" }));
 
     expect(unlinkAppAction).toHaveBeenCalledWith(LINK_ID);
     await waitFor(() => {
-      expect(screen.queryByText("SnapApp linked")).not.toBeInTheDocument();
+      expect(screen.queryByText("SnapApps linked")).not.toBeInTheDocument();
     });
     expect(screen.getByRole("button", { name: "Generate code" })).toBeInTheDocument();
   });

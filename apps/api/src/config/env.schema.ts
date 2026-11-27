@@ -299,7 +299,7 @@ export const envSchema = z.object({
   /** Each client's public JWKS or secret, one file per client id (docs/26 §1.9). */
   OIDC_CLIENT_KEYS_DIR: z.string().min(1).default("/opt/yourtal/secrets/oidc/clients"),
   /** F125: the company named on each app's consent screen. Brand names until the legal names arrive. */
-  OIDC_OPERATOR_SNAPAPP: z.string().min(1).max(120).default("SnapApp"),
+  OIDC_OPERATOR_SNAPAPP: z.string().min(1).max(120).default("SnapApps"),
   OIDC_OPERATOR_FTR: z.string().min(1).max(120).default("Free Tax Returns"),
   OIDC_OPERATOR_GOD: z.string().min(1).max(120).default("Global Omni Data"),
 

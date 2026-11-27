@@ -65,10 +65,10 @@ describe("login and create", () => {
   it("login leads with Sign in and links to /login and /register with the way back", () => {
     renderScreen(details({ screen: "login", account: null, sharing: null }));
     expect(
-      screen.getByRole("heading", { level: 1, name: "Sign in to continue to SnapApp" }),
+      screen.getByRole("heading", { level: 1, name: "Sign in to continue to SnapApps" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("SnapApp uses your YourTal account to sign you in."),
+      screen.getByText("SnapApps uses your YourTal account to sign you in."),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
       "href",
@@ -102,7 +102,7 @@ describe("verify_email", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Check your email" })).toBeInTheDocument();
     expect(
       screen.getByText(
-        "We sent a link to ana@example.com. Open it to confirm it's yours, then you'll go on to SnapApp.",
+        "We sent a link to ana@example.com. Open it to confirm it's yours, then you'll go on to SnapApps.",
       ),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "I've confirmed my email" }));
@@ -129,11 +129,11 @@ describe("consent", () => {
   it("shows what an adult in Australia shares, and what is never shared", () => {
     renderScreen(details());
     expect(
-      screen.getByRole("heading", { level: 1, name: "Continue to SnapApp as Ana" }),
+      screen.getByRole("heading", { level: 1, name: "Continue to SnapApps as Ana" }),
     ).toBeInTheDocument();
     expect(screen.getByText("ana@example.com")).toBeInTheDocument();
     expect(screen.getByText("Not you?")).toBeInTheDocument();
-    expect(screen.getByText("SnapApp will get:")).toBeInTheDocument();
+    expect(screen.getByText("SnapApps will get:")).toBeInTheDocument();
     const items = screen.getAllByRole("listitem").map((li) => li.textContent);
     expect(items).toEqual([
       "your name and email address",
@@ -156,7 +156,7 @@ describe("consent", () => {
       "noopener noreferrer",
     );
     expect(
-      screen.getByText("You can remove SnapApp at any time in YourTal, under Me → Linked apps."),
+      screen.getByText("You can remove SnapApps at any time in YourTal, under Me → Linked apps."),
     ).toBeInTheDocument();
     expect(screen.getByText("You'll go back to snapapp.gaiada.com.")).toBeInTheDocument();
   });
@@ -184,13 +184,13 @@ describe("consent", () => {
     renderScreen(details());
     expect(
       screen.getByText(
-        "SnapApp is run by Gaiada Pty Ltd. Its privacy policy explains how it uses your details.",
+        "SnapApps is run by Gaiada Pty Ltd. Its privacy policy explains how it uses your details.",
       ),
     ).toBeInTheDocument();
   });
 
   it("drops the operator clause when the operator is the brand name", () => {
-    renderScreen(details({ client: { ...details().client, operator: "SnapApp" } }));
+    renderScreen(details({ client: { ...details().client, operator: "SnapApps" } }));
     expect(screen.queryByText(/is run by/)).not.toBeInTheDocument();
     expect(
       screen.getByText("Its privacy policy explains how it uses your details."),
@@ -289,11 +289,11 @@ describe("continue", () => {
   it("is the one-tap screen: who, which app, Continue and Cancel, nothing else", () => {
     renderScreen(oneTap);
     expect(
-      screen.getByRole("heading", { level: 1, name: "Continue to SnapApp as Ana" }),
+      screen.getByRole("heading", { level: 1, name: "Continue to SnapApps as Ana" }),
     ).toBeInTheDocument();
     expect(screen.getByText("ana@example.com")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Use another account" })).toBeInTheDocument();
-    expect(screen.queryByText("SnapApp will get:")).not.toBeInTheDocument();
+    expect(screen.queryByText("SnapApps will get:")).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Privacy policy" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Continue" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
@@ -315,7 +315,7 @@ describe("sign_in_again", () => {
     switchAccountAction.mockResolvedValueOnce({ kind: "reload" });
     renderScreen(again);
     expect(
-      screen.getByRole("heading", { level: 1, name: "Sign in again to continue to SnapApp" }),
+      screen.getByRole("heading", { level: 1, name: "Sign in again to continue to SnapApps" }),
     ).toBeInTheDocument();
     expect(screen.getByText("ana@example.com")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Continue" })).not.toBeInTheDocument();
@@ -343,8 +343,8 @@ describe("sign_in_again", () => {
 describe("refused", () => {
   const cases = [
     ["account_on_hold", "Your YourTal account is on hold", /Contact YourTal support/],
-    ["region_not_supported", "SnapApp isn't available for your account", /doesn't support/],
-    ["teen_not_allowed", "SnapApp is for people 18 and over", /teen account/],
+    ["region_not_supported", "SnapApps isn't available for your account", /doesn't support/],
+    ["teen_not_allowed", "SnapApps is for people 18 and over", /teen account/],
     ["teen_invite_required", "You need an invite from your parent", /parent or guardian/],
   ] as const;
 
@@ -356,7 +356,7 @@ describe("refused", () => {
     renderScreen(details({ screen: "refused", sharing: null, refusal }));
     expect(screen.getByRole("heading", { level: 1, name: title })).toBeInTheDocument();
     expect(screen.getByText(body)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Back to SnapApp" }));
+    fireEvent.click(screen.getByRole("button", { name: "Back to SnapApps" }));
     await waitFor(() => expect(navigateTo).toHaveBeenCalledWith("https://y.test/oidc/auth/b"));
     expect(cancelAction).toHaveBeenCalledWith("uid_123-abc");
   });
@@ -394,7 +394,7 @@ describe("send", () => {
     expect(screen.getByText("Signed in as Ana")).toBeInTheDocument();
     expect(screen.getByText("ana@example.com")).toBeInTheDocument();
     expect(
-      screen.getByText(/SnapApp will send Free Tax Returns 14 deduction lines for 2025-26: /),
+      screen.getByText(/SnapApps will send Free Tax Returns 14 deduction lines for 2025-26: /),
     ).toBeInTheDocument();
     expect(screen.getByText(/It arrives as an import for you to check\./)).toBeInTheDocument();
     expect(
@@ -417,7 +417,7 @@ describe("send", () => {
     renderScreen({ ...value, send: { ...value.send!, lineCount: 0 } });
     expect(
       screen.getByText(
-        /SnapApp will send Free Tax Returns your occupation and work kilometres for 2025-26\. Not the receipts/,
+        /SnapApps will send Free Tax Returns your occupation and work kilometres for 2025-26\. Not the receipts/,
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText(/0 deduction/)).not.toBeInTheDocument();
@@ -428,7 +428,7 @@ describe("send", () => {
     renderScreen({ ...value, send: { ...value.send!, lineCount: 0 } }, "id-ID");
     expect(
       screen.getByText(
-        /SnapApp akan mengirim pekerjaan dan kilometer kerjamu untuk 2025-26 ke Free Tax Returns\. Bukan/,
+        /SnapApps akan mengirim pekerjaan dan kilometer kerjamu untuk 2025-26 ke Free Tax Returns\. Bukan/,
       ),
     ).toBeInTheDocument();
   });
@@ -482,13 +482,13 @@ describe("send", () => {
   it.each([
     [
       "not_connected",
-      "Sign in to Free Tax Returns with YourTal once, then send again from SnapApp.",
+      "Sign in to Free Tax Returns with YourTal once, then send again from SnapApps.",
     ],
     [
       "wrong_account",
-      "This was started from another YourTal account. Switch back to the one you use in SnapApp.",
+      "This was started from another YourTal account. Switch back to the one you use in SnapApps.",
     ],
-    ["expired", "This has expired. Start again from SnapApp."],
+    ["expired", "This has expired. Start again from SnapApps."],
     ["not_allowed", "Free Tax Returns is for adults in Australia."],
   ] as const)("refused for %s ends with Nothing was sent", async (sendProblem, text) => {
     cancelAction.mockResolvedValueOnce({ kind: "redirect", redirectTo: "https://y.test/c" });
@@ -499,7 +499,7 @@ describe("send", () => {
       screen.getByRole("heading", { level: 1, name: "We couldn't send your deductions" }),
     ).toBeInTheDocument();
     expect(screen.getByText(`${text} Nothing was sent.`)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Back to SnapApp" }));
+    fireEvent.click(screen.getByRole("button", { name: "Back to SnapApps" }));
     await waitFor(() => expect(navigateTo).toHaveBeenCalledWith("https://y.test/c"));
   });
 
@@ -520,7 +520,7 @@ describe("send", () => {
   });
 });
 
-describe("a teen at SnapApp", () => {
+describe("a teen at SnapApps", () => {
   const teen: InteractionDetails["sharing"] = {
     claims: ["name", "email", "age_band", "region"],
     ageBand: "teen",
@@ -534,16 +534,16 @@ describe("a teen at SnapApp", () => {
     });
     renderScreen(details({ sharing: teen, teenInvite: { parentName: "Pat" } }));
     expect(
-      screen.getByRole("heading", { level: 1, name: "Join SnapApp with Pat's invite" }),
+      screen.getByRole("heading", { level: 1, name: "Join SnapApps with Pat's invite" }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Pat can see everything you add to SnapApp/)).toBeInTheDocument();
+    expect(screen.getByText(/Pat can see everything you add to SnapApps/)).toBeInTheDocument();
     expect(
       screen.getByText(/that you're under 18, and that your YourTal account is for Australia/),
     ).toBeInTheDocument();
     expect(screen.getByText("You won't earn YourTal points for receipts.")).toBeInTheDocument();
     // The same disclosures as an adult gets.
     expect(
-      screen.getByText(/SnapApp is run by Gaiada Pty Ltd\. Its privacy policy/),
+      screen.getByText(/SnapApps is run by Gaiada Pty Ltd\. Its privacy policy/),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Privacy policy" })).toHaveAttribute(
       "href",
@@ -559,7 +559,7 @@ describe("a teen at SnapApp", () => {
   it("renders from the id-ID catalogue", () => {
     renderScreen(details({ sharing: teen, teenInvite: { parentName: "Pat" } }), "id-ID");
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "Bergabung dengan SnapApp lewat undangan Pat",
+      "Bergabung dengan SnapApps lewat undangan Pat",
     );
   });
 
@@ -596,7 +596,7 @@ describe("Indonesian", () => {
   it("renders the consent screen from the id-ID catalogue", () => {
     renderScreen(details(), "id-ID");
     expect(
-      screen.getByRole("heading", { level: 1, name: "Lanjutkan ke SnapApp sebagai Ana" }),
+      screen.getByRole("heading", { level: 1, name: "Lanjutkan ke SnapApps sebagai Ana" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Lanjutkan" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Batal" })).toBeInTheDocument();

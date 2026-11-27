@@ -110,7 +110,7 @@
     },
     "demo_sign_in_not_allowed": {
       "title": "This test account can't sign in to {app}",
-      "body": "You signed in to YourTal as a test account without a password. Test accounts like this can only be used with SnapApp's test apps. Nothing from your account was shared with {app}."
+      "body": "You signed in to YourTal as a test account without a password. Test accounts like this can only be used with SnapApps' test apps. Nothing from your account was shared with {app}."
     }
   },
   "continuing": {

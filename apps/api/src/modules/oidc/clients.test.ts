@@ -67,7 +67,7 @@ describe("the client registry (docs/26 §1.9)", () => {
           // The App Link on the app's own host, or the phone app's browser build (PWA).
           expect([
             client.returnHost,
-            "snapapp.gaiada.com", // the App Link host installed APKs verify; stays registered
+            "snapapp.gaiada.com", // the App Link host of APKs before 2026-11-27; stays registered
             "app.snapapps.gaiada.com",
             "snapapp.app.gaiada.com",
           ]).toContain(uri.host);
@@ -84,6 +84,7 @@ describe("the client registry (docs/26 §1.9)", () => {
     );
     expect(uris.get("snapapp-staging-mobile")).toEqual([
       "au.com.snapapps.app:/oauth/yourtal",
+      "https://snapapps.gaiada.com/oauth/yourtal",
       "https://snapapp.gaiada.com/oauth/yourtal",
       "https://app.snapapps.gaiada.com/oauth/yourtal",
       "https://snapapp.app.gaiada.com/oauth/yourtal",
@@ -328,6 +329,7 @@ describe("client credentials from the secrets directory", () => {
     expect(byId.get("snapapp-staging-mobile")?.token_endpoint_auth_method).toBe("none");
     expect(byId.get("snapapp-staging-mobile")?.redirect_uris).toEqual([
       "au.com.snapapps.app:/oauth/yourtal",
+      "https://snapapps.gaiada.com/oauth/yourtal",
       "https://snapapp.gaiada.com/oauth/yourtal",
       "https://app.snapapps.gaiada.com/oauth/yourtal",
       "https://snapapp.app.gaiada.com/oauth/yourtal",

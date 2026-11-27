@@ -114,6 +114,10 @@ const DEFINITIONS: readonly Definition<YourTalClient>[] = [
     auth: "none",
     redirectUris: [
       "au.com.snapapps.app:/oauth/yourtal",
+      // The App Link (3.3.e) on the website's host since 2026-11-27: snapapp.gaiada.com no longer resolves, so
+      // APKs built from now on verify and return on snapapps.gaiada.com. Same client, same sector, same `sub`.
+      "https://snapapps.gaiada.com/oauth/yourtal",
+      // The App Link host of APKs before 2026-11-27: harmless, kept until those APKs are gone.
       "https://snapapp.gaiada.com/oauth/yourtal",
       // The phone app's browser build (PWA): the popup returns to its own origin and hands
       // the code back to the tab that opened it. Same client, same sector, same `sub`.

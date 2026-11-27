@@ -11,7 +11,8 @@ import { Text } from "@yourtal/ui/text";
 import type { Region } from "@yourtal/contracts/region";
 import { useStaffTime } from "../staff-time";
 import { SpambankLeadEditButton } from "./spambank-lead-edit-button";
-import type { LeadStatus, SpambankLead } from "./spambank-staff-contract";
+import type { LeadStatus } from "./spambank-lead-statuses";
+import type { SpambankLead } from "./spambank-staff-contract";
 
 export interface SpambankLeadsListProps {
   readonly initial: readonly SpambankLead[];

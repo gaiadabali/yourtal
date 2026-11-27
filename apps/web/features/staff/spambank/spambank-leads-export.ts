@@ -2,7 +2,7 @@ import "server-only";
 
 import { apiInternalUrl } from "@/lib/api/env";
 import { readSessionToken } from "@/lib/api/session-cookies";
-import { LEAD_STATUSES } from "./spambank-staff-contract";
+import { LEAD_STATUSES } from "./spambank-lead-statuses";
 import { leadQueryString } from "./spambank-staff-data";
 
 /**

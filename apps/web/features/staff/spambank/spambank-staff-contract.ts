@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { LEAD_STATUSES } from "./spambank-lead-statuses";
 
 /**
  * The staff and opt-out wire shapes of spambank/BUILD.md 5.4, written down
@@ -7,9 +8,7 @@ import * as z from "zod";
  * and this one becomes a re-export; the shapes must not change.
  */
 
-export const LEAD_STATUSES = ["new", "contacted", "ignored", "customer"] as const;
 export const leadStatusSchema = z.enum(LEAD_STATUSES);
-export type LeadStatus = z.infer<typeof leadStatusSchema>;
 
 export const spambankLeadSchema = z.object({
   orgDomain: z.string().min(1),

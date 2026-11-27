@@ -9,7 +9,7 @@ import { PageHeader } from "@yourtal/ui/page-header";
 import { Text } from "@yourtal/ui/text";
 import type { StaffSession } from "@yourtal/contracts/staff/session";
 import { listSpambankLeads, leadQueryString, type LeadQuery } from "./spambank-staff-data";
-import { LEAD_STATUSES } from "./spambank-staff-contract";
+import { LEAD_STATUSES } from "./spambank-lead-statuses";
 import { SpambankLeadsList } from "./spambank-leads-list";
 
 export interface SpambankLeadsScreenProps {

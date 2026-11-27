@@ -1,10 +1,10 @@
 import "server-only";
 import { forbidden } from "next/navigation";
 import { apiFetch } from "@/lib/api/api-fetch";
+import type { LeadStatus } from "./spambank-lead-statuses";
 import {
   spambankAutoreplySchema,
   spambankLeadPageSchema,
-  type LeadStatus,
   type SpambankAutoreply,
   type SpambankLeadPage,
 } from "./spambank-staff-contract";

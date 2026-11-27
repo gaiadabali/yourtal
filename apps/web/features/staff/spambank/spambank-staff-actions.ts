@@ -1,7 +1,8 @@
 "use server";
 
 import * as z from "zod";
-import { LEAD_STATUSES, type SpambankAutoreplyChange } from "./spambank-staff-contract";
+import { LEAD_STATUSES } from "./spambank-lead-statuses";
+import type { SpambankAutoreplyChange } from "./spambank-staff-contract";
 import { apiFetch } from "@/lib/api/api-fetch";
 import type { ApiError } from "@/lib/api/api-fetch";
 

@@ -14,7 +14,8 @@ import {
 import { NativeSelect } from "@yourtal/ui/native-select";
 import { Notice } from "@yourtal/ui/notice";
 import { Textarea } from "@yourtal/ui/textarea";
-import { LEAD_STATUSES, type LeadStatus, type SpambankLead } from "./spambank-staff-contract";
+import { LEAD_STATUSES, type LeadStatus } from "./spambank-lead-statuses";
+import type { SpambankLead } from "./spambank-staff-contract";
 import { updateLeadAction } from "./spambank-staff-actions";
 
 export interface SpambankLeadEditButtonProps {

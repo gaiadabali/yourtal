@@ -1,6 +1,6 @@
 import { requireStaffSession } from "@/features/staff/staff-session";
 import { SpambankLeadsScreen } from "@/features/staff/spambank/spambank-leads-screen";
-import { LEAD_STATUSES, type LeadStatus } from "@/features/staff/spambank/spambank-staff-contract";
+import { LEAD_STATUSES, type LeadStatus } from "@/features/staff/spambank/spambank-lead-statuses";
 
 export const dynamic = "force-dynamic";
 

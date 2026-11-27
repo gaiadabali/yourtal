@@ -33,7 +33,7 @@ export const GOD_BRANDS: readonly GodBrand[] = [
     key: "snapapp",
     name: "SnapApps",
     purpose: "Scan and keep every receipt",
-    url: "https://snapapp.gaiada.com",
+    url: "https://snapapps.gaiada.com",
     appUrl: "https://app.snapapps.gaiada.com",
     adultsOnly: false,
   },

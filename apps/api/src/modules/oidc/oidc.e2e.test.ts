@@ -346,6 +346,7 @@ describe("sign in with YourTal, end to end", () => {
     const ana = await person();
     for (const [redirect, host] of [
       [MOBILE_APP_LINK, "snapapp.gaiada.com"],
+      ["https://app.snapapps.gaiada.com/oauth/yourtal", "app.snapapps.gaiada.com"],
       ["https://snapapp.app.gaiada.com/oauth/yourtal", "snapapp.app.gaiada.com"],
     ] as const) {
       const started = await startSignIn(await mobileApp(), redirect);

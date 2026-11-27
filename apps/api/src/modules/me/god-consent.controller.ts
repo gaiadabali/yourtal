@@ -78,6 +78,22 @@ export class GodConsentController {
       });
     }
 
+    // Taking back an acceptance is a withdrawal (`withdraw`), not a "Not now".
+    if (parsed.data.decision === "declined") {
+      const current = await this.consents.current(principal.id);
+      if (
+        current !== null &&
+        current.decision === "accepted" &&
+        current.noticeVersion === GOD_GROUP_NOTICE.version
+      ) {
+        throw new ConflictException({
+          error: "already_accepted",
+          code: "already_accepted",
+          message: "Use the withdrawal request to take back an acceptance.",
+        });
+      }
+    }
+
     const region = await requireRegion(this.profiles, principal.id);
     await this.consents.append(
       {

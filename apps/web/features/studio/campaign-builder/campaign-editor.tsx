@@ -15,6 +15,8 @@ import { CampaignEditorDetails } from "./campaign-editor-details";
 import { CampaignEditorReward } from "./campaign-editor-reward";
 import type { CampaignEditorSection } from "./campaign-editor-sections";
 import { CampaignEditorSectionNav } from "./campaign-editor-section-nav";
+import { rewardConfigFieldTab } from "./campaign-reward-patch";
+import { useRewardConfigSave } from "./use-reward-config-save";
 import { CampaignEditorStatusPanel } from "./campaign-editor-status-panel";
 import { CampaignSaveBar } from "./campaign-save-bar";
 import type { DetailsSaveState } from "./campaign-save-bar";
@@ -83,6 +85,11 @@ export function CampaignEditor({
   const [section, setSection] = useState<CampaignEditorSection>("details");
   // Counts the author's own edits, so a refusal on screen can tell it no longer matches them.
   const [revision, setRevision] = useState(0);
+  // One reward-and-budget save for both tabs, so a refusal sits beside its own field and flags its own tab.
+  const rewardSave = useRewardConfigSave(draft, draft.merchantName, allocations.length, onPatch);
+  const rewardIssue = rewardSave.state.status === "error" ? rewardSave.state : null;
+  const issueTab = rewardIssue ? rewardConfigFieldTab(rewardIssue.field) : null;
+  const flagged: CampaignEditorSection[] = issueTab ? [issueTab] : [];
   function onChange(next: CampaignDraft) {
     setRevision((count) => count + 1);
     onChangeDraft(next);
@@ -107,7 +114,31 @@ export function CampaignEditor({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex flex-col gap-4">
-          <CampaignEditorSectionNav active={section} onChange={changeSection} />
+          <CampaignEditorSectionNav active={section} onChange={changeSection} flagged={flagged} />
+
+          {rewardIssue && issueTab && issueTab !== section ? (
+            <div
+              role="alert"
+              className="flex flex-wrap items-center gap-2 rounded-md border border-danger px-3 py-2 text-xs font-sans text-danger"
+            >
+              <span>
+                {t("campaignBuilder.sections.issueElsewhere", {
+                  tab: t(`campaignBuilder.sections.${issueTab}`),
+                  message: rewardIssue.message,
+                })}
+              </span>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => changeSection(issueTab)}
+              >
+                {t("campaignBuilder.sections.openTab", {
+                  tab: t(`campaignBuilder.sections.${issueTab}`),
+                })}
+              </Button>
+            </div>
+          ) : null}
 
           <div
             role="tabpanel"
@@ -145,10 +176,9 @@ export function CampaignEditor({
                 draft={draft}
                 form={form}
                 onChange={onChange}
-                onPatch={onPatch}
+                rewardSave={rewardSave}
                 disabled={!editable}
                 isLiveMode={isLiveMode}
-                merchantName={draft.merchantName}
                 allocations={allocations}
               />
             ) : null}
@@ -164,10 +194,9 @@ export function CampaignEditor({
                 draft={draft}
                 form={form}
                 onChange={onChange}
-                onPatch={onPatch}
+                rewardSave={rewardSave}
                 disabled={!editable}
                 isLiveMode={isLiveMode}
-                merchantName={draft.merchantName}
               />
             ) : null}
             {section === "boost" ? (

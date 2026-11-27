@@ -1,6 +1,6 @@
 import type { BusinessMember } from "@yourtal/contracts/business/member";
 import type { BusinessTeamRole } from "@yourtal/contracts/business/team-role";
-import { getMemberProfile } from "./studio-member-directory";
+import type { MemberProfile } from "./studio-member-directory";
 import { roleLabel } from "./studio-roles";
 
 /**
@@ -69,9 +69,11 @@ export function describeAuditEntry(
   return t(`team.audit.${entry.message}`, values);
 }
 
-function inviteEntry(member: BusinessMember): TeamAuditEntry {
-  const invited = getMemberProfile(member.userId);
-  const invitedBy = getMemberProfile(member.invitedByUserId);
+type ProfileOf = (userId: string) => MemberProfile;
+
+function inviteEntry(member: BusinessMember, profileOf: ProfileOf): TeamAuditEntry {
+  const invited = profileOf(member.userId);
+  const invitedBy = profileOf(member.invitedByUserId);
   return {
     id: `invite-${member.userId}`,
     occurredAt: member.invitedAt,
@@ -81,11 +83,11 @@ function inviteEntry(member: BusinessMember): TeamAuditEntry {
   };
 }
 
-function joinEntry(member: BusinessMember): TeamAuditEntry | null {
+function joinEntry(member: BusinessMember, profileOf: ProfileOf): TeamAuditEntry | null {
   if (!member.joinedAt) {
     return null;
   }
-  const joined = getMemberProfile(member.userId);
+  const joined = profileOf(member.userId);
   return {
     id: `join-${member.userId}`,
     occurredAt: member.joinedAt,
@@ -96,11 +98,14 @@ function joinEntry(member: BusinessMember): TeamAuditEntry | null {
 }
 
 /** Builds and time-sorts (newest first) the roster's invite/join history. */
-export function buildTeamAuditTrail(roster: readonly BusinessMember[]): TeamAuditEntry[] {
+export function buildTeamAuditTrail(
+  roster: readonly BusinessMember[],
+  profileOf: ProfileOf,
+): TeamAuditEntry[] {
   const entries: TeamAuditEntry[] = [];
   for (const member of roster) {
-    entries.push(inviteEntry(member));
-    const join = joinEntry(member);
+    entries.push(inviteEntry(member, profileOf));
+    const join = joinEntry(member, profileOf);
     if (join) {
       entries.push(join);
     }

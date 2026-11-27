@@ -27,3 +27,15 @@ export const businessMemberSchema = z.object({
 });
 
 export type BusinessMember = z.infer<typeof businessMemberSchema>;
+
+/**
+ * One row of `GET /api/:tenantId/business/team`: the membership plus who the person is, read from
+ * their account. Either is `null` when the account has none (a name never set, no password
+ * sign-in), and the console then falls back to the email, never to a made-up name.
+ */
+export const teamMemberSchema = businessMemberSchema.extend({
+  displayName: z.string().min(1).nullable(),
+  email: z.string().min(1).nullable(),
+});
+
+export type TeamMember = z.infer<typeof teamMemberSchema>;

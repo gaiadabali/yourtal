@@ -6,8 +6,11 @@ import {
   draftBudgetIssue,
   draftRewardConfigUnsaved,
   draftRewardUnsaved,
+  rewardConfigFieldTab,
+  rewardConfigGap,
   rewardConfigPatchFor,
   rewardErrorText,
+  rewardFailureField,
   savedRewardPatch,
 } from "./campaign-reward-patch";
 
@@ -254,5 +257,45 @@ describe("what is saved (B3)", () => {
       "rewardValueMinorUnits",
       "savedReward",
     ]);
+  });
+});
+
+describe("rewardFailureField and rewardConfigGap (10.7.b, 10.7.c)", () => {
+  it("puts the reward ceiling on the reward field, never the budget", () => {
+    expect(rewardFailureField("reward_exceeds_ceiling")).toBe("rewardPoints");
+    expect(rewardFailureField("accuracy_bonus_too_high")).toBe("rewardPoints");
+    expect(rewardConfigFieldTab("rewardPoints")).toBe("reward");
+  });
+
+  it("puts budget refusals on the budget field and funding refusals on the funding field", () => {
+    expect(rewardFailureField("budget_below_one_completion")).toBe("budget");
+    expect(rewardFailureField("daily_cap_above_budget")).toBe("budget");
+    expect(rewardConfigFieldTab("budget")).toBe("budget");
+    expect(rewardFailureField("allocation_not_campaign_funding")).toBe("allocation");
+    expect(rewardFailureField("something_else")).toBe("save");
+    expect(rewardConfigFieldTab("save")).toBeNull();
+  });
+
+  const base = createEmptyCampaignDraft("00000000-0000-4000-8000-000000000601", "Kopi");
+
+  it("names the missing funding whichever tab asks", () => {
+    const draft = {
+      ...base,
+      rewardPoints: 2,
+      budget: { totalBudgetPoints: 100, dailyCapPoints: null },
+    };
+    expect(rewardConfigGap(draft, 2)).toEqual({ field: "allocation", reason: "required" });
+    expect(rewardConfigGap(draft, 0)).toEqual({ field: "allocation", reason: "none" });
+  });
+
+  it("names the budget once funding is chosen, and is clear when both are set", () => {
+    const funded = { ...base, rewardPoints: 2, allocationId: "alloc_1" };
+    expect(rewardConfigGap(funded, 1)).toEqual({
+      field: "budget",
+      reason: "budgetBelowOneCompletion",
+    });
+    expect(
+      rewardConfigGap({ ...funded, budget: { totalBudgetPoints: 100, dailyCapPoints: null } }, 1),
+    ).toBeNull();
   });
 });

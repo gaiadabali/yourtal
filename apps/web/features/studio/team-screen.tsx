@@ -8,7 +8,8 @@ import { Button } from "@yourtal/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@yourtal/ui/card";
 import { buildTeamAuditTrail } from "./studio-audit";
 import type { TeamAuditEntry } from "./studio-audit";
-import { getMemberProfile } from "./studio-member-directory";
+import { demoProfiles, resolveMemberProfile } from "./studio-member-directory";
+import type { MemberProfiles } from "./studio-member-directory";
 import { changeMemberRole, inviteMember, removeMember, transferOwnership } from "./team-actions";
 import {
   changeMemberRoleLive,
@@ -34,6 +35,8 @@ export interface TeamScreenProps {
   /** The viewer's role when this screen mounted. Team-zone view already requires owner or admin (`studio-zone-access.ts`), enforced one level up in `page.tsx` before this component ever renders. */
   initialViewerRole: Extract<BusinessTeamRole, "owner" | "admin">;
   initialRoster: BusinessMember[];
+  /** Who each member is: the real names and emails live, the demo cast in mock mode (the default). */
+  initialProfiles?: MemberProfiles;
   /** `studioDataSourceMode === "live"` (`page.tsx`) — every mutation below calls `team-live-actions.ts`'s real endpoints instead of `team-actions.ts`'s in-memory functions. */
   isLiveMode: boolean;
 }
@@ -75,13 +78,17 @@ export function TeamScreen({
   currentUserId,
   initialViewerRole,
   initialRoster,
+  initialProfiles,
   isLiveMode,
 }: TeamScreenProps) {
   const t = useTranslations("studio");
   const [roster, setRoster] = useState<BusinessMember[]>(initialRoster);
   const [pendingEmails, setPendingEmails] = useState<Record<string, string>>({});
+  const [profiles] = useState<MemberProfiles>(() => initialProfiles ?? demoProfiles(initialRoster));
   const [auditEntries, setAuditEntries] = useState<TeamAuditEntry[]>(() =>
-    buildTeamAuditTrail(initialRoster),
+    buildTeamAuditTrail(initialRoster, (userId) =>
+      resolveMemberProfile(profiles, userId, t("team.unknownMember")),
+    ),
   );
   const [viewerRole, setViewerRole] =
     useState<Extract<BusinessTeamRole, "owner" | "admin">>(initialViewerRole);
@@ -111,7 +118,7 @@ export function TeamScreen({
     if (pendingEmail) {
       return { name: pendingEmail, email: pendingEmail };
     }
-    return getMemberProfile(userId);
+    return resolveMemberProfile(profiles, userId, t("team.unknownMember"));
   }
 
   function resolveRow(member: BusinessMember): TeamRosterRow {

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ChangeEvent } from "react";
-import { useId, useState } from "react";
+import { useId } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import type { UseFormReturn } from "react-hook-form";
 import type { BillingAllocation } from "@yourtal/contracts/billing";
@@ -12,14 +12,9 @@ import { MoneyAmount } from "@yourtal/ui/money-amount";
 import { NativeSelect } from "@yourtal/ui/native-select";
 import type { CampaignScoringRule } from "@yourtal/contracts/campaign";
 import { useRegion } from "@/features/region/use-region";
-import { setRewardConfigLive } from "./campaign-builder-actions";
 import { rewardRatioText, rewardRatioView } from "./campaign-reward-risk";
-import {
-  draftRewardUnsaved,
-  rewardConfigPatchFor,
-  rewardErrorText,
-  savedRewardPatch,
-} from "./campaign-reward-patch";
+import { draftRewardUnsaved } from "./campaign-reward-patch";
+import type { RewardConfigSave } from "./use-reward-config-save";
 import { fundingOptions } from "./campaign-funding-label";
 import type { CampaignDraft, CampaignDraftFormValues } from "./campaign-draft";
 import {
@@ -32,11 +27,10 @@ export interface CampaignEditorRewardProps {
   draft: CampaignDraft;
   form: UseFormReturn<CampaignDraftFormValues>;
   onChange: (draft: CampaignDraft) => void;
-  /** Applies a change on top of the latest draft: for results that arrive after a wait, when `draft` here may be stale. */
-  onPatch: (patch: Partial<CampaignDraft>) => void;
+  /** The reward-and-budget save the editor owns, shared with the Budget tab. */
+  rewardSave: RewardConfigSave;
   disabled?: boolean;
   isLiveMode: boolean;
-  merchantName: string;
   /** The partner allocations a reward may draw from (`GET .../studio/campaign-funding`, 7.3.c, 13.3.b). */
   allocations: BillingAllocation[];
 }
@@ -64,10 +58,9 @@ export function CampaignEditorReward({
   draft,
   form,
   onChange,
-  onPatch,
+  rewardSave,
   disabled,
   isLiveMode,
-  merchantName,
   allocations,
 }: CampaignEditorRewardProps) {
   const t = useTranslations("studio");
@@ -76,16 +69,13 @@ export function CampaignEditorReward({
   const allocationSelectId = useId();
   const { currency, region } = useRegion();
   const estimatedDataMb = draftEstimatedDataMb(draft);
-  const [saveState, setSaveState] = useState<
-    | { status: "idle" | "saving" | "saved" }
-    | { status: "error"; message: string; field: "allocation" | "save" }
-  >({ status: "idle" });
+  const saveState = rewardSave.state;
   const hasBonus = draft.scoringRule === "base_plus_accuracy_bonus";
   const unsaved = draftRewardUnsaved(draft);
 
   /** Any edit makes a shown refusal or "saved" stale. */
   function edit(next: CampaignDraft) {
-    setSaveState({ status: "idle" });
+    rewardSave.clear();
     onChange(next);
   }
   const scoringRuleLabels: Record<CampaignScoringRule, string> = {
@@ -106,35 +96,6 @@ export function CampaignEditorReward({
   });
   const options = fundingOptions(allocations, locale, region, t);
 
-  async function saveReward() {
-    const patch = rewardConfigPatchFor(draft);
-    if (patch === null) {
-      setSaveState({
-        status: "error",
-        field: "allocation",
-        message: t(
-          allocations.length === 0
-            ? "campaignBuilder.reward.allocationNone"
-            : "campaignBuilder.reward.allocationRequired",
-        ),
-      });
-      return;
-    }
-    setSaveState({ status: "saving" });
-    // The budget saves with the reward (14.2); see rewardConfigPatchFor.
-    const result = await setRewardConfigLive(draft.businessId, draft.id, merchantName, patch);
-    if (!result.ok) {
-      setSaveState({ status: "error", field: "save", message: rewardErrorText(result, t) });
-      return;
-    }
-    // Only the reward comes back from the server; the author's unsaved
-    // details on other tabs must survive (13.3.b: they were wiped), and so must
-    // anything typed while this was saving, hence a patch, not the draft from click time.
-    const saved = result.value;
-    onPatch(savedRewardPatch(saved));
-    setSaveState({ status: "saved" });
-  }
-
   return (
     <div className="flex flex-col gap-4">
       <Input
@@ -153,7 +114,9 @@ export function CampaignEditorReward({
         })}
         {...(form.formState.errors.rewardPoints?.message
           ? { errorMessage: campaignFormErrorText(t, form.formState.errors.rewardPoints.message) }
-          : {})}
+          : saveState.status === "error" && saveState.field === "rewardPoints"
+            ? { errorMessage: saveState.message }
+            : {})}
       />
 
       <NativeSelect
@@ -259,7 +222,7 @@ export function CampaignEditorReward({
             size="sm"
             className="w-fit"
             disabled={disabled || saveState.status === "saving"}
-            onClick={() => void saveReward()}
+            onClick={() => void rewardSave.save()}
           >
             {t("campaignBuilder.reward.saveReward")}
           </Button>

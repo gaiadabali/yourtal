@@ -1,6 +1,8 @@
 import * as z from "zod";
-import { businessMemberSchema } from "@yourtal/contracts/business/member";
+import { teamMemberSchema } from "@yourtal/contracts/business/member";
 import type { BusinessMember } from "@yourtal/contracts/business/member";
+import { demoProfiles, profilesFromTeam } from "./studio-member-directory";
+import type { MemberProfiles } from "./studio-member-directory";
 import { resolveStudioDataSource } from "./studio-data-source";
 import { apiFetch } from "@/lib/api/api-fetch";
 
@@ -18,31 +20,35 @@ import { apiFetch } from "@/lib/api/api-fetch";
  * `current.roster` from `studio-data.ts`'s existing mock membership, so
  * this seam adds nothing new to maintain for the mock flow.
  */
+export interface TeamDirectory {
+  roster: BusinessMember[];
+  /** Who each member is: their real name and email live, the demo cast in mock mode. */
+  profiles: MemberProfiles;
+}
+
 interface TeamDataSource {
-  listTeam: (businessId: string, fallback: BusinessMember[]) => Promise<BusinessMember[]>;
+  listTeam: (businessId: string, fallback: BusinessMember[]) => Promise<TeamDirectory>;
 }
 
 const mockDataSource: TeamDataSource = {
-  listTeam: (_businessId, fallback) => Promise.resolve(fallback),
+  listTeam: (_businessId, fallback) =>
+    Promise.resolve({ roster: fallback, profiles: demoProfiles(fallback) }),
 };
 
-const teamResponseSchema = z.array(businessMemberSchema);
+const teamResponseSchema = z.array(teamMemberSchema);
 
 /** Live: `GET /api/:tenantId/business/team` (7.1.d's team directory, merged to `main`). */
 const liveDataSource: TeamDataSource = {
   listTeam: async (businessId) => {
     const result = await apiFetch(`/api/${businessId}/business/team`, teamResponseSchema);
     if (!result.ok) throw new Error(`Could not load the team roster: ${result.error.message}`);
-    return result.data;
+    return { roster: result.data, profiles: profilesFromTeam(result.data) };
   },
 };
 
 const teamDataSource = resolveStudioDataSource({ mock: mockDataSource, live: liveDataSource });
 
-/** The business's real roster (live) or its existing mock roster, unchanged (mock). */
-export function listTeam(
-  businessId: string,
-  fallback: BusinessMember[],
-): Promise<BusinessMember[]> {
+/** The business's real roster and who each member is (live), or its existing mock roster (mock). */
+export function listTeam(businessId: string, fallback: BusinessMember[]): Promise<TeamDirectory> {
   return teamDataSource.listTeam(businessId, fallback);
 }

@@ -120,3 +120,54 @@ export function savedRewardPatch(saved: CampaignDraft): Partial<CampaignDraft> {
     savedReward: saved.savedReward ?? null,
   };
 }
+
+/** Which control a refused or incomplete reward-and-budget save belongs to. `save` is anything that fits no field. */
+export type RewardConfigField = "rewardPoints" | "allocation" | "budget" | "save";
+
+/** The editor tab that holds a field, or null for a refusal that belongs to none. */
+export function rewardConfigFieldTab(field: RewardConfigField): "reward" | "budget" | null {
+  if (field === "rewardPoints" || field === "allocation") return "reward";
+  if (field === "budget") return "budget";
+  return null;
+}
+
+/**
+ * Which field a refused `PUT .../reward` is about, so its message sits next to that
+ * field whichever tab pressed Save (the reward ceiling was showing under the budget).
+ */
+export function rewardFailureField(code: string | undefined): RewardConfigField {
+  switch (code) {
+    case "reward_exceeds_ceiling":
+    case "accuracy_bonus_too_high":
+      return "rewardPoints";
+    case "allocation_not_campaign_funding":
+    case "allocation_not_owned":
+    case "allocation_not_partner_funded":
+      return "allocation";
+    case "budget_below_one_completion":
+    case "daily_cap_below_one_completion":
+    case "daily_cap_above_budget":
+      return "budget";
+    default:
+      return "save";
+  }
+}
+
+/**
+ * The combined draft's first gap before a save, whichever tab is open: the reward, its
+ * funding and the budget are one save, so each tab checks all of them and names the field
+ * that is missing instead of waiting on the other tab.
+ */
+export function rewardConfigGap(
+  draft: CampaignDraft,
+  allocationCount: number,
+):
+  | { field: "allocation"; reason: "none" | "required" }
+  | { field: "budget"; reason: CampaignBudgetIssue }
+  | null {
+  if (!draft.allocationId) {
+    return { field: "allocation", reason: allocationCount === 0 ? "none" : "required" };
+  }
+  const issue = draftBudgetIssue(draft);
+  return issue === null ? null : { field: "budget", reason: issue };
+}

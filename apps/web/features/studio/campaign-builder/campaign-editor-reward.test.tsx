@@ -15,6 +15,7 @@ import { campaignDraftFormResolver } from "./campaign-draft-form";
 import { createEmptyCampaignDraft } from "./campaign-draft-fixtures";
 import { liveAllocation, liveDraft } from "./campaign-draft-live-fixtures";
 import { CampaignEditorReward } from "./campaign-editor-reward";
+import { useRewardConfigSave } from "./use-reward-config-save";
 
 vi.mock("./campaign-builder-actions", () => ({ setRewardConfigLive: vi.fn() }));
 
@@ -27,6 +28,34 @@ const BUSINESS_ID = "00000000-0000-4000-8000-000000000601";
  * state, so this test still exercises the component in isolation rather
  * than through the full `CampaignEditor` tree.
  */
+function RewardUnderTest({
+  draft,
+  setDraft,
+  form,
+  live,
+  allocations,
+}: {
+  draft: CampaignDraft;
+  setDraft: (next: CampaignDraft | ((current: CampaignDraft) => CampaignDraft)) => void;
+  form: ReturnType<typeof useForm<CampaignDraftFormValues>>;
+  live: boolean;
+  allocations: BillingAllocation[];
+}) {
+  const rewardSave = useRewardConfigSave(draft, "Kopi Kenangan", allocations.length, (patch) =>
+    setDraft((current) => ({ ...current, ...patch })),
+  );
+  return (
+    <CampaignEditorReward
+      draft={draft}
+      form={form}
+      onChange={setDraft}
+      rewardSave={rewardSave}
+      isLiveMode={live}
+      allocations={allocations}
+    />
+  );
+}
+
 function StatefulReward({
   initial,
   live = false,
@@ -45,13 +74,11 @@ function StatefulReward({
   return (
     <StudioIntlProvider>
       <RegionProvider region={live ? "AU" : "ID"}>
-        <CampaignEditorReward
+        <RewardUnderTest
           draft={draft}
+          setDraft={setDraft}
           form={form}
-          onChange={setDraft}
-          onPatch={(patch) => setDraft((current) => ({ ...current, ...patch }))}
-          isLiveMode={live}
-          merchantName="Kopi Kenangan"
+          live={live}
           allocations={allocations}
         />
       </RegionProvider>
@@ -70,6 +97,7 @@ function draftWithDuration(minutes: number, rewardPoints: number): CampaignDraft
 function twentySecondDraft(overrides: Partial<CampaignDraft> = {}): CampaignDraft {
   return {
     ...liveDraft({ durationSeconds: 20, hlsUrl: "https://media.test/index.m3u8" }),
+    budget: { totalBudgetPoints: 10_000, dailyCapPoints: null },
     ...overrides,
   };
 }
@@ -146,7 +174,10 @@ describe("CampaignEditorReward live (B3, B4)", () => {
     const allocation = liveAllocation();
     render(
       <StatefulReward
-        initial={twentySecondDraft({ allocationId: allocation.allocationId, rewardPoints: 3 })}
+        initial={twentySecondDraft({
+          allocationId: allocation.allocationId,
+          rewardPoints: 3,
+        })}
         live
         allocations={[allocation]}
       />,
@@ -215,31 +246,23 @@ describe("CampaignEditorReward live (B3, B4)", () => {
     );
   });
 
-  it("sends a budget never set as 0 and words the server's refusal, without raising it to one completion", async () => {
-    vi.mocked(setRewardConfigLive).mockResolvedValue({
-      ok: false,
-      code: "budget_below_one_completion",
-      message: "the total budget must cover at least one completion (reward plus bonus)",
-    });
+  it("does not send a reward whose budget was never set, and says the budget is the gap", async () => {
     const allocation = liveAllocation();
     render(
       <StatefulReward
-        initial={twentySecondDraft({ allocationId: allocation.allocationId, rewardPoints: 2 })}
+        initial={twentySecondDraft({
+          allocationId: allocation.allocationId,
+          rewardPoints: 2,
+          budget: { totalBudgetPoints: 0, dailyCapPoints: null },
+        })}
         live
         allocations={[allocation]}
       />,
     );
     await userEvent.click(screen.getByRole("button", { name: "Save reward" }));
-
-    expect(setRewardConfigLive).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.any(String),
-      "Kopi Kenangan",
-      expect.objectContaining({ maxPointsForCampaign: 0 }),
-    );
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Set the total budget on the Budget tab first.",
-    );
+    // The combined draft is checked here, not by waiting for the Budget tab: nothing is sent,
+    // and the budget is not raised to one completion behind the author's back.
+    expect(setRewardConfigLive).not.toHaveBeenCalled();
   });
 
   it("clears a refusal as soon as the reward is changed, and says Saved after a good save", async () => {
@@ -254,7 +277,10 @@ describe("CampaignEditorReward live (B3, B4)", () => {
     const allocation = liveAllocation();
     render(
       <StatefulReward
-        initial={twentySecondDraft({ allocationId: allocation.allocationId, rewardPoints: 3 })}
+        initial={twentySecondDraft({
+          allocationId: allocation.allocationId,
+          rewardPoints: 3,
+        })}
         live
         allocations={[allocation]}
       />,

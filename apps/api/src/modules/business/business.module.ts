@@ -2,6 +2,7 @@ import { forwardRef, Module } from "@nestjs/common";
 import { AuthzModule } from "../../shared/authz/authz.module";
 import { PdpClientModule } from "../../shared/pdp/pdp-client.module";
 import { EmailDriverModule } from "../../shared/drivers/email-driver.module";
+import { IdentityModule } from "../identity/identity.module";
 import { APP_CONFIG } from "../../config/app-config.module";
 import type { AppConfig } from "../../config/app-config";
 import { BillingContactController } from "./billing-contact.controller";
@@ -58,7 +59,7 @@ const BUSINESS_DB = Symbol("BUSINESS_DB");
  */
 @Module({
   // forwardRef: AuthzModule -> DevicesModule -> BusinessModule -> AuthzModule (devices.module.ts says why).
-  imports: [forwardRef(() => AuthzModule), PdpClientModule, EmailDriverModule],
+  imports: [forwardRef(() => AuthzModule), PdpClientModule, EmailDriverModule, IdentityModule],
   controllers: [
     CreateBusinessController,
     BusinessController,

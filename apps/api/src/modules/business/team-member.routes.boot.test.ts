@@ -126,6 +126,29 @@ function cookieHeader(session: TestSession): { readonly cookie: string } {
   return { cookie: session.cookie };
 }
 
+describe("GET .../business/team over a real round trip (10.7.d)", () => {
+  it("returns each member's real display name and sign-in email, not a placeholder", async () => {
+    const { businessId, owner, admin } = await seed();
+
+    const response = await app.inject({
+      method: "GET",
+      url: `/api/${businessId}/business/team`,
+      headers: cookieHeader(owner),
+    });
+
+    expect(response.statusCode).toBe(200);
+    const rows =
+      response.json<Array<{ userId: string; displayName: string | null; email: string | null }>>();
+    const byUser = new Map(rows.map((row) => [row.userId, row]));
+    expect(byUser.get(owner.userId)).toMatchObject({
+      displayName: "Session For",
+      email: owner.email,
+    });
+    expect(byUser.get(admin.userId)).toMatchObject({ email: admin.email });
+    expect(JSON.stringify(rows)).not.toContain("example.invalid");
+  });
+});
+
 describe("PATCH .../business/team/:userId/role against a live PDP and a live use-case", () => {
   it("refuses a business admin demoting the owner (the YT-0580 exploit, reproduced over HTTP)", async () => {
     const { businessId, members, owner, admin } = await seed();

@@ -31,6 +31,7 @@ const PROTECTED_PREFIXES = [
   "/store",
   "/wallet",
   "/me",
+  "/mail",
   "/onboarding",
   "/quick",
   "/business",

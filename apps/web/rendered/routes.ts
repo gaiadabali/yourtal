@@ -11,6 +11,8 @@ export const GATE_ROUTES = [
   "/id/rewards",
   "/lab/ui",
   "/lab/shell",
+  "/lab/mail",
+  "/lab/mail/spam",
 ] as const;
 
 export const THEMES = ["light", "dark"] as const;

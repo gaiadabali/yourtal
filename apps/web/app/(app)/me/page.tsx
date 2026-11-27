@@ -34,6 +34,8 @@ import { MeDataExportSection } from "@/features/me/me-data-export-section";
 import { MeDeleteAccountSection } from "@/features/me/me-delete-account-section";
 import { MeTeenCapSection } from "@/features/me/me-teen-cap-section";
 import { MeSectionError } from "@/features/me/me-section-states";
+import { LazyMeMailSection } from "@/features/spambank/me-mail-lazy";
+import { getMailboxStatus } from "@/features/spambank/spambank-data";
 
 /**
  * `/me` (TASKS.md 6.7.a), replacing the Phase U placeholder wholesale — see
@@ -80,6 +82,17 @@ export default async function MePage() {
   // refuses one), and neither does anyone whose age band could not be read.
   const isAdult = profile.ok && profile.data.profile.ageBand === "adult";
   const area = isAdult ? await getViewerArea() : null;
+  // Spambank mail settings: adults only, and only where the feature is on (the API says so).
+  const mailbox = isAdult ? await getMailboxStatus() : null;
+  const mailSection =
+    mailbox?.ok === true &&
+    mailbox.data.available &&
+    (mailbox.data.state === "on" || mailbox.data.state === "off") ? (
+      <LazyMeMailSection
+        address={mailbox.data.state === "on" ? (mailbox.data.address ?? null) : null}
+        quota={mailbox.data.quota}
+      />
+    ) : null;
   const [wallet, todayPoints] = isTeen
     ? await Promise.all([getWalletBalance(), earnedToday(profile.data.profile.region)])
     : [null, 0];
@@ -120,6 +133,8 @@ export default async function MePage() {
         ) : (
           <MeSectionError title={t("area.heading")} error={area.error} />
         )}
+
+        {mailSection}
 
         {isTeen && wallet?.ok === true && wallet.data.dailyCapPoints !== undefined ? (
           <MeTeenCapSection

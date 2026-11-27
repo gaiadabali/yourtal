@@ -11,6 +11,7 @@ import { getNavTranslator, type SupportedLocale } from "./nav-i18n";
 import { AccountMenu, type AccountSummary } from "./account-menu";
 import { useShellBalance } from "./shell-balance";
 import { Wordmark } from "./wordmark";
+import { MailNavLink } from "@/features/spambank/mail-nav-link";
 
 export interface TopBarProps {
   locale: SupportedLocale;
@@ -38,6 +39,8 @@ export interface TopBarProps {
   theme?: ThemeSetting;
   /** 13.13.d: the streak badge. `null` (or omitted) hides it; 0 shows an empty streak, so a viewer sees it before their first earn. */
   streakDays?: number | null;
+  /** Spambank: the Mail icon with its unread badge. Omitted, no icon shows. */
+  mail?: { on: boolean };
 }
 
 /**
@@ -56,6 +59,7 @@ export function TopBar({
   account,
   theme = "system",
   streakDays = null,
+  mail,
 }: TopBarProps) {
   const t = getNavTranslator(locale);
   const points = useShellBalance(availablePoints);
@@ -126,6 +130,16 @@ export function TopBar({
               </span>
               <span className="sr-only">{t("streak", { count: streakDays })}</span>
             </span>
+          ) : null}
+          {/* Below 380 px the bar has no room for it; the account menu carries a Mail row too. */}
+          {mail ? (
+            <MailNavLink
+              locale={locale}
+              on={mail.on}
+              variant="top"
+              className="relative hidden size-9 shrink-0 items-center justify-center rounded-pill text-fg hover:bg-surface-sunken min-[380px]:inline-flex min-[360px]:size-10"
+              activeClassName="bg-surface-sunken text-accent"
+            />
           ) : null}
           {notifications ? <NotificationsBell initialNotifications={notifications} /> : null}
           <Link href="/wallet" className="shrink-0 rounded-pill">

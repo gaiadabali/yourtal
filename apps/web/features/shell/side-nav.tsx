@@ -4,6 +4,7 @@ import { getNavTranslator, type SupportedLocale } from "./nav-i18n";
 import { navItems, type NavLabelKey } from "./nav-items";
 import { NavLink } from "./nav-link";
 import { Wordmark } from "./wordmark";
+import { MailNavLink } from "@/features/spambank/mail-nav-link";
 
 export interface SideNavProps {
   locale: SupportedLocale;
@@ -19,6 +20,8 @@ export interface SideNavProps {
   signedOutHrefs?: Readonly<Record<NavLabelKey, string>>;
   /** Where the rail's logo links when signed out (the public locale root). */
   homeHref?: string;
+  /** Spambank: a Mail row under the tabs, with the unread badge when `on`. */
+  mail?: { on: boolean };
 }
 
 const LINK_BASE =
@@ -40,7 +43,7 @@ const LINK_ACTIVE = "bg-surface-sunken text-accent";
  * why (same reasoning, same catalogue, so the two chrome variants can never
  * disagree on a label for a given region).
  */
-export function SideNav({ locale, signedOutHrefs, homeHref }: SideNavProps) {
+export function SideNav({ locale, signedOutHrefs, homeHref, mail }: SideNavProps) {
   const t = getNavTranslator(locale);
 
   return (
@@ -93,6 +96,15 @@ export function SideNav({ locale, signedOutHrefs, homeHref }: SideNavProps) {
             </NavLink>
           );
         })}
+        {mail && !signedOutHrefs ? (
+          <MailNavLink
+            locale={locale}
+            on={mail.on}
+            variant="rail"
+            className={LINK_BASE}
+            activeClassName={LINK_ACTIVE}
+          />
+        ) : null}
       </nav>
     </aside>
   );

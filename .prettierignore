@@ -41,3 +41,7 @@ apps/api/src/shared/authz/__snapshots__/
 
 # Written by packages/contracts/scripts/build-areas.mjs from the ABS allocation files (F116).
 packages/contracts/data/areas/au.json
+
+# Vendored copy of snap-app's mail engine (spambank/BUILD.md B4): it must stay
+# byte-identical to the source, so no formatter may touch it.
+packages/mail-engine/src/

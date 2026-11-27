@@ -25,6 +25,7 @@
     "@simplewebauthn/browser": "14.0.0",
     "@yourtal/consent": "workspace:*",
     "@yourtal/contracts": "workspace:*",
+    "@yourtal/mail-engine": "workspace:*",
     "@yourtal/ui": "workspace:*",
     "hls.js": "1.7.3",
     "lucide-react": "1.48.0",

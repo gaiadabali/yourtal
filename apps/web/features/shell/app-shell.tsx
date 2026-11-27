@@ -8,6 +8,7 @@ import { getRegion } from "@/features/region/get-region";
 import * as z from "zod";
 import { apiFetch } from "@/lib/api/api-fetch";
 import { readThemeCookie } from "@/lib/api/session-cookies";
+import { getMailboxStatus, mailNavState } from "@/features/spambank/spambank-data";
 
 const STAFF_CONSOLE_ROLES: ReadonlySet<string> = new Set([
   "support",
@@ -40,14 +41,18 @@ export interface AppShellProps {
  * than a broken shell if `GET /api/me/notifications` errors.
  */
 export async function AppShell({ children }: AppShellProps) {
-  const [locale, wallet, notifications, me, theme, streak] = await Promise.all([
+  const [locale, wallet, notifications, me, theme, streak, mailbox] = await Promise.all([
     getDisplayLocale(),
     getWalletBalance(),
     getNotifications(),
     getMeProfile(),
     readThemeCookie(),
     apiFetch("/api/me/streak", streakResponseSchema),
+    getMailboxStatus(),
   ]);
+  // Spambank: adults only. The API already answers a teen with `not_allowed`; the age band check is a
+  // second guard so a stale status can never put Mail in a teen's shell.
+  const mail = me.ok && me.data.profile.ageBand === "adult" ? mailNavState(mailbox) : null;
   // 13.13.d: the streak is a header badge; 12.2.b: teens get no streak anywhere.
   // `null` hides the badge (a teen, or a read that failed); a real 0 shows before the first earn.
   const streakDays =
@@ -105,6 +110,7 @@ export async function AppShell({ children }: AppShellProps) {
         theme={theme}
         streakDays={streakDays}
         {...(account ? { account } : {})}
+        {...(mail ? { mail } : {})}
       >
         {children}
       </ViewerShell>

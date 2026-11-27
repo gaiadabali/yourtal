@@ -18,6 +18,7 @@ import { Text } from "@yourtal/ui/text";
 import { cn } from "@yourtal/ui/cn";
 import { logoutAction, updateMeAction } from "@/lib/api/actions";
 import { setThemeAction } from "@/features/me/me-actions";
+import { MailNavLink } from "@/features/spambank/mail-nav-link";
 import { clearSessionScopedServiceWorkerCache } from "./clear-session-cache";
 import { getNavTranslator, type SupportedLocale } from "./nav-i18n";
 
@@ -28,6 +29,8 @@ export interface AccountSummary {
   hasStaff: boolean;
   /** F86: adults only. */
   hasAuctions: boolean;
+  /** Spambank: a Mail row, with the unread badge when `on`. Omitted, no row. */
+  mail?: { on: boolean };
 }
 
 export interface AccountMenuProps {
@@ -150,6 +153,9 @@ export function AccountMenu({ locale, account, theme: initialTheme }: AccountMen
             <Wallet aria-hidden="true" className="h-5 w-5 text-fg-muted" />
             {t("wallet")}
           </Link>
+          {account.mail ? (
+            <MailNavLink locale={locale} on={account.mail.on} variant="menu" className={ROW} />
+          ) : null}
           {account.hasAuctions ? (
             <Link href="/auctions" className={ROW}>
               <HeartHandshake aria-hidden="true" className="h-5 w-5 text-fg-muted" />

@@ -115,7 +115,9 @@ export function TopBar({
       )}
       {signedOutCta ? (
         <>
-          {godBar ? <GodAppsMenu locale={locale} adult={godBar.adult} /> : null}
+          {godBar ? (
+            <GodAppsMenu locale={locale} label={t("godApps")} adult={godBar.adult} />
+          ) : null}
           <a
             href={signedOutCta.href}
             className="inline-flex h-8 shrink-0 items-center rounded-pill bg-accent px-3 text-label font-sans font-bold text-fg-on-accent"
@@ -148,7 +150,9 @@ export function TopBar({
               activeClassName="bg-surface-sunken text-accent-text"
             />
           ) : null}
-          {godBar ? <GodAppsMenu locale={locale} adult={godBar.adult} /> : null}
+          {godBar ? (
+            <GodAppsMenu locale={locale} label={t("godApps")} adult={godBar.adult} />
+          ) : null}
           {notifications ? <NotificationsBell initialNotifications={notifications} /> : null}
           <Link href="/wallet" className="shrink-0 rounded-pill">
             <PointsChip

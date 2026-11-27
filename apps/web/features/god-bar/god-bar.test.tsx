@@ -9,7 +9,13 @@ vi.mock("next/navigation", () => ({ usePathname: () => "/home" }));
 
 async function openPanel(adult: boolean, locale: "en-AU" | "id-ID" = "en-AU") {
   const user = userEvent.setup();
-  render(<GodAppsMenu locale={locale} adult={adult} />);
+  render(
+    <GodAppsMenu
+      locale={locale}
+      label={locale === "en-AU" ? "GOD apps" : "Aplikasi GOD"}
+      adult={adult}
+    />,
+  );
   const button = screen.getByRole("button", {
     name: locale === "en-AU" ? "GOD apps" : "Aplikasi GOD",
   });
@@ -20,7 +26,7 @@ async function openPanel(adult: boolean, locale: "en-AU" | "id-ID" = "en-AU") {
 
 describe("the GOD app switcher", () => {
   it("is a real button that starts closed and loads nothing until pressed", () => {
-    render(<GodAppsMenu locale="en-AU" adult />);
+    render(<GodAppsMenu locale="en-AU" label="GOD apps" adult />);
     const button = screen.getByRole("button", { name: "GOD apps" });
     expect(button).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByRole("dialog")).toBeNull();

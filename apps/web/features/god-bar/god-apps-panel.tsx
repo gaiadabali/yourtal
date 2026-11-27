@@ -8,12 +8,11 @@ import { getGodBarTranslator } from "./god-bar-i18n";
 import { GOD } from "./god";
 
 export interface GodAppsPanelProps {
-  id: string;
   locale: SupportedLocale;
   /** Shows the adults-only brands (Spambank). False for a teen, a visitor, or when Mail is off. */
   adult: boolean;
   triggerRef: RefObject<HTMLButtonElement | null>;
-  onClose: () => void;
+  setOpen: (open: boolean) => void;
 }
 
 const TILE =
@@ -73,13 +72,7 @@ function Tile({
  * The switcher's panel, loaded on demand. Moves focus to the first tile, keeps Tab inside, closes on
  * Esc (focus goes back to the button) or a press outside. Plain links: no tracking, no tokens.
  */
-export default function GodAppsPanel({
-  id,
-  locale,
-  adult,
-  triggerRef,
-  onClose,
-}: GodAppsPanelProps) {
+export default function GodAppsPanel({ locale, adult, triggerRef, setOpen }: GodAppsPanelProps) {
   const t = getGodBarTranslator(locale);
   const rootRef = useRef<HTMLDivElement>(null);
   const brands = GOD_BRANDS.filter((brand) => !brand.adultsOnly || adult);
@@ -90,16 +83,16 @@ export default function GodAppsPanel({
     function onPointer(event: PointerEvent) {
       const target = event.target as Node;
       if (root?.contains(target) || triggerRef.current?.contains(target)) return;
-      onClose();
+      setOpen(false);
     }
     document.addEventListener("pointerdown", onPointer);
     return () => document.removeEventListener("pointerdown", onPointer);
-  }, [onClose, triggerRef]);
+  }, [setOpen, triggerRef]);
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === "Escape") {
       event.stopPropagation();
-      onClose();
+      setOpen(false);
       triggerRef.current?.focus();
       return;
     }
@@ -119,7 +112,7 @@ export default function GodAppsPanel({
   return (
     <div
       ref={rootRef}
-      id={id}
+      id="god-apps"
       role="dialog"
       aria-label={t("title")}
       onKeyDown={onKeyDown}
@@ -133,7 +126,7 @@ export default function GodAppsPanel({
               purpose={t(`brands.${brand.key}`)}
               current={brand.key === CURRENT_BRAND}
               currentLabel={t("current")}
-              onClose={onClose}
+              onClose={() => setOpen(false)}
             />
           </li>
         ))}

@@ -41,7 +41,7 @@ export function VoucherValidityCountdown({
         className="h-1.5 w-full overflow-hidden rounded-full bg-surface-raised"
       >
         <div
-          className="h-full rounded-full bg-primary transition-[width] duration-300 ease-linear"
+          className="h-full rounded-full bg-accent-text transition-[width] duration-300 ease-linear"
           style={{ width: `${percentRemaining}%` }}
           suppressHydrationWarning
         />

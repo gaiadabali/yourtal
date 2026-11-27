@@ -22,7 +22,7 @@ export function GodTeenExplanation() {
         href={GOD_GROUP_NOTICE.teensUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="self-start text-body-sm text-accent underline underline-offset-4"
+        className="self-start text-body-sm text-accent-text underline underline-offset-4"
       >
         {tick("link")}
       </a>

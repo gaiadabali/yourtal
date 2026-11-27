@@ -20,7 +20,7 @@ const HEIGHTS = { sm: 22, md: 30, lg: 42, xl: 60 } as const;
  * swap in other colours), so it is drawn on a Charcoal plate on every surface, light or
  * dark. The plate's padding is the clear space around the artwork.
  */
-const PLATE = "inline-flex shrink-0 items-center rounded-card bg-brand-ground";
+const PLATE = "inline-flex max-w-full shrink-0 items-center rounded-card bg-brand-ground";
 const PLATE_PAD = { sm: "px-3 py-2", md: "px-4 py-2.5", lg: "px-5 py-3", xl: "px-6 py-4" } as const;
 
 export type BrandMarkSize = keyof typeof HEIGHTS;
@@ -99,7 +99,7 @@ export const BrandWordmark = React.forwardRef<HTMLSpanElement, WordmarkProps>(
           viewBox={`0 0 ${LOCKUP_WIDTH} ${LOCKUP_HEIGHT}`}
           width={Math.round((height * LOCKUP_WIDTH) / LOCKUP_HEIGHT)}
           height={height}
-          className="text-brand-logo"
+          className="h-auto max-w-full text-brand-logo"
         >
           <path fill="currentColor" fillRule="evenodd" d={LOCKUP_PATH} />
         </svg>

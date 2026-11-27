@@ -5,7 +5,7 @@ import { EmptyState } from "@yourtal/ui/empty-state";
 import { ErrorState } from "@yourtal/ui/error-state";
 import { PageContainer } from "@yourtal/ui/page-container";
 import { ClientMessages } from "@/features/shell/client-messages";
-import { MailShell } from "@/features/spambank/mail-shell";
+import { LazyMailFrame } from "@/features/spambank/mail-lazy";
 import { SwitchOn } from "@/features/spambank/switch-on";
 import { getMailboxStatus } from "@/features/spambank/spambank-data";
 
@@ -16,8 +16,8 @@ import { getMailboxStatus } from "@/features/spambank/spambank-data";
  *     there is nothing to explain.
  *  2. A failed read: an explanation, never a blank page.
  *  3. Suspended: a plain message. No mailbox yet: the switch-on screen.
- *  4. A mailbox: the mail screens, inside the shell. The mail client itself is mounted by the app
- *     shell (`app-shell.tsx`), above the top bar, so the nav badge shares it.
+ *  4. A mailbox: the mail screens, inside the shell. The screens and the engine load after the page
+ *     (`mail-lazy.tsx`); the nav badge does too, and shares the tab's one client with them.
  *
  * This is a convenience for the person, never the security boundary: Cerbos decides who may have
  * a mailbox, and the mail proxy only serves a token the server minted for this person.
@@ -37,7 +37,7 @@ export default async function MailLayout({ children }: { children: ReactNode }) 
   } else if (status.data.state !== "on" || !status.data.address) {
     body = <SwitchOn />;
   } else {
-    body = <MailShell address={status.data.address}>{children}</MailShell>;
+    body = <LazyMailFrame address={status.data.address}>{children}</LazyMailFrame>;
   }
 
   return (

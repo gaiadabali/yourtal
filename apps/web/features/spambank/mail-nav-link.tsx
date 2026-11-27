@@ -1,42 +1,27 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Mail } from "lucide-react";
-import { useUnreadCount } from "@yourtal/mail-engine/react";
 import { cn } from "@yourtal/ui/cn";
 import { getNavTranslator } from "@/features/shell/nav-i18n";
 import type { SupportedLocale } from "@/features/shell/nav-i18n";
-import { countLabel } from "./mail-format";
 
-/** The live unread count of the Inbox. Needs a `MailRoot` above it, which the shell mounts when mail is on. */
-function UnreadBadge({ locale, className }: { locale: SupportedLocale; className?: string }) {
-  const count = useUnreadCount("inbox");
-  if (count <= 0) return null;
+/** Loaded after the page, with the mail engine behind it: nothing mail-related weighs on a first load. */
+const MailUnreadBadge = dynamic(() => import("./mail-unread-badge"), { ssr: false });
+
+function UnreadBadge({ locale, className }: { locale: SupportedLocale; className: string }) {
   const t = getNavTranslator(locale);
-  return (
-    <>
-      <span
-        aria-hidden="true"
-        data-testid="mail-unread-badge"
-        className={cn(
-          "inline-flex min-w-5 items-center justify-center rounded-pill bg-accent px-1.5 text-caption font-sans font-bold tabular-nums text-fg-on-accent",
-          className,
-        )}
-      >
-        {countLabel(count)}
-      </span>
-      <span className="sr-only">{t("mailUnread", { count })}</span>
-    </>
-  );
+  return <MailUnreadBadge label={(count) => t("mailUnread", { count })} className={className} />;
 }
 
 export type MailNavVariant = "top" | "rail" | "menu";
 
 /**
  * The Mail entry of the shell: an icon with the unread badge in the top bar, a row in the side rail
- * and one in the account menu. `on` is true only when the person has a mailbox (the shell mounted
- * the mail client); before that the link leads to the switch-on screen and shows no badge.
+ * and one in the account menu. `on` is true only when the person has a mailbox; before that the
+ * link leads to the switch-on screen and shows no badge.
  */
 export function MailNavLink({
   locale,

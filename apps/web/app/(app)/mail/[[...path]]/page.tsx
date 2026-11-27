@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { MailRoutesView } from "@/features/spambank/mail-routes-view";
+import { LazyMailRoutes } from "@/features/spambank/mail-lazy";
 import { resolveMailRoute } from "@/features/spambank/mail-routes";
 
 export const metadata = { title: "Mail" };
@@ -10,11 +10,11 @@ export const metadata = { title: "Mail" };
  * table (`features/spambank/mail-routes.ts`); an address that is not one of those answers 404.
  *
  * The gate (unavailable, teen, not switched on) is the layout's job, so by the time this renders
- * there is a mailbox, and the app shell has mounted the mail client above it.
+ * there is a mailbox.
  */
 export default async function MailPage(props: PageProps<"/mail/[[...path]]">) {
   const [{ path }, query] = await Promise.all([props.params, props.searchParams]);
   const route = resolveMailRoute(path, query);
   if (!route) notFound();
-  return <MailRoutesView route={route} />;
+  return <LazyMailRoutes route={route} />;
 }

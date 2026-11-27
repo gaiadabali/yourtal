@@ -5,7 +5,6 @@ const mocks = vi.hoisted(() => ({
   getMailboxStatus: vi.fn(),
   getMeProfile: vi.fn(),
   viewerShell: vi.fn((_props: Record<string, unknown>) => null),
-  mailRoot: vi.fn((_props: Record<string, unknown>) => null),
 }));
 
 vi.mock("@/features/notifications/notifications-data", () => ({
@@ -26,7 +25,6 @@ vi.mock("@/features/spambank/spambank-data", async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   getMailboxStatus: mocks.getMailboxStatus,
 }));
-vi.mock("@/features/spambank/mail-root", () => ({ MailRoot: mocks.mailRoot }));
 vi.mock("./viewer-shell", () => ({ ViewerShell: mocks.viewerShell }));
 
 import { AppShell } from "./app-shell";
@@ -42,16 +40,15 @@ const profile = (ageBand: "adult" | "teen") => ({
 });
 const mailbox = (state: string) => ({ ok: true, data: { available: true, state } });
 
-/** The shell's element tree: `<><RumReporterLoader />{shell or <MailRoot>{shell}</MailRoot>}</>`. */
-async function tree(): Promise<{ root: ReactElement; shell: ReactElement }> {
+/** The shell's element tree: `<><RumReporterLoader /><ViewerShell /></>`. */
+async function shellProps(): Promise<Record<string, unknown>> {
   const element = (await AppShell({ children: null })) as ReactElement<{
     children: ReactElement[];
   }>;
-  const root = element.props.children[1];
-  if (root === undefined) throw new Error("no shell");
-  const inner =
-    root.type === mocks.mailRoot ? (root.props as { children: ReactElement }).children : root;
-  return { root, shell: inner };
+  const shell = element.props.children[1];
+  if (shell === undefined) throw new Error("no shell");
+  expect(shell.type).toBe(mocks.viewerShell);
+  return shell.props as Record<string, unknown>;
 }
 
 beforeEach(() => {
@@ -60,35 +57,29 @@ beforeEach(() => {
 });
 
 describe("AppShell Mail entry (Spambank)", () => {
-  it("gives an adult with a mailbox the Mail entry and mounts the shared mail client", async () => {
+  it("gives an adult with a mailbox the Mail entry with the live badge", async () => {
     mocks.getMeProfile.mockResolvedValue(profile("adult"));
     mocks.getMailboxStatus.mockResolvedValue(mailbox("on"));
-    const { root, shell } = await tree();
-    expect(root.type).toBe(mocks.mailRoot);
-    expect(shell.props).toMatchObject({ mail: { on: true } });
+    expect(await shellProps()).toMatchObject({ mail: { on: true } });
   });
 
-  it("shows an adult without a mailbox the entry, but runs no mail client", async () => {
+  it("shows an adult without a mailbox the entry, but no badge", async () => {
     mocks.getMeProfile.mockResolvedValue(profile("adult"));
     mocks.getMailboxStatus.mockResolvedValue(mailbox("off"));
-    const { root, shell } = await tree();
-    expect(root.type).toBe(mocks.viewerShell);
-    expect(shell.props).toMatchObject({ mail: { on: false } });
+    expect(await shellProps()).toMatchObject({ mail: { on: false } });
   });
 
   it("never shows Mail to a teen, even if the status said otherwise", async () => {
     mocks.getMeProfile.mockResolvedValue(profile("teen"));
     mocks.getMailboxStatus.mockResolvedValue(mailbox("on"));
-    const { root, shell } = await tree();
-    expect(root.type).toBe(mocks.viewerShell);
-    expect(shell.props).not.toHaveProperty("mail");
+    expect(await shellProps()).not.toHaveProperty("mail");
   });
 
   it("hides Mail when the API says teen (not_allowed) or the feature is off", async () => {
     mocks.getMeProfile.mockResolvedValue(profile("adult"));
     mocks.getMailboxStatus.mockResolvedValue(mailbox("not_allowed"));
-    expect((await tree()).shell.props).not.toHaveProperty("mail");
+    expect(await shellProps()).not.toHaveProperty("mail");
     mocks.getMailboxStatus.mockResolvedValue({ ok: true, data: { available: false } });
-    expect((await tree()).shell.props).not.toHaveProperty("mail");
+    expect(await shellProps()).not.toHaveProperty("mail");
   });
 });

@@ -3,10 +3,12 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { createMemoryMailClient } from "@yourtal/mail-engine/testing";
+import type { MemoryMailClient } from "@yourtal/mail-engine/testing";
 import { Button } from "@yourtal/ui/button";
 import { PageContainer } from "@yourtal/ui/page-container";
 import { ViewerShell } from "@/features/shell/viewer-shell";
 import type { SupportedLocale } from "@/features/shell/nav-i18n";
+import { setSharedMailClient } from "./mail-client";
 import { MAIL_BASE } from "./mail-routes";
 import type { MailRoute } from "./mail-routes";
 import { MailRoot } from "./mail-root";
@@ -15,6 +17,15 @@ import { MailShell } from "./mail-shell";
 
 const LAB_BASE = `/lab${MAIL_BASE}`;
 const ADDRESS = "geewizduck@yourtal.gaiada.com";
+
+// One fixture mailbox per page load, shared with the shell's badge. Created on demand (never twice,
+// even if React runs an initializer twice) and handed to the shared-client slot the real app uses.
+let lab: MemoryMailClient | undefined;
+function labClient(): MemoryMailClient {
+  lab ??= createMemoryMailClient();
+  setSharedMailClient(lab);
+  return lab;
+}
 
 /**
  * The frame of the lab preview: the in-memory client and the real viewer shell. Lab only. It lives
@@ -28,11 +39,9 @@ export function MailLabFrame({
   locale: SupportedLocale;
   children: ReactNode;
 }) {
-  // One client for the page. StrictMode runs an initializer twice and keeps the first result, so
-  // the button below must use the state's client, not whichever call ran last.
-  const [memory] = useState(() => createMemoryMailClient());
+  const [memory] = useState(labClient);
   return (
-    <MailRoot createClient={() => memory} base={LAB_BASE}>
+    <MailRoot client={memory} base={LAB_BASE}>
       <ViewerShell locale={locale} availablePoints={1240} mail={{ on: true }}>
         <PageContainer width="wide" className="py-6">
           {children}

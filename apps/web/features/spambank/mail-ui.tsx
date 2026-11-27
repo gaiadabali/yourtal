@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { MailError } from "@yourtal/mail-engine";
+import type { MailErrorCode } from "@yourtal/mail-engine";
 import { Button } from "@yourtal/ui/button";
 import { ErrorState } from "@yourtal/ui/error-state";
 import { Notice } from "@yourtal/ui/notice";
@@ -16,11 +16,22 @@ export function useMailLocale(): MailLocale {
   return mailLocale(useLocale());
 }
 
+/**
+ * The engine's `MailError`, recognised by name: this file is on Me too, which must not pull the
+ * engine into its first load (`mail-client.ts` is the only door to it).
+ */
+function mailErrorOf(error: unknown): { code: MailErrorCode; message: string } | null {
+  if (!(error instanceof Error) || error.name !== "MailError") return null;
+  const code = (error as Error & { code?: MailErrorCode }).code;
+  return code === undefined ? null : { code, message: error.message };
+}
+
 /** Plain words for an engine error. Never a stack, a status code or a server's own wording. */
 export function useMailErrorText(): (error: unknown) => string {
   const t = useTranslations("spambank.errors");
-  return (error) => {
-    if (!(error instanceof MailError)) return t("generic");
+  return (raw) => {
+    const error = mailErrorOf(raw);
+    if (!error) return t("generic");
     switch (error.code) {
       case "unauthorized":
         return t("unauthorized");

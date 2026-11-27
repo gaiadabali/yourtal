@@ -8,7 +8,6 @@ import { getRegion } from "@/features/region/get-region";
 import * as z from "zod";
 import { apiFetch } from "@/lib/api/api-fetch";
 import { readThemeCookie } from "@/lib/api/session-cookies";
-import { MailRoot } from "@/features/spambank/mail-root";
 import { getMailboxStatus, mailNavState } from "@/features/spambank/spambank-data";
 
 const STAFF_CONSOLE_ROLES: ReadonlySet<string> = new Set([
@@ -101,24 +100,20 @@ export async function AppShell({ children }: AppShellProps) {
       </>
     );
   }
-  const shell = (
-    <ViewerShell
-      locale={locale}
-      availablePoints={wallet.ok ? wallet.data.availablePoints : 0}
-      notifications={notifications.ok ? notifications.data.notifications : []}
-      theme={theme}
-      streakDays={streakDays}
-      {...(account ? { account } : {})}
-      {...(mail ? { mail } : {})}
-    >
-      {children}
-    </ViewerShell>
-  );
   return (
     <>
       <RumReporterLoader />
-      {/* One mail client for the whole shell, so the nav badge and the mail screens share a token and a stream. */}
-      {mail?.on ? <MailRoot>{shell}</MailRoot> : shell}
+      <ViewerShell
+        locale={locale}
+        availablePoints={wallet.ok ? wallet.data.availablePoints : 0}
+        notifications={notifications.ok ? notifications.data.notifications : []}
+        theme={theme}
+        streakDays={streakDays}
+        {...(account ? { account } : {})}
+        {...(mail ? { mail } : {})}
+      >
+        {children}
+      </ViewerShell>
     </>
   );
 }

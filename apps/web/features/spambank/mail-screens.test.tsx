@@ -3,14 +3,14 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { NextIntlClientProvider } from "next-intl";
 import type { ReactElement } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { IFRAME_SANDBOX } from "@yourtal/mail-engine";
 import { createMemoryMailClient } from "@yourtal/mail-engine/testing";
-import type { MemoryMailClient } from "@yourtal/mail-engine/testing";
 import enNav from "@/messages/en-AU/nav.json";
 import enSpambank from "@/messages/en-AU/spambank.json";
 import idSpambank from "@/messages/id-ID/spambank.json";
 import { MailNavLink } from "./mail-nav-link";
+import { setSharedMailClient } from "./mail-client";
 import { MailRoot } from "./mail-root";
 import { MailRoutesView } from "./mail-routes-view";
 import { MailShell } from "./mail-shell";
@@ -26,19 +26,14 @@ vi.mock("./spambank-actions", () => ({ mintMailSessionAction: vi.fn() }));
 const ADDRESS = "geewizduck@yourtal.gaiada.com";
 
 function renderMail(ui: ReactElement, opts: { locale?: "en-AU" | "id-ID" } = {}) {
-  let memory!: MemoryMailClient;
+  const memory = createMemoryMailClient();
+  // The nav badge loads on its own and reads the tab's shared client.
+  setSharedMailClient(memory);
   const locale = opts.locale ?? "en-AU";
   const messages = { spambank: locale === "id-ID" ? idSpambank : enSpambank, nav: enNav };
   const view = render(
     <NextIntlClientProvider locale={locale} messages={messages}>
-      <MailRoot
-        createClient={() => {
-          memory = createMemoryMailClient();
-          return memory;
-        }}
-      >
-        {ui}
-      </MailRoot>
+      <MailRoot client={memory}>{ui}</MailRoot>
     </NextIntlClientProvider>,
   );
   return { ...view, memory: () => memory };
@@ -49,6 +44,8 @@ const screenFor = (route: MailRoute) => (
     <MailRoutesView route={route} />
   </MailShell>
 );
+
+afterEach(() => setSharedMailClient(null));
 
 beforeEach(() => {
   // jsdom has no matchMedia; the reader asks it whether the page is dark.

@@ -34,7 +34,7 @@ import { MeDataExportSection } from "@/features/me/me-data-export-section";
 import { MeDeleteAccountSection } from "@/features/me/me-delete-account-section";
 import { MeTeenCapSection } from "@/features/me/me-teen-cap-section";
 import { MeSectionError } from "@/features/me/me-section-states";
-import { MeMailSection } from "@/features/spambank/me-mail-section";
+import { LazyMeMailSection } from "@/features/spambank/me-mail-lazy";
 import { getMailboxStatus } from "@/features/spambank/spambank-data";
 
 /**
@@ -88,7 +88,7 @@ export default async function MePage() {
     mailbox?.ok === true &&
     mailbox.data.available &&
     (mailbox.data.state === "on" || mailbox.data.state === "off") ? (
-      <MeMailSection
+      <LazyMeMailSection
         address={mailbox.data.state === "on" ? (mailbox.data.address ?? null) : null}
         quota={mailbox.data.quota}
       />

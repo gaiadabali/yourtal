@@ -46,7 +46,7 @@ export interface ViewerShellProps {
   account?: AccountSummary;
   /**
    * Spambank: shows the Mail entry (top bar, side rail, account menu). `on` also runs the live unread
-   * badge, which needs the `MailRoot` that `app-shell.tsx` mounts above this shell. Omit to hide Mail.
+   * badge, which loads after the page. Omit to hide Mail.
    */
   mail?: NonNullable<MailNavState>;
   signedOut?: ViewerShellSignedOutProps;

@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
+import {
+  APP_PASSWORDS_MAX as CONTRACT_MAX,
+  APP_PASSWORD_NAME_MAX as CONTRACT_NAME_MAX,
+} from "@yourtal/contracts/spambank/management";
 import { MailError } from "@yourtal/mail-engine";
 import type { MailSession } from "@yourtal/mail-engine";
 import type { ApiResult } from "@/lib/api/api-fetch";
+import { APP_PASSWORDS_MAX, APP_PASSWORD_NAME_MAX } from "./mail-limits";
 import { fileSize, initialsOf, listDate, mailLocale } from "./mail-format";
 import { composeHref, folderHref, messageHref, resolveMailRoute, searchHref } from "./mail-routes";
 import { mailErrorCodeFor, sessionFrom } from "./mail-session";
@@ -122,5 +127,12 @@ describe("mail formatting", () => {
     expect(parts.filter((p) => p.kind === "link")).toStrictEqual([
       { kind: "link", text: "https://example.com/a", href: "https://example.com/a" },
     ]);
+  });
+});
+
+describe("app password limits", () => {
+  it("match the contract the API enforces", () => {
+    expect(APP_PASSWORDS_MAX).toBe(CONTRACT_MAX);
+    expect(APP_PASSWORD_NAME_MAX).toBe(CONTRACT_NAME_MAX);
   });
 });

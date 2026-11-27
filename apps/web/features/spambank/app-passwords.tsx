@@ -7,7 +7,6 @@ import type {
   AppPasswordCreated,
   AppPasswordSummary,
 } from "@yourtal/contracts/spambank/management";
-import { APP_PASSWORDS_MAX, APP_PASSWORD_NAME_MAX } from "@yourtal/contracts/spambank/management";
 import { Badge } from "@yourtal/ui/badge";
 import { Button } from "@yourtal/ui/button";
 import { Heading } from "@yourtal/ui/heading";
@@ -15,6 +14,7 @@ import { Input } from "@yourtal/ui/input";
 import { Text } from "@yourtal/ui/text";
 import { CopyButton } from "./copy-button";
 import { dayDate } from "./mail-format";
+import { APP_PASSWORDS_MAX, APP_PASSWORD_NAME_MAX } from "./mail-limits";
 import { ErrorBlock, ListSkeleton, MailNotice, useMailLocale } from "./mail-ui";
 import {
   createAppPasswordAction,

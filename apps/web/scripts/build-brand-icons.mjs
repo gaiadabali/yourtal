@@ -149,7 +149,9 @@ async function main() {
     await browser.close();
   }
 
-  console.log("[build-brand-icons] wrote public/brand/yourtal-{lockup,mark,mascot}.svg, app/icon.svg, app/favicon.ico, app/apple-icon.png,");
+  console.log(
+    "[build-brand-icons] wrote public/brand/yourtal-{lockup,mark,mascot}.svg, app/icon.svg, app/favicon.ico, app/apple-icon.png,",
+  );
   console.log(
     "[build-brand-icons]   public/icons/icon-192.png, icon-512.png, icon-512-maskable.png",
   );

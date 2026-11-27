@@ -276,7 +276,7 @@ describe("blocklist check", () => {
       db: pool,
       lookup: (name) =>
         Promise.resolve(
-          name.endsWith("dbl.spamhaus.org")
+          name.endsWith(".dbl.spamhaus.org")
             ? { status: "found", addresses: ["127.0.1.2"] }
             : { status: "nxdomain" },
         ),

@@ -38,7 +38,9 @@ import { followToApp, startSignIn, webServerCall } from "./testing/sign-in-drive
  * provider on a real port, openid-client as each app, and the interaction API
  * driven with the browser's cookies the way YourTal's /connect page will.
  */
-const WEB_REDIRECT = "https://snapapp.gaiada.com/auth/yourtal/callback";
+// SnapApps' website moved from snapapp.gaiada.com to snapapps.gaiada.com on 2026-11-27; both are registered.
+const WEB_REDIRECT = "https://snapapps.gaiada.com/auth/yourtal/callback";
+const WEB_REDIRECT_OLD = "https://snapapp.gaiada.com/auth/yourtal/callback";
 const MOBILE_REDIRECT = "au.com.snapapps.app:/oauth/yourtal";
 const MOBILE_APP_LINK = "https://snapapp.gaiada.com/oauth/yourtal";
 const FTR_REDIRECT = "https://freetaxreturns.com.au/api/auth/oauth2/callback/yourtal";
@@ -340,6 +342,22 @@ describe("sign in with YourTal, end to end", () => {
     const phone = await signIn(await mobileApp(), MOBILE_APP_LINK, ana, "continue");
     expect(phone.callback.origin + phone.callback.pathname).toBe(MOBILE_APP_LINK);
     expect(phone.tokens.claims()?.sub).toBe(first.tokens.claims()?.sub);
+  });
+
+  it("SnapApps' website may return on its new host or its old one, with the same sub and the host named on the consent screen", async () => {
+    const ana = await person();
+    const onNew = await signIn(await webApp(), WEB_REDIRECT, ana, "consent");
+    const onOld = await signIn(await webApp(), WEB_REDIRECT_OLD, ana, "continue");
+    expect(onOld.callback.origin + onOld.callback.pathname).toBe(WEB_REDIRECT_OLD);
+    expect(onOld.tokens.claims()?.sub).toBe(onNew.tokens.claims()?.sub);
+    for (const [redirect, host] of [
+      [WEB_REDIRECT, "snapapps.gaiada.com"],
+      [WEB_REDIRECT_OLD, "snapapp.gaiada.com"],
+    ] as const) {
+      const started = await startSignIn(await webApp(), redirect);
+      const shown = await webServerCall(base, started, ana.token, "");
+      expect((await details(shown)).client.returnHost).toBe(host);
+    }
   });
 
   it("the consent screen names the site the redirect really returns to", async () => {

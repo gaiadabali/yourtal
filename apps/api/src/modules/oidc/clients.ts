@@ -73,9 +73,11 @@ const SNAPAPP = {
   app: "snapapp",
   externalOperator: false,
   sector: "snapapp-staging",
-  privacyUrl: "https://snapapp.gaiada.com/legal/privacy",
-  termsUrl: "https://snapapp.gaiada.com/legal/terms",
-  returnHost: "snapapp.gaiada.com",
+  // The website moved to snapapps.gaiada.com on 2026-11-27; the old host 301s to it. `returnHost` is only the
+  // name the consent screen shows when the redirect is not an https URL on a registered host (the app's own scheme).
+  privacyUrl: "https://snapapps.gaiada.com/legal/privacy",
+  termsUrl: "https://snapapps.gaiada.com/legal/terms",
+  returnHost: "snapapps.gaiada.com",
   teens: "invite_only",
   regions: ["AU", "ID"],
   allowedScopes: SIGN_IN_SCOPES,
@@ -98,7 +100,12 @@ const DEFINITIONS: readonly Definition<YourTalClient>[] = [
     clientId: "snapapp-staging-web",
     kind: "web",
     auth: "private_key_jwt",
-    redirectUris: ["https://snapapp.gaiada.com/auth/yourtal/callback"],
+    redirectUris: [
+      "https://snapapps.gaiada.com/auth/yourtal/callback",
+      // The website's host before 2026-11-27, kept until SnapApps' WEB_PUBLIC_URL names the new one
+      // (and for a sign-in already under way). Same client, same sector, same `sub`.
+      "https://snapapp.gaiada.com/auth/yourtal/callback",
+    ],
   },
   {
     ...SNAPAPP,

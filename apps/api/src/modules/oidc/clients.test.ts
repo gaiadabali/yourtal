@@ -61,11 +61,13 @@ describe("the client registry (docs/26 §1.9)", () => {
         expect(redirectUri).not.toMatch(/localhost|127\.0\.0\.1|\*/);
         if (client.kind === "web") {
           expect(uri.protocol).toBe("https:");
-          expect(uri.host).toBe(client.returnHost);
+          // SnapApps' website is on two hosts while the 2026-11-27 move settles; every other web client has one.
+          expect([client.returnHost, "snapapp.gaiada.com"]).toContain(uri.host);
         } else if (uri.protocol === "https:") {
           // The App Link on the app's own host, or the phone app's browser build (PWA).
           expect([
             client.returnHost,
+            "snapapp.gaiada.com", // the App Link host installed APKs verify; stays registered
             "app.snapapps.gaiada.com",
             "snapapp.app.gaiada.com",
           ]).toContain(uri.host);
@@ -87,8 +89,21 @@ describe("the client registry (docs/26 §1.9)", () => {
       "https://snapapp.app.gaiada.com/oauth/yourtal",
     ]);
     for (const [clientId, list] of uris) {
-      if (clientId !== "snapapp-staging-mobile") expect(list, clientId).toHaveLength(1);
+      // SnapApps' website has two while its host move settles (the test below pins them).
+      if (clientId === "snapapp-staging-web") expect(list, clientId).toHaveLength(2);
+      else if (clientId !== "snapapp-staging-mobile") expect(list, clientId).toHaveLength(1);
     }
+  });
+
+  it("registers SnapApps' website on its new host and keeps the old one, so a switch of WEB_PUBLIC_URL cannot lock people out", () => {
+    const web = CLIENTS.filter(isSignInClient).find((c) => c.clientId === "snapapp-staging-web");
+    expect(web?.redirectUris).toEqual([
+      "https://snapapps.gaiada.com/auth/yourtal/callback",
+      "https://snapapp.gaiada.com/auth/yourtal/callback",
+    ]);
+    expect(web?.returnHost).toBe("snapapps.gaiada.com");
+    expect(web?.privacyUrl).toBe("https://snapapps.gaiada.com/legal/privacy");
+    expect(web?.termsUrl).toBe("https://snapapps.gaiada.com/legal/terms");
   });
 
   it("lets only the phone app authenticate with none", () => {
@@ -325,7 +340,10 @@ describe("client credentials from the secrets directory", () => {
     expect(byId.get("snapapp-staging-mobile")?.sector_identifier_uri).toBe(
       "https://snapapp-staging.sector.yourtal.invalid/",
     );
-    expect(byId.get("snapapp-staging-web")?.sector_identifier_uri).toBeUndefined();
+    // Two redirect hosts now (SnapApps' website moved 2026-11-27): the same pinned, never-fetched sector.
+    expect(byId.get("snapapp-staging-web")?.sector_identifier_uri).toBe(
+      "https://snapapp-staging.sector.yourtal.invalid/",
+    );
     expect(byId.get("snapapp-staging-server")?.grant_types).toEqual(["client_credentials"]);
     expect(byId.get("snapapp-staging-web")?.grant_types).toEqual(["authorization_code"]);
   });
@@ -378,6 +396,19 @@ describe("returnHostFor (the host the consent screen names)", () => {
     expect(returnHostFor(phone, "https://snapapp.app.gaiada.com/oauth/yourtal")).toBe(
       "snapapp.app.gaiada.com",
     );
+  });
+
+  it("names the new website's host for a web redirect on it, and keeps the old one's name for the old redirect", () => {
+    const web = CLIENTS.filter(isSignInClient).find((c) => c.clientId === "snapapp-staging-web");
+    if (web === undefined) throw new Error("the SnapApp web client is registered");
+    expect(returnHostFor(web, "https://snapapps.gaiada.com/auth/yourtal/callback")).toBe(
+      "snapapps.gaiada.com",
+    );
+    expect(returnHostFor(web, "https://snapapp.gaiada.com/auth/yourtal/callback")).toBe(
+      "snapapp.gaiada.com",
+    );
+    // A custom-scheme or unregistered redirect falls back to the configured host, now the new one.
+    expect(returnHostFor(phone, "au.com.snapapps.app:/oauth/yourtal")).toBe("snapapps.gaiada.com");
   });
 
   it("names the App Link host for the App Link redirect", () => {

@@ -22,6 +22,7 @@ import {
   renderHlsLadder,
   renderPosterLadder,
   renderTeaser,
+  TRANSCODE_FAILURE_MESSAGE,
 } from "@yourtal/media/ffmpeg-transcode";
 import { callReady } from "./transcode-ready-client";
 
@@ -53,7 +54,11 @@ export const job = defineJob({
       const result = await transcode(data, workDir);
       await callReady(config, data.assetId, result);
     } catch (error) {
-      const failureReason = error instanceof Error ? error.message : String(error);
+      // The raw ffmpeg text carries the command line: log it here, send the user a plain message.
+      console.error(
+        `[transcode] asset ${data.assetId} failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      const failureReason = TRANSCODE_FAILURE_MESSAGE;
       // If even reporting the failure throws, let the job fail loudly and retry.
       await callReady(config, data.assetId, { status: "failed", failureReason });
     } finally {

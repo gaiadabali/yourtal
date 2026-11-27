@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { renderHlsLadder } from "./ffmpeg-transcode";
+import { buildHlsArgs, renderHlsLadder } from "./ffmpeg-transcode";
 
 /**
  * F66-adjacent (found 2026-09-28, 7.2.f, live-verifying a real ~3-minute
@@ -75,5 +75,38 @@ describe("renderHlsLadder", () => {
       expect(duration).toBeGreaterThan(5.5);
       expect(duration).toBeLessThan(6.5);
     }
+  }, 60_000);
+});
+
+describe("buildHlsArgs", () => {
+  it("maps audio per rendition when the source has a track", () => {
+    const args = buildHlsArgs("in.mp4", "out", true);
+    expect(args.filter((a) => a === "a:0")).toHaveLength(3);
+    expect(args[args.indexOf("-var_stream_map") + 1]).toBe("v:0,a:0 v:1,a:1 v:2,a:2");
+    expect(args).toContain("aac");
+  });
+
+  it("builds video-only variants when the source has no audio (10.7.a)", () => {
+    const args = buildHlsArgs("in.mp4", "out", false);
+    expect(args).not.toContain("a:0");
+    expect(args).not.toContain("a:0?");
+    expect(args).not.toContain("aac");
+    expect(args[args.indexOf("-var_stream_map") + 1]).toBe("v:0 v:1 v:2");
+  });
+});
+
+describe("renderHlsLadder without audio", () => {
+  it("transcodes a silent clip into a playable ladder", async () => {
+    const inputPath = path.join(workDir, "silent.mp4");
+    execFileSync("ffmpeg", [
+      ...["-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi"],
+      ...["-i", "testsrc=size=640x360:rate=24:duration=8", "-an"],
+      ...["-c:v", "libx264", "-pix_fmt", "yuv420p", inputPath],
+    ]);
+    const outputDir = path.join(workDir, "hls-silent");
+    const bytes = await renderHlsLadder(inputPath, outputDir);
+    expect(bytes.v540).toBeGreaterThan(0);
+    const master = readFileSync(path.join(outputDir, "index.m3u8"), "utf8");
+    expect(master).toContain("v0/index.m3u8");
   }, 60_000);
 });

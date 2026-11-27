@@ -70,6 +70,9 @@ const SESSION_START_RETENTION_MS = 24 * 60 * 60 * 1_000;
 
 const CONTINUE_WATCHING_LIMIT = 20;
 
+/** The placeholder `startOrResume` writes until `finalizeEarningOutcome` replaces it. */
+const PENDING_FUNDING_CHECK = "pending_funding_check";
+
 /** How many checkpoint questions a session must answer: the schedule `complete` judges and `resume` reports. */
 function expectedQuestions(sessionId: string, durationSeconds: number, secret: string): number {
   return checkpointSchedule({
@@ -191,7 +194,16 @@ export class WatchController {
       }));
     }
 
-    if (!resumed) {
+    // 10.7.f: the row is inserted non-earning and finalised in a second step.
+    // If that step never ran (the ledger hold threw, the process died), the
+    // session is stuck on the placeholder, and resuming it must not skip the
+    // decision or the viewer watches to the end for nothing.
+    const needsEarningDecision =
+      !resumed ||
+      (started.nonEarning &&
+        started.nonEarningReason === PENDING_FUNDING_CHECK &&
+        started.holdId === null);
+    if (needsEarningDecision) {
       const outcome = identity.mayEarn
         ? await this.decideEarningOutcome(userId, campaignId, started.id, terms.durationSeconds)
         : { nonEarning: true, nonEarningReason: IDENTITY_CHECK_REQUIRED, holdId: null };
@@ -357,26 +369,35 @@ export class WatchController {
 
     const owed = expectedQuestions(session.id, durationSeconds, this.checkpointSecret);
 
-    const verdict = judgeCompletion({
-      session,
-      coverage,
-      durationSeconds,
-      questionsAnswered: session.questionsAsked >= owed,
-      campaignIsLive: await this.campaigns.isLive(session.campaignId),
-    });
-    if (verdict !== "earned") {
-      throw new ForbiddenException(describeCompletionRefusal(verdict));
-    }
-
-    const now = new Date();
-    const matched = await this.sessions.markCompleted(session.id, now);
-    if (!matched) {
-      // Two concurrent completions raced this session; the OTHER one won.
-      // Never a second grant from here.
-      throw new ConflictException({
-        code: "already_completing",
-        message: "This session is already being completed by another request.",
+    // 10.7.f: a session already `completed` but never `granted` is one whose
+    // grant call threw or was refused after the state change committed. Retrying
+    // it is safe (the grant key is per session, so the ledger replays rather than
+    // pays twice) and it skips the coverage judgement, which already passed.
+    const retryingGrant = session.state === "completed" && !session.granted && !session.nonEarning;
+    let now = new Date();
+    if (retryingGrant) {
+      now = session.completedAt === null ? now : new Date(session.completedAt);
+    } else {
+      const verdict = judgeCompletion({
+        session,
+        coverage,
+        durationSeconds,
+        questionsAnswered: session.questionsAsked >= owed,
+        campaignIsLive: await this.campaigns.isLive(session.campaignId),
       });
+      if (verdict !== "earned") {
+        throw new ForbiddenException(describeCompletionRefusal(verdict));
+      }
+
+      const matched = await this.sessions.markCompleted(session.id, now);
+      if (!matched) {
+        // Two concurrent completions raced this session; the OTHER one won.
+        // Never a second grant from here.
+        throw new ConflictException({
+          code: "already_completing",
+          message: "This session is already being completed by another request.",
+        });
+      }
     }
 
     if (session.nonEarning) {

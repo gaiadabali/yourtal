@@ -147,7 +147,11 @@ jobs:
           mkdir -p "$STAGE/apps/web/.next" "$STAGE/bin" "$STAGE/deploy"
           cp -r apps/web/.next/standalone/. "$STAGE"/
           cp -r apps/web/.next/static "$STAGE/apps/web/.next/static"
-          if [ -d apps/web/public ]; then cp -r apps/web/public "$STAGE/apps/web/public"; fi
+          # Copy the CONTENTS of public/: the standalone output already has an
+          # apps/web/public (sw.js), so `cp -r public dest/public` nested it as
+          # public/public and /brand/* and /icons/* answered 404 (found 2026-11-27).
+          if [ -d apps/web/public ]; then mkdir -p "$STAGE/apps/web/public" && cp -r apps/web/public/. "$STAGE/apps/web/public/"; fi
+          test ! -e "$STAGE/apps/web/public/public" || { echo "public/ nested again" >&2; exit 1; }
           pnpm --filter @yourtal/api deploy --prod "$STAGE/api"
           pnpm --filter @yourtal/worker deploy --prod "$STAGE/worker"
           for svc in ledger voucher; do

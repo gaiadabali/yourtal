@@ -44,6 +44,10 @@ export const STAFF_ZONES: readonly StaffZone[] = [
   // billing.yaml's own `staff-work-the-settlement-queue` rule. Payout
   // approval itself is finance-only (ledger_adjustment.yaml).
   { key: "settlement", href: "/staff/settlement", roles: ["finance", "ops"] },
+  // Spambank (BUILD.md 4.7, 5.4). Leads: ops and support, per spambank_lead.yaml
+  // (T7). Auto-reply controls: platform_setting view is admin and ops.
+  { key: "spambankLeads", href: "/staff/spambank/leads", roles: ["ops", "support"] },
+  { key: "spambankAutoreply", href: "/staff/spambank/autoreply", roles: ["ops", "admin"] },
 ];
 
 export function zonesFor(roles: readonly StaffRole[]): readonly StaffZone[] {

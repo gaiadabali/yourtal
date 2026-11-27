@@ -6,12 +6,12 @@ import { Button } from "@yourtal/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogTitle,
   DialogTrigger,
 } from "@yourtal/ui/dialog";
-import { Heading } from "@yourtal/ui/heading";
-import { Text } from "@yourtal/ui/text";
 import { Textarea } from "@yourtal/ui/textarea";
 
 export interface StaffReasonDialogButtonProps {
@@ -75,10 +75,8 @@ export function StaffReasonDialogButton({
       </DialogTrigger>
       <DialogContent closeLabel={t("dialog.close")}>
         <DialogHeader>
-          <Heading level={2} size="title">
-            {dialogTitle}
-          </Heading>
-          <Text tone="muted">{dialogBody}</Text>
+          <DialogTitle className="font-semibold">{dialogTitle}</DialogTitle>
+          <DialogDescription>{dialogBody}</DialogDescription>
         </DialogHeader>
         <Textarea
           id={reasonInputId}

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { LOCKUP_HEIGHT, LOCKUP_PATH, LOCKUP_WIDTH } from "@yourtal/ui/brand/brand-paths";
 
 /**
  * Shared OG/share-card markup for every public page, rendered through
@@ -16,13 +17,12 @@ export interface PublicOgCardProps {
   rewardLine: string;
 }
 
-// After Dark tokens (packages/ui/src/styles/tokens.css), inlined for Satori.
-const INK_950 = "#0b0b0f";
-const INK_25 = "#f5f5f7";
-const INK_300 = "#b0b0bf";
-const ROSE_500 = "#ff3d6e";
+// Brand tokens (packages/ui/src/styles/tokens.css), inlined for Satori.
+const CHARCOAL = "#363636";
+const INK_25 = "#f5f5f5";
+const INK_300 = "#d0d0d0";
+const YELLOW = "#ffda00";
 const GOLD_400 = "#ffc53d";
-const GOLD_950 = "#1a1300";
 
 const PAGE_STYLE = {
   width: "100%",
@@ -31,39 +31,22 @@ const PAGE_STYLE = {
   flexDirection: "column" as const,
   justifyContent: "space-between",
   padding: "64px",
-  backgroundColor: INK_950,
-  backgroundImage: `radial-gradient(circle at 100% 0%, ${ROSE_500}55 0%, ${INK_950} 55%)`,
+  backgroundColor: CHARCOAL,
   color: INK_25,
   fontFamily: "sans-serif",
 };
 
-// The coin glyph from packages/ui/src/brand/coin-mark.tsx on the gold badge.
+// The official lockup (brand-paths.ts) in Play Yellow on the Charcoal page, the guide's pairing.
 function OgBrand() {
+  const height = 64;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 56,
-          height: 56,
-          borderRadius: 28,
-          backgroundColor: GOLD_400,
-        }}
-      >
-        <svg width="34" height="34" viewBox="0 0 16 16" fill="none">
-          <circle cx="8" cy="8" r="6.5" stroke={GOLD_950} strokeWidth="1.4" />
-          <path
-            d="M5.8 6c0-.9.9-1.6 2.2-1.6s2.2.6 2.2 1.4c0 1.7-4.4.9-4.4 2.7 0 .8 1 1.5 2.2 1.5s2.2-.7 2.2-1.6M8 3.6v8.8"
-            stroke={GOLD_950}
-            strokeWidth="1.1"
-            strokeLinecap="round"
-          />
-        </svg>
-      </div>
-      <span style={{ fontSize: 40, fontWeight: 800 }}>YourTal</span>
-    </div>
+    <svg
+      width={Math.round((height * LOCKUP_WIDTH) / LOCKUP_HEIGHT)}
+      height={height}
+      viewBox={`0 0 ${LOCKUP_WIDTH} ${LOCKUP_HEIGHT}`}
+    >
+      <path fill={YELLOW} fillRule="evenodd" d={LOCKUP_PATH} />
+    </svg>
   );
 }
 
@@ -71,9 +54,7 @@ function OgFrame({ eyebrow, children }: { eyebrow: string; children: ReactNode }
   return (
     <div style={PAGE_STYLE}>
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        <span
-          style={{ fontSize: 28, letterSpacing: 2, textTransform: "uppercase", color: ROSE_500 }}
-        >
+        <span style={{ fontSize: 28, letterSpacing: 2, textTransform: "uppercase", color: YELLOW }}>
           {eyebrow}
         </span>
         {children}

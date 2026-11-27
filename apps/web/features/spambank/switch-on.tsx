@@ -81,7 +81,7 @@ export function SwitchOnView({
       <ul className="flex flex-col gap-4">
         {POINTS.map(({ key, icon: Icon }) => (
           <li key={key} className="flex gap-3 text-body font-sans text-fg">
-            <Icon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-accent" />
+            <Icon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-accent-text" />
             <span>{t(`points.${key}`)}</span>
           </li>
         ))}

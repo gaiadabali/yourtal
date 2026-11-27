@@ -18,7 +18,7 @@ export default async function StudioJoinPage(props: PageProps<"/studio/join">) {
       <JoinBusinessForm token={token} failed={searchParams.error === "invalid"} locale={locale} />
       <Link
         href="/studio/onboarding"
-        className="w-fit text-body-sm font-sans text-accent underline underline-offset-4"
+        className="w-fit text-body-sm font-sans text-accent-text underline underline-offset-4"
       >
         {t("join.registerInstead")}
       </Link>

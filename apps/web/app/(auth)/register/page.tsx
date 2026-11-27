@@ -46,7 +46,7 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
           {/* Switching between sign-in and sign-up keeps where the viewer was going. */}
           <Link
             href={returnTo ? { pathname: "/login", query: { returnTo } } : "/login"}
-            className="text-accent underline underline-offset-4"
+            className="text-accent-text underline underline-offset-4"
           >
             {t("signInCta")}
           </Link>

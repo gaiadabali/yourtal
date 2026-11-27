@@ -117,7 +117,7 @@ export async function WalletScreen({
             </h2>
             <a
               href={`/store?max=${String(balance.availablePoints)}&sort=points_desc`}
-              className="text-label font-sans font-semibold text-accent hover:underline"
+              className="text-label font-sans font-semibold text-accent-text hover:underline"
             >
               {t("overview.seeAllAffordable")}
             </a>

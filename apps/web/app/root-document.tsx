@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Figtree, JetBrains_Mono } from "next/font/google";
+import { Fredoka, JetBrains_Mono } from "next/font/google";
 import type { CSSProperties, ReactNode } from "react";
 import { isStaging } from "@/features/shell/app-env";
 import { StagingBanner } from "@/features/shell/staging-banner";
@@ -35,15 +35,12 @@ import "./globals.css";
  * in three files would emit three copies and download each more than once.
  */
 
-// Figtree for body, Bricolage Grotesque for display, JetBrains Mono for codes.
-// Latin only: Indonesian needs no diacritics, so latin-ext would only add weight.
-const fontBody = Figtree({ subsets: ["latin"], display: "swap", variable: "--font-body-app" });
-const fontDisplay = Bricolage_Grotesque({
-  subsets: ["latin"],
-  weight: ["700", "800"],
-  display: "swap",
-  variable: "--font-display-app",
-});
+// Fredoka is the brand face (brand guide, p15): display and headings set it at 600-700,
+// body and labels at 400-500. One variable file serves every weight, so there is a single
+// font download. "Fredoka One" no longer ships on Google Fonts (it was folded into Fredoka),
+// so the bold end of the same family stands in for it. Latin only: Indonesian needs no
+// diacritics, so latin-ext would only add weight.
+const fontBody = Fredoka({ subsets: ["latin"], display: "swap", variable: "--font-body-app" });
 // Only voucher codes use the mono face, so it is not preloaded on every page (13.4.a).
 const fontMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -52,7 +49,7 @@ const fontMono = JetBrains_Mono({
   preload: false,
   variable: "--font-mono-app",
 });
-const fontVariables = `${fontBody.variable} ${fontDisplay.variable} ${fontMono.variable}`;
+const fontVariables = `${fontBody.variable} ${fontMono.variable}`;
 
 export const baseMetadata: Metadata = {
   title: "YourTal",

@@ -17,7 +17,7 @@ export interface LandingHeroProps {
  */
 export function LandingHero({ featured }: LandingHeroProps) {
   return (
-    <section className="relative flex min-h-[70vh] flex-col justify-end overflow-hidden bg-fg text-primary-fg">
+    <section className="relative flex min-h-[70vh] flex-col justify-end overflow-hidden bg-fg text-canvas">
       {featured ? (
         <video
           className="absolute inset-0 h-full w-full object-cover opacity-70"
@@ -31,16 +31,16 @@ export function LandingHero({ featured }: LandingHeroProps) {
         />
       ) : null}
       <div className="relative z-10 flex flex-col gap-4 p-gutter-md pb-12 md:p-12">
-        <p className="text-xs font-medium uppercase tracking-wide text-primary-fg/80">YourTal</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-canvas/80">YourTal</p>
         <h1 className="max-w-2xl font-display text-display md:text-display-lg">
           Watch, learn, earn — and spend it where you live.
         </h1>
-        <p className="max-w-xl text-lg text-primary-fg/90">
+        <p className="max-w-xl text-lg text-canvas/90">
           Real videos from real local businesses. Watch, answer a couple of honest questions, and
           earn points you spend at the businesses you already visit.
         </p>
         {featured ? (
-          <p className="text-body-sm text-primary-fg/70">
+          <p className="text-body-sm text-canvas/70">
             Now showing: {featured.title} — {featured.merchantName}
           </p>
         ) : null}

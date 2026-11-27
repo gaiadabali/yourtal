@@ -10,6 +10,7 @@ import { SearchChannelRow } from "@/features/search/search-channel-row";
 import { StoreVoucherCard } from "@/features/store/store-voucher-card";
 import { VideoCard } from "@/features/feed/video-card";
 import { getDisplayLocale } from "@/i18n/get-locale";
+import { BrandMascot } from "@/features/brand/brand-mascot";
 
 function Results({
   id,
@@ -62,7 +63,10 @@ export default async function SearchPage(props: PageProps<"/search">) {
     </div>
   );
 
-  if (query === "") return shell(<EmptyState title={t("emptyQuery")} />);
+  if (query === "")
+    return shell(
+      <EmptyState icon={<BrandMascot decorative size="lg" />} title={t("emptyQuery")} />,
+    );
 
   const result = await search(query);
   if (!result.ok) {
@@ -72,7 +76,7 @@ export default async function SearchPage(props: PageProps<"/search">) {
         retry={
           <a
             href={`/search?q=${encodeURIComponent(query)}`}
-            className="text-label font-sans font-semibold text-accent"
+            className="text-label font-sans font-semibold text-accent-text"
           >
             {t("retry")}
           </a>
@@ -85,7 +89,9 @@ export default async function SearchPage(props: PageProps<"/search">) {
   const videos = campaigns.filter((item) => item.kind === "long_form");
   const shorts = campaigns.filter((item) => item.kind === "quick");
   if (campaigns.length === 0 && channels.length === 0 && listings.length === 0) {
-    return shell(<EmptyState title={t("noResults", { query })} />);
+    return shell(
+      <EmptyState icon={<BrandMascot decorative size="lg" />} title={t("noResults", { query })} />,
+    );
   }
 
   return shell(

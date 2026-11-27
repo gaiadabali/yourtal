@@ -1,4 +1,4 @@
-import { BrandWordmark } from "@yourtal/ui/brand/wordmark";
+import { BrandLogo } from "@yourtal/ui/brand/wordmark";
 import type { SupportedLocale } from "./public-i18n";
 import { getPublicTranslator } from "./public-i18n";
 import { PublicCtaLink } from "./public-cta-link";
@@ -58,9 +58,9 @@ export function PublicHeader({ locale, homeHref, currentPublicLocale }: PublicHe
   return (
     <header className="flex items-center justify-between gap-4 border-b border-border-subtle px-gutter-sm py-3 md:px-gutter-md">
       <a href={homeHref}>
-        <BrandWordmark size="sm" />
+        <BrandLogo />
       </a>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 min-[420px]:gap-4">
         <nav aria-label={t("header.language")} className="flex items-center gap-1.5">
           {GENERATED_PUBLIC_LOCALES.map((publicLocale) => {
             const isCurrent = publicLocale === currentPublicLocale;
@@ -81,7 +81,10 @@ export function PublicHeader({ locale, homeHref, currentPublicLocale }: PublicHe
             );
           })}
         </nav>
-        <a href="/au" className="text-label font-sans font-medium text-fg-muted hover:text-fg">
+        <a
+          href="/au"
+          className="text-label font-sans font-medium whitespace-nowrap text-fg-muted hover:text-fg"
+        >
           {t("header.logIn")}
         </a>
         <PublicCtaLink href="/register">{t("header.signUp")}</PublicCtaLink>

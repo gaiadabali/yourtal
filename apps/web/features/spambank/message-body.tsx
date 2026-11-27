@@ -76,7 +76,7 @@ export function PlainBody({ text }: { text: string }) {
             href={p.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-accent underline underline-offset-2"
+            className="text-accent-text underline underline-offset-2"
           >
             {p.text}
           </a>

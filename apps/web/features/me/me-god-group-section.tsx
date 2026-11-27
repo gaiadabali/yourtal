@@ -78,7 +78,7 @@ export function MeGodGroupSection({ initialStatus }: MeGodGroupSectionProps) {
           href={status.notice.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="self-start text-body-sm text-accent underline underline-offset-4"
+          className="self-start text-body-sm text-accent-text underline underline-offset-4"
         >
           {t("readNotice")}
         </a>

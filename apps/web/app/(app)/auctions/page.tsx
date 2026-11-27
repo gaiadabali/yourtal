@@ -49,13 +49,13 @@ export default async function AuctionsPage(props: PageProps<"/auctions">) {
         <div className="flex gap-4">
           <a
             href="/charities"
-            className="text-label font-sans font-semibold text-accent hover:underline"
+            className="text-label font-sans font-semibold text-accent-text hover:underline"
           >
             {t("charitiesLink")}
           </a>
           <a
             href="/auctions/mine"
-            className="text-label font-sans font-semibold text-accent hover:underline"
+            className="text-label font-sans font-semibold text-accent-text hover:underline"
           >
             {t("mine.link")}
           </a>
@@ -113,7 +113,7 @@ export default async function AuctionsPage(props: PageProps<"/auctions">) {
           action={
             <a
               href="/wallet"
-              className="text-label font-sans font-semibold text-accent hover:underline"
+              className="text-label font-sans font-semibold text-accent-text hover:underline"
             >
               {t("empty.action")}
             </a>

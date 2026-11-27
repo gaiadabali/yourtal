@@ -51,6 +51,9 @@
     "./counter-shell": "./src/counter-shell/counter-shell.tsx",
     "./brand/coin-mark": "./src/brand/coin-mark.tsx",
     "./brand/wordmark": "./src/brand/wordmark.tsx",
+    "./brand/mascot": "./src/brand/mascot.tsx",
+    "./brand/brand-paths": "./src/brand/brand-paths.ts",
+    "./brand/brand-sizes": "./src/brand/brand-sizes.ts",
     "./cn": "./src/cn.ts"
   },
   "scripts": {

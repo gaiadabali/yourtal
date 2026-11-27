@@ -8,6 +8,7 @@ import { ClientMessages } from "@/features/shell/client-messages";
 import { LazyMailFrame } from "@/features/spambank/mail-lazy";
 import { SwitchOn } from "@/features/spambank/switch-on";
 import { getMailboxStatus } from "@/features/spambank/spambank-data";
+import { BrandMascot } from "@/features/brand/brand-mascot";
 
 /**
  * The gate for every mail screen, in the order a person meets it:
@@ -33,7 +34,13 @@ export default async function MailLayout({ children }: { children: ReactNode }) 
   } else if (!status.data.available || status.data.state === "not_allowed") {
     notFound();
   } else if (status.data.state === "suspended") {
-    body = <EmptyState title={t("gate.suspendedTitle")} description={t("gate.suspendedBody")} />;
+    body = (
+      <EmptyState
+        icon={<BrandMascot decorative size="lg" />}
+        title={t("gate.suspendedTitle")}
+        description={t("gate.suspendedBody")}
+      />
+    );
   } else if (status.data.state !== "on" || !status.data.address) {
     body = <SwitchOn />;
   } else {

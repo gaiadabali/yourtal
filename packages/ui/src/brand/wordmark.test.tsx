@@ -9,25 +9,55 @@ describe("BrandMark", () => {
     const { container } = render(<BrandMark />);
     expect(container.firstElementChild).toHaveAttribute("aria-hidden", "true");
   });
+
+  it("sits on the Charcoal plate unless the caller says the surface already is Charcoal", () => {
+    const { container, rerender } = render(<BrandMark />);
+    expect(container.firstElementChild).toHaveClass("bg-brand-ground");
+    rerender(<BrandMark ground={false} />);
+    expect(container.firstElementChild).not.toHaveClass("bg-brand-ground");
+  });
+
+  it("keeps the artwork's own proportions", () => {
+    const { container } = render(<BrandMark size="lg" />);
+    const svg = container.querySelector("img");
+    const ratio = Number(svg?.getAttribute("width")) / Number(svg?.getAttribute("height"));
+    expect(ratio).toBeCloseTo(736 / 446, 1);
+    expect(svg).toHaveAttribute("src", "/brand/yourtal-mark.svg");
+  });
 });
 
 describe("BrandWordmark", () => {
-  it("shows the literal brand name as visible, accessible text", () => {
+  it("is one image named with the brand name", () => {
     render(<BrandWordmark />);
-    expect(screen.getByText("YourTal")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "YourTal" })).toBeInTheDocument();
   });
 
-  it("bakes in no aria-label by default: the visible text is the accessible name", () => {
+  it("draws the official yellow artwork on the Charcoal plate", () => {
     const { container } = render(<BrandWordmark />);
-    expect(container.firstElementChild).not.toHaveAttribute("aria-label");
+    expect(container.firstElementChild).toHaveClass("bg-brand-ground");
+    expect(container.querySelector("img")).toHaveAttribute("src", "/brand/yourtal-lockup.svg");
+  });
+
+  it("keeps the artwork's own proportions", () => {
+    const { container } = render(<BrandWordmark size="sm" />);
+    const svg = container.querySelector("img");
+    const ratio = Number(svg?.getAttribute("width")) / Number(svg?.getAttribute("height"));
+    expect(ratio).toBeCloseTo(2940 / 468, 1);
+  });
+
+  it("is at least the guide's 120 px wide at its smallest size", () => {
+    const { container } = render(<BrandWordmark size="sm" />);
+    expect(Number(container.querySelector("img")?.getAttribute("width"))).toBeGreaterThanOrEqual(
+      120,
+    );
   });
 
   it("accepts an override accessible name when the caller needs one", () => {
     render(<BrandWordmark aria-label="YourTal home" />);
-    expect(screen.getByLabelText("YourTal home")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "YourTal home" })).toBeInTheDocument();
   });
 
-  it('stays readable as just "YourTal" inside a link, since the mark is hidden', () => {
+  it('stays readable as just "YourTal" inside a link', () => {
     render(
       <a href="/">
         <BrandWordmark />

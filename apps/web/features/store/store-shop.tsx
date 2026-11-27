@@ -158,7 +158,7 @@ export async function StoreShop({ data, query, locale, base, brand }: StoreShopP
                   { ...EMPTY_STORE_QUERY, q: query.q, category: query.category, sort: query.sort },
                   base,
                 )}
-                className="text-caption font-sans font-semibold text-accent hover:underline"
+                className="text-caption font-sans font-semibold text-accent-text hover:underline"
               >
                 {t("clearAll")}
               </a>
@@ -171,7 +171,7 @@ export async function StoreShop({ data, query, locale, base, brand }: StoreShopP
               <p className="text-body font-sans text-fg-muted">{t("noneBody")}</p>
               <a
                 href={base}
-                className="text-label font-sans font-semibold text-accent hover:underline"
+                className="text-label font-sans font-semibold text-accent-text hover:underline"
               >
                 {t("clearAll")}
               </a>
@@ -191,7 +191,7 @@ export async function StoreShop({ data, query, locale, base, brand }: StoreShopP
               {query.after ? (
                 <a
                   href={storeHref(withFilters(query, {}), base)}
-                  className="text-label font-sans font-semibold text-accent hover:underline"
+                  className="text-label font-sans font-semibold text-accent-text hover:underline"
                 >
                   {t("firstPage")}
                 </a>

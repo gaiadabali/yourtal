@@ -66,7 +66,7 @@ export default async function ReviewPage({ searchParams }: ReviewPageProps) {
     { key: "theme", href: "/me" },
     { key: "open", href: locale === "id-ID" ? (openId ?? openAu) : (openAu ?? openId) },
   ];
-  const link = "font-sans font-semibold text-accent underline-offset-4 hover:underline";
+  const link = "font-sans font-semibold text-accent-text underline-offset-4 hover:underline";
 
   return (
     <main

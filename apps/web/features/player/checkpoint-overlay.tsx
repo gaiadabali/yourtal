@@ -134,7 +134,7 @@ export function CheckpointOverlay({
       role="dialog"
       aria-modal="true"
       aria-labelledby="checkpoint-prompt"
-      className="z-20 flex flex-col gap-3 rounded-lg bg-fg p-4 text-primary-fg focus-visible:outline-none sm:absolute sm:inset-0 sm:bg-fg/90 sm:p-6"
+      className="z-20 flex flex-col gap-3 rounded-lg bg-fg p-4 text-canvas focus-visible:outline-none sm:absolute sm:inset-0 sm:bg-fg/90 sm:p-6"
     >
       <div className="flex shrink-0 items-center justify-between gap-3 text-sm font-sans">
         <span>{t("checkpoint.progress", { current: questionNumber, total: totalQuestions })}</span>
@@ -162,7 +162,7 @@ export function CheckpointOverlay({
                     aria-checked={selected === String(value)}
                     disabled={submitting}
                     onClick={() => chooseBool(value)}
-                    className="rounded-control border border-white/30 bg-white/10 px-4 py-3 text-left text-body font-sans break-words text-primary-fg disabled:opacity-60 aria-checked:border-white aria-checked:bg-white/25"
+                    className="rounded-control border border-white/30 bg-white/10 px-4 py-3 text-left text-body font-sans break-words text-canvas disabled:opacity-60 aria-checked:border-white aria-checked:bg-white/25"
                   >
                     {t(value ? "checkpoint.true" : "checkpoint.false")}
                   </button>
@@ -176,7 +176,7 @@ export function CheckpointOverlay({
                     aria-checked={selected === option.id}
                     disabled={submitting}
                     onClick={() => choose(option.id)}
-                    className="rounded-control border border-white/30 bg-white/10 px-4 py-3 text-left text-body font-sans break-words text-primary-fg disabled:opacity-60 aria-checked:border-white aria-checked:bg-white/25"
+                    className="rounded-control border border-white/30 bg-white/10 px-4 py-3 text-left text-body font-sans break-words text-canvas disabled:opacity-60 aria-checked:border-white aria-checked:bg-white/25"
                   >
                     {option.label}
                   </button>

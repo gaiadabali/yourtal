@@ -25,7 +25,7 @@ export default async function CharityPage(props: PageProps<"/charities/[charityI
     <AuctionPageShell>
       <a
         href="/charities"
-        className="w-fit text-label font-sans font-semibold text-accent hover:underline"
+        className="w-fit text-label font-sans font-semibold text-accent-text hover:underline"
       >
         {t("browse.back")}
       </a>

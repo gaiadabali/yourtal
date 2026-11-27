@@ -33,7 +33,7 @@ export const ChoiceCard = React.forwardRef<HTMLInputElement, ChoiceCardProps>(
         htmlFor={inputId}
         className={cn(
           "group relative flex cursor-pointer flex-col gap-3 rounded-card border border-border-subtle bg-surface p-4",
-          "has-[:checked]:border-accent has-[:checked]:bg-accent-subtle",
+          "has-[:checked]:border-accent-text has-[:checked]:bg-accent-subtle",
           "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus",
           "has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50",
           className,

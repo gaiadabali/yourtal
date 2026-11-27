@@ -124,7 +124,7 @@ export function TopBar({
               className="hidden h-8 shrink-0 items-center gap-1 rounded-pill bg-accent-subtle px-2 text-label font-sans font-bold text-fg min-[380px]:inline-flex sm:px-2.5"
               title={t("streak", { count: streakDays })}
             >
-              <Flame aria-hidden="true" className="h-4 w-4 text-accent" />
+              <Flame aria-hidden="true" className="h-4 w-4 text-accent-text" />
               <span aria-hidden="true" className="tabular-nums">
                 {streakDays}
               </span>
@@ -138,7 +138,7 @@ export function TopBar({
               on={mail.on}
               variant="top"
               className="relative hidden size-9 shrink-0 items-center justify-center rounded-pill text-fg hover:bg-surface-sunken min-[380px]:inline-flex min-[360px]:size-10"
-              activeClassName="bg-surface-sunken text-accent"
+              activeClassName="bg-surface-sunken text-accent-text"
             />
           ) : null}
           {notifications ? <NotificationsBell initialNotifications={notifications} /> : null}

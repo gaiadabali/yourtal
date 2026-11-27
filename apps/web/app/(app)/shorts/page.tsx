@@ -9,6 +9,7 @@ import { SHORTS_SIGN_UP_HREF } from "@/features/feed/shorts-signup-href";
 import { PUBLIC_SITE_URL } from "@/features/public/public-locale";
 import { getRegion } from "@/features/region/get-region";
 import { getDisplayLocale } from "@/i18n/get-locale";
+import { BrandMascot } from "@/features/brand/brand-mascot";
 
 /**
  * Shorts (13.14.a): the vertical swipe feed, Shorts only, earning in place
@@ -39,13 +40,14 @@ export default async function ShortsPage() {
           title={t("error.heading")}
           description={t("error.body")}
           retry={
-            <a href="/shorts" className="text-label font-sans font-semibold text-accent">
+            <a href="/shorts" className="text-label font-sans font-semibold text-accent-text">
               {t("error.retry")}
             </a>
           }
         />
       ) : result.data.items.length === 0 ? (
         <EmptyState
+          icon={<BrandMascot decorative size="lg" />}
           headingLevel={2}
           title={t("shortsEmpty.heading")}
           description={result.data.signedOut ? t("shortsEmpty.visitorBody") : t("shortsEmpty.body")}

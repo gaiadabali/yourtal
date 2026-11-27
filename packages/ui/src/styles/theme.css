@@ -31,6 +31,17 @@
   }
 }
 
+/* The mascot's idle bob; callers opt in with `bob` and reduced-motion users never see it. */
+@keyframes mascot-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
 /* Numbers that change in place (balances, timers) should not jiggle. */
 @utility text-numeric {
   font-family: var(--font-display);
@@ -54,6 +65,9 @@
   --color-accent: var(--color-accent);
   --color-accent-hover: var(--color-accent-hover);
   --color-accent-subtle: var(--color-accent-subtle);
+  --color-accent-text: var(--color-accent-text);
+  --color-brand-logo: var(--color-brand-logo);
+  --color-brand-ground: var(--color-brand-ground);
   --color-points: var(--color-points);
   --color-points-subtle: var(--color-points-subtle);
   --color-focus: var(--color-focus);

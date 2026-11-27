@@ -13,8 +13,8 @@ import type { MetadataRoute } from "next";
  * Lighthouse's "no manifest" PWA warning and gives Android something to
  * show if a user does add YourTal to their home screen.
  *
- * Colours match the "After Dark" canvas (`--color-canvas`'s dark value,
- * `packages/ui/src/styles/tokens.css`), not a Tailwind class: this file
+ * Colours are the brand Charcoal (`--brand-charcoal`,
+ * `packages/ui/src/styles/tokens.css`), the ground every app icon is drawn on, not a Tailwind class: this file
  * runs at build/request time with no CSS engine attached, the same reason
  * `scripts/build-brand-icons.mjs` hard-codes the same hex.
  */
@@ -25,8 +25,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Watch, learn, earn — and spend it where you live.",
     start_url: "/",
     display: "standalone",
-    background_color: "#0B0B0F",
-    theme_color: "#0B0B0F",
+    background_color: "#363636",
+    theme_color: "#363636",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },

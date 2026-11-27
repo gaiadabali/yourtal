@@ -28,7 +28,7 @@ export default async function ForgotPasswordPage({ searchParams }: ForgotPasswor
       title={t("heading")}
       description={t("intro")}
       footer={
-        <Link href="/login" className="text-accent underline underline-offset-4">
+        <Link href="/login" className="text-accent-text underline underline-offset-4">
           {t("backToSignIn")}
         </Link>
       }

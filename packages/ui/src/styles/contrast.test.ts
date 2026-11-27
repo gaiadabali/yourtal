@@ -85,6 +85,9 @@ const SEMANTIC = [
   "accent",
   "accent-hover",
   "accent-subtle",
+  "accent-text",
+  "brand-logo",
+  "brand-ground",
   "points",
   "points-subtle",
   "focus",
@@ -106,7 +109,7 @@ function pairs(surface: Surface): [string, string, number][] {
       ["fg", bg, text],
       ["fg-muted", bg, text],
       ["fg-subtle", bg, text],
-      ["accent", bg, 4.5],
+      ["accent-text", bg, 4.5],
       ["border-control", bg, 3],
       ["focus", bg, 3],
       ...STATUSES.map((s): [string, string, number] => [`${s}-solid`, bg, 4.5]),
@@ -114,6 +117,9 @@ function pairs(surface: Surface): [string, string, number][] {
     ["fg-on-accent", "accent", 4.5],
     ["fg-on-accent", "accent-hover", 4.5],
     ["fg", "accent-subtle", 4.5],
+    ["accent-text", "accent-subtle", 4.5],
+    // The logo and mascot are yellow on the Charcoal ground, never on anything else.
+    ["brand-logo", "brand-ground", 4.5],
     ["fg-on-points", "points", 4.5],
     ["fg", "points-subtle", 4.5],
     ...STATUSES.flatMap((s): [string, string, number][] => [
@@ -152,6 +158,23 @@ describe("tokens v2", () => {
       });
     }
   }
+
+  it("the brand yellow is exactly the official #FFDA00 on every surface", () => {
+    for (const surface of Object.keys(SURFACES) as Surface[]) {
+      for (const theme of ["light", "dark"] as const) {
+        expect(color("accent", surface, theme).toLowerCase()).toBe("#ffda00");
+      }
+    }
+  });
+
+  it("brand yellow is a fill, never the text or indicator colour on a light surface", () => {
+    for (const surface of Object.keys(SURFACES) as Surface[]) {
+      expect(
+        ratio(color("accent", surface, "light"), color("canvas", surface, "light")),
+      ).toBeLessThan(3);
+      expect(color("accent-text", surface, "light")).not.toBe(color("accent", surface, "light"));
+    }
+  });
 
   it("points gold is never a text colour on a light surface", () => {
     for (const surface of Object.keys(SURFACES) as Surface[]) {

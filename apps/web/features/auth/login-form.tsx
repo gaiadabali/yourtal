@@ -57,7 +57,7 @@ export function LoginForm({ returnTo, errorCode }: LoginFormProps) {
       <PendingSubmitButton>{t("submitCta")}</PendingSubmitButton>
       <Link
         href="/forgot"
-        className="text-body-sm font-sans text-accent underline underline-offset-4"
+        className="text-body-sm font-sans text-accent-text underline underline-offset-4"
       >
         {t("forgotCta")}
       </Link>

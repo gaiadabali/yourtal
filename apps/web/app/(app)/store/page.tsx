@@ -32,7 +32,7 @@ export default async function StorePage(props: PageProps<"/store">) {
           title={t("boardError.title")}
           description={t("boardError.description")}
           retry={
-            <a href="/store" className="text-label font-sans font-semibold text-accent">
+            <a href="/store" className="text-label font-sans font-semibold text-accent-text">
               {t("errorPanel.retryLabel")}
             </a>
           }

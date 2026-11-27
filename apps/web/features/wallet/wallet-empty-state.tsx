@@ -28,7 +28,7 @@ export async function WalletEmptyState() {
       <ol className="grid gap-4 sm:grid-cols-3">
         {steps.map((step, index) => (
           <li key={step.title} className="flex flex-col gap-2 rounded-card bg-canvas p-4">
-            <span className="flex items-center gap-2 text-caption font-sans font-bold text-accent">
+            <span className="flex items-center gap-2 text-caption font-sans font-bold text-accent-text">
               <step.icon aria-hidden="true" className="h-5 w-5" />
               {t("emptyState.step", { number: index + 1 })}
             </span>

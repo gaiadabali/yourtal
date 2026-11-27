@@ -11,6 +11,7 @@ import { parseReturnTo } from "@/features/onboarding/onboarding-return-to";
 import { getOnboardingConsents, interestsStepSkipped } from "@/features/onboarding/onboarding-data";
 import { EmailVerificationReminder } from "@/features/me/email-verification";
 import { getMeProfile } from "@/features/me/me-data";
+import { BrandMascot } from "@/features/brand/brand-mascot";
 
 export interface OnboardingDonePageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -42,7 +43,9 @@ export default async function OnboardingDonePage({ searchParams }: OnboardingDon
         currentIndex={onboardingStepIndex("done")}
         skipped={interestsStepSkipped(consents) ? ["interests"] : []}
       />
-      <div className="flex flex-col gap-3 text-center">
+      <div className="flex flex-col items-center gap-3 text-center">
+        {/* A finished sign-up is a moment of its own: the mascot has its name here. */}
+        <BrandMascot size="lg" bob />
         <Heading level={1} size="headline">
           {t("heading")}
         </Heading>

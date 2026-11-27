@@ -22,7 +22,7 @@ export function PublicCtaLink({ href, children }: PublicCtaLinkProps) {
   return (
     <a
       href={href}
-      className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-6 text-base font-medium text-primary-fg transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-4 text-base whitespace-nowrap sm:px-6 font-medium text-primary-fg transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       {children}
     </a>

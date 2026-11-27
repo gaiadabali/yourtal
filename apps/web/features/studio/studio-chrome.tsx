@@ -7,6 +7,7 @@ import { StudioIdentityPanel } from "./studio-identity-panel";
 import { StudioZoneNav } from "./studio-zone-nav";
 import { buildStudioNavItems } from "./studio-zone-items";
 import { getVisibleZones } from "./studio-zone-access";
+import { BrandWordmark } from "@yourtal/ui/brand/wordmark";
 
 export interface StudioChromeProps {
   current: BusinessMembership;
@@ -71,6 +72,8 @@ export function StudioChrome({
             aria-label={t("chrome.zoneNav.ariaLabel")}
             className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:w-full lg:flex-none lg:flex-col lg:items-stretch lg:gap-3"
           >
+            {/* The sidebar's logo, top left; the mobile strip has no room for it. */}
+            <BrandWordmark size="sm" className="hidden self-start lg:inline-flex" />
             <StudioIdentityPanel
               current={current}
               allMemberships={allMemberships}

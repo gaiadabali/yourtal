@@ -62,7 +62,7 @@ export function StaffRiskList({ initial }: StaffRiskListProps) {
             key: "user",
             header: t("risk.columnUser"),
             cell: (row) => (
-              <Link href={`/staff/users/${row.userId}`} className="text-accent underline">
+              <Link href={`/staff/users/${row.userId}`} className="text-accent-text underline">
                 {row.userId}
               </Link>
             ),

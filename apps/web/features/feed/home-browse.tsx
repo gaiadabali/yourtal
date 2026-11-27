@@ -71,7 +71,7 @@ export async function HomeBrowse({ data, query, locale, publicBase }: HomeBrowse
               <p className="text-body font-sans text-fg-muted">{t("browse.noneBody")}</p>
               <a
                 href={browseHref({ category: query.category, tags: [], sort: "for_you" })}
-                className="text-label font-sans font-semibold text-accent hover:underline"
+                className="text-label font-sans font-semibold text-accent-text hover:underline"
               >
                 {t("browse.clear")}
               </a>
@@ -194,7 +194,7 @@ function Shelf({
           <a
             href={seeAll.href}
             aria-label={seeAll.ariaLabel}
-            className="text-label font-sans font-semibold text-accent hover:underline"
+            className="text-label font-sans font-semibold text-accent-text hover:underline"
           >
             {seeAll.label}
           </a>

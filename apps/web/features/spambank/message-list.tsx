@@ -120,7 +120,7 @@ export function MessageList({ folder, search }: { folder?: FolderKey; search?: s
               setSelected(e.target.checked ? new Set(list.items.map((m) => m.id)) : new Set())
             }
             aria-label={t("list.selectAll")}
-            className="size-4 accent-accent"
+            className="size-4 accent-accent-text"
           />
           <span className={cn(count === 0 && "sr-only")}>{t("list.selected", { count })}</span>
         </label>

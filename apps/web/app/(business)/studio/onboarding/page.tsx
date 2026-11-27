@@ -32,7 +32,7 @@ export default async function StudioOnboardingPage(props: PageProps<"/studio/onb
       <PageHeader title={t("onboarding.title")} description={t("onboarding.description")} />
       <Link
         href="/studio/join"
-        className="w-fit text-body-sm font-sans text-accent underline underline-offset-4"
+        className="w-fit text-body-sm font-sans text-accent-text underline underline-offset-4"
       >
         {t("onboarding.joinInstead")}
       </Link>

@@ -63,7 +63,7 @@ export function MessageRow({
             checked={selected}
             onChange={(e) => onSelect(e.target.checked)}
             aria-label={t("list.selectMessage", { who, subject })}
-            className="size-4 accent-accent"
+            className="size-4 accent-accent-text"
           />
         </label>
         <Button
@@ -87,7 +87,7 @@ export function MessageRow({
           aria-hidden="true"
           className={cn(
             "size-2 shrink-0 rounded-full",
-            message.unread ? "bg-accent" : "bg-transparent",
+            message.unread ? "bg-accent-text" : "bg-transparent",
           )}
         />
         <span className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-4">

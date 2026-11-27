@@ -143,7 +143,7 @@ export function VideoCardMenu({
             className={ITEM}
           >
             {saved ? (
-              <BookmarkCheck aria-hidden="true" className="h-5 w-5 text-accent" />
+              <BookmarkCheck aria-hidden="true" className="h-5 w-5 text-accent-text" />
             ) : (
               <Bookmark aria-hidden="true" className="h-5 w-5 text-fg-muted" />
             )}

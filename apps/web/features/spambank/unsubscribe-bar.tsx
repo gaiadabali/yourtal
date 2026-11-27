@@ -80,7 +80,7 @@ export function UnsubscribeBar({
               type="checkbox"
               checked={moveToJunk}
               onChange={(e) => onToggleMove(e.target.checked)}
-              className="size-4 accent-accent"
+              className="size-4 accent-accent-text"
             />
             {t("alsoMove")}
           </label>

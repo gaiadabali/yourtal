@@ -131,7 +131,7 @@ export function CampaignEditorUpload({
           value={video.status === "processing" ? 100 : video.progressPercent}
           max={100}
           aria-label={t("campaignBuilder.upload.progressAriaLabel")}
-          className="h-2 w-full [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-surface-raised [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-primary"
+          className="h-2 w-full [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-surface-raised [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-accent-text"
         />
       ) : null}
       {isLiveMode && video.assetId ? (

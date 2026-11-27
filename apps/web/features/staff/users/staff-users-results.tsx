@@ -26,7 +26,7 @@ export function StaffUsersResults({ t, results }: StaffUsersResultsProps) {
           key: "email",
           header: t("users.columnEmail"),
           cell: (row) => (
-            <Link href={`/staff/users/${row.userId}`} className="text-accent underline">
+            <Link href={`/staff/users/${row.userId}`} className="text-accent-text underline">
               {row.email ?? row.userId}
             </Link>
           ),

@@ -35,7 +35,7 @@ export default async function AuctionPage(props: PageProps<"/auctions/[auctionId
     <AuctionPageShell>
       <a
         href="/auctions"
-        className="w-fit text-label font-sans font-semibold text-accent hover:underline"
+        className="w-fit text-label font-sans font-semibold text-accent-text hover:underline"
       >
         {t("back")}
       </a>

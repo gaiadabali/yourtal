@@ -39,7 +39,7 @@ export function GodNoticeTick({ name, checked, onCheckedChange, required }: GodN
           href={GOD_GROUP_NOTICE.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-accent underline underline-offset-4"
+          className="text-accent-text underline underline-offset-4"
         >
           {t("link")}
         </a>

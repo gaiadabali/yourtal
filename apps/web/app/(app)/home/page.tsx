@@ -7,6 +7,7 @@ import { HomeBrowse } from "@/features/feed/home-browse";
 import { PUBLIC_SITE_URL } from "@/features/public/public-locale";
 import { getRegion } from "@/features/region/get-region";
 import { getDisplayLocale } from "@/i18n/get-locale";
+import { BrandMascot } from "@/features/brand/brand-mascot";
 
 export interface HomePageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -35,7 +36,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             title={t("error.heading")}
             description={t("error.body")}
             retry={
-              <a href="/home" className="text-label font-sans font-semibold text-accent">
+              <a href="/home" className="text-label font-sans font-semibold text-accent-text">
                 {t("error.retry")}
               </a>
             }
@@ -43,7 +44,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </div>
       ) : result.data.items.length === 0 && result.data.categories.length === 0 ? (
         <div className="pt-6">
-          <EmptyState title={t("empty.heading")} description={t("empty.body")} />
+          <EmptyState
+            icon={<BrandMascot decorative size="lg" />}
+            title={t("empty.heading")}
+            description={t("empty.body")}
+          />
         </div>
       ) : (
         <HomeBrowse

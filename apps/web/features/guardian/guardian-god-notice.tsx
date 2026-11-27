@@ -34,7 +34,7 @@ export function GuardianGodNoticeTick({ locale, checked, onChange }: GuardianGod
           href={GOD_GROUP_NOTICE.teensUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-accent underline underline-offset-4"
+          className="text-accent-text underline underline-offset-4"
         >
           {t("godNotice.link")}
         </a>

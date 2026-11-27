@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { EmptyState } from "@yourtal/ui/empty-state";
+import { Mascot } from "@yourtal/ui/brand/mascot";
 import {
   GENERATED_PUBLIC_LOCALES,
   publicLanguageAlternates,
@@ -70,6 +71,7 @@ export default async function PublicHomePage({ params }: PublicHomePageProps) {
       <h1 className="text-title font-display font-bold text-fg">{t("feed.heading")}</h1>
       {feedItems.length === 0 ? (
         <EmptyState
+          icon={<Mascot size="lg" />}
           headingLevel={2}
           title={t("feed.emptyHeading")}
           description={t("feed.emptyBody")}

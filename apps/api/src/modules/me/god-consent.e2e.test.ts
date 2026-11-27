@@ -205,6 +205,31 @@ describe("9.1.b: an existing user on their next sign-in", () => {
     expect(accepted.json<StatusBody>()).toMatchObject({ ask: false, inGod: true });
   });
 
+  it("refuses Not now once the current notice is accepted: 409 already_accepted, status unchanged", async () => {
+    const session = await existingUser();
+    const accepted = await app.inject({
+      method: "POST",
+      url: "/api/me/god-consent",
+      headers: { cookie: session.cookie },
+      payload: { decision: "accepted", noticeVersion: "1.0" },
+    });
+    expect(accepted.statusCode, accepted.body).toBeLessThan(300);
+
+    const declined = await app.inject({
+      method: "POST",
+      url: "/api/me/god-consent",
+      headers: { cookie: session.cookie },
+      payload: { decision: "declined", noticeVersion: "1.0" },
+    });
+    expect(declined.statusCode, declined.body).toBe(409);
+    expect(declined.json<{ error: string }>().error).toBe("already_accepted");
+
+    const after = await status(session);
+    expect(after.current).toMatchObject({ decision: "accepted", method: "next_sign_in" });
+    expect(after.inGod).toBe(true);
+    expect(await logFor(session.userId)).toHaveLength(1);
+  });
+
   it("asks again when the notice version changes, and refuses a decision on an old version", async () => {
     const session = await existingUser();
     // A decision on file against an earlier notice version.

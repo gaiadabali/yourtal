@@ -34,7 +34,8 @@ const PASSWORD = process.env.STAGING_REVIEW_PASSWORD;
 const STAFF_PASSWORD = process.env.STAGING_DEMO_PASSWORD;
 const SNAP_EMAIL = process.env.SNAP_CHECK_EMAIL ?? "sam@marshtransport.example";
 const PARTNER_SECRET = process.env.SNAP_APP_PARTNER_SECRET;
-const LISTING_TITLE = "50 SnapApp scans";
+const LISTING_ID = "00000000-0000-4000-9000-000000000401"; // the seed's fixed id: survives a rename
+const LISTING_TITLE = "50 SnapApps scans"; // for messages only
 const STAFF_PRICE = 200; // F128 (2026-10-22); buyers pay max(it, the ledger quote) (2.8.g)
 const SNAP_APP_BUSINESS = "00000000-0000-4000-9000-000000000001"; // Snap App Pty Ltd (AU), staging
 const BANK_LAST4 = "3456"; // Snap App's simulated payout account (L3)
@@ -110,7 +111,7 @@ const snap = (s, method, path, body) => http(SNAP, method, path, s.ws, body);
 async function findListing(s) {
   for (let cursor = ""; ;) {
     const page = await yt(s, "GET", `/api/store/listings${cursor}`);
-    const hit = page.body?.data?.find((l) => l.title === LISTING_TITLE);
+    const hit = page.body?.data?.find((l) => l.id === LISTING_ID);
     if (hit) return hit;
     if (!page.body?.has_more) return null;
     cursor = `?startingAfter=${page.body.data.at(-1).id}`;

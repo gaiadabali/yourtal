@@ -1263,7 +1263,7 @@ describe("ensureSnapAppScansListing (2.8 T7)", () => {
       expect(first).toEqual({ status: "created", detail: expect.any(String) });
       const row = await listing();
       expect(row).toMatchObject({
-        title: "50 SnapApp scans",
+        title: "50 SnapApps scans",
         merchant_id: BUSINESS_IDS[0],
         region: "AU",
         currency: "AUD",

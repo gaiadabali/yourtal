@@ -5,7 +5,7 @@
  */
 export const GOD_GROUP_NOTICE = {
   id: "god-group-notice",
-  version: "1.0",
+  version: "1.1",
   effectiveFrom: "2026-11-27",
   url: "https://god.gaiada.com/privacy-notice/",
   teensUrl: "https://god.gaiada.com/privacy-notice/#teens",

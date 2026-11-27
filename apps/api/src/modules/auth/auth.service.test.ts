@@ -306,7 +306,7 @@ describe("9.1.b: the GOD Group Privacy Notice at registration", () => {
       userId: result.value.userId,
       region: "AU",
       noticeId: "god-group-notice",
-      noticeVersion: "1.0",
+      noticeVersion: "1.1",
       decision: "accepted",
       method: "registration",
       track: "adult",

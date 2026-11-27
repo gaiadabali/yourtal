@@ -64,7 +64,11 @@ describe("the client registry (docs/26 §1.9)", () => {
           expect(uri.host).toBe(client.returnHost);
         } else if (uri.protocol === "https:") {
           // The App Link on the app's own host, or the phone app's browser build (PWA).
-          expect([client.returnHost, "snapapp.app.gaiada.com"]).toContain(uri.host);
+          expect([
+            client.returnHost,
+            "app.snapapps.gaiada.com",
+            "snapapp.app.gaiada.com",
+          ]).toContain(uri.host);
         } else {
           expect(uri.protocol).toBe("au.com.snapapps.app:");
         }
@@ -79,6 +83,7 @@ describe("the client registry (docs/26 §1.9)", () => {
     expect(uris.get("snapapp-staging-mobile")).toEqual([
       "au.com.snapapps.app:/oauth/yourtal",
       "https://snapapp.gaiada.com/oauth/yourtal",
+      "https://app.snapapps.gaiada.com/oauth/yourtal",
       "https://snapapp.app.gaiada.com/oauth/yourtal",
     ]);
     for (const [clientId, list] of uris) {
@@ -309,6 +314,7 @@ describe("client credentials from the secrets directory", () => {
     expect(byId.get("snapapp-staging-mobile")?.redirect_uris).toEqual([
       "au.com.snapapps.app:/oauth/yourtal",
       "https://snapapp.gaiada.com/oauth/yourtal",
+      "https://app.snapapps.gaiada.com/oauth/yourtal",
       "https://snapapp.app.gaiada.com/oauth/yourtal",
     ]);
     expect(byId.get("ftr-web")?.redirect_uris).toEqual([
@@ -366,6 +372,9 @@ describe("returnHostFor (the host the consent screen names)", () => {
   if (phone === undefined) throw new Error("the SnapApp phone client is registered");
 
   it("names the PWA's own host when the PWA's redirect is used", () => {
+    expect(returnHostFor(phone, "https://app.snapapps.gaiada.com/oauth/yourtal")).toBe(
+      "app.snapapps.gaiada.com",
+    );
     expect(returnHostFor(phone, "https://snapapp.app.gaiada.com/oauth/yourtal")).toBe(
       "snapapp.app.gaiada.com",
     );

@@ -286,12 +286,13 @@ describe("authorization requests", () => {
     expect(errorOf(response.headers.location)).toBe("invalid_scope");
   });
 
-  it("the phone app may return on each of its three URIs, and only those", async () => {
+  it("the phone app may return on each of its four URIs, and only those", async () => {
     const mobile = (redirect_uri: string) =>
       authorize({ client_id: "snapapp-staging-mobile", redirect_uri });
     for (const redirect_uri of [
       "au.com.snapapps.app:/oauth/yourtal",
       "https://snapapp.gaiada.com/oauth/yourtal",
+      "https://app.snapapps.gaiada.com/oauth/yourtal",
       "https://snapapp.app.gaiada.com/oauth/yourtal",
     ]) {
       expect((await mobile(redirect_uri)).headers.location ?? "", redirect_uri).toContain(
@@ -301,6 +302,7 @@ describe("authorization requests", () => {
     for (const redirect_uri of [
       "https://snapapp.app.gaiada.com/oauth/yourtal/",
       "https://snapapp.app.gaiada.com/auth/yourtal/callback",
+      "https://app.snapapps.gaiada.com/oauth/yourtal/",
       "https://evil.app.gaiada.com/oauth/yourtal",
     ]) {
       expect((await mobile(redirect_uri)).headers.location, redirect_uri).toBeUndefined();

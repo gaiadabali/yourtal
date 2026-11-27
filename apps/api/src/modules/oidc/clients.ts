@@ -110,6 +110,8 @@ const DEFINITIONS: readonly Definition<YourTalClient>[] = [
       "https://snapapp.gaiada.com/oauth/yourtal",
       // The phone app's browser build (PWA): the popup returns to its own origin and hands
       // the code back to the tab that opened it. Same client, same sector, same `sub`.
+      "https://app.snapapps.gaiada.com/oauth/yourtal",
+      // The PWA's host before 2026-11-27, kept until SnapApps' env names the new one.
       "https://snapapp.app.gaiada.com/oauth/yourtal",
     ],
   },

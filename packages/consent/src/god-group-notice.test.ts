@@ -27,13 +27,13 @@ function decided(over: Partial<GodConsentRecord> = {}): GodConsentRecord {
   });
 }
 
-const NEXT_VERSION = { ...GOD_GROUP_NOTICE, version: "1.1" };
+const NEXT_VERSION = { ...GOD_GROUP_NOTICE, version: "1.2" };
 
 describe("the notice", () => {
   it("is the shared contract the three apps record against", () => {
     expect(GOD_GROUP_NOTICE).toStrictEqual({
       id: "god-group-notice",
-      version: "1.0",
+      version: "1.1",
       effectiveFrom: "2026-11-27",
       url: "https://god.gaiada.com/privacy-notice/",
       teensUrl: "https://god.gaiada.com/privacy-notice/#teens",
@@ -95,6 +95,12 @@ describe("who is in GOD", () => {
     expect(isInGod(null, "adult")).toBe(false);
   });
 
+  it("an acceptance of v1.0 (before the Indonesia hosting correction) no longer counts", () => {
+    const v10 = decided({ noticeVersion: "1.0" });
+    expect(isInGod(v10, "adult")).toBe(false);
+    expect(adultShouldBeAsked(v10, "adult")).toBe(true);
+  });
+
   it("a teen counts only through their guardian, on the teen track", () => {
     expect(isInGod(decided({ method: "guardian", track: "teen" }), "teen")).toBe(true);
     expect(isInGod(decided({ track: "teen" }), "teen")).toBe(false);
@@ -113,7 +119,7 @@ describe("god_group_insights through mayUseSignalFor", () => {
     });
     expect(decision).toEqual({
       allowed: true,
-      basis: { type: "consent", policyVersionId: "god-group-notice@1.0" },
+      basis: { type: "consent", policyVersionId: "god-group-notice@1.1" },
     });
   });
 
@@ -159,7 +165,7 @@ describe("god_group_insights through mayUseSignalFor", () => {
       reason: {
         type: "consent_stale",
         consentedVersionId: "god-group-notice@0.9",
-        currentVersionId: "god-group-notice@1.0",
+        currentVersionId: "god-group-notice@1.1",
       },
     });
   });

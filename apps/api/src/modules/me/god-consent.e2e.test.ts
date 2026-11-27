@@ -134,9 +134,9 @@ describe("9.1.b: new registration", () => {
   it("records the tick as accepted at registration, so nothing is asked on sign-in", async () => {
     const session = await sessionFor(app);
     const body = await status(session);
-    expect(body.notice).toMatchObject({ id: "god-group-notice", version: "1.0" });
+    expect(body.notice).toMatchObject({ id: "god-group-notice", version: "1.1" });
     expect(body.current).toMatchObject({
-      noticeVersion: "1.0",
+      noticeVersion: "1.1",
       decision: "accepted",
       method: "registration",
       track: "adult",
@@ -146,7 +146,7 @@ describe("9.1.b: new registration", () => {
     expect(await logFor(session.userId)).toEqual([
       {
         notice_id: "god-group-notice",
-        notice_version: "1.0",
+        notice_version: "1.1",
         decision: "accepted",
         method: "registration",
         track: "adult",
@@ -164,7 +164,7 @@ describe("9.1.b: an existing user on their next sign-in", () => {
       method: "POST",
       url: "/api/me/god-consent",
       headers: { cookie: session.cookie },
-      payload: { decision: "declined", noticeVersion: "1.0" },
+      payload: { decision: "declined", noticeVersion: "1.1" },
     });
     expect(declined.statusCode, declined.body).toBeLessThan(300);
 
@@ -199,7 +199,7 @@ describe("9.1.b: an existing user on their next sign-in", () => {
       method: "POST",
       url: "/api/me/god-consent",
       headers: { cookie: session.cookie },
-      payload: { decision: "accepted", noticeVersion: "1.0" },
+      payload: { decision: "accepted", noticeVersion: "1.1" },
     });
     expect(accepted.statusCode, accepted.body).toBeLessThan(300);
     expect(accepted.json<StatusBody>()).toMatchObject({ ask: false, inGod: true });
@@ -211,7 +211,7 @@ describe("9.1.b: an existing user on their next sign-in", () => {
       method: "POST",
       url: "/api/me/god-consent",
       headers: { cookie: session.cookie },
-      payload: { decision: "accepted", noticeVersion: "1.0" },
+      payload: { decision: "accepted", noticeVersion: "1.1" },
     });
     expect(accepted.statusCode, accepted.body).toBeLessThan(300);
 
@@ -219,7 +219,7 @@ describe("9.1.b: an existing user on their next sign-in", () => {
       method: "POST",
       url: "/api/me/god-consent",
       headers: { cookie: session.cookie },
-      payload: { decision: "declined", noticeVersion: "1.0" },
+      payload: { decision: "declined", noticeVersion: "1.1" },
     });
     expect(declined.statusCode, declined.body).toBe(409);
     expect(declined.json<{ error: string }>().error).toBe("already_accepted");
@@ -239,11 +239,11 @@ describe("9.1.b: an existing user on their next sign-in", () => {
     await pool.query(
       `INSERT INTO identity.god_group_consent
          (user_id, region, notice_id, notice_version, decision, method, track)
-       VALUES ($1, 'AU', 'god-group-notice', '0.9', 'accepted', 'next_sign_in', 'adult')`,
+       VALUES ($1, 'AU', 'god-group-notice', '1.0', 'accepted', 'next_sign_in', 'adult')`,
       [session.userId],
     );
     const stale = await status(session);
-    expect(stale.current).toMatchObject({ noticeVersion: "0.9", decision: "accepted" });
+    expect(stale.current).toMatchObject({ noticeVersion: "1.0", decision: "accepted" });
     expect(stale.ask).toBe(true);
     expect(stale.inGod).toBe(false);
 
@@ -251,7 +251,7 @@ describe("9.1.b: an existing user on their next sign-in", () => {
       method: "POST",
       url: "/api/me/god-consent",
       headers: { cookie: session.cookie },
-      payload: { decision: "accepted", noticeVersion: "0.9" },
+      payload: { decision: "accepted", noticeVersion: "1.0" },
     });
     expect(old.statusCode).toBe(409);
     expect(old.json<{ code: string }>().code).toBe("notice_changed");
@@ -343,7 +343,7 @@ describe("9.1.c: a teen and their guardian", () => {
       method: "POST",
       url: "/api/me/god-consent",
       headers: { cookie: session.cookie },
-      payload: { decision: "accepted", noticeVersion: "1.0" },
+      payload: { decision: "accepted", noticeVersion: "1.1" },
     });
     expect(own.statusCode).toBe(403);
     expect(await logFor(session.userId)).toEqual([]);
@@ -360,7 +360,7 @@ describe("9.1.c: a teen and their guardian", () => {
     expect(await logFor(session.userId)).toEqual([
       {
         notice_id: "god-group-notice",
-        notice_version: "1.0",
+        notice_version: "1.1",
         decision: "accepted",
         method: "guardian",
         track: "teen",

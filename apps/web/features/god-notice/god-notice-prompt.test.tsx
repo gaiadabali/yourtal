@@ -19,7 +19,7 @@ const TICK_TEXT =
 function renderPrompt() {
   return render(
     <NextIntlClientProvider locale="en-AU" messages={{ godNotice: enAU }}>
-      <GodNoticePrompt noticeVersion="1.0" />
+      <GodNoticePrompt noticeVersion="1.1" />
     </NextIntlClientProvider>,
   );
 }
@@ -44,7 +44,7 @@ describe("GodNoticePrompt (9.1.b, an existing account's next sign-in)", () => {
 
     await user.click(screen.getByRole("button", { name: "Not now" }));
 
-    expect(decideMock).toHaveBeenCalledWith("declined", "1.0");
+    expect(decideMock).toHaveBeenCalledWith("declined", "1.1");
     expect(refresh).toHaveBeenCalled();
   });
 
@@ -56,7 +56,7 @@ describe("GodNoticePrompt (9.1.b, an existing account's next sign-in)", () => {
     await user.click(screen.getByRole("checkbox"));
     await user.click(screen.getByRole("button", { name: "Accept" }));
 
-    expect(decideMock).toHaveBeenCalledWith("accepted", "1.0");
+    expect(decideMock).toHaveBeenCalledWith("accepted", "1.1");
   });
 
   it("stays open and says so when saving fails", async () => {

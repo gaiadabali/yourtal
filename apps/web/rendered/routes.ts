@@ -9,6 +9,7 @@ export const GATE_ROUTES = [
   "/id",
   "/au/rewards",
   "/id/rewards",
+  "/login",
   "/lab/ui",
   "/lab/shell",
   "/lab/mail",

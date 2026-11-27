@@ -44,7 +44,11 @@ function listFiles(dir) {
 const lf = (file) => readFileSync(file, "utf8").replace(/\r\n/g, "\n");
 
 function git(cwd, ...args) {
-  return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  return execFileSync("git", args, {
+    cwd,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  }).trim();
 }
 
 /** A sparse, shallow clone of snap-app main: only the engine source. */

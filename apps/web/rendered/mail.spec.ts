@@ -27,12 +27,21 @@ async function shot(page: Page, name: string): Promise<void> {
 }
 
 async function violations(page: Page): Promise<string[]> {
-  const result = await new AxeBuilder({ page }).withTags(WCAG_AA).analyze();
+  // The message frame is a sandbox with no scripts, so axe cannot run inside it (and it holds the
+  // sender's own markup, not ours); everything around it is checked.
+  const result = await new AxeBuilder({ page })
+    .withTags(WCAG_AA)
+    .exclude("[data-testid=mail-html-frame]")
+    .analyze();
   return result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" | ")}`);
 }
 
 const SCREENS = [
-  { name: "inbox", url: "/lab/mail", ready: (p: Page) => p.getByText("Lunch on Friday?") },
+  {
+    name: "inbox",
+    url: "/lab/mail",
+    ready: (p: Page) => p.getByText("Lunch on Friday?", { exact: true }),
+  },
   { name: "spam", url: "/lab/mail/spam", ready: (p: Page) => p.getByTestId("spam-banner") },
   {
     name: "message",
@@ -95,30 +104,36 @@ test.describe("mail behaviour", () => {
   });
 
   test("move to Spam and back, then Junk and Trash", async ({ page }) => {
+    // Stay in the app between steps: a full page load would start a fresh fixture mailbox.
+    const lunch = page.getByText("Lunch on Friday?", { exact: true });
+    const rail = page.getByRole("navigation", { name: "Mail folders" });
     await gotoSettled(page, "/lab/mail");
-    await page.getByText("Lunch on Friday?").click();
+    await lunch.click();
     await page.getByLabel("Move this message to").selectOption("spam");
     await expect(page.getByText("Moved to Spam.")).toBeVisible();
-    await page.goto("/lab/mail/spam");
-    await page.getByText("Lunch on Friday?").click();
+    await rail.getByRole("link", { name: /^Spam/ }).click();
+    await lunch.click();
     await page.getByRole("button", { name: "Not spam" }).click();
     await expect(page.getByText(/Moved to Inbox/)).toBeVisible();
-    await page.getByText("Lunch on Friday?").click();
+    await rail.getByRole("link", { name: /^Inbox/ }).click();
+    await lunch.click();
     await page.getByLabel("Move this message to").selectOption("junk");
     await expect(page.getByText("Moved to Junk.")).toBeVisible();
-    await page.goto("/lab/mail/junk");
-    await page.getByText("Lunch on Friday?").click();
+    await rail.getByRole("link", { name: /^Junk/ }).click();
+    await lunch.click();
     await page.getByRole("button", { name: "Delete", exact: true }).click();
     await expect(page.getByText("Moved to Trash.")).toBeVisible();
+    await rail.getByRole("link", { name: /^Trash/ }).click();
+    await expect(lunch).toBeVisible();
   });
 
   test("search finds a message by a word of its subject", async ({ page }) => {
     await gotoSettled(page, "/lab/mail");
-    await expect(page.getByText("Lunch on Friday?")).toBeVisible();
-    await page.getByRole("search").getByRole("searchbox").fill("invoice");
-    await page.getByRole("search").getByRole("searchbox").press("Enter");
-    await expect(page.getByText("Invoice 2026-114")).toBeVisible();
-    await expect(page.getByText("Lunch on Friday?")).toHaveCount(0);
+    await expect(page.getByText("Lunch on Friday?", { exact: true })).toBeVisible();
+    await page.getByRole("searchbox", { name: "Search mail" }).fill("invoice");
+    await page.getByRole("searchbox", { name: "Search mail" }).press("Enter");
+    await expect(page.getByText("Invoice 2026-114", { exact: true })).toBeVisible();
+    await expect(page.getByText("Lunch on Friday?", { exact: true })).toHaveCount(0);
   });
 
   test("the Spam folder carries the YourTal banner", async ({ page }) => {
@@ -142,7 +157,7 @@ test.describe("mail behaviour", () => {
     await gotoSettled(page, "/lab/mail/compose");
     await page.getByLabel("To", { exact: true }).fill("someone@example.com");
     await page.getByLabel("Subject").fill("Browser test");
-    await page.getByLabel("Message").fill("Hello");
+    await page.getByLabel("Message", { exact: true }).fill("Hello");
     await page.getByLabel("Attach files").setInputFiles({
       name: "note.txt",
       mimeType: "text/plain",

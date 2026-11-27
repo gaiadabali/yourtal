@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef } from "react";
+import { useState } from "react";
+import type { ReactNode } from "react";
 import { createMemoryMailClient } from "@yourtal/mail-engine/testing";
-import type { MemoryMailClient } from "@yourtal/mail-engine/testing";
 import { Button } from "@yourtal/ui/button";
 import { PageContainer } from "@yourtal/ui/page-container";
 import { ViewerShell } from "@/features/shell/viewer-shell";
@@ -17,30 +17,31 @@ const LAB_BASE = `/lab${MAIL_BASE}`;
 const ADDRESS = "geewizduck@yourtal.gaiada.com";
 
 /**
- * The real mail screens on the engine's in-memory client, in the real viewer shell. Lab only
- * (`page.lab.tsx`): it is how the rendered gate checks the screens, and how they are looked at,
- * without a mailbox. "Deliver a message" stands in for new mail arriving, so the nav badge can be
- * watched rising.
+ * The frame of the lab preview: the in-memory client and the real viewer shell. Lab only. It lives
+ * in the route's layout so the client (like the real shell's) survives moving between screens.
+ * "Deliver a message" stands in for new mail arriving, so the nav badge can be watched rising.
  */
-export function MailLab({ route, locale }: { route: MailRoute; locale: SupportedLocale }) {
-  const memory = useRef<MemoryMailClient | null>(null);
-  const create = () => {
-    memory.current = createMemoryMailClient();
-    return memory.current;
-  };
+export function MailLabFrame({
+  locale,
+  children,
+}: {
+  locale: SupportedLocale;
+  children: ReactNode;
+}) {
+  // One client for the page. StrictMode runs an initializer twice and keeps the first result, so
+  // the button below must use the state's client, not whichever call ran last.
+  const [memory] = useState(() => createMemoryMailClient());
   return (
-    <MailRoot createClient={create} base={LAB_BASE}>
+    <MailRoot createClient={() => memory} base={LAB_BASE}>
       <ViewerShell locale={locale} availablePoints={1240} mail={{ on: true }}>
         <PageContainer width="wide" className="py-6">
-          <MailShell address={ADDRESS}>
-            <MailRoutesView route={route} />
-          </MailShell>
+          {children}
           <div className="mt-6">
             <Button
               type="button"
               variant="secondary"
               size="sm"
-              onClick={() => memory.current?.deliver({ subject: "A brand new message" })}
+              onClick={() => memory.deliver({ subject: "A brand new message" })}
               data-testid="lab-deliver"
             >
               Deliver a message
@@ -49,5 +50,14 @@ export function MailLab({ route, locale }: { route: MailRoute; locale: Supported
         </PageContainer>
       </ViewerShell>
     </MailRoot>
+  );
+}
+
+/** One mail screen, as `/mail` renders it. */
+export function MailLabScreen({ route }: { route: MailRoute }) {
+  return (
+    <MailShell address={ADDRESS}>
+      <MailRoutesView route={route} />
+    </MailShell>
   );
 }

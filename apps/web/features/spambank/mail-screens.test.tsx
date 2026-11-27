@@ -209,7 +209,8 @@ describe("compose", () => {
     renderMail(screenFor({ view: "compose", mode: "reply", id: "m1" }));
     expect(await screen.findByLabelText("To")).toHaveValue("Maria Santos <maria@example.com>");
     expect(screen.getByLabelText("Subject")).toHaveValue("Re: Lunch on Friday?");
-    expect((screen.getByLabelText("Message") as HTMLTextAreaElement).value).toContain("wrote:");
+    const body = screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Message" });
+    expect(body.value).toContain("wrote:");
   });
 
   it("forwards with the original attachment carried over", async () => {

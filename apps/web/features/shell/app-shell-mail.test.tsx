@@ -23,7 +23,7 @@ vi.mock("@/lib/api/api-fetch", () => ({
   apiFetch: () => Promise.resolve({ ok: true, data: { currentLength: 0 } }),
 }));
 vi.mock("@/features/spambank/spambank-data", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/features/spambank/spambank-data")>()),
+  ...(await importOriginal<Record<string, unknown>>()),
   getMailboxStatus: mocks.getMailboxStatus,
 }));
 vi.mock("@/features/spambank/mail-root", () => ({ MailRoot: mocks.mailRoot }));

@@ -63,6 +63,15 @@ describe("AppShell Mail entry (Spambank)", () => {
     expect(await shellProps()).toMatchObject({ mail: { on: true } });
   });
 
+  it("gives the GOD bar the same signal: Spambank for an adult, never for a teen", async () => {
+    mocks.getMeProfile.mockResolvedValue(profile("adult"));
+    mocks.getMailboxStatus.mockResolvedValue(mailbox("off"));
+    expect(await shellProps()).toMatchObject({ godBar: { adult: true } });
+    mocks.getMeProfile.mockResolvedValue(profile("teen"));
+    mocks.getMailboxStatus.mockResolvedValue(mailbox("on"));
+    expect(await shellProps()).toMatchObject({ godBar: { adult: false } });
+  });
+
   it("shows an adult without a mailbox the entry, but no badge", async () => {
     mocks.getMeProfile.mockResolvedValue(profile("adult"));
     mocks.getMailboxStatus.mockResolvedValue(mailbox("off"));

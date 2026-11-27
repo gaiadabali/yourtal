@@ -30,8 +30,7 @@ import { MeAuthenticatorSection, MePasskeysSection } from "@/features/me/me-sign
 import { MeNotificationsSection } from "@/features/me/me-notifications-section";
 import { MeLinkedAppsSection } from "@/features/me/me-linked-apps-section";
 import { MeConnectedAppsSection } from "@/features/me/me-connected-apps-section";
-import { MeDataExportSection } from "@/features/me/me-data-export-section";
-import { MeDeleteAccountSection } from "@/features/me/me-delete-account-section";
+import { MeDataExportSection, MeDeleteAccountSection } from "@/features/me/me-account-end-lazy";
 import { MeTeenCapSection } from "@/features/me/me-teen-cap-section";
 import { MeSectionError } from "@/features/me/me-section-states";
 import { LazyMeMailSection } from "@/features/spambank/me-mail-lazy";

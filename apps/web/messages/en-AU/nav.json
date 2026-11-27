@@ -26,5 +26,6 @@
   "streak": "{count}-day streak",
   "auctions": "Charity auctions",
   "mail": "Mail",
+  "godApps": "GOD apps",
   "mailUnread": "{count, plural, one {# unread message} other {# unread messages}}"
 }

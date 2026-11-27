@@ -86,6 +86,7 @@ export async function AppShell({ children }: AppShellProps) {
           locale={locale}
           availablePoints={0}
           theme={theme}
+          godBar={{ adult: false }}
           signedOut={{
             homeHref: home,
             hrefs: {
@@ -123,6 +124,7 @@ export async function AppShell({ children }: AppShellProps) {
         streakDays={streakDays}
         {...(account ? { account } : {})}
         {...(mail ? { mail } : {})}
+        godBar={{ adult: mail !== null }}
       >
         {children}
       </ViewerShell>

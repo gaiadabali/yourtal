@@ -4,6 +4,7 @@ import type { Notification } from "@yourtal/contracts/me/notification";
 import type { ThemeSetting } from "@yourtal/contracts/me/theme-setting";
 import type { MailNavState } from "@/features/spambank/spambank-data";
 import type { AccountSummary } from "./account-menu";
+import { GodCompanyFooter } from "@/features/god-bar/god-company-footer";
 import { BottomNav } from "./bottom-nav";
 import type { SupportedLocale } from "./nav-i18n";
 import type { NavLabelKey } from "./nav-items";
@@ -49,6 +50,11 @@ export interface ViewerShellProps {
    * badge, which loads after the page. Omit to hide Mail.
    */
   mail?: NonNullable<MailNavState>;
+  /**
+   * The GOD bar: the app switcher in the top bar and "A GOD company" at the foot of the page. Omit to
+   * leave both out (the gallery). `adult` is the signal that shows Mail; it also shows Spambank.
+   */
+  godBar?: { adult: boolean };
   signedOut?: ViewerShellSignedOutProps;
   children: ReactNode;
 }
@@ -85,6 +91,7 @@ export function ViewerShell({
   streakDays = null,
   account,
   mail,
+  godBar,
   signedOut,
   children,
 }: ViewerShellProps) {
@@ -107,6 +114,7 @@ export function ViewerShell({
   const topBarAccountProps =
     account && !signedOut ? { account: mail ? { ...account, mail } : account } : {};
   const mailProps = mail && !signedOut ? { mail } : {};
+  const godBarProps = godBar ? { godBar } : {};
 
   return (
     <ShellBalanceProvider serverPoints={availablePoints}>
@@ -129,6 +137,7 @@ export function ViewerShell({
           {...topBarNotificationsProps}
           {...topBarAccountProps}
           {...mailProps}
+          {...godBarProps}
         />
         <SideNav
           locale={locale}
@@ -145,6 +154,7 @@ export function ViewerShell({
           )}
         >
           {children}
+          {godBar ? <GodCompanyFooter locale={locale} /> : null}
         </main>
         <BottomNav locale={locale} {...navSignedOutProps} />
       </div>

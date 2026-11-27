@@ -177,7 +177,7 @@ export async function WalletHistory({
       {olderHref ? (
         <a
           href={olderHref}
-          className="w-fit text-label font-sans font-semibold text-accent hover:underline"
+          className="w-fit text-label font-sans font-semibold text-accent-text hover:underline"
         >
           {t("overview.older")}
         </a>

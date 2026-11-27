@@ -82,7 +82,7 @@ export async function SpambankLeadsScreen({ session, query }: SpambankLeadsScree
               href={
                 `/staff/spambank/leads${leadQueryString({ ...query, cursor: page.nextCursor })}` as Route
               }
-              className="text-label font-sans text-accent underline"
+              className="text-label font-sans text-accent-text underline"
             >
               {t("nextPage")}
             </Link>

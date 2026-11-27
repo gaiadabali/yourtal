@@ -40,7 +40,7 @@ export function ReportsBarChart({ rows }: ReportsBarChartProps) {
           </span>
           <div className="h-3 flex-1 overflow-hidden rounded-full bg-surface-raised">
             <div
-              className="h-full rounded-full bg-primary"
+              className="h-full rounded-full bg-accent-text"
               style={{ width: `${Math.round((row.value / maxValue) * 100)}%` }}
             />
           </div>

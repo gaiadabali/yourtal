@@ -153,7 +153,7 @@ export function OpenViewPlayer({
             type="button"
             onClick={session.handlePlay}
             aria-label={copy.playAriaLabel}
-            className="absolute inset-0 flex items-center justify-center bg-fg/40 text-primary-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="absolute inset-0 flex items-center justify-center bg-fg/40 text-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <PlayIcon className="h-14 w-14" />
           </button>

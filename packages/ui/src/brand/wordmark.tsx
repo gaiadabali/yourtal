@@ -1,48 +1,64 @@
 import * as React from "react";
 import { cn } from "../cn";
-import { CoinMark } from "./coin-mark";
+import {
+  LOCKUP_HEIGHT,
+  LOCKUP_PATH,
+  LOCKUP_WIDTH,
+  MARK_HEIGHT,
+  MARK_PATH,
+  MARK_WIDTH,
+} from "./brand-paths";
 
-const SIZES = {
-  sm: { text: "text-title", badge: "h-6 w-6", coin: 14, gap: "gap-1.5" },
-  md: { text: "text-headline", badge: "h-8 w-8", coin: 18, gap: "gap-2" },
-  lg: { text: "text-display", badge: "h-11 w-11", coin: 26, gap: "gap-2" },
-  xl: { text: "text-display-lg", badge: "h-14 w-14", coin: 34, gap: "gap-3" },
-} as const;
+/**
+ * Rendered heights in px. The artwork keeps its own proportions at every size. The
+ * smallest full lockup is 22 px high, 138 px wide: the guide's 120 px floor (p9) holds.
+ */
+const HEIGHTS = { sm: 22, md: 30, lg: 42, xl: 60 } as const;
 
-export type BrandMarkSize = keyof typeof SIZES;
+/**
+ * The logo is yellow line art made for the Charcoal ground (brand guide, pp10-11: never
+ * swap in other colours), so it is drawn on a Charcoal plate on every surface, light or
+ * dark. The plate's padding is the clear space around the artwork.
+ */
+const PLATE = "inline-flex shrink-0 items-center rounded-card bg-brand-ground";
+const PLATE_PAD = { sm: "px-3 py-2", md: "px-4 py-2.5", lg: "px-5 py-3", xl: "px-6 py-4" } as const;
+
+export type BrandMarkSize = keyof typeof HEIGHTS;
 
 export interface BrandMarkProps {
   size?: BrandMarkSize;
+  /** Draw the Charcoal plate. Pass `false` only on a surface that is already Charcoal. */
+  ground?: boolean;
   // `| undefined` so a wrapper that forwards its own optional className
-  // (e.g. `apps/web/features/shell/wordmark.tsx`) type-checks under
-  // `exactOptionalPropertyTypes` without needing a fallback default.
+  // type-checks under `exactOptionalPropertyTypes` without a fallback default.
   className?: string | undefined;
 }
 
 /**
- * The YourTal mark alone: the points coin glyph (`CoinMark`) on a filled
- * gold badge — the same gold-fill-plus-`text-fg-on-points` pairing every
- * `PointsChip` uses, so a coin means the same thing wherever it appears.
- * Purely decorative (`aria-hidden`); pair it with a real accessible name
- * from the surrounding link/button, or with `BrandWordmark` for the name
- * spelled out.
+ * The YourTal submark alone: the official ribbon-and-dot symbol in Play Yellow, on the
+ * Charcoal plate. Purely decorative (`aria-hidden`): pair it with a real accessible
+ * name from the surrounding link or button.
  */
 export const BrandMark = React.forwardRef<HTMLSpanElement, BrandMarkProps>(function BrandMark(
-  { size = "md", className },
+  { size = "md", ground = true, className },
   ref,
 ) {
-  const { badge, coin } = SIZES[size];
+  const height = HEIGHTS[size];
   return (
     <span
       ref={ref}
       aria-hidden="true"
-      className={cn(
-        "flex shrink-0 items-center justify-center rounded-full bg-points text-fg-on-points",
-        badge,
-        className,
-      )}
+      className={cn(ground ? [PLATE, PLATE_PAD[size]] : "inline-flex shrink-0", className)}
     >
-      <CoinMark size={coin} />
+      <svg
+        focusable="false"
+        viewBox={`0 0 ${MARK_WIDTH} ${MARK_HEIGHT}`}
+        width={Math.round((height * MARK_WIDTH) / MARK_HEIGHT)}
+        height={height}
+        className="text-brand-logo"
+      >
+        <path fill="currentColor" fillRule="evenodd" d={MARK_PATH} />
+      </svg>
     </span>
   );
 });
@@ -50,32 +66,63 @@ BrandMark.displayName = "BrandMark";
 
 export interface WordmarkProps {
   size?: BrandMarkSize;
+  /** Draw the Charcoal plate. Pass `false` only on a surface that is already Charcoal. */
+  ground?: boolean;
   className?: string | undefined;
   /**
-   * Overrides the accessible name of the whole mark+text group (only
-   * needed when something other than the visible text should be read out,
-   * e.g. hiding the group and giving the name to a wrapping link instead).
-   * Nothing is baked in by default: "YourTal" is the brand's own name, not
-   * user-facing copy the bilingual catalogues translate, so the visible
-   * text already is the accessible name.
+   * Overrides the accessible name of the logo (only needed when something
+   * other than the brand name should be read out). "YourTal" is the brand's
+   * own name, not copy the bilingual catalogues translate, so it is the default.
    */
   "aria-label"?: string;
 }
 
-/** The YourTal wordmark: the coin mark plus "YourTal" in the display face. */
+/**
+ * The official YourTal logo: ribbon mark and "YourTal" lettering as one drawing in Play
+ * Yellow on the Charcoal plate. The lettering is custom artwork, not a font, so the whole
+ * lockup is one image with an accessible name.
+ */
 export const BrandWordmark = React.forwardRef<HTMLSpanElement, WordmarkProps>(
-  function BrandWordmark({ size = "md", className, "aria-label": ariaLabel }, ref) {
-    const { text, gap } = SIZES[size];
+  function BrandWordmark(
+    { size = "md", ground = true, className, "aria-label": ariaLabel = "YourTal" },
+    ref,
+  ) {
+    const height = HEIGHTS[size];
     return (
       <span
         ref={ref}
-        aria-label={ariaLabel}
-        className={cn("inline-flex items-center", gap, className)}
+        className={cn(ground ? [PLATE, PLATE_PAD[size]] : "inline-flex shrink-0", className)}
       >
-        <BrandMark size={size} />
-        <span className={cn(text, "font-display font-extrabold text-fg")}>YourTal</span>
+        <svg
+          role="img"
+          aria-label={ariaLabel}
+          viewBox={`0 0 ${LOCKUP_WIDTH} ${LOCKUP_HEIGHT}`}
+          width={Math.round((height * LOCKUP_WIDTH) / LOCKUP_HEIGHT)}
+          height={height}
+          className="text-brand-logo"
+        >
+          <path fill="currentColor" fillRule="evenodd" d={LOCKUP_PATH} />
+        </svg>
       </span>
     );
   },
 );
 BrandWordmark.displayName = "BrandWordmark";
+
+export interface BrandLogoProps {
+  className?: string | undefined;
+}
+
+/**
+ * The logo for a tight header: the full lockup from 420 px wide, the submark below it.
+ * The brand guide (p9) sets a 120 px floor for the lockup and says to use the icon under
+ * it. One image with one name, whichever of the two drawings the width shows.
+ */
+export function BrandLogo({ className }: BrandLogoProps) {
+  return (
+    <span role="img" aria-label="YourTal" className={className}>
+      <BrandMark size="sm" className="min-[420px]:hidden" />
+      <BrandWordmark size="sm" className="hidden min-[420px]:inline-flex" />
+    </span>
+  );
+}

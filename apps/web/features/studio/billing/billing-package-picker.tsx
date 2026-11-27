@@ -67,7 +67,7 @@ export function BillingPackagePicker({
           {packages.map((pkg, index) => (
             <div
               key={pkg.tierKey}
-              className={`${CARD} has-[:checked]:border-accent has-[:checked]:bg-accent-subtle has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus`}
+              className={`${CARD} has-[:checked]:border-accent-text has-[:checked]:bg-accent-subtle has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus`}
             >
               {/* One label per radio: the Input's own, shown as the card's title. Its ::after is stretched over the card so the whole card is the click target. */}
               <Input
@@ -81,7 +81,7 @@ export function BillingPackagePicker({
                 aria-describedby={`package-${pkg.tierKey}-details`}
                 wrapperClassName="flex-row items-center gap-3"
                 labelClassName={`${NAME} order-2 cursor-pointer after:absolute after:inset-0 after:content-['']`}
-                className="order-1 h-4 w-4 shrink-0 rounded-none border-0 bg-transparent p-0 accent-primary"
+                className="order-1 h-4 w-4 shrink-0 rounded-none border-0 bg-transparent p-0 accent-accent-text"
               />
               <PackageDetails pkg={pkg} locale={locale} />
             </div>

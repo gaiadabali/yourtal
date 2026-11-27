@@ -63,7 +63,7 @@ export function MultipleChoiceFields({ draft, onChange }: MultipleChoiceFieldsPr
             hideLabel
             checked={draft.correctOptionId === option.id}
             onChange={() => onChange({ ...draft, correctOptionId: option.id })}
-            className="h-4 w-4 shrink-0 rounded-none border-0 bg-transparent p-0 accent-primary"
+            className="h-4 w-4 shrink-0 rounded-none border-0 bg-transparent p-0 accent-accent-text"
           />
           <div className="flex-1">
             <Input

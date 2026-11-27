@@ -24,7 +24,7 @@ export function LandingRegionChooser() {
             key={region.href}
             href={region.href}
             hrefLang={region.hrefLang}
-            className="flex flex-col gap-1 rounded-lg border border-border p-6 transition-colors hover:border-accent hover:bg-surface-raised"
+            className="flex flex-col gap-1 rounded-lg border border-border p-6 transition-colors hover:border-accent-text hover:bg-surface-raised"
           >
             <span className="text-title font-semibold text-fg">{region.name}</span>
             <span className="text-sm text-fg-muted">{region.language}</span>

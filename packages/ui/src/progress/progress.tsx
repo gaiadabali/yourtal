@@ -27,7 +27,7 @@ export const Progress = React.forwardRef<
     {...props}
   >
     <ProgressPrimitive.Indicator
-      className="h-full w-full flex-1 bg-accent transition-transform duration-(--duration-slow) ease-standard"
+      className="h-full w-full flex-1 bg-accent-text transition-transform duration-(--duration-slow) ease-standard"
       style={{ transform: `translateX(-${100 - (Math.min(value, max) / max) * 100}%)` }}
     />
   </ProgressPrimitive.Root>

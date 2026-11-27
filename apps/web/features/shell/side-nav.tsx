@@ -27,7 +27,7 @@ export interface SideNavProps {
 const LINK_BASE =
   "flex w-full items-center gap-3 rounded-control px-3 py-2 text-label font-sans font-medium " +
   "text-fg-muted transition-colors duration-(--duration-fast) ease-standard hover:bg-surface-sunken";
-const LINK_ACTIVE = "bg-surface-sunken text-accent";
+const LINK_ACTIVE = "bg-surface-sunken text-accent-text";
 
 /**
  * Side rail from `lg` (1024px) up, replacing the bottom bar — task 3.5.c

@@ -51,7 +51,7 @@ export function SeekSlider({
           aria-hidden="true"
           className="absolute left-0 right-0 h-1.5 overflow-hidden rounded-full bg-surface-raised"
         >
-          <div className="h-full bg-primary" style={{ width: `${progressPercent}%` }} />
+          <div className="h-full bg-accent-text" style={{ width: `${progressPercent}%` }} />
           {chapters.slice(1).map((chapter) => (
             <span
               key={chapter.index}
@@ -79,7 +79,7 @@ export function SeekSlider({
           onChange={(event) => {
             onSeek(Number(event.target.value));
           }}
-          className="relative h-5 w-full cursor-pointer appearance-none bg-transparent accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="relative h-5 w-full cursor-pointer appearance-none bg-transparent accent-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </div>
       <div className="flex justify-between text-xs font-sans text-fg-muted" aria-hidden="true">

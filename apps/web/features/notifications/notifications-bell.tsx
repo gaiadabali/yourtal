@@ -12,6 +12,7 @@ import type { Notification } from "@yourtal/contracts/me/notification";
 import { REGION_TIME_ZONE } from "@/features/region/region-time-zone";
 import { notificationCopy } from "./notification-copy";
 import { markNotificationReadAction } from "./notifications-actions";
+import { BrandMascot } from "@/features/brand/brand-mascot";
 
 export interface NotificationsBellProps {
   /** Server-fetched at shell render time (`app-shell.tsx`) — the bell never fetches on mount. */
@@ -84,7 +85,7 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
           <SheetTitle>{t("title")}</SheetTitle>
         </SheetHeader>
         {notifications.length === 0 ? (
-          <EmptyState title={t("empty")} />
+          <EmptyState icon={<BrandMascot decorative size="md" />} title={t("empty")} />
         ) : (
           <ul className="flex flex-1 flex-col gap-1 overflow-y-auto">
             {notifications.map((notification) => {
@@ -115,7 +116,7 @@ export function NotificationsBell({ initialNotifications }: NotificationsBellPro
                         {notification.readAt === null ? (
                           <span
                             aria-label={t("markRead")}
-                            className="block size-2 shrink-0 rounded-full bg-accent"
+                            className="block size-2 shrink-0 rounded-full bg-accent-text"
                           />
                         ) : null}
                       </span>

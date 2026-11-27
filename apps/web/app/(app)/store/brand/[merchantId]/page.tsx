@@ -28,7 +28,7 @@ export default async function StoreBrandPage(props: PageProps<"/store/brand/[mer
     <div className="flex flex-col gap-5 px-gutter-sm py-5 md:px-gutter-md">
       <a
         href="/store"
-        className="w-fit text-label font-sans font-semibold text-accent hover:underline"
+        className="w-fit text-label font-sans font-semibold text-accent-text hover:underline"
       >
         {t("shop.backToStore")}
       </a>
@@ -52,7 +52,7 @@ export default async function StoreBrandPage(props: PageProps<"/store/brand/[mer
           title={t("boardError.title")}
           description={t("boardError.description")}
           retry={
-            <a href={base} className="text-label font-sans font-semibold text-accent">
+            <a href={base} className="text-label font-sans font-semibold text-accent-text">
               {t("errorPanel.retryLabel")}
             </a>
           }

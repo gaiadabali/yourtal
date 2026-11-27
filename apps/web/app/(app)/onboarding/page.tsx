@@ -5,6 +5,7 @@ import { ONBOARDING_STEPS, onboardingStepIndex } from "@/features/onboarding/onb
 import { OnboardingTimingMark } from "@/features/onboarding/onboarding-timing-mark";
 import { parseReturnTo, withReturnTo } from "@/features/onboarding/onboarding-return-to";
 import { getOnboardingConsents } from "@/features/onboarding/onboarding-data";
+import { BrandMascot } from "@/features/brand/brand-mascot";
 
 export interface OnboardingPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -26,6 +27,9 @@ export default async function OnboardingPage({ searchParams }: OnboardingPagePro
   return (
     <div className="flex flex-col gap-6">
       <OnboardingTimingMark mark="signup-start" />
+      <div className="flex justify-center">
+        <BrandMascot decorative size="md" />
+      </div>
       <OnboardingProgress steps={ONBOARDING_STEPS} currentIndex={onboardingStepIndex("consent")} />
       {consents.ok ? (
         <OnboardingConsentStep initialConsents={consents.data.consents} returnTo={returnTo} />

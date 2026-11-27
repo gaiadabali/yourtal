@@ -20,7 +20,7 @@ export default async function CharityApplyPage() {
       {mine === null ? (
         <Link
           href="/login?next=/charity/apply"
-          className="self-start font-sans text-body text-accent underline"
+          className="self-start font-sans text-body text-accent-text underline"
         >
           {t("apply.signIn")}
         </Link>
@@ -51,7 +51,10 @@ export default async function CharityApplyPage() {
                         {t(`apply.state.${charity.state}`)}
                       </Badge>
                       {charity.state === "approved" ? (
-                        <Link href={`/charity/${charity.id}`} className="text-accent underline">
+                        <Link
+                          href={`/charity/${charity.id}`}
+                          className="text-accent-text underline"
+                        >
                           {t("apply.openConsole")}
                         </Link>
                       ) : null}

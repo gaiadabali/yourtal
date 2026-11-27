@@ -50,7 +50,7 @@ export function AppPolicy({ client }: { client: InteractionDetails["client"] }) 
           href={client.privacyUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-accent underline underline-offset-4"
+          className="text-accent-text underline underline-offset-4"
         >
           {t("privacyLink")}
         </a>
@@ -58,7 +58,7 @@ export function AppPolicy({ client }: { client: InteractionDetails["client"] }) 
           href={client.termsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-accent underline underline-offset-4"
+          className="text-accent-text underline underline-offset-4"
         >
           {t("termsLink")}
         </a>

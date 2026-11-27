@@ -22,7 +22,7 @@ export default async function CharitiesPage() {
         </div>
         <a
           href="/auctions"
-          className="text-label font-sans font-semibold text-accent hover:underline"
+          className="text-label font-sans font-semibold text-accent-text hover:underline"
         >
           {t("browse.auctionsLink")}
         </a>
@@ -60,7 +60,7 @@ export default async function CharitiesPage() {
           ))}
         </ul>
       )}
-      <a href="/charity/apply" className="w-fit text-body-sm font-sans text-accent underline">
+      <a href="/charity/apply" className="w-fit text-body-sm font-sans text-accent-text underline">
         {t("list.applyLink")}
       </a>
     </AuctionPageShell>

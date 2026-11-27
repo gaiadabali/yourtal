@@ -15,7 +15,7 @@ export const textVariants = cva("font-sans", {
       default: "text-fg",
       muted: "text-fg-muted",
       subtle: "text-fg-subtle",
-      accent: "text-accent",
+      accent: "text-accent-text",
       danger: "text-danger-solid",
       success: "text-success-solid",
     },

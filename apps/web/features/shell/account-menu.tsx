@@ -118,7 +118,7 @@ export function AccountMenu({ locale, account, theme: initialTheme }: AccountMen
         className={cn(
           "flex rounded-pill ring-offset-2 ring-offset-surface transition-shadow",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
-          open && "ring-2 ring-accent",
+          open && "ring-2 ring-accent-text",
         )}
       >
         <ChannelAvatar name={account.displayName} size="sm" decorative />

@@ -128,7 +128,7 @@ export function CampaignEditorBoost(props: CampaignEditorBoostProps) {
           action={
             <Link
               href={cardPanelHref(props.businessId)}
-              className="font-semibold text-accent underline-offset-4 hover:underline"
+              className="font-semibold text-accent-text underline-offset-4 hover:underline"
             >
               {t("boost.addCard")}
             </Link>

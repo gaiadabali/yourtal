@@ -53,7 +53,7 @@ export function RadioQuestionGroup({
             key={option.id}
             className={cn(
               "flex items-center gap-3 rounded-md border border-border bg-surface p-3",
-              isChecked && "border-primary bg-surface-raised",
+              isChecked && "border-accent-text bg-surface-raised",
             )}
           >
             <RadioGroupPrimitive.Item
@@ -62,10 +62,10 @@ export function RadioQuestionGroup({
               className={cn(
                 "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border-strong",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                "data-[state=checked]:border-primary",
+                "data-[state=checked]:border-accent-text",
               )}
             >
-              <RadioGroupPrimitive.Indicator className="h-2.5 w-2.5 rounded-full bg-primary" />
+              <RadioGroupPrimitive.Indicator className="h-2.5 w-2.5 rounded-full bg-accent-text" />
             </RadioGroupPrimitive.Item>
             <LabelPrimitive.Root htmlFor={inputId} className="text-sm font-sans text-fg">
               {option.label}

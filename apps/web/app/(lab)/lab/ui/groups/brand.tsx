@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Mascot } from "@yourtal/ui/brand/mascot";
 import { BrandMark, BrandWordmark } from "@yourtal/ui/brand/wordmark";
 import { GalleryRow, GallerySection } from "../lib/gallery-section";
 
@@ -16,8 +17,8 @@ const APP_ICONS = [
 ] as const;
 
 /**
- * The brand mark and wordmark (task 3.6.a): every size the shared
- * `@yourtal/ui/brand/wordmark` component ships, the coin mark alone, and
+ * The brand logo and mascot (task 3.6.a): every size the shared
+ * `@yourtal/ui/brand` components ship, the submark alone, and
  * the static app icon files it was rasterised into — so a regression in
  * any of them (a missing file, a size that renders blank) is visible on
  * this one page rather than only discoverable at `/favicon.ico`.
@@ -27,7 +28,7 @@ export function BrandGroup() {
     <GallerySection
       id="brand"
       title="Brand"
-      description="The YourTal wordmark, the coin mark alone, and the generated app icon files."
+      description="The official YourTal logo and submark on the Charcoal plate, the mascot, and the generated app icon files."
     >
       <GalleryRow label="Wordmark, every size">
         {WORDMARK_SIZES.map((size) => (
@@ -35,7 +36,13 @@ export function BrandGroup() {
         ))}
       </GalleryRow>
 
-      <GalleryRow label="Mark alone">
+      <GalleryRow label="Mascot, every size (Friendly, on the Charcoal plate)">
+        {WORDMARK_SIZES.map((size) => (
+          <Mascot key={size} size={size} />
+        ))}
+      </GalleryRow>
+
+      <GalleryRow label="Submark alone">
         {WORDMARK_SIZES.map((size) => (
           <BrandMark key={size} size={size} />
         ))}

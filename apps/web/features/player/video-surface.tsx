@@ -165,7 +165,7 @@ export function VideoSurface({
       {hasError ? (
         <div
           role="alert"
-          className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-fg/90 p-6 text-center text-fg-on-accent"
+          className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-fg/90 p-6 text-center text-canvas"
         >
           <p className="text-title font-sans font-semibold">{errorTitle}</p>
           <p className="text-body-sm">{errorBody}</p>

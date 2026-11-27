@@ -72,7 +72,7 @@ export function QualitySelector({
             <label
               key={option.id}
               htmlFor={`quality-tier-${option.id}`}
-              className="flex cursor-pointer items-center justify-between gap-3 rounded-md border border-border p-3 has-[[data-state=checked]]:border-primary"
+              className="flex cursor-pointer items-center justify-between gap-3 rounded-md border border-border p-3 has-[[data-state=checked]]:border-accent-text"
             >
               <span className="flex flex-col">
                 <span className="text-sm font-sans font-medium text-fg">{option.label}</span>
@@ -83,9 +83,9 @@ export function QualitySelector({
               <RadioGroupPrimitive.Item
                 id={`quality-tier-${option.id}`}
                 value={option.id}
-                className="h-5 w-5 shrink-0 rounded-full border border-border-strong data-[state=checked]:border-primary"
+                className="h-5 w-5 shrink-0 rounded-full border border-border-strong data-[state=checked]:border-accent-text"
               >
-                <RadioGroupPrimitive.Indicator className="flex h-full w-full items-center justify-center after:h-2.5 after:w-2.5 after:rounded-full after:bg-primary" />
+                <RadioGroupPrimitive.Indicator className="flex h-full w-full items-center justify-center after:h-2.5 after:w-2.5 after:rounded-full after:bg-accent-text" />
               </RadioGroupPrimitive.Item>
             </label>
           ))}

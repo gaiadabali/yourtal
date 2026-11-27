@@ -58,7 +58,7 @@ export function StoreVoucherCard({ listing, locale, priority = false }: StoreVou
       <div className="flex flex-1 flex-col gap-1.5 p-3">
         <a
           href={`/store/brand/${listing.merchantId}`}
-          className="relative z-10 block max-w-full truncate text-caption font-sans font-semibold uppercase tracking-wide text-fg-muted hover:text-accent"
+          className="relative z-10 block max-w-full truncate text-caption font-sans font-semibold uppercase tracking-wide text-fg-muted hover:text-accent-text"
         >
           {listing.merchantName}
         </a>

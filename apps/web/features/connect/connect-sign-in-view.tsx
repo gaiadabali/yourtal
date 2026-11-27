@@ -38,7 +38,7 @@ export function ConnectSignInView({ details }: ConnectSignInViewProps) {
           {secondary.prompt}{" "}
           <Link
             href={{ pathname: secondary.pathname, query: { returnTo } }}
-            className="text-accent underline underline-offset-4"
+            className="text-accent-text underline underline-offset-4"
           >
             {secondary.label}
           </Link>

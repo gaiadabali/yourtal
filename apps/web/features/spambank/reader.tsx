@@ -46,7 +46,7 @@ function BackLink({ href, label }: { href: Route; label: string }) {
   return (
     <Link
       href={href}
-      className="mb-3 inline-flex items-center gap-1 text-caption font-sans font-semibold text-accent hover:underline"
+      className="mb-3 inline-flex items-center gap-1 text-caption font-sans font-semibold text-accent-text hover:underline"
     >
       <ChevronLeft aria-hidden="true" className="size-4" />
       {label}

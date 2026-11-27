@@ -17,6 +17,7 @@ import { classifyBalanceEligibility, recoveryForError, burnErrorFromApiError } f
 import { useAdoptShellBalance } from "@/features/shell/shell-balance";
 import { confirmCheckoutAction } from "./confirm-checkout-action";
 import type { BurnFlowState } from "./burn-flow-state";
+import { BrandMascot } from "@/features/brand/brand-mascot";
 
 export interface BurnFlowProps {
   listing: PublicListing;
@@ -168,6 +169,7 @@ function BurnFlowStep({
       const voucherHref = `/wallet/voucher/${state.voucherId}` as Route;
       return (
         <div className="flex flex-col gap-3 rounded-lg border border-success bg-success/10 p-4">
+          <BrandMascot size="md" />
           <Badge variant="success" className="w-fit">
             {t("flow.successBadge")}
           </Badge>

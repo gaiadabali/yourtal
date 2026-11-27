@@ -31,7 +31,7 @@ export async function WalletGiftInbox({ gifts, locale }: WalletGiftsProps) {
       {waiting.map((gift) => (
         <article
           key={gift.giftId}
-          className="flex flex-col gap-4 rounded-card border border-accent/40 bg-accent-subtle p-4 sm:flex-row sm:items-center sm:justify-between"
+          className="flex flex-col gap-4 rounded-card border border-accent-text/40 bg-accent-subtle p-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="flex items-start gap-3">
             <span

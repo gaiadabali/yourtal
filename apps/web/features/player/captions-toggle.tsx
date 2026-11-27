@@ -22,7 +22,7 @@ export function CaptionsToggle({ on, onToggle, label, className }: CaptionsToggl
       aria-pressed={on}
       aria-label={label}
       onClick={onToggle}
-      className={cn("absolute right-2 top-2 z-10", on && "ring-2 ring-accent", className)}
+      className={cn("absolute right-2 top-2 z-10", on && "ring-2 ring-accent-text", className)}
     >
       {on ? (
         <Captions aria-hidden="true" className="size-4" />

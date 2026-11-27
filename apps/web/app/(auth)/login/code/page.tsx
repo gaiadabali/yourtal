@@ -38,7 +38,7 @@ export default async function LoginCodePage({ searchParams }: LoginCodePageProps
       footer={
         <Link
           href={returnTo ? { pathname: "/login", query: { returnTo } } : "/login"}
-          className="text-accent underline underline-offset-4"
+          className="text-accent-text underline underline-offset-4"
         >
           {t("startOverCta")}
         </Link>

@@ -41,7 +41,7 @@ export const Stepper = React.forwardRef<HTMLOListElement, StepperProps>(
                 className={cn(
                   "flex h-8 w-8 shrink-0 items-center justify-center rounded-pill text-body-sm font-sans font-semibold",
                   status === "complete" && "bg-accent text-fg-on-accent",
-                  status === "current" && "border-2 border-accent text-accent",
+                  status === "current" && "border-2 border-accent-text text-accent-text",
                   (status === "upcoming" || status === "skipped") &&
                     "border border-border-subtle text-fg-subtle",
                 )}
@@ -59,7 +59,7 @@ export const Stepper = React.forwardRef<HTMLOListElement, StepperProps>(
                   aria-hidden="true"
                   className={cn(
                     "mx-2 h-px flex-1",
-                    status === "complete" ? "bg-accent" : "bg-border-subtle",
+                    status === "complete" ? "bg-accent-text" : "bg-border-subtle",
                   )}
                 />
               ) : null}

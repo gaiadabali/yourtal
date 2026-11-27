@@ -12,7 +12,7 @@ export interface BottomNavProps {
 const LINK_BASE =
   "flex flex-1 flex-col items-center justify-center gap-0.5 text-caption font-sans font-medium " +
   "text-fg-muted transition-colors duration-(--duration-fast) ease-standard";
-const LINK_ACTIVE = "text-accent";
+const LINK_ACTIVE = "text-accent-text";
 
 /**
  * Bottom tab bar, below `lg` only (task 3.5.c widened this from `md`, so a

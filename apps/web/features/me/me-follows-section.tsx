@@ -10,6 +10,7 @@ import { ChannelAvatar } from "@yourtal/ui/channel-avatar";
 import type { FollowEntry } from "./me-schemas";
 import { unfollowAction } from "./me-actions";
 import { useMeActionStatus } from "./use-me-action-status";
+import { BrandMascot } from "@/features/brand/brand-mascot";
 
 export interface MeFollowsSectionProps {
   initialFollows: readonly FollowEntry[];
@@ -37,7 +38,11 @@ export function MeFollowsSection({ initialFollows }: MeFollowsSectionProps) {
   return (
     <Section title={t("heading")} description={t("intro")}>
       {follows.length === 0 ? (
-        <EmptyState title={t("emptyTitle")} description={t("emptyBody")} />
+        <EmptyState
+          icon={<BrandMascot decorative size="lg" />}
+          title={t("emptyTitle")}
+          description={t("emptyBody")}
+        />
       ) : (
         <div className="flex flex-col gap-1">
           {follows.map((entry) => (

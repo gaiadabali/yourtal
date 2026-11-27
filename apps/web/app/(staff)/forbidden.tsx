@@ -10,7 +10,7 @@ export default async function StaffForbidden() {
     <main className="min-h-dvh bg-canvas py-12">
       <PageContainer className="flex flex-col gap-6">
         <PageHeader title={t("title")} description={t("body")} />
-        <Link href="/home" className="text-label font-sans text-accent underline">
+        <Link href="/home" className="text-label font-sans text-accent-text underline">
           {t("home")}
         </Link>
       </PageContainer>

@@ -20,7 +20,7 @@ export const buttonVariants = cva(
         secondary: "bg-surface-sunken text-fg border border-border-control hover:bg-surface",
         ghost: "bg-transparent text-fg hover:bg-surface-sunken",
         danger: "bg-danger-solid text-fg-on-status hover:opacity-90",
-        link: "bg-transparent text-accent underline-offset-4 hover:underline p-0 h-auto",
+        link: "bg-transparent text-accent-text underline-offset-4 hover:underline p-0 h-auto",
         // v1 aliases, mapped onto the new look.
         default: "bg-accent text-fg-on-accent hover:bg-accent-hover",
         destructive: "bg-danger-solid text-fg-on-status hover:opacity-90",

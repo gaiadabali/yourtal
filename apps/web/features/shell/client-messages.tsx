@@ -6,7 +6,7 @@ import { getLocale, getMessages } from "next-intl/server";
  * 13.4.a: the strings every viewer page's client code needs: the shell, feed
  * cards, category labels, and the app-wide error boundary.
  */
-export const BASE_CLIENT_NAMESPACES = ["shell", "feed", "taxonomy", "campaign"] as const;
+export const BASE_CLIENT_NAMESPACES = ["shell", "feed", "taxonomy", "campaign", "brand"] as const;
 
 /**
  * Sends only the namespaces a section's client components translate, so a page

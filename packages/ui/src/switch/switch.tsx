@@ -74,7 +74,7 @@ export const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
             aria-hidden="true"
             className={cn(
               "inline-flex h-5 w-9 items-center rounded-pill border border-border-control p-0.5 transition-colors duration-base ease-standard",
-              isOn ? "bg-accent" : "bg-surface-sunken",
+              isOn ? "bg-accent-text" : "bg-surface-sunken",
             )}
           >
             <span

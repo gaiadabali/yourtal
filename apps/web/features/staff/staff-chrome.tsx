@@ -6,6 +6,7 @@ import type { StaffSession } from "@yourtal/contracts/staff/session";
 import { LogoutButton } from "@/features/me/logout-button";
 import { StaffNav } from "./staff-nav";
 import { zonesFor } from "./staff-zones";
+import { BrandWordmark } from "@yourtal/ui/brand/wordmark";
 
 export interface StaffChromeProps {
   readonly session: StaffSession;
@@ -26,6 +27,8 @@ export async function StaffChrome({ session, children }: StaffChromeProps) {
           aria-label={t("chrome.navLabel")}
           className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:w-full lg:flex-none lg:flex-col lg:items-stretch lg:gap-3"
         >
+          {/* The sidebar's logo, top left; the mobile strip has no room for it. */}
+          <BrandWordmark size="sm" className="hidden self-start lg:inline-flex" />
           <div className="flex min-w-0 flex-col px-3 lg:py-2">
             <Text size="label">{t("chrome.title")}</Text>
             {session.email === null ? null : (

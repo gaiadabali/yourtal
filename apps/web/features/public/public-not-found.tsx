@@ -2,6 +2,7 @@ import { Heading } from "@yourtal/ui/heading";
 import { Text } from "@yourtal/ui/text";
 import { getPublicTranslator } from "./public-i18n";
 import { PublicCtaLink } from "./public-cta-link";
+import { Mascot } from "@yourtal/ui/brand/mascot";
 
 /**
  * The branded 404. A not-found boundary never sees the `[locale]` segment,
@@ -12,7 +13,8 @@ export function PublicNotFound() {
   const id = getPublicTranslator("id-ID");
   return (
     <div className="flex flex-col items-start gap-6 py-12">
-      <p aria-hidden="true" className="font-display text-display-lg text-accent">
+      <Mascot size="lg" />
+      <p aria-hidden="true" className="font-display text-display-lg text-accent-text">
         404
       </p>
       <div className="flex flex-col gap-2">

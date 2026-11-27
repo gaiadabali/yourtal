@@ -31,7 +31,7 @@ export function TrueFalseFields({ draft, onChange }: TrueFalseFieldsProps) {
             label={option.label}
             checked={draft.correctAnswer === option.value}
             onChange={() => onChange({ ...draft, correctAnswer: option.value })}
-            className="h-4 w-4 shrink-0 rounded-none border-0 bg-transparent p-0 accent-primary"
+            className="h-4 w-4 shrink-0 rounded-none border-0 bg-transparent p-0 accent-accent-text"
           />
         ))}
       </div>

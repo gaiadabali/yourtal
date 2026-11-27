@@ -217,7 +217,7 @@ export function VideoPlayer({
               onClick={() => void start()}
               disabled={phase.kind === "starting"}
               aria-label={t("controls.playCampaign", { title: campaign.title })}
-              className="absolute inset-0 flex items-center justify-center bg-fg/40 text-primary-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-70"
+              className="absolute inset-0 flex items-center justify-center bg-fg/40 text-canvas focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-70"
             >
               <PlayIcon className="h-14 w-14" />
             </button>
@@ -225,7 +225,7 @@ export function VideoPlayer({
 
           {/* 1.6.l: a refused reward is told BEFORE any video plays. */}
           {phase.kind === "refused" ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 overflow-y-auto bg-fg/85 p-4 text-center text-primary-fg">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 overflow-y-auto bg-fg/85 p-4 text-center text-canvas">
               <p role="status" className="text-base font-sans font-semibold">
                 {t("refusal.title")}
               </p>
@@ -250,7 +250,7 @@ export function VideoPlayer({
           ) : null}
 
           {videoError && isWatching ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-fg/70 p-4 text-center text-primary-fg">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-fg/70 p-4 text-center text-canvas">
               <p role="alert" className="text-sm font-sans">
                 {t("errors.playbackFailed")}
               </p>

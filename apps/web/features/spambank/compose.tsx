@@ -52,7 +52,7 @@ export function Compose({ mode, id }: { mode: ComposeMode; id: string | null }) 
       <div className="flex flex-col gap-3">
         <Link
           href={folderHref(base, "inbox")}
-          className="inline-flex text-caption font-sans font-semibold text-accent hover:underline"
+          className="inline-flex text-caption font-sans font-semibold text-accent-text hover:underline"
         >
           {t("compose.backToInbox")}
         </Link>

@@ -7,6 +7,7 @@ import {
 } from "@yourtal/drivers/driver-mode";
 import { createSpambankDriver } from "@yourtal/drivers/spambank";
 import { pingSpambank } from "./spambank-ping";
+import { loadSpambankConfig } from "./spambank-runtime";
 import { loadWorkerConfig } from "./config";
 import { loadJobs } from "./job-loader";
 import { startWorker } from "./worker";
@@ -30,6 +31,9 @@ async function bootstrap(): Promise<void> {
   const config = loadWorkerConfig();
   // The API's boot rule (2.3.b), now that the worker sends app events itself (3.7 Y4).
   assertDriversConfiguredForBoot(process.env, config.appEnv);
+  // Spambank's settings, as the API checks them at boot: e.g. production refuses auto-reply `live`
+  // without a real ABN and contact address (BUILD.md 12.3), and the boot check must see that.
+  loadSpambankConfig();
   // spambank/BUILD.md T2: asks Stalwart for its domains and exits. Run by hand, never by the boot check.
   if (process.argv.includes("--spambank-ping")) {
     const mode = resolveDriverMode("spambank", process.env);

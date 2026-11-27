@@ -1,4 +1,5 @@
 import type { MailSession } from "@yourtal/contracts/spambank/common";
+import { mailUrlsFor } from "@yourtal/contracts/spambank/mail";
 import { signMailToken } from "../mail-token";
 import type { MailboxRecord } from "../persistence/mailbox.store";
 import { addressOf, tokenKeyOf } from "./deps";
@@ -38,8 +39,8 @@ export async function mintMailSession(deps: ManagementDeps, caller: Caller): Pro
   return {
     token: minted.token,
     expiresAt: minted.expiresAt.toISOString(),
-    sessionUrl: `${deps.publicOrigin}/api/spambank/jmap/session`,
-    helpersBase: `${deps.publicOrigin}/api/spambank/mail`,
+    // The same URLs the proxy mounts (spambank/proxy), from one helper.
+    ...mailUrlsFor(deps.publicOrigin),
     address: addressOf(mailbox),
   };
 }

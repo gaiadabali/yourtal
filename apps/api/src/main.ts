@@ -11,6 +11,9 @@ import { mountPaySim } from "./paysim/mount-paysim";
 import { mountOidc } from "./modules/oidc/mount-oidc";
 import { OIDC_RUNTIME } from "./modules/oidc/oidc-runtime";
 import type { OidcRuntime } from "./modules/oidc/oidc-runtime";
+import { mountSpambankMail } from "./modules/spambank/proxy/mount-spambank-mail";
+import { SPAMBANK_PROXY_CONTEXT } from "./modules/spambank/proxy/spambank-mail.module";
+import type { ProxyContext } from "./modules/spambank/proxy/proxy-context";
 import { TRUSTED_PROXIES } from "./shared/http/trusted-proxies";
 
 /**
@@ -68,6 +71,11 @@ async function bootstrap(): Promise<void> {
   if (await mountOidc(app.getHttpAdapter().getInstance(), app.get<OidcRuntime>(OIDC_RUNTIME))) {
     app.enableShutdownHooks();
   }
+  // Spambank's mail API (spambank/BUILD.md §5.3): the JMAP proxy and its helpers, the same way.
+  await mountSpambankMail(
+    app.getHttpAdapter().getInstance(),
+    app.get<ProxyContext>(SPAMBANK_PROXY_CONTEXT),
+  );
   await app.listen(config.port, config.host ?? "127.0.0.1");
 }
 

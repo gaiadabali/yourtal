@@ -1,4 +1,4 @@
-h1:9A2vPRAonVNV+ZDqHeorNk4uD1K6nJ8O9RbVgm3vYkQ=
+h1:7SlsxOPbWTlRv9GdeJsal1YqiUgJ+79fSNaaxyqejQk=
 20260919000001_platform_idempotency.sql h1:a6DOQb78gFNpsPfOSotJz00xW9E/KvU68wz+YFExR/4=
 20260919000002_ledger.sql h1:fzkehY+GATt6eTrratr1+A70mvf1Fxo96TQ0BUQOVD4=
 20260919000003_business.sql h1:j3D1BFG1EciQm2kgCpy4bkHOPywRG1Dih4oG7ASBpKQ=
@@ -154,3 +154,4 @@ h1:9A2vPRAonVNV+ZDqHeorNk4uD1K6nJ8O9RbVgm3vYkQ=
 20261128090000_spambank.sql h1:cfNOeG2BVBRqBVI9nqs1RLbK8OndJSuoZbOl/m1WzRI=
 20261128120000_spambank_autoreply.sql h1:JgnwcMn79bJ3TmvWbjDslTJ7ADDNawjP63ZihUrlJvs=
 20261128130000_god_group_consent.sql h1:orxCk/hTK1n+igzmJQ3QtkSw7fP4yI3wZ9FZ4SgQI0s=
+20261128140000_snapapps_voucher_rename.sql h1:NXwODmof6wqg7o4ec49NyBKYYYJq5jlwpDzRM5lHCv0=

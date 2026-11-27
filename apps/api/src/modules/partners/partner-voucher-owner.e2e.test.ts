@@ -54,18 +54,18 @@ async function seedListing(region: "AU" | "ID", redeemPartnerId: string | null) 
        stock_remaining, stock_total, transferable, partial_redemption_policy,
        minimum_spend_minor, expires_at, status, currency, region, audience,
        content_category, image_url, channel, partial_redemption, redeem_partner_id)
-    VALUES (${listingId}, ${merchantId}, 'Snap App Pty Ltd', '50 SnapApp scans',
+    VALUES (${listingId}, ${merchantId}, 'Snap App Pty Ltd', '50 SnapApps scans',
             'seeded for partner-voucher-owner.e2e.test.ts', 'food_beverage',
             500, 500, 200, 5, 5, false, 'single_use_forfeit',
             NULL, ${farFuture}, 'available', ${currency}, ${region}, 'adult',
             'food-and-drink', 'http://127.0.0.1:26900/yourtal-media/listings/placeholder.jpg',
             'online', 'single_use', ${redeemPartnerId})
   `);
-  // The live engine mints a batch at a listing's locations (docs/28 4.6: "SnapApp (online)").
+  // The live engine mints a batch at a listing's locations (docs/28 4.6: "SnapApps (online)").
   const locationId = randomUUID();
   await owner.execute(sql`
     INSERT INTO store.merchant_location (id, merchant_id, name, address, district)
-    VALUES (${locationId}, ${merchantId}, 'SnapApp (online)', 'Online', 'Online')
+    VALUES (${locationId}, ${merchantId}, 'SnapApps (online)', 'Online', 'Online')
   `);
   await owner.execute(sql`
     INSERT INTO store.listing_location (listing_id, location_id) VALUES (${listingId}, ${locationId})

@@ -26,7 +26,7 @@ const LISTING = "00000000-0000-4000-9000-000000000401";
 
 const row = (over: Partial<ListingPriceRow>): ListingPriceRow => ({
   listingId: LISTING,
-  title: "50 SnapApp scans",
+  title: "50 SnapApps scans",
   merchantName: "Snap App",
   faceValueMinor: 500 as MinorUnits,
   currency: "AUD",
@@ -78,7 +78,7 @@ beforeEach(() => {
 describe("the listing points price screen (2.8.g)", () => {
   it("shows the ledger price, the staff price and what buyers pay", () => {
     show([row({})]);
-    expect(screen.getByRole("heading", { name: "50 SnapApp scans" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "50 SnapApps scans" })).toBeInTheDocument();
     expect(screen.getByText("Snap App · $5.00 face value · Redeemed in snap-app")).toBeVisible();
     expect(screen.getByText("Ledger price").nextElementSibling).toHaveTextContent("167 points");
     expect(screen.getByText("Staff price").nextElementSibling).toHaveTextContent("200 points");
@@ -152,12 +152,12 @@ describe("the listing points price screen (2.8.g)", () => {
     show([row({ pending: pending(OTHER, 250) })]);
     expect(screen.getByText("finance.one@example.test proposed 250 points.")).toBeInTheDocument();
     expect(screen.queryByLabelText("Points price")).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Approve price: 50 SnapApp scans" }));
+    await user.click(screen.getByRole("button", { name: "Approve price: 50 SnapApps scans" }));
     await waitFor(() =>
       expect(decideListingPriceAction).toHaveBeenCalledWith("AU", "prop-1", "approve"),
     );
     expect(await screen.findByText("you cannot approve your own proposal")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Decline price: 50 SnapApp scans" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Decline price: 50 SnapApps scans" })).toBeVisible();
   });
 
   it("offers the proposer only a withdraw, never an approve", () => {
@@ -167,7 +167,7 @@ describe("the listing points price screen (2.8.g)", () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Approve/ })).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Withdraw proposal: 50 SnapApp scans" }),
+      screen.getByRole("button", { name: "Withdraw proposal: 50 SnapApps scans" }),
     ).toBeVisible();
   });
 

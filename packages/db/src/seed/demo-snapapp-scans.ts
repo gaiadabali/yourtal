@@ -12,9 +12,9 @@ import {
 } from "./staging";
 
 /**
- * The "50 SnapApp scans" voucher on staging and in dev (2.8 T7, docs/28 4.6):
+ * The "50 SnapApps scans" voucher on staging and in dev (2.8 T7, docs/28 4.6):
  * an online AU listing from Snap App Pty Ltd, A$5 face and settlement, bound to
- * the `snap-app` partner so only a linked SnapApp account redeems it. Listed at
+ * the `snap-app` partner so only a linked SnapApps account redeems it. Listed at
  * 200 points (F128, 2.8.g): checkout charges max(200, the ledger's quote), so
  * the price never drops below the backing. Kept stocked with real minted
  * vouchers.
@@ -35,8 +35,8 @@ const STOCK_TARGET = 50;
 const LISTED_PRICE_POINTS = 200;
 
 const DESCRIPTION =
-  "Adds 50 receipt scans to SnapApp. Link SnapApp under Me → Linked apps, then in SnapApp open " +
-  "Points, choose Use a YourTal voucher and enter the code. Only the SnapApp account linked to " +
+  "Adds 50 receipt scans to SnapApps. Link SnapApps under Me → Linked apps, then in SnapApps open " +
+  "Points, choose Use a YourTal voucher and enter the code. Only the SnapApps account linked to " +
   "this YourTal account can use it. Single use.";
 
 export type SnapAppScansResult =
@@ -108,11 +108,11 @@ export async function ensureSnapAppScansListing(
           id: LISTING_ID,
           merchantId: SNAP_APP_AU_ID,
           merchantName: "Snap App",
-          title: "50 SnapApp scans",
+          title: "50 SnapApps scans",
           description: DESCRIPTION,
           category: "services",
           locations: [
-            { id: LOCATION_ID, name: "SnapApp (online)", address: "Online", district: "Online" },
+            { id: LOCATION_ID, name: "SnapApps (online)", address: "Online", district: "Online" },
           ],
           currency: "AUD",
           faceValueMinor: toMinorUnits(FACE_AND_SETTLEMENT_MINOR),

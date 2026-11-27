@@ -12,7 +12,7 @@ vi.mock("./me-actions", () => ({ removeConnectedAppAction: vi.fn() }));
 
 const SNAP = {
   app: "snapapp" as const,
-  name: "SnapApp",
+  name: "SnapApps",
   operator: "Snap Apps Pty Ltd",
   scopes: ["openid", "profile", "email"],
   grantedAt: "2026-10-20T01:00:00Z",
@@ -39,7 +39,7 @@ describe("MeConnectedAppsSection (docs/29 Y5)", () => {
     renderSection({ initialApps: [SNAP, FTR], isTeen: false });
 
     expect(screen.getByRole("heading", { name: "Apps you sign in to with YourTal" })).toBeVisible();
-    expect(screen.getByText("SnapApp")).toBeInTheDocument();
+    expect(screen.getByText("SnapApps")).toBeInTheDocument();
     expect(screen.getByText("Free Tax Returns")).toBeInTheDocument();
     expect(
       screen.getByText(
@@ -60,26 +60,26 @@ describe("MeConnectedAppsSection (docs/29 Y5)", () => {
     const user = userEvent.setup();
     renderSection({ initialApps: [SNAP], isTeen: false });
 
-    await user.click(screen.getByRole("button", { name: "Remove SnapApp" }));
-    const dialog = await screen.findByRole("dialog", { name: "Remove SnapApp?" });
+    await user.click(screen.getByRole("button", { name: "Remove SnapApps" }));
+    const dialog = await screen.findByRole("dialog", { name: "Remove SnapApps?" });
     expect(dialog).toHaveTextContent(
-      "You'll be signed out of SnapApp, and it can't sign you in with YourTal until you agree again. Your SnapApp account and data stay with SnapApp, and you can delete them there.",
+      "You'll be signed out of SnapApps, and it can't sign you in with YourTal until you agree again. Your SnapApps account and data stay with SnapApps, and you can delete them there.",
     );
     expect(dialog).not.toHaveTextContent("30 days");
 
     await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
     expect(removeConnectedAppAction).not.toHaveBeenCalled();
-    expect(screen.getByText("SnapApp")).toBeInTheDocument();
+    expect(screen.getByText("SnapApps")).toBeInTheDocument();
   });
 
   it("asks a teen with the teen copy", async () => {
     const user = userEvent.setup();
     renderSection({ initialApps: [SNAP], isTeen: true });
 
-    await user.click(screen.getByRole("button", { name: "Remove SnapApp" }));
+    await user.click(screen.getByRole("button", { name: "Remove SnapApps" }));
     const dialog = await screen.findByRole("dialog");
     expect(dialog).toHaveTextContent(
-      "Your SnapApp space will be deleted after 30 days, and you'll need a new invite from your parent to use SnapApp again.",
+      "Your SnapApps space will be deleted after 30 days, and you'll need a new invite from your parent to use SnapApps again.",
     );
   });
 
@@ -91,13 +91,13 @@ describe("MeConnectedAppsSection (docs/29 Y5)", () => {
     const user = userEvent.setup();
     renderSection({ initialApps: [SNAP, FTR], isTeen: false });
 
-    await user.click(screen.getByRole("button", { name: "Remove SnapApp" }));
+    await user.click(screen.getByRole("button", { name: "Remove SnapApps" }));
     const dialog = await screen.findByRole("dialog");
     await user.click(within(dialog).getByRole("button", { name: "Remove" }));
 
     expect(removeConnectedAppAction).toHaveBeenCalledWith("snapapp");
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    expect(screen.queryByText("SnapApp")).not.toBeInTheDocument();
+    expect(screen.queryByText("SnapApps")).not.toBeInTheDocument();
     expect(screen.getByText("Free Tax Returns")).toBeInTheDocument();
   });
 
@@ -109,14 +109,14 @@ describe("MeConnectedAppsSection (docs/29 Y5)", () => {
     const user = userEvent.setup();
     renderSection({ initialApps: [SNAP], isTeen: false });
 
-    await user.click(screen.getByRole("button", { name: "Remove SnapApp" }));
+    await user.click(screen.getByRole("button", { name: "Remove SnapApps" }));
     const dialog = await screen.findByRole("dialog");
     await user.click(within(dialog).getByRole("button", { name: "Remove" }));
     expect(await within(dialog).findByRole("alert")).toHaveTextContent("That didn't work");
-    expect(screen.getByText("SnapApp")).toBeInTheDocument();
+    expect(screen.getByText("SnapApps")).toBeInTheDocument();
 
     await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
-    await user.click(screen.getByRole("button", { name: "Remove SnapApp" }));
+    await user.click(screen.getByRole("button", { name: "Remove SnapApps" }));
     expect(within(await screen.findByRole("dialog")).queryByRole("alert")).not.toBeInTheDocument();
   });
 });

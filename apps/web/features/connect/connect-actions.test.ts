@@ -59,8 +59,8 @@ const DETAILS = {
   screen: "consent",
   client: {
     clientId: "snapapp-web",
-    name: "SnapApp",
-    operator: "SnapApp",
+    name: "SnapApps",
+    operator: "SnapApps",
     externalOperator: false,
     privacyUrl: "https://snapapp.gaiada.com/privacy",
     termsUrl: "https://snapapp.gaiada.com/terms",

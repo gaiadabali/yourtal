@@ -129,9 +129,9 @@ describe("the client registry (docs/26 §1.9)", () => {
       "GOD Pty Ltd",
     ]);
     expect(clientsFor("staging").map((client) => client.operator)).toEqual([
-      "SnapApp",
-      "SnapApp",
-      "SnapApp",
+      "SnapApps",
+      "SnapApps",
+      "SnapApps",
       "Free Tax Returns",
       "Free Tax Returns",
       "Global Omni Data",

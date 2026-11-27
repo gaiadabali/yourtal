@@ -249,7 +249,7 @@ describe("sign in with YourTal, end to end", () => {
   it("SnapApp's website (private_key_jwt): consent, then a signed ID token with the agreed claims", async () => {
     const ana = await person();
     const { tokens, details } = await signIn(await webApp(), WEB_REDIRECT, ana, "consent");
-    expect(details.client).toMatchObject({ clientId: "snapapp-staging-web", name: "SnapApp" });
+    expect(details.client).toMatchObject({ clientId: "snapapp-staging-web", name: "SnapApps" });
     expect(details.sharing).toEqual({
       claims: ["name", "email", "age_band", "region"],
       ageBand: "adult",
@@ -1256,7 +1256,7 @@ describe("removing an app from Me -> Linked apps (3.7 Y3)", () => {
       .parse(listed.body["connectedApps"]);
     // Oldest grant first.
     expect(apps.map(({ app, name, operator }) => ({ app, name, operator }))).toEqual([
-      { app: "snapapp", name: "SnapApp", operator: "SnapApp" },
+      { app: "snapapp", name: "SnapApps", operator: "SnapApps" },
       { app: "ftr", name: "Free Tax Returns", operator: "Free Tax Returns" },
     ]);
     const text = JSON.stringify(listed.body);

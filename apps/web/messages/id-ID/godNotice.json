@@ -2,11 +2,11 @@
   "tick": {
     "before": "Saya sudah membaca dan menerima",
     "link": "GOD Group Privacy Notice",
-    "after": ". Saya paham bahwa aktivitas saya di YourTal, SnapApp, dan Free Tax Returns digabungkan menjadi satu profil, dan bisnis hanya menerima laporan tentang kelompok orang, tidak pernah tentang saya."
+    "after": ". Saya paham bahwa aktivitas saya di YourTal, SnapApps, dan Free Tax Returns digabungkan menjadi satu profil, dan bisnis hanya menerima laporan tentang kelompok orang, tidak pernah tentang saya."
   },
   "prompt": {
     "title": "YourTal kini bagian dari GOD",
-    "intro": "YourTal, SnapApp, dan Free Tax Returns tergabung dalam satu grup bernama GOD. Baca dulu pemberitahuannya, lalu beri tahu kami apakah kamu setuju aktivitasmu digabungkan.",
+    "intro": "YourTal, SnapApps, dan Free Tax Returns tergabung dalam satu grup bernama GOD. Baca dulu pemberitahuannya, lalu beri tahu kami apakah kamu setuju aktivitasmu digabungkan.",
     "acceptCta": "Setuju",
     "notNowCta": "Nanti saja",
     "notNowHint": "Kalau pilih Nanti saja, akunmu tetap seperti biasa. Tidak ada yang digabungkan, dan kami baru akan bertanya lagi kalau pemberitahuannya berubah.",
@@ -14,7 +14,7 @@
   },
   "teen": {
     "heading": "Cara GOD memakai aktivitasmu",
-    "bullet1": "YourTal, SnapApp, dan Free Tax Returns tergabung dalam satu grup bernama GOD.",
+    "bullet1": "YourTal, SnapApps, dan Free Tax Returns tergabung dalam satu grup bernama GOD.",
     "bullet2": "Kalau kamu memakai lebih dari satu aplikasi itu, aktivitasmu kami gabungkan: area yang kamu pilih, hal yang kamu suka dan tonton, serta apa yang kamu beli dan di mana (dari struk belanjamu).",
     "bullet3": "Kami memakainya untuk memberi tahu bisnis tentang kelompok anak muda, misalnya \"remaja di sekitar Parramatta sering belanja di toko jenis ini\". Ini hanya kami lakukan untuk kelompok berisi minimal 20 orang.",
     "bullet4": "Tidak ada bisnis yang bisa melihatmu, namamu, atau aktivitasmu sendiri. Tidak ada yang memakai ini untuk memilihkan iklan untukmu.",

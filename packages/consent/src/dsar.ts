@@ -91,7 +91,7 @@ const DOMAINS: readonly DataDomain[] = [
   {
     id: "partner_links",
     holds:
-      "Which partner apps (such as SnapApp) the account linked, its one-time link codes, and which receipts it reported",
+      "Which partner apps (such as SnapApps) the account linked, its one-time link codes, and which receipts it reported",
     service: "partners",
     owner: "ops",
     onDeletion: "anonymise",
@@ -101,7 +101,7 @@ const DOMAINS: readonly DataDomain[] = [
   {
     id: "connected_apps",
     holds:
-      "Which apps (SnapApp, Free Tax Returns) the account signs in to with YourTal: its per-app subject ids, consents, teen invites, sign-in log and provider sessions. Each app is sent a signed event and erases what it holds",
+      "Which apps (SnapApps, Free Tax Returns) the account signs in to with YourTal: its per-app subject ids, consents, teen invites, sign-in log and provider sessions. Each app is sent a signed event and erases what it holds",
     service: "oidc",
     owner: "ops",
     onDeletion: "erase",

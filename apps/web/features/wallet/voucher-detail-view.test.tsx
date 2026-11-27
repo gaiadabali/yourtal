@@ -200,7 +200,7 @@ describe("VoucherDetailView", () => {
 
     expect(screen.getByText("K7M2-Q9XP")).toBeInTheDocument();
     expect(
-      screen.getByText(/enter this code\. Only the SnapApp account linked/),
+      screen.getByText(/enter this code\. Only the SnapApps account linked/),
     ).toBeInTheDocument();
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     expect(screen.queryByText("Toko Cache CBD")).not.toBeInTheDocument();

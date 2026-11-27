@@ -14,14 +14,14 @@ export type OperatedApp = "snapapp" | "ftr" | "god";
 /** F125: the name on each app's consent screen. Settings, so legal names need no code change. */
 export type Operators = Readonly<Record<OperatedApp, string>>;
 export const DEFAULT_OPERATORS: Operators = {
-  snapapp: "SnapApp",
+  snapapp: "SnapApps",
   ftr: "Free Tax Returns",
   god: "Global Omni Data",
 };
 
 interface ClientBase {
   readonly clientId: string;
-  /** The app, on the screens: "SnapApp". */
+  /** The app, on the screens: "SnapApps". */
   readonly name: string;
   /** Which app, for the operator setting (F125). */
   readonly app: OperatedApp;
@@ -69,7 +69,7 @@ export const REQUIRED_SIGN_IN_SCOPES = ["openid", "account"] as const;
 type Definition<T> = T extends YourTalClient ? Omit<T, "operator"> : never;
 
 const SNAPAPP = {
-  name: "SnapApp",
+  name: "SnapApps",
   app: "snapapp",
   externalOperator: false,
   sector: "snapapp-staging",

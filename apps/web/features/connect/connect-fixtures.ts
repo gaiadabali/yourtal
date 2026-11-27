@@ -7,7 +7,7 @@ export function details(overrides: Partial<InteractionDetails> = {}): Interactio
     screen: "consent",
     client: {
       clientId: "snapapp-web",
-      name: "SnapApp",
+      name: "SnapApps",
       operator: "Gaiada Pty Ltd",
       externalOperator: false,
       privacyUrl: "https://snapapp.gaiada.com/privacy",

@@ -77,7 +77,7 @@
     },
     "giftFrom": "Gift from {name}",
     "shortRef": "Ref. {code}",
-    "appInstructions": "Open SnapApp, go to Points, choose Use a YourTal voucher and enter this code. Only the SnapApp account linked to your YourTal account can use it.",
+    "appInstructions": "Open SnapApps, go to Points, choose Use a YourTal voucher and enter this code. Only the SnapApps account linked to your YourTal account can use it.",
     "appCodeCopy": "Copy code",
     "appCodeCopied": "Copied",
     "appCodeUnavailable": "Your code can't be shown right now. Reconnect and reopen this voucher."

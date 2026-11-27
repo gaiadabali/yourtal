@@ -1,3 +1,4 @@
+import { GOD } from "@/features/god-bar/god";
 import type { SupportedLocale } from "./public-i18n";
 import { getPublicTranslator } from "./public-i18n";
 import type { ReactNode } from "react";
@@ -18,6 +19,11 @@ export function PublicFooter({ locale, children }: PublicFooterProps) {
     <footer className="border-t border-border-subtle px-gutter-sm py-6 text-body-sm text-fg-muted md:px-gutter-md">
       <p>{t("footer.tagline")}</p>
       {children ? <div className="mt-3">{children}</div> : null}
+      <p className="mt-3">
+        <a href={GOD.url} className="hover:text-fg">
+          {t("footer.godCompany")}
+        </a>
+      </p>
       <nav aria-label={t("footer.regionsHeading")} className="mt-3 flex gap-4">
         <a href="/au" hrefLang="en-AU" className="hover:text-fg">
           {t("footer.au")}

@@ -12,6 +12,7 @@ import { AccountMenu, type AccountSummary } from "./account-menu";
 import { useShellBalance } from "./shell-balance";
 import { Wordmark } from "./wordmark";
 import { MailNavLink } from "@/features/spambank/mail-nav-link";
+import { GodAppsMenu } from "@/features/god-bar/god-apps-menu";
 
 export interface TopBarProps {
   locale: SupportedLocale;
@@ -41,6 +42,8 @@ export interface TopBarProps {
   streakDays?: number | null;
   /** Spambank: the Mail icon with its unread badge. Omitted, no icon shows. */
   mail?: { on: boolean };
+  /** The GOD app switcher. Omitted, no button shows. `adult` is the signal that shows Mail: it also shows Spambank. */
+  godBar?: { adult: boolean };
 }
 
 /**
@@ -60,6 +63,7 @@ export function TopBar({
   theme = "system",
   streakDays = null,
   mail,
+  godBar,
 }: TopBarProps) {
   const t = getNavTranslator(locale);
   const points = useShellBalance(availablePoints);
@@ -110,12 +114,15 @@ export function TopBar({
         </>
       )}
       {signedOutCta ? (
-        <a
-          href={signedOutCta.href}
-          className="inline-flex h-8 shrink-0 items-center rounded-pill bg-accent px-3 text-label font-sans font-bold text-fg-on-accent"
-        >
-          {signedOutCta.label}
-        </a>
+        <>
+          {godBar ? <GodAppsMenu locale={locale} adult={godBar.adult} /> : null}
+          <a
+            href={signedOutCta.href}
+            className="inline-flex h-8 shrink-0 items-center rounded-pill bg-accent px-3 text-label font-sans font-bold text-fg-on-accent"
+          >
+            {signedOutCta.label}
+          </a>
+        </>
       ) : (
         <>
           {/* Below 380 px the bar has no room left for it (it would scroll the page sideways). */}
@@ -141,6 +148,7 @@ export function TopBar({
               activeClassName="bg-surface-sunken text-accent-text"
             />
           ) : null}
+          {godBar ? <GodAppsMenu locale={locale} adult={godBar.adult} /> : null}
           {notifications ? <NotificationsBell initialNotifications={notifications} /> : null}
           <Link href="/wallet" className="shrink-0 rounded-pill">
             <PointsChip
